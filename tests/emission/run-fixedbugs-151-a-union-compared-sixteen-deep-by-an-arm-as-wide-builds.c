@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("i")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -189,6 +189,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -217,43 +225,43 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 221 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 229 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_eq(const U *a, const U *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0U_eq(const U *a, const U *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0U_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R0_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R0_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R1_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R1_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R2_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R3_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R3_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R4_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R4_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R5_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R5_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R6_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R6_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R7_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R7_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R8_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R8_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R9_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R9_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R10_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R10_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R11_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R11_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R12_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R12_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R13_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R13_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R14_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R14_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R15_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R15_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -262,13 +270,17 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(int32_t h0_i);
 void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void);
 
 #line 61 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(int32_t h0_i) { h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 h1_r0; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 h2_r1; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 h3_r2; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 h4_r3; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 h5_r4; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 h6_r5; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 h7_r6; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 h8_r7; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 h9_r8; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 h10_r9; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 h11_r10; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 h12_r11; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 h13_r12; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 h14_r13; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 h15_r14; HERO_NODEBUG int32_t t1; HERO_NODEBUG U t2; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 t3, t4; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 t5, t6; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 t7, t8; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 t9, t10; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 t11, t12; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 t13, t14; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 t15, t16; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 t17, t18; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 t19, t20; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 t21, t22; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 t23, t24; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 t25, t26; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 t27, t28; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 t29, t30; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 t31, t32; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t33; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_i; t2 = make_u(t1); t3 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0){.f_u = t2}; h1_r0 = t3;
+    t1 = h0_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.deep", 62, 16}; t2 = make_u(t1); } t3 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0){.f_u = t2}; h1_r0 = t3;
     t4 = h1_r0; t5 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1){.f_inner = t4}; h2_r1 = t5;
     t6 = h2_r1; t7 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2){.f_inner = t6}; h3_r2 = t7;
     t8 = h3_r2; t9 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3){.f_inner = t8}; h4_r3 = t9;
@@ -284,215 +296,215 @@ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aun
     t28 = h13_r12; t29 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13){.f_inner = t28}; h14_r13 = t29;
     t30 = h14_r13; t31 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14){.f_inner = t30}; h15_r14 = t31;
     t32 = h15_r14; t33 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15){.f_inner = t32}; return t33;
-#line 288 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 300 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
 void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void) { HERO_NODEBUG int32_t t1, t3, t7, t9; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t2, t4, t8, t10; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(3); t2 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t1); t3 = INT64_C(3); t4 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t3); t5 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(&t2, &t4); t6 = HERO_STR_LIT(hero_str_20); t7 = INT64_C(3); t8 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t7); t9 = INT64_C(4); t10 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t9); t11 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(&t8, &t10); hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_end(); return;
-#line 294 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+    t1 = INT64_C(3); t2 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t1); t3 = INT64_C(3); t4 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t3); t5 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R15_eq(&t2, &t4); t6 = HERO_STR_LIT(hero_str_20); t7 = INT64_C(3); t8 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t7); t9 = INT64_C(4); t10 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t9); t11 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R15_eq(&t8, &t10); hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_end(); return;
+#line 306 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_eq(const U *a, const U *b) {
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0U_eq(const U *a, const U *b) {
     if (!(a->i == b->i)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0U_hash(const void *elem) {
     const U *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->i)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_eq(&a->f_u, &b->f_u))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R0_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0U_eq(&a->f_u, &b->f_u))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R0_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_hash(&v->f_u)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0U_hash(&v->f_u)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R1_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R0_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R1_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R0_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R2_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R1_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R2_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R1_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R3_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R2_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R3_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R2_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R4_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R3_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R4_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R3_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R5_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R4_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R5_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R4_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R6_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R5_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R6_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R5_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R7_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R6_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R7_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R6_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R8_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R7_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R8_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R7_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R9_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R8_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R9_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R8_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R10_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R9_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R10_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R9_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R11_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R10_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R11_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R10_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R12_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R11_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R12_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R11_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R13_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R12_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R13_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R12_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R14_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R13_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R14_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R13_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *b) {
-    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R15_eq(const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *a, const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *b) {
+    if (!(h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R14_eq(&a->f_inner, &b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R15_hash(const void *elem) {
     const h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_0R14_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -560,10 +572,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("40ecfb4113830191", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("33495796523eb18e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds\tfixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds\n");
     h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main();
     hero_runtime_check_leaks();
     return 0;

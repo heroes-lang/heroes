@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -143,11 +151,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "ffirestzeroapartialrecord.c"
+#line 155 "ffirestzeroapartialrecord.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b);
-HERO_TU_LOCAL uint64_t h_ffirestzeroapartialrecord_SP_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_0SP_eq(const SP *a, const SP *b);
+HERO_TU_LOCAL uint64_t h_ffirestzeroapartialrecord_0SP_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -156,6 +164,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 SP h_ffirestzeroapartialrecord_built(void);
 void h_ffirestzeroapartialrecord_main(void);
@@ -183,7 +195,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 SP h_ffirestzeroapartialrecord_built(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG SP t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(4); t2 = (SP){0}; __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; return t2;
-#line 187 "ffirestzeroapartialrecord.c"
+#line 199 "ffirestzeroapartialrecord.c"
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
@@ -192,18 +204,18 @@ void h_ffirestzeroapartialrecord_main(void) {
 #define h0_s (*hero_lend_h0_s)
 #line 15
     SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    (void)dirty();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-partial-record.hero", "ffi-rest-zero-a-partial-record.main", 16, 5}; (void)dirty(); }
     t1 = h_ffirestzeroapartialrecord_built(); h0_s = t1; hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_s.kind; t3 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_s, "sp_union", "s"); hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0); t4 = sp_union(&h0_s); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_s); return;
-#line 199 "ffirestzeroapartialrecord.c"
+    t2 = h0_s.kind; t3 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-partial-record.hero", "ffi-rest-zero-a-partial-record.main", 18, 24}; hero_lend_local_name(hero_lend_h0_s, "sp_union", "s"); hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0); t4 = sp_union(&h0_s); } hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_s); return;
+#line 211 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
-HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {
-    hero_panic("h_ffirestzeroapartialrecord_SP_eq: a partial record has no structural equality");
+HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_0SP_eq(const SP *a, const SP *b) {
+    hero_panic("h_ffirestzeroapartialrecord_0SP_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_ffirestzeroapartialrecord_SP_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffirestzeroapartialrecord_SP_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_ffirestzeroapartialrecord_0SP_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffirestzeroapartialrecord_0SP_hash: a partial record has no structural hash");
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -270,10 +282,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("288dda9165d2c83d", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5476c99748a3a562", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffirestzeroapartialrecord\tffi-rest-zero-a-partial-record\n");
     h_ffirestzeroapartialrecord_main();
     hero_runtime_check_leaks();
     return 0;

@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -129,6 +129,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -157,11 +165,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 169 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_0Kinds_eq(const struct kinds *a, const struct kinds *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_0Kinds_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -170,6 +178,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void);
 void *hero_pad_nowhere(void);
@@ -193,16 +205,16 @@ void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void) { struct 
 #line 25
     t26 = (struct kinds){.name = {t1, t2, t3, t4, t5, t6, t7, t8}, .flags = {t10, t11}, .xs = {t13, t14}, .ps = {t16, t17}, .labels = {t19, t20}, .small = {t22, t23, t24}}; h0_k = t26; hero_pad_fill(&h0_k, sizeof(struct kinds), 1, hero_pad_g_0, hero_pad_n_0);
 #line 33
-    t27 = INT64_C(0); t28 = UINT64_C(65); h0_k.name[((uint64_t)(t27) >= UINT64_C(8) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))] = t28;
-    t29 = INT64_C(1); t30 = true; h0_k.flags[((uint64_t)(t29) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t29))] = t30;
-    t31 = INT64_C(1); t32 = 0x1.4p+1; h0_k.xs[((uint64_t)(t31) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t31))] = t32;
-    t33 = INT64_C(0); t34 = (void *)kinds_pointer(); h0_k.ps[((uint64_t)(t33) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t33))] = t34;
-    t35 = INT64_C(1); t36 = (const char *)kinds_label(); h0_k.labels[((uint64_t)(t35) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t35))] = t36;
-    t37 = INT64_C(2); t38 = INT64_C(-3); h0_k.small[((uint64_t)(t37) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t37))] = t38;
-    t39 = h0_k; t40 = kinds_check(t39); hero_print_int(t40); hero_print_end(); return;
-#line 204 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+    t27 = INT64_C(0); t28 = UINT64_C(65); h0_k.name[((uint64_t)(t27) >= UINT64_C(8) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 33, 5), (int64_t)0) : (t27))] = t28;
+    t29 = INT64_C(1); t30 = true; h0_k.flags[((uint64_t)(t29) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 34, 5), (int64_t)0) : (t29))] = t30;
+    t31 = INT64_C(1); t32 = 0x1.4p+1; h0_k.xs[((uint64_t)(t31) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 35, 5), (int64_t)0) : (t31))] = t32;
+    t33 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 36, 15}; t34 = (void *)kinds_pointer(); } h0_k.ps[((uint64_t)(t33) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 36, 5), (int64_t)0) : (t33))] = t34;
+    t35 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 37, 19}; t36 = (const char *)kinds_label(); } h0_k.labels[((uint64_t)(t35) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 37, 5), (int64_t)0) : (t35))] = t36;
+    t37 = INT64_C(2); t38 = INT64_C(-3); h0_k.small[((uint64_t)(t37) >= UINT64_C(3) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 38, 5), (int64_t)0) : (t37))] = t38;
+    t39 = h0_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero", "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.main", 39, 11}; t40 = kinds_check(t39); } hero_print_int(t40); hero_print_end(); return;
+#line 216 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 }
-HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b) {
+HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_0Kinds_eq(const struct kinds *a, const struct kinds *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
     if (!((a->flags[0] == b->flags[0] && a->flags[1] == b->flags[1]))) return false;
     if (!((a->xs[0] == b->xs[0] && a->xs[1] == b->xs[1]))) return false;
@@ -212,7 +224,7 @@ HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_0Kinds_hash(const void *elem) {
     const struct kinds *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->name[0])) * UINT64_C(0x100000001b3);
@@ -301,10 +313,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d1f72f34c10d80b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bd50e1c0d8ac860", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsafixedarrayelementofeveryfieldkindiswritten\tfixedbugs-a-fixed-array-element-of-every-field-kind-is-written\n");
     h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main();
     hero_runtime_check_leaks();
     return 0;

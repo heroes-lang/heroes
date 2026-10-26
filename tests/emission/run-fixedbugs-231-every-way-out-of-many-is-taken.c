@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -244,7 +244,7 @@ HeroStr h_fixedbugs231everywayoutofmanyistaken_ladder(int64_t h0_x) { HeroStr h1
 
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 h_0opt_f87774a h_fixedbugs231everywayoutofmanyistaken_pick(int64_t h0_x, int64_t *ph1_count) { HeroStr h2_s0 = {0}; HeroStr h3_s1 = {0}; HeroStr h4_s2 = {0}; HeroStr h5_s3 = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}, h20_own20 = {0}, t41, t42, t46, t49, t101, t102; int64_t h7_n; HeroStr h8_s4 = {0}; HeroStr h9_s5 = {0}; HeroStr h10_s6 = {0}; HERO_NODEBUG h_0opt_f87774a h11_ret0 = {0}, h15_own15 = {0}, h17_own17 = {0}, h19_own19 = {0}, h22_own22 = {0}, h25_own25 = {0}, h27_own27 = {0}, h31_own31 = {0}, h34_own34 = {0}, h35_own35 = {0}, t12, t20, t29, t39, t48, t59, t70, t81, t87, t88, t94, t97, t100, t104, t108, t111, t116, t119, t120; HERO_NODEBUG HeroStr h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h16_own16 = {0}, h18_own18 = {0}, h21_own21 = {0}, h23_own23 = {0}, h24_own24 = {0}, h26_own26 = {0}, h29_own29 = {0}, h30_own30 = {0}, h32_own32 = {0}, h33_own33 = {0}, t4, t6, t7, t11, t13, t14, t15, t19, t21, t22, t23, t27, t28, t30, t31, t32, t36, t37, t38, t51, t53, t54, t58, t60, t61, t62, t66, t69, t71, t72, t73, t75, t76, t80, t82, t83, t84, t85, t86, t89, t90, t91, t92, t93, t95, t96, t98, t99, t103, t105, t106, t107, t109, t110, t113, t114, t115, t117, t118; HERO_NODEBUG HeroArrayHeader *h28_own28 = {0}, *t74, *t112; HERO_NODEBUG int64_t t1, t2, t3, t5, t8, t9, t16, t17, t24, t25, t33, t34, t40, t43, t44, t50, t52, t55, t56, t63, t64, t67, t68, t77, t78; HERO_NODEBUG bool t10, t18, t26, t35, t45, t57, t65, t79; HERO_NODEBUG HeroFailure t47; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph1_count); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph1_count) = t3;
+    t1 = (*ph1_count); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.pick", 68, 13); (*ph1_count) = t3;
     t4 = HERO_STR_LIT(hero_str_61); t5 = h0_x; t6 = hero_int_to_str(t5); t89 = h12_own12; h12_own12 = t6; hero_str_decref(t89); t7 = hero_str_concat(t4, t6); t90 = h13_own13; h13_own13 = t7; hero_str_decref(t90); t91 = h2_s0; hero_str_incref(t7); h2_s0 = t7; hero_str_decref(t91);
 #line 71
     t8 = h0_x; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb2; else goto bb3; bb1:
@@ -287,7 +287,7 @@ h_0opt_f87774a h_fixedbugs231everywayoutofmanyistaken_pick(int64_t h0_x, int64_t
 #line 96
     t77 = h0_x; t78 = INT64_C(6); t79 = t77 == t78; if (t79) goto bb22; else goto bb23; bb19:
 #line 93
-    t66 = h9_s5; t67 = INT64_C(0); t68 = INT64_C(3); t69 = hero_str_slice(t66, t67, t68); t115 = h30_own30; h30_own30 = t69; hero_str_decref(t115); hero_str_incref(t69); t70 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t69}; t116 = h31_own31; h31_own31 = t70; h_0opt_f87774a_release(&t116); h11_ret0 = t70; goto bb24; bb20: goto bb18; bb21:
+    t66 = h9_s5; t67 = INT64_C(0); t68 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.pick", 93, 19}; t69 = hero_str_slice_at(t66, t67, t68, &hero_here); } t115 = h30_own30; h30_own30 = t69; hero_str_decref(t115); hero_str_incref(t69); t70 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t69}; t116 = h31_own31; h31_own31 = t70; h_0opt_f87774a_release(&t116); h11_ret0 = t70; goto bb24; bb20: goto bb18; bb21:
 #line 98
     t82 = h10_s6; t83 = h4_s2; t84 = hero_str_concat(t82, t83); t117 = h32_own32; h32_own32 = t84; hero_str_decref(t117); t85 = h3_s1; t86 = hero_str_concat(t84, t85); t118 = h33_own33; h33_own33 = t86; hero_str_decref(t118); hero_str_incref(t86); t87 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t86}; t119 = h34_own34; h34_own34 = t87; h_0opt_f87774a_release(&t119); h11_ret0 = t87; goto bb24; bb22:
 #line 97
@@ -334,7 +334,7 @@ h_0opt_f87774a h_fixedbugs231everywayoutofmanyistaken_pick(int64_t h0_x, int64_t
 h_0opt_e201354 h_fixedbugs231everywayoutofmanyistaken_tens(int64_t h0_x) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t7, t8, t9; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = INT64_C(7); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 103
-    t7 = h0_x; t8 = INT64_C(10); if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
+    t7 = h0_x; t8 = INT64_C(10); if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.tens", 103, 15); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
 #line 102
     t4 = HERO_STR_LIT(hero_str_70509edc); t5 = HERO_STR_LIT(hero_str_24f659ad); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t13 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t13); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
 #line 341 "fixedbugs231everywayoutofmanyistaken.c"
@@ -349,11 +349,11 @@ h_0opt_e201354 h_fixedbugs231everywayoutofmanyistaken_tens(int64_t h0_x) { HERO_
 void h_fixedbugs231everywayoutofmanyistaken_tally(int64_t h0_x, HeroArrayHeader * *ph1_seen) { HERO_NODEBUG HeroStr t2, t10, t18; HERO_NODEBUG int64_t t4, t5, t6, t7, t12, t13, t14, t15; HERO_NODEBUG bool t8, t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t2 = HERO_STR_LIT(hero_str_3629); hero_array_push_owned(&(*ph1_seen), &t2);
 #line 110
-    t4 = h0_x; t5 = INT64_C(2); if (t5 == 0) hero_panic("division by zero"); if (t4 == INT64_MIN && t5 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t6 = t4 % t5; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb2; else goto bb3; bb1:
+    t4 = h0_x; t5 = INT64_C(2); if (t5 == 0) hero_panic_at("division by zero", "fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.tally", 110, 8); if (t4 == INT64_MIN && t5 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.tally", 110, 8); t6 = t4 % t5; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb2; else goto bb3; bb1:
 #line 112
     t10 = HERO_STR_LIT(hero_str_1d4477); hero_array_push_owned(&(*ph1_seen), &t10);
 #line 114
-    t12 = h0_x; t13 = INT64_C(3); if (t13 == 0) hero_panic("division by zero"); if (t12 == INT64_MIN && t13 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t14 = t12 % t13; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb5; else goto bb6; bb2: goto bb7; bb3: goto bb1; bb4:
+    t12 = h0_x; t13 = INT64_C(3); if (t13 == 0) hero_panic_at("division by zero", "fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.tally", 114, 8); if (t12 == INT64_MIN && t13 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.tally", 114, 8); t14 = t12 % t13; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb5; else goto bb6; bb2: goto bb7; bb3: goto bb1; bb4:
 #line 116
     t18 = HERO_STR_LIT(hero_str_f613ce0); hero_array_push_owned(&(*ph1_seen), &t18); goto bb7; bb5: goto bb7; bb6: goto bb4; bb7: return;
 #line 360 "fixedbugs231everywayoutofmanyistaken.c"
@@ -365,7 +365,7 @@ void h_fixedbugs231everywayoutofmanyistaken_main(void) { int64_t h0_x; int64_t h
 #line 121
     t2 = h0_x; t3 = INT64_C(13); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
     t5 = h0_x; t6 = h_fixedbugs231everywayoutofmanyistaken_ladder(t5); t46 = h6_own6; h6_own6 = t6; hero_str_decref(t46); hero_print_str(t6); hero_print_end();
-    t7 = h0_x; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); h0_x = t9; goto bb1; bb3:
+    t7 = h0_x; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.main", 123, 13); h0_x = t9; goto bb1; bb3:
 #line 125
     t10 = INT64_C(0); h1_count = t10;
     t11 = hero_array_new(&hero_desc_str, 1); t47 = h7_own7; h7_own7 = t11; hero_array_decref(t47); t48 = h2_seen; hero_array_incref(t11); h2_seen = t11; hero_array_decref(t48);
@@ -388,7 +388,7 @@ void h_fixedbugs231everywayoutofmanyistaken_main(void) { int64_t h0_x; int64_t h
 bb7:
 #line 134 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t36 = h0_x; h_fixedbugs231everywayoutofmanyistaken_tally(t36, &h2_seen);
-    t37 = h0_x; t38 = INT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow(); h0_x = t39; goto bb4; bb8:
+    t37 = h0_x; t38 = INT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow_at("fixedbugs-231-every-way-out-of-many-is-taken.hero", "fixedbugs-231-every-way-out-of-many-is-taken.main", 135, 13); h0_x = t39; goto bb4; bb8:
 #line 131
     t20 = h3_s0; t21 = t20.as.ok; t52 = h4_s; hero_str_incref(t21); h4_s = t21; hero_str_decref(t52); t22 = h0_x; t23 = HERO_STR_LIT(hero_str_466fb28); t24 = h4_s; t25 = HERO_STR_LIT(hero_str_20); t26 = h1_count; hero_print_int(t22); hero_print_str(t23); hero_print_str(t24); hero_print_str(t25); hero_print_int(t26); hero_print_end(); goto bb7; bb9:
     t27 = h3_s0; t28 = t27.as.err; t53 = h5_e; hero_failure_retain(&t28); h5_e = t28; hero_failure_release(&t53); t29 = h0_x; t30 = HERO_STR_LIT(hero_str_3f5d7cc3); t31 = h5_e.code; t32 = HERO_STR_LIT(hero_str_20); t33 = h5_e.msg; t34 = HERO_STR_LIT(hero_str_20); t35 = h1_count; hero_print_int(t29); hero_print_str(t30); hero_print_str(t31); hero_print_str(t32); hero_print_str(t33); hero_print_str(t34); hero_print_int(t35); hero_print_end(); goto bb7;
@@ -491,9 +491,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("62072f4f4519865b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("569bfaf85dfa7700", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs231everywayoutofmanyistaken\tfixedbugs-231-every-way-out-of-many-is-taken\n");
     h_fixedbugs231everywayoutofmanyistaken_main();
     hero_runtime_check_leaks();
     return 0;

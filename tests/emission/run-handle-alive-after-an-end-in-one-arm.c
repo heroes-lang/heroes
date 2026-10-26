@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -145,11 +153,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "handlealiveafteranendinonearm.c"
+#line 157 "handlealiveafteranendinonearm.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_Node_eq(node * const *a, node * const *b);
-HERO_TU_LOCAL uint64_t h_handlealiveafteranendinonearm_Node_hash(const void *elem);
+HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_0Node_eq(node * const *a, node * const *b);
+HERO_TU_LOCAL uint64_t h_handlealiveafteranendinonearm_0Node_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -158,27 +166,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_handlealiveafteranendinonearm_main(void);
 
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
 void h_handlealiveafteranendinonearm_main(void) { node * h0_n; HERO_NODEBUG int64_t t1, t4, t5, t11; HERO_NODEBUG node *t2, *t3, *t7, *t10, *t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); t2 = node_new(t1); hero_handle_acquired(t2, "node_free"); h0_n = t2;
+    t1 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-in-one-arm.hero", "handle-alive-after-an-end-in-one-arm.main", 16, 9}; t2 = node_new(t1); hero_handle_acquired_at(t2, "node_free", &hero_here); } h0_n = t2;
 #line 18
-    t3 = h0_n; hero_handle_alive(t3, "the argument `n` of `node_peek`"); t4 = node_peek(t3); t5 = INT64_C(100); t6 = t4 > t5; if (t6) goto bb2; else goto bb3; bb1:
+    t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-in-one-arm.hero", "handle-alive-after-an-end-in-one-arm.main", 18, 8}; hero_handle_alive_at(t3, "the argument `n` of `node_peek`", &hero_here); t4 = node_peek(t3); } t5 = INT64_C(100); t6 = t4 > t5; if (t6) goto bb2; else goto bb3; bb1:
 #line 21
-    t9 = HERO_STR_LIT(hero_str_457adaeb); t10 = h0_n; hero_handle_alive(t10, "the argument `n` of `node_peek`"); t11 = node_peek(t10); hero_print_str(t9); hero_print_int(t11); hero_print_end();
-    t12 = h0_n; { hero_handle_alive(t12, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL); (void)node_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead(); } return; bb2:
+    t9 = HERO_STR_LIT(hero_str_457adaeb); t10 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-in-one-arm.hero", "handle-alive-after-an-end-in-one-arm.main", 21, 27}; hero_handle_alive_at(t10, "the argument `n` of `node_peek`", &hero_here); t11 = node_peek(t10); } hero_print_str(t9); hero_print_int(t11); hero_print_end();
+    t12 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-in-one-arm.hero", "handle-alive-after-an-end-in-one-arm.main", 22, 5}; { hero_handle_alive_at(t12, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t12, "node_free", NULL, &hero_here); (void)node_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead(); } } return; bb2:
 #line 19
-    t7 = h0_n; { hero_handle_alive(t7, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "node_free", NULL); (void)node_free(t7); if (hero_handle_ended(t7, hero_life_0_0) && h0_n == t7) h0_n = hero_handle_dead(); }
+    t7 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-in-one-arm.hero", "handle-alive-after-an-end-in-one-arm.main", 19, 9}; { hero_handle_alive_at(t7, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t7, "node_free", NULL, &hero_here); (void)node_free(t7); if (hero_handle_ended(t7, hero_life_0_0) && h0_n == t7) h0_n = hero_handle_dead(); } }
     t8 = HERO_STR_LIT(hero_str_543259bb); hero_print_str(t8); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 176 "handlealiveafteranendinonearm.c"
+#line 188 "handlealiveafteranendinonearm.c"
 }
-HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_Node_eq(node * const *a, node * const *b) {
+HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_handlealiveafteranendinonearm_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_handlealiveafteranendinonearm_0Node_hash(const void *elem) {
     node * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -249,10 +261,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fda96c723f8ead6", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("709bf35132d858c6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("handlealiveafteranendinonearm\thandle-alive-after-an-end-in-one-arm\n");
     h_handlealiveafteranendinonearm_main();
     hero_runtime_check_leaks();
     return 0;

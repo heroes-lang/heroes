@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -133,6 +133,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -165,7 +173,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs227theshownreadnameseverybyte.c"
+#line 177 "fixedbugs227theshownreadnameseverybyte.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -180,6 +188,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(void);
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(void);
@@ -192,7 +204,7 @@ void h_fixedbugs227theshownreadnameseverybyte_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(void) {
-#line 196 "fixedbugs227theshownreadnameseverybyte.c"
+#line 208 "fixedbugs227theshownreadnameseverybyte.c"
     _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
     _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 #pragma clang diagnostic push
@@ -204,13 +216,13 @@ int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     return HERO_OS_OK;
-#line 208 "fixedbugs227theshownreadnameseverybyte.c"
+#line 220 "fixedbugs227theshownreadnameseverybyte.c"
 #pragma clang diagnostic pop
 }
 
 #line 20 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(void) {
-#line 214 "fixedbugs227theshownreadnameseverybyte.c"
+#line 226 "fixedbugs227theshownreadnameseverybyte.c"
     _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
     _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 #pragma clang diagnostic push
@@ -222,13 +234,13 @@ int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     return HERO_OS_NOT_FOUND;
-#line 226 "fixedbugs227theshownreadnameseverybyte.c"
+#line 238 "fixedbugs227theshownreadnameseverybyte.c"
 #pragma clang diagnostic pop
 }
 
 #line 21 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_TEXT(void) {
-#line 232 "fixedbugs227theshownreadnameseverybyte.c"
+#line 244 "fixedbugs227theshownreadnameseverybyte.c"
     _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
     _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 #pragma clang diagnostic push
@@ -240,14 +252,14 @@ int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_TEXT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     return HERO_OS_NOT_TEXT;
-#line 244 "fixedbugs227theshownreadnameseverybyte.c"
+#line 256 "fixedbugs227theshownreadnameseverybyte.c"
 #pragma clang diagnostic pop
 }
 
 #line 23 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 HeroStr h_fixedbugs227theshownreadnameseverybyte_NOT_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7d88d4f7);
-#line 251 "fixedbugs227theshownreadnameseverybyte.c"
+#line 263 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -255,14 +267,14 @@ HeroStr h_fixedbugs227theshownreadnameseverybyte_NOT_TEXT(void) { HERO_NODEBUG H
 #line 26 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 HeroStr h_fixedbugs227theshownreadnameseverybyte_IS_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1e3ef7a5);
-#line 259 "fixedbugs227theshownreadnameseverybyte.c"
+#line 271 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bool h_fixedbugs227theshownreadnameseverybyte_put(HeroStr h0_path, HeroArrayHeader * h1_bytes) { void * h2_handle; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t10, *t13, *t16, *t38; HERO_NODEBUG int64_t h4_i0, t11, t12, t14, t17, t18, t19, t22, t23, t31, t32, t33; int64_t h5_b; HERO_NODEBUG h_0opt_e1f4933 h6_f0 = {0}, h8_own8 = {0}, t20, t21, t25, t27, t39, t40; HERO_NODEBUG bool h7_ret0, t8, t9, t15, t24, t36, t37; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t6, *t7, *t29, *t34; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG int32_t t28; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = hero_str_lend(t1); t3 = HERO_STR_LIT(hero_str_3d47); t4 = hero_str_lend(t3); t5 = (void *)fopen(hero_cstr_nonnull(t2), hero_cstr_nonnull(t4)); h2_handle = t5;
+    t1 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 30, 26}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = HERO_STR_LIT(hero_str_3d47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 30, 45}; t4 = hero_str_lend_at(t3, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 30, 14}; t5 = (void *)fopen(hero_cstr_nonnull_at(t2, &hero_here), hero_cstr_nonnull_at(t4, &hero_here)); } h2_handle = t5;
 #line 32
     t6 = h2_handle; t7 = ((void *)0); t8 = t6 == t7; if (t8) goto bb2; else goto bb3; bb1:
 #line 35
@@ -270,17 +282,17 @@ bool h_fixedbugs227theshownreadnameseverybyte_put(HeroStr h0_path, HeroArrayHead
 #line 33
     t9 = false; h7_ret0 = t9; goto bb10; bb3: goto bb1; bb4:
 #line 35
-    t12 = h4_i0; t13 = h3_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb5; else goto bb7; bb5: t16 = h3_xs0; t17 = h4_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h5_b = t18;
+    t12 = h4_i0; t13 = h3_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb5; else goto bb7; bb5: t16 = h3_xs0; t17 = h4_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 35, 9) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h5_b = t18;
     t19 = h5_b; if (t19 >= -2147483648LL && t19 <= 2147483647LL) { t20 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t19}; } else { t20 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t39 = h8_own8; h8_own8 = t20; h_0opt_e1f4933_release(&t39); t40 = h6_f0; h_0opt_e1f4933_retain(&t20); h6_f0 = t20; h_0opt_e1f4933_release(&t40); t21 = h6_f0; t22 = t21.tag; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb8; else goto bb9; bb6:
 #line 35
-    t31 = h4_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow(); h4_i0 = t33; goto bb4; bb7:
+    t31 = h4_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 35, 9); h4_i0 = t33; goto bb4; bb7:
 #line 38
-    t34 = h2_handle; (void)fclose(t34);
+    t34 = h2_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 38, 9}; (void)fclose(t34); }
     t36 = true; h7_ret0 = t36; goto bb10; bb8:
 #line 36
-    t27 = h6_f0; t28 = t27.as.ok; t29 = h2_handle; (void)fputc(t28, t29); goto bb6; bb9: t25 = h6_f0; t26 = t25.as.err;
-#line 283 "fixedbugs227theshownreadnameseverybyte.c"
-    hero_panic_must(t26);
+    t27 = h6_f0; t28 = t27.as.ok; t29 = h2_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 36, 13}; (void)fputc(t28, t29); } goto bb6; bb9: t25 = h6_f0; t26 = t25.as.err;
+#line 295 "fixedbugs227theshownreadnameseverybyte.c"
+    hero_panic_must_at(t26, "fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.put", 36, 22);
     hero_unreachable();
 bb10:
     t37 = h7_ret0;
@@ -300,11 +312,11 @@ void h_fixedbugs227theshownreadnameseverybyte_said(HeroStr h0_path) {
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "status"); int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "marks"); HeroStr h3_got = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t3, t5, t6, t10, t14, t18, t19, t22, t23, t24, t25, t27, t29, t30, t31, t35, t36, t37, t38, t39; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t12, t15, t16, t20, t21, t26, t28, t32, t33, t34; HERO_NODEBUG const char *t4; HERO_NODEBUG bool t9, t13, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_status = t1;
     t2 = INT64_C(0); h2_marks = t2;
-    t3 = h0_path; t4 = hero_str_lend(t3); hero_lend_local_name(hero_lend_h1_status, "hero_file_read_shown", "status"); hero_lend_local_name(hero_lend_h2_marks, "hero_file_read_shown", "marks"); t5 = hero_file_read_shown(hero_cstr_nonnull(t4), (void *)&h1_status, (void *)&h2_marks); t36 = h4_own4; h4_own4 = t5; hero_str_decref(t36); t37 = h3_got; hero_str_incref(t5); h3_got = t5; hero_str_decref(t37);
+    t3 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.said", 44, 38}; t4 = hero_str_lend_at(t3, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.said", 44, 11}; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_shown", "status"); hero_lend_local_name(hero_lend_h2_marks, "hero_file_read_shown", "marks"); t5 = hero_file_read_shown(hero_cstr_nonnull_at(t4, &hero_here), (void *)&h1_status, (void *)&h2_marks); } t36 = h4_own4; h4_own4 = t5; hero_str_decref(t36); t37 = h3_got; hero_str_incref(t5); h3_got = t5; hero_str_decref(t37);
     t6 = HERO_STR_LIT(hero_str_5a8e78fd); t7 = h1_status; t8 = h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(); t9 = t7 == t8; t10 = HERO_STR_LIT(hero_str_20); t11 = h1_status; t12 = h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(); t13 = t11 == t12; t14 = HERO_STR_LIT(hero_str_20); t15 = h1_status; t16 = h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_TEXT(); t17 = t15 == t16; hero_print_str(t6); hero_print_bool(t9); hero_print_str(t10); hero_print_bool(t13); hero_print_str(t14); hero_print_bool(t17); hero_print_end();
-    t18 = HERO_STR_LIT(hero_str_1cc0b081); t19 = h3_got; t20 = INT64_C(0); t21 = h2_marks; t22 = hero_str_slice(t19, t20, t21); t38 = h5_own5; h5_own5 = t22; hero_str_decref(t38); t23 = HERO_STR_LIT(hero_str_5d); hero_print_str(t18); hero_print_str(t22); hero_print_str(t23); hero_print_end();
-    t24 = HERO_STR_LIT(hero_str_750df7b9); t25 = h3_got; t26 = h2_marks; t27 = h3_got; t28 = hero_str_len(t27); t29 = hero_str_slice(t25, t26, t28); t39 = h6_own6; h6_own6 = t29; hero_str_decref(t39); t30 = HERO_STR_LIT(hero_str_2fb7); t31 = h3_got; t32 = hero_str_len(t31); t33 = h2_marks; if (__builtin_sub_overflow(t32, t33, &t34)) hero_panic_overflow(); t35 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t24); hero_print_str(t29); hero_print_str(t30); hero_print_int(t34); hero_print_str(t35); hero_print_end();
-#line 308 "fixedbugs227theshownreadnameseverybyte.c"
+    t18 = HERO_STR_LIT(hero_str_1cc0b081); t19 = h3_got; t20 = INT64_C(0); t21 = h2_marks; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.said", 46, 22}; t22 = hero_str_slice_at(t19, t20, t21, &hero_here); } t38 = h5_own5; h5_own5 = t22; hero_str_decref(t38); t23 = HERO_STR_LIT(hero_str_5d); hero_print_str(t18); hero_print_str(t22); hero_print_str(t23); hero_print_end();
+    t24 = HERO_STR_LIT(hero_str_750df7b9); t25 = h3_got; t26 = h2_marks; t27 = h3_got; t28 = hero_str_len(t27); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.said", 47, 21}; t29 = hero_str_slice_at(t25, t26, t28, &hero_here); } t39 = h6_own6; h6_own6 = t29; hero_str_decref(t39); t30 = HERO_STR_LIT(hero_str_2fb7); t31 = h3_got; t32 = hero_str_len(t31); t33 = h2_marks; if (__builtin_sub_overflow(t32, t33, &t34)) hero_panic_overflow_at("fixedbugs-227-the-shown-read-names-every-byte.hero", "fixedbugs-227-the-shown-read-names-every-byte.said", 47, 66); t35 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t24); hero_print_str(t29); hero_print_str(t30); hero_print_int(t34); hero_print_str(t35); hero_print_end();
+#line 320 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_release_at(&h3_got);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -331,7 +343,7 @@ void h_fixedbugs227theshownreadnameseverybyte_main(void) { HERO_NODEBUG HeroStr 
     t26 = HERO_STR_LIT(hero_str_49656b13); h_fixedbugs227theshownreadnameseverybyte_said(t26); goto bb7; bb5:
 #line 60
     t24 = HERO_STR_LIT(hero_str_2fccf3e5); hero_print_str(t24); hero_print_end(); goto bb7; bb6: goto bb4; bb7:
-#line 335 "fixedbugs227theshownreadnameseverybyte.c"
+#line 347 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -436,10 +448,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ecb10f46b5d49a3", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ec1b61d288dda88", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs227theshownreadnameseverybyte\tfixedbugs-227-the-shown-read-names-every-byte\n");
     h_fixedbugs227theshownreadnameseverybyte_main();
     hero_runtime_check_leaks();
     return 0;

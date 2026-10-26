@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -161,8 +161,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 162 "ffiabytefieldcrossestoc.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_Slot_eq(const Slot *a, const Slot *b);
-HERO_TU_LOCAL uint64_t h_ffiabytefieldcrossestoc_Slot_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_0Slot_eq(const Slot *a, const Slot *b);
+HERO_TU_LOCAL uint64_t h_ffiabytefieldcrossestoc_0Slot_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -190,20 +190,20 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_ffiabytefieldcrossestoc_main(void) { Slot h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h4_own4 = {0}, t40, t41, t45, t47, t76, t77; Slot h2_t; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}, h5_own5 = {0}, t67, t68, t72, t74, t78, t79; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t39, t49, t50, t51, t52, t53, t54, t55, t56; HERO_NODEBUG int8_t t10, t11, t12, t13, t58, t59, t60, t61; HERO_NODEBUG int64_t t15, t20, t21, t25, t26, t30, t34, t35, t38, t42, t43, t48, t63, t69, t70; HERO_NODEBUG Slot t16, t36, t64, t65; HERO_NODEBUG void *t19, *t24, *t29, *t33; HERO_NODEBUG bool t44, t71; HERO_NODEBUG HeroFailure t46, t73; HERO_NODEBUG HeroStr t75; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); t2 = UINT64_C(0); t3 = UINT64_C(3); t4 = UINT64_C(0); t5 = UINT64_C(5); t6 = UINT64_C(0); t7 = UINT64_C(7); t8 = UINT64_C(0); t10 = INT64_C(9); t11 = INT64_C(8); t12 = INT64_C(7); t13 = INT64_C(6); t15 = INT64_C(0); t16 = (Slot){.nsap = {t1, t2, t3, t4, t5, t6, t7, t8}, .tag = {t10, t11, t12, t13}, .id = t15}; h0_s = t16; hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
 #line 47
-    t19 = (void *)(h0_s.nsap); t20 = INT64_C(8); _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2522 2534 2539 2540 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2522 2534 2539 2540 8 const void *"); t21 = slot_sum(t19, t20); hero_print_int(t21); hero_print_end();
+    t19 = (void *)(h0_s.nsap); t20 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 47, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2522 2534 2539 2540 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2522 2534 2539 2540 8 const void *"); t21 = slot_sum(t19, t20); } hero_print_int(t21); hero_print_end();
 #line 51
-    t24 = (void *)(h0_s.tag); t25 = INT64_C(4); _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)sizeof(h0_s.tag)), "heroes-ffi-extent slot_sum p n 2711 2722 2727 2728 4"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)(sizeof(h0_s.tag) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2711 2722 2727 2728 4 const void *"); t26 = slot_sum(t24, t25); hero_print_int(t26); hero_print_end();
+    t24 = (void *)(h0_s.tag); t25 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 51, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)sizeof(h0_s.tag)), "heroes-ffi-extent slot_sum p n 2711 2722 2727 2728 4"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)(sizeof(h0_s.tag) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2711 2722 2727 2728 4 const void *"); t26 = slot_sum(t24, t25); } hero_print_int(t26); hero_print_end();
 #line 54
-    t29 = (void *)(h0_s.nsap); t30 = INT64_C(8); _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_fill p n 2822 2834 2839 2840 8"); _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 2822 2834 2839 2840 8 void *"); (void)slot_fill(t29, t30);
-    t33 = (void *)(h0_s.nsap); t34 = INT64_C(8); _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2864 2876 2881 2882 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2864 2876 2881 2882 8 const void *"); t35 = slot_sum(t33, t34); hero_print_int(t35); hero_print_end();
-    t36 = h0_s; t38 = INT64_C(3); t39 = t36.nsap[((uint64_t)(t38) >= UINT64_C(8) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t38))]; t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t39}; t76 = h4_own4; h4_own4 = t40; h_0opt_e201354_release(&t76); t77 = h1_f0; h_0opt_e201354_retain(&t40); h1_f0 = t40; h_0opt_e201354_release(&t77); t41 = h1_f0; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb1; else goto bb2; bb1: t47 = h1_f0; t48 = t47.as.ok; hero_print_int(t48); hero_print_end();
+    t29 = (void *)(h0_s.nsap); t30 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 54, 5}; _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_fill p n 2822 2834 2839 2840 8"); _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 2822 2834 2839 2840 8 void *"); (void)slot_fill(t29, t30); }
+    t33 = (void *)(h0_s.nsap); t34 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 55, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2864 2876 2881 2882 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2864 2876 2881 2882 8 const void *"); t35 = slot_sum(t33, t34); } hero_print_int(t35); hero_print_end();
+    t36 = h0_s; t38 = INT64_C(3); t39 = t36.nsap[((uint64_t)(t38) >= UINT64_C(8) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 56, 11), (int64_t)0) : (t38))]; t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t39}; t76 = h4_own4; h4_own4 = t40; h_0opt_e201354_release(&t76); t77 = h1_f0; h_0opt_e201354_retain(&t40); h1_f0 = t40; h_0opt_e201354_release(&t77); t41 = h1_f0; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb1; else goto bb2; bb1: t47 = h1_f0; t48 = t47.as.ok; hero_print_int(t48); hero_print_end();
 #line 60
     t49 = UINT64_C(72); t50 = UINT64_C(105); t51 = UINT64_C(0); t52 = UINT64_C(0); t53 = UINT64_C(0); t54 = UINT64_C(0); t55 = UINT64_C(0); t56 = UINT64_C(0); t58 = INT64_C(0); t59 = INT64_C(0); t60 = INT64_C(0); t61 = INT64_C(0); t63 = INT64_C(1); t64 = (Slot){.nsap = {t49, t50, t51, t52, t53, t54, t55, t56}, .tag = {t58, t59, t60, t61}, .id = t63}; h2_t = t64; hero_pad_fill(&h2_t, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
     t65 = h2_t; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t65.nsap), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t67 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t67 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t78 = h5_own5; h5_own5 = t67; h_0opt_f87774a_release(&t78); t79 = h3_f1; h_0opt_f87774a_retain(&t67); h3_f1 = t67; h_0opt_f87774a_release(&t79); t68 = h3_f1; t69 = t68.tag; t70 = INT64_C(0); t71 = t69 == t70; if (t71) goto bb3; else goto bb4; bb2:
 #line 56
     t45 = h1_f0; t46 = t45.as.err;
 #line 206 "ffiabytefieldcrossestoc.c"
-    hero_panic_must(t46);
+    hero_panic_must_at(t46, "ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 56, 11);
     hero_unreachable();
 bb3:
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -218,17 +218,17 @@ bb4:
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t72 = h3_f1; t73 = t72.as.err;
 #line 221 "ffiabytefieldcrossestoc.c"
-    hero_panic_must(t73);
+    hero_panic_must_at(t73, "ffi-a-byte-field-crosses-to-c.hero", "ffi-a-byte-field-crosses-to-c.main", 61, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_Slot_eq(const Slot *a, const Slot *b) {
+HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_0Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;
     if (!((a->tag[0] == b->tag[0] && a->tag[1] == b->tag[1] && a->tag[2] == b->tag[2] && a->tag[3] == b->tag[3]))) return false;
     if (!(a->id == b->id)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiabytefieldcrossestoc_Slot_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiabytefieldcrossestoc_0Slot_hash(const void *elem) {
     const Slot *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->nsap[0])) * UINT64_C(0x100000001b3);
@@ -344,9 +344,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("542525ec428f8c12", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7238dca60d3b77ab", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffiabytefieldcrossestoc\tffi-a-byte-field-crosses-to-c\n");
     h_ffiabytefieldcrossestoc_main();
     hero_runtime_check_leaks();
     return 0;

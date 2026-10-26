@@ -56,7 +56,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -167,8 +167,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 168 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_0S_eq(const S *a, const S *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_0S_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -196,7 +196,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void) { S h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t9, t10, t14, t16, t19, t20; HERO_NODEBUG int32_t t1, t2, t6, t7, t8; HERO_NODEBUG S t3; HERO_NODEBUG int64_t t4, t5, t11, t12, t17, t18; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = (S){.a = t1, .b = t2}; h0_s = t3; hero_pad_fill(&h0_s, sizeof(S), 1, hero_pad_g_0, hero_pad_n_0);
-    t4 = INT64_C(3); t5 = h_fixedbugs559wide_doubled(t4); t6 = h0_s.a; t7 = h0_s.b; if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow(); t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t8}; t19 = h2_own2; h2_own2 = t9; h_0opt_e201354_release(&t19); t20 = h1_f0; h_0opt_e201354_retain(&t9); h1_f0 = t9; h_0opt_e201354_release(&t20); t10 = h1_f0; t11 = t10.tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto bb1; else goto bb2; bb1: t16 = h1_f0; t17 = t16.as.ok; if (__builtin_add_overflow(t5, t17, &t18)) hero_panic_overflow(); hero_print_int(t18); hero_print_end();
+    t4 = INT64_C(3); t5 = h_fixedbugs559wide_doubled(t4); t6 = h0_s.a; t7 = h0_s.b; if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero", "fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.main", 20, 39); t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t8}; t19 = h2_own2; h2_own2 = t9; h_0opt_e201354_release(&t19); t20 = h1_f0; h_0opt_e201354_retain(&t9); h1_f0 = t9; h_0opt_e201354_release(&t20); t10 = h1_f0; t11 = t10.tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto bb1; else goto bb2; bb1: t16 = h1_f0; t17 = t16.as.ok; if (__builtin_add_overflow(t5, t17, &t18)) hero_panic_overflow_at("fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero", "fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.main", 20, 11); hero_print_int(t18); hero_print_end();
 #line 201 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -205,22 +205,22 @@ bb2:
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t14 = h1_f0; t15 = t14.as.err;
 #line 208 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
-    hero_panic_must(t15);
+    hero_panic_must_at(t15, "fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero", "fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.main", 20, 32);
     hero_unreachable();
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_x; t2 = twice(t1); return t2;
+    t1 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs559/wide.hero", "wide.doubled", 8, 12}; t2 = twice(t1); } return t2;
 #line 216 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b) {
+HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_0S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;
     if (!(a->b == b->b)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_0S_hash(const void *elem) {
     const S *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->a)) * UINT64_C(0x100000001b3);
@@ -325,9 +325,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("39d1fe1a7287a28a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28ff2fa519f8866a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs559amacroofanothermoduledoesnotlayoutarecord\tfixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record\nfixedbugs559wide\twide\n");
     h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main();
     hero_runtime_check_leaks();
     return 0;

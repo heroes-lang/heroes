@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -127,6 +127,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -156,13 +164,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 168 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(const ADDR *a, const ADDR *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ACT_eq(const ACT *a, const ACT *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ACT_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_eq(const ADDR *a, const ADDR *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_eq(const ACT *a, const ACT *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -171,29 +179,33 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void);
 
 #line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void) { HERO_NODEBUG uint8_t t1, t3, t7, t9, t13, t17; HERO_NODEBUG ADDR t2, t4, t8, t10, t14; HERO_NODEBUG bool t5, t11, t22, t28; HERO_NODEBUG HeroStr t6, t12, t23; HERO_NODEBUG int64_t t16; HERO_NODEBUG int32_t t18, t20, t24, t26; HERO_NODEBUG ACT t19, t21, t25, t27; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 20
-    t1 = UINT64_C(1); t2 = make_addr(t1); t3 = UINT64_C(1); t4 = make_addr(t3); t5 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(&t2, &t4);
+    t1 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 20, 9}; t2 = make_addr(t1); } t3 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 20, 31}; t4 = make_addr(t3); } t5 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_eq(&t2, &t4);
     t6 = HERO_STR_LIT(hero_str_20);
-    t7 = UINT64_C(1); t8 = make_addr(t7); t9 = UINT64_C(2); t10 = make_addr(t9); t11 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(&t8, &t10);
+    t7 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 22, 9}; t8 = make_addr(t7); } t9 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 22, 31}; t10 = make_addr(t9); } t11 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_eq(&t8, &t10);
     t12 = HERO_STR_LIT(hero_str_20);
-    t13 = UINT64_C(7); t14 = make_addr(t13); t16 = INT64_C(15); t17 = t14.addr_bytes[((uint64_t)(t16) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t16))];
+    t13 = UINT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 24, 9}; t14 = make_addr(t13); } t16 = INT64_C(15); t17 = t14.addr_bytes[((uint64_t)(t16) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 24, 9), (int64_t)0) : (t16))];
 #line 19
     hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t17); hero_print_end();
 #line 26
-    t18 = INT64_C(2); t19 = make_act(t18); t20 = INT64_C(2); t21 = make_act(t20); t22 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ACT_eq(&t19, &t21); t23 = HERO_STR_LIT(hero_str_20); t24 = INT64_C(2); t25 = make_act(t24); t26 = INT64_C(3); t27 = make_act(t26); t28 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ACT_eq(&t25, &t27); hero_print_bool(t22); hero_print_str(t23); hero_print_bool(t28); hero_print_end(); return;
-#line 190 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+    t18 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 11}; t19 = make_act(t18); } t20 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 33}; t21 = make_act(t20); } t22 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_eq(&t19, &t21); t23 = HERO_STR_LIT(hero_str_20); t24 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 58}; t25 = make_act(t24); } t26 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 80}; t27 = make_act(t26); } t28 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_eq(&t25, &t27); hero_print_bool(t22); hero_print_str(t23); hero_print_bool(t28); hero_print_end(); return;
+#line 202 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(const ADDR *a, const ADDR *b) {
+HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_eq(const ADDR *a, const ADDR *b) {
     if (!((a->addr_bytes[0] == b->addr_bytes[0] && a->addr_bytes[1] == b->addr_bytes[1] && a->addr_bytes[2] == b->addr_bytes[2] && a->addr_bytes[3] == b->addr_bytes[3] && a->addr_bytes[4] == b->addr_bytes[4] && a->addr_bytes[5] == b->addr_bytes[5] && a->addr_bytes[6] == b->addr_bytes[6] && a->addr_bytes[7] == b->addr_bytes[7] && a->addr_bytes[8] == b->addr_bytes[8] && a->addr_bytes[9] == b->addr_bytes[9] && a->addr_bytes[10] == b->addr_bytes[10] && a->addr_bytes[11] == b->addr_bytes[11] && a->addr_bytes[12] == b->addr_bytes[12] && a->addr_bytes[13] == b->addr_bytes[13] && a->addr_bytes[14] == b->addr_bytes[14] && a->addr_bytes[15] == b->addr_bytes[15]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_hash(const void *elem) {
     const ADDR *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->addr_bytes[0])) * UINT64_C(0x100000001b3);
@@ -215,13 +227,13 @@ HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionsco
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ACT_eq(const ACT *a, const ACT *b) {
+HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_eq(const ACT *a, const ACT *b) {
     if (!(a->act_one == b->act_one)) return false;
     if (!(a->flags == b->flags)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ACT_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_hash(const void *elem) {
     const ACT *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
@@ -293,10 +305,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6400c1a73c86e9ed", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6158f3dd46b11360", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs151armsamacroreachesaswideastheirnamedunionscompared\tfixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared\n");
     h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main();
     hero_runtime_check_leaks();
     return 0;

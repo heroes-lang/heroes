@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -101,26 +101,26 @@ typedef struct h_fixedbugs582pair_Pair {
     int64_t f_b;
 } h_fixedbugs582pair_Pair;
 
-typedef enum h_fixedbugs582pair_Shape_tag {
-    h_fixedbugs582pair_Shape_tag_dot = 0,
-    h_fixedbugs582pair_Shape_tag_flag = 1,
-    h_fixedbugs582pair_Shape_tag_rect = 2,
-} h_fixedbugs582pair_Shape_tag;
+typedef enum h_fixedbugs582pair_0Shape_tag {
+    h_fixedbugs582pair_0Shape_tag_dot = 0,
+    h_fixedbugs582pair_0Shape_tag_flag = 1,
+    h_fixedbugs582pair_0Shape_tag_rect = 2,
+} h_fixedbugs582pair_0Shape_tag;
 
-typedef struct h_fixedbugs582pair_Shape_c_flag {
+typedef struct h_fixedbugs582pair_0Shape_c_flag {
     uint8_t f_f;
-} h_fixedbugs582pair_Shape_c_flag;
+} h_fixedbugs582pair_0Shape_c_flag;
 
-typedef struct h_fixedbugs582pair_Shape_c_rect {
+typedef struct h_fixedbugs582pair_0Shape_c_rect {
     int64_t f_w;
     int64_t f_h;
-} h_fixedbugs582pair_Shape_c_rect;
+} h_fixedbugs582pair_0Shape_c_rect;
 
 typedef struct h_fixedbugs582pair_Shape {
-    h_fixedbugs582pair_Shape_tag tag;
+    h_fixedbugs582pair_0Shape_tag tag;
     union {
-        h_fixedbugs582pair_Shape_c_flag c_flag;
-        h_fixedbugs582pair_Shape_c_rect c_rect;
+        h_fixedbugs582pair_0Shape_c_flag c_flag;
+        h_fixedbugs582pair_0Shape_c_rect c_rect;
     } as;
 } h_fixedbugs582pair_Shape;
 
@@ -178,14 +178,14 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 179 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs582pair_Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Pair_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs582pair_Shape_c_flag_eq(const h_fixedbugs582pair_Shape_c_flag *a, const h_fixedbugs582pair_Shape_c_flag *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Shape_c_flag_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs582pair_Shape_c_rect_eq(const h_fixedbugs582pair_Shape_c_rect *a, const h_fixedbugs582pair_Shape_c_rect *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Shape_c_rect_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs582pair_Shape_eq(const h_fixedbugs582pair_Shape *a, const h_fixedbugs582pair_Shape *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Shape_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Pair_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Shape_c_flag_eq(const h_fixedbugs582pair_0Shape_c_flag *a, const h_fixedbugs582pair_0Shape_c_flag *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Shape_c_flag_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Shape_c_rect_eq(const h_fixedbugs582pair_0Shape_c_rect *a, const h_fixedbugs582pair_0Shape_c_rect *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Shape_c_rect_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Shape_eq(const h_fixedbugs582pair_Shape *a, const h_fixedbugs582pair_Shape *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Shape_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -207,9 +207,9 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
 
 #line 12 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
 void h_fixedbugs582apackpushinaheaderthegroupsheaderincludes_main(void) { h_fixedbugs582pair_Pair h0_p; HERO_NODEBUG int64_t t1, t2, t4, t7, t10, t11, t13, t14, t15, t17; HERO_NODEBUG h_fixedbugs582pair_Pair t3, t6, t12; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG h_fixedbugs582pair_Shape t16; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(-123456789); t2 = llabs(t1); t3 = h_fixedbugs582pair_make(t2); h0_p = t3;
-    t4 = h0_p.f_b; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p; t7 = h_fixedbugs582pair_second(t6); t8 = HERO_STR_LIT(hero_str_20); t9 = UINT64_C(2); t10 = INT64_C(-987654321); t11 = llabs(t10); t12 = (h_fixedbugs582pair_Pair){.f_a = t9, .f_b = t11}; t13 = h_fixedbugs582pair_second(t12); hero_print_int(t4); hero_print_str(t5); hero_print_int(t7); hero_print_str(t8); hero_print_int(t13); hero_print_end();
-    t14 = INT64_C(-7); t15 = llabs(t14); t16 = h_fixedbugs582pair_shape(t15); t17 = h_fixedbugs582pair_area(t16); hero_print_int(t17); hero_print_end(); return;
+    t1 = INT64_C(-123456789); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero", "fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.main", 13, 19}; t2 = llabs(t1); } t3 = h_fixedbugs582pair_make(t2); h0_p = t3;
+    t4 = h0_p.f_b; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p; t7 = h_fixedbugs582pair_second(t6); t8 = HERO_STR_LIT(hero_str_20); t9 = UINT64_C(2); t10 = INT64_C(-987654321); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero", "fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.main", 14, 73}; t11 = llabs(t10); } t12 = (h_fixedbugs582pair_Pair){.f_a = t9, .f_b = t11}; t13 = h_fixedbugs582pair_second(t12); hero_print_int(t4); hero_print_str(t5); hero_print_int(t7); hero_print_str(t8); hero_print_int(t13); hero_print_end();
+    t14 = INT64_C(-7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero", "fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.main", 15, 32}; t15 = llabs(t14); } t16 = h_fixedbugs582pair_shape(t15); t17 = h_fixedbugs582pair_area(t16); hero_print_int(t17); hero_print_end(); return;
 #line 214 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 }
 
@@ -227,20 +227,20 @@ int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) { HERO_NODEBUG i
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = h0_n; t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}}; return t3;
+    t1 = h0_n; t2 = h0_n; t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_0Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}}; return t3;
 #line 232 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
-int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) { HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t17; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t8, t9, t13, t15, t23, t24; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t10, t11, t16, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t18; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) { HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t17; h_fixedbugs582pair_0Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t8, t9, t13, t15, t23, t24; h_fixedbugs582pair_0Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t10, t11, t16, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs582pair_0Shape_c_flag t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_fixedbugs582pair_0Shape_c_rect t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb2:
     t4 = INT64_C(0); h5_ret0 = t4; goto bb7; bb3:
     t5 = h1_s0; t6 = t5.as.c_flag; h2_f = t6; t7 = h2_f.f_f; t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t7}; t23 = h6_own6; h6_own6 = t8; h_0opt_e201354_release(&t23); t24 = h3_f0; h_0opt_e201354_retain(&t8); h3_f0 = t8; h_0opt_e201354_release(&t24); t9 = h3_f0; t10 = t9.tag; t11 = INT64_C(0); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb4:
-    t17 = h1_s0; t18 = t17.as.c_rect; h4_r = t18; t19 = h4_r.f_w; t20 = h4_r.f_h; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow(); h5_ret0 = t21; goto bb7; bb5:
+    t17 = h1_s0; t18 = t17.as.c_rect; h4_r = t18; t19 = h4_r.f_w; t20 = h4_r.f_h; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs582/pair.hero", "pair.area", 30, 27); h5_ret0 = t21; goto bb7; bb5:
 #line 29
     t15 = h3_f0; t16 = t15.as.ok; h5_ret0 = t16; goto bb7; bb6: t13 = h3_f0; t14 = t13.as.err;
 #line 243 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
-    hero_panic_must(t14);
+    hero_panic_must_at(t14, "fixedbugs582/pair.hero", "pair.area", 29, 27);
     hero_unreachable();
 bb7:
     t22 = h5_ret0;
@@ -248,13 +248,13 @@ bb7:
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return t22;
 }
-HERO_TU_LOCAL bool h_fixedbugs582pair_Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b) {
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b) {
     if (!(a->f_a == b->f_a)) return false;
     if (!(a->f_b == b->f_b)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Pair_hash(const void *elem) {
     const h_fixedbugs582pair_Pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->f_a)) * UINT64_C(0x100000001b3);
@@ -262,50 +262,50 @@ HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Pair_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs582pair_Shape_c_flag_eq(const h_fixedbugs582pair_Shape_c_flag *a, const h_fixedbugs582pair_Shape_c_flag *b) {
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Shape_c_flag_eq(const h_fixedbugs582pair_0Shape_c_flag *a, const h_fixedbugs582pair_0Shape_c_flag *b) {
     if (!(a->f_f == b->f_f)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Shape_c_flag_hash(const void *elem) {
-    const h_fixedbugs582pair_Shape_c_flag *v = elem;
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Shape_c_flag_hash(const void *elem) {
+    const h_fixedbugs582pair_0Shape_c_flag *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->f_f)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs582pair_Shape_c_rect_eq(const h_fixedbugs582pair_Shape_c_rect *a, const h_fixedbugs582pair_Shape_c_rect *b) {
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Shape_c_rect_eq(const h_fixedbugs582pair_0Shape_c_rect *a, const h_fixedbugs582pair_0Shape_c_rect *b) {
     if (!(a->f_w == b->f_w)) return false;
     if (!(a->f_h == b->f_h)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Shape_c_rect_hash(const void *elem) {
-    const h_fixedbugs582pair_Shape_c_rect *v = elem;
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Shape_c_rect_hash(const void *elem) {
+    const h_fixedbugs582pair_0Shape_c_rect *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_w)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_int)->hash(&v->f_h)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs582pair_Shape_eq(const h_fixedbugs582pair_Shape *a, const h_fixedbugs582pair_Shape *b) {
+HERO_TU_LOCAL bool h_fixedbugs582pair_0Shape_eq(const h_fixedbugs582pair_Shape *a, const h_fixedbugs582pair_Shape *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_fixedbugs582pair_Shape_tag_dot: return true;
-        case h_fixedbugs582pair_Shape_tag_flag: return h_fixedbugs582pair_Shape_c_flag_eq(&a->as.c_flag, &b->as.c_flag);
-        case h_fixedbugs582pair_Shape_tag_rect: return h_fixedbugs582pair_Shape_c_rect_eq(&a->as.c_rect, &b->as.c_rect);
+        case h_fixedbugs582pair_0Shape_tag_dot: return true;
+        case h_fixedbugs582pair_0Shape_tag_flag: return h_fixedbugs582pair_0Shape_c_flag_eq(&a->as.c_flag, &b->as.c_flag);
+        case h_fixedbugs582pair_0Shape_tag_rect: return h_fixedbugs582pair_0Shape_c_rect_eq(&a->as.c_rect, &b->as.c_rect);
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs582pair_Shape_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs582pair_0Shape_hash(const void *elem) {
     const h_fixedbugs582pair_Shape *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_fixedbugs582pair_Shape_tag_dot: return h;
-        case h_fixedbugs582pair_Shape_tag_flag: return (h ^ h_fixedbugs582pair_Shape_c_flag_hash(&v->as.c_flag)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs582pair_Shape_tag_rect: return (h ^ h_fixedbugs582pair_Shape_c_rect_hash(&v->as.c_rect)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs582pair_0Shape_tag_dot: return h;
+        case h_fixedbugs582pair_0Shape_tag_flag: return (h ^ h_fixedbugs582pair_0Shape_c_flag_hash(&v->as.c_flag)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs582pair_0Shape_tag_rect: return (h ^ h_fixedbugs582pair_0Shape_c_rect_hash(&v->as.c_rect)) * UINT64_C(0x100000001b3);
     }
     hero_unreachable();
 }
@@ -407,9 +407,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("617629325bc7afab", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("50a35abd0338938b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs582apackpushinaheaderthegroupsheaderincludes\tfixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes\nfixedbugs582pair\tpair\n");
     h_fixedbugs582apackpushinaheaderthegroupsheaderincludes_main();
     hero_runtime_check_leaks();
     return 0;

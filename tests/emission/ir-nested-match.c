@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,29 +56,29 @@ HERO_STR_STATIC(hero_str_77dba954, "red line");
 HERO_STR_STATIC(hero_str_769134a3, "blue line");
 
 #line 59 "nestedmatch.c"
-typedef enum h_nestedmatch_Shape_tag {
-    h_nestedmatch_Shape_tag_dot = 0,
-    h_nestedmatch_Shape_tag_line = 1,
-} h_nestedmatch_Shape_tag;
+typedef enum h_nestedmatch_0Shape_tag {
+    h_nestedmatch_0Shape_tag_dot = 0,
+    h_nestedmatch_0Shape_tag_line = 1,
+} h_nestedmatch_0Shape_tag;
 
-typedef struct h_nestedmatch_Shape_c_line {
+typedef struct h_nestedmatch_0Shape_c_line {
     int64_t f_length;
-} h_nestedmatch_Shape_c_line;
+} h_nestedmatch_0Shape_c_line;
 
 typedef struct h_nestedmatch_Shape {
-    h_nestedmatch_Shape_tag tag;
+    h_nestedmatch_0Shape_tag tag;
     union {
-        h_nestedmatch_Shape_c_line c_line;
+        h_nestedmatch_0Shape_c_line c_line;
     } as;
 } h_nestedmatch_Shape;
 
-typedef enum h_nestedmatch_Colour_tag {
-    h_nestedmatch_Colour_tag_red = 0,
-    h_nestedmatch_Colour_tag_blue = 1,
-} h_nestedmatch_Colour_tag;
+typedef enum h_nestedmatch_0Colour_tag {
+    h_nestedmatch_0Colour_tag_red = 0,
+    h_nestedmatch_0Colour_tag_blue = 1,
+} h_nestedmatch_0Colour_tag;
 
 typedef struct h_nestedmatch_Colour {
-    h_nestedmatch_Colour_tag tag;
+    h_nestedmatch_0Colour_tag tag;
 } h_nestedmatch_Colour;
 
 typedef struct h_0opt_f87774a {
@@ -96,6 +96,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -110,15 +118,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "nestedmatch.c"
+#line 122 "nestedmatch.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b);
-HERO_TU_LOCAL uint64_t h_nestedmatch_Shape_c_line_hash(const void *elem);
-HERO_TU_LOCAL bool h_nestedmatch_Shape_eq(const h_nestedmatch_Shape *a, const h_nestedmatch_Shape *b);
-HERO_TU_LOCAL uint64_t h_nestedmatch_Shape_hash(const void *elem);
-HERO_TU_LOCAL bool h_nestedmatch_Colour_eq(const h_nestedmatch_Colour *a, const h_nestedmatch_Colour *b);
-HERO_TU_LOCAL uint64_t h_nestedmatch_Colour_hash(const void *elem);
+HERO_TU_LOCAL bool h_nestedmatch_0Shape_c_line_eq(const h_nestedmatch_0Shape_c_line *a, const h_nestedmatch_0Shape_c_line *b);
+HERO_TU_LOCAL uint64_t h_nestedmatch_0Shape_c_line_hash(const void *elem);
+HERO_TU_LOCAL bool h_nestedmatch_0Shape_eq(const h_nestedmatch_Shape *a, const h_nestedmatch_Shape *b);
+HERO_TU_LOCAL uint64_t h_nestedmatch_0Shape_hash(const void *elem);
+HERO_TU_LOCAL bool h_nestedmatch_0Colour_eq(const h_nestedmatch_Colour *a, const h_nestedmatch_Colour *b);
+HERO_TU_LOCAL uint64_t h_nestedmatch_0Colour_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -127,13 +135,17 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c);
 
 #line 21 "tests/golden/ir/nested-match.hero"
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) { HERO_NODEBUG h_nestedmatch_Shape h2_s0, t1, t2; HERO_NODEBUG HeroStr h3_r0 = {0}, h5_r1 = {0}, h7_r2 = {0}, t7, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_nestedmatch_Colour h4_s1, h6_s2, t4, t5, t10, t11; HERO_NODEBUG int64_t t3, t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; h2_s0 = t1; t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t16 = h3_r0;
-#line 137 "nestedmatch.c"
+#line 149 "nestedmatch.c"
     hero_str_incref(t16);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h5_r1);
@@ -168,56 +180,56 @@ bb2:
     t14 = HERO_STR_LIT(hero_str_769134a3);
 #line 28
     t22 = h7_r2; hero_str_incref(t14); h7_r2 = t14; hero_str_decref(t22); goto bb7;
-#line 172 "nestedmatch.c"
+#line 184 "nestedmatch.c"
 }
-HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b) {
+HERO_TU_LOCAL bool h_nestedmatch_0Shape_c_line_eq(const h_nestedmatch_0Shape_c_line *a, const h_nestedmatch_0Shape_c_line *b) {
     if (!(a->f_length == b->f_length)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_nestedmatch_Shape_c_line_hash(const void *elem) {
-    const h_nestedmatch_Shape_c_line *v = elem;
+HERO_TU_LOCAL uint64_t h_nestedmatch_0Shape_c_line_hash(const void *elem) {
+    const h_nestedmatch_0Shape_c_line *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_length)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_nestedmatch_Shape_eq(const h_nestedmatch_Shape *a, const h_nestedmatch_Shape *b) {
+HERO_TU_LOCAL bool h_nestedmatch_0Shape_eq(const h_nestedmatch_Shape *a, const h_nestedmatch_Shape *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_nestedmatch_Shape_tag_dot: return true;
-        case h_nestedmatch_Shape_tag_line: return h_nestedmatch_Shape_c_line_eq(&a->as.c_line, &b->as.c_line);
+        case h_nestedmatch_0Shape_tag_dot: return true;
+        case h_nestedmatch_0Shape_tag_line: return h_nestedmatch_0Shape_c_line_eq(&a->as.c_line, &b->as.c_line);
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_nestedmatch_Shape_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_nestedmatch_0Shape_hash(const void *elem) {
     const h_nestedmatch_Shape *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_nestedmatch_Shape_tag_dot: return h;
-        case h_nestedmatch_Shape_tag_line: return (h ^ h_nestedmatch_Shape_c_line_hash(&v->as.c_line)) * UINT64_C(0x100000001b3);
+        case h_nestedmatch_0Shape_tag_dot: return h;
+        case h_nestedmatch_0Shape_tag_line: return (h ^ h_nestedmatch_0Shape_c_line_hash(&v->as.c_line)) * UINT64_C(0x100000001b3);
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_nestedmatch_Colour_eq(const h_nestedmatch_Colour *a, const h_nestedmatch_Colour *b) {
+HERO_TU_LOCAL bool h_nestedmatch_0Colour_eq(const h_nestedmatch_Colour *a, const h_nestedmatch_Colour *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_nestedmatch_Colour_tag_red: return true;
-        case h_nestedmatch_Colour_tag_blue: return true;
+        case h_nestedmatch_0Colour_tag_red: return true;
+        case h_nestedmatch_0Colour_tag_blue: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_nestedmatch_Colour_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_nestedmatch_0Colour_hash(const void *elem) {
     const h_nestedmatch_Colour *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_nestedmatch_Colour_tag_red: return h;
-        case h_nestedmatch_Colour_tag_blue: return h;
+        case h_nestedmatch_0Colour_tag_red: return h;
+        case h_nestedmatch_0Colour_tag_blue: return h;
     }
     hero_unreachable();
 }
@@ -284,5 +296,37 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return h;
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 

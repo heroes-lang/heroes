@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -113,6 +113,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -139,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 151 "fixedbugsachandlerthatrecoversleavesnoline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -150,16 +158,20 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void);
 
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) { HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t10, t11; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(4); t3 = hero_str_repeat(t1, t2); t10 = h2_own2; h2_own2 = t3; hero_str_decref(t10); t11 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t11);
-    t4 = h0_word; t5 = hero_str_held(t4); h1_held = t5;
-    t6 = HERO_STR_LIT(hero_str_46d0b2be); t7 = try_abort(); t8 = try_trap(); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); hero_print_str(t6); hero_print_int(t9); hero_print_end();
-    hero_held_release(&h1_held);
-#line 163 "fixedbugsachandlerthatrecoversleavesnoline.c"
+    t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 27, 12}; t3 = hero_str_repeat_at(t1, t2, &hero_here); } t10 = h2_own2; h2_own2 = t3; hero_str_decref(t10); t11 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t11);
+    t4 = h0_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 28, 19}; t5 = hero_str_held_at(t4, &hero_here); } h1_held = t5;
+    t6 = HERO_STR_LIT(hero_str_46d0b2be); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 29, 26}; t7 = try_abort(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 29, 40}; t8 = try_trap(); } if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 29, 26); hero_print_str(t6); hero_print_int(t9); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 30, 5}; hero_held_release_at(&h1_held, &hero_here); }
+#line 175 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;
@@ -228,10 +240,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("250368712a75f3c2", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("003f0ba4646e8233", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsachandlerthatrecoversleavesnoline\tfixedbugs-a-c-handler-that-recovers-leaves-no-line\n");
     h_fixedbugsachandlerthatrecoversleavesnoline_main();
     hero_runtime_check_leaks();
     return 0;

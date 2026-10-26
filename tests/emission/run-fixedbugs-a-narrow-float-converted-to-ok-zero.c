@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,7 +115,7 @@ void h_fixedbugsanarrowfloatconvertedtookzero_main(void) { float h0_small; HERO_
 #line 25
     t8 = h1_f0; t9 = t8.as.err;
 #line 118 "fixedbugsanarrowfloatconvertedtookzero.c"
-    hero_panic_must(t9);
+    hero_panic_must_at(t9, "fixedbugs-a-narrow-float-converted-to-ok-zero.hero", "fixedbugs-a-narrow-float-converted-to-ok-zero.main", 25, 11);
     hero_unreachable();
 bb3:
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -128,7 +128,7 @@ bb3:
 #line 27
     t20 = h3_f1; t21 = t20.as.err;
 #line 131 "fixedbugsanarrowfloatconvertedtookzero.c"
-    hero_panic_must(t21);
+    hero_panic_must_at(t21, "fixedbugs-a-narrow-float-converted-to-ok-zero.hero", "fixedbugs-a-narrow-float-converted-to-ok-zero.main", 27, 11);
     hero_unreachable();
 bb5:
 #line 34 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -147,7 +147,7 @@ bb6:
 #line 34 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t38 = h7_f3; t39 = t38.as.err;
 #line 150 "fixedbugsanarrowfloatconvertedtookzero.c"
-    hero_panic_must(t39);
+    hero_panic_must_at(t39, "fixedbugs-a-narrow-float-converted-to-ok-zero.hero", "fixedbugs-a-narrow-float-converted-to-ok-zero.main", 34, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -247,9 +247,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6accca7063e02786", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ac36f992110b86b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsanarrowfloatconvertedtookzero\tfixedbugs-a-narrow-float-converted-to-ok-zero\n");
     h_fixedbugsanarrowfloatconvertedtookzero_main();
     hero_runtime_check_leaks();
     return 0;

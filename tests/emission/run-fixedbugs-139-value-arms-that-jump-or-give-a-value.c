@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -51,13 +51,13 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 54 "fixedbugs139valuearmsthatjumporgiveavalue.c"
-typedef enum h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag {
-    h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red = 0,
-    h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue = 1,
-} h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag;
+typedef enum h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag {
+    h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red = 0,
+    h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue = 1,
+} h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag;
 
 typedef struct h_fixedbugs139valuearmsthatjumporgiveavalue_Color {
-    h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag tag;
+    h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag tag;
 } h_fixedbugs139valuearmsthatjumporgiveavalue_Color;
 
 typedef struct h_0opt_f87774a {
@@ -75,6 +75,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,11 +97,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 101 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs139valuearmsthatjumporgiveavalue_Color_eq(const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *a, const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs139valuearmsthatjumporgiveavalue_Color_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_eq(const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *a, const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -102,6 +110,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c);
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c);
@@ -125,7 +137,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound(h_fixedbugs139valuearm
     t5 = INT64_C(5);
 #line 16
     h2_r0 = t5; goto bb1; bb4:
-#line 129 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 141 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t8 = h4_ret0;
     return t8;
 }
@@ -141,7 +153,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed(h_fixedbugs139valuearm
     h2_r0 = t4; goto bb1; bb3:
 #line 25
     t5 = INT64_C(8); h4_ret0 = t5; goto bb4; bb4:
-#line 145 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 157 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t8 = h4_ret0;
     return t8;
 }
@@ -156,7 +168,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_returned(h_fixedbugs139value
     t5 = INT64_C(2);
 #line 30
     h2_r0 = t5; goto bb1;
-#line 160 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 172 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
@@ -181,23 +193,23 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_nested(h_fixedbugs139valuear
     t8 = INT64_C(12);
 #line 36
     h5_r1 = t8; goto bb4;
-#line 185 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 197 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(HeroArrayHeader * h0_xs) { int64_t h1_found; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t24; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_r0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23; int64_t h4_x; int64_t h7_y; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_found = t1;
 #line 46
-    t2 = h0_xs; t24 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t24); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t2 = h0_xs; t24 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t24); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-139-value-arms-that-jump-or-give-a-value.hero", "fixedbugs-139-value-arms-that-jump-or-give-a-value.first_nonzero", 46, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
     t11 = h4_x; h5_s0 = t11; t12 = h5_s0;
     t13 = INT64_C(0);
 #line 47
     t14 = t12 == t13; if (t14) goto bb6; else goto bb7; bb3:
 #line 46
-    t20 = h3_i0; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow(); h3_i0 = t22; goto bb1; bb4:
+    t20 = h3_i0; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("fixedbugs-139-value-arms-that-jump-or-give-a-value.hero", "fixedbugs-139-value-arms-that-jump-or-give-a-value.first_nonzero", 46, 9); h3_i0 = t22; goto bb1; bb4:
 #line 54
     t23 = h1_found;
-#line 201 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 213 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     hero_array_release_at(&h2_xs0);
     return t23;
 bb5:
@@ -206,10 +218,10 @@ bb5:
 #line 51
     t19 = h7_y; h1_found = t19; goto bb4; bb6: goto bb3; bb7: goto bb8; bb8:
 #line 49
-    t15 = h4_x; t16 = INT64_C(10); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow();
+    t15 = h4_x; t16 = INT64_C(10); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-139-value-arms-that-jump-or-give-a-value.hero", "fixedbugs-139-value-arms-that-jump-or-give-a-value.first_nonzero", 49, 18);
 #line 47
     h6_r0 = t17; goto bb5;
-#line 213 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 225 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
@@ -223,7 +235,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(bool h0_b) { HERO_N
     t3 = INT64_C(4);
 #line 57
     h1_r0 = t3; goto bb1; bb4:
-#line 227 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 239 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t6 = h3_ret0;
     return t6;
 }
@@ -239,7 +251,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(bool h0_b) { HERO_N
     h1_r0 = t2; goto bb1; bb3:
 #line 67
     t3 = INT64_C(6); h3_ret0 = t3; goto bb4; bb4:
-#line 243 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 255 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t6 = h3_ret0;
     return t6;
 }
@@ -265,7 +277,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(bool 
 #line 73
     t6 = INT64_C(20); hero_print_int(t6); hero_print_end(); goto bb4; bb6: goto bb7; bb7:
     t7 = INT64_C(29); hero_print_int(t7); hero_print_end(); goto bb4;
-#line 269 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 281 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
@@ -297,7 +309,7 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_valu
 #line 90
     t13 = INT64_C(32); hero_print_int(t13); hero_print_end(); goto bb8; bb10: goto bb11; bb11:
     t14 = INT64_C(39); hero_print_int(t14); hero_print_end(); goto bb8;
-#line 301 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 313 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
@@ -311,19 +323,19 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(h_fixedbugs13
     t11 = INT64_C(40); h1_n = t11; goto bb1; bb4:
 #line 100
     t5 = h1_n; t6 = INT64_C(3); t7 = t5 < t6; if (t7) goto bb5; else goto bb6; bb5:
-    t8 = h1_n; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); h1_n = t10; goto bb4; bb6: goto bb1;
-#line 316 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+    t8 = h1_n; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-139-value-arms-that-jump-or-give-a-value.hero", "fixedbugs-139-value-arms-that-jump-or-give-a-value.statement_arms", 101, 17); h1_n = t10; goto bb4; bb6: goto bb1;
+#line 328 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t21, *t43; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1, t3, t5, t7, t9, t11, t12, t14, t15, t39, t41; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t13, t16, t17, t18, t19, t20, t22, t24, t26, t28, t30, t32, t34, t36, t38, t40, t42; HERO_NODEBUG bool t23, t25, t27, t29, t31, t33, t35, t37; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t2 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t1); hero_print_int(t2); hero_print_end();
-    t3 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t4 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t3); hero_print_int(t4); hero_print_end();
-    t5 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t6 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t5); hero_print_int(t6); hero_print_end();
-    t7 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t8 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t7); hero_print_int(t8); hero_print_end();
-    t9 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t10 = h_fixedbugs139valuearmsthatjumporgiveavalue_returned(t9); hero_print_int(t10); hero_print_end();
-    t11 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t12 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t13 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t11, t12); hero_print_int(t13); hero_print_end();
-    t14 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t15 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t16 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t14, t15); hero_print_int(t16); hero_print_end();
+    t1 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red}; t2 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t1); hero_print_int(t2); hero_print_end();
+    t3 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue}; t4 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t3); hero_print_int(t4); hero_print_end();
+    t5 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red}; t6 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t5); hero_print_int(t6); hero_print_end();
+    t7 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue}; t8 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t7); hero_print_int(t8); hero_print_end();
+    t9 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue}; t10 = h_fixedbugs139valuearmsthatjumporgiveavalue_returned(t9); hero_print_int(t10); hero_print_end();
+    t11 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red}; t12 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue}; t13 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t11, t12); hero_print_int(t13); hero_print_end();
+    t14 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue}; t15 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red}; t16 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t14, t15); hero_print_int(t16); hero_print_end();
     t17 = INT64_C(0); t18 = INT64_C(0); t19 = INT64_C(4); t20 = INT64_C(5); t21 = hero_array_new(&hero_desc_int, 4); hero_array_push_owned(&t21, &t17); hero_array_push_owned(&t21, &t18); hero_array_push_owned(&t21, &t19); hero_array_push_owned(&t21, &t20); t43 = h0_own0; h0_own0 = t21; hero_array_decref(t43); t22 = h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(t21); hero_print_int(t22); hero_print_end();
     t23 = true; t24 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(t23); hero_print_int(t24); hero_print_end();
     t25 = false; t26 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(t25); hero_print_int(t26); hero_print_end();
@@ -333,28 +345,28 @@ void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void) { HERO_NODEBUG HeroA
     t33 = false; t34 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(t33); hero_print_int(t34); hero_print_end();
     t35 = true; t36 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(t35); hero_print_int(t36); hero_print_end();
     t37 = false; t38 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(t37); hero_print_int(t38); hero_print_end();
-    t39 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t40 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t39); hero_print_int(t40); hero_print_end();
-    t41 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t42 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t41); hero_print_int(t42); hero_print_end();
-#line 339 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+    t39 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red}; t40 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t39); hero_print_int(t40); hero_print_end();
+    t41 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue}; t42 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t41); hero_print_int(t42); hero_print_end();
+#line 351 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     hero_array_release_at(&h0_own0);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs139valuearmsthatjumporgiveavalue_Color_eq(const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *a, const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *b) {
+HERO_TU_LOCAL bool h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_eq(const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *a, const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red: return true;
-        case h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue: return true;
+        case h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red: return true;
+        case h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs139valuearmsthatjumporgiveavalue_Color_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_hash(const void *elem) {
     const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red: return h;
-        case h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue: return h;
+        case h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_red: return h;
+        case h_fixedbugs139valuearmsthatjumporgiveavalue_0Color_tag_blue: return h;
     }
     hero_unreachable();
 }
@@ -423,10 +435,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b3716c668e96dc1", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0672b9f922e1fc33", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs139valuearmsthatjumporgiveavalue\tfixedbugs-139-value-arms-that-jump-or-give-a-value\n");
     h_fixedbugs139valuearmsthatjumporgiveavalue_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -119,6 +119,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -147,11 +155,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 159 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_eq(const struct held *a, const struct held *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_0Held_eq(const struct held *a, const struct held *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -160,6 +168,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(uint64_t h0_k);
 void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void);
@@ -174,25 +186,25 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(uint64_t h0_k) { HERO_NODEBUG uint64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_k; t2 = UINT64_C(4); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
-#line 179 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+    t1 = h0_k; t2 = UINT64_C(4); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero", "fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.at_run_time", 14, 12); return t3;
+#line 191 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void) { struct held h0_h; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18, t20, t26, t27; HERO_NODEBUG struct held t19; HERO_NODEBUG void *t23; HERO_NODEBUG uint64_t t24, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(0); t10 = UINT64_C(0); t11 = UINT64_C(0); t12 = UINT64_C(0); t13 = UINT64_C(0); t14 = UINT64_C(0); t15 = UINT64_C(0); t16 = UINT64_C(0); t18 = INT64_C(7); t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18}; h0_h = t19; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_0, hero_pad_n_0);
     t20 = h0_h.after; hero_print_int(t20); hero_print_end();
-    t23 = (void *)(h0_h.buf); t24 = UINT64_C(4); t25 = h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(t24); if ((uint64_t)(t25) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic(sizeof(*(int *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero:19: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero:19: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at"); t26 = fill_ints(t23, t25); hero_print_int(t26); hero_print_end();
+    t23 = (void *)(h0_h.buf); t24 = UINT64_C(4); t25 = h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(t24); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero", "fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.main", 19, 11}; if ((uint64_t)(t25) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic_at(sizeof(*(int *)0) == 1 ? "`fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "`fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at", "fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero", "fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.main", 19, 24); t26 = fill_ints(t23, t25); } hero_print_int(t26); hero_print_end();
     t27 = h0_h.after; hero_print_int(t27); hero_print_end(); return;
-#line 188 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 200 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_eq(const struct held *a, const struct held *b) {
+HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_0Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_0Held_hash(const void *elem) {
     const struct held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->buf[0])) * UINT64_C(0x100000001b3);
@@ -279,10 +291,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b7b4bbb34143cd2", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2defaefd6dde5a16", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs395acountreadatruntimepastcsunitaborts\tfixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts\n");
     h_fixedbugs395acountreadatruntimepastcsunitaborts_main();
     hero_runtime_check_leaks();
     return 0;

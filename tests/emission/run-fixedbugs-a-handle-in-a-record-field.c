@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("handle")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -120,6 +120,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -149,13 +157,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugsahandleinarecordfield.c"
+#line 161 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_Thing_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Slot_eq(const Slot *a, const Slot *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_Slot_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Thing_eq(Thing * const *a, Thing * const *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_0Thing_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Slot_eq(const Slot *a, const Slot *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_0Slot_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -164,6 +172,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsahandleinarecordfield_main(void);
 void *hero_pad_nowhere(void);
@@ -177,35 +189,35 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) { Slot h0_s; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot t2, t3; HERO_NODEBUG Thing *t5, *t6; HERO_NODEBUG bool t7; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); t2 = slot_make(t1); h0_s = t2; hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
-    t3 = h0_s; hero_handle_alive(t3.handle, "the argument `s` of `slot_count`, at `.handle`"); t4 = slot_count(t3); hero_print_int(t4); hero_print_end();
+    t1 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 51, 9}; t2 = slot_make(t1); } h0_s = t2; hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
+    t3 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 52, 11}; hero_handle_alive_at(t3.handle, "the argument `s` of `slot_count`, at `.handle`", &hero_here); t4 = slot_count(t3); } hero_print_int(t4); hero_print_end();
 #line 56
-    t5 = h0_s.handle; t6 = ((void *)0); t7 = h_fixedbugsahandleinarecordfield_Thing_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
+    t5 = h0_s.handle; t6 = ((void *)0); t7 = h_fixedbugsahandleinarecordfield_0Thing_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
     t8 = h0_s.ratio; hero_print_f64(t8); hero_print_end(); return;
-#line 186 "fixedbugsahandleinarecordfield.c"
+#line 198 "fixedbugsahandleinarecordfield.c"
 }
-HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
+HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_Thing_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_0Thing_hash(const void *elem) {
     Thing * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Slot_eq(const Slot *a, const Slot *b) {
-    if (!(h_fixedbugsahandleinarecordfield_Thing_eq(&a->handle, &b->handle))) return false;
+HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Slot_eq(const Slot *a, const Slot *b) {
+    if (!(h_fixedbugsahandleinarecordfield_0Thing_eq(&a->handle, &b->handle))) return false;
     if (!(a->ratio == b->ratio)) return false;
     if (!(a->count == b->count)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_Slot_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsahandleinarecordfield_0Slot_hash(const void *elem) {
     const Slot *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugsahandleinarecordfield_Thing_hash(&v->handle)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugsahandleinarecordfield_0Thing_hash(&v->handle)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_f64)->hash(&v->ratio)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_int)->hash(&v->count)) * UINT64_C(0x100000001b3);
     return h;
@@ -275,10 +287,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("32215a361f7654e1", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("02e2b6c12e55c2d1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsahandleinarecordfield\tfixedbugs-a-handle-in-a-record-field\n");
     h_fixedbugsahandleinarecordfield_main();
     hero_runtime_check_leaks();
     return 0;

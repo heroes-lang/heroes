@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,19 +57,19 @@ typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Holder {
     h_0fn_48ac9712 f_g;
 } h_fixedbugsafieldwinsthedotoverafreefunction_Holder;
 
-typedef enum h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag {
-    h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_apply = 0,
-    h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_stop = 1,
-} h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag;
+typedef enum h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag {
+    h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_apply = 0,
+    h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_stop = 1,
+} h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag;
 
-typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply {
+typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply {
     h_0fn_48ac9712 f_g;
-} h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply;
+} h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply;
 
 typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Step {
-    h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag tag;
+    h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag tag;
     union {
-        h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply c_apply;
+        h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply c_apply;
     } as;
 } h_fixedbugsafieldwinsthedotoverafreefunction_Step;
 
@@ -88,6 +88,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -102,15 +110,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 106 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 114 "fixedbugsafieldwinsthedotoverafreefunction.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Holder_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Step_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Step *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Step *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Step_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_0Holder_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply *a, const h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Step_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Step *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Step *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_0Step_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -119,6 +127,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n);
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n);
@@ -126,35 +138,35 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
-#line 131 "fixedbugsafieldwinsthedotoverafreefunction.c"
+    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-field-wins-the-dot-over-a-free-function.hero", "fixedbugs-a-field-wins-the-dot-over-a-free-function.double_it", 36, 12); return t3;
+#line 143 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_n; t2 = INT64_C(1000); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = h0_h.f_tag; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); return t5;
-#line 137 "fixedbugsafieldwinsthedotoverafreefunction.c"
+    t1 = h1_n; t2 = INT64_C(1000); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-field-wins-the-dot-over-a-free-function.hero", "fixedbugs-a-field-wins-the-dot-over-a-free-function.g", 49, 12); t4 = h0_h.f_tag; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-a-field-wins-the-dot-over-a-free-function.hero", "fixedbugs-a-field-wins-the-dot-over-a-free-function.g", 49, 12); return t5;
+#line 149 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) { h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s; h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0, t12, t13, t14, t16; h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply h3_a; HERO_NODEBUG int64_t t1, t6, t7, t9, t10, t15, t20, t21, t22; HERO_NODEBUG h_0fn_48ac9712 t2, t5, t11, t19; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t3, t4, t8; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) { h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s; h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0, t12, t13, t14, t16; h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply h3_a; HERO_NODEBUG int64_t t1, t6, t7, t9, t10, t15, t20, t21, t22; HERO_NODEBUG h_0fn_48ac9712 t2, t5, t11, t19; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t3, t4, t8; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = h_fixedbugsafieldwinsthedotoverafreefunction_double_it; t3 = (h_fixedbugsafieldwinsthedotoverafreefunction_Holder){.f_tag = t1, .f_g = t2}; h0_s = t3;
     t4 = h0_s; t5 = t4.f_g; t6 = INT64_C(50); t7 = t5(t6); hero_print_int(t7); hero_print_end();
     t8 = h0_s; t9 = INT64_C(50); t10 = h_fixedbugsafieldwinsthedotoverafreefunction_g(t8, t9); hero_print_int(t10); hero_print_end();
-    t11 = h_fixedbugsafieldwinsthedotoverafreefunction_double_it; t12 = (h_fixedbugsafieldwinsthedotoverafreefunction_Step){.tag = h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_apply, .as.c_apply = {.f_g = t11}}; h1_v = t12;
+    t11 = h_fixedbugsafieldwinsthedotoverafreefunction_double_it; t12 = (h_fixedbugsafieldwinsthedotoverafreefunction_Step){.tag = h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_apply, .as.c_apply = {.f_g = t11}}; h1_v = t12;
 #line 57
     t13 = h1_v; h2_s0 = t13; t14 = h2_s0; t15 = t14.tag; switch (t15) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: return; bb2:
     t16 = h2_s0; t17 = t16.as.c_apply; h3_a = t17; t18 = h3_a; t19 = t18.f_g; t20 = INT64_C(50); t21 = t19(t20); hero_print_int(t21); hero_print_end(); goto bb1; bb3:
     t22 = INT64_C(0); hero_print_int(t22); hero_print_end(); goto bb1;
-#line 150 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 162 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
-HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
+HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
     if (!(a->f_tag == b->f_tag)) return false;
     if (!(a->f_g == b->f_g)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Holder_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_0Holder_hash(const void *elem) {
     const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_tag)) * UINT64_C(0x100000001b3);
@@ -162,34 +174,34 @@ HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Holder_hash(
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply *b) {
+HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply *a, const h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply *b) {
     if (!(a->f_g == b->f_g)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply_hash(const void *elem) {
-    const h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply *v = elem;
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply_hash(const void *elem) {
+    const h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_func)->hash(&v->f_g)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Step_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Step *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Step *b) {
+HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Step_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Step *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Step *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_apply: return h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply_eq(&a->as.c_apply, &b->as.c_apply);
-        case h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_stop: return true;
+        case h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_apply: return h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply_eq(&a->as.c_apply, &b->as.c_apply);
+        case h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_stop: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_Step_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldwinsthedotoverafreefunction_0Step_hash(const void *elem) {
     const h_fixedbugsafieldwinsthedotoverafreefunction_Step *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_apply: return (h ^ h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply_hash(&v->as.c_apply)) * UINT64_C(0x100000001b3);
-        case h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_stop: return h;
+        case h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_apply: return (h ^ h_fixedbugsafieldwinsthedotoverafreefunction_0Step_c_apply_hash(&v->as.c_apply)) * UINT64_C(0x100000001b3);
+        case h_fixedbugsafieldwinsthedotoverafreefunction_0Step_tag_stop: return h;
     }
     hero_unreachable();
 }
@@ -258,10 +270,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a4abf9169c300c5", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11a1b03e5c9703f9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsafieldwinsthedotoverafreefunction\tfixedbugs-a-field-wins-the-dot-over-a-free-function\n");
     h_fixedbugsafieldwinsthedotoverafreefunction_main();
     hero_runtime_check_leaks();
     return 0;

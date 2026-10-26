@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs139constantsthatgiveavalue.c"
+#line 92 "fixedbugs139constantsthatgiveavalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_MATCH(void);
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_IF(void);
@@ -110,7 +122,7 @@ int64_t h_fixedbugs139constantsthatgiveavalue_BY_MATCH(void) { HERO_NODEBUG int6
     t6 = INT64_C(6);
 #line 8
     h1_r0 = t6; goto bb1;
-#line 114 "fixedbugs139constantsthatgiveavalue.c"
+#line 126 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
@@ -123,7 +135,7 @@ int64_t h_fixedbugs139constantsthatgiveavalue_BY_IF(void) { HERO_NODEBUG int64_t
     t3 = INT64_C(9);
 #line 13
     h0_r0 = t3; goto bb1;
-#line 127 "fixedbugs139constantsthatgiveavalue.c"
+#line 139 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
@@ -138,7 +150,7 @@ int64_t h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH(void) { HERO_NODEBUG
     goto bb1; bb3: goto bb4; bb4:
 #line 23
     goto bb1;
-#line 142 "fixedbugs139constantsthatgiveavalue.c"
+#line 154 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
@@ -146,7 +158,7 @@ void h_fixedbugs139constantsthatgiveavalue_main(void) { HERO_NODEBUG int64_t t1,
     t1 = h_fixedbugs139constantsthatgiveavalue_BY_MATCH(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs139constantsthatgiveavalue_BY_IF(); hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH(); hero_print_int(t3); hero_print_end(); return;
-#line 150 "fixedbugs139constantsthatgiveavalue.c"
+#line 162 "fixedbugs139constantsthatgiveavalue.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -212,10 +224,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("48b6b7d2317d3aca", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("769d2a68307d1e24", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs139constantsthatgiveavalue\tfixedbugs-139-constants-that-give-a-value\n");
     h_fixedbugs139constantsthatgiveavalue_main();
     hero_runtime_check_leaks();
     return 0;

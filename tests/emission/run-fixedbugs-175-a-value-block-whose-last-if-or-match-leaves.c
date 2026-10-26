@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,14 +57,14 @@ HERO_STR_STATIC(hero_str_eb4aa2b, "many");
 HERO_STR_STATIC(hero_str_b928f19, "false");
 
 #line 60 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-typedef enum h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag {
-    h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_red = 0,
-    h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_green = 1,
-    h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_blue = 2,
-} h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag;
+typedef enum h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag {
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_red = 0,
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_green = 1,
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_blue = 2,
+} h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag;
 
 typedef struct h_fixedbugs175avalueblockwhoselastiformatchleaves_Color {
-    h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag tag;
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag tag;
 } h_fixedbugs175avalueblockwhoselastiformatchleaves_Color;
 
 typedef struct h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair {
@@ -87,6 +87,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -101,13 +109,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 113 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_0Pair_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_0Pair_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -116,6 +124,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t h0_k, int64_t h1_j);
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_if_returns(int64_t h0_k);
@@ -138,7 +150,8 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_loops_or_returns(int64
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h0_k, int64_t h1_j);
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(int64_t h0_k, int64_t h1_j, int64_t h2_m);
 void h_fixedbugs175avalueblockwhoselastiformatchleaves_main(void);
-void h_library_exit(int64_t h0_code);
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
 
 #line 28 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, h6_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13, t14; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0; bb0:
@@ -160,7 +173,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t 
 #line 32
     t9 = INT64_C(1); h6_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(2); h6_ret0 = t10; goto bb9; bb9:
-#line 164 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 177 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h6_ret0;
     return t14;
 }
@@ -183,7 +196,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_if_returns(int64
     t8 = INT64_C(1); h4_ret0 = t8; goto bb8; bb7:
 #line 45
     t9 = INT64_C(2); h4_ret0 = t9; goto bb8; bb8:
-#line 187 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 200 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h4_ret0;
     return t13;
 }
@@ -210,7 +223,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_a_statement_first(int6
 #line 57
     t10 = INT64_C(1); h5_ret0 = t10; goto bb9; bb7: goto bb8; bb8:
     t11 = INT64_C(2); h5_ret0 = t11; goto bb9; bb9:
-#line 214 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 227 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t15 = h5_ret0;
     return t15;
 }
@@ -232,7 +245,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_outer_if(int64_t h0_k,
 #line 67
     t8 = INT64_C(1); h5_ret0 = t8; goto bb8; bb6: goto bb7; bb7:
     t9 = INT64_C(2); h5_ret0 = t9; goto bb8; bb8:
-#line 236 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 249 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -257,7 +270,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inline_head(int64_t h0
 #line 78
     t9 = INT64_C(1); h6_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(2); h6_ret0 = t10; goto bb9; bb9:
-#line 261 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 274 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h6_ret0;
     return t14;
 }
@@ -280,7 +293,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_returned_directly(int6
 #line 89
     t9 = INT64_C(1); h5_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(2); h5_ret0 = t10; goto bb9; bb9:
-#line 284 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 297 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -310,7 +323,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_two_deep(int64_t h0_k,
     t12 = INT64_C(1); h6_ret0 = t12; goto bb12; bb11:
 #line 102
     t13 = INT64_C(3); h6_ret0 = t13; goto bb12; bb12:
-#line 314 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 327 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t18 = h6_ret0;
     return t18;
 }
@@ -319,30 +332,30 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_two_deep(int64_t h0_k,
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_in_a_loop(HeroArrayHeader * h0_xs) { int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t27; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_r0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t15, t16, t18, t19, t20, t21, t22, t23, t24, t25, t26; int64_t h4_v; int64_t h7_y; HERO_NODEBUG bool t7, t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_total = t1;
 #line 112
-    t2 = h0_xs; t27 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t27); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_v = t10;
+    t2 = h0_xs; t27 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t27); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.in_a_loop", 112, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_v = t10;
     t11 = h4_v; h5_s0 = t11; t12 = h5_s0;
     t13 = INT64_C(0);
 #line 113
     t14 = t12 == t13; if (t14) goto bb6; else goto bb7; bb3:
 #line 112
-    t23 = h3_i0; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow(); h3_i0 = t25; goto bb1; bb4:
+    t23 = h3_i0; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.in_a_loop", 112, 9); h3_i0 = t25; goto bb1; bb4:
 #line 123
     t26 = h1_total;
-#line 332 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 345 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_release_at(&h2_xs0);
     return t26;
 bb5:
 #line 113 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t19 = h6_r0; h7_y = t19;
 #line 121
-    t20 = h1_total; t21 = h7_y; if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow(); h1_total = t22; goto bb3; bb6:
+    t20 = h1_total; t21 = h7_y; if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.in_a_loop", 121, 17); h1_total = t22; goto bb3; bb6:
 #line 115
     t15 = h1_total; t16 = INT64_C(5); t17 = t15 > t16; if (t17) goto bb10; else goto bb11; bb7: goto bb8; bb8:
 #line 119
     t18 = h4_v;
 #line 113
     h6_r0 = t18; goto bb5; bb10: goto bb4; bb11: goto bb3;
-#line 346 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 359 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -363,7 +376,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_value_if_arm(int64_t h
     t8 = INT64_C(1); h5_ret0 = t8; goto bb8; bb7:
 #line 131
     t9 = INT64_C(2); h5_ret0 = t9; goto bb8; bb8:
-#line 367 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 380 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -388,7 +401,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked(int64_t h0_k, 
 #line 141
     t9 = INT64_C(2); h6_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(3); h6_ret0 = t10; goto bb9; bb9:
-#line 392 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 405 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h6_ret0;
     return t14;
 }
@@ -407,7 +420,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_return_if(int64_t h0_k
 #line 151
     t8 = INT64_C(1); h3_ret0 = t8; goto bb8; bb6: goto bb7; bb7:
     t9 = INT64_C(2); h3_ret0 = t9; goto bb8; bb8:
-#line 411 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 424 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t12 = h3_ret0;
     return t12;
 }
@@ -418,7 +431,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_while_tail(int64_t h0_
     t2 = INT64_C(0); h2_total = t2; goto bb1; bb1:
 #line 161
     t3 = h1_i; t4 = h0_n; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_i; t7 = INT64_C(1); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow(); h1_i = t8;
+    t6 = h1_i; t7 = INT64_C(1); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.while_tail", 162, 13); h1_i = t8;
 #line 164
     t9 = h1_i; h3_s0 = t9; t10 = h3_s0;
     t11 = INT64_C(3);
@@ -429,14 +442,14 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_while_tail(int64_t h0_
 #line 164
     t17 = h4_r0; h5_step = t17;
 #line 172
-    t18 = h2_total; t19 = h5_step; if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow(); h2_total = t20; goto bb1; bb5:
+    t18 = h2_total; t19 = h5_step; if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.while_tail", 172, 17); h2_total = t20; goto bb1; bb5:
 #line 166
     t13 = h2_total; t14 = INT64_C(100); t15 = t13 > t14; if (t15) goto bb9; else goto bb10; bb6: goto bb7; bb7:
 #line 170
     t16 = h1_i;
 #line 164
     h4_r0 = t16; goto bb4; bb9: goto bb3; bb10: goto bb1;
-#line 440 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 453 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -462,7 +475,7 @@ HeroStr h_fixedbugs175avalueblockwhoselastiformatchleaves_word(int64_t h0_k) { H
     t12 = HERO_STR_LIT(hero_str_1d4996); h3_ret0 = t12; goto bb10; bb9:
 #line 184
     t13 = HERO_STR_LIT(hero_str_188c0f4b); h3_ret0 = t13; goto bb10; bb10:
-#line 466 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 479 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t16 = h3_ret0;
     hero_str_incref(t16);
     hero_str_release_at(&h2_r0);
@@ -487,7 +500,7 @@ h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h_fixedbugs175avalueblock
     t8 = INT64_C(1); t9 = INT64_C(5); t10 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair){.f_first = t8, .f_second = t9}; h4_ret0 = t10; goto bb8; bb7:
 #line 194
     t11 = INT64_C(0); t12 = INT64_C(0); t13 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair){.f_first = t11, .f_second = t12}; h4_ret0 = t13; goto bb8; bb8:
-#line 491 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 504 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t19 = h4_ret0;
     return t19;
 }
@@ -499,7 +512,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(h_fixedbugs175av
 #line 201
     h2_r0 = t4; goto bb1; bb3:
 #line 204
-    t5 = h0_c; t6 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Color){.tag = h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_green}; t7 = h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_eq(&t5, &t6); if (t7) goto bb6; else goto bb7; bb4:
+    t5 = h0_c; t6 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Color){.tag = h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_green}; t7 = h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_eq(&t5, &t6); if (t7) goto bb6; else goto bb7; bb4:
 #line 208
     t10 = INT64_C(2);
 #line 201
@@ -508,13 +521,13 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(h_fixedbugs175av
     t8 = INT64_C(3); h3_ret0 = t8; goto bb8; bb7:
 #line 207
     t9 = INT64_C(4); h3_ret0 = t9; goto bb8; bb8:
-#line 512 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 525 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t12 = h3_ret0;
     return t12;
 }
 
 #line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, h5_ret0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, h5_ret0, t1, t2, t3, t5, t6, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_NODEBUG uint8_t t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; h2_s0 = t1; t2 = h2_s0;
     t3 = INT64_C(0);
 #line 212
@@ -528,16 +541,16 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64
 #line 212
     h3_r0 = t10; goto bb1; bb5: hero_unreachable(); bb6:
 #line 215
-    t8 = INT64_C(1); h_library_exit(t8); hero_unreachable(); goto bb5; bb7:
+    t8 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.exits_or_returns", 215, 17}; h_library_exit(t8, &hero_here); } hero_unreachable(); goto bb5; bb7:
 #line 217
     t9 = INT64_C(2); h5_ret0 = t9; goto bb8; bb8:
-#line 535 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 548 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
 
 #line 222 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, t1, t2, t3, t5, t6, t7, t11, t12, t13; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_NODEBUG uint8_t t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; h2_s0 = t1; t2 = h2_s0;
     t3 = INT64_C(0);
 #line 223
@@ -554,9 +567,9 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(int64_
 #line 223
     h3_r0 = t11; goto bb1; bb5: hero_unreachable(); bb6:
 #line 226
-    t9 = INT64_C(1); h_library_exit(t9); hero_unreachable(); goto bb5; bb7: goto bb8; bb8:
-    t10 = INT64_C(2); h_library_exit(t10); hero_unreachable(); goto bb5;
-#line 560 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    t9 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.every_arm_exits", 226, 22}; h_library_exit(t9, &hero_here); } hero_unreachable(); goto bb5; bb7: goto bb8; bb8:
+    t10 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.every_arm_exits", 227, 22}; h_library_exit(t10, &hero_here); } hero_unreachable(); goto bb5;
+#line 573 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -578,13 +591,13 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_loops_or_returns(int64
 #line 236
     t8 = true; if (t8) goto bb9; else goto bb10; bb9:
     t9 = INT64_C(0); hero_print_int(t9); hero_print_end(); goto bb8; bb10: goto bb5; bb11:
-#line 582 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 595 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h5_ret0;
     return t14;
 }
 
 #line 244 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t5, t6, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7, t9; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t5, t6, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7, t9; HERO_NODEBUG HeroStr t8; HERO_NODEBUG uint8_t t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; h2_s0 = t1; t2 = h2_s0;
     t3 = INT64_C(0);
 #line 245
@@ -600,9 +613,9 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h
 #line 248
     t8 = HERO_STR_LIT(hero_str_b928f19); t9 = false; if (t9) goto bb8; else goto bb9; bb7:
 #line 250
-    t10 = INT64_C(4); h_library_exit(t10); hero_unreachable(); goto bb5; bb8: goto bb5; bb9:
-#line 605 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_panic_assert(t8);
+    t10 = UINT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.checked_ends", 250, 17}; h_library_exit(t10, &hero_here); } hero_unreachable(); goto bb5; bb8: goto bb5; bb9:
+#line 618 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    hero_panic_assert_at(t8, "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.checked_ends", 248, 24);
     hero_unreachable();
 }
 
@@ -633,7 +646,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(int64_t h0_
 #line 261
     t13 = INT64_C(1); h8_ret0 = t13; goto bb13; bb11: goto bb12; bb12:
     t14 = INT64_C(2); h8_ret0 = t14; goto bb13; bb13:
-#line 637 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 650 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t19 = h8_ret0;
     return t19;
 }
@@ -657,8 +670,8 @@ void h_fixedbugs175avalueblockwhoselastiformatchleaves_main(void) { h_fixedbugs1
     t43 = INT64_C(6); t44 = h_fixedbugs175avalueblockwhoselastiformatchleaves_while_tail(t43); hero_print_int(t44); hero_print_end();
     t45 = INT64_C(1); t46 = h_fixedbugs175avalueblockwhoselastiformatchleaves_word(t45); t85 = h2_own2; h2_own2 = t46; hero_str_decref(t85); hero_print_str(t46); hero_print_end();
     t47 = INT64_C(0); t48 = h_fixedbugs175avalueblockwhoselastiformatchleaves_pair(t47); h0_p = t48;
-    t49 = h0_p.f_first; t50 = h0_p.f_second; if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow(); hero_print_int(t51); hero_print_end();
-    t52 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Color){.tag = h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_green}; t53 = h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(t52); hero_print_int(t53); hero_print_end();
+    t49 = h0_p.f_first; t50 = h0_p.f_second; if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.main", 286, 11); hero_print_int(t51); hero_print_end();
+    t52 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Color){.tag = h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_green}; t53 = h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(t52); hero_print_int(t53); hero_print_end();
     t54 = INT64_C(0); t55 = INT64_C(1); t56 = h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(t54, t55); hero_print_int(t56); hero_print_end();
     t57 = INT64_C(5); t58 = INT64_C(0); t59 = h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(t57, t58); hero_print_int(t59); hero_print_end();
     t60 = INT64_C(5); t61 = INT64_C(0); t62 = h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(t60, t61); hero_print_int(t62); hero_print_end();
@@ -668,46 +681,53 @@ void h_fixedbugs175avalueblockwhoselastiformatchleaves_main(void) { h_fixedbugs1
     t72 = INT64_C(0); t73 = INT64_C(0); t74 = INT64_C(1); t75 = h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(t72, t73, t74); hero_print_int(t75); hero_print_end();
     t76 = INT64_C(0); t77 = INT64_C(1); t78 = INT64_C(0); t79 = h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(t76, t77, t78); hero_print_int(t79); hero_print_end();
     t80 = INT64_C(5); t81 = INT64_C(0); t82 = INT64_C(0); t83 = h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(t80, t81, t82); hero_print_int(t83); hero_print_end();
-#line 672 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 685 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;
 }
 
-#line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; (void)hero_exit(t1); return;
-#line 681 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 235 "<heroes library>"
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
+#line 694 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return;
 }
-HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b) {
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+    h_library_exit(h0_code, &hero_here);
+}
+HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_red: return true;
-        case h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_green: return true;
-        case h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_blue: return true;
+        case h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_red: return true;
+        case h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_green: return true;
+        case h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_blue: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_hash(const void *elem) {
     const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_red: return h;
-        case h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_green: return h;
-        case h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_tag_blue: return h;
+        case h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_red: return h;
+        case h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_green: return h;
+        case h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_blue: return h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *b) {
+HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_0Pair_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *b) {
     if (!(a->f_first == b->f_first)) return false;
     if (!(a->f_second == b->f_second)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_0Pair_hash(const void *elem) {
     const h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_first)) * UINT64_C(0x100000001b3);
@@ -779,10 +799,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("46181bd37d88bd28", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6caf7dc16351e7b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs175avalueblockwhoselastiformatchleaves\tfixedbugs-175-a-value-block-whose-last-if-or-match-leaves\n");
     h_fixedbugs175avalueblockwhoselastiformatchleaves_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -130,6 +130,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -161,7 +169,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "fixedbugs396twothreadslendatonce.c"
+#line 173 "fixedbugs396twothreadslendatonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
@@ -180,6 +188,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at);
 int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed);
@@ -194,16 +206,16 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 14 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at) { HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}, h3_own3 = {0}, t12, t13, t17, t19, t21, t22; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t14, t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG uint8_t t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_seed; t2 = INT64_C(31); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = h1_at; t5 = INT64_C(17); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow(); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow(); t8 = INT64_C(63); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = INT64_C(256); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t11 = t9 % t10; if (t11 >= 0LL && t11 <= 255LL) { t12 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t11}; } else { t12 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t21 = h3_own3; h3_own3 = t12; h_0opt_1ec004_release(&t21); t22 = h2_f0; h_0opt_1ec004_retain(&t12); h2_f0 = t12; h_0opt_1ec004_release(&t22); t13 = h2_f0; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb1; else goto bb2; bb1: t19 = h2_f0; t20 = t19.as.ok;
-#line 199 "fixedbugs396twothreadslendatonce.c"
+    t1 = h0_seed; t2 = INT64_C(31); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t4 = h1_at; t5 = INT64_C(17); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 26); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t8 = INT64_C(63); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t10 = INT64_C(256); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 13); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 13); t11 = t9 % t10; if (t11 >= 0LL && t11 <= 255LL) { t12 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t11}; } else { t12 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t21 = h3_own3; h3_own3 = t12; h_0opt_1ec004_release(&t21); t22 = h2_f0; h_0opt_1ec004_retain(&t12); h2_f0 = t12; h_0opt_1ec004_release(&t22); t13 = h2_f0; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb1; else goto bb2; bb1: t19 = h2_f0; t20 = t19.as.ok;
+#line 211 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004_release(hero_slot_escape(&h2_f0));
     h_0opt_1ec004_release(hero_slot_escape(&h3_own3));
     return t20;
 bb2:
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t17 = h2_f0; t18 = t17.as.err;
-#line 206 "fixedbugs396twothreadslendatonce.c"
-    hero_panic_must(t18);
+#line 218 "fixedbugs396twothreadslendatonce.c"
+    hero_panic_must_at(t18, "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 12);
     hero_unreachable();
 }
 
@@ -217,7 +229,7 @@ int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) { hero_thread
     t7 = h0_seed; if (t7 >= 0LL) { t8 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t7}; } else { t8 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t40 = h7_own7; h7_own7 = t8; h_0opt_fbbb698_release(&t40); t41 = h4_f0; h_0opt_fbbb698_retain(&t8); h4_f0 = t8; h_0opt_fbbb698_release(&t41); t9 = h4_f0; t10 = t9.tag; t11 = INT64_C(0); t12 = t10 == t11; if (t12) goto bb4; else goto bb5; bb3:
 #line 33
     t37 = h1_wrong;
-#line 221 "fixedbugs396twothreadslendatonce.c"
+#line 233 "fixedbugs396twothreadslendatonce.c"
     hero_array_release_at(&h3_md);
     h_0opt_fbbb698_release(hero_slot_escape(&h4_f0));
     hero_array_release_at(&h6_own6);
@@ -225,24 +237,24 @@ int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) { hero_thread
     return t37;
 bb4:
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    t15 = h4_f0; t16 = t15.as.ok; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer stamp32 md 503 505 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e2_0 = INT64_C(32); HERO_NODEBUG void *hero_lend_b2_0 = hero_lend_take(h3_md, hero_lend_e2_0, "stamp32", "md"); (void)stamp32((void *)hero_lend_b2_0, t16); h3_md = hero_lend_give(h3_md, hero_lend_b2_0, hero_lend_e2_0); }
+    t15 = h4_f0; t16 = t15.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 23, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer stamp32 md 503 505 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e2_0 = INT64_C(32); HERO_NODEBUG void *hero_lend_b2_0 = hero_lend_take_at(h3_md, hero_lend_e2_0, "stamp32", "md", &hero_here); (void)stamp32((void *)hero_lend_b2_0, t16); h3_md = hero_lend_give_at(h3_md, hero_lend_b2_0, hero_lend_e2_0, &hero_here); } }
     t17 = INT64_C(0); h5_at = t17; goto bb6; bb5:
 #line 23
     t13 = h4_f0; t14 = t13.as.err;
-#line 233 "fixedbugs396twothreadslendatonce.c"
-    hero_panic_must(t14);
+#line 245 "fixedbugs396twothreadslendatonce.c"
+    hero_panic_must_at(t14, "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 23, 28);
     hero_unreachable();
 bb6:
 #line 26 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t18 = h5_at; t19 = INT64_C(32); t20 = t18 < t19; if (t20) goto bb7; else goto bb8; bb7:
-    t21 = h3_md; t22 = h5_at; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]); t24 = h0_seed; t25 = h5_at; t26 = h_fixedbugs396twothreadslendatonce_expected(t24, t25); t27 = t23 != t26; if (t27) goto bb10; else goto bb11; bb8:
+    t21 = h3_md; t22 = h5_at; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? hero_panic_index_at(t21, t22, "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 27, 16) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]); t24 = h0_seed; t25 = h5_at; t26 = h_fixedbugs396twothreadslendatonce_expected(t24, t25); t27 = t23 != t26; if (t27) goto bb10; else goto bb11; bb8:
 #line 31
-    t34 = h2_round; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow(); h2_round = t36; goto bb1; bb9:
+    t34 = h2_round; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 31, 17); h2_round = t36; goto bb1; bb9:
 #line 29
-    t31 = h5_at; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow(); h5_at = t33; goto bb6; bb10:
+    t31 = h5_at; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 29, 18); h5_at = t33; goto bb6; bb10:
 #line 28
-    t28 = h1_wrong; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h1_wrong = t30; goto bb9; bb11: goto bb9;
-#line 246 "fixedbugs396twothreadslendatonce.c"
+    t28 = h1_wrong; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 28, 25); h1_wrong = t30; goto bb9; bb11: goto bb9;
+#line 258 "fixedbugs396twothreadslendatonce.c"
 }
 
 int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
@@ -252,11 +264,11 @@ int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
 
 #line 35 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 void h_fixedbugs396twothreadslendatonce_main(void) { int64_t h0_a; int64_t h1_b; int64_t h2_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG int64_t t2, t3, t5, t6, t7, t8, t9, t10, t12, t13, t15; HERO_NODEBUG HeroStr t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs396twothreadslendatonce_worker; t2 = INT64_C(1); t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); h0_a = t3;
-    t4 = h_fixedbugs396twothreadslendatonce_worker; t5 = INT64_C(2); t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); h1_b = t6;
+    t1 = h_fixedbugs396twothreadslendatonce_worker; t2 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 36, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_a = t3;
+    t4 = h_fixedbugs396twothreadslendatonce_worker; t5 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 37, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
     t7 = INT64_C(3); t8 = h_fixedbugs396twothreadslendatonce_worker(t7); h2_here = t8;
-    t9 = h0_a; t10 = hero_thread_join(t9); t11 = HERO_STR_LIT(hero_str_20); t12 = h1_b; t13 = hero_thread_join(t12); t14 = HERO_STR_LIT(hero_str_20); t15 = h2_here; hero_print_int(t10); hero_print_str(t11); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end(); return;
-#line 260 "fixedbugs396twothreadslendatonce.c"
+    t9 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 39, 11}; t10 = hero_thread_join(t9); } t11 = HERO_STR_LIT(hero_str_20); t12 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 39, 45}; t13 = hero_thread_join(t12); } t14 = HERO_STR_LIT(hero_str_20); t15 = h2_here; hero_print_int(t10); hero_print_str(t11); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end(); return;
+#line 272 "fixedbugs396twothreadslendatonce.c"
 }
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
     if (v->tag == INT64_C(0)) {
@@ -386,10 +398,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f21126600ff5dc4", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("39a62f39140cb286", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs396twothreadslendatonce\tfixedbugs-396-two-threads-lend-at-once\n");
     h_fixedbugs396twothreadslendatonce_main();
     hero_runtime_check_leaks();
     return 0;

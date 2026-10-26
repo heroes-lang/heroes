@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -75,6 +75,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,17 +97,17 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "fixedbugsfieldpathstoreleaked.c"
+#line 101 "fixedbugsfieldpathstoreleaked.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Row_retain(const h_fixedbugsfieldpathstoreleaked_Row *v);
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Row_release(h_fixedbugsfieldpathstoreleaked_Row *v);
-HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_Row_eq(const h_fixedbugsfieldpathstoreleaked_Row *a, const h_fixedbugsfieldpathstoreleaked_Row *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_Row_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Pair_retain(const h_fixedbugsfieldpathstoreleaked_Pair *v);
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Pair_release(h_fixedbugsfieldpathstoreleaked_Pair *v);
-HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_Pair_eq(const h_fixedbugsfieldpathstoreleaked_Pair *a, const h_fixedbugsfieldpathstoreleaked_Pair *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_Pair_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Row_retain(const h_fixedbugsfieldpathstoreleaked_Row *v);
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Row_release(h_fixedbugsfieldpathstoreleaked_Row *v);
+HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_0Row_eq(const h_fixedbugsfieldpathstoreleaked_Row *a, const h_fixedbugsfieldpathstoreleaked_Row *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_0Row_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Pair_retain(const h_fixedbugsfieldpathstoreleaked_Pair *v);
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Pair_release(h_fixedbugsfieldpathstoreleaked_Pair *v);
+HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_0Pair_eq(const h_fixedbugsfieldpathstoreleaked_Pair *a, const h_fixedbugsfieldpathstoreleaked_Pair *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_0Pair_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -108,85 +116,89 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsfieldpathstoreleaked_main(void);
 
 #line 30 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
 void h_fixedbugsfieldpathstoreleaked_main(void) { h_fixedbugsfieldpathstoreleaked_Row h0_p = {0}; h_fixedbugsfieldpathstoreleaked_Pair h1_q = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h12_own12 = {0}, *t2, *t4, *t7, *t11, *t12, *t15, *t18, *t22, *t23, *t26, *t29, *t34, *t36, *t39, *t43, *t45, *t48, *t49, *t50, *t51, *t52, *t53, *t54, *t56, *t60; HERO_NODEBUG h_fixedbugsfieldpathstoreleaked_Row h3_own3 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t3, t27, t30, t35, t42, t46, t47, t55, t57, t61, t62, t63; HERO_NODEBUG h_fixedbugsfieldpathstoreleaked_Pair h11_own11 = {0}, t31, t58, t59; HERO_NODEBUG int64_t t1, t5, t6, t8, t9, t10, t13, t14, t16, t17, t19, t20, t21, t24, t25, t28, t32, t33, t37, t38, t40, t41, t44; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(9); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t45 = h2_own2; h2_own2 = t2; hero_array_decref(t45); hero_array_incref(t2); t3 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t2}; t46 = h3_own3; h3_own3 = t3; h_fixedbugsfieldpathstoreleaked_Row_release(&t46); t47 = h0_p; h_fixedbugsfieldpathstoreleaked_Row_retain(&t3); h0_p = t3; h_fixedbugsfieldpathstoreleaked_Row_release(&t47);
-    t4 = h0_p.f_cells; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); t7 = h0_p.f_cells; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); hero_print_int(t6); hero_print_int(t8); hero_print_end();
+    t1 = INT64_C(9); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t45 = h2_own2; h2_own2 = t2; hero_array_decref(t45); hero_array_incref(t2); t3 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t2}; t46 = h3_own3; h3_own3 = t3; h_fixedbugsfieldpathstoreleaked_0Row_release(&t46); t47 = h0_p; h_fixedbugsfieldpathstoreleaked_0Row_retain(&t3); h0_p = t3; h_fixedbugsfieldpathstoreleaked_0Row_release(&t47);
+    t4 = h0_p.f_cells; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-field-path-store-leaked.hero", "fixedbugs-field-path-store-leaked.main", 32, 11) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); t7 = h0_p.f_cells; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); hero_print_int(t6); hero_print_int(t8); hero_print_end();
 #line 35
     t9 = INT64_C(7); t10 = INT64_C(8); t11 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t11, &t9); hero_array_push_owned(&t11, &t10); t48 = h4_own4; h4_own4 = t11; hero_array_decref(t48); t49 = h0_p.f_cells; hero_array_incref(t11); h0_p.f_cells = t11; hero_array_decref(t49);
-    t12 = h0_p.f_cells; t13 = INT64_C(0); t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); t15 = h0_p.f_cells; t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len); hero_print_int(t14); hero_print_int(t16); hero_print_end();
+    t12 = h0_p.f_cells; t13 = INT64_C(0); t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "fixedbugs-field-path-store-leaked.hero", "fixedbugs-field-path-store-leaked.main", 36, 11) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); t15 = h0_p.f_cells; t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len); hero_print_int(t14); hero_print_int(t16); hero_print_end();
 #line 39
     t17 = INT64_C(1); t18 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t18, &t17); t50 = h5_own5; h5_own5 = t18; hero_array_decref(t50); t51 = h0_p.f_cells; hero_array_incref(t18); h0_p.f_cells = t18; hero_array_decref(t51);
     t19 = INT64_C(2); t20 = INT64_C(3); t21 = INT64_C(4); t22 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t22, &t19); hero_array_push_owned(&t22, &t20); hero_array_push_owned(&t22, &t21); t52 = h6_own6; h6_own6 = t22; hero_array_decref(t52); t53 = h0_p.f_cells; hero_array_incref(t22); h0_p.f_cells = t22; hero_array_decref(t53);
     t23 = h0_p.f_cells; t24 = ((void)(t23 == NULL ? ((void)hero_array_len(t23), hero_unreachable()) : (void)0), t23->len); hero_print_int(t24); hero_print_end();
 #line 44
-    t25 = INT64_C(1); t26 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t26, &t25); t54 = h7_own7; h7_own7 = t26; hero_array_decref(t54); hero_array_incref(t26); t27 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t26}; t55 = h8_own8; h8_own8 = t27; h_fixedbugsfieldpathstoreleaked_Row_release(&t55); t28 = INT64_C(2); t29 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t29, &t28); t56 = h9_own9; h9_own9 = t29; hero_array_decref(t56); hero_array_incref(t29); t30 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t29}; t57 = h10_own10; h10_own10 = t30; h_fixedbugsfieldpathstoreleaked_Row_release(&t57); h_fixedbugsfieldpathstoreleaked_Row_retain(&t27); h_fixedbugsfieldpathstoreleaked_Row_retain(&t30); t31 = (h_fixedbugsfieldpathstoreleaked_Pair){.f_left = t27, .f_right = t30}; t58 = h11_own11; h11_own11 = t31; h_fixedbugsfieldpathstoreleaked_Pair_release(&t58); t59 = h1_q; h_fixedbugsfieldpathstoreleaked_Pair_retain(&t31); h1_q = t31; h_fixedbugsfieldpathstoreleaked_Pair_release(&t59);
-    t32 = INT64_C(5); t33 = INT64_C(6); t34 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t34, &t32); hero_array_push_owned(&t34, &t33); t60 = h12_own12; h12_own12 = t34; hero_array_decref(t60); hero_array_incref(t34); t35 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t34}; t61 = h13_own13; h13_own13 = t35; h_fixedbugsfieldpathstoreleaked_Row_release(&t61); t62 = h1_q.f_left; h_fixedbugsfieldpathstoreleaked_Row_retain(&t35); h1_q.f_left = t35; h_fixedbugsfieldpathstoreleaked_Row_release(&t62);
-    t36 = h1_q.f_left.f_cells; t37 = INT64_C(1); t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t36 + 1))[t37]); t39 = h1_q.f_right.f_cells; t40 = INT64_C(0); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t39 + 1))[t40]); hero_print_int(t38); hero_print_int(t41); hero_print_end();
+    t25 = INT64_C(1); t26 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t26, &t25); t54 = h7_own7; h7_own7 = t26; hero_array_decref(t54); hero_array_incref(t26); t27 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t26}; t55 = h8_own8; h8_own8 = t27; h_fixedbugsfieldpathstoreleaked_0Row_release(&t55); t28 = INT64_C(2); t29 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t29, &t28); t56 = h9_own9; h9_own9 = t29; hero_array_decref(t56); hero_array_incref(t29); t30 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t29}; t57 = h10_own10; h10_own10 = t30; h_fixedbugsfieldpathstoreleaked_0Row_release(&t57); h_fixedbugsfieldpathstoreleaked_0Row_retain(&t27); h_fixedbugsfieldpathstoreleaked_0Row_retain(&t30); t31 = (h_fixedbugsfieldpathstoreleaked_Pair){.f_left = t27, .f_right = t30}; t58 = h11_own11; h11_own11 = t31; h_fixedbugsfieldpathstoreleaked_0Pair_release(&t58); t59 = h1_q; h_fixedbugsfieldpathstoreleaked_0Pair_retain(&t31); h1_q = t31; h_fixedbugsfieldpathstoreleaked_0Pair_release(&t59);
+    t32 = INT64_C(5); t33 = INT64_C(6); t34 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t34, &t32); hero_array_push_owned(&t34, &t33); t60 = h12_own12; h12_own12 = t34; hero_array_decref(t60); hero_array_incref(t34); t35 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t34}; t61 = h13_own13; h13_own13 = t35; h_fixedbugsfieldpathstoreleaked_0Row_release(&t61); t62 = h1_q.f_left; h_fixedbugsfieldpathstoreleaked_0Row_retain(&t35); h1_q.f_left = t35; h_fixedbugsfieldpathstoreleaked_0Row_release(&t62);
+    t36 = h1_q.f_left.f_cells; t37 = INT64_C(1); t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? hero_panic_index_at(t36, t37, "fixedbugs-field-path-store-leaked.hero", "fixedbugs-field-path-store-leaked.main", 46, 11) : (void)0), (void)(t36->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t36 + 1))[t37]); t39 = h1_q.f_right.f_cells; t40 = INT64_C(0); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "fixedbugs-field-path-store-leaked.hero", "fixedbugs-field-path-store-leaked.main", 46, 28) : (void)0), (void)(t39->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t39 + 1))[t40]); hero_print_int(t38); hero_print_int(t41); hero_print_end();
 #line 49
-    t42 = h1_q.f_right; t63 = h1_q.f_right; h_fixedbugsfieldpathstoreleaked_Row_retain(&t42); h1_q.f_right = t42; h_fixedbugsfieldpathstoreleaked_Row_release(&t63);
+    t42 = h1_q.f_right; t63 = h1_q.f_right; h_fixedbugsfieldpathstoreleaked_0Row_retain(&t42); h1_q.f_right = t42; h_fixedbugsfieldpathstoreleaked_0Row_release(&t63);
     t43 = h1_q.f_right.f_cells; t44 = ((void)(t43 == NULL ? ((void)hero_array_len(t43), hero_unreachable()) : (void)0), t43->len); hero_print_int(t44); hero_print_end();
-#line 133 "fixedbugsfieldpathstoreleaked.c"
-    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h0_p));
-    h_fixedbugsfieldpathstoreleaked_Pair_release(hero_slot_escape(&h1_q));
+#line 145 "fixedbugsfieldpathstoreleaked.c"
+    h_fixedbugsfieldpathstoreleaked_0Row_release(hero_slot_escape(&h0_p));
+    h_fixedbugsfieldpathstoreleaked_0Pair_release(hero_slot_escape(&h1_q));
     hero_array_release_at(&h2_own2);
-    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h3_own3));
+    h_fixedbugsfieldpathstoreleaked_0Row_release(hero_slot_escape(&h3_own3));
     hero_array_release_at(&h4_own4);
     hero_array_release_at(&h5_own5);
     hero_array_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);
-    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h8_own8));
+    h_fixedbugsfieldpathstoreleaked_0Row_release(hero_slot_escape(&h8_own8));
     hero_array_release_at(&h9_own9);
-    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h10_own10));
-    h_fixedbugsfieldpathstoreleaked_Pair_release(hero_slot_escape(&h11_own11));
+    h_fixedbugsfieldpathstoreleaked_0Row_release(hero_slot_escape(&h10_own10));
+    h_fixedbugsfieldpathstoreleaked_0Pair_release(hero_slot_escape(&h11_own11));
     hero_array_release_at(&h12_own12);
-    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h13_own13));
+    h_fixedbugsfieldpathstoreleaked_0Row_release(hero_slot_escape(&h13_own13));
     return;
 }
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Row_retain(const h_fixedbugsfieldpathstoreleaked_Row *v) {
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Row_retain(const h_fixedbugsfieldpathstoreleaked_Row *v) {
     hero_array_incref(v->f_cells);
 }
 
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Row_release(h_fixedbugsfieldpathstoreleaked_Row *v) {
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Row_release(h_fixedbugsfieldpathstoreleaked_Row *v) {
     hero_array_decref(v->f_cells);
 }
 
-HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_Row_eq(const h_fixedbugsfieldpathstoreleaked_Row *a, const h_fixedbugsfieldpathstoreleaked_Row *b) {
+HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_0Row_eq(const h_fixedbugsfieldpathstoreleaked_Row *a, const h_fixedbugsfieldpathstoreleaked_Row *b) {
     if (!(hero_array_eq(a->f_cells, b->f_cells))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_Row_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_0Row_hash(const void *elem) {
     const h_fixedbugsfieldpathstoreleaked_Row *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Pair_retain(const h_fixedbugsfieldpathstoreleaked_Pair *v) {
-    h_fixedbugsfieldpathstoreleaked_Row_retain(&v->f_left);
-    h_fixedbugsfieldpathstoreleaked_Row_retain(&v->f_right);
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Pair_retain(const h_fixedbugsfieldpathstoreleaked_Pair *v) {
+    h_fixedbugsfieldpathstoreleaked_0Row_retain(&v->f_left);
+    h_fixedbugsfieldpathstoreleaked_0Row_retain(&v->f_right);
 }
 
-HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Pair_release(h_fixedbugsfieldpathstoreleaked_Pair *v) {
-    h_fixedbugsfieldpathstoreleaked_Row_release(&v->f_left);
-    h_fixedbugsfieldpathstoreleaked_Row_release(&v->f_right);
+HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Pair_release(h_fixedbugsfieldpathstoreleaked_Pair *v) {
+    h_fixedbugsfieldpathstoreleaked_0Row_release(&v->f_left);
+    h_fixedbugsfieldpathstoreleaked_0Row_release(&v->f_right);
 }
 
-HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_Pair_eq(const h_fixedbugsfieldpathstoreleaked_Pair *a, const h_fixedbugsfieldpathstoreleaked_Pair *b) {
-    if (!(h_fixedbugsfieldpathstoreleaked_Row_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugsfieldpathstoreleaked_Row_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugsfieldpathstoreleaked_0Pair_eq(const h_fixedbugsfieldpathstoreleaked_Pair *a, const h_fixedbugsfieldpathstoreleaked_Pair *b) {
+    if (!(h_fixedbugsfieldpathstoreleaked_0Row_eq(&a->f_left, &b->f_left))) return false;
+    if (!(h_fixedbugsfieldpathstoreleaked_0Row_eq(&a->f_right, &b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsfieldpathstoreleaked_0Pair_hash(const void *elem) {
     const h_fixedbugsfieldpathstoreleaked_Pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugsfieldpathstoreleaked_Row_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugsfieldpathstoreleaked_Row_hash(&v->f_right)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugsfieldpathstoreleaked_0Row_hash(&v->f_left)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugsfieldpathstoreleaked_0Row_hash(&v->f_right)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -254,10 +266,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("049ee01f3c762c58", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b022b0c116de4f3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsfieldpathstoreleaked\tfixedbugs-field-path-store-leaked\n");
     h_fixedbugsfieldpathstoreleaked_main();
     hero_runtime_check_leaks();
     return 0;

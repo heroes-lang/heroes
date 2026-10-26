@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -70,6 +70,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -84,7 +92,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "adversarialstrcopyout.c"
+#line 96 "adversarialstrcopyout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,6 +103,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times);
 void h_adversarialstrcopyout_main(void);
@@ -105,10 +117,10 @@ void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) { int64_t 
 #line 16
     t2 = h2_i; t3 = h1_times; t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
     t5 = (*ph0_s); t6 = HERO_STR_LIT(hero_str_21); t7 = hero_str_concat(t5, t6); t14 = h3_own3; h3_own3 = t7; hero_str_decref(t14); t15 = (*ph0_s); hero_str_incref(t7); (*ph0_s) = t7; hero_str_decref(t15);
-    t8 = h2_i; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); h2_i = t10;
+    t8 = h2_i; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("adversarial-str-copy-out.hero", "adversarial-str-copy-out.extend", 18, 13); h2_i = t10;
 #line 20
     t11 = h2_i; t12 = INT64_C(2); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3: goto bb7; bb4: goto bb1; bb5: goto bb7; bb6: goto bb4; bb7:
-#line 112 "adversarialstrcopyout.c"
+#line 124 "adversarialstrcopyout.c"
     hero_str_release_at(&h3_own3);
     return;
 }
@@ -123,7 +135,7 @@ void h_adversarialstrcopyout_main(void) { HeroStr h0_a = {0}; HeroStr h1_b = {0}
     t7 = INT64_C(0); h_adversarialstrcopyout_extend(&h1_b, t7);
     t8 = h1_b; hero_print_str(t8); hero_print_end();
     t9 = h1_b; t10 = hero_str_len(t9); hero_print_int(t10); hero_print_end();
-#line 127 "adversarialstrcopyout.c"
+#line 139 "adversarialstrcopyout.c"
     hero_str_release_at(&h0_a);
     hero_str_release_at(&h1_b);
     return;
@@ -192,10 +204,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4527462f0c2a18f8", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("691fb7562d2f6945", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("adversarialstrcopyout\tadversarial-str-copy-out\n");
     h_adversarialstrcopyout_main();
     hero_runtime_check_leaks();
     return 0;

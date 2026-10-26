@@ -58,9 +58,11 @@ constant EXEMPT: [str]
 # 2,030 files having left the tree for GitHub (the author's answers of that
 # day); measured by this suite on that commit's tree. **5,246 the same
 # evening**, the six modules of the transcription's words having left with
-# the folder's last readers.
+# the folder's last readers. **6,600 at M-panic-location's batch gate,
+# 2026-10-26**, raised on purpose as `floors.check` asked, the tree having
+# outgrown 5,246 by more than a quarter in the fourteen days since.
 constant LEAST_DOCUMENTS: i64
-    5246
+    6600
 
 # One character found, by its file, its line and its code.
 record Found

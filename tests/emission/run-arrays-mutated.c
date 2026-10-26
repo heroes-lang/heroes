@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -89,6 +89,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -103,15 +111,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "arraysmutated.c"
+#line 115 "arraysmutated.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_arraysmutated_Point_eq(const h_arraysmutated_Point *a, const h_arraysmutated_Point *b);
-HERO_TU_LOCAL uint64_t h_arraysmutated_Point_hash(const void *elem);
-HERO_TU_LOCAL void h_arraysmutated_Holder_retain(const h_arraysmutated_Holder *v);
-HERO_TU_LOCAL void h_arraysmutated_Holder_release(h_arraysmutated_Holder *v);
-HERO_TU_LOCAL bool h_arraysmutated_Holder_eq(const h_arraysmutated_Holder *a, const h_arraysmutated_Holder *b);
-HERO_TU_LOCAL uint64_t h_arraysmutated_Holder_hash(const void *elem);
+HERO_TU_LOCAL bool h_arraysmutated_0Point_eq(const h_arraysmutated_Point *a, const h_arraysmutated_Point *b);
+HERO_TU_LOCAL uint64_t h_arraysmutated_0Point_hash(const void *elem);
+HERO_TU_LOCAL void h_arraysmutated_0Holder_retain(const h_arraysmutated_Holder *v);
+HERO_TU_LOCAL void h_arraysmutated_0Holder_release(h_arraysmutated_Holder *v);
+HERO_TU_LOCAL bool h_arraysmutated_0Holder_eq(const h_arraysmutated_Holder *a, const h_arraysmutated_Holder *b);
+HERO_TU_LOCAL uint64_t h_arraysmutated_0Holder_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -120,40 +128,44 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_arraysmutated_Point_desc_copy(void *dst, const void *src) {
+static void h_arraysmutated_0Point_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_arraysmutated_Point));
 }
-static void h_arraysmutated_Point_desc_drop(void *elem) {
+static void h_arraysmutated_0Point_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_arraysmutated_Point_desc_eq(const void *a, const void *b) {
-    return h_arraysmutated_Point_eq((const h_arraysmutated_Point *)a, (const h_arraysmutated_Point *)b);
+static bool h_arraysmutated_0Point_desc_eq(const void *a, const void *b) {
+    return h_arraysmutated_0Point_eq((const h_arraysmutated_Point *)a, (const h_arraysmutated_Point *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_arraysmutated_Point_desc = {
+HERO_TU_QUIET static const HeroDesc h_arraysmutated_0Point_desc = {
     sizeof(h_arraysmutated_Point),
-    h_arraysmutated_Point_desc_copy,
-    h_arraysmutated_Point_desc_drop,
-    h_arraysmutated_Point_desc_eq,
-    h_arraysmutated_Point_hash,
+    h_arraysmutated_0Point_desc_copy,
+    h_arraysmutated_0Point_desc_drop,
+    h_arraysmutated_0Point_desc_eq,
+    h_arraysmutated_0Point_hash,
 };
 
-static void h_arraysmutated_Holder_desc_copy(void *dst, const void *src) {
+static void h_arraysmutated_0Holder_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_arraysmutated_Holder));
-    h_arraysmutated_Holder_retain((const h_arraysmutated_Holder *)dst);
+    h_arraysmutated_0Holder_retain((const h_arraysmutated_Holder *)dst);
 }
-static void h_arraysmutated_Holder_desc_drop(void *elem) {
-    h_arraysmutated_Holder_release((h_arraysmutated_Holder *)elem);
+static void h_arraysmutated_0Holder_desc_drop(void *elem) {
+    h_arraysmutated_0Holder_release((h_arraysmutated_Holder *)elem);
 }
-static bool h_arraysmutated_Holder_desc_eq(const void *a, const void *b) {
-    return h_arraysmutated_Holder_eq((const h_arraysmutated_Holder *)a, (const h_arraysmutated_Holder *)b);
+static bool h_arraysmutated_0Holder_desc_eq(const void *a, const void *b) {
+    return h_arraysmutated_0Holder_eq((const h_arraysmutated_Holder *)a, (const h_arraysmutated_Holder *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_arraysmutated_Holder_desc = {
+HERO_TU_QUIET static const HeroDesc h_arraysmutated_0Holder_desc = {
     sizeof(h_arraysmutated_Holder),
-    h_arraysmutated_Holder_desc_copy,
-    h_arraysmutated_Holder_desc_drop,
-    h_arraysmutated_Holder_desc_eq,
-    h_arraysmutated_Holder_hash,
+    h_arraysmutated_0Holder_desc_copy,
+    h_arraysmutated_0Holder_desc_drop,
+    h_arraysmutated_0Holder_desc_eq,
+    h_arraysmutated_0Holder_hash,
 };
 
 void h_arraysmutated_main(void);
@@ -161,34 +173,34 @@ void h_arraysmutated_main(void);
 #line 23 "tests/golden/run/arrays-mutated.hero"
 void h_arraysmutated_main(void) { HeroArrayHeader * h0_ns = {0}; HeroArrayHeader * h1_ws = {0}; HeroArrayHeader * h2_ps = {0}; HeroArrayHeader * h3_hs = {0}; HeroArrayHeader * h4_gs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h8_own8 = {0}, *h11_own11 = {0}, *h16_own16 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *t4, *t11, *t14, *t17, *t26, *t35, *t38, *t47, *t56, *t60, *t64, *t76, *t87, *t91, *t97, *t100, *t101, *t104, *t108, *t109, *t111, *t114, *t116, *t119, *t121, *t124, *t126, *t128, *t130, *t132, *t133, *t136, *t137, *t140, *t141, *t146, *t147, *t152, *t153, *t154, *t155, *t156, *t157; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h14_own14 = {0}, h17_own17 = {0}, h19_own19 = {0}, t20, t21, t22, t23, t24, t25, t28, t29, t30, t32, t33, t34, t37, t40, t68, t69, t70, t72, t73, t74, t78, t79, t80, t83, t84, t85, t90, t94, t134, t135, t138, t139, t142, t144, t148, t150; HERO_NODEBUG h_arraysmutated_Holder h13_own13 = {0}, h15_own15 = {0}, h18_own18 = {0}, h20_own20 = {0}, t71, t75, t81, t86, t89, t93, t143, t145, t149, t151; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t7, t8, t9, t10, t12, t13, t15, t16, t18, t19, t27, t31, t36, t39, t41, t42, t44, t45, t48, t49, t50, t52, t53, t54, t57, t59, t61, t63, t65, t67, t77, t82, t88, t92, t95, t96, t98, t99, t102, t103, t105, t106, t107, t110, t112, t113, t115, t117, t118, t120, t122, t123, t125, t127, t129, t131; HERO_NODEBUG h_arraysmutated_Point t43, t46, t51, t55, t58, t62, t66; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t132 = h5_own5; h5_own5 = t4; hero_array_decref(t132); t133 = h0_ns; hero_array_incref(t4); h0_ns = t4; hero_array_decref(t133);
-    t5 = INT64_C(0); t6 = INT64_C(10); hero_array_set(&(h0_ns), t5, &t6);
-    t7 = INT64_C(0); t8 = INT64_C(11); hero_array_set(&(h0_ns), t7, &t8);
-    t9 = INT64_C(2); t10 = INT64_C(33); hero_array_set(&(h0_ns), t9, &t10);
-    t11 = h0_ns; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); t14 = h0_ns; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); t17 = h0_ns; t18 = INT64_C(2); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); hero_print_int(t13); hero_print_int(t16); hero_print_int(t19); hero_print_end();
+    t5 = INT64_C(0); t6 = INT64_C(10); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h0_ns); if (*hero_slot == NULL || t5 < 0 || t5 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t5, "arrays-mutated.hero", "arrays-mutated.main", 25, 5); hero_array_set(hero_slot, t5, &t6); }
+    t7 = INT64_C(0); t8 = INT64_C(11); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h0_ns); if (*hero_slot == NULL || t7 < 0 || t7 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t7, "arrays-mutated.hero", "arrays-mutated.main", 26, 5); hero_array_set(hero_slot, t7, &t8); }
+    t9 = INT64_C(2); t10 = INT64_C(33); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h0_ns); if (*hero_slot == NULL || t9 < 0 || t9 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t9, "arrays-mutated.hero", "arrays-mutated.main", 27, 5); hero_array_set(hero_slot, t9, &t10); }
+    t11 = h0_ns; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "arrays-mutated.hero", "arrays-mutated.main", 28, 11) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); t14 = h0_ns; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "arrays-mutated.hero", "arrays-mutated.main", 28, 18) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); t17 = h0_ns; t18 = INT64_C(2); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "arrays-mutated.hero", "arrays-mutated.main", 28, 25) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); hero_print_int(t13); hero_print_int(t16); hero_print_int(t19); hero_print_end();
 #line 30
     t20 = HERO_STR_LIT(hero_str_61); t21 = HERO_STR_LIT(hero_str_31); t22 = hero_str_concat(t20, t21); t134 = h6_own6; h6_own6 = t22; hero_str_decref(t134); t23 = HERO_STR_LIT(hero_str_62); t24 = HERO_STR_LIT(hero_str_32); t25 = hero_str_concat(t23, t24); t135 = h7_own7; h7_own7 = t25; hero_str_decref(t135); t26 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t26, &t22); hero_array_push_owned(&t26, &t25); t136 = h8_own8; h8_own8 = t26; hero_array_decref(t136); t137 = h1_ws; hero_array_incref(t26); h1_ws = t26; hero_array_decref(t137);
-    t27 = INT64_C(0); t28 = HERO_STR_LIT(hero_str_7a); t29 = HERO_STR_LIT(hero_str_39); t30 = hero_str_concat(t28, t29); t138 = h9_own9; h9_own9 = t30; hero_str_decref(t138); hero_str_incref(t30); hero_array_set(&(h1_ws), t27, &t30);
-    t31 = INT64_C(0); t32 = HERO_STR_LIT(hero_str_79); t33 = HERO_STR_LIT(hero_str_38); t34 = hero_str_concat(t32, t33); t139 = h10_own10; h10_own10 = t34; hero_str_decref(t139); hero_str_incref(t34); hero_array_set(&(h1_ws), t31, &t34);
-    t35 = h1_ws; t36 = INT64_C(0); t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t36]); t38 = h1_ws; t39 = INT64_C(1); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t38 + 1))[t39]); hero_print_str(t37); hero_print_str(t40); hero_print_end();
+    t27 = INT64_C(0); t28 = HERO_STR_LIT(hero_str_7a); t29 = HERO_STR_LIT(hero_str_39); t30 = hero_str_concat(t28, t29); t138 = h9_own9; h9_own9 = t30; hero_str_decref(t138); hero_str_incref(t30); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h1_ws); if (*hero_slot == NULL || t27 < 0 || t27 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t27, "arrays-mutated.hero", "arrays-mutated.main", 31, 5); hero_array_set(hero_slot, t27, &t30); }
+    t31 = INT64_C(0); t32 = HERO_STR_LIT(hero_str_79); t33 = HERO_STR_LIT(hero_str_38); t34 = hero_str_concat(t32, t33); t139 = h10_own10; h10_own10 = t34; hero_str_decref(t139); hero_str_incref(t34); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h1_ws); if (*hero_slot == NULL || t31 < 0 || t31 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t31, "arrays-mutated.hero", "arrays-mutated.main", 32, 5); hero_array_set(hero_slot, t31, &t34); }
+    t35 = h1_ws; t36 = INT64_C(0); t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? hero_panic_index_at(t35, t36, "arrays-mutated.hero", "arrays-mutated.main", 33, 11) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t36]); t38 = h1_ws; t39 = INT64_C(1); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? hero_panic_index_at(t38, t39, "arrays-mutated.hero", "arrays-mutated.main", 33, 18) : (void)0), (void)(t38->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t38 + 1))[t39]); hero_print_str(t37); hero_print_str(t40); hero_print_end();
 #line 35
-    t41 = INT64_C(1); t42 = INT64_C(2); t43 = (h_arraysmutated_Point){.f_x = t41, .f_y = t42}; t44 = INT64_C(3); t45 = INT64_C(4); t46 = (h_arraysmutated_Point){.f_x = t44, .f_y = t45}; t47 = hero_array_new(&h_arraysmutated_Point_desc, 2); hero_array_push_owned(&t47, &t43); hero_array_push_owned(&t47, &t46); t140 = h11_own11; h11_own11 = t47; hero_array_decref(t140); t141 = h2_ps; hero_array_incref(t47); h2_ps = t47; hero_array_decref(t141);
-    t48 = INT64_C(1); t49 = INT64_C(5); t50 = INT64_C(6); t51 = (h_arraysmutated_Point){.f_x = t49, .f_y = t50}; hero_array_set(&(h2_ps), t48, &t51);
-    t52 = INT64_C(1); t53 = INT64_C(7); t54 = INT64_C(8); t55 = (h_arraysmutated_Point){.f_x = t53, .f_y = t54}; hero_array_set(&(h2_ps), t52, &t55);
-    t56 = h2_ps; t57 = INT64_C(0); t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t56 + 1))[t57]); t59 = t58.f_x; t60 = h2_ps; t61 = INT64_C(1); t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t60 + 1))[t61]); t63 = t62.f_x; t64 = h2_ps; t65 = INT64_C(1); t66 = ((void)((t64 == NULL || t65 < 0 || t65 >= t64->len) ? ((void)hero_array_at(t64, t65), hero_unreachable()) : (void)0), (void)(t64->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t64 + 1))[t65]); t67 = t66.f_y; hero_print_int(t59); hero_print_int(t63); hero_print_int(t67); hero_print_end();
+    t41 = INT64_C(1); t42 = INT64_C(2); t43 = (h_arraysmutated_Point){.f_x = t41, .f_y = t42}; t44 = INT64_C(3); t45 = INT64_C(4); t46 = (h_arraysmutated_Point){.f_x = t44, .f_y = t45}; t47 = hero_array_new(&h_arraysmutated_0Point_desc, 2); hero_array_push_owned(&t47, &t43); hero_array_push_owned(&t47, &t46); t140 = h11_own11; h11_own11 = t47; hero_array_decref(t140); t141 = h2_ps; hero_array_incref(t47); h2_ps = t47; hero_array_decref(t141);
+    t48 = INT64_C(1); t49 = INT64_C(5); t50 = INT64_C(6); t51 = (h_arraysmutated_Point){.f_x = t49, .f_y = t50}; { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h2_ps); if (*hero_slot == NULL || t48 < 0 || t48 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t48, "arrays-mutated.hero", "arrays-mutated.main", 36, 5); hero_array_set(hero_slot, t48, &t51); }
+    t52 = INT64_C(1); t53 = INT64_C(7); t54 = INT64_C(8); t55 = (h_arraysmutated_Point){.f_x = t53, .f_y = t54}; { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h2_ps); if (*hero_slot == NULL || t52 < 0 || t52 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t52, "arrays-mutated.hero", "arrays-mutated.main", 37, 5); hero_array_set(hero_slot, t52, &t55); }
+    t56 = h2_ps; t57 = INT64_C(0); t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? hero_panic_index_at(t56, t57, "arrays-mutated.hero", "arrays-mutated.main", 38, 11) : (void)0), (void)(t56->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t56 + 1))[t57]); t59 = t58.f_x; t60 = h2_ps; t61 = INT64_C(1); t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? hero_panic_index_at(t60, t61, "arrays-mutated.hero", "arrays-mutated.main", 38, 20) : (void)0), (void)(t60->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t60 + 1))[t61]); t63 = t62.f_x; t64 = h2_ps; t65 = INT64_C(1); t66 = ((void)((t64 == NULL || t65 < 0 || t65 >= t64->len) ? hero_panic_index_at(t64, t65, "arrays-mutated.hero", "arrays-mutated.main", 38, 29) : (void)0), (void)(t64->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t64 + 1))[t65]); t67 = t66.f_y; hero_print_int(t59); hero_print_int(t63); hero_print_int(t67); hero_print_end();
 #line 40
-    t68 = HERO_STR_LIT(hero_str_1d4996); t69 = HERO_STR_LIT(hero_str_21); t70 = hero_str_concat(t68, t69); t142 = h12_own12; h12_own12 = t70; hero_str_decref(t142); hero_str_incref(t70); t71 = (h_arraysmutated_Holder){.f_name = t70}; t143 = h13_own13; h13_own13 = t71; h_arraysmutated_Holder_release(&t143); t72 = HERO_STR_LIT(hero_str_1e9d68); t73 = HERO_STR_LIT(hero_str_21); t74 = hero_str_concat(t72, t73); t144 = h14_own14; h14_own14 = t74; hero_str_decref(t144); hero_str_incref(t74); t75 = (h_arraysmutated_Holder){.f_name = t74}; t145 = h15_own15; h15_own15 = t75; h_arraysmutated_Holder_release(&t145); t76 = hero_array_new(&h_arraysmutated_Holder_desc, 2); hero_array_push_owned(&t76, &t71); hero_array_push_owned(&t76, &t75); t146 = h16_own16; h16_own16 = t76; hero_array_decref(t146); t147 = h3_hs; hero_array_incref(t76); h3_hs = t76; hero_array_decref(t147);
-    t77 = INT64_C(0); t78 = HERO_STR_LIT(hero_str_1d0204); t79 = HERO_STR_LIT(hero_str_21); t80 = hero_str_concat(t78, t79); t148 = h17_own17; h17_own17 = t80; hero_str_decref(t148); hero_str_incref(t80); t81 = (h_arraysmutated_Holder){.f_name = t80}; t149 = h18_own18; h18_own18 = t81; h_arraysmutated_Holder_release(&t149); h_arraysmutated_Holder_retain(&t81); hero_array_set(&(h3_hs), t77, &t81);
-    t82 = INT64_C(0); t83 = HERO_STR_LIT(hero_str_188c5254); t84 = HERO_STR_LIT(hero_str_21); t85 = hero_str_concat(t83, t84); t150 = h19_own19; h19_own19 = t85; hero_str_decref(t150); hero_str_incref(t85); t86 = (h_arraysmutated_Holder){.f_name = t85}; t151 = h20_own20; h20_own20 = t86; h_arraysmutated_Holder_release(&t151); h_arraysmutated_Holder_retain(&t86); hero_array_set(&(h3_hs), t82, &t86);
-    t87 = h3_hs; t88 = INT64_C(0); t89 = ((void)((t87 == NULL || t88 < 0 || t88 >= t87->len) ? ((void)hero_array_at(t87, t88), hero_unreachable()) : (void)0), (void)(t87->elem->size != sizeof(h_arraysmutated_Holder) ? hero_unreachable() : (void)0), ((h_arraysmutated_Holder const *)(const void *)(t87 + 1))[t88]); t90 = t89.f_name; t91 = h3_hs; t92 = INT64_C(1); t93 = ((void)((t91 == NULL || t92 < 0 || t92 >= t91->len) ? ((void)hero_array_at(t91, t92), hero_unreachable()) : (void)0), (void)(t91->elem->size != sizeof(h_arraysmutated_Holder) ? hero_unreachable() : (void)0), ((h_arraysmutated_Holder const *)(const void *)(t91 + 1))[t92]); t94 = t93.f_name; hero_print_str(t90); hero_print_str(t94); hero_print_end();
+    t68 = HERO_STR_LIT(hero_str_1d4996); t69 = HERO_STR_LIT(hero_str_21); t70 = hero_str_concat(t68, t69); t142 = h12_own12; h12_own12 = t70; hero_str_decref(t142); hero_str_incref(t70); t71 = (h_arraysmutated_Holder){.f_name = t70}; t143 = h13_own13; h13_own13 = t71; h_arraysmutated_0Holder_release(&t143); t72 = HERO_STR_LIT(hero_str_1e9d68); t73 = HERO_STR_LIT(hero_str_21); t74 = hero_str_concat(t72, t73); t144 = h14_own14; h14_own14 = t74; hero_str_decref(t144); hero_str_incref(t74); t75 = (h_arraysmutated_Holder){.f_name = t74}; t145 = h15_own15; h15_own15 = t75; h_arraysmutated_0Holder_release(&t145); t76 = hero_array_new(&h_arraysmutated_0Holder_desc, 2); hero_array_push_owned(&t76, &t71); hero_array_push_owned(&t76, &t75); t146 = h16_own16; h16_own16 = t76; hero_array_decref(t146); t147 = h3_hs; hero_array_incref(t76); h3_hs = t76; hero_array_decref(t147);
+    t77 = INT64_C(0); t78 = HERO_STR_LIT(hero_str_1d0204); t79 = HERO_STR_LIT(hero_str_21); t80 = hero_str_concat(t78, t79); t148 = h17_own17; h17_own17 = t80; hero_str_decref(t148); hero_str_incref(t80); t81 = (h_arraysmutated_Holder){.f_name = t80}; t149 = h18_own18; h18_own18 = t81; h_arraysmutated_0Holder_release(&t149); h_arraysmutated_0Holder_retain(&t81); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h3_hs); if (*hero_slot == NULL || t77 < 0 || t77 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t77, "arrays-mutated.hero", "arrays-mutated.main", 41, 5); hero_array_set(hero_slot, t77, &t81); }
+    t82 = INT64_C(0); t83 = HERO_STR_LIT(hero_str_188c5254); t84 = HERO_STR_LIT(hero_str_21); t85 = hero_str_concat(t83, t84); t150 = h19_own19; h19_own19 = t85; hero_str_decref(t150); hero_str_incref(t85); t86 = (h_arraysmutated_Holder){.f_name = t85}; t151 = h20_own20; h20_own20 = t86; h_arraysmutated_0Holder_release(&t151); h_arraysmutated_0Holder_retain(&t86); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h3_hs); if (*hero_slot == NULL || t82 < 0 || t82 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t82, "arrays-mutated.hero", "arrays-mutated.main", 42, 5); hero_array_set(hero_slot, t82, &t86); }
+    t87 = h3_hs; t88 = INT64_C(0); t89 = ((void)((t87 == NULL || t88 < 0 || t88 >= t87->len) ? hero_panic_index_at(t87, t88, "arrays-mutated.hero", "arrays-mutated.main", 43, 11) : (void)0), (void)(t87->elem->size != sizeof(h_arraysmutated_Holder) ? hero_unreachable() : (void)0), ((h_arraysmutated_Holder const *)(const void *)(t87 + 1))[t88]); t90 = t89.f_name; t91 = h3_hs; t92 = INT64_C(1); t93 = ((void)((t91 == NULL || t92 < 0 || t92 >= t91->len) ? hero_panic_index_at(t91, t92, "arrays-mutated.hero", "arrays-mutated.main", 43, 23) : (void)0), (void)(t91->elem->size != sizeof(h_arraysmutated_Holder) ? hero_unreachable() : (void)0), ((h_arraysmutated_Holder const *)(const void *)(t91 + 1))[t92]); t94 = t93.f_name; hero_print_str(t90); hero_print_str(t94); hero_print_end();
 #line 45
     t95 = INT64_C(1); t96 = INT64_C(2); t97 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t97, &t95); hero_array_push_owned(&t97, &t96); t152 = h21_own21; h21_own21 = t97; hero_array_decref(t152); t98 = INT64_C(3); t99 = INT64_C(4); t100 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t100, &t98); hero_array_push_owned(&t100, &t99); t153 = h22_own22; h22_own22 = t100; hero_array_decref(t153); t101 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t101, &t97); hero_array_push_owned(&t101, &t100); t154 = h23_own23; h23_own23 = t101; hero_array_decref(t154); t155 = h4_gs; hero_array_incref(t101); h4_gs = t101; hero_array_decref(t155);
-    t102 = INT64_C(0); t103 = INT64_C(9); t104 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t104, &t103); t156 = h24_own24; h24_own24 = t104; hero_array_decref(t156); hero_array_incref(t104); hero_array_set(&(h4_gs), t102, &t104);
-    t105 = INT64_C(0); t106 = INT64_C(8); t107 = INT64_C(7); t108 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t108, &t106); hero_array_push_owned(&t108, &t107); t157 = h25_own25; h25_own25 = t108; hero_array_decref(t157); hero_array_incref(t108); hero_array_set(&(h4_gs), t105, &t108);
-    t109 = h4_gs; t110 = INT64_C(0); t111 = ((void)((t109 == NULL || t110 < 0 || t110 >= t109->len) ? ((void)hero_array_at(t109, t110), hero_unreachable()) : (void)0), (void)(t109->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t109 + 1))[t110]); t112 = INT64_C(0); t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? ((void)hero_array_at(t111, t112), hero_unreachable()) : (void)0), (void)(t111->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t111 + 1))[t112]); t114 = h4_gs; t115 = INT64_C(0); t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? ((void)hero_array_at(t114, t115), hero_unreachable()) : (void)0), (void)(t114->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t114 + 1))[t115]); t117 = INT64_C(1); t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? ((void)hero_array_at(t116, t117), hero_unreachable()) : (void)0), (void)(t116->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t116 + 1))[t117]); t119 = h4_gs; t120 = INT64_C(1); t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? ((void)hero_array_at(t119, t120), hero_unreachable()) : (void)0), (void)(t119->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t119 + 1))[t120]); t122 = INT64_C(0); t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? ((void)hero_array_at(t121, t122), hero_unreachable()) : (void)0), (void)(t121->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t121 + 1))[t122]); hero_print_int(t113); hero_print_int(t118); hero_print_int(t123); hero_print_end();
-    t124 = h4_gs; t125 = INT64_C(0); t126 = ((void)((t124 == NULL || t125 < 0 || t125 >= t124->len) ? ((void)hero_array_at(t124, t125), hero_unreachable()) : (void)0), (void)(t124->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t124 + 1))[t125]); t127 = ((void)(t126 == NULL ? ((void)hero_array_len(t126), hero_unreachable()) : (void)0), t126->len); t128 = h4_gs; t129 = ((void)(t128 == NULL ? ((void)hero_array_len(t128), hero_unreachable()) : (void)0), t128->len); hero_print_int(t127); hero_print_int(t129); hero_print_end();
+    t102 = INT64_C(0); t103 = INT64_C(9); t104 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t104, &t103); t156 = h24_own24; h24_own24 = t104; hero_array_decref(t156); hero_array_incref(t104); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h4_gs); if (*hero_slot == NULL || t102 < 0 || t102 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t102, "arrays-mutated.hero", "arrays-mutated.main", 46, 5); hero_array_set(hero_slot, t102, &t104); }
+    t105 = INT64_C(0); t106 = INT64_C(8); t107 = INT64_C(7); t108 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t108, &t106); hero_array_push_owned(&t108, &t107); t157 = h25_own25; h25_own25 = t108; hero_array_decref(t157); hero_array_incref(t108); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h4_gs); if (*hero_slot == NULL || t105 < 0 || t105 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t105, "arrays-mutated.hero", "arrays-mutated.main", 47, 5); hero_array_set(hero_slot, t105, &t108); }
+    t109 = h4_gs; t110 = INT64_C(0); t111 = ((void)((t109 == NULL || t110 < 0 || t110 >= t109->len) ? hero_panic_index_at(t109, t110, "arrays-mutated.hero", "arrays-mutated.main", 48, 11) : (void)0), (void)(t109->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t109 + 1))[t110]); t112 = INT64_C(0); t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? hero_panic_index_at(t111, t112, "arrays-mutated.hero", "arrays-mutated.main", 48, 11) : (void)0), (void)(t111->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t111 + 1))[t112]); t114 = h4_gs; t115 = INT64_C(0); t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? hero_panic_index_at(t114, t115, "arrays-mutated.hero", "arrays-mutated.main", 48, 21) : (void)0), (void)(t114->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t114 + 1))[t115]); t117 = INT64_C(1); t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? hero_panic_index_at(t116, t117, "arrays-mutated.hero", "arrays-mutated.main", 48, 21) : (void)0), (void)(t116->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t116 + 1))[t117]); t119 = h4_gs; t120 = INT64_C(1); t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? hero_panic_index_at(t119, t120, "arrays-mutated.hero", "arrays-mutated.main", 48, 31) : (void)0), (void)(t119->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t119 + 1))[t120]); t122 = INT64_C(0); t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? hero_panic_index_at(t121, t122, "arrays-mutated.hero", "arrays-mutated.main", 48, 31) : (void)0), (void)(t121->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t121 + 1))[t122]); hero_print_int(t113); hero_print_int(t118); hero_print_int(t123); hero_print_end();
+    t124 = h4_gs; t125 = INT64_C(0); t126 = ((void)((t124 == NULL || t125 < 0 || t125 >= t124->len) ? hero_panic_index_at(t124, t125, "arrays-mutated.hero", "arrays-mutated.main", 49, 15) : (void)0), (void)(t124->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t124 + 1))[t125]); t127 = ((void)(t126 == NULL ? ((void)hero_array_len(t126), hero_unreachable()) : (void)0), t126->len); t128 = h4_gs; t129 = ((void)(t128 == NULL ? ((void)hero_array_len(t128), hero_unreachable()) : (void)0), t128->len); hero_print_int(t127); hero_print_int(t129); hero_print_end();
 #line 53
     t130 = h0_ns; t131 = ((void)(t130 == NULL ? ((void)hero_array_len(t130), hero_unreachable()) : (void)0), t130->len); hero_print_int(t131); hero_print_end();
-#line 192 "arraysmutated.c"
+#line 204 "arraysmutated.c"
     hero_array_release_at(&h0_ns);
     hero_array_release_at(&h1_ws);
     hero_array_release_at(&h2_ps);
@@ -202,14 +214,14 @@ void h_arraysmutated_main(void) { HeroArrayHeader * h0_ns = {0}; HeroArrayHeader
     hero_str_release_at(&h10_own10);
     hero_array_release_at(&h11_own11);
     hero_str_release_at(&h12_own12);
-    h_arraysmutated_Holder_release(hero_slot_escape(&h13_own13));
+    h_arraysmutated_0Holder_release(hero_slot_escape(&h13_own13));
     hero_str_release_at(&h14_own14);
-    h_arraysmutated_Holder_release(hero_slot_escape(&h15_own15));
+    h_arraysmutated_0Holder_release(hero_slot_escape(&h15_own15));
     hero_array_release_at(&h16_own16);
     hero_str_release_at(&h17_own17);
-    h_arraysmutated_Holder_release(hero_slot_escape(&h18_own18));
+    h_arraysmutated_0Holder_release(hero_slot_escape(&h18_own18));
     hero_str_release_at(&h19_own19);
-    h_arraysmutated_Holder_release(hero_slot_escape(&h20_own20));
+    h_arraysmutated_0Holder_release(hero_slot_escape(&h20_own20));
     hero_array_release_at(&h21_own21);
     hero_array_release_at(&h22_own22);
     hero_array_release_at(&h23_own23);
@@ -217,13 +229,13 @@ void h_arraysmutated_main(void) { HeroArrayHeader * h0_ns = {0}; HeroArrayHeader
     hero_array_release_at(&h25_own25);
     return;
 }
-HERO_TU_LOCAL bool h_arraysmutated_Point_eq(const h_arraysmutated_Point *a, const h_arraysmutated_Point *b) {
+HERO_TU_LOCAL bool h_arraysmutated_0Point_eq(const h_arraysmutated_Point *a, const h_arraysmutated_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
     if (!(a->f_y == b->f_y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_arraysmutated_Point_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_arraysmutated_0Point_hash(const void *elem) {
     const h_arraysmutated_Point *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
@@ -231,20 +243,20 @@ HERO_TU_LOCAL uint64_t h_arraysmutated_Point_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL void h_arraysmutated_Holder_retain(const h_arraysmutated_Holder *v) {
+HERO_TU_LOCAL void h_arraysmutated_0Holder_retain(const h_arraysmutated_Holder *v) {
     hero_str_incref(v->f_name);
 }
 
-HERO_TU_LOCAL void h_arraysmutated_Holder_release(h_arraysmutated_Holder *v) {
+HERO_TU_LOCAL void h_arraysmutated_0Holder_release(h_arraysmutated_Holder *v) {
     hero_str_decref(v->f_name);
 }
 
-HERO_TU_LOCAL bool h_arraysmutated_Holder_eq(const h_arraysmutated_Holder *a, const h_arraysmutated_Holder *b) {
+HERO_TU_LOCAL bool h_arraysmutated_0Holder_eq(const h_arraysmutated_Holder *a, const h_arraysmutated_Holder *b) {
     if (!(hero_str_eq(a->f_name, b->f_name))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_arraysmutated_Holder_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_arraysmutated_0Holder_hash(const void *elem) {
     const h_arraysmutated_Holder *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);
@@ -315,10 +327,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5440246d0ccf58e3", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f23c3964cbd0882", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("arraysmutated\tarrays-mutated\n");
     h_arraysmutated_main();
     hero_runtime_check_leaks();
     return 0;

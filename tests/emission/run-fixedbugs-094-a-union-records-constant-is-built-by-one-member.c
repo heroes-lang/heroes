@@ -55,7 +55,7 @@
 #pragma pop_macro("f")
 #pragma pop_macro("i")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -120,6 +120,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -146,11 +154,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 158 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_0Num_eq(const Num *a, const Num *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_0Num_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -159,6 +167,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void);
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void);
@@ -180,7 +192,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
-#line 184 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 196 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -192,7 +204,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     static Num hero_constant_value = NUM_INIT;
-#line 196 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 208 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -211,7 +223,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
-#line 215 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 227 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -223,7 +235,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     static Num hero_constant_value = NUM_F;
-#line 227 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 239 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -246,15 +258,15 @@ void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) { Num h0_n
     t2 = h0_n.i; hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(); h1_g = t3; hero_pad_fill(&h1_g, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h1_g.f; hero_print_f32(t4); hero_print_end(); return;
-#line 250 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 262 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b) {
+HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_0Num_eq(const Num *a, const Num *b) {
     if (!(a->i == b->i)) return false;
     if (!(a->f == b->f)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_0Num_hash(const void *elem) {
     const Num *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->i)) * UINT64_C(0x100000001b3);
@@ -326,10 +338,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e9d512717c1a111", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("232fa9702b0f7bfc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs094aunionrecordsconstantisbuiltbyonemember\tfixedbugs-094-a-union-records-constant-is-built-by-one-member\n");
     h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main();
     hero_runtime_check_leaks();
     return 0;

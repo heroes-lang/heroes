@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs218afunctionof800ifsbuildsandruns.c"
+#line 92 "fixedbugs218afunctionof800ifsbuildsandruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs218afunctionof800ifsbuildsandruns_main(void);
 
@@ -102,3204 +114,3204 @@ void h_fixedbugs218afunctionof800ifsbuildsandruns_main(void) { int64_t h0_t; HER
 #line 18
     t8 = h0_t; t9 = INT64_C(1); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
 #line 16
-    t5 = h0_t; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow(); h0_t = t7; goto bb1; bb3: goto bb1; bb4:
+    t5 = h0_t; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 16, 13); h0_t = t7; goto bb1; bb3: goto bb1; bb4:
 #line 21
     t14 = h0_t; t15 = INT64_C(2); t16 = t14 == t15; if (t16) goto bb8; else goto bb9; bb5:
 #line 19
-    t11 = h0_t; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h0_t = t13; goto bb4; bb6: goto bb4; bb7:
+    t11 = h0_t; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 19, 13); h0_t = t13; goto bb4; bb6: goto bb4; bb7:
 #line 24
     t20 = h0_t; t21 = INT64_C(3); t22 = t20 == t21; if (t22) goto bb11; else goto bb12; bb8:
 #line 22
-    t17 = h0_t; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); h0_t = t19; goto bb7; bb9: goto bb7; bb10:
+    t17 = h0_t; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 22, 13); h0_t = t19; goto bb7; bb9: goto bb7; bb10:
 #line 27
     t26 = h0_t; t27 = INT64_C(4); t28 = t26 == t27; if (t28) goto bb14; else goto bb15; bb11:
 #line 25
-    t23 = h0_t; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow(); h0_t = t25; goto bb10; bb12: goto bb10; bb13:
+    t23 = h0_t; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 25, 13); h0_t = t25; goto bb10; bb12: goto bb10; bb13:
 #line 30
     t32 = h0_t; t33 = INT64_C(5); t34 = t32 == t33; if (t34) goto bb17; else goto bb18; bb14:
 #line 28
-    t29 = h0_t; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow(); h0_t = t31; goto bb13; bb15: goto bb13; bb16:
+    t29 = h0_t; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 28, 13); h0_t = t31; goto bb13; bb15: goto bb13; bb16:
 #line 33
     t38 = h0_t; t39 = INT64_C(6); t40 = t38 == t39; if (t40) goto bb20; else goto bb21; bb17:
 #line 31
-    t35 = h0_t; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow(); h0_t = t37; goto bb16; bb18: goto bb16; bb19:
+    t35 = h0_t; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 31, 13); h0_t = t37; goto bb16; bb18: goto bb16; bb19:
 #line 36
     t44 = h0_t; t45 = INT64_C(7); t46 = t44 == t45; if (t46) goto bb23; else goto bb24; bb20:
 #line 34
-    t41 = h0_t; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow(); h0_t = t43; goto bb19; bb21: goto bb19; bb22:
+    t41 = h0_t; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 34, 13); h0_t = t43; goto bb19; bb21: goto bb19; bb22:
 #line 39
     t50 = h0_t; t51 = INT64_C(8); t52 = t50 == t51; if (t52) goto bb26; else goto bb27; bb23:
 #line 37
-    t47 = h0_t; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow(); h0_t = t49; goto bb22; bb24: goto bb22; bb25:
+    t47 = h0_t; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 37, 13); h0_t = t49; goto bb22; bb24: goto bb22; bb25:
 #line 42
     t56 = h0_t; t57 = INT64_C(9); t58 = t56 == t57; if (t58) goto bb29; else goto bb30; bb26:
 #line 40
-    t53 = h0_t; t54 = INT64_C(1); if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow(); h0_t = t55; goto bb25; bb27: goto bb25; bb28:
+    t53 = h0_t; t54 = INT64_C(1); if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 40, 13); h0_t = t55; goto bb25; bb27: goto bb25; bb28:
 #line 45
     t62 = h0_t; t63 = INT64_C(10); t64 = t62 == t63; if (t64) goto bb32; else goto bb33; bb29:
 #line 43
-    t59 = h0_t; t60 = INT64_C(1); if (__builtin_add_overflow(t59, t60, &t61)) hero_panic_overflow(); h0_t = t61; goto bb28; bb30: goto bb28; bb31:
+    t59 = h0_t; t60 = INT64_C(1); if (__builtin_add_overflow(t59, t60, &t61)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 43, 13); h0_t = t61; goto bb28; bb30: goto bb28; bb31:
 #line 48
     t68 = h0_t; t69 = INT64_C(11); t70 = t68 == t69; if (t70) goto bb35; else goto bb36; bb32:
 #line 46
-    t65 = h0_t; t66 = INT64_C(1); if (__builtin_add_overflow(t65, t66, &t67)) hero_panic_overflow(); h0_t = t67; goto bb31; bb33: goto bb31; bb34:
+    t65 = h0_t; t66 = INT64_C(1); if (__builtin_add_overflow(t65, t66, &t67)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 46, 13); h0_t = t67; goto bb31; bb33: goto bb31; bb34:
 #line 51
     t74 = h0_t; t75 = INT64_C(12); t76 = t74 == t75; if (t76) goto bb38; else goto bb39; bb35:
 #line 49
-    t71 = h0_t; t72 = INT64_C(1); if (__builtin_add_overflow(t71, t72, &t73)) hero_panic_overflow(); h0_t = t73; goto bb34; bb36: goto bb34; bb37:
+    t71 = h0_t; t72 = INT64_C(1); if (__builtin_add_overflow(t71, t72, &t73)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 49, 13); h0_t = t73; goto bb34; bb36: goto bb34; bb37:
 #line 54
     t80 = h0_t; t81 = INT64_C(13); t82 = t80 == t81; if (t82) goto bb41; else goto bb42; bb38:
 #line 52
-    t77 = h0_t; t78 = INT64_C(1); if (__builtin_add_overflow(t77, t78, &t79)) hero_panic_overflow(); h0_t = t79; goto bb37; bb39: goto bb37; bb40:
+    t77 = h0_t; t78 = INT64_C(1); if (__builtin_add_overflow(t77, t78, &t79)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 52, 13); h0_t = t79; goto bb37; bb39: goto bb37; bb40:
 #line 57
     t86 = h0_t; t87 = INT64_C(14); t88 = t86 == t87; if (t88) goto bb44; else goto bb45; bb41:
 #line 55
-    t83 = h0_t; t84 = INT64_C(1); if (__builtin_add_overflow(t83, t84, &t85)) hero_panic_overflow(); h0_t = t85; goto bb40; bb42: goto bb40; bb43:
+    t83 = h0_t; t84 = INT64_C(1); if (__builtin_add_overflow(t83, t84, &t85)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 55, 13); h0_t = t85; goto bb40; bb42: goto bb40; bb43:
 #line 60
     t92 = h0_t; t93 = INT64_C(15); t94 = t92 == t93; if (t94) goto bb47; else goto bb48; bb44:
 #line 58
-    t89 = h0_t; t90 = INT64_C(1); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow(); h0_t = t91; goto bb43; bb45: goto bb43; bb46:
+    t89 = h0_t; t90 = INT64_C(1); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 58, 13); h0_t = t91; goto bb43; bb45: goto bb43; bb46:
 #line 63
     t98 = h0_t; t99 = INT64_C(16); t100 = t98 == t99; if (t100) goto bb50; else goto bb51; bb47:
 #line 61
-    t95 = h0_t; t96 = INT64_C(1); if (__builtin_add_overflow(t95, t96, &t97)) hero_panic_overflow(); h0_t = t97; goto bb46; bb48: goto bb46; bb49:
+    t95 = h0_t; t96 = INT64_C(1); if (__builtin_add_overflow(t95, t96, &t97)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 61, 13); h0_t = t97; goto bb46; bb48: goto bb46; bb49:
 #line 66
     t104 = h0_t; t105 = INT64_C(17); t106 = t104 == t105; if (t106) goto bb53; else goto bb54; bb50:
 #line 64
-    t101 = h0_t; t102 = INT64_C(1); if (__builtin_add_overflow(t101, t102, &t103)) hero_panic_overflow(); h0_t = t103; goto bb49; bb51: goto bb49; bb52:
+    t101 = h0_t; t102 = INT64_C(1); if (__builtin_add_overflow(t101, t102, &t103)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 64, 13); h0_t = t103; goto bb49; bb51: goto bb49; bb52:
 #line 69
     t110 = h0_t; t111 = INT64_C(18); t112 = t110 == t111; if (t112) goto bb56; else goto bb57; bb53:
 #line 67
-    t107 = h0_t; t108 = INT64_C(1); if (__builtin_add_overflow(t107, t108, &t109)) hero_panic_overflow(); h0_t = t109; goto bb52; bb54: goto bb52; bb55:
+    t107 = h0_t; t108 = INT64_C(1); if (__builtin_add_overflow(t107, t108, &t109)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 67, 13); h0_t = t109; goto bb52; bb54: goto bb52; bb55:
 #line 72
     t116 = h0_t; t117 = INT64_C(19); t118 = t116 == t117; if (t118) goto bb59; else goto bb60; bb56:
 #line 70
-    t113 = h0_t; t114 = INT64_C(1); if (__builtin_add_overflow(t113, t114, &t115)) hero_panic_overflow(); h0_t = t115; goto bb55; bb57: goto bb55; bb58:
+    t113 = h0_t; t114 = INT64_C(1); if (__builtin_add_overflow(t113, t114, &t115)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 70, 13); h0_t = t115; goto bb55; bb57: goto bb55; bb58:
 #line 75
     t122 = h0_t; t123 = INT64_C(20); t124 = t122 == t123; if (t124) goto bb62; else goto bb63; bb59:
 #line 73
-    t119 = h0_t; t120 = INT64_C(1); if (__builtin_add_overflow(t119, t120, &t121)) hero_panic_overflow(); h0_t = t121; goto bb58; bb60: goto bb58; bb61:
+    t119 = h0_t; t120 = INT64_C(1); if (__builtin_add_overflow(t119, t120, &t121)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 73, 13); h0_t = t121; goto bb58; bb60: goto bb58; bb61:
 #line 78
     t128 = h0_t; t129 = INT64_C(21); t130 = t128 == t129; if (t130) goto bb65; else goto bb66; bb62:
 #line 76
-    t125 = h0_t; t126 = INT64_C(1); if (__builtin_add_overflow(t125, t126, &t127)) hero_panic_overflow(); h0_t = t127; goto bb61; bb63: goto bb61; bb64:
+    t125 = h0_t; t126 = INT64_C(1); if (__builtin_add_overflow(t125, t126, &t127)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 76, 13); h0_t = t127; goto bb61; bb63: goto bb61; bb64:
 #line 81
     t134 = h0_t; t135 = INT64_C(22); t136 = t134 == t135; if (t136) goto bb68; else goto bb69; bb65:
 #line 79
-    t131 = h0_t; t132 = INT64_C(1); if (__builtin_add_overflow(t131, t132, &t133)) hero_panic_overflow(); h0_t = t133; goto bb64; bb66: goto bb64; bb67:
+    t131 = h0_t; t132 = INT64_C(1); if (__builtin_add_overflow(t131, t132, &t133)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 79, 13); h0_t = t133; goto bb64; bb66: goto bb64; bb67:
 #line 84
     t140 = h0_t; t141 = INT64_C(23); t142 = t140 == t141; if (t142) goto bb71; else goto bb72; bb68:
 #line 82
-    t137 = h0_t; t138 = INT64_C(1); if (__builtin_add_overflow(t137, t138, &t139)) hero_panic_overflow(); h0_t = t139; goto bb67; bb69: goto bb67; bb70:
+    t137 = h0_t; t138 = INT64_C(1); if (__builtin_add_overflow(t137, t138, &t139)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 82, 13); h0_t = t139; goto bb67; bb69: goto bb67; bb70:
 #line 87
     t146 = h0_t; t147 = INT64_C(24); t148 = t146 == t147; if (t148) goto bb74; else goto bb75; bb71:
 #line 85
-    t143 = h0_t; t144 = INT64_C(1); if (__builtin_add_overflow(t143, t144, &t145)) hero_panic_overflow(); h0_t = t145; goto bb70; bb72: goto bb70; bb73:
+    t143 = h0_t; t144 = INT64_C(1); if (__builtin_add_overflow(t143, t144, &t145)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 85, 13); h0_t = t145; goto bb70; bb72: goto bb70; bb73:
 #line 90
     t152 = h0_t; t153 = INT64_C(25); t154 = t152 == t153; if (t154) goto bb77; else goto bb78; bb74:
 #line 88
-    t149 = h0_t; t150 = INT64_C(1); if (__builtin_add_overflow(t149, t150, &t151)) hero_panic_overflow(); h0_t = t151; goto bb73; bb75: goto bb73; bb76:
+    t149 = h0_t; t150 = INT64_C(1); if (__builtin_add_overflow(t149, t150, &t151)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 88, 13); h0_t = t151; goto bb73; bb75: goto bb73; bb76:
 #line 93
     t158 = h0_t; t159 = INT64_C(26); t160 = t158 == t159; if (t160) goto bb80; else goto bb81; bb77:
 #line 91
-    t155 = h0_t; t156 = INT64_C(1); if (__builtin_add_overflow(t155, t156, &t157)) hero_panic_overflow(); h0_t = t157; goto bb76; bb78: goto bb76; bb79:
+    t155 = h0_t; t156 = INT64_C(1); if (__builtin_add_overflow(t155, t156, &t157)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 91, 13); h0_t = t157; goto bb76; bb78: goto bb76; bb79:
 #line 96
     t164 = h0_t; t165 = INT64_C(27); t166 = t164 == t165; if (t166) goto bb83; else goto bb84; bb80:
 #line 94
-    t161 = h0_t; t162 = INT64_C(1); if (__builtin_add_overflow(t161, t162, &t163)) hero_panic_overflow(); h0_t = t163; goto bb79; bb81: goto bb79; bb82:
+    t161 = h0_t; t162 = INT64_C(1); if (__builtin_add_overflow(t161, t162, &t163)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 94, 13); h0_t = t163; goto bb79; bb81: goto bb79; bb82:
 #line 99
     t170 = h0_t; t171 = INT64_C(28); t172 = t170 == t171; if (t172) goto bb86; else goto bb87; bb83:
 #line 97
-    t167 = h0_t; t168 = INT64_C(1); if (__builtin_add_overflow(t167, t168, &t169)) hero_panic_overflow(); h0_t = t169; goto bb82; bb84: goto bb82; bb85:
+    t167 = h0_t; t168 = INT64_C(1); if (__builtin_add_overflow(t167, t168, &t169)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 97, 13); h0_t = t169; goto bb82; bb84: goto bb82; bb85:
 #line 102
     t176 = h0_t; t177 = INT64_C(29); t178 = t176 == t177; if (t178) goto bb89; else goto bb90; bb86:
 #line 100
-    t173 = h0_t; t174 = INT64_C(1); if (__builtin_add_overflow(t173, t174, &t175)) hero_panic_overflow(); h0_t = t175; goto bb85; bb87: goto bb85; bb88:
+    t173 = h0_t; t174 = INT64_C(1); if (__builtin_add_overflow(t173, t174, &t175)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 100, 13); h0_t = t175; goto bb85; bb87: goto bb85; bb88:
 #line 105
     t182 = h0_t; t183 = INT64_C(30); t184 = t182 == t183; if (t184) goto bb92; else goto bb93; bb89:
 #line 103
-    t179 = h0_t; t180 = INT64_C(1); if (__builtin_add_overflow(t179, t180, &t181)) hero_panic_overflow(); h0_t = t181; goto bb88; bb90: goto bb88; bb91:
+    t179 = h0_t; t180 = INT64_C(1); if (__builtin_add_overflow(t179, t180, &t181)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 103, 13); h0_t = t181; goto bb88; bb90: goto bb88; bb91:
 #line 108
     t188 = h0_t; t189 = INT64_C(31); t190 = t188 == t189; if (t190) goto bb95; else goto bb96; bb92:
 #line 106
-    t185 = h0_t; t186 = INT64_C(1); if (__builtin_add_overflow(t185, t186, &t187)) hero_panic_overflow(); h0_t = t187; goto bb91; bb93: goto bb91; bb94:
+    t185 = h0_t; t186 = INT64_C(1); if (__builtin_add_overflow(t185, t186, &t187)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 106, 13); h0_t = t187; goto bb91; bb93: goto bb91; bb94:
 #line 111
     t194 = h0_t; t195 = INT64_C(32); t196 = t194 == t195; if (t196) goto bb98; else goto bb99; bb95:
 #line 109
-    t191 = h0_t; t192 = INT64_C(1); if (__builtin_add_overflow(t191, t192, &t193)) hero_panic_overflow(); h0_t = t193; goto bb94; bb96: goto bb94; bb97:
+    t191 = h0_t; t192 = INT64_C(1); if (__builtin_add_overflow(t191, t192, &t193)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 109, 13); h0_t = t193; goto bb94; bb96: goto bb94; bb97:
 #line 114
     t200 = h0_t; t201 = INT64_C(33); t202 = t200 == t201; if (t202) goto bb101; else goto bb102; bb98:
 #line 112
-    t197 = h0_t; t198 = INT64_C(1); if (__builtin_add_overflow(t197, t198, &t199)) hero_panic_overflow(); h0_t = t199; goto bb97; bb99: goto bb97; bb100:
+    t197 = h0_t; t198 = INT64_C(1); if (__builtin_add_overflow(t197, t198, &t199)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 112, 13); h0_t = t199; goto bb97; bb99: goto bb97; bb100:
 #line 117
     t206 = h0_t; t207 = INT64_C(34); t208 = t206 == t207; if (t208) goto bb104; else goto bb105; bb101:
 #line 115
-    t203 = h0_t; t204 = INT64_C(1); if (__builtin_add_overflow(t203, t204, &t205)) hero_panic_overflow(); h0_t = t205; goto bb100; bb102: goto bb100; bb103:
+    t203 = h0_t; t204 = INT64_C(1); if (__builtin_add_overflow(t203, t204, &t205)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 115, 13); h0_t = t205; goto bb100; bb102: goto bb100; bb103:
 #line 120
     t212 = h0_t; t213 = INT64_C(35); t214 = t212 == t213; if (t214) goto bb107; else goto bb108; bb104:
 #line 118
-    t209 = h0_t; t210 = INT64_C(1); if (__builtin_add_overflow(t209, t210, &t211)) hero_panic_overflow(); h0_t = t211; goto bb103; bb105: goto bb103; bb106:
+    t209 = h0_t; t210 = INT64_C(1); if (__builtin_add_overflow(t209, t210, &t211)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 118, 13); h0_t = t211; goto bb103; bb105: goto bb103; bb106:
 #line 123
     t218 = h0_t; t219 = INT64_C(36); t220 = t218 == t219; if (t220) goto bb110; else goto bb111; bb107:
 #line 121
-    t215 = h0_t; t216 = INT64_C(1); if (__builtin_add_overflow(t215, t216, &t217)) hero_panic_overflow(); h0_t = t217; goto bb106; bb108: goto bb106; bb109:
+    t215 = h0_t; t216 = INT64_C(1); if (__builtin_add_overflow(t215, t216, &t217)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 121, 13); h0_t = t217; goto bb106; bb108: goto bb106; bb109:
 #line 126
     t224 = h0_t; t225 = INT64_C(37); t226 = t224 == t225; if (t226) goto bb113; else goto bb114; bb110:
 #line 124
-    t221 = h0_t; t222 = INT64_C(1); if (__builtin_add_overflow(t221, t222, &t223)) hero_panic_overflow(); h0_t = t223; goto bb109; bb111: goto bb109; bb112:
+    t221 = h0_t; t222 = INT64_C(1); if (__builtin_add_overflow(t221, t222, &t223)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 124, 13); h0_t = t223; goto bb109; bb111: goto bb109; bb112:
 #line 129
     t230 = h0_t; t231 = INT64_C(38); t232 = t230 == t231; if (t232) goto bb116; else goto bb117; bb113:
 #line 127
-    t227 = h0_t; t228 = INT64_C(1); if (__builtin_add_overflow(t227, t228, &t229)) hero_panic_overflow(); h0_t = t229; goto bb112; bb114: goto bb112; bb115:
+    t227 = h0_t; t228 = INT64_C(1); if (__builtin_add_overflow(t227, t228, &t229)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 127, 13); h0_t = t229; goto bb112; bb114: goto bb112; bb115:
 #line 132
     t236 = h0_t; t237 = INT64_C(39); t238 = t236 == t237; if (t238) goto bb119; else goto bb120; bb116:
 #line 130
-    t233 = h0_t; t234 = INT64_C(1); if (__builtin_add_overflow(t233, t234, &t235)) hero_panic_overflow(); h0_t = t235; goto bb115; bb117: goto bb115; bb118:
+    t233 = h0_t; t234 = INT64_C(1); if (__builtin_add_overflow(t233, t234, &t235)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 130, 13); h0_t = t235; goto bb115; bb117: goto bb115; bb118:
 #line 135
     t242 = h0_t; t243 = INT64_C(40); t244 = t242 == t243; if (t244) goto bb122; else goto bb123; bb119:
 #line 133
-    t239 = h0_t; t240 = INT64_C(1); if (__builtin_add_overflow(t239, t240, &t241)) hero_panic_overflow(); h0_t = t241; goto bb118; bb120: goto bb118; bb121:
+    t239 = h0_t; t240 = INT64_C(1); if (__builtin_add_overflow(t239, t240, &t241)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 133, 13); h0_t = t241; goto bb118; bb120: goto bb118; bb121:
 #line 138
     t248 = h0_t; t249 = INT64_C(41); t250 = t248 == t249; if (t250) goto bb125; else goto bb126; bb122:
 #line 136
-    t245 = h0_t; t246 = INT64_C(1); if (__builtin_add_overflow(t245, t246, &t247)) hero_panic_overflow(); h0_t = t247; goto bb121; bb123: goto bb121; bb124:
+    t245 = h0_t; t246 = INT64_C(1); if (__builtin_add_overflow(t245, t246, &t247)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 136, 13); h0_t = t247; goto bb121; bb123: goto bb121; bb124:
 #line 141
     t254 = h0_t; t255 = INT64_C(42); t256 = t254 == t255; if (t256) goto bb128; else goto bb129; bb125:
 #line 139
-    t251 = h0_t; t252 = INT64_C(1); if (__builtin_add_overflow(t251, t252, &t253)) hero_panic_overflow(); h0_t = t253; goto bb124; bb126: goto bb124; bb127:
+    t251 = h0_t; t252 = INT64_C(1); if (__builtin_add_overflow(t251, t252, &t253)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 139, 13); h0_t = t253; goto bb124; bb126: goto bb124; bb127:
 #line 144
     t260 = h0_t; t261 = INT64_C(43); t262 = t260 == t261; if (t262) goto bb131; else goto bb132; bb128:
 #line 142
-    t257 = h0_t; t258 = INT64_C(1); if (__builtin_add_overflow(t257, t258, &t259)) hero_panic_overflow(); h0_t = t259; goto bb127; bb129: goto bb127; bb130:
+    t257 = h0_t; t258 = INT64_C(1); if (__builtin_add_overflow(t257, t258, &t259)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 142, 13); h0_t = t259; goto bb127; bb129: goto bb127; bb130:
 #line 147
     t266 = h0_t; t267 = INT64_C(44); t268 = t266 == t267; if (t268) goto bb134; else goto bb135; bb131:
 #line 145
-    t263 = h0_t; t264 = INT64_C(1); if (__builtin_add_overflow(t263, t264, &t265)) hero_panic_overflow(); h0_t = t265; goto bb130; bb132: goto bb130; bb133:
+    t263 = h0_t; t264 = INT64_C(1); if (__builtin_add_overflow(t263, t264, &t265)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 145, 13); h0_t = t265; goto bb130; bb132: goto bb130; bb133:
 #line 150
     t272 = h0_t; t273 = INT64_C(45); t274 = t272 == t273; if (t274) goto bb137; else goto bb138; bb134:
 #line 148
-    t269 = h0_t; t270 = INT64_C(1); if (__builtin_add_overflow(t269, t270, &t271)) hero_panic_overflow(); h0_t = t271; goto bb133; bb135: goto bb133; bb136:
+    t269 = h0_t; t270 = INT64_C(1); if (__builtin_add_overflow(t269, t270, &t271)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 148, 13); h0_t = t271; goto bb133; bb135: goto bb133; bb136:
 #line 153
     t278 = h0_t; t279 = INT64_C(46); t280 = t278 == t279; if (t280) goto bb140; else goto bb141; bb137:
 #line 151
-    t275 = h0_t; t276 = INT64_C(1); if (__builtin_add_overflow(t275, t276, &t277)) hero_panic_overflow(); h0_t = t277; goto bb136; bb138: goto bb136; bb139:
+    t275 = h0_t; t276 = INT64_C(1); if (__builtin_add_overflow(t275, t276, &t277)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 151, 13); h0_t = t277; goto bb136; bb138: goto bb136; bb139:
 #line 156
     t284 = h0_t; t285 = INT64_C(47); t286 = t284 == t285; if (t286) goto bb143; else goto bb144; bb140:
 #line 154
-    t281 = h0_t; t282 = INT64_C(1); if (__builtin_add_overflow(t281, t282, &t283)) hero_panic_overflow(); h0_t = t283; goto bb139; bb141: goto bb139; bb142:
+    t281 = h0_t; t282 = INT64_C(1); if (__builtin_add_overflow(t281, t282, &t283)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 154, 13); h0_t = t283; goto bb139; bb141: goto bb139; bb142:
 #line 159
     t290 = h0_t; t291 = INT64_C(48); t292 = t290 == t291; if (t292) goto bb146; else goto bb147; bb143:
 #line 157
-    t287 = h0_t; t288 = INT64_C(1); if (__builtin_add_overflow(t287, t288, &t289)) hero_panic_overflow(); h0_t = t289; goto bb142; bb144: goto bb142; bb145:
+    t287 = h0_t; t288 = INT64_C(1); if (__builtin_add_overflow(t287, t288, &t289)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 157, 13); h0_t = t289; goto bb142; bb144: goto bb142; bb145:
 #line 162
     t296 = h0_t; t297 = INT64_C(49); t298 = t296 == t297; if (t298) goto bb149; else goto bb150; bb146:
 #line 160
-    t293 = h0_t; t294 = INT64_C(1); if (__builtin_add_overflow(t293, t294, &t295)) hero_panic_overflow(); h0_t = t295; goto bb145; bb147: goto bb145; bb148:
+    t293 = h0_t; t294 = INT64_C(1); if (__builtin_add_overflow(t293, t294, &t295)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 160, 13); h0_t = t295; goto bb145; bb147: goto bb145; bb148:
 #line 165
     t302 = h0_t; t303 = INT64_C(50); t304 = t302 == t303; if (t304) goto bb152; else goto bb153; bb149:
 #line 163
-    t299 = h0_t; t300 = INT64_C(1); if (__builtin_add_overflow(t299, t300, &t301)) hero_panic_overflow(); h0_t = t301; goto bb148; bb150: goto bb148; bb151:
+    t299 = h0_t; t300 = INT64_C(1); if (__builtin_add_overflow(t299, t300, &t301)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 163, 13); h0_t = t301; goto bb148; bb150: goto bb148; bb151:
 #line 168
     t308 = h0_t; t309 = INT64_C(51); t310 = t308 == t309; if (t310) goto bb155; else goto bb156; bb152:
 #line 166
-    t305 = h0_t; t306 = INT64_C(1); if (__builtin_add_overflow(t305, t306, &t307)) hero_panic_overflow(); h0_t = t307; goto bb151; bb153: goto bb151; bb154:
+    t305 = h0_t; t306 = INT64_C(1); if (__builtin_add_overflow(t305, t306, &t307)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 166, 13); h0_t = t307; goto bb151; bb153: goto bb151; bb154:
 #line 171
     t314 = h0_t; t315 = INT64_C(52); t316 = t314 == t315; if (t316) goto bb158; else goto bb159; bb155:
 #line 169
-    t311 = h0_t; t312 = INT64_C(1); if (__builtin_add_overflow(t311, t312, &t313)) hero_panic_overflow(); h0_t = t313; goto bb154; bb156: goto bb154; bb157:
+    t311 = h0_t; t312 = INT64_C(1); if (__builtin_add_overflow(t311, t312, &t313)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 169, 13); h0_t = t313; goto bb154; bb156: goto bb154; bb157:
 #line 174
     t320 = h0_t; t321 = INT64_C(53); t322 = t320 == t321; if (t322) goto bb161; else goto bb162; bb158:
 #line 172
-    t317 = h0_t; t318 = INT64_C(1); if (__builtin_add_overflow(t317, t318, &t319)) hero_panic_overflow(); h0_t = t319; goto bb157; bb159: goto bb157; bb160:
+    t317 = h0_t; t318 = INT64_C(1); if (__builtin_add_overflow(t317, t318, &t319)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 172, 13); h0_t = t319; goto bb157; bb159: goto bb157; bb160:
 #line 177
     t326 = h0_t; t327 = INT64_C(54); t328 = t326 == t327; if (t328) goto bb164; else goto bb165; bb161:
 #line 175
-    t323 = h0_t; t324 = INT64_C(1); if (__builtin_add_overflow(t323, t324, &t325)) hero_panic_overflow(); h0_t = t325; goto bb160; bb162: goto bb160; bb163:
+    t323 = h0_t; t324 = INT64_C(1); if (__builtin_add_overflow(t323, t324, &t325)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 175, 13); h0_t = t325; goto bb160; bb162: goto bb160; bb163:
 #line 180
     t332 = h0_t; t333 = INT64_C(55); t334 = t332 == t333; if (t334) goto bb167; else goto bb168; bb164:
 #line 178
-    t329 = h0_t; t330 = INT64_C(1); if (__builtin_add_overflow(t329, t330, &t331)) hero_panic_overflow(); h0_t = t331; goto bb163; bb165: goto bb163; bb166:
+    t329 = h0_t; t330 = INT64_C(1); if (__builtin_add_overflow(t329, t330, &t331)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 178, 13); h0_t = t331; goto bb163; bb165: goto bb163; bb166:
 #line 183
     t338 = h0_t; t339 = INT64_C(56); t340 = t338 == t339; if (t340) goto bb170; else goto bb171; bb167:
 #line 181
-    t335 = h0_t; t336 = INT64_C(1); if (__builtin_add_overflow(t335, t336, &t337)) hero_panic_overflow(); h0_t = t337; goto bb166; bb168: goto bb166; bb169:
+    t335 = h0_t; t336 = INT64_C(1); if (__builtin_add_overflow(t335, t336, &t337)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 181, 13); h0_t = t337; goto bb166; bb168: goto bb166; bb169:
 #line 186
     t344 = h0_t; t345 = INT64_C(57); t346 = t344 == t345; if (t346) goto bb173; else goto bb174; bb170:
 #line 184
-    t341 = h0_t; t342 = INT64_C(1); if (__builtin_add_overflow(t341, t342, &t343)) hero_panic_overflow(); h0_t = t343; goto bb169; bb171: goto bb169; bb172:
+    t341 = h0_t; t342 = INT64_C(1); if (__builtin_add_overflow(t341, t342, &t343)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 184, 13); h0_t = t343; goto bb169; bb171: goto bb169; bb172:
 #line 189
     t350 = h0_t; t351 = INT64_C(58); t352 = t350 == t351; if (t352) goto bb176; else goto bb177; bb173:
 #line 187
-    t347 = h0_t; t348 = INT64_C(1); if (__builtin_add_overflow(t347, t348, &t349)) hero_panic_overflow(); h0_t = t349; goto bb172; bb174: goto bb172; bb175:
+    t347 = h0_t; t348 = INT64_C(1); if (__builtin_add_overflow(t347, t348, &t349)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 187, 13); h0_t = t349; goto bb172; bb174: goto bb172; bb175:
 #line 192
     t356 = h0_t; t357 = INT64_C(59); t358 = t356 == t357; if (t358) goto bb179; else goto bb180; bb176:
 #line 190
-    t353 = h0_t; t354 = INT64_C(1); if (__builtin_add_overflow(t353, t354, &t355)) hero_panic_overflow(); h0_t = t355; goto bb175; bb177: goto bb175; bb178:
+    t353 = h0_t; t354 = INT64_C(1); if (__builtin_add_overflow(t353, t354, &t355)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 190, 13); h0_t = t355; goto bb175; bb177: goto bb175; bb178:
 #line 195
     t362 = h0_t; t363 = INT64_C(60); t364 = t362 == t363; if (t364) goto bb182; else goto bb183; bb179:
 #line 193
-    t359 = h0_t; t360 = INT64_C(1); if (__builtin_add_overflow(t359, t360, &t361)) hero_panic_overflow(); h0_t = t361; goto bb178; bb180: goto bb178; bb181:
+    t359 = h0_t; t360 = INT64_C(1); if (__builtin_add_overflow(t359, t360, &t361)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 193, 13); h0_t = t361; goto bb178; bb180: goto bb178; bb181:
 #line 198
     t368 = h0_t; t369 = INT64_C(61); t370 = t368 == t369; if (t370) goto bb185; else goto bb186; bb182:
 #line 196
-    t365 = h0_t; t366 = INT64_C(1); if (__builtin_add_overflow(t365, t366, &t367)) hero_panic_overflow(); h0_t = t367; goto bb181; bb183: goto bb181; bb184:
+    t365 = h0_t; t366 = INT64_C(1); if (__builtin_add_overflow(t365, t366, &t367)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 196, 13); h0_t = t367; goto bb181; bb183: goto bb181; bb184:
 #line 201
     t374 = h0_t; t375 = INT64_C(62); t376 = t374 == t375; if (t376) goto bb188; else goto bb189; bb185:
 #line 199
-    t371 = h0_t; t372 = INT64_C(1); if (__builtin_add_overflow(t371, t372, &t373)) hero_panic_overflow(); h0_t = t373; goto bb184; bb186: goto bb184; bb187:
+    t371 = h0_t; t372 = INT64_C(1); if (__builtin_add_overflow(t371, t372, &t373)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 199, 13); h0_t = t373; goto bb184; bb186: goto bb184; bb187:
 #line 204
     t380 = h0_t; t381 = INT64_C(63); t382 = t380 == t381; if (t382) goto bb191; else goto bb192; bb188:
 #line 202
-    t377 = h0_t; t378 = INT64_C(1); if (__builtin_add_overflow(t377, t378, &t379)) hero_panic_overflow(); h0_t = t379; goto bb187; bb189: goto bb187; bb190:
+    t377 = h0_t; t378 = INT64_C(1); if (__builtin_add_overflow(t377, t378, &t379)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 202, 13); h0_t = t379; goto bb187; bb189: goto bb187; bb190:
 #line 207
     t386 = h0_t; t387 = INT64_C(64); t388 = t386 == t387; if (t388) goto bb194; else goto bb195; bb191:
 #line 205
-    t383 = h0_t; t384 = INT64_C(1); if (__builtin_add_overflow(t383, t384, &t385)) hero_panic_overflow(); h0_t = t385; goto bb190; bb192: goto bb190; bb193:
+    t383 = h0_t; t384 = INT64_C(1); if (__builtin_add_overflow(t383, t384, &t385)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 205, 13); h0_t = t385; goto bb190; bb192: goto bb190; bb193:
 #line 210
     t392 = h0_t; t393 = INT64_C(65); t394 = t392 == t393; if (t394) goto bb197; else goto bb198; bb194:
 #line 208
-    t389 = h0_t; t390 = INT64_C(1); if (__builtin_add_overflow(t389, t390, &t391)) hero_panic_overflow(); h0_t = t391; goto bb193; bb195: goto bb193; bb196:
+    t389 = h0_t; t390 = INT64_C(1); if (__builtin_add_overflow(t389, t390, &t391)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 208, 13); h0_t = t391; goto bb193; bb195: goto bb193; bb196:
 #line 213
     t398 = h0_t; t399 = INT64_C(66); t400 = t398 == t399; if (t400) goto bb200; else goto bb201; bb197:
 #line 211
-    t395 = h0_t; t396 = INT64_C(1); if (__builtin_add_overflow(t395, t396, &t397)) hero_panic_overflow(); h0_t = t397; goto bb196; bb198: goto bb196; bb199:
+    t395 = h0_t; t396 = INT64_C(1); if (__builtin_add_overflow(t395, t396, &t397)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 211, 13); h0_t = t397; goto bb196; bb198: goto bb196; bb199:
 #line 216
     t404 = h0_t; t405 = INT64_C(67); t406 = t404 == t405; if (t406) goto bb203; else goto bb204; bb200:
 #line 214
-    t401 = h0_t; t402 = INT64_C(1); if (__builtin_add_overflow(t401, t402, &t403)) hero_panic_overflow(); h0_t = t403; goto bb199; bb201: goto bb199; bb202:
+    t401 = h0_t; t402 = INT64_C(1); if (__builtin_add_overflow(t401, t402, &t403)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 214, 13); h0_t = t403; goto bb199; bb201: goto bb199; bb202:
 #line 219
     t410 = h0_t; t411 = INT64_C(68); t412 = t410 == t411; if (t412) goto bb206; else goto bb207; bb203:
 #line 217
-    t407 = h0_t; t408 = INT64_C(1); if (__builtin_add_overflow(t407, t408, &t409)) hero_panic_overflow(); h0_t = t409; goto bb202; bb204: goto bb202; bb205:
+    t407 = h0_t; t408 = INT64_C(1); if (__builtin_add_overflow(t407, t408, &t409)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 217, 13); h0_t = t409; goto bb202; bb204: goto bb202; bb205:
 #line 222
     t416 = h0_t; t417 = INT64_C(69); t418 = t416 == t417; if (t418) goto bb209; else goto bb210; bb206:
 #line 220
-    t413 = h0_t; t414 = INT64_C(1); if (__builtin_add_overflow(t413, t414, &t415)) hero_panic_overflow(); h0_t = t415; goto bb205; bb207: goto bb205; bb208:
+    t413 = h0_t; t414 = INT64_C(1); if (__builtin_add_overflow(t413, t414, &t415)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 220, 13); h0_t = t415; goto bb205; bb207: goto bb205; bb208:
 #line 225
     t422 = h0_t; t423 = INT64_C(70); t424 = t422 == t423; if (t424) goto bb212; else goto bb213; bb209:
 #line 223
-    t419 = h0_t; t420 = INT64_C(1); if (__builtin_add_overflow(t419, t420, &t421)) hero_panic_overflow(); h0_t = t421; goto bb208; bb210: goto bb208; bb211:
+    t419 = h0_t; t420 = INT64_C(1); if (__builtin_add_overflow(t419, t420, &t421)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 223, 13); h0_t = t421; goto bb208; bb210: goto bb208; bb211:
 #line 228
     t428 = h0_t; t429 = INT64_C(71); t430 = t428 == t429; if (t430) goto bb215; else goto bb216; bb212:
 #line 226
-    t425 = h0_t; t426 = INT64_C(1); if (__builtin_add_overflow(t425, t426, &t427)) hero_panic_overflow(); h0_t = t427; goto bb211; bb213: goto bb211; bb214:
+    t425 = h0_t; t426 = INT64_C(1); if (__builtin_add_overflow(t425, t426, &t427)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 226, 13); h0_t = t427; goto bb211; bb213: goto bb211; bb214:
 #line 231
     t434 = h0_t; t435 = INT64_C(72); t436 = t434 == t435; if (t436) goto bb218; else goto bb219; bb215:
 #line 229
-    t431 = h0_t; t432 = INT64_C(1); if (__builtin_add_overflow(t431, t432, &t433)) hero_panic_overflow(); h0_t = t433; goto bb214; bb216: goto bb214; bb217:
+    t431 = h0_t; t432 = INT64_C(1); if (__builtin_add_overflow(t431, t432, &t433)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 229, 13); h0_t = t433; goto bb214; bb216: goto bb214; bb217:
 #line 234
     t440 = h0_t; t441 = INT64_C(73); t442 = t440 == t441; if (t442) goto bb221; else goto bb222; bb218:
 #line 232
-    t437 = h0_t; t438 = INT64_C(1); if (__builtin_add_overflow(t437, t438, &t439)) hero_panic_overflow(); h0_t = t439; goto bb217; bb219: goto bb217; bb220:
+    t437 = h0_t; t438 = INT64_C(1); if (__builtin_add_overflow(t437, t438, &t439)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 232, 13); h0_t = t439; goto bb217; bb219: goto bb217; bb220:
 #line 237
     t446 = h0_t; t447 = INT64_C(74); t448 = t446 == t447; if (t448) goto bb224; else goto bb225; bb221:
 #line 235
-    t443 = h0_t; t444 = INT64_C(1); if (__builtin_add_overflow(t443, t444, &t445)) hero_panic_overflow(); h0_t = t445; goto bb220; bb222: goto bb220; bb223:
+    t443 = h0_t; t444 = INT64_C(1); if (__builtin_add_overflow(t443, t444, &t445)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 235, 13); h0_t = t445; goto bb220; bb222: goto bb220; bb223:
 #line 240
     t452 = h0_t; t453 = INT64_C(75); t454 = t452 == t453; if (t454) goto bb227; else goto bb228; bb224:
 #line 238
-    t449 = h0_t; t450 = INT64_C(1); if (__builtin_add_overflow(t449, t450, &t451)) hero_panic_overflow(); h0_t = t451; goto bb223; bb225: goto bb223; bb226:
+    t449 = h0_t; t450 = INT64_C(1); if (__builtin_add_overflow(t449, t450, &t451)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 238, 13); h0_t = t451; goto bb223; bb225: goto bb223; bb226:
 #line 243
     t458 = h0_t; t459 = INT64_C(76); t460 = t458 == t459; if (t460) goto bb230; else goto bb231; bb227:
 #line 241
-    t455 = h0_t; t456 = INT64_C(1); if (__builtin_add_overflow(t455, t456, &t457)) hero_panic_overflow(); h0_t = t457; goto bb226; bb228: goto bb226; bb229:
+    t455 = h0_t; t456 = INT64_C(1); if (__builtin_add_overflow(t455, t456, &t457)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 241, 13); h0_t = t457; goto bb226; bb228: goto bb226; bb229:
 #line 246
     t464 = h0_t; t465 = INT64_C(77); t466 = t464 == t465; if (t466) goto bb233; else goto bb234; bb230:
 #line 244
-    t461 = h0_t; t462 = INT64_C(1); if (__builtin_add_overflow(t461, t462, &t463)) hero_panic_overflow(); h0_t = t463; goto bb229; bb231: goto bb229; bb232:
+    t461 = h0_t; t462 = INT64_C(1); if (__builtin_add_overflow(t461, t462, &t463)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 244, 13); h0_t = t463; goto bb229; bb231: goto bb229; bb232:
 #line 249
     t470 = h0_t; t471 = INT64_C(78); t472 = t470 == t471; if (t472) goto bb236; else goto bb237; bb233:
 #line 247
-    t467 = h0_t; t468 = INT64_C(1); if (__builtin_add_overflow(t467, t468, &t469)) hero_panic_overflow(); h0_t = t469; goto bb232; bb234: goto bb232; bb235:
+    t467 = h0_t; t468 = INT64_C(1); if (__builtin_add_overflow(t467, t468, &t469)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 247, 13); h0_t = t469; goto bb232; bb234: goto bb232; bb235:
 #line 252
     t476 = h0_t; t477 = INT64_C(79); t478 = t476 == t477; if (t478) goto bb239; else goto bb240; bb236:
 #line 250
-    t473 = h0_t; t474 = INT64_C(1); if (__builtin_add_overflow(t473, t474, &t475)) hero_panic_overflow(); h0_t = t475; goto bb235; bb237: goto bb235; bb238:
+    t473 = h0_t; t474 = INT64_C(1); if (__builtin_add_overflow(t473, t474, &t475)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 250, 13); h0_t = t475; goto bb235; bb237: goto bb235; bb238:
 #line 255
     t482 = h0_t; t483 = INT64_C(80); t484 = t482 == t483; if (t484) goto bb242; else goto bb243; bb239:
 #line 253
-    t479 = h0_t; t480 = INT64_C(1); if (__builtin_add_overflow(t479, t480, &t481)) hero_panic_overflow(); h0_t = t481; goto bb238; bb240: goto bb238; bb241:
+    t479 = h0_t; t480 = INT64_C(1); if (__builtin_add_overflow(t479, t480, &t481)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 253, 13); h0_t = t481; goto bb238; bb240: goto bb238; bb241:
 #line 258
     t488 = h0_t; t489 = INT64_C(81); t490 = t488 == t489; if (t490) goto bb245; else goto bb246; bb242:
 #line 256
-    t485 = h0_t; t486 = INT64_C(1); if (__builtin_add_overflow(t485, t486, &t487)) hero_panic_overflow(); h0_t = t487; goto bb241; bb243: goto bb241; bb244:
+    t485 = h0_t; t486 = INT64_C(1); if (__builtin_add_overflow(t485, t486, &t487)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 256, 13); h0_t = t487; goto bb241; bb243: goto bb241; bb244:
 #line 261
     t494 = h0_t; t495 = INT64_C(82); t496 = t494 == t495; if (t496) goto bb248; else goto bb249; bb245:
 #line 259
-    t491 = h0_t; t492 = INT64_C(1); if (__builtin_add_overflow(t491, t492, &t493)) hero_panic_overflow(); h0_t = t493; goto bb244; bb246: goto bb244; bb247:
+    t491 = h0_t; t492 = INT64_C(1); if (__builtin_add_overflow(t491, t492, &t493)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 259, 13); h0_t = t493; goto bb244; bb246: goto bb244; bb247:
 #line 264
     t500 = h0_t; t501 = INT64_C(83); t502 = t500 == t501; if (t502) goto bb251; else goto bb252; bb248:
 #line 262
-    t497 = h0_t; t498 = INT64_C(1); if (__builtin_add_overflow(t497, t498, &t499)) hero_panic_overflow(); h0_t = t499; goto bb247; bb249: goto bb247; bb250:
+    t497 = h0_t; t498 = INT64_C(1); if (__builtin_add_overflow(t497, t498, &t499)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 262, 13); h0_t = t499; goto bb247; bb249: goto bb247; bb250:
 #line 267
     t506 = h0_t; t507 = INT64_C(84); t508 = t506 == t507; if (t508) goto bb254; else goto bb255; bb251:
 #line 265
-    t503 = h0_t; t504 = INT64_C(1); if (__builtin_add_overflow(t503, t504, &t505)) hero_panic_overflow(); h0_t = t505; goto bb250; bb252: goto bb250; bb253:
+    t503 = h0_t; t504 = INT64_C(1); if (__builtin_add_overflow(t503, t504, &t505)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 265, 13); h0_t = t505; goto bb250; bb252: goto bb250; bb253:
 #line 270
     t512 = h0_t; t513 = INT64_C(85); t514 = t512 == t513; if (t514) goto bb257; else goto bb258; bb254:
 #line 268
-    t509 = h0_t; t510 = INT64_C(1); if (__builtin_add_overflow(t509, t510, &t511)) hero_panic_overflow(); h0_t = t511; goto bb253; bb255: goto bb253; bb256:
+    t509 = h0_t; t510 = INT64_C(1); if (__builtin_add_overflow(t509, t510, &t511)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 268, 13); h0_t = t511; goto bb253; bb255: goto bb253; bb256:
 #line 273
     t518 = h0_t; t519 = INT64_C(86); t520 = t518 == t519; if (t520) goto bb260; else goto bb261; bb257:
 #line 271
-    t515 = h0_t; t516 = INT64_C(1); if (__builtin_add_overflow(t515, t516, &t517)) hero_panic_overflow(); h0_t = t517; goto bb256; bb258: goto bb256; bb259:
+    t515 = h0_t; t516 = INT64_C(1); if (__builtin_add_overflow(t515, t516, &t517)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 271, 13); h0_t = t517; goto bb256; bb258: goto bb256; bb259:
 #line 276
     t524 = h0_t; t525 = INT64_C(87); t526 = t524 == t525; if (t526) goto bb263; else goto bb264; bb260:
 #line 274
-    t521 = h0_t; t522 = INT64_C(1); if (__builtin_add_overflow(t521, t522, &t523)) hero_panic_overflow(); h0_t = t523; goto bb259; bb261: goto bb259; bb262:
+    t521 = h0_t; t522 = INT64_C(1); if (__builtin_add_overflow(t521, t522, &t523)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 274, 13); h0_t = t523; goto bb259; bb261: goto bb259; bb262:
 #line 279
     t530 = h0_t; t531 = INT64_C(88); t532 = t530 == t531; if (t532) goto bb266; else goto bb267; bb263:
 #line 277
-    t527 = h0_t; t528 = INT64_C(1); if (__builtin_add_overflow(t527, t528, &t529)) hero_panic_overflow(); h0_t = t529; goto bb262; bb264: goto bb262; bb265:
+    t527 = h0_t; t528 = INT64_C(1); if (__builtin_add_overflow(t527, t528, &t529)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 277, 13); h0_t = t529; goto bb262; bb264: goto bb262; bb265:
 #line 282
     t536 = h0_t; t537 = INT64_C(89); t538 = t536 == t537; if (t538) goto bb269; else goto bb270; bb266:
 #line 280
-    t533 = h0_t; t534 = INT64_C(1); if (__builtin_add_overflow(t533, t534, &t535)) hero_panic_overflow(); h0_t = t535; goto bb265; bb267: goto bb265; bb268:
+    t533 = h0_t; t534 = INT64_C(1); if (__builtin_add_overflow(t533, t534, &t535)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 280, 13); h0_t = t535; goto bb265; bb267: goto bb265; bb268:
 #line 285
     t542 = h0_t; t543 = INT64_C(90); t544 = t542 == t543; if (t544) goto bb272; else goto bb273; bb269:
 #line 283
-    t539 = h0_t; t540 = INT64_C(1); if (__builtin_add_overflow(t539, t540, &t541)) hero_panic_overflow(); h0_t = t541; goto bb268; bb270: goto bb268; bb271:
+    t539 = h0_t; t540 = INT64_C(1); if (__builtin_add_overflow(t539, t540, &t541)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 283, 13); h0_t = t541; goto bb268; bb270: goto bb268; bb271:
 #line 288
     t548 = h0_t; t549 = INT64_C(91); t550 = t548 == t549; if (t550) goto bb275; else goto bb276; bb272:
 #line 286
-    t545 = h0_t; t546 = INT64_C(1); if (__builtin_add_overflow(t545, t546, &t547)) hero_panic_overflow(); h0_t = t547; goto bb271; bb273: goto bb271; bb274:
+    t545 = h0_t; t546 = INT64_C(1); if (__builtin_add_overflow(t545, t546, &t547)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 286, 13); h0_t = t547; goto bb271; bb273: goto bb271; bb274:
 #line 291
     t554 = h0_t; t555 = INT64_C(92); t556 = t554 == t555; if (t556) goto bb278; else goto bb279; bb275:
 #line 289
-    t551 = h0_t; t552 = INT64_C(1); if (__builtin_add_overflow(t551, t552, &t553)) hero_panic_overflow(); h0_t = t553; goto bb274; bb276: goto bb274; bb277:
+    t551 = h0_t; t552 = INT64_C(1); if (__builtin_add_overflow(t551, t552, &t553)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 289, 13); h0_t = t553; goto bb274; bb276: goto bb274; bb277:
 #line 294
     t560 = h0_t; t561 = INT64_C(93); t562 = t560 == t561; if (t562) goto bb281; else goto bb282; bb278:
 #line 292
-    t557 = h0_t; t558 = INT64_C(1); if (__builtin_add_overflow(t557, t558, &t559)) hero_panic_overflow(); h0_t = t559; goto bb277; bb279: goto bb277; bb280:
+    t557 = h0_t; t558 = INT64_C(1); if (__builtin_add_overflow(t557, t558, &t559)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 292, 13); h0_t = t559; goto bb277; bb279: goto bb277; bb280:
 #line 297
     t566 = h0_t; t567 = INT64_C(94); t568 = t566 == t567; if (t568) goto bb284; else goto bb285; bb281:
 #line 295
-    t563 = h0_t; t564 = INT64_C(1); if (__builtin_add_overflow(t563, t564, &t565)) hero_panic_overflow(); h0_t = t565; goto bb280; bb282: goto bb280; bb283:
+    t563 = h0_t; t564 = INT64_C(1); if (__builtin_add_overflow(t563, t564, &t565)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 295, 13); h0_t = t565; goto bb280; bb282: goto bb280; bb283:
 #line 300
     t572 = h0_t; t573 = INT64_C(95); t574 = t572 == t573; if (t574) goto bb287; else goto bb288; bb284:
 #line 298
-    t569 = h0_t; t570 = INT64_C(1); if (__builtin_add_overflow(t569, t570, &t571)) hero_panic_overflow(); h0_t = t571; goto bb283; bb285: goto bb283; bb286:
+    t569 = h0_t; t570 = INT64_C(1); if (__builtin_add_overflow(t569, t570, &t571)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 298, 13); h0_t = t571; goto bb283; bb285: goto bb283; bb286:
 #line 303
     t578 = h0_t; t579 = INT64_C(96); t580 = t578 == t579; if (t580) goto bb290; else goto bb291; bb287:
 #line 301
-    t575 = h0_t; t576 = INT64_C(1); if (__builtin_add_overflow(t575, t576, &t577)) hero_panic_overflow(); h0_t = t577; goto bb286; bb288: goto bb286; bb289:
+    t575 = h0_t; t576 = INT64_C(1); if (__builtin_add_overflow(t575, t576, &t577)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 301, 13); h0_t = t577; goto bb286; bb288: goto bb286; bb289:
 #line 306
     t584 = h0_t; t585 = INT64_C(97); t586 = t584 == t585; if (t586) goto bb293; else goto bb294; bb290:
 #line 304
-    t581 = h0_t; t582 = INT64_C(1); if (__builtin_add_overflow(t581, t582, &t583)) hero_panic_overflow(); h0_t = t583; goto bb289; bb291: goto bb289; bb292:
+    t581 = h0_t; t582 = INT64_C(1); if (__builtin_add_overflow(t581, t582, &t583)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 304, 13); h0_t = t583; goto bb289; bb291: goto bb289; bb292:
 #line 309
     t590 = h0_t; t591 = INT64_C(98); t592 = t590 == t591; if (t592) goto bb296; else goto bb297; bb293:
 #line 307
-    t587 = h0_t; t588 = INT64_C(1); if (__builtin_add_overflow(t587, t588, &t589)) hero_panic_overflow(); h0_t = t589; goto bb292; bb294: goto bb292; bb295:
+    t587 = h0_t; t588 = INT64_C(1); if (__builtin_add_overflow(t587, t588, &t589)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 307, 13); h0_t = t589; goto bb292; bb294: goto bb292; bb295:
 #line 312
     t596 = h0_t; t597 = INT64_C(99); t598 = t596 == t597; if (t598) goto bb299; else goto bb300; bb296:
 #line 310
-    t593 = h0_t; t594 = INT64_C(1); if (__builtin_add_overflow(t593, t594, &t595)) hero_panic_overflow(); h0_t = t595; goto bb295; bb297: goto bb295; bb298:
+    t593 = h0_t; t594 = INT64_C(1); if (__builtin_add_overflow(t593, t594, &t595)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 310, 13); h0_t = t595; goto bb295; bb297: goto bb295; bb298:
 #line 315
     t602 = h0_t; t603 = INT64_C(100); t604 = t602 == t603; if (t604) goto bb302; else goto bb303; bb299:
 #line 313
-    t599 = h0_t; t600 = INT64_C(1); if (__builtin_add_overflow(t599, t600, &t601)) hero_panic_overflow(); h0_t = t601; goto bb298; bb300: goto bb298; bb301:
+    t599 = h0_t; t600 = INT64_C(1); if (__builtin_add_overflow(t599, t600, &t601)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 313, 13); h0_t = t601; goto bb298; bb300: goto bb298; bb301:
 #line 318
     t608 = h0_t; t609 = INT64_C(101); t610 = t608 == t609; if (t610) goto bb305; else goto bb306; bb302:
 #line 316
-    t605 = h0_t; t606 = INT64_C(1); if (__builtin_add_overflow(t605, t606, &t607)) hero_panic_overflow(); h0_t = t607; goto bb301; bb303: goto bb301; bb304:
+    t605 = h0_t; t606 = INT64_C(1); if (__builtin_add_overflow(t605, t606, &t607)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 316, 13); h0_t = t607; goto bb301; bb303: goto bb301; bb304:
 #line 321
     t614 = h0_t; t615 = INT64_C(102); t616 = t614 == t615; if (t616) goto bb308; else goto bb309; bb305:
 #line 319
-    t611 = h0_t; t612 = INT64_C(1); if (__builtin_add_overflow(t611, t612, &t613)) hero_panic_overflow(); h0_t = t613; goto bb304; bb306: goto bb304; bb307:
+    t611 = h0_t; t612 = INT64_C(1); if (__builtin_add_overflow(t611, t612, &t613)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 319, 13); h0_t = t613; goto bb304; bb306: goto bb304; bb307:
 #line 324
     t620 = h0_t; t621 = INT64_C(103); t622 = t620 == t621; if (t622) goto bb311; else goto bb312; bb308:
 #line 322
-    t617 = h0_t; t618 = INT64_C(1); if (__builtin_add_overflow(t617, t618, &t619)) hero_panic_overflow(); h0_t = t619; goto bb307; bb309: goto bb307; bb310:
+    t617 = h0_t; t618 = INT64_C(1); if (__builtin_add_overflow(t617, t618, &t619)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 322, 13); h0_t = t619; goto bb307; bb309: goto bb307; bb310:
 #line 327
     t626 = h0_t; t627 = INT64_C(104); t628 = t626 == t627; if (t628) goto bb314; else goto bb315; bb311:
 #line 325
-    t623 = h0_t; t624 = INT64_C(1); if (__builtin_add_overflow(t623, t624, &t625)) hero_panic_overflow(); h0_t = t625; goto bb310; bb312: goto bb310; bb313:
+    t623 = h0_t; t624 = INT64_C(1); if (__builtin_add_overflow(t623, t624, &t625)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 325, 13); h0_t = t625; goto bb310; bb312: goto bb310; bb313:
 #line 330
     t632 = h0_t; t633 = INT64_C(105); t634 = t632 == t633; if (t634) goto bb317; else goto bb318; bb314:
 #line 328
-    t629 = h0_t; t630 = INT64_C(1); if (__builtin_add_overflow(t629, t630, &t631)) hero_panic_overflow(); h0_t = t631; goto bb313; bb315: goto bb313; bb316:
+    t629 = h0_t; t630 = INT64_C(1); if (__builtin_add_overflow(t629, t630, &t631)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 328, 13); h0_t = t631; goto bb313; bb315: goto bb313; bb316:
 #line 333
     t638 = h0_t; t639 = INT64_C(106); t640 = t638 == t639; if (t640) goto bb320; else goto bb321; bb317:
 #line 331
-    t635 = h0_t; t636 = INT64_C(1); if (__builtin_add_overflow(t635, t636, &t637)) hero_panic_overflow(); h0_t = t637; goto bb316; bb318: goto bb316; bb319:
+    t635 = h0_t; t636 = INT64_C(1); if (__builtin_add_overflow(t635, t636, &t637)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 331, 13); h0_t = t637; goto bb316; bb318: goto bb316; bb319:
 #line 336
     t644 = h0_t; t645 = INT64_C(107); t646 = t644 == t645; if (t646) goto bb323; else goto bb324; bb320:
 #line 334
-    t641 = h0_t; t642 = INT64_C(1); if (__builtin_add_overflow(t641, t642, &t643)) hero_panic_overflow(); h0_t = t643; goto bb319; bb321: goto bb319; bb322:
+    t641 = h0_t; t642 = INT64_C(1); if (__builtin_add_overflow(t641, t642, &t643)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 334, 13); h0_t = t643; goto bb319; bb321: goto bb319; bb322:
 #line 339
     t650 = h0_t; t651 = INT64_C(108); t652 = t650 == t651; if (t652) goto bb326; else goto bb327; bb323:
 #line 337
-    t647 = h0_t; t648 = INT64_C(1); if (__builtin_add_overflow(t647, t648, &t649)) hero_panic_overflow(); h0_t = t649; goto bb322; bb324: goto bb322; bb325:
+    t647 = h0_t; t648 = INT64_C(1); if (__builtin_add_overflow(t647, t648, &t649)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 337, 13); h0_t = t649; goto bb322; bb324: goto bb322; bb325:
 #line 342
     t656 = h0_t; t657 = INT64_C(109); t658 = t656 == t657; if (t658) goto bb329; else goto bb330; bb326:
 #line 340
-    t653 = h0_t; t654 = INT64_C(1); if (__builtin_add_overflow(t653, t654, &t655)) hero_panic_overflow(); h0_t = t655; goto bb325; bb327: goto bb325; bb328:
+    t653 = h0_t; t654 = INT64_C(1); if (__builtin_add_overflow(t653, t654, &t655)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 340, 13); h0_t = t655; goto bb325; bb327: goto bb325; bb328:
 #line 345
     t662 = h0_t; t663 = INT64_C(110); t664 = t662 == t663; if (t664) goto bb332; else goto bb333; bb329:
 #line 343
-    t659 = h0_t; t660 = INT64_C(1); if (__builtin_add_overflow(t659, t660, &t661)) hero_panic_overflow(); h0_t = t661; goto bb328; bb330: goto bb328; bb331:
+    t659 = h0_t; t660 = INT64_C(1); if (__builtin_add_overflow(t659, t660, &t661)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 343, 13); h0_t = t661; goto bb328; bb330: goto bb328; bb331:
 #line 348
     t668 = h0_t; t669 = INT64_C(111); t670 = t668 == t669; if (t670) goto bb335; else goto bb336; bb332:
 #line 346
-    t665 = h0_t; t666 = INT64_C(1); if (__builtin_add_overflow(t665, t666, &t667)) hero_panic_overflow(); h0_t = t667; goto bb331; bb333: goto bb331; bb334:
+    t665 = h0_t; t666 = INT64_C(1); if (__builtin_add_overflow(t665, t666, &t667)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 346, 13); h0_t = t667; goto bb331; bb333: goto bb331; bb334:
 #line 351
     t674 = h0_t; t675 = INT64_C(112); t676 = t674 == t675; if (t676) goto bb338; else goto bb339; bb335:
 #line 349
-    t671 = h0_t; t672 = INT64_C(1); if (__builtin_add_overflow(t671, t672, &t673)) hero_panic_overflow(); h0_t = t673; goto bb334; bb336: goto bb334; bb337:
+    t671 = h0_t; t672 = INT64_C(1); if (__builtin_add_overflow(t671, t672, &t673)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 349, 13); h0_t = t673; goto bb334; bb336: goto bb334; bb337:
 #line 354
     t680 = h0_t; t681 = INT64_C(113); t682 = t680 == t681; if (t682) goto bb341; else goto bb342; bb338:
 #line 352
-    t677 = h0_t; t678 = INT64_C(1); if (__builtin_add_overflow(t677, t678, &t679)) hero_panic_overflow(); h0_t = t679; goto bb337; bb339: goto bb337; bb340:
+    t677 = h0_t; t678 = INT64_C(1); if (__builtin_add_overflow(t677, t678, &t679)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 352, 13); h0_t = t679; goto bb337; bb339: goto bb337; bb340:
 #line 357
     t686 = h0_t; t687 = INT64_C(114); t688 = t686 == t687; if (t688) goto bb344; else goto bb345; bb341:
 #line 355
-    t683 = h0_t; t684 = INT64_C(1); if (__builtin_add_overflow(t683, t684, &t685)) hero_panic_overflow(); h0_t = t685; goto bb340; bb342: goto bb340; bb343:
+    t683 = h0_t; t684 = INT64_C(1); if (__builtin_add_overflow(t683, t684, &t685)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 355, 13); h0_t = t685; goto bb340; bb342: goto bb340; bb343:
 #line 360
     t692 = h0_t; t693 = INT64_C(115); t694 = t692 == t693; if (t694) goto bb347; else goto bb348; bb344:
 #line 358
-    t689 = h0_t; t690 = INT64_C(1); if (__builtin_add_overflow(t689, t690, &t691)) hero_panic_overflow(); h0_t = t691; goto bb343; bb345: goto bb343; bb346:
+    t689 = h0_t; t690 = INT64_C(1); if (__builtin_add_overflow(t689, t690, &t691)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 358, 13); h0_t = t691; goto bb343; bb345: goto bb343; bb346:
 #line 363
     t698 = h0_t; t699 = INT64_C(116); t700 = t698 == t699; if (t700) goto bb350; else goto bb351; bb347:
 #line 361
-    t695 = h0_t; t696 = INT64_C(1); if (__builtin_add_overflow(t695, t696, &t697)) hero_panic_overflow(); h0_t = t697; goto bb346; bb348: goto bb346; bb349:
+    t695 = h0_t; t696 = INT64_C(1); if (__builtin_add_overflow(t695, t696, &t697)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 361, 13); h0_t = t697; goto bb346; bb348: goto bb346; bb349:
 #line 366
     t704 = h0_t; t705 = INT64_C(117); t706 = t704 == t705; if (t706) goto bb353; else goto bb354; bb350:
 #line 364
-    t701 = h0_t; t702 = INT64_C(1); if (__builtin_add_overflow(t701, t702, &t703)) hero_panic_overflow(); h0_t = t703; goto bb349; bb351: goto bb349; bb352:
+    t701 = h0_t; t702 = INT64_C(1); if (__builtin_add_overflow(t701, t702, &t703)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 364, 13); h0_t = t703; goto bb349; bb351: goto bb349; bb352:
 #line 369
     t710 = h0_t; t711 = INT64_C(118); t712 = t710 == t711; if (t712) goto bb356; else goto bb357; bb353:
 #line 367
-    t707 = h0_t; t708 = INT64_C(1); if (__builtin_add_overflow(t707, t708, &t709)) hero_panic_overflow(); h0_t = t709; goto bb352; bb354: goto bb352; bb355:
+    t707 = h0_t; t708 = INT64_C(1); if (__builtin_add_overflow(t707, t708, &t709)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 367, 13); h0_t = t709; goto bb352; bb354: goto bb352; bb355:
 #line 372
     t716 = h0_t; t717 = INT64_C(119); t718 = t716 == t717; if (t718) goto bb359; else goto bb360; bb356:
 #line 370
-    t713 = h0_t; t714 = INT64_C(1); if (__builtin_add_overflow(t713, t714, &t715)) hero_panic_overflow(); h0_t = t715; goto bb355; bb357: goto bb355; bb358:
+    t713 = h0_t; t714 = INT64_C(1); if (__builtin_add_overflow(t713, t714, &t715)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 370, 13); h0_t = t715; goto bb355; bb357: goto bb355; bb358:
 #line 375
     t722 = h0_t; t723 = INT64_C(120); t724 = t722 == t723; if (t724) goto bb362; else goto bb363; bb359:
 #line 373
-    t719 = h0_t; t720 = INT64_C(1); if (__builtin_add_overflow(t719, t720, &t721)) hero_panic_overflow(); h0_t = t721; goto bb358; bb360: goto bb358; bb361:
+    t719 = h0_t; t720 = INT64_C(1); if (__builtin_add_overflow(t719, t720, &t721)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 373, 13); h0_t = t721; goto bb358; bb360: goto bb358; bb361:
 #line 378
     t728 = h0_t; t729 = INT64_C(121); t730 = t728 == t729; if (t730) goto bb365; else goto bb366; bb362:
 #line 376
-    t725 = h0_t; t726 = INT64_C(1); if (__builtin_add_overflow(t725, t726, &t727)) hero_panic_overflow(); h0_t = t727; goto bb361; bb363: goto bb361; bb364:
+    t725 = h0_t; t726 = INT64_C(1); if (__builtin_add_overflow(t725, t726, &t727)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 376, 13); h0_t = t727; goto bb361; bb363: goto bb361; bb364:
 #line 381
     t734 = h0_t; t735 = INT64_C(122); t736 = t734 == t735; if (t736) goto bb368; else goto bb369; bb365:
 #line 379
-    t731 = h0_t; t732 = INT64_C(1); if (__builtin_add_overflow(t731, t732, &t733)) hero_panic_overflow(); h0_t = t733; goto bb364; bb366: goto bb364; bb367:
+    t731 = h0_t; t732 = INT64_C(1); if (__builtin_add_overflow(t731, t732, &t733)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 379, 13); h0_t = t733; goto bb364; bb366: goto bb364; bb367:
 #line 384
     t740 = h0_t; t741 = INT64_C(123); t742 = t740 == t741; if (t742) goto bb371; else goto bb372; bb368:
 #line 382
-    t737 = h0_t; t738 = INT64_C(1); if (__builtin_add_overflow(t737, t738, &t739)) hero_panic_overflow(); h0_t = t739; goto bb367; bb369: goto bb367; bb370:
+    t737 = h0_t; t738 = INT64_C(1); if (__builtin_add_overflow(t737, t738, &t739)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 382, 13); h0_t = t739; goto bb367; bb369: goto bb367; bb370:
 #line 387
     t746 = h0_t; t747 = INT64_C(124); t748 = t746 == t747; if (t748) goto bb374; else goto bb375; bb371:
 #line 385
-    t743 = h0_t; t744 = INT64_C(1); if (__builtin_add_overflow(t743, t744, &t745)) hero_panic_overflow(); h0_t = t745; goto bb370; bb372: goto bb370; bb373:
+    t743 = h0_t; t744 = INT64_C(1); if (__builtin_add_overflow(t743, t744, &t745)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 385, 13); h0_t = t745; goto bb370; bb372: goto bb370; bb373:
 #line 390
     t752 = h0_t; t753 = INT64_C(125); t754 = t752 == t753; if (t754) goto bb377; else goto bb378; bb374:
 #line 388
-    t749 = h0_t; t750 = INT64_C(1); if (__builtin_add_overflow(t749, t750, &t751)) hero_panic_overflow(); h0_t = t751; goto bb373; bb375: goto bb373; bb376:
+    t749 = h0_t; t750 = INT64_C(1); if (__builtin_add_overflow(t749, t750, &t751)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 388, 13); h0_t = t751; goto bb373; bb375: goto bb373; bb376:
 #line 393
     t758 = h0_t; t759 = INT64_C(126); t760 = t758 == t759; if (t760) goto bb380; else goto bb381; bb377:
 #line 391
-    t755 = h0_t; t756 = INT64_C(1); if (__builtin_add_overflow(t755, t756, &t757)) hero_panic_overflow(); h0_t = t757; goto bb376; bb378: goto bb376; bb379:
+    t755 = h0_t; t756 = INT64_C(1); if (__builtin_add_overflow(t755, t756, &t757)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 391, 13); h0_t = t757; goto bb376; bb378: goto bb376; bb379:
 #line 396
     t764 = h0_t; t765 = INT64_C(127); t766 = t764 == t765; if (t766) goto bb383; else goto bb384; bb380:
 #line 394
-    t761 = h0_t; t762 = INT64_C(1); if (__builtin_add_overflow(t761, t762, &t763)) hero_panic_overflow(); h0_t = t763; goto bb379; bb381: goto bb379; bb382:
+    t761 = h0_t; t762 = INT64_C(1); if (__builtin_add_overflow(t761, t762, &t763)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 394, 13); h0_t = t763; goto bb379; bb381: goto bb379; bb382:
 #line 399
     t770 = h0_t; t771 = INT64_C(128); t772 = t770 == t771; if (t772) goto bb386; else goto bb387; bb383:
 #line 397
-    t767 = h0_t; t768 = INT64_C(1); if (__builtin_add_overflow(t767, t768, &t769)) hero_panic_overflow(); h0_t = t769; goto bb382; bb384: goto bb382; bb385:
+    t767 = h0_t; t768 = INT64_C(1); if (__builtin_add_overflow(t767, t768, &t769)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 397, 13); h0_t = t769; goto bb382; bb384: goto bb382; bb385:
 #line 402
     t776 = h0_t; t777 = INT64_C(129); t778 = t776 == t777; if (t778) goto bb389; else goto bb390; bb386:
 #line 400
-    t773 = h0_t; t774 = INT64_C(1); if (__builtin_add_overflow(t773, t774, &t775)) hero_panic_overflow(); h0_t = t775; goto bb385; bb387: goto bb385; bb388:
+    t773 = h0_t; t774 = INT64_C(1); if (__builtin_add_overflow(t773, t774, &t775)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 400, 13); h0_t = t775; goto bb385; bb387: goto bb385; bb388:
 #line 405
     t782 = h0_t; t783 = INT64_C(130); t784 = t782 == t783; if (t784) goto bb392; else goto bb393; bb389:
 #line 403
-    t779 = h0_t; t780 = INT64_C(1); if (__builtin_add_overflow(t779, t780, &t781)) hero_panic_overflow(); h0_t = t781; goto bb388; bb390: goto bb388; bb391:
+    t779 = h0_t; t780 = INT64_C(1); if (__builtin_add_overflow(t779, t780, &t781)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 403, 13); h0_t = t781; goto bb388; bb390: goto bb388; bb391:
 #line 408
     t788 = h0_t; t789 = INT64_C(131); t790 = t788 == t789; if (t790) goto bb395; else goto bb396; bb392:
 #line 406
-    t785 = h0_t; t786 = INT64_C(1); if (__builtin_add_overflow(t785, t786, &t787)) hero_panic_overflow(); h0_t = t787; goto bb391; bb393: goto bb391; bb394:
+    t785 = h0_t; t786 = INT64_C(1); if (__builtin_add_overflow(t785, t786, &t787)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 406, 13); h0_t = t787; goto bb391; bb393: goto bb391; bb394:
 #line 411
     t794 = h0_t; t795 = INT64_C(132); t796 = t794 == t795; if (t796) goto bb398; else goto bb399; bb395:
 #line 409
-    t791 = h0_t; t792 = INT64_C(1); if (__builtin_add_overflow(t791, t792, &t793)) hero_panic_overflow(); h0_t = t793; goto bb394; bb396: goto bb394; bb397:
+    t791 = h0_t; t792 = INT64_C(1); if (__builtin_add_overflow(t791, t792, &t793)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 409, 13); h0_t = t793; goto bb394; bb396: goto bb394; bb397:
 #line 414
     t800 = h0_t; t801 = INT64_C(133); t802 = t800 == t801; if (t802) goto bb401; else goto bb402; bb398:
 #line 412
-    t797 = h0_t; t798 = INT64_C(1); if (__builtin_add_overflow(t797, t798, &t799)) hero_panic_overflow(); h0_t = t799; goto bb397; bb399: goto bb397; bb400:
+    t797 = h0_t; t798 = INT64_C(1); if (__builtin_add_overflow(t797, t798, &t799)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 412, 13); h0_t = t799; goto bb397; bb399: goto bb397; bb400:
 #line 417
     t806 = h0_t; t807 = INT64_C(134); t808 = t806 == t807; if (t808) goto bb404; else goto bb405; bb401:
 #line 415
-    t803 = h0_t; t804 = INT64_C(1); if (__builtin_add_overflow(t803, t804, &t805)) hero_panic_overflow(); h0_t = t805; goto bb400; bb402: goto bb400; bb403:
+    t803 = h0_t; t804 = INT64_C(1); if (__builtin_add_overflow(t803, t804, &t805)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 415, 13); h0_t = t805; goto bb400; bb402: goto bb400; bb403:
 #line 420
     t812 = h0_t; t813 = INT64_C(135); t814 = t812 == t813; if (t814) goto bb407; else goto bb408; bb404:
 #line 418
-    t809 = h0_t; t810 = INT64_C(1); if (__builtin_add_overflow(t809, t810, &t811)) hero_panic_overflow(); h0_t = t811; goto bb403; bb405: goto bb403; bb406:
+    t809 = h0_t; t810 = INT64_C(1); if (__builtin_add_overflow(t809, t810, &t811)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 418, 13); h0_t = t811; goto bb403; bb405: goto bb403; bb406:
 #line 423
     t818 = h0_t; t819 = INT64_C(136); t820 = t818 == t819; if (t820) goto bb410; else goto bb411; bb407:
 #line 421
-    t815 = h0_t; t816 = INT64_C(1); if (__builtin_add_overflow(t815, t816, &t817)) hero_panic_overflow(); h0_t = t817; goto bb406; bb408: goto bb406; bb409:
+    t815 = h0_t; t816 = INT64_C(1); if (__builtin_add_overflow(t815, t816, &t817)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 421, 13); h0_t = t817; goto bb406; bb408: goto bb406; bb409:
 #line 426
     t824 = h0_t; t825 = INT64_C(137); t826 = t824 == t825; if (t826) goto bb413; else goto bb414; bb410:
 #line 424
-    t821 = h0_t; t822 = INT64_C(1); if (__builtin_add_overflow(t821, t822, &t823)) hero_panic_overflow(); h0_t = t823; goto bb409; bb411: goto bb409; bb412:
+    t821 = h0_t; t822 = INT64_C(1); if (__builtin_add_overflow(t821, t822, &t823)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 424, 13); h0_t = t823; goto bb409; bb411: goto bb409; bb412:
 #line 429
     t830 = h0_t; t831 = INT64_C(138); t832 = t830 == t831; if (t832) goto bb416; else goto bb417; bb413:
 #line 427
-    t827 = h0_t; t828 = INT64_C(1); if (__builtin_add_overflow(t827, t828, &t829)) hero_panic_overflow(); h0_t = t829; goto bb412; bb414: goto bb412; bb415:
+    t827 = h0_t; t828 = INT64_C(1); if (__builtin_add_overflow(t827, t828, &t829)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 427, 13); h0_t = t829; goto bb412; bb414: goto bb412; bb415:
 #line 432
     t836 = h0_t; t837 = INT64_C(139); t838 = t836 == t837; if (t838) goto bb419; else goto bb420; bb416:
 #line 430
-    t833 = h0_t; t834 = INT64_C(1); if (__builtin_add_overflow(t833, t834, &t835)) hero_panic_overflow(); h0_t = t835; goto bb415; bb417: goto bb415; bb418:
+    t833 = h0_t; t834 = INT64_C(1); if (__builtin_add_overflow(t833, t834, &t835)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 430, 13); h0_t = t835; goto bb415; bb417: goto bb415; bb418:
 #line 435
     t842 = h0_t; t843 = INT64_C(140); t844 = t842 == t843; if (t844) goto bb422; else goto bb423; bb419:
 #line 433
-    t839 = h0_t; t840 = INT64_C(1); if (__builtin_add_overflow(t839, t840, &t841)) hero_panic_overflow(); h0_t = t841; goto bb418; bb420: goto bb418; bb421:
+    t839 = h0_t; t840 = INT64_C(1); if (__builtin_add_overflow(t839, t840, &t841)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 433, 13); h0_t = t841; goto bb418; bb420: goto bb418; bb421:
 #line 438
     t848 = h0_t; t849 = INT64_C(141); t850 = t848 == t849; if (t850) goto bb425; else goto bb426; bb422:
 #line 436
-    t845 = h0_t; t846 = INT64_C(1); if (__builtin_add_overflow(t845, t846, &t847)) hero_panic_overflow(); h0_t = t847; goto bb421; bb423: goto bb421; bb424:
+    t845 = h0_t; t846 = INT64_C(1); if (__builtin_add_overflow(t845, t846, &t847)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 436, 13); h0_t = t847; goto bb421; bb423: goto bb421; bb424:
 #line 441
     t854 = h0_t; t855 = INT64_C(142); t856 = t854 == t855; if (t856) goto bb428; else goto bb429; bb425:
 #line 439
-    t851 = h0_t; t852 = INT64_C(1); if (__builtin_add_overflow(t851, t852, &t853)) hero_panic_overflow(); h0_t = t853; goto bb424; bb426: goto bb424; bb427:
+    t851 = h0_t; t852 = INT64_C(1); if (__builtin_add_overflow(t851, t852, &t853)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 439, 13); h0_t = t853; goto bb424; bb426: goto bb424; bb427:
 #line 444
     t860 = h0_t; t861 = INT64_C(143); t862 = t860 == t861; if (t862) goto bb431; else goto bb432; bb428:
 #line 442
-    t857 = h0_t; t858 = INT64_C(1); if (__builtin_add_overflow(t857, t858, &t859)) hero_panic_overflow(); h0_t = t859; goto bb427; bb429: goto bb427; bb430:
+    t857 = h0_t; t858 = INT64_C(1); if (__builtin_add_overflow(t857, t858, &t859)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 442, 13); h0_t = t859; goto bb427; bb429: goto bb427; bb430:
 #line 447
     t866 = h0_t; t867 = INT64_C(144); t868 = t866 == t867; if (t868) goto bb434; else goto bb435; bb431:
 #line 445
-    t863 = h0_t; t864 = INT64_C(1); if (__builtin_add_overflow(t863, t864, &t865)) hero_panic_overflow(); h0_t = t865; goto bb430; bb432: goto bb430; bb433:
+    t863 = h0_t; t864 = INT64_C(1); if (__builtin_add_overflow(t863, t864, &t865)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 445, 13); h0_t = t865; goto bb430; bb432: goto bb430; bb433:
 #line 450
     t872 = h0_t; t873 = INT64_C(145); t874 = t872 == t873; if (t874) goto bb437; else goto bb438; bb434:
 #line 448
-    t869 = h0_t; t870 = INT64_C(1); if (__builtin_add_overflow(t869, t870, &t871)) hero_panic_overflow(); h0_t = t871; goto bb433; bb435: goto bb433; bb436:
+    t869 = h0_t; t870 = INT64_C(1); if (__builtin_add_overflow(t869, t870, &t871)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 448, 13); h0_t = t871; goto bb433; bb435: goto bb433; bb436:
 #line 453
     t878 = h0_t; t879 = INT64_C(146); t880 = t878 == t879; if (t880) goto bb440; else goto bb441; bb437:
 #line 451
-    t875 = h0_t; t876 = INT64_C(1); if (__builtin_add_overflow(t875, t876, &t877)) hero_panic_overflow(); h0_t = t877; goto bb436; bb438: goto bb436; bb439:
+    t875 = h0_t; t876 = INT64_C(1); if (__builtin_add_overflow(t875, t876, &t877)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 451, 13); h0_t = t877; goto bb436; bb438: goto bb436; bb439:
 #line 456
     t884 = h0_t; t885 = INT64_C(147); t886 = t884 == t885; if (t886) goto bb443; else goto bb444; bb440:
 #line 454
-    t881 = h0_t; t882 = INT64_C(1); if (__builtin_add_overflow(t881, t882, &t883)) hero_panic_overflow(); h0_t = t883; goto bb439; bb441: goto bb439; bb442:
+    t881 = h0_t; t882 = INT64_C(1); if (__builtin_add_overflow(t881, t882, &t883)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 454, 13); h0_t = t883; goto bb439; bb441: goto bb439; bb442:
 #line 459
     t890 = h0_t; t891 = INT64_C(148); t892 = t890 == t891; if (t892) goto bb446; else goto bb447; bb443:
 #line 457
-    t887 = h0_t; t888 = INT64_C(1); if (__builtin_add_overflow(t887, t888, &t889)) hero_panic_overflow(); h0_t = t889; goto bb442; bb444: goto bb442; bb445:
+    t887 = h0_t; t888 = INT64_C(1); if (__builtin_add_overflow(t887, t888, &t889)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 457, 13); h0_t = t889; goto bb442; bb444: goto bb442; bb445:
 #line 462
     t896 = h0_t; t897 = INT64_C(149); t898 = t896 == t897; if (t898) goto bb449; else goto bb450; bb446:
 #line 460
-    t893 = h0_t; t894 = INT64_C(1); if (__builtin_add_overflow(t893, t894, &t895)) hero_panic_overflow(); h0_t = t895; goto bb445; bb447: goto bb445; bb448:
+    t893 = h0_t; t894 = INT64_C(1); if (__builtin_add_overflow(t893, t894, &t895)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 460, 13); h0_t = t895; goto bb445; bb447: goto bb445; bb448:
 #line 465
     t902 = h0_t; t903 = INT64_C(150); t904 = t902 == t903; if (t904) goto bb452; else goto bb453; bb449:
 #line 463
-    t899 = h0_t; t900 = INT64_C(1); if (__builtin_add_overflow(t899, t900, &t901)) hero_panic_overflow(); h0_t = t901; goto bb448; bb450: goto bb448; bb451:
+    t899 = h0_t; t900 = INT64_C(1); if (__builtin_add_overflow(t899, t900, &t901)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 463, 13); h0_t = t901; goto bb448; bb450: goto bb448; bb451:
 #line 468
     t908 = h0_t; t909 = INT64_C(151); t910 = t908 == t909; if (t910) goto bb455; else goto bb456; bb452:
 #line 466
-    t905 = h0_t; t906 = INT64_C(1); if (__builtin_add_overflow(t905, t906, &t907)) hero_panic_overflow(); h0_t = t907; goto bb451; bb453: goto bb451; bb454:
+    t905 = h0_t; t906 = INT64_C(1); if (__builtin_add_overflow(t905, t906, &t907)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 466, 13); h0_t = t907; goto bb451; bb453: goto bb451; bb454:
 #line 471
     t914 = h0_t; t915 = INT64_C(152); t916 = t914 == t915; if (t916) goto bb458; else goto bb459; bb455:
 #line 469
-    t911 = h0_t; t912 = INT64_C(1); if (__builtin_add_overflow(t911, t912, &t913)) hero_panic_overflow(); h0_t = t913; goto bb454; bb456: goto bb454; bb457:
+    t911 = h0_t; t912 = INT64_C(1); if (__builtin_add_overflow(t911, t912, &t913)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 469, 13); h0_t = t913; goto bb454; bb456: goto bb454; bb457:
 #line 474
     t920 = h0_t; t921 = INT64_C(153); t922 = t920 == t921; if (t922) goto bb461; else goto bb462; bb458:
 #line 472
-    t917 = h0_t; t918 = INT64_C(1); if (__builtin_add_overflow(t917, t918, &t919)) hero_panic_overflow(); h0_t = t919; goto bb457; bb459: goto bb457; bb460:
+    t917 = h0_t; t918 = INT64_C(1); if (__builtin_add_overflow(t917, t918, &t919)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 472, 13); h0_t = t919; goto bb457; bb459: goto bb457; bb460:
 #line 477
     t926 = h0_t; t927 = INT64_C(154); t928 = t926 == t927; if (t928) goto bb464; else goto bb465; bb461:
 #line 475
-    t923 = h0_t; t924 = INT64_C(1); if (__builtin_add_overflow(t923, t924, &t925)) hero_panic_overflow(); h0_t = t925; goto bb460; bb462: goto bb460; bb463:
+    t923 = h0_t; t924 = INT64_C(1); if (__builtin_add_overflow(t923, t924, &t925)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 475, 13); h0_t = t925; goto bb460; bb462: goto bb460; bb463:
 #line 480
     t932 = h0_t; t933 = INT64_C(155); t934 = t932 == t933; if (t934) goto bb467; else goto bb468; bb464:
 #line 478
-    t929 = h0_t; t930 = INT64_C(1); if (__builtin_add_overflow(t929, t930, &t931)) hero_panic_overflow(); h0_t = t931; goto bb463; bb465: goto bb463; bb466:
+    t929 = h0_t; t930 = INT64_C(1); if (__builtin_add_overflow(t929, t930, &t931)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 478, 13); h0_t = t931; goto bb463; bb465: goto bb463; bb466:
 #line 483
     t938 = h0_t; t939 = INT64_C(156); t940 = t938 == t939; if (t940) goto bb470; else goto bb471; bb467:
 #line 481
-    t935 = h0_t; t936 = INT64_C(1); if (__builtin_add_overflow(t935, t936, &t937)) hero_panic_overflow(); h0_t = t937; goto bb466; bb468: goto bb466; bb469:
+    t935 = h0_t; t936 = INT64_C(1); if (__builtin_add_overflow(t935, t936, &t937)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 481, 13); h0_t = t937; goto bb466; bb468: goto bb466; bb469:
 #line 486
     t944 = h0_t; t945 = INT64_C(157); t946 = t944 == t945; if (t946) goto bb473; else goto bb474; bb470:
 #line 484
-    t941 = h0_t; t942 = INT64_C(1); if (__builtin_add_overflow(t941, t942, &t943)) hero_panic_overflow(); h0_t = t943; goto bb469; bb471: goto bb469; bb472:
+    t941 = h0_t; t942 = INT64_C(1); if (__builtin_add_overflow(t941, t942, &t943)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 484, 13); h0_t = t943; goto bb469; bb471: goto bb469; bb472:
 #line 489
     t950 = h0_t; t951 = INT64_C(158); t952 = t950 == t951; if (t952) goto bb476; else goto bb477; bb473:
 #line 487
-    t947 = h0_t; t948 = INT64_C(1); if (__builtin_add_overflow(t947, t948, &t949)) hero_panic_overflow(); h0_t = t949; goto bb472; bb474: goto bb472; bb475:
+    t947 = h0_t; t948 = INT64_C(1); if (__builtin_add_overflow(t947, t948, &t949)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 487, 13); h0_t = t949; goto bb472; bb474: goto bb472; bb475:
 #line 492
     t956 = h0_t; t957 = INT64_C(159); t958 = t956 == t957; if (t958) goto bb479; else goto bb480; bb476:
 #line 490
-    t953 = h0_t; t954 = INT64_C(1); if (__builtin_add_overflow(t953, t954, &t955)) hero_panic_overflow(); h0_t = t955; goto bb475; bb477: goto bb475; bb478:
+    t953 = h0_t; t954 = INT64_C(1); if (__builtin_add_overflow(t953, t954, &t955)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 490, 13); h0_t = t955; goto bb475; bb477: goto bb475; bb478:
 #line 495
     t962 = h0_t; t963 = INT64_C(160); t964 = t962 == t963; if (t964) goto bb482; else goto bb483; bb479:
 #line 493
-    t959 = h0_t; t960 = INT64_C(1); if (__builtin_add_overflow(t959, t960, &t961)) hero_panic_overflow(); h0_t = t961; goto bb478; bb480: goto bb478; bb481:
+    t959 = h0_t; t960 = INT64_C(1); if (__builtin_add_overflow(t959, t960, &t961)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 493, 13); h0_t = t961; goto bb478; bb480: goto bb478; bb481:
 #line 498
     t968 = h0_t; t969 = INT64_C(161); t970 = t968 == t969; if (t970) goto bb485; else goto bb486; bb482:
 #line 496
-    t965 = h0_t; t966 = INT64_C(1); if (__builtin_add_overflow(t965, t966, &t967)) hero_panic_overflow(); h0_t = t967; goto bb481; bb483: goto bb481; bb484:
+    t965 = h0_t; t966 = INT64_C(1); if (__builtin_add_overflow(t965, t966, &t967)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 496, 13); h0_t = t967; goto bb481; bb483: goto bb481; bb484:
 #line 501
     t974 = h0_t; t975 = INT64_C(162); t976 = t974 == t975; if (t976) goto bb488; else goto bb489; bb485:
 #line 499
-    t971 = h0_t; t972 = INT64_C(1); if (__builtin_add_overflow(t971, t972, &t973)) hero_panic_overflow(); h0_t = t973; goto bb484; bb486: goto bb484; bb487:
+    t971 = h0_t; t972 = INT64_C(1); if (__builtin_add_overflow(t971, t972, &t973)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 499, 13); h0_t = t973; goto bb484; bb486: goto bb484; bb487:
 #line 504
     t980 = h0_t; t981 = INT64_C(163); t982 = t980 == t981; if (t982) goto bb491; else goto bb492; bb488:
 #line 502
-    t977 = h0_t; t978 = INT64_C(1); if (__builtin_add_overflow(t977, t978, &t979)) hero_panic_overflow(); h0_t = t979; goto bb487; bb489: goto bb487; bb490:
+    t977 = h0_t; t978 = INT64_C(1); if (__builtin_add_overflow(t977, t978, &t979)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 502, 13); h0_t = t979; goto bb487; bb489: goto bb487; bb490:
 #line 507
     t986 = h0_t; t987 = INT64_C(164); t988 = t986 == t987; if (t988) goto bb494; else goto bb495; bb491:
 #line 505
-    t983 = h0_t; t984 = INT64_C(1); if (__builtin_add_overflow(t983, t984, &t985)) hero_panic_overflow(); h0_t = t985; goto bb490; bb492: goto bb490; bb493:
+    t983 = h0_t; t984 = INT64_C(1); if (__builtin_add_overflow(t983, t984, &t985)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 505, 13); h0_t = t985; goto bb490; bb492: goto bb490; bb493:
 #line 510
     t992 = h0_t; t993 = INT64_C(165); t994 = t992 == t993; if (t994) goto bb497; else goto bb498; bb494:
 #line 508
-    t989 = h0_t; t990 = INT64_C(1); if (__builtin_add_overflow(t989, t990, &t991)) hero_panic_overflow(); h0_t = t991; goto bb493; bb495: goto bb493; bb496:
+    t989 = h0_t; t990 = INT64_C(1); if (__builtin_add_overflow(t989, t990, &t991)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 508, 13); h0_t = t991; goto bb493; bb495: goto bb493; bb496:
 #line 513
     t998 = h0_t; t999 = INT64_C(166); t1000 = t998 == t999; if (t1000) goto bb500; else goto bb501; bb497:
 #line 511
-    t995 = h0_t; t996 = INT64_C(1); if (__builtin_add_overflow(t995, t996, &t997)) hero_panic_overflow(); h0_t = t997; goto bb496; bb498: goto bb496; bb499:
+    t995 = h0_t; t996 = INT64_C(1); if (__builtin_add_overflow(t995, t996, &t997)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 511, 13); h0_t = t997; goto bb496; bb498: goto bb496; bb499:
 #line 516
     t1004 = h0_t; t1005 = INT64_C(167); t1006 = t1004 == t1005; if (t1006) goto bb503; else goto bb504; bb500:
 #line 514
-    t1001 = h0_t; t1002 = INT64_C(1); if (__builtin_add_overflow(t1001, t1002, &t1003)) hero_panic_overflow(); h0_t = t1003; goto bb499; bb501: goto bb499; bb502:
+    t1001 = h0_t; t1002 = INT64_C(1); if (__builtin_add_overflow(t1001, t1002, &t1003)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 514, 13); h0_t = t1003; goto bb499; bb501: goto bb499; bb502:
 #line 519
     t1010 = h0_t; t1011 = INT64_C(168); t1012 = t1010 == t1011; if (t1012) goto bb506; else goto bb507; bb503:
 #line 517
-    t1007 = h0_t; t1008 = INT64_C(1); if (__builtin_add_overflow(t1007, t1008, &t1009)) hero_panic_overflow(); h0_t = t1009; goto bb502; bb504: goto bb502; bb505:
+    t1007 = h0_t; t1008 = INT64_C(1); if (__builtin_add_overflow(t1007, t1008, &t1009)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 517, 13); h0_t = t1009; goto bb502; bb504: goto bb502; bb505:
 #line 522
     t1016 = h0_t; t1017 = INT64_C(169); t1018 = t1016 == t1017; if (t1018) goto bb509; else goto bb510; bb506:
 #line 520
-    t1013 = h0_t; t1014 = INT64_C(1); if (__builtin_add_overflow(t1013, t1014, &t1015)) hero_panic_overflow(); h0_t = t1015; goto bb505; bb507: goto bb505; bb508:
+    t1013 = h0_t; t1014 = INT64_C(1); if (__builtin_add_overflow(t1013, t1014, &t1015)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 520, 13); h0_t = t1015; goto bb505; bb507: goto bb505; bb508:
 #line 525
     t1022 = h0_t; t1023 = INT64_C(170); t1024 = t1022 == t1023; if (t1024) goto bb512; else goto bb513; bb509:
 #line 523
-    t1019 = h0_t; t1020 = INT64_C(1); if (__builtin_add_overflow(t1019, t1020, &t1021)) hero_panic_overflow(); h0_t = t1021; goto bb508; bb510: goto bb508; bb511:
+    t1019 = h0_t; t1020 = INT64_C(1); if (__builtin_add_overflow(t1019, t1020, &t1021)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 523, 13); h0_t = t1021; goto bb508; bb510: goto bb508; bb511:
 #line 528
     t1028 = h0_t; t1029 = INT64_C(171); t1030 = t1028 == t1029; if (t1030) goto bb515; else goto bb516; bb512:
 #line 526
-    t1025 = h0_t; t1026 = INT64_C(1); if (__builtin_add_overflow(t1025, t1026, &t1027)) hero_panic_overflow(); h0_t = t1027; goto bb511; bb513: goto bb511; bb514:
+    t1025 = h0_t; t1026 = INT64_C(1); if (__builtin_add_overflow(t1025, t1026, &t1027)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 526, 13); h0_t = t1027; goto bb511; bb513: goto bb511; bb514:
 #line 531
     t1034 = h0_t; t1035 = INT64_C(172); t1036 = t1034 == t1035; if (t1036) goto bb518; else goto bb519; bb515:
 #line 529
-    t1031 = h0_t; t1032 = INT64_C(1); if (__builtin_add_overflow(t1031, t1032, &t1033)) hero_panic_overflow(); h0_t = t1033; goto bb514; bb516: goto bb514; bb517:
+    t1031 = h0_t; t1032 = INT64_C(1); if (__builtin_add_overflow(t1031, t1032, &t1033)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 529, 13); h0_t = t1033; goto bb514; bb516: goto bb514; bb517:
 #line 534
     t1040 = h0_t; t1041 = INT64_C(173); t1042 = t1040 == t1041; if (t1042) goto bb521; else goto bb522; bb518:
 #line 532
-    t1037 = h0_t; t1038 = INT64_C(1); if (__builtin_add_overflow(t1037, t1038, &t1039)) hero_panic_overflow(); h0_t = t1039; goto bb517; bb519: goto bb517; bb520:
+    t1037 = h0_t; t1038 = INT64_C(1); if (__builtin_add_overflow(t1037, t1038, &t1039)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 532, 13); h0_t = t1039; goto bb517; bb519: goto bb517; bb520:
 #line 537
     t1046 = h0_t; t1047 = INT64_C(174); t1048 = t1046 == t1047; if (t1048) goto bb524; else goto bb525; bb521:
 #line 535
-    t1043 = h0_t; t1044 = INT64_C(1); if (__builtin_add_overflow(t1043, t1044, &t1045)) hero_panic_overflow(); h0_t = t1045; goto bb520; bb522: goto bb520; bb523:
+    t1043 = h0_t; t1044 = INT64_C(1); if (__builtin_add_overflow(t1043, t1044, &t1045)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 535, 13); h0_t = t1045; goto bb520; bb522: goto bb520; bb523:
 #line 540
     t1052 = h0_t; t1053 = INT64_C(175); t1054 = t1052 == t1053; if (t1054) goto bb527; else goto bb528; bb524:
 #line 538
-    t1049 = h0_t; t1050 = INT64_C(1); if (__builtin_add_overflow(t1049, t1050, &t1051)) hero_panic_overflow(); h0_t = t1051; goto bb523; bb525: goto bb523; bb526:
+    t1049 = h0_t; t1050 = INT64_C(1); if (__builtin_add_overflow(t1049, t1050, &t1051)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 538, 13); h0_t = t1051; goto bb523; bb525: goto bb523; bb526:
 #line 543
     t1058 = h0_t; t1059 = INT64_C(176); t1060 = t1058 == t1059; if (t1060) goto bb530; else goto bb531; bb527:
 #line 541
-    t1055 = h0_t; t1056 = INT64_C(1); if (__builtin_add_overflow(t1055, t1056, &t1057)) hero_panic_overflow(); h0_t = t1057; goto bb526; bb528: goto bb526; bb529:
+    t1055 = h0_t; t1056 = INT64_C(1); if (__builtin_add_overflow(t1055, t1056, &t1057)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 541, 13); h0_t = t1057; goto bb526; bb528: goto bb526; bb529:
 #line 546
     t1064 = h0_t; t1065 = INT64_C(177); t1066 = t1064 == t1065; if (t1066) goto bb533; else goto bb534; bb530:
 #line 544
-    t1061 = h0_t; t1062 = INT64_C(1); if (__builtin_add_overflow(t1061, t1062, &t1063)) hero_panic_overflow(); h0_t = t1063; goto bb529; bb531: goto bb529; bb532:
+    t1061 = h0_t; t1062 = INT64_C(1); if (__builtin_add_overflow(t1061, t1062, &t1063)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 544, 13); h0_t = t1063; goto bb529; bb531: goto bb529; bb532:
 #line 549
     t1070 = h0_t; t1071 = INT64_C(178); t1072 = t1070 == t1071; if (t1072) goto bb536; else goto bb537; bb533:
 #line 547
-    t1067 = h0_t; t1068 = INT64_C(1); if (__builtin_add_overflow(t1067, t1068, &t1069)) hero_panic_overflow(); h0_t = t1069; goto bb532; bb534: goto bb532; bb535:
+    t1067 = h0_t; t1068 = INT64_C(1); if (__builtin_add_overflow(t1067, t1068, &t1069)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 547, 13); h0_t = t1069; goto bb532; bb534: goto bb532; bb535:
 #line 552
     t1076 = h0_t; t1077 = INT64_C(179); t1078 = t1076 == t1077; if (t1078) goto bb539; else goto bb540; bb536:
 #line 550
-    t1073 = h0_t; t1074 = INT64_C(1); if (__builtin_add_overflow(t1073, t1074, &t1075)) hero_panic_overflow(); h0_t = t1075; goto bb535; bb537: goto bb535; bb538:
+    t1073 = h0_t; t1074 = INT64_C(1); if (__builtin_add_overflow(t1073, t1074, &t1075)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 550, 13); h0_t = t1075; goto bb535; bb537: goto bb535; bb538:
 #line 555
     t1082 = h0_t; t1083 = INT64_C(180); t1084 = t1082 == t1083; if (t1084) goto bb542; else goto bb543; bb539:
 #line 553
-    t1079 = h0_t; t1080 = INT64_C(1); if (__builtin_add_overflow(t1079, t1080, &t1081)) hero_panic_overflow(); h0_t = t1081; goto bb538; bb540: goto bb538; bb541:
+    t1079 = h0_t; t1080 = INT64_C(1); if (__builtin_add_overflow(t1079, t1080, &t1081)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 553, 13); h0_t = t1081; goto bb538; bb540: goto bb538; bb541:
 #line 558
     t1088 = h0_t; t1089 = INT64_C(181); t1090 = t1088 == t1089; if (t1090) goto bb545; else goto bb546; bb542:
 #line 556
-    t1085 = h0_t; t1086 = INT64_C(1); if (__builtin_add_overflow(t1085, t1086, &t1087)) hero_panic_overflow(); h0_t = t1087; goto bb541; bb543: goto bb541; bb544:
+    t1085 = h0_t; t1086 = INT64_C(1); if (__builtin_add_overflow(t1085, t1086, &t1087)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 556, 13); h0_t = t1087; goto bb541; bb543: goto bb541; bb544:
 #line 561
     t1094 = h0_t; t1095 = INT64_C(182); t1096 = t1094 == t1095; if (t1096) goto bb548; else goto bb549; bb545:
 #line 559
-    t1091 = h0_t; t1092 = INT64_C(1); if (__builtin_add_overflow(t1091, t1092, &t1093)) hero_panic_overflow(); h0_t = t1093; goto bb544; bb546: goto bb544; bb547:
+    t1091 = h0_t; t1092 = INT64_C(1); if (__builtin_add_overflow(t1091, t1092, &t1093)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 559, 13); h0_t = t1093; goto bb544; bb546: goto bb544; bb547:
 #line 564
     t1100 = h0_t; t1101 = INT64_C(183); t1102 = t1100 == t1101; if (t1102) goto bb551; else goto bb552; bb548:
 #line 562
-    t1097 = h0_t; t1098 = INT64_C(1); if (__builtin_add_overflow(t1097, t1098, &t1099)) hero_panic_overflow(); h0_t = t1099; goto bb547; bb549: goto bb547; bb550:
+    t1097 = h0_t; t1098 = INT64_C(1); if (__builtin_add_overflow(t1097, t1098, &t1099)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 562, 13); h0_t = t1099; goto bb547; bb549: goto bb547; bb550:
 #line 567
     t1106 = h0_t; t1107 = INT64_C(184); t1108 = t1106 == t1107; if (t1108) goto bb554; else goto bb555; bb551:
 #line 565
-    t1103 = h0_t; t1104 = INT64_C(1); if (__builtin_add_overflow(t1103, t1104, &t1105)) hero_panic_overflow(); h0_t = t1105; goto bb550; bb552: goto bb550; bb553:
+    t1103 = h0_t; t1104 = INT64_C(1); if (__builtin_add_overflow(t1103, t1104, &t1105)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 565, 13); h0_t = t1105; goto bb550; bb552: goto bb550; bb553:
 #line 570
     t1112 = h0_t; t1113 = INT64_C(185); t1114 = t1112 == t1113; if (t1114) goto bb557; else goto bb558; bb554:
 #line 568
-    t1109 = h0_t; t1110 = INT64_C(1); if (__builtin_add_overflow(t1109, t1110, &t1111)) hero_panic_overflow(); h0_t = t1111; goto bb553; bb555: goto bb553; bb556:
+    t1109 = h0_t; t1110 = INT64_C(1); if (__builtin_add_overflow(t1109, t1110, &t1111)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 568, 13); h0_t = t1111; goto bb553; bb555: goto bb553; bb556:
 #line 573
     t1118 = h0_t; t1119 = INT64_C(186); t1120 = t1118 == t1119; if (t1120) goto bb560; else goto bb561; bb557:
 #line 571
-    t1115 = h0_t; t1116 = INT64_C(1); if (__builtin_add_overflow(t1115, t1116, &t1117)) hero_panic_overflow(); h0_t = t1117; goto bb556; bb558: goto bb556; bb559:
+    t1115 = h0_t; t1116 = INT64_C(1); if (__builtin_add_overflow(t1115, t1116, &t1117)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 571, 13); h0_t = t1117; goto bb556; bb558: goto bb556; bb559:
 #line 576
     t1124 = h0_t; t1125 = INT64_C(187); t1126 = t1124 == t1125; if (t1126) goto bb563; else goto bb564; bb560:
 #line 574
-    t1121 = h0_t; t1122 = INT64_C(1); if (__builtin_add_overflow(t1121, t1122, &t1123)) hero_panic_overflow(); h0_t = t1123; goto bb559; bb561: goto bb559; bb562:
+    t1121 = h0_t; t1122 = INT64_C(1); if (__builtin_add_overflow(t1121, t1122, &t1123)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 574, 13); h0_t = t1123; goto bb559; bb561: goto bb559; bb562:
 #line 579
     t1130 = h0_t; t1131 = INT64_C(188); t1132 = t1130 == t1131; if (t1132) goto bb566; else goto bb567; bb563:
 #line 577
-    t1127 = h0_t; t1128 = INT64_C(1); if (__builtin_add_overflow(t1127, t1128, &t1129)) hero_panic_overflow(); h0_t = t1129; goto bb562; bb564: goto bb562; bb565:
+    t1127 = h0_t; t1128 = INT64_C(1); if (__builtin_add_overflow(t1127, t1128, &t1129)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 577, 13); h0_t = t1129; goto bb562; bb564: goto bb562; bb565:
 #line 582
     t1136 = h0_t; t1137 = INT64_C(189); t1138 = t1136 == t1137; if (t1138) goto bb569; else goto bb570; bb566:
 #line 580
-    t1133 = h0_t; t1134 = INT64_C(1); if (__builtin_add_overflow(t1133, t1134, &t1135)) hero_panic_overflow(); h0_t = t1135; goto bb565; bb567: goto bb565; bb568:
+    t1133 = h0_t; t1134 = INT64_C(1); if (__builtin_add_overflow(t1133, t1134, &t1135)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 580, 13); h0_t = t1135; goto bb565; bb567: goto bb565; bb568:
 #line 585
     t1142 = h0_t; t1143 = INT64_C(190); t1144 = t1142 == t1143; if (t1144) goto bb572; else goto bb573; bb569:
 #line 583
-    t1139 = h0_t; t1140 = INT64_C(1); if (__builtin_add_overflow(t1139, t1140, &t1141)) hero_panic_overflow(); h0_t = t1141; goto bb568; bb570: goto bb568; bb571:
+    t1139 = h0_t; t1140 = INT64_C(1); if (__builtin_add_overflow(t1139, t1140, &t1141)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 583, 13); h0_t = t1141; goto bb568; bb570: goto bb568; bb571:
 #line 588
     t1148 = h0_t; t1149 = INT64_C(191); t1150 = t1148 == t1149; if (t1150) goto bb575; else goto bb576; bb572:
 #line 586
-    t1145 = h0_t; t1146 = INT64_C(1); if (__builtin_add_overflow(t1145, t1146, &t1147)) hero_panic_overflow(); h0_t = t1147; goto bb571; bb573: goto bb571; bb574:
+    t1145 = h0_t; t1146 = INT64_C(1); if (__builtin_add_overflow(t1145, t1146, &t1147)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 586, 13); h0_t = t1147; goto bb571; bb573: goto bb571; bb574:
 #line 591
     t1154 = h0_t; t1155 = INT64_C(192); t1156 = t1154 == t1155; if (t1156) goto bb578; else goto bb579; bb575:
 #line 589
-    t1151 = h0_t; t1152 = INT64_C(1); if (__builtin_add_overflow(t1151, t1152, &t1153)) hero_panic_overflow(); h0_t = t1153; goto bb574; bb576: goto bb574; bb577:
+    t1151 = h0_t; t1152 = INT64_C(1); if (__builtin_add_overflow(t1151, t1152, &t1153)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 589, 13); h0_t = t1153; goto bb574; bb576: goto bb574; bb577:
 #line 594
     t1160 = h0_t; t1161 = INT64_C(193); t1162 = t1160 == t1161; if (t1162) goto bb581; else goto bb582; bb578:
 #line 592
-    t1157 = h0_t; t1158 = INT64_C(1); if (__builtin_add_overflow(t1157, t1158, &t1159)) hero_panic_overflow(); h0_t = t1159; goto bb577; bb579: goto bb577; bb580:
+    t1157 = h0_t; t1158 = INT64_C(1); if (__builtin_add_overflow(t1157, t1158, &t1159)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 592, 13); h0_t = t1159; goto bb577; bb579: goto bb577; bb580:
 #line 597
     t1166 = h0_t; t1167 = INT64_C(194); t1168 = t1166 == t1167; if (t1168) goto bb584; else goto bb585; bb581:
 #line 595
-    t1163 = h0_t; t1164 = INT64_C(1); if (__builtin_add_overflow(t1163, t1164, &t1165)) hero_panic_overflow(); h0_t = t1165; goto bb580; bb582: goto bb580; bb583:
+    t1163 = h0_t; t1164 = INT64_C(1); if (__builtin_add_overflow(t1163, t1164, &t1165)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 595, 13); h0_t = t1165; goto bb580; bb582: goto bb580; bb583:
 #line 600
     t1172 = h0_t; t1173 = INT64_C(195); t1174 = t1172 == t1173; if (t1174) goto bb587; else goto bb588; bb584:
 #line 598
-    t1169 = h0_t; t1170 = INT64_C(1); if (__builtin_add_overflow(t1169, t1170, &t1171)) hero_panic_overflow(); h0_t = t1171; goto bb583; bb585: goto bb583; bb586:
+    t1169 = h0_t; t1170 = INT64_C(1); if (__builtin_add_overflow(t1169, t1170, &t1171)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 598, 13); h0_t = t1171; goto bb583; bb585: goto bb583; bb586:
 #line 603
     t1178 = h0_t; t1179 = INT64_C(196); t1180 = t1178 == t1179; if (t1180) goto bb590; else goto bb591; bb587:
 #line 601
-    t1175 = h0_t; t1176 = INT64_C(1); if (__builtin_add_overflow(t1175, t1176, &t1177)) hero_panic_overflow(); h0_t = t1177; goto bb586; bb588: goto bb586; bb589:
+    t1175 = h0_t; t1176 = INT64_C(1); if (__builtin_add_overflow(t1175, t1176, &t1177)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 601, 13); h0_t = t1177; goto bb586; bb588: goto bb586; bb589:
 #line 606
     t1184 = h0_t; t1185 = INT64_C(197); t1186 = t1184 == t1185; if (t1186) goto bb593; else goto bb594; bb590:
 #line 604
-    t1181 = h0_t; t1182 = INT64_C(1); if (__builtin_add_overflow(t1181, t1182, &t1183)) hero_panic_overflow(); h0_t = t1183; goto bb589; bb591: goto bb589; bb592:
+    t1181 = h0_t; t1182 = INT64_C(1); if (__builtin_add_overflow(t1181, t1182, &t1183)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 604, 13); h0_t = t1183; goto bb589; bb591: goto bb589; bb592:
 #line 609
     t1190 = h0_t; t1191 = INT64_C(198); t1192 = t1190 == t1191; if (t1192) goto bb596; else goto bb597; bb593:
 #line 607
-    t1187 = h0_t; t1188 = INT64_C(1); if (__builtin_add_overflow(t1187, t1188, &t1189)) hero_panic_overflow(); h0_t = t1189; goto bb592; bb594: goto bb592; bb595:
+    t1187 = h0_t; t1188 = INT64_C(1); if (__builtin_add_overflow(t1187, t1188, &t1189)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 607, 13); h0_t = t1189; goto bb592; bb594: goto bb592; bb595:
 #line 612
     t1196 = h0_t; t1197 = INT64_C(199); t1198 = t1196 == t1197; if (t1198) goto bb599; else goto bb600; bb596:
 #line 610
-    t1193 = h0_t; t1194 = INT64_C(1); if (__builtin_add_overflow(t1193, t1194, &t1195)) hero_panic_overflow(); h0_t = t1195; goto bb595; bb597: goto bb595; bb598:
+    t1193 = h0_t; t1194 = INT64_C(1); if (__builtin_add_overflow(t1193, t1194, &t1195)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 610, 13); h0_t = t1195; goto bb595; bb597: goto bb595; bb598:
 #line 615
     t1202 = h0_t; t1203 = INT64_C(200); t1204 = t1202 == t1203; if (t1204) goto bb602; else goto bb603; bb599:
 #line 613
-    t1199 = h0_t; t1200 = INT64_C(1); if (__builtin_add_overflow(t1199, t1200, &t1201)) hero_panic_overflow(); h0_t = t1201; goto bb598; bb600: goto bb598; bb601:
+    t1199 = h0_t; t1200 = INT64_C(1); if (__builtin_add_overflow(t1199, t1200, &t1201)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 613, 13); h0_t = t1201; goto bb598; bb600: goto bb598; bb601:
 #line 618
     t1208 = h0_t; t1209 = INT64_C(201); t1210 = t1208 == t1209; if (t1210) goto bb605; else goto bb606; bb602:
 #line 616
-    t1205 = h0_t; t1206 = INT64_C(1); if (__builtin_add_overflow(t1205, t1206, &t1207)) hero_panic_overflow(); h0_t = t1207; goto bb601; bb603: goto bb601; bb604:
+    t1205 = h0_t; t1206 = INT64_C(1); if (__builtin_add_overflow(t1205, t1206, &t1207)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 616, 13); h0_t = t1207; goto bb601; bb603: goto bb601; bb604:
 #line 621
     t1214 = h0_t; t1215 = INT64_C(202); t1216 = t1214 == t1215; if (t1216) goto bb608; else goto bb609; bb605:
 #line 619
-    t1211 = h0_t; t1212 = INT64_C(1); if (__builtin_add_overflow(t1211, t1212, &t1213)) hero_panic_overflow(); h0_t = t1213; goto bb604; bb606: goto bb604; bb607:
+    t1211 = h0_t; t1212 = INT64_C(1); if (__builtin_add_overflow(t1211, t1212, &t1213)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 619, 13); h0_t = t1213; goto bb604; bb606: goto bb604; bb607:
 #line 624
     t1220 = h0_t; t1221 = INT64_C(203); t1222 = t1220 == t1221; if (t1222) goto bb611; else goto bb612; bb608:
 #line 622
-    t1217 = h0_t; t1218 = INT64_C(1); if (__builtin_add_overflow(t1217, t1218, &t1219)) hero_panic_overflow(); h0_t = t1219; goto bb607; bb609: goto bb607; bb610:
+    t1217 = h0_t; t1218 = INT64_C(1); if (__builtin_add_overflow(t1217, t1218, &t1219)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 622, 13); h0_t = t1219; goto bb607; bb609: goto bb607; bb610:
 #line 627
     t1226 = h0_t; t1227 = INT64_C(204); t1228 = t1226 == t1227; if (t1228) goto bb614; else goto bb615; bb611:
 #line 625
-    t1223 = h0_t; t1224 = INT64_C(1); if (__builtin_add_overflow(t1223, t1224, &t1225)) hero_panic_overflow(); h0_t = t1225; goto bb610; bb612: goto bb610; bb613:
+    t1223 = h0_t; t1224 = INT64_C(1); if (__builtin_add_overflow(t1223, t1224, &t1225)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 625, 13); h0_t = t1225; goto bb610; bb612: goto bb610; bb613:
 #line 630
     t1232 = h0_t; t1233 = INT64_C(205); t1234 = t1232 == t1233; if (t1234) goto bb617; else goto bb618; bb614:
 #line 628
-    t1229 = h0_t; t1230 = INT64_C(1); if (__builtin_add_overflow(t1229, t1230, &t1231)) hero_panic_overflow(); h0_t = t1231; goto bb613; bb615: goto bb613; bb616:
+    t1229 = h0_t; t1230 = INT64_C(1); if (__builtin_add_overflow(t1229, t1230, &t1231)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 628, 13); h0_t = t1231; goto bb613; bb615: goto bb613; bb616:
 #line 633
     t1238 = h0_t; t1239 = INT64_C(206); t1240 = t1238 == t1239; if (t1240) goto bb620; else goto bb621; bb617:
 #line 631
-    t1235 = h0_t; t1236 = INT64_C(1); if (__builtin_add_overflow(t1235, t1236, &t1237)) hero_panic_overflow(); h0_t = t1237; goto bb616; bb618: goto bb616; bb619:
+    t1235 = h0_t; t1236 = INT64_C(1); if (__builtin_add_overflow(t1235, t1236, &t1237)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 631, 13); h0_t = t1237; goto bb616; bb618: goto bb616; bb619:
 #line 636
     t1244 = h0_t; t1245 = INT64_C(207); t1246 = t1244 == t1245; if (t1246) goto bb623; else goto bb624; bb620:
 #line 634
-    t1241 = h0_t; t1242 = INT64_C(1); if (__builtin_add_overflow(t1241, t1242, &t1243)) hero_panic_overflow(); h0_t = t1243; goto bb619; bb621: goto bb619; bb622:
+    t1241 = h0_t; t1242 = INT64_C(1); if (__builtin_add_overflow(t1241, t1242, &t1243)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 634, 13); h0_t = t1243; goto bb619; bb621: goto bb619; bb622:
 #line 639
     t1250 = h0_t; t1251 = INT64_C(208); t1252 = t1250 == t1251; if (t1252) goto bb626; else goto bb627; bb623:
 #line 637
-    t1247 = h0_t; t1248 = INT64_C(1); if (__builtin_add_overflow(t1247, t1248, &t1249)) hero_panic_overflow(); h0_t = t1249; goto bb622; bb624: goto bb622; bb625:
+    t1247 = h0_t; t1248 = INT64_C(1); if (__builtin_add_overflow(t1247, t1248, &t1249)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 637, 13); h0_t = t1249; goto bb622; bb624: goto bb622; bb625:
 #line 642
     t1256 = h0_t; t1257 = INT64_C(209); t1258 = t1256 == t1257; if (t1258) goto bb629; else goto bb630; bb626:
 #line 640
-    t1253 = h0_t; t1254 = INT64_C(1); if (__builtin_add_overflow(t1253, t1254, &t1255)) hero_panic_overflow(); h0_t = t1255; goto bb625; bb627: goto bb625; bb628:
+    t1253 = h0_t; t1254 = INT64_C(1); if (__builtin_add_overflow(t1253, t1254, &t1255)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 640, 13); h0_t = t1255; goto bb625; bb627: goto bb625; bb628:
 #line 645
     t1262 = h0_t; t1263 = INT64_C(210); t1264 = t1262 == t1263; if (t1264) goto bb632; else goto bb633; bb629:
 #line 643
-    t1259 = h0_t; t1260 = INT64_C(1); if (__builtin_add_overflow(t1259, t1260, &t1261)) hero_panic_overflow(); h0_t = t1261; goto bb628; bb630: goto bb628; bb631:
+    t1259 = h0_t; t1260 = INT64_C(1); if (__builtin_add_overflow(t1259, t1260, &t1261)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 643, 13); h0_t = t1261; goto bb628; bb630: goto bb628; bb631:
 #line 648
     t1268 = h0_t; t1269 = INT64_C(211); t1270 = t1268 == t1269; if (t1270) goto bb635; else goto bb636; bb632:
 #line 646
-    t1265 = h0_t; t1266 = INT64_C(1); if (__builtin_add_overflow(t1265, t1266, &t1267)) hero_panic_overflow(); h0_t = t1267; goto bb631; bb633: goto bb631; bb634:
+    t1265 = h0_t; t1266 = INT64_C(1); if (__builtin_add_overflow(t1265, t1266, &t1267)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 646, 13); h0_t = t1267; goto bb631; bb633: goto bb631; bb634:
 #line 651
     t1274 = h0_t; t1275 = INT64_C(212); t1276 = t1274 == t1275; if (t1276) goto bb638; else goto bb639; bb635:
 #line 649
-    t1271 = h0_t; t1272 = INT64_C(1); if (__builtin_add_overflow(t1271, t1272, &t1273)) hero_panic_overflow(); h0_t = t1273; goto bb634; bb636: goto bb634; bb637:
+    t1271 = h0_t; t1272 = INT64_C(1); if (__builtin_add_overflow(t1271, t1272, &t1273)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 649, 13); h0_t = t1273; goto bb634; bb636: goto bb634; bb637:
 #line 654
     t1280 = h0_t; t1281 = INT64_C(213); t1282 = t1280 == t1281; if (t1282) goto bb641; else goto bb642; bb638:
 #line 652
-    t1277 = h0_t; t1278 = INT64_C(1); if (__builtin_add_overflow(t1277, t1278, &t1279)) hero_panic_overflow(); h0_t = t1279; goto bb637; bb639: goto bb637; bb640:
+    t1277 = h0_t; t1278 = INT64_C(1); if (__builtin_add_overflow(t1277, t1278, &t1279)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 652, 13); h0_t = t1279; goto bb637; bb639: goto bb637; bb640:
 #line 657
     t1286 = h0_t; t1287 = INT64_C(214); t1288 = t1286 == t1287; if (t1288) goto bb644; else goto bb645; bb641:
 #line 655
-    t1283 = h0_t; t1284 = INT64_C(1); if (__builtin_add_overflow(t1283, t1284, &t1285)) hero_panic_overflow(); h0_t = t1285; goto bb640; bb642: goto bb640; bb643:
+    t1283 = h0_t; t1284 = INT64_C(1); if (__builtin_add_overflow(t1283, t1284, &t1285)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 655, 13); h0_t = t1285; goto bb640; bb642: goto bb640; bb643:
 #line 660
     t1292 = h0_t; t1293 = INT64_C(215); t1294 = t1292 == t1293; if (t1294) goto bb647; else goto bb648; bb644:
 #line 658
-    t1289 = h0_t; t1290 = INT64_C(1); if (__builtin_add_overflow(t1289, t1290, &t1291)) hero_panic_overflow(); h0_t = t1291; goto bb643; bb645: goto bb643; bb646:
+    t1289 = h0_t; t1290 = INT64_C(1); if (__builtin_add_overflow(t1289, t1290, &t1291)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 658, 13); h0_t = t1291; goto bb643; bb645: goto bb643; bb646:
 #line 663
     t1298 = h0_t; t1299 = INT64_C(216); t1300 = t1298 == t1299; if (t1300) goto bb650; else goto bb651; bb647:
 #line 661
-    t1295 = h0_t; t1296 = INT64_C(1); if (__builtin_add_overflow(t1295, t1296, &t1297)) hero_panic_overflow(); h0_t = t1297; goto bb646; bb648: goto bb646; bb649:
+    t1295 = h0_t; t1296 = INT64_C(1); if (__builtin_add_overflow(t1295, t1296, &t1297)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 661, 13); h0_t = t1297; goto bb646; bb648: goto bb646; bb649:
 #line 666
     t1304 = h0_t; t1305 = INT64_C(217); t1306 = t1304 == t1305; if (t1306) goto bb653; else goto bb654; bb650:
 #line 664
-    t1301 = h0_t; t1302 = INT64_C(1); if (__builtin_add_overflow(t1301, t1302, &t1303)) hero_panic_overflow(); h0_t = t1303; goto bb649; bb651: goto bb649; bb652:
+    t1301 = h0_t; t1302 = INT64_C(1); if (__builtin_add_overflow(t1301, t1302, &t1303)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 664, 13); h0_t = t1303; goto bb649; bb651: goto bb649; bb652:
 #line 669
     t1310 = h0_t; t1311 = INT64_C(218); t1312 = t1310 == t1311; if (t1312) goto bb656; else goto bb657; bb653:
 #line 667
-    t1307 = h0_t; t1308 = INT64_C(1); if (__builtin_add_overflow(t1307, t1308, &t1309)) hero_panic_overflow(); h0_t = t1309; goto bb652; bb654: goto bb652; bb655:
+    t1307 = h0_t; t1308 = INT64_C(1); if (__builtin_add_overflow(t1307, t1308, &t1309)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 667, 13); h0_t = t1309; goto bb652; bb654: goto bb652; bb655:
 #line 672
     t1316 = h0_t; t1317 = INT64_C(219); t1318 = t1316 == t1317; if (t1318) goto bb659; else goto bb660; bb656:
 #line 670
-    t1313 = h0_t; t1314 = INT64_C(1); if (__builtin_add_overflow(t1313, t1314, &t1315)) hero_panic_overflow(); h0_t = t1315; goto bb655; bb657: goto bb655; bb658:
+    t1313 = h0_t; t1314 = INT64_C(1); if (__builtin_add_overflow(t1313, t1314, &t1315)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 670, 13); h0_t = t1315; goto bb655; bb657: goto bb655; bb658:
 #line 675
     t1322 = h0_t; t1323 = INT64_C(220); t1324 = t1322 == t1323; if (t1324) goto bb662; else goto bb663; bb659:
 #line 673
-    t1319 = h0_t; t1320 = INT64_C(1); if (__builtin_add_overflow(t1319, t1320, &t1321)) hero_panic_overflow(); h0_t = t1321; goto bb658; bb660: goto bb658; bb661:
+    t1319 = h0_t; t1320 = INT64_C(1); if (__builtin_add_overflow(t1319, t1320, &t1321)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 673, 13); h0_t = t1321; goto bb658; bb660: goto bb658; bb661:
 #line 678
     t1328 = h0_t; t1329 = INT64_C(221); t1330 = t1328 == t1329; if (t1330) goto bb665; else goto bb666; bb662:
 #line 676
-    t1325 = h0_t; t1326 = INT64_C(1); if (__builtin_add_overflow(t1325, t1326, &t1327)) hero_panic_overflow(); h0_t = t1327; goto bb661; bb663: goto bb661; bb664:
+    t1325 = h0_t; t1326 = INT64_C(1); if (__builtin_add_overflow(t1325, t1326, &t1327)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 676, 13); h0_t = t1327; goto bb661; bb663: goto bb661; bb664:
 #line 681
     t1334 = h0_t; t1335 = INT64_C(222); t1336 = t1334 == t1335; if (t1336) goto bb668; else goto bb669; bb665:
 #line 679
-    t1331 = h0_t; t1332 = INT64_C(1); if (__builtin_add_overflow(t1331, t1332, &t1333)) hero_panic_overflow(); h0_t = t1333; goto bb664; bb666: goto bb664; bb667:
+    t1331 = h0_t; t1332 = INT64_C(1); if (__builtin_add_overflow(t1331, t1332, &t1333)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 679, 13); h0_t = t1333; goto bb664; bb666: goto bb664; bb667:
 #line 684
     t1340 = h0_t; t1341 = INT64_C(223); t1342 = t1340 == t1341; if (t1342) goto bb671; else goto bb672; bb668:
 #line 682
-    t1337 = h0_t; t1338 = INT64_C(1); if (__builtin_add_overflow(t1337, t1338, &t1339)) hero_panic_overflow(); h0_t = t1339; goto bb667; bb669: goto bb667; bb670:
+    t1337 = h0_t; t1338 = INT64_C(1); if (__builtin_add_overflow(t1337, t1338, &t1339)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 682, 13); h0_t = t1339; goto bb667; bb669: goto bb667; bb670:
 #line 687
     t1346 = h0_t; t1347 = INT64_C(224); t1348 = t1346 == t1347; if (t1348) goto bb674; else goto bb675; bb671:
 #line 685
-    t1343 = h0_t; t1344 = INT64_C(1); if (__builtin_add_overflow(t1343, t1344, &t1345)) hero_panic_overflow(); h0_t = t1345; goto bb670; bb672: goto bb670; bb673:
+    t1343 = h0_t; t1344 = INT64_C(1); if (__builtin_add_overflow(t1343, t1344, &t1345)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 685, 13); h0_t = t1345; goto bb670; bb672: goto bb670; bb673:
 #line 690
     t1352 = h0_t; t1353 = INT64_C(225); t1354 = t1352 == t1353; if (t1354) goto bb677; else goto bb678; bb674:
 #line 688
-    t1349 = h0_t; t1350 = INT64_C(1); if (__builtin_add_overflow(t1349, t1350, &t1351)) hero_panic_overflow(); h0_t = t1351; goto bb673; bb675: goto bb673; bb676:
+    t1349 = h0_t; t1350 = INT64_C(1); if (__builtin_add_overflow(t1349, t1350, &t1351)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 688, 13); h0_t = t1351; goto bb673; bb675: goto bb673; bb676:
 #line 693
     t1358 = h0_t; t1359 = INT64_C(226); t1360 = t1358 == t1359; if (t1360) goto bb680; else goto bb681; bb677:
 #line 691
-    t1355 = h0_t; t1356 = INT64_C(1); if (__builtin_add_overflow(t1355, t1356, &t1357)) hero_panic_overflow(); h0_t = t1357; goto bb676; bb678: goto bb676; bb679:
+    t1355 = h0_t; t1356 = INT64_C(1); if (__builtin_add_overflow(t1355, t1356, &t1357)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 691, 13); h0_t = t1357; goto bb676; bb678: goto bb676; bb679:
 #line 696
     t1364 = h0_t; t1365 = INT64_C(227); t1366 = t1364 == t1365; if (t1366) goto bb683; else goto bb684; bb680:
 #line 694
-    t1361 = h0_t; t1362 = INT64_C(1); if (__builtin_add_overflow(t1361, t1362, &t1363)) hero_panic_overflow(); h0_t = t1363; goto bb679; bb681: goto bb679; bb682:
+    t1361 = h0_t; t1362 = INT64_C(1); if (__builtin_add_overflow(t1361, t1362, &t1363)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 694, 13); h0_t = t1363; goto bb679; bb681: goto bb679; bb682:
 #line 699
     t1370 = h0_t; t1371 = INT64_C(228); t1372 = t1370 == t1371; if (t1372) goto bb686; else goto bb687; bb683:
 #line 697
-    t1367 = h0_t; t1368 = INT64_C(1); if (__builtin_add_overflow(t1367, t1368, &t1369)) hero_panic_overflow(); h0_t = t1369; goto bb682; bb684: goto bb682; bb685:
+    t1367 = h0_t; t1368 = INT64_C(1); if (__builtin_add_overflow(t1367, t1368, &t1369)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 697, 13); h0_t = t1369; goto bb682; bb684: goto bb682; bb685:
 #line 702
     t1376 = h0_t; t1377 = INT64_C(229); t1378 = t1376 == t1377; if (t1378) goto bb689; else goto bb690; bb686:
 #line 700
-    t1373 = h0_t; t1374 = INT64_C(1); if (__builtin_add_overflow(t1373, t1374, &t1375)) hero_panic_overflow(); h0_t = t1375; goto bb685; bb687: goto bb685; bb688:
+    t1373 = h0_t; t1374 = INT64_C(1); if (__builtin_add_overflow(t1373, t1374, &t1375)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 700, 13); h0_t = t1375; goto bb685; bb687: goto bb685; bb688:
 #line 705
     t1382 = h0_t; t1383 = INT64_C(230); t1384 = t1382 == t1383; if (t1384) goto bb692; else goto bb693; bb689:
 #line 703
-    t1379 = h0_t; t1380 = INT64_C(1); if (__builtin_add_overflow(t1379, t1380, &t1381)) hero_panic_overflow(); h0_t = t1381; goto bb688; bb690: goto bb688; bb691:
+    t1379 = h0_t; t1380 = INT64_C(1); if (__builtin_add_overflow(t1379, t1380, &t1381)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 703, 13); h0_t = t1381; goto bb688; bb690: goto bb688; bb691:
 #line 708
     t1388 = h0_t; t1389 = INT64_C(231); t1390 = t1388 == t1389; if (t1390) goto bb695; else goto bb696; bb692:
 #line 706
-    t1385 = h0_t; t1386 = INT64_C(1); if (__builtin_add_overflow(t1385, t1386, &t1387)) hero_panic_overflow(); h0_t = t1387; goto bb691; bb693: goto bb691; bb694:
+    t1385 = h0_t; t1386 = INT64_C(1); if (__builtin_add_overflow(t1385, t1386, &t1387)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 706, 13); h0_t = t1387; goto bb691; bb693: goto bb691; bb694:
 #line 711
     t1394 = h0_t; t1395 = INT64_C(232); t1396 = t1394 == t1395; if (t1396) goto bb698; else goto bb699; bb695:
 #line 709
-    t1391 = h0_t; t1392 = INT64_C(1); if (__builtin_add_overflow(t1391, t1392, &t1393)) hero_panic_overflow(); h0_t = t1393; goto bb694; bb696: goto bb694; bb697:
+    t1391 = h0_t; t1392 = INT64_C(1); if (__builtin_add_overflow(t1391, t1392, &t1393)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 709, 13); h0_t = t1393; goto bb694; bb696: goto bb694; bb697:
 #line 714
     t1400 = h0_t; t1401 = INT64_C(233); t1402 = t1400 == t1401; if (t1402) goto bb701; else goto bb702; bb698:
 #line 712
-    t1397 = h0_t; t1398 = INT64_C(1); if (__builtin_add_overflow(t1397, t1398, &t1399)) hero_panic_overflow(); h0_t = t1399; goto bb697; bb699: goto bb697; bb700:
+    t1397 = h0_t; t1398 = INT64_C(1); if (__builtin_add_overflow(t1397, t1398, &t1399)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 712, 13); h0_t = t1399; goto bb697; bb699: goto bb697; bb700:
 #line 717
     t1406 = h0_t; t1407 = INT64_C(234); t1408 = t1406 == t1407; if (t1408) goto bb704; else goto bb705; bb701:
 #line 715
-    t1403 = h0_t; t1404 = INT64_C(1); if (__builtin_add_overflow(t1403, t1404, &t1405)) hero_panic_overflow(); h0_t = t1405; goto bb700; bb702: goto bb700; bb703:
+    t1403 = h0_t; t1404 = INT64_C(1); if (__builtin_add_overflow(t1403, t1404, &t1405)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 715, 13); h0_t = t1405; goto bb700; bb702: goto bb700; bb703:
 #line 720
     t1412 = h0_t; t1413 = INT64_C(235); t1414 = t1412 == t1413; if (t1414) goto bb707; else goto bb708; bb704:
 #line 718
-    t1409 = h0_t; t1410 = INT64_C(1); if (__builtin_add_overflow(t1409, t1410, &t1411)) hero_panic_overflow(); h0_t = t1411; goto bb703; bb705: goto bb703; bb706:
+    t1409 = h0_t; t1410 = INT64_C(1); if (__builtin_add_overflow(t1409, t1410, &t1411)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 718, 13); h0_t = t1411; goto bb703; bb705: goto bb703; bb706:
 #line 723
     t1418 = h0_t; t1419 = INT64_C(236); t1420 = t1418 == t1419; if (t1420) goto bb710; else goto bb711; bb707:
 #line 721
-    t1415 = h0_t; t1416 = INT64_C(1); if (__builtin_add_overflow(t1415, t1416, &t1417)) hero_panic_overflow(); h0_t = t1417; goto bb706; bb708: goto bb706; bb709:
+    t1415 = h0_t; t1416 = INT64_C(1); if (__builtin_add_overflow(t1415, t1416, &t1417)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 721, 13); h0_t = t1417; goto bb706; bb708: goto bb706; bb709:
 #line 726
     t1424 = h0_t; t1425 = INT64_C(237); t1426 = t1424 == t1425; if (t1426) goto bb713; else goto bb714; bb710:
 #line 724
-    t1421 = h0_t; t1422 = INT64_C(1); if (__builtin_add_overflow(t1421, t1422, &t1423)) hero_panic_overflow(); h0_t = t1423; goto bb709; bb711: goto bb709; bb712:
+    t1421 = h0_t; t1422 = INT64_C(1); if (__builtin_add_overflow(t1421, t1422, &t1423)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 724, 13); h0_t = t1423; goto bb709; bb711: goto bb709; bb712:
 #line 729
     t1430 = h0_t; t1431 = INT64_C(238); t1432 = t1430 == t1431; if (t1432) goto bb716; else goto bb717; bb713:
 #line 727
-    t1427 = h0_t; t1428 = INT64_C(1); if (__builtin_add_overflow(t1427, t1428, &t1429)) hero_panic_overflow(); h0_t = t1429; goto bb712; bb714: goto bb712; bb715:
+    t1427 = h0_t; t1428 = INT64_C(1); if (__builtin_add_overflow(t1427, t1428, &t1429)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 727, 13); h0_t = t1429; goto bb712; bb714: goto bb712; bb715:
 #line 732
     t1436 = h0_t; t1437 = INT64_C(239); t1438 = t1436 == t1437; if (t1438) goto bb719; else goto bb720; bb716:
 #line 730
-    t1433 = h0_t; t1434 = INT64_C(1); if (__builtin_add_overflow(t1433, t1434, &t1435)) hero_panic_overflow(); h0_t = t1435; goto bb715; bb717: goto bb715; bb718:
+    t1433 = h0_t; t1434 = INT64_C(1); if (__builtin_add_overflow(t1433, t1434, &t1435)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 730, 13); h0_t = t1435; goto bb715; bb717: goto bb715; bb718:
 #line 735
     t1442 = h0_t; t1443 = INT64_C(240); t1444 = t1442 == t1443; if (t1444) goto bb722; else goto bb723; bb719:
 #line 733
-    t1439 = h0_t; t1440 = INT64_C(1); if (__builtin_add_overflow(t1439, t1440, &t1441)) hero_panic_overflow(); h0_t = t1441; goto bb718; bb720: goto bb718; bb721:
+    t1439 = h0_t; t1440 = INT64_C(1); if (__builtin_add_overflow(t1439, t1440, &t1441)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 733, 13); h0_t = t1441; goto bb718; bb720: goto bb718; bb721:
 #line 738
     t1448 = h0_t; t1449 = INT64_C(241); t1450 = t1448 == t1449; if (t1450) goto bb725; else goto bb726; bb722:
 #line 736
-    t1445 = h0_t; t1446 = INT64_C(1); if (__builtin_add_overflow(t1445, t1446, &t1447)) hero_panic_overflow(); h0_t = t1447; goto bb721; bb723: goto bb721; bb724:
+    t1445 = h0_t; t1446 = INT64_C(1); if (__builtin_add_overflow(t1445, t1446, &t1447)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 736, 13); h0_t = t1447; goto bb721; bb723: goto bb721; bb724:
 #line 741
     t1454 = h0_t; t1455 = INT64_C(242); t1456 = t1454 == t1455; if (t1456) goto bb728; else goto bb729; bb725:
 #line 739
-    t1451 = h0_t; t1452 = INT64_C(1); if (__builtin_add_overflow(t1451, t1452, &t1453)) hero_panic_overflow(); h0_t = t1453; goto bb724; bb726: goto bb724; bb727:
+    t1451 = h0_t; t1452 = INT64_C(1); if (__builtin_add_overflow(t1451, t1452, &t1453)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 739, 13); h0_t = t1453; goto bb724; bb726: goto bb724; bb727:
 #line 744
     t1460 = h0_t; t1461 = INT64_C(243); t1462 = t1460 == t1461; if (t1462) goto bb731; else goto bb732; bb728:
 #line 742
-    t1457 = h0_t; t1458 = INT64_C(1); if (__builtin_add_overflow(t1457, t1458, &t1459)) hero_panic_overflow(); h0_t = t1459; goto bb727; bb729: goto bb727; bb730:
+    t1457 = h0_t; t1458 = INT64_C(1); if (__builtin_add_overflow(t1457, t1458, &t1459)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 742, 13); h0_t = t1459; goto bb727; bb729: goto bb727; bb730:
 #line 747
     t1466 = h0_t; t1467 = INT64_C(244); t1468 = t1466 == t1467; if (t1468) goto bb734; else goto bb735; bb731:
 #line 745
-    t1463 = h0_t; t1464 = INT64_C(1); if (__builtin_add_overflow(t1463, t1464, &t1465)) hero_panic_overflow(); h0_t = t1465; goto bb730; bb732: goto bb730; bb733:
+    t1463 = h0_t; t1464 = INT64_C(1); if (__builtin_add_overflow(t1463, t1464, &t1465)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 745, 13); h0_t = t1465; goto bb730; bb732: goto bb730; bb733:
 #line 750
     t1472 = h0_t; t1473 = INT64_C(245); t1474 = t1472 == t1473; if (t1474) goto bb737; else goto bb738; bb734:
 #line 748
-    t1469 = h0_t; t1470 = INT64_C(1); if (__builtin_add_overflow(t1469, t1470, &t1471)) hero_panic_overflow(); h0_t = t1471; goto bb733; bb735: goto bb733; bb736:
+    t1469 = h0_t; t1470 = INT64_C(1); if (__builtin_add_overflow(t1469, t1470, &t1471)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 748, 13); h0_t = t1471; goto bb733; bb735: goto bb733; bb736:
 #line 753
     t1478 = h0_t; t1479 = INT64_C(246); t1480 = t1478 == t1479; if (t1480) goto bb740; else goto bb741; bb737:
 #line 751
-    t1475 = h0_t; t1476 = INT64_C(1); if (__builtin_add_overflow(t1475, t1476, &t1477)) hero_panic_overflow(); h0_t = t1477; goto bb736; bb738: goto bb736; bb739:
+    t1475 = h0_t; t1476 = INT64_C(1); if (__builtin_add_overflow(t1475, t1476, &t1477)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 751, 13); h0_t = t1477; goto bb736; bb738: goto bb736; bb739:
 #line 756
     t1484 = h0_t; t1485 = INT64_C(247); t1486 = t1484 == t1485; if (t1486) goto bb743; else goto bb744; bb740:
 #line 754
-    t1481 = h0_t; t1482 = INT64_C(1); if (__builtin_add_overflow(t1481, t1482, &t1483)) hero_panic_overflow(); h0_t = t1483; goto bb739; bb741: goto bb739; bb742:
+    t1481 = h0_t; t1482 = INT64_C(1); if (__builtin_add_overflow(t1481, t1482, &t1483)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 754, 13); h0_t = t1483; goto bb739; bb741: goto bb739; bb742:
 #line 759
     t1490 = h0_t; t1491 = INT64_C(248); t1492 = t1490 == t1491; if (t1492) goto bb746; else goto bb747; bb743:
 #line 757
-    t1487 = h0_t; t1488 = INT64_C(1); if (__builtin_add_overflow(t1487, t1488, &t1489)) hero_panic_overflow(); h0_t = t1489; goto bb742; bb744: goto bb742; bb745:
+    t1487 = h0_t; t1488 = INT64_C(1); if (__builtin_add_overflow(t1487, t1488, &t1489)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 757, 13); h0_t = t1489; goto bb742; bb744: goto bb742; bb745:
 #line 762
     t1496 = h0_t; t1497 = INT64_C(249); t1498 = t1496 == t1497; if (t1498) goto bb749; else goto bb750; bb746:
 #line 760
-    t1493 = h0_t; t1494 = INT64_C(1); if (__builtin_add_overflow(t1493, t1494, &t1495)) hero_panic_overflow(); h0_t = t1495; goto bb745; bb747: goto bb745; bb748:
+    t1493 = h0_t; t1494 = INT64_C(1); if (__builtin_add_overflow(t1493, t1494, &t1495)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 760, 13); h0_t = t1495; goto bb745; bb747: goto bb745; bb748:
 #line 765
     t1502 = h0_t; t1503 = INT64_C(250); t1504 = t1502 == t1503; if (t1504) goto bb752; else goto bb753; bb749:
 #line 763
-    t1499 = h0_t; t1500 = INT64_C(1); if (__builtin_add_overflow(t1499, t1500, &t1501)) hero_panic_overflow(); h0_t = t1501; goto bb748; bb750: goto bb748; bb751:
+    t1499 = h0_t; t1500 = INT64_C(1); if (__builtin_add_overflow(t1499, t1500, &t1501)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 763, 13); h0_t = t1501; goto bb748; bb750: goto bb748; bb751:
 #line 768
     t1508 = h0_t; t1509 = INT64_C(251); t1510 = t1508 == t1509; if (t1510) goto bb755; else goto bb756; bb752:
 #line 766
-    t1505 = h0_t; t1506 = INT64_C(1); if (__builtin_add_overflow(t1505, t1506, &t1507)) hero_panic_overflow(); h0_t = t1507; goto bb751; bb753: goto bb751; bb754:
+    t1505 = h0_t; t1506 = INT64_C(1); if (__builtin_add_overflow(t1505, t1506, &t1507)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 766, 13); h0_t = t1507; goto bb751; bb753: goto bb751; bb754:
 #line 771
     t1514 = h0_t; t1515 = INT64_C(252); t1516 = t1514 == t1515; if (t1516) goto bb758; else goto bb759; bb755:
 #line 769
-    t1511 = h0_t; t1512 = INT64_C(1); if (__builtin_add_overflow(t1511, t1512, &t1513)) hero_panic_overflow(); h0_t = t1513; goto bb754; bb756: goto bb754; bb757:
+    t1511 = h0_t; t1512 = INT64_C(1); if (__builtin_add_overflow(t1511, t1512, &t1513)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 769, 13); h0_t = t1513; goto bb754; bb756: goto bb754; bb757:
 #line 774
     t1520 = h0_t; t1521 = INT64_C(253); t1522 = t1520 == t1521; if (t1522) goto bb761; else goto bb762; bb758:
 #line 772
-    t1517 = h0_t; t1518 = INT64_C(1); if (__builtin_add_overflow(t1517, t1518, &t1519)) hero_panic_overflow(); h0_t = t1519; goto bb757; bb759: goto bb757; bb760:
+    t1517 = h0_t; t1518 = INT64_C(1); if (__builtin_add_overflow(t1517, t1518, &t1519)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 772, 13); h0_t = t1519; goto bb757; bb759: goto bb757; bb760:
 #line 777
     t1526 = h0_t; t1527 = INT64_C(254); t1528 = t1526 == t1527; if (t1528) goto bb764; else goto bb765; bb761:
 #line 775
-    t1523 = h0_t; t1524 = INT64_C(1); if (__builtin_add_overflow(t1523, t1524, &t1525)) hero_panic_overflow(); h0_t = t1525; goto bb760; bb762: goto bb760; bb763:
+    t1523 = h0_t; t1524 = INT64_C(1); if (__builtin_add_overflow(t1523, t1524, &t1525)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 775, 13); h0_t = t1525; goto bb760; bb762: goto bb760; bb763:
 #line 780
     t1532 = h0_t; t1533 = INT64_C(255); t1534 = t1532 == t1533; if (t1534) goto bb767; else goto bb768; bb764:
 #line 778
-    t1529 = h0_t; t1530 = INT64_C(1); if (__builtin_add_overflow(t1529, t1530, &t1531)) hero_panic_overflow(); h0_t = t1531; goto bb763; bb765: goto bb763; bb766:
+    t1529 = h0_t; t1530 = INT64_C(1); if (__builtin_add_overflow(t1529, t1530, &t1531)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 778, 13); h0_t = t1531; goto bb763; bb765: goto bb763; bb766:
 #line 783
     t1538 = h0_t; t1539 = INT64_C(256); t1540 = t1538 == t1539; if (t1540) goto bb770; else goto bb771; bb767:
 #line 781
-    t1535 = h0_t; t1536 = INT64_C(1); if (__builtin_add_overflow(t1535, t1536, &t1537)) hero_panic_overflow(); h0_t = t1537; goto bb766; bb768: goto bb766; bb769:
+    t1535 = h0_t; t1536 = INT64_C(1); if (__builtin_add_overflow(t1535, t1536, &t1537)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 781, 13); h0_t = t1537; goto bb766; bb768: goto bb766; bb769:
 #line 786
     t1544 = h0_t; t1545 = INT64_C(257); t1546 = t1544 == t1545; if (t1546) goto bb773; else goto bb774; bb770:
 #line 784
-    t1541 = h0_t; t1542 = INT64_C(1); if (__builtin_add_overflow(t1541, t1542, &t1543)) hero_panic_overflow(); h0_t = t1543; goto bb769; bb771: goto bb769; bb772:
+    t1541 = h0_t; t1542 = INT64_C(1); if (__builtin_add_overflow(t1541, t1542, &t1543)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 784, 13); h0_t = t1543; goto bb769; bb771: goto bb769; bb772:
 #line 789
     t1550 = h0_t; t1551 = INT64_C(258); t1552 = t1550 == t1551; if (t1552) goto bb776; else goto bb777; bb773:
 #line 787
-    t1547 = h0_t; t1548 = INT64_C(1); if (__builtin_add_overflow(t1547, t1548, &t1549)) hero_panic_overflow(); h0_t = t1549; goto bb772; bb774: goto bb772; bb775:
+    t1547 = h0_t; t1548 = INT64_C(1); if (__builtin_add_overflow(t1547, t1548, &t1549)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 787, 13); h0_t = t1549; goto bb772; bb774: goto bb772; bb775:
 #line 792
     t1556 = h0_t; t1557 = INT64_C(259); t1558 = t1556 == t1557; if (t1558) goto bb779; else goto bb780; bb776:
 #line 790
-    t1553 = h0_t; t1554 = INT64_C(1); if (__builtin_add_overflow(t1553, t1554, &t1555)) hero_panic_overflow(); h0_t = t1555; goto bb775; bb777: goto bb775; bb778:
+    t1553 = h0_t; t1554 = INT64_C(1); if (__builtin_add_overflow(t1553, t1554, &t1555)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 790, 13); h0_t = t1555; goto bb775; bb777: goto bb775; bb778:
 #line 795
     t1562 = h0_t; t1563 = INT64_C(260); t1564 = t1562 == t1563; if (t1564) goto bb782; else goto bb783; bb779:
 #line 793
-    t1559 = h0_t; t1560 = INT64_C(1); if (__builtin_add_overflow(t1559, t1560, &t1561)) hero_panic_overflow(); h0_t = t1561; goto bb778; bb780: goto bb778; bb781:
+    t1559 = h0_t; t1560 = INT64_C(1); if (__builtin_add_overflow(t1559, t1560, &t1561)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 793, 13); h0_t = t1561; goto bb778; bb780: goto bb778; bb781:
 #line 798
     t1568 = h0_t; t1569 = INT64_C(261); t1570 = t1568 == t1569; if (t1570) goto bb785; else goto bb786; bb782:
 #line 796
-    t1565 = h0_t; t1566 = INT64_C(1); if (__builtin_add_overflow(t1565, t1566, &t1567)) hero_panic_overflow(); h0_t = t1567; goto bb781; bb783: goto bb781; bb784:
+    t1565 = h0_t; t1566 = INT64_C(1); if (__builtin_add_overflow(t1565, t1566, &t1567)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 796, 13); h0_t = t1567; goto bb781; bb783: goto bb781; bb784:
 #line 801
     t1574 = h0_t; t1575 = INT64_C(262); t1576 = t1574 == t1575; if (t1576) goto bb788; else goto bb789; bb785:
 #line 799
-    t1571 = h0_t; t1572 = INT64_C(1); if (__builtin_add_overflow(t1571, t1572, &t1573)) hero_panic_overflow(); h0_t = t1573; goto bb784; bb786: goto bb784; bb787:
+    t1571 = h0_t; t1572 = INT64_C(1); if (__builtin_add_overflow(t1571, t1572, &t1573)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 799, 13); h0_t = t1573; goto bb784; bb786: goto bb784; bb787:
 #line 804
     t1580 = h0_t; t1581 = INT64_C(263); t1582 = t1580 == t1581; if (t1582) goto bb791; else goto bb792; bb788:
 #line 802
-    t1577 = h0_t; t1578 = INT64_C(1); if (__builtin_add_overflow(t1577, t1578, &t1579)) hero_panic_overflow(); h0_t = t1579; goto bb787; bb789: goto bb787; bb790:
+    t1577 = h0_t; t1578 = INT64_C(1); if (__builtin_add_overflow(t1577, t1578, &t1579)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 802, 13); h0_t = t1579; goto bb787; bb789: goto bb787; bb790:
 #line 807
     t1586 = h0_t; t1587 = INT64_C(264); t1588 = t1586 == t1587; if (t1588) goto bb794; else goto bb795; bb791:
 #line 805
-    t1583 = h0_t; t1584 = INT64_C(1); if (__builtin_add_overflow(t1583, t1584, &t1585)) hero_panic_overflow(); h0_t = t1585; goto bb790; bb792: goto bb790; bb793:
+    t1583 = h0_t; t1584 = INT64_C(1); if (__builtin_add_overflow(t1583, t1584, &t1585)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 805, 13); h0_t = t1585; goto bb790; bb792: goto bb790; bb793:
 #line 810
     t1592 = h0_t; t1593 = INT64_C(265); t1594 = t1592 == t1593; if (t1594) goto bb797; else goto bb798; bb794:
 #line 808
-    t1589 = h0_t; t1590 = INT64_C(1); if (__builtin_add_overflow(t1589, t1590, &t1591)) hero_panic_overflow(); h0_t = t1591; goto bb793; bb795: goto bb793; bb796:
+    t1589 = h0_t; t1590 = INT64_C(1); if (__builtin_add_overflow(t1589, t1590, &t1591)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 808, 13); h0_t = t1591; goto bb793; bb795: goto bb793; bb796:
 #line 813
     t1598 = h0_t; t1599 = INT64_C(266); t1600 = t1598 == t1599; if (t1600) goto bb800; else goto bb801; bb797:
 #line 811
-    t1595 = h0_t; t1596 = INT64_C(1); if (__builtin_add_overflow(t1595, t1596, &t1597)) hero_panic_overflow(); h0_t = t1597; goto bb796; bb798: goto bb796; bb799:
+    t1595 = h0_t; t1596 = INT64_C(1); if (__builtin_add_overflow(t1595, t1596, &t1597)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 811, 13); h0_t = t1597; goto bb796; bb798: goto bb796; bb799:
 #line 816
     t1604 = h0_t; t1605 = INT64_C(267); t1606 = t1604 == t1605; if (t1606) goto bb803; else goto bb804; bb800:
 #line 814
-    t1601 = h0_t; t1602 = INT64_C(1); if (__builtin_add_overflow(t1601, t1602, &t1603)) hero_panic_overflow(); h0_t = t1603; goto bb799; bb801: goto bb799; bb802:
+    t1601 = h0_t; t1602 = INT64_C(1); if (__builtin_add_overflow(t1601, t1602, &t1603)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 814, 13); h0_t = t1603; goto bb799; bb801: goto bb799; bb802:
 #line 819
     t1610 = h0_t; t1611 = INT64_C(268); t1612 = t1610 == t1611; if (t1612) goto bb806; else goto bb807; bb803:
 #line 817
-    t1607 = h0_t; t1608 = INT64_C(1); if (__builtin_add_overflow(t1607, t1608, &t1609)) hero_panic_overflow(); h0_t = t1609; goto bb802; bb804: goto bb802; bb805:
+    t1607 = h0_t; t1608 = INT64_C(1); if (__builtin_add_overflow(t1607, t1608, &t1609)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 817, 13); h0_t = t1609; goto bb802; bb804: goto bb802; bb805:
 #line 822
     t1616 = h0_t; t1617 = INT64_C(269); t1618 = t1616 == t1617; if (t1618) goto bb809; else goto bb810; bb806:
 #line 820
-    t1613 = h0_t; t1614 = INT64_C(1); if (__builtin_add_overflow(t1613, t1614, &t1615)) hero_panic_overflow(); h0_t = t1615; goto bb805; bb807: goto bb805; bb808:
+    t1613 = h0_t; t1614 = INT64_C(1); if (__builtin_add_overflow(t1613, t1614, &t1615)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 820, 13); h0_t = t1615; goto bb805; bb807: goto bb805; bb808:
 #line 825
     t1622 = h0_t; t1623 = INT64_C(270); t1624 = t1622 == t1623; if (t1624) goto bb812; else goto bb813; bb809:
 #line 823
-    t1619 = h0_t; t1620 = INT64_C(1); if (__builtin_add_overflow(t1619, t1620, &t1621)) hero_panic_overflow(); h0_t = t1621; goto bb808; bb810: goto bb808; bb811:
+    t1619 = h0_t; t1620 = INT64_C(1); if (__builtin_add_overflow(t1619, t1620, &t1621)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 823, 13); h0_t = t1621; goto bb808; bb810: goto bb808; bb811:
 #line 828
     t1628 = h0_t; t1629 = INT64_C(271); t1630 = t1628 == t1629; if (t1630) goto bb815; else goto bb816; bb812:
 #line 826
-    t1625 = h0_t; t1626 = INT64_C(1); if (__builtin_add_overflow(t1625, t1626, &t1627)) hero_panic_overflow(); h0_t = t1627; goto bb811; bb813: goto bb811; bb814:
+    t1625 = h0_t; t1626 = INT64_C(1); if (__builtin_add_overflow(t1625, t1626, &t1627)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 826, 13); h0_t = t1627; goto bb811; bb813: goto bb811; bb814:
 #line 831
     t1634 = h0_t; t1635 = INT64_C(272); t1636 = t1634 == t1635; if (t1636) goto bb818; else goto bb819; bb815:
 #line 829
-    t1631 = h0_t; t1632 = INT64_C(1); if (__builtin_add_overflow(t1631, t1632, &t1633)) hero_panic_overflow(); h0_t = t1633; goto bb814; bb816: goto bb814; bb817:
+    t1631 = h0_t; t1632 = INT64_C(1); if (__builtin_add_overflow(t1631, t1632, &t1633)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 829, 13); h0_t = t1633; goto bb814; bb816: goto bb814; bb817:
 #line 834
     t1640 = h0_t; t1641 = INT64_C(273); t1642 = t1640 == t1641; if (t1642) goto bb821; else goto bb822; bb818:
 #line 832
-    t1637 = h0_t; t1638 = INT64_C(1); if (__builtin_add_overflow(t1637, t1638, &t1639)) hero_panic_overflow(); h0_t = t1639; goto bb817; bb819: goto bb817; bb820:
+    t1637 = h0_t; t1638 = INT64_C(1); if (__builtin_add_overflow(t1637, t1638, &t1639)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 832, 13); h0_t = t1639; goto bb817; bb819: goto bb817; bb820:
 #line 837
     t1646 = h0_t; t1647 = INT64_C(274); t1648 = t1646 == t1647; if (t1648) goto bb824; else goto bb825; bb821:
 #line 835
-    t1643 = h0_t; t1644 = INT64_C(1); if (__builtin_add_overflow(t1643, t1644, &t1645)) hero_panic_overflow(); h0_t = t1645; goto bb820; bb822: goto bb820; bb823:
+    t1643 = h0_t; t1644 = INT64_C(1); if (__builtin_add_overflow(t1643, t1644, &t1645)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 835, 13); h0_t = t1645; goto bb820; bb822: goto bb820; bb823:
 #line 840
     t1652 = h0_t; t1653 = INT64_C(275); t1654 = t1652 == t1653; if (t1654) goto bb827; else goto bb828; bb824:
 #line 838
-    t1649 = h0_t; t1650 = INT64_C(1); if (__builtin_add_overflow(t1649, t1650, &t1651)) hero_panic_overflow(); h0_t = t1651; goto bb823; bb825: goto bb823; bb826:
+    t1649 = h0_t; t1650 = INT64_C(1); if (__builtin_add_overflow(t1649, t1650, &t1651)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 838, 13); h0_t = t1651; goto bb823; bb825: goto bb823; bb826:
 #line 843
     t1658 = h0_t; t1659 = INT64_C(276); t1660 = t1658 == t1659; if (t1660) goto bb830; else goto bb831; bb827:
 #line 841
-    t1655 = h0_t; t1656 = INT64_C(1); if (__builtin_add_overflow(t1655, t1656, &t1657)) hero_panic_overflow(); h0_t = t1657; goto bb826; bb828: goto bb826; bb829:
+    t1655 = h0_t; t1656 = INT64_C(1); if (__builtin_add_overflow(t1655, t1656, &t1657)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 841, 13); h0_t = t1657; goto bb826; bb828: goto bb826; bb829:
 #line 846
     t1664 = h0_t; t1665 = INT64_C(277); t1666 = t1664 == t1665; if (t1666) goto bb833; else goto bb834; bb830:
 #line 844
-    t1661 = h0_t; t1662 = INT64_C(1); if (__builtin_add_overflow(t1661, t1662, &t1663)) hero_panic_overflow(); h0_t = t1663; goto bb829; bb831: goto bb829; bb832:
+    t1661 = h0_t; t1662 = INT64_C(1); if (__builtin_add_overflow(t1661, t1662, &t1663)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 844, 13); h0_t = t1663; goto bb829; bb831: goto bb829; bb832:
 #line 849
     t1670 = h0_t; t1671 = INT64_C(278); t1672 = t1670 == t1671; if (t1672) goto bb836; else goto bb837; bb833:
 #line 847
-    t1667 = h0_t; t1668 = INT64_C(1); if (__builtin_add_overflow(t1667, t1668, &t1669)) hero_panic_overflow(); h0_t = t1669; goto bb832; bb834: goto bb832; bb835:
+    t1667 = h0_t; t1668 = INT64_C(1); if (__builtin_add_overflow(t1667, t1668, &t1669)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 847, 13); h0_t = t1669; goto bb832; bb834: goto bb832; bb835:
 #line 852
     t1676 = h0_t; t1677 = INT64_C(279); t1678 = t1676 == t1677; if (t1678) goto bb839; else goto bb840; bb836:
 #line 850
-    t1673 = h0_t; t1674 = INT64_C(1); if (__builtin_add_overflow(t1673, t1674, &t1675)) hero_panic_overflow(); h0_t = t1675; goto bb835; bb837: goto bb835; bb838:
+    t1673 = h0_t; t1674 = INT64_C(1); if (__builtin_add_overflow(t1673, t1674, &t1675)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 850, 13); h0_t = t1675; goto bb835; bb837: goto bb835; bb838:
 #line 855
     t1682 = h0_t; t1683 = INT64_C(280); t1684 = t1682 == t1683; if (t1684) goto bb842; else goto bb843; bb839:
 #line 853
-    t1679 = h0_t; t1680 = INT64_C(1); if (__builtin_add_overflow(t1679, t1680, &t1681)) hero_panic_overflow(); h0_t = t1681; goto bb838; bb840: goto bb838; bb841:
+    t1679 = h0_t; t1680 = INT64_C(1); if (__builtin_add_overflow(t1679, t1680, &t1681)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 853, 13); h0_t = t1681; goto bb838; bb840: goto bb838; bb841:
 #line 858
     t1688 = h0_t; t1689 = INT64_C(281); t1690 = t1688 == t1689; if (t1690) goto bb845; else goto bb846; bb842:
 #line 856
-    t1685 = h0_t; t1686 = INT64_C(1); if (__builtin_add_overflow(t1685, t1686, &t1687)) hero_panic_overflow(); h0_t = t1687; goto bb841; bb843: goto bb841; bb844:
+    t1685 = h0_t; t1686 = INT64_C(1); if (__builtin_add_overflow(t1685, t1686, &t1687)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 856, 13); h0_t = t1687; goto bb841; bb843: goto bb841; bb844:
 #line 861
     t1694 = h0_t; t1695 = INT64_C(282); t1696 = t1694 == t1695; if (t1696) goto bb848; else goto bb849; bb845:
 #line 859
-    t1691 = h0_t; t1692 = INT64_C(1); if (__builtin_add_overflow(t1691, t1692, &t1693)) hero_panic_overflow(); h0_t = t1693; goto bb844; bb846: goto bb844; bb847:
+    t1691 = h0_t; t1692 = INT64_C(1); if (__builtin_add_overflow(t1691, t1692, &t1693)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 859, 13); h0_t = t1693; goto bb844; bb846: goto bb844; bb847:
 #line 864
     t1700 = h0_t; t1701 = INT64_C(283); t1702 = t1700 == t1701; if (t1702) goto bb851; else goto bb852; bb848:
 #line 862
-    t1697 = h0_t; t1698 = INT64_C(1); if (__builtin_add_overflow(t1697, t1698, &t1699)) hero_panic_overflow(); h0_t = t1699; goto bb847; bb849: goto bb847; bb850:
+    t1697 = h0_t; t1698 = INT64_C(1); if (__builtin_add_overflow(t1697, t1698, &t1699)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 862, 13); h0_t = t1699; goto bb847; bb849: goto bb847; bb850:
 #line 867
     t1706 = h0_t; t1707 = INT64_C(284); t1708 = t1706 == t1707; if (t1708) goto bb854; else goto bb855; bb851:
 #line 865
-    t1703 = h0_t; t1704 = INT64_C(1); if (__builtin_add_overflow(t1703, t1704, &t1705)) hero_panic_overflow(); h0_t = t1705; goto bb850; bb852: goto bb850; bb853:
+    t1703 = h0_t; t1704 = INT64_C(1); if (__builtin_add_overflow(t1703, t1704, &t1705)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 865, 13); h0_t = t1705; goto bb850; bb852: goto bb850; bb853:
 #line 870
     t1712 = h0_t; t1713 = INT64_C(285); t1714 = t1712 == t1713; if (t1714) goto bb857; else goto bb858; bb854:
 #line 868
-    t1709 = h0_t; t1710 = INT64_C(1); if (__builtin_add_overflow(t1709, t1710, &t1711)) hero_panic_overflow(); h0_t = t1711; goto bb853; bb855: goto bb853; bb856:
+    t1709 = h0_t; t1710 = INT64_C(1); if (__builtin_add_overflow(t1709, t1710, &t1711)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 868, 13); h0_t = t1711; goto bb853; bb855: goto bb853; bb856:
 #line 873
     t1718 = h0_t; t1719 = INT64_C(286); t1720 = t1718 == t1719; if (t1720) goto bb860; else goto bb861; bb857:
 #line 871
-    t1715 = h0_t; t1716 = INT64_C(1); if (__builtin_add_overflow(t1715, t1716, &t1717)) hero_panic_overflow(); h0_t = t1717; goto bb856; bb858: goto bb856; bb859:
+    t1715 = h0_t; t1716 = INT64_C(1); if (__builtin_add_overflow(t1715, t1716, &t1717)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 871, 13); h0_t = t1717; goto bb856; bb858: goto bb856; bb859:
 #line 876
     t1724 = h0_t; t1725 = INT64_C(287); t1726 = t1724 == t1725; if (t1726) goto bb863; else goto bb864; bb860:
 #line 874
-    t1721 = h0_t; t1722 = INT64_C(1); if (__builtin_add_overflow(t1721, t1722, &t1723)) hero_panic_overflow(); h0_t = t1723; goto bb859; bb861: goto bb859; bb862:
+    t1721 = h0_t; t1722 = INT64_C(1); if (__builtin_add_overflow(t1721, t1722, &t1723)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 874, 13); h0_t = t1723; goto bb859; bb861: goto bb859; bb862:
 #line 879
     t1730 = h0_t; t1731 = INT64_C(288); t1732 = t1730 == t1731; if (t1732) goto bb866; else goto bb867; bb863:
 #line 877
-    t1727 = h0_t; t1728 = INT64_C(1); if (__builtin_add_overflow(t1727, t1728, &t1729)) hero_panic_overflow(); h0_t = t1729; goto bb862; bb864: goto bb862; bb865:
+    t1727 = h0_t; t1728 = INT64_C(1); if (__builtin_add_overflow(t1727, t1728, &t1729)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 877, 13); h0_t = t1729; goto bb862; bb864: goto bb862; bb865:
 #line 882
     t1736 = h0_t; t1737 = INT64_C(289); t1738 = t1736 == t1737; if (t1738) goto bb869; else goto bb870; bb866:
 #line 880
-    t1733 = h0_t; t1734 = INT64_C(1); if (__builtin_add_overflow(t1733, t1734, &t1735)) hero_panic_overflow(); h0_t = t1735; goto bb865; bb867: goto bb865; bb868:
+    t1733 = h0_t; t1734 = INT64_C(1); if (__builtin_add_overflow(t1733, t1734, &t1735)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 880, 13); h0_t = t1735; goto bb865; bb867: goto bb865; bb868:
 #line 885
     t1742 = h0_t; t1743 = INT64_C(290); t1744 = t1742 == t1743; if (t1744) goto bb872; else goto bb873; bb869:
 #line 883
-    t1739 = h0_t; t1740 = INT64_C(1); if (__builtin_add_overflow(t1739, t1740, &t1741)) hero_panic_overflow(); h0_t = t1741; goto bb868; bb870: goto bb868; bb871:
+    t1739 = h0_t; t1740 = INT64_C(1); if (__builtin_add_overflow(t1739, t1740, &t1741)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 883, 13); h0_t = t1741; goto bb868; bb870: goto bb868; bb871:
 #line 888
     t1748 = h0_t; t1749 = INT64_C(291); t1750 = t1748 == t1749; if (t1750) goto bb875; else goto bb876; bb872:
 #line 886
-    t1745 = h0_t; t1746 = INT64_C(1); if (__builtin_add_overflow(t1745, t1746, &t1747)) hero_panic_overflow(); h0_t = t1747; goto bb871; bb873: goto bb871; bb874:
+    t1745 = h0_t; t1746 = INT64_C(1); if (__builtin_add_overflow(t1745, t1746, &t1747)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 886, 13); h0_t = t1747; goto bb871; bb873: goto bb871; bb874:
 #line 891
     t1754 = h0_t; t1755 = INT64_C(292); t1756 = t1754 == t1755; if (t1756) goto bb878; else goto bb879; bb875:
 #line 889
-    t1751 = h0_t; t1752 = INT64_C(1); if (__builtin_add_overflow(t1751, t1752, &t1753)) hero_panic_overflow(); h0_t = t1753; goto bb874; bb876: goto bb874; bb877:
+    t1751 = h0_t; t1752 = INT64_C(1); if (__builtin_add_overflow(t1751, t1752, &t1753)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 889, 13); h0_t = t1753; goto bb874; bb876: goto bb874; bb877:
 #line 894
     t1760 = h0_t; t1761 = INT64_C(293); t1762 = t1760 == t1761; if (t1762) goto bb881; else goto bb882; bb878:
 #line 892
-    t1757 = h0_t; t1758 = INT64_C(1); if (__builtin_add_overflow(t1757, t1758, &t1759)) hero_panic_overflow(); h0_t = t1759; goto bb877; bb879: goto bb877; bb880:
+    t1757 = h0_t; t1758 = INT64_C(1); if (__builtin_add_overflow(t1757, t1758, &t1759)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 892, 13); h0_t = t1759; goto bb877; bb879: goto bb877; bb880:
 #line 897
     t1766 = h0_t; t1767 = INT64_C(294); t1768 = t1766 == t1767; if (t1768) goto bb884; else goto bb885; bb881:
 #line 895
-    t1763 = h0_t; t1764 = INT64_C(1); if (__builtin_add_overflow(t1763, t1764, &t1765)) hero_panic_overflow(); h0_t = t1765; goto bb880; bb882: goto bb880; bb883:
+    t1763 = h0_t; t1764 = INT64_C(1); if (__builtin_add_overflow(t1763, t1764, &t1765)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 895, 13); h0_t = t1765; goto bb880; bb882: goto bb880; bb883:
 #line 900
     t1772 = h0_t; t1773 = INT64_C(295); t1774 = t1772 == t1773; if (t1774) goto bb887; else goto bb888; bb884:
 #line 898
-    t1769 = h0_t; t1770 = INT64_C(1); if (__builtin_add_overflow(t1769, t1770, &t1771)) hero_panic_overflow(); h0_t = t1771; goto bb883; bb885: goto bb883; bb886:
+    t1769 = h0_t; t1770 = INT64_C(1); if (__builtin_add_overflow(t1769, t1770, &t1771)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 898, 13); h0_t = t1771; goto bb883; bb885: goto bb883; bb886:
 #line 903
     t1778 = h0_t; t1779 = INT64_C(296); t1780 = t1778 == t1779; if (t1780) goto bb890; else goto bb891; bb887:
 #line 901
-    t1775 = h0_t; t1776 = INT64_C(1); if (__builtin_add_overflow(t1775, t1776, &t1777)) hero_panic_overflow(); h0_t = t1777; goto bb886; bb888: goto bb886; bb889:
+    t1775 = h0_t; t1776 = INT64_C(1); if (__builtin_add_overflow(t1775, t1776, &t1777)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 901, 13); h0_t = t1777; goto bb886; bb888: goto bb886; bb889:
 #line 906
     t1784 = h0_t; t1785 = INT64_C(297); t1786 = t1784 == t1785; if (t1786) goto bb893; else goto bb894; bb890:
 #line 904
-    t1781 = h0_t; t1782 = INT64_C(1); if (__builtin_add_overflow(t1781, t1782, &t1783)) hero_panic_overflow(); h0_t = t1783; goto bb889; bb891: goto bb889; bb892:
+    t1781 = h0_t; t1782 = INT64_C(1); if (__builtin_add_overflow(t1781, t1782, &t1783)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 904, 13); h0_t = t1783; goto bb889; bb891: goto bb889; bb892:
 #line 909
     t1790 = h0_t; t1791 = INT64_C(298); t1792 = t1790 == t1791; if (t1792) goto bb896; else goto bb897; bb893:
 #line 907
-    t1787 = h0_t; t1788 = INT64_C(1); if (__builtin_add_overflow(t1787, t1788, &t1789)) hero_panic_overflow(); h0_t = t1789; goto bb892; bb894: goto bb892; bb895:
+    t1787 = h0_t; t1788 = INT64_C(1); if (__builtin_add_overflow(t1787, t1788, &t1789)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 907, 13); h0_t = t1789; goto bb892; bb894: goto bb892; bb895:
 #line 912
     t1796 = h0_t; t1797 = INT64_C(299); t1798 = t1796 == t1797; if (t1798) goto bb899; else goto bb900; bb896:
 #line 910
-    t1793 = h0_t; t1794 = INT64_C(1); if (__builtin_add_overflow(t1793, t1794, &t1795)) hero_panic_overflow(); h0_t = t1795; goto bb895; bb897: goto bb895; bb898:
+    t1793 = h0_t; t1794 = INT64_C(1); if (__builtin_add_overflow(t1793, t1794, &t1795)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 910, 13); h0_t = t1795; goto bb895; bb897: goto bb895; bb898:
 #line 915
     t1802 = h0_t; t1803 = INT64_C(300); t1804 = t1802 == t1803; if (t1804) goto bb902; else goto bb903; bb899:
 #line 913
-    t1799 = h0_t; t1800 = INT64_C(1); if (__builtin_add_overflow(t1799, t1800, &t1801)) hero_panic_overflow(); h0_t = t1801; goto bb898; bb900: goto bb898; bb901:
+    t1799 = h0_t; t1800 = INT64_C(1); if (__builtin_add_overflow(t1799, t1800, &t1801)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 913, 13); h0_t = t1801; goto bb898; bb900: goto bb898; bb901:
 #line 918
     t1808 = h0_t; t1809 = INT64_C(301); t1810 = t1808 == t1809; if (t1810) goto bb905; else goto bb906; bb902:
 #line 916
-    t1805 = h0_t; t1806 = INT64_C(1); if (__builtin_add_overflow(t1805, t1806, &t1807)) hero_panic_overflow(); h0_t = t1807; goto bb901; bb903: goto bb901; bb904:
+    t1805 = h0_t; t1806 = INT64_C(1); if (__builtin_add_overflow(t1805, t1806, &t1807)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 916, 13); h0_t = t1807; goto bb901; bb903: goto bb901; bb904:
 #line 921
     t1814 = h0_t; t1815 = INT64_C(302); t1816 = t1814 == t1815; if (t1816) goto bb908; else goto bb909; bb905:
 #line 919
-    t1811 = h0_t; t1812 = INT64_C(1); if (__builtin_add_overflow(t1811, t1812, &t1813)) hero_panic_overflow(); h0_t = t1813; goto bb904; bb906: goto bb904; bb907:
+    t1811 = h0_t; t1812 = INT64_C(1); if (__builtin_add_overflow(t1811, t1812, &t1813)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 919, 13); h0_t = t1813; goto bb904; bb906: goto bb904; bb907:
 #line 924
     t1820 = h0_t; t1821 = INT64_C(303); t1822 = t1820 == t1821; if (t1822) goto bb911; else goto bb912; bb908:
 #line 922
-    t1817 = h0_t; t1818 = INT64_C(1); if (__builtin_add_overflow(t1817, t1818, &t1819)) hero_panic_overflow(); h0_t = t1819; goto bb907; bb909: goto bb907; bb910:
+    t1817 = h0_t; t1818 = INT64_C(1); if (__builtin_add_overflow(t1817, t1818, &t1819)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 922, 13); h0_t = t1819; goto bb907; bb909: goto bb907; bb910:
 #line 927
     t1826 = h0_t; t1827 = INT64_C(304); t1828 = t1826 == t1827; if (t1828) goto bb914; else goto bb915; bb911:
 #line 925
-    t1823 = h0_t; t1824 = INT64_C(1); if (__builtin_add_overflow(t1823, t1824, &t1825)) hero_panic_overflow(); h0_t = t1825; goto bb910; bb912: goto bb910; bb913:
+    t1823 = h0_t; t1824 = INT64_C(1); if (__builtin_add_overflow(t1823, t1824, &t1825)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 925, 13); h0_t = t1825; goto bb910; bb912: goto bb910; bb913:
 #line 930
     t1832 = h0_t; t1833 = INT64_C(305); t1834 = t1832 == t1833; if (t1834) goto bb917; else goto bb918; bb914:
 #line 928
-    t1829 = h0_t; t1830 = INT64_C(1); if (__builtin_add_overflow(t1829, t1830, &t1831)) hero_panic_overflow(); h0_t = t1831; goto bb913; bb915: goto bb913; bb916:
+    t1829 = h0_t; t1830 = INT64_C(1); if (__builtin_add_overflow(t1829, t1830, &t1831)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 928, 13); h0_t = t1831; goto bb913; bb915: goto bb913; bb916:
 #line 933
     t1838 = h0_t; t1839 = INT64_C(306); t1840 = t1838 == t1839; if (t1840) goto bb920; else goto bb921; bb917:
 #line 931
-    t1835 = h0_t; t1836 = INT64_C(1); if (__builtin_add_overflow(t1835, t1836, &t1837)) hero_panic_overflow(); h0_t = t1837; goto bb916; bb918: goto bb916; bb919:
+    t1835 = h0_t; t1836 = INT64_C(1); if (__builtin_add_overflow(t1835, t1836, &t1837)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 931, 13); h0_t = t1837; goto bb916; bb918: goto bb916; bb919:
 #line 936
     t1844 = h0_t; t1845 = INT64_C(307); t1846 = t1844 == t1845; if (t1846) goto bb923; else goto bb924; bb920:
 #line 934
-    t1841 = h0_t; t1842 = INT64_C(1); if (__builtin_add_overflow(t1841, t1842, &t1843)) hero_panic_overflow(); h0_t = t1843; goto bb919; bb921: goto bb919; bb922:
+    t1841 = h0_t; t1842 = INT64_C(1); if (__builtin_add_overflow(t1841, t1842, &t1843)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 934, 13); h0_t = t1843; goto bb919; bb921: goto bb919; bb922:
 #line 939
     t1850 = h0_t; t1851 = INT64_C(308); t1852 = t1850 == t1851; if (t1852) goto bb926; else goto bb927; bb923:
 #line 937
-    t1847 = h0_t; t1848 = INT64_C(1); if (__builtin_add_overflow(t1847, t1848, &t1849)) hero_panic_overflow(); h0_t = t1849; goto bb922; bb924: goto bb922; bb925:
+    t1847 = h0_t; t1848 = INT64_C(1); if (__builtin_add_overflow(t1847, t1848, &t1849)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 937, 13); h0_t = t1849; goto bb922; bb924: goto bb922; bb925:
 #line 942
     t1856 = h0_t; t1857 = INT64_C(309); t1858 = t1856 == t1857; if (t1858) goto bb929; else goto bb930; bb926:
 #line 940
-    t1853 = h0_t; t1854 = INT64_C(1); if (__builtin_add_overflow(t1853, t1854, &t1855)) hero_panic_overflow(); h0_t = t1855; goto bb925; bb927: goto bb925; bb928:
+    t1853 = h0_t; t1854 = INT64_C(1); if (__builtin_add_overflow(t1853, t1854, &t1855)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 940, 13); h0_t = t1855; goto bb925; bb927: goto bb925; bb928:
 #line 945
     t1862 = h0_t; t1863 = INT64_C(310); t1864 = t1862 == t1863; if (t1864) goto bb932; else goto bb933; bb929:
 #line 943
-    t1859 = h0_t; t1860 = INT64_C(1); if (__builtin_add_overflow(t1859, t1860, &t1861)) hero_panic_overflow(); h0_t = t1861; goto bb928; bb930: goto bb928; bb931:
+    t1859 = h0_t; t1860 = INT64_C(1); if (__builtin_add_overflow(t1859, t1860, &t1861)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 943, 13); h0_t = t1861; goto bb928; bb930: goto bb928; bb931:
 #line 948
     t1868 = h0_t; t1869 = INT64_C(311); t1870 = t1868 == t1869; if (t1870) goto bb935; else goto bb936; bb932:
 #line 946
-    t1865 = h0_t; t1866 = INT64_C(1); if (__builtin_add_overflow(t1865, t1866, &t1867)) hero_panic_overflow(); h0_t = t1867; goto bb931; bb933: goto bb931; bb934:
+    t1865 = h0_t; t1866 = INT64_C(1); if (__builtin_add_overflow(t1865, t1866, &t1867)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 946, 13); h0_t = t1867; goto bb931; bb933: goto bb931; bb934:
 #line 951
     t1874 = h0_t; t1875 = INT64_C(312); t1876 = t1874 == t1875; if (t1876) goto bb938; else goto bb939; bb935:
 #line 949
-    t1871 = h0_t; t1872 = INT64_C(1); if (__builtin_add_overflow(t1871, t1872, &t1873)) hero_panic_overflow(); h0_t = t1873; goto bb934; bb936: goto bb934; bb937:
+    t1871 = h0_t; t1872 = INT64_C(1); if (__builtin_add_overflow(t1871, t1872, &t1873)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 949, 13); h0_t = t1873; goto bb934; bb936: goto bb934; bb937:
 #line 954
     t1880 = h0_t; t1881 = INT64_C(313); t1882 = t1880 == t1881; if (t1882) goto bb941; else goto bb942; bb938:
 #line 952
-    t1877 = h0_t; t1878 = INT64_C(1); if (__builtin_add_overflow(t1877, t1878, &t1879)) hero_panic_overflow(); h0_t = t1879; goto bb937; bb939: goto bb937; bb940:
+    t1877 = h0_t; t1878 = INT64_C(1); if (__builtin_add_overflow(t1877, t1878, &t1879)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 952, 13); h0_t = t1879; goto bb937; bb939: goto bb937; bb940:
 #line 957
     t1886 = h0_t; t1887 = INT64_C(314); t1888 = t1886 == t1887; if (t1888) goto bb944; else goto bb945; bb941:
 #line 955
-    t1883 = h0_t; t1884 = INT64_C(1); if (__builtin_add_overflow(t1883, t1884, &t1885)) hero_panic_overflow(); h0_t = t1885; goto bb940; bb942: goto bb940; bb943:
+    t1883 = h0_t; t1884 = INT64_C(1); if (__builtin_add_overflow(t1883, t1884, &t1885)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 955, 13); h0_t = t1885; goto bb940; bb942: goto bb940; bb943:
 #line 960
     t1892 = h0_t; t1893 = INT64_C(315); t1894 = t1892 == t1893; if (t1894) goto bb947; else goto bb948; bb944:
 #line 958
-    t1889 = h0_t; t1890 = INT64_C(1); if (__builtin_add_overflow(t1889, t1890, &t1891)) hero_panic_overflow(); h0_t = t1891; goto bb943; bb945: goto bb943; bb946:
+    t1889 = h0_t; t1890 = INT64_C(1); if (__builtin_add_overflow(t1889, t1890, &t1891)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 958, 13); h0_t = t1891; goto bb943; bb945: goto bb943; bb946:
 #line 963
     t1898 = h0_t; t1899 = INT64_C(316); t1900 = t1898 == t1899; if (t1900) goto bb950; else goto bb951; bb947:
 #line 961
-    t1895 = h0_t; t1896 = INT64_C(1); if (__builtin_add_overflow(t1895, t1896, &t1897)) hero_panic_overflow(); h0_t = t1897; goto bb946; bb948: goto bb946; bb949:
+    t1895 = h0_t; t1896 = INT64_C(1); if (__builtin_add_overflow(t1895, t1896, &t1897)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 961, 13); h0_t = t1897; goto bb946; bb948: goto bb946; bb949:
 #line 966
     t1904 = h0_t; t1905 = INT64_C(317); t1906 = t1904 == t1905; if (t1906) goto bb953; else goto bb954; bb950:
 #line 964
-    t1901 = h0_t; t1902 = INT64_C(1); if (__builtin_add_overflow(t1901, t1902, &t1903)) hero_panic_overflow(); h0_t = t1903; goto bb949; bb951: goto bb949; bb952:
+    t1901 = h0_t; t1902 = INT64_C(1); if (__builtin_add_overflow(t1901, t1902, &t1903)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 964, 13); h0_t = t1903; goto bb949; bb951: goto bb949; bb952:
 #line 969
     t1910 = h0_t; t1911 = INT64_C(318); t1912 = t1910 == t1911; if (t1912) goto bb956; else goto bb957; bb953:
 #line 967
-    t1907 = h0_t; t1908 = INT64_C(1); if (__builtin_add_overflow(t1907, t1908, &t1909)) hero_panic_overflow(); h0_t = t1909; goto bb952; bb954: goto bb952; bb955:
+    t1907 = h0_t; t1908 = INT64_C(1); if (__builtin_add_overflow(t1907, t1908, &t1909)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 967, 13); h0_t = t1909; goto bb952; bb954: goto bb952; bb955:
 #line 972
     t1916 = h0_t; t1917 = INT64_C(319); t1918 = t1916 == t1917; if (t1918) goto bb959; else goto bb960; bb956:
 #line 970
-    t1913 = h0_t; t1914 = INT64_C(1); if (__builtin_add_overflow(t1913, t1914, &t1915)) hero_panic_overflow(); h0_t = t1915; goto bb955; bb957: goto bb955; bb958:
+    t1913 = h0_t; t1914 = INT64_C(1); if (__builtin_add_overflow(t1913, t1914, &t1915)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 970, 13); h0_t = t1915; goto bb955; bb957: goto bb955; bb958:
 #line 975
     t1922 = h0_t; t1923 = INT64_C(320); t1924 = t1922 == t1923; if (t1924) goto bb962; else goto bb963; bb959:
 #line 973
-    t1919 = h0_t; t1920 = INT64_C(1); if (__builtin_add_overflow(t1919, t1920, &t1921)) hero_panic_overflow(); h0_t = t1921; goto bb958; bb960: goto bb958; bb961:
+    t1919 = h0_t; t1920 = INT64_C(1); if (__builtin_add_overflow(t1919, t1920, &t1921)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 973, 13); h0_t = t1921; goto bb958; bb960: goto bb958; bb961:
 #line 978
     t1928 = h0_t; t1929 = INT64_C(321); t1930 = t1928 == t1929; if (t1930) goto bb965; else goto bb966; bb962:
 #line 976
-    t1925 = h0_t; t1926 = INT64_C(1); if (__builtin_add_overflow(t1925, t1926, &t1927)) hero_panic_overflow(); h0_t = t1927; goto bb961; bb963: goto bb961; bb964:
+    t1925 = h0_t; t1926 = INT64_C(1); if (__builtin_add_overflow(t1925, t1926, &t1927)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 976, 13); h0_t = t1927; goto bb961; bb963: goto bb961; bb964:
 #line 981
     t1934 = h0_t; t1935 = INT64_C(322); t1936 = t1934 == t1935; if (t1936) goto bb968; else goto bb969; bb965:
 #line 979
-    t1931 = h0_t; t1932 = INT64_C(1); if (__builtin_add_overflow(t1931, t1932, &t1933)) hero_panic_overflow(); h0_t = t1933; goto bb964; bb966: goto bb964; bb967:
+    t1931 = h0_t; t1932 = INT64_C(1); if (__builtin_add_overflow(t1931, t1932, &t1933)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 979, 13); h0_t = t1933; goto bb964; bb966: goto bb964; bb967:
 #line 984
     t1940 = h0_t; t1941 = INT64_C(323); t1942 = t1940 == t1941; if (t1942) goto bb971; else goto bb972; bb968:
 #line 982
-    t1937 = h0_t; t1938 = INT64_C(1); if (__builtin_add_overflow(t1937, t1938, &t1939)) hero_panic_overflow(); h0_t = t1939; goto bb967; bb969: goto bb967; bb970:
+    t1937 = h0_t; t1938 = INT64_C(1); if (__builtin_add_overflow(t1937, t1938, &t1939)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 982, 13); h0_t = t1939; goto bb967; bb969: goto bb967; bb970:
 #line 987
     t1946 = h0_t; t1947 = INT64_C(324); t1948 = t1946 == t1947; if (t1948) goto bb974; else goto bb975; bb971:
 #line 985
-    t1943 = h0_t; t1944 = INT64_C(1); if (__builtin_add_overflow(t1943, t1944, &t1945)) hero_panic_overflow(); h0_t = t1945; goto bb970; bb972: goto bb970; bb973:
+    t1943 = h0_t; t1944 = INT64_C(1); if (__builtin_add_overflow(t1943, t1944, &t1945)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 985, 13); h0_t = t1945; goto bb970; bb972: goto bb970; bb973:
 #line 990
     t1952 = h0_t; t1953 = INT64_C(325); t1954 = t1952 == t1953; if (t1954) goto bb977; else goto bb978; bb974:
 #line 988
-    t1949 = h0_t; t1950 = INT64_C(1); if (__builtin_add_overflow(t1949, t1950, &t1951)) hero_panic_overflow(); h0_t = t1951; goto bb973; bb975: goto bb973; bb976:
+    t1949 = h0_t; t1950 = INT64_C(1); if (__builtin_add_overflow(t1949, t1950, &t1951)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 988, 13); h0_t = t1951; goto bb973; bb975: goto bb973; bb976:
 #line 993
     t1958 = h0_t; t1959 = INT64_C(326); t1960 = t1958 == t1959; if (t1960) goto bb980; else goto bb981; bb977:
 #line 991
-    t1955 = h0_t; t1956 = INT64_C(1); if (__builtin_add_overflow(t1955, t1956, &t1957)) hero_panic_overflow(); h0_t = t1957; goto bb976; bb978: goto bb976; bb979:
+    t1955 = h0_t; t1956 = INT64_C(1); if (__builtin_add_overflow(t1955, t1956, &t1957)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 991, 13); h0_t = t1957; goto bb976; bb978: goto bb976; bb979:
 #line 996
     t1964 = h0_t; t1965 = INT64_C(327); t1966 = t1964 == t1965; if (t1966) goto bb983; else goto bb984; bb980:
 #line 994
-    t1961 = h0_t; t1962 = INT64_C(1); if (__builtin_add_overflow(t1961, t1962, &t1963)) hero_panic_overflow(); h0_t = t1963; goto bb979; bb981: goto bb979; bb982:
+    t1961 = h0_t; t1962 = INT64_C(1); if (__builtin_add_overflow(t1961, t1962, &t1963)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 994, 13); h0_t = t1963; goto bb979; bb981: goto bb979; bb982:
 #line 999
     t1970 = h0_t; t1971 = INT64_C(328); t1972 = t1970 == t1971; if (t1972) goto bb986; else goto bb987; bb983:
 #line 997
-    t1967 = h0_t; t1968 = INT64_C(1); if (__builtin_add_overflow(t1967, t1968, &t1969)) hero_panic_overflow(); h0_t = t1969; goto bb982; bb984: goto bb982; bb985:
+    t1967 = h0_t; t1968 = INT64_C(1); if (__builtin_add_overflow(t1967, t1968, &t1969)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 997, 13); h0_t = t1969; goto bb982; bb984: goto bb982; bb985:
 #line 1002
     t1976 = h0_t; t1977 = INT64_C(329); t1978 = t1976 == t1977; if (t1978) goto bb989; else goto bb990; bb986:
 #line 1000
-    t1973 = h0_t; t1974 = INT64_C(1); if (__builtin_add_overflow(t1973, t1974, &t1975)) hero_panic_overflow(); h0_t = t1975; goto bb985; bb987: goto bb985; bb988:
+    t1973 = h0_t; t1974 = INT64_C(1); if (__builtin_add_overflow(t1973, t1974, &t1975)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1000, 13); h0_t = t1975; goto bb985; bb987: goto bb985; bb988:
 #line 1005
     t1982 = h0_t; t1983 = INT64_C(330); t1984 = t1982 == t1983; if (t1984) goto bb992; else goto bb993; bb989:
 #line 1003
-    t1979 = h0_t; t1980 = INT64_C(1); if (__builtin_add_overflow(t1979, t1980, &t1981)) hero_panic_overflow(); h0_t = t1981; goto bb988; bb990: goto bb988; bb991:
+    t1979 = h0_t; t1980 = INT64_C(1); if (__builtin_add_overflow(t1979, t1980, &t1981)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1003, 13); h0_t = t1981; goto bb988; bb990: goto bb988; bb991:
 #line 1008
     t1988 = h0_t; t1989 = INT64_C(331); t1990 = t1988 == t1989; if (t1990) goto bb995; else goto bb996; bb992:
 #line 1006
-    t1985 = h0_t; t1986 = INT64_C(1); if (__builtin_add_overflow(t1985, t1986, &t1987)) hero_panic_overflow(); h0_t = t1987; goto bb991; bb993: goto bb991; bb994:
+    t1985 = h0_t; t1986 = INT64_C(1); if (__builtin_add_overflow(t1985, t1986, &t1987)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1006, 13); h0_t = t1987; goto bb991; bb993: goto bb991; bb994:
 #line 1011
     t1994 = h0_t; t1995 = INT64_C(332); t1996 = t1994 == t1995; if (t1996) goto bb998; else goto bb999; bb995:
 #line 1009
-    t1991 = h0_t; t1992 = INT64_C(1); if (__builtin_add_overflow(t1991, t1992, &t1993)) hero_panic_overflow(); h0_t = t1993; goto bb994; bb996: goto bb994; bb997:
+    t1991 = h0_t; t1992 = INT64_C(1); if (__builtin_add_overflow(t1991, t1992, &t1993)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1009, 13); h0_t = t1993; goto bb994; bb996: goto bb994; bb997:
 #line 1014
     t2000 = h0_t; t2001 = INT64_C(333); t2002 = t2000 == t2001; if (t2002) goto bb1001; else goto bb1002; bb998:
 #line 1012
-    t1997 = h0_t; t1998 = INT64_C(1); if (__builtin_add_overflow(t1997, t1998, &t1999)) hero_panic_overflow(); h0_t = t1999; goto bb997; bb999: goto bb997; bb1000:
+    t1997 = h0_t; t1998 = INT64_C(1); if (__builtin_add_overflow(t1997, t1998, &t1999)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1012, 13); h0_t = t1999; goto bb997; bb999: goto bb997; bb1000:
 #line 1017
     t2006 = h0_t; t2007 = INT64_C(334); t2008 = t2006 == t2007; if (t2008) goto bb1004; else goto bb1005; bb1001:
 #line 1015
-    t2003 = h0_t; t2004 = INT64_C(1); if (__builtin_add_overflow(t2003, t2004, &t2005)) hero_panic_overflow(); h0_t = t2005; goto bb1000; bb1002: goto bb1000; bb1003:
+    t2003 = h0_t; t2004 = INT64_C(1); if (__builtin_add_overflow(t2003, t2004, &t2005)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1015, 13); h0_t = t2005; goto bb1000; bb1002: goto bb1000; bb1003:
 #line 1020
     t2012 = h0_t; t2013 = INT64_C(335); t2014 = t2012 == t2013; if (t2014) goto bb1007; else goto bb1008; bb1004:
 #line 1018
-    t2009 = h0_t; t2010 = INT64_C(1); if (__builtin_add_overflow(t2009, t2010, &t2011)) hero_panic_overflow(); h0_t = t2011; goto bb1003; bb1005: goto bb1003; bb1006:
+    t2009 = h0_t; t2010 = INT64_C(1); if (__builtin_add_overflow(t2009, t2010, &t2011)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1018, 13); h0_t = t2011; goto bb1003; bb1005: goto bb1003; bb1006:
 #line 1023
     t2018 = h0_t; t2019 = INT64_C(336); t2020 = t2018 == t2019; if (t2020) goto bb1010; else goto bb1011; bb1007:
 #line 1021
-    t2015 = h0_t; t2016 = INT64_C(1); if (__builtin_add_overflow(t2015, t2016, &t2017)) hero_panic_overflow(); h0_t = t2017; goto bb1006; bb1008: goto bb1006; bb1009:
+    t2015 = h0_t; t2016 = INT64_C(1); if (__builtin_add_overflow(t2015, t2016, &t2017)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1021, 13); h0_t = t2017; goto bb1006; bb1008: goto bb1006; bb1009:
 #line 1026
     t2024 = h0_t; t2025 = INT64_C(337); t2026 = t2024 == t2025; if (t2026) goto bb1013; else goto bb1014; bb1010:
 #line 1024
-    t2021 = h0_t; t2022 = INT64_C(1); if (__builtin_add_overflow(t2021, t2022, &t2023)) hero_panic_overflow(); h0_t = t2023; goto bb1009; bb1011: goto bb1009; bb1012:
+    t2021 = h0_t; t2022 = INT64_C(1); if (__builtin_add_overflow(t2021, t2022, &t2023)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1024, 13); h0_t = t2023; goto bb1009; bb1011: goto bb1009; bb1012:
 #line 1029
     t2030 = h0_t; t2031 = INT64_C(338); t2032 = t2030 == t2031; if (t2032) goto bb1016; else goto bb1017; bb1013:
 #line 1027
-    t2027 = h0_t; t2028 = INT64_C(1); if (__builtin_add_overflow(t2027, t2028, &t2029)) hero_panic_overflow(); h0_t = t2029; goto bb1012; bb1014: goto bb1012; bb1015:
+    t2027 = h0_t; t2028 = INT64_C(1); if (__builtin_add_overflow(t2027, t2028, &t2029)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1027, 13); h0_t = t2029; goto bb1012; bb1014: goto bb1012; bb1015:
 #line 1032
     t2036 = h0_t; t2037 = INT64_C(339); t2038 = t2036 == t2037; if (t2038) goto bb1019; else goto bb1020; bb1016:
 #line 1030
-    t2033 = h0_t; t2034 = INT64_C(1); if (__builtin_add_overflow(t2033, t2034, &t2035)) hero_panic_overflow(); h0_t = t2035; goto bb1015; bb1017: goto bb1015; bb1018:
+    t2033 = h0_t; t2034 = INT64_C(1); if (__builtin_add_overflow(t2033, t2034, &t2035)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1030, 13); h0_t = t2035; goto bb1015; bb1017: goto bb1015; bb1018:
 #line 1035
     t2042 = h0_t; t2043 = INT64_C(340); t2044 = t2042 == t2043; if (t2044) goto bb1022; else goto bb1023; bb1019:
 #line 1033
-    t2039 = h0_t; t2040 = INT64_C(1); if (__builtin_add_overflow(t2039, t2040, &t2041)) hero_panic_overflow(); h0_t = t2041; goto bb1018; bb1020: goto bb1018; bb1021:
+    t2039 = h0_t; t2040 = INT64_C(1); if (__builtin_add_overflow(t2039, t2040, &t2041)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1033, 13); h0_t = t2041; goto bb1018; bb1020: goto bb1018; bb1021:
 #line 1038
     t2048 = h0_t; t2049 = INT64_C(341); t2050 = t2048 == t2049; if (t2050) goto bb1025; else goto bb1026; bb1022:
 #line 1036
-    t2045 = h0_t; t2046 = INT64_C(1); if (__builtin_add_overflow(t2045, t2046, &t2047)) hero_panic_overflow(); h0_t = t2047; goto bb1021; bb1023: goto bb1021; bb1024:
+    t2045 = h0_t; t2046 = INT64_C(1); if (__builtin_add_overflow(t2045, t2046, &t2047)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1036, 13); h0_t = t2047; goto bb1021; bb1023: goto bb1021; bb1024:
 #line 1041
     t2054 = h0_t; t2055 = INT64_C(342); t2056 = t2054 == t2055; if (t2056) goto bb1028; else goto bb1029; bb1025:
 #line 1039
-    t2051 = h0_t; t2052 = INT64_C(1); if (__builtin_add_overflow(t2051, t2052, &t2053)) hero_panic_overflow(); h0_t = t2053; goto bb1024; bb1026: goto bb1024; bb1027:
+    t2051 = h0_t; t2052 = INT64_C(1); if (__builtin_add_overflow(t2051, t2052, &t2053)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1039, 13); h0_t = t2053; goto bb1024; bb1026: goto bb1024; bb1027:
 #line 1044
     t2060 = h0_t; t2061 = INT64_C(343); t2062 = t2060 == t2061; if (t2062) goto bb1031; else goto bb1032; bb1028:
 #line 1042
-    t2057 = h0_t; t2058 = INT64_C(1); if (__builtin_add_overflow(t2057, t2058, &t2059)) hero_panic_overflow(); h0_t = t2059; goto bb1027; bb1029: goto bb1027; bb1030:
+    t2057 = h0_t; t2058 = INT64_C(1); if (__builtin_add_overflow(t2057, t2058, &t2059)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1042, 13); h0_t = t2059; goto bb1027; bb1029: goto bb1027; bb1030:
 #line 1047
     t2066 = h0_t; t2067 = INT64_C(344); t2068 = t2066 == t2067; if (t2068) goto bb1034; else goto bb1035; bb1031:
 #line 1045
-    t2063 = h0_t; t2064 = INT64_C(1); if (__builtin_add_overflow(t2063, t2064, &t2065)) hero_panic_overflow(); h0_t = t2065; goto bb1030; bb1032: goto bb1030; bb1033:
+    t2063 = h0_t; t2064 = INT64_C(1); if (__builtin_add_overflow(t2063, t2064, &t2065)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1045, 13); h0_t = t2065; goto bb1030; bb1032: goto bb1030; bb1033:
 #line 1050
     t2072 = h0_t; t2073 = INT64_C(345); t2074 = t2072 == t2073; if (t2074) goto bb1037; else goto bb1038; bb1034:
 #line 1048
-    t2069 = h0_t; t2070 = INT64_C(1); if (__builtin_add_overflow(t2069, t2070, &t2071)) hero_panic_overflow(); h0_t = t2071; goto bb1033; bb1035: goto bb1033; bb1036:
+    t2069 = h0_t; t2070 = INT64_C(1); if (__builtin_add_overflow(t2069, t2070, &t2071)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1048, 13); h0_t = t2071; goto bb1033; bb1035: goto bb1033; bb1036:
 #line 1053
     t2078 = h0_t; t2079 = INT64_C(346); t2080 = t2078 == t2079; if (t2080) goto bb1040; else goto bb1041; bb1037:
 #line 1051
-    t2075 = h0_t; t2076 = INT64_C(1); if (__builtin_add_overflow(t2075, t2076, &t2077)) hero_panic_overflow(); h0_t = t2077; goto bb1036; bb1038: goto bb1036; bb1039:
+    t2075 = h0_t; t2076 = INT64_C(1); if (__builtin_add_overflow(t2075, t2076, &t2077)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1051, 13); h0_t = t2077; goto bb1036; bb1038: goto bb1036; bb1039:
 #line 1056
     t2084 = h0_t; t2085 = INT64_C(347); t2086 = t2084 == t2085; if (t2086) goto bb1043; else goto bb1044; bb1040:
 #line 1054
-    t2081 = h0_t; t2082 = INT64_C(1); if (__builtin_add_overflow(t2081, t2082, &t2083)) hero_panic_overflow(); h0_t = t2083; goto bb1039; bb1041: goto bb1039; bb1042:
+    t2081 = h0_t; t2082 = INT64_C(1); if (__builtin_add_overflow(t2081, t2082, &t2083)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1054, 13); h0_t = t2083; goto bb1039; bb1041: goto bb1039; bb1042:
 #line 1059
     t2090 = h0_t; t2091 = INT64_C(348); t2092 = t2090 == t2091; if (t2092) goto bb1046; else goto bb1047; bb1043:
 #line 1057
-    t2087 = h0_t; t2088 = INT64_C(1); if (__builtin_add_overflow(t2087, t2088, &t2089)) hero_panic_overflow(); h0_t = t2089; goto bb1042; bb1044: goto bb1042; bb1045:
+    t2087 = h0_t; t2088 = INT64_C(1); if (__builtin_add_overflow(t2087, t2088, &t2089)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1057, 13); h0_t = t2089; goto bb1042; bb1044: goto bb1042; bb1045:
 #line 1062
     t2096 = h0_t; t2097 = INT64_C(349); t2098 = t2096 == t2097; if (t2098) goto bb1049; else goto bb1050; bb1046:
 #line 1060
-    t2093 = h0_t; t2094 = INT64_C(1); if (__builtin_add_overflow(t2093, t2094, &t2095)) hero_panic_overflow(); h0_t = t2095; goto bb1045; bb1047: goto bb1045; bb1048:
+    t2093 = h0_t; t2094 = INT64_C(1); if (__builtin_add_overflow(t2093, t2094, &t2095)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1060, 13); h0_t = t2095; goto bb1045; bb1047: goto bb1045; bb1048:
 #line 1065
     t2102 = h0_t; t2103 = INT64_C(350); t2104 = t2102 == t2103; if (t2104) goto bb1052; else goto bb1053; bb1049:
 #line 1063
-    t2099 = h0_t; t2100 = INT64_C(1); if (__builtin_add_overflow(t2099, t2100, &t2101)) hero_panic_overflow(); h0_t = t2101; goto bb1048; bb1050: goto bb1048; bb1051:
+    t2099 = h0_t; t2100 = INT64_C(1); if (__builtin_add_overflow(t2099, t2100, &t2101)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1063, 13); h0_t = t2101; goto bb1048; bb1050: goto bb1048; bb1051:
 #line 1068
     t2108 = h0_t; t2109 = INT64_C(351); t2110 = t2108 == t2109; if (t2110) goto bb1055; else goto bb1056; bb1052:
 #line 1066
-    t2105 = h0_t; t2106 = INT64_C(1); if (__builtin_add_overflow(t2105, t2106, &t2107)) hero_panic_overflow(); h0_t = t2107; goto bb1051; bb1053: goto bb1051; bb1054:
+    t2105 = h0_t; t2106 = INT64_C(1); if (__builtin_add_overflow(t2105, t2106, &t2107)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1066, 13); h0_t = t2107; goto bb1051; bb1053: goto bb1051; bb1054:
 #line 1071
     t2114 = h0_t; t2115 = INT64_C(352); t2116 = t2114 == t2115; if (t2116) goto bb1058; else goto bb1059; bb1055:
 #line 1069
-    t2111 = h0_t; t2112 = INT64_C(1); if (__builtin_add_overflow(t2111, t2112, &t2113)) hero_panic_overflow(); h0_t = t2113; goto bb1054; bb1056: goto bb1054; bb1057:
+    t2111 = h0_t; t2112 = INT64_C(1); if (__builtin_add_overflow(t2111, t2112, &t2113)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1069, 13); h0_t = t2113; goto bb1054; bb1056: goto bb1054; bb1057:
 #line 1074
     t2120 = h0_t; t2121 = INT64_C(353); t2122 = t2120 == t2121; if (t2122) goto bb1061; else goto bb1062; bb1058:
 #line 1072
-    t2117 = h0_t; t2118 = INT64_C(1); if (__builtin_add_overflow(t2117, t2118, &t2119)) hero_panic_overflow(); h0_t = t2119; goto bb1057; bb1059: goto bb1057; bb1060:
+    t2117 = h0_t; t2118 = INT64_C(1); if (__builtin_add_overflow(t2117, t2118, &t2119)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1072, 13); h0_t = t2119; goto bb1057; bb1059: goto bb1057; bb1060:
 #line 1077
     t2126 = h0_t; t2127 = INT64_C(354); t2128 = t2126 == t2127; if (t2128) goto bb1064; else goto bb1065; bb1061:
 #line 1075
-    t2123 = h0_t; t2124 = INT64_C(1); if (__builtin_add_overflow(t2123, t2124, &t2125)) hero_panic_overflow(); h0_t = t2125; goto bb1060; bb1062: goto bb1060; bb1063:
+    t2123 = h0_t; t2124 = INT64_C(1); if (__builtin_add_overflow(t2123, t2124, &t2125)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1075, 13); h0_t = t2125; goto bb1060; bb1062: goto bb1060; bb1063:
 #line 1080
     t2132 = h0_t; t2133 = INT64_C(355); t2134 = t2132 == t2133; if (t2134) goto bb1067; else goto bb1068; bb1064:
 #line 1078
-    t2129 = h0_t; t2130 = INT64_C(1); if (__builtin_add_overflow(t2129, t2130, &t2131)) hero_panic_overflow(); h0_t = t2131; goto bb1063; bb1065: goto bb1063; bb1066:
+    t2129 = h0_t; t2130 = INT64_C(1); if (__builtin_add_overflow(t2129, t2130, &t2131)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1078, 13); h0_t = t2131; goto bb1063; bb1065: goto bb1063; bb1066:
 #line 1083
     t2138 = h0_t; t2139 = INT64_C(356); t2140 = t2138 == t2139; if (t2140) goto bb1070; else goto bb1071; bb1067:
 #line 1081
-    t2135 = h0_t; t2136 = INT64_C(1); if (__builtin_add_overflow(t2135, t2136, &t2137)) hero_panic_overflow(); h0_t = t2137; goto bb1066; bb1068: goto bb1066; bb1069:
+    t2135 = h0_t; t2136 = INT64_C(1); if (__builtin_add_overflow(t2135, t2136, &t2137)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1081, 13); h0_t = t2137; goto bb1066; bb1068: goto bb1066; bb1069:
 #line 1086
     t2144 = h0_t; t2145 = INT64_C(357); t2146 = t2144 == t2145; if (t2146) goto bb1073; else goto bb1074; bb1070:
 #line 1084
-    t2141 = h0_t; t2142 = INT64_C(1); if (__builtin_add_overflow(t2141, t2142, &t2143)) hero_panic_overflow(); h0_t = t2143; goto bb1069; bb1071: goto bb1069; bb1072:
+    t2141 = h0_t; t2142 = INT64_C(1); if (__builtin_add_overflow(t2141, t2142, &t2143)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1084, 13); h0_t = t2143; goto bb1069; bb1071: goto bb1069; bb1072:
 #line 1089
     t2150 = h0_t; t2151 = INT64_C(358); t2152 = t2150 == t2151; if (t2152) goto bb1076; else goto bb1077; bb1073:
 #line 1087
-    t2147 = h0_t; t2148 = INT64_C(1); if (__builtin_add_overflow(t2147, t2148, &t2149)) hero_panic_overflow(); h0_t = t2149; goto bb1072; bb1074: goto bb1072; bb1075:
+    t2147 = h0_t; t2148 = INT64_C(1); if (__builtin_add_overflow(t2147, t2148, &t2149)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1087, 13); h0_t = t2149; goto bb1072; bb1074: goto bb1072; bb1075:
 #line 1092
     t2156 = h0_t; t2157 = INT64_C(359); t2158 = t2156 == t2157; if (t2158) goto bb1079; else goto bb1080; bb1076:
 #line 1090
-    t2153 = h0_t; t2154 = INT64_C(1); if (__builtin_add_overflow(t2153, t2154, &t2155)) hero_panic_overflow(); h0_t = t2155; goto bb1075; bb1077: goto bb1075; bb1078:
+    t2153 = h0_t; t2154 = INT64_C(1); if (__builtin_add_overflow(t2153, t2154, &t2155)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1090, 13); h0_t = t2155; goto bb1075; bb1077: goto bb1075; bb1078:
 #line 1095
     t2162 = h0_t; t2163 = INT64_C(360); t2164 = t2162 == t2163; if (t2164) goto bb1082; else goto bb1083; bb1079:
 #line 1093
-    t2159 = h0_t; t2160 = INT64_C(1); if (__builtin_add_overflow(t2159, t2160, &t2161)) hero_panic_overflow(); h0_t = t2161; goto bb1078; bb1080: goto bb1078; bb1081:
+    t2159 = h0_t; t2160 = INT64_C(1); if (__builtin_add_overflow(t2159, t2160, &t2161)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1093, 13); h0_t = t2161; goto bb1078; bb1080: goto bb1078; bb1081:
 #line 1098
     t2168 = h0_t; t2169 = INT64_C(361); t2170 = t2168 == t2169; if (t2170) goto bb1085; else goto bb1086; bb1082:
 #line 1096
-    t2165 = h0_t; t2166 = INT64_C(1); if (__builtin_add_overflow(t2165, t2166, &t2167)) hero_panic_overflow(); h0_t = t2167; goto bb1081; bb1083: goto bb1081; bb1084:
+    t2165 = h0_t; t2166 = INT64_C(1); if (__builtin_add_overflow(t2165, t2166, &t2167)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1096, 13); h0_t = t2167; goto bb1081; bb1083: goto bb1081; bb1084:
 #line 1101
     t2174 = h0_t; t2175 = INT64_C(362); t2176 = t2174 == t2175; if (t2176) goto bb1088; else goto bb1089; bb1085:
 #line 1099
-    t2171 = h0_t; t2172 = INT64_C(1); if (__builtin_add_overflow(t2171, t2172, &t2173)) hero_panic_overflow(); h0_t = t2173; goto bb1084; bb1086: goto bb1084; bb1087:
+    t2171 = h0_t; t2172 = INT64_C(1); if (__builtin_add_overflow(t2171, t2172, &t2173)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1099, 13); h0_t = t2173; goto bb1084; bb1086: goto bb1084; bb1087:
 #line 1104
     t2180 = h0_t; t2181 = INT64_C(363); t2182 = t2180 == t2181; if (t2182) goto bb1091; else goto bb1092; bb1088:
 #line 1102
-    t2177 = h0_t; t2178 = INT64_C(1); if (__builtin_add_overflow(t2177, t2178, &t2179)) hero_panic_overflow(); h0_t = t2179; goto bb1087; bb1089: goto bb1087; bb1090:
+    t2177 = h0_t; t2178 = INT64_C(1); if (__builtin_add_overflow(t2177, t2178, &t2179)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1102, 13); h0_t = t2179; goto bb1087; bb1089: goto bb1087; bb1090:
 #line 1107
     t2186 = h0_t; t2187 = INT64_C(364); t2188 = t2186 == t2187; if (t2188) goto bb1094; else goto bb1095; bb1091:
 #line 1105
-    t2183 = h0_t; t2184 = INT64_C(1); if (__builtin_add_overflow(t2183, t2184, &t2185)) hero_panic_overflow(); h0_t = t2185; goto bb1090; bb1092: goto bb1090; bb1093:
+    t2183 = h0_t; t2184 = INT64_C(1); if (__builtin_add_overflow(t2183, t2184, &t2185)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1105, 13); h0_t = t2185; goto bb1090; bb1092: goto bb1090; bb1093:
 #line 1110
     t2192 = h0_t; t2193 = INT64_C(365); t2194 = t2192 == t2193; if (t2194) goto bb1097; else goto bb1098; bb1094:
 #line 1108
-    t2189 = h0_t; t2190 = INT64_C(1); if (__builtin_add_overflow(t2189, t2190, &t2191)) hero_panic_overflow(); h0_t = t2191; goto bb1093; bb1095: goto bb1093; bb1096:
+    t2189 = h0_t; t2190 = INT64_C(1); if (__builtin_add_overflow(t2189, t2190, &t2191)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1108, 13); h0_t = t2191; goto bb1093; bb1095: goto bb1093; bb1096:
 #line 1113
     t2198 = h0_t; t2199 = INT64_C(366); t2200 = t2198 == t2199; if (t2200) goto bb1100; else goto bb1101; bb1097:
 #line 1111
-    t2195 = h0_t; t2196 = INT64_C(1); if (__builtin_add_overflow(t2195, t2196, &t2197)) hero_panic_overflow(); h0_t = t2197; goto bb1096; bb1098: goto bb1096; bb1099:
+    t2195 = h0_t; t2196 = INT64_C(1); if (__builtin_add_overflow(t2195, t2196, &t2197)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1111, 13); h0_t = t2197; goto bb1096; bb1098: goto bb1096; bb1099:
 #line 1116
     t2204 = h0_t; t2205 = INT64_C(367); t2206 = t2204 == t2205; if (t2206) goto bb1103; else goto bb1104; bb1100:
 #line 1114
-    t2201 = h0_t; t2202 = INT64_C(1); if (__builtin_add_overflow(t2201, t2202, &t2203)) hero_panic_overflow(); h0_t = t2203; goto bb1099; bb1101: goto bb1099; bb1102:
+    t2201 = h0_t; t2202 = INT64_C(1); if (__builtin_add_overflow(t2201, t2202, &t2203)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1114, 13); h0_t = t2203; goto bb1099; bb1101: goto bb1099; bb1102:
 #line 1119
     t2210 = h0_t; t2211 = INT64_C(368); t2212 = t2210 == t2211; if (t2212) goto bb1106; else goto bb1107; bb1103:
 #line 1117
-    t2207 = h0_t; t2208 = INT64_C(1); if (__builtin_add_overflow(t2207, t2208, &t2209)) hero_panic_overflow(); h0_t = t2209; goto bb1102; bb1104: goto bb1102; bb1105:
+    t2207 = h0_t; t2208 = INT64_C(1); if (__builtin_add_overflow(t2207, t2208, &t2209)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1117, 13); h0_t = t2209; goto bb1102; bb1104: goto bb1102; bb1105:
 #line 1122
     t2216 = h0_t; t2217 = INT64_C(369); t2218 = t2216 == t2217; if (t2218) goto bb1109; else goto bb1110; bb1106:
 #line 1120
-    t2213 = h0_t; t2214 = INT64_C(1); if (__builtin_add_overflow(t2213, t2214, &t2215)) hero_panic_overflow(); h0_t = t2215; goto bb1105; bb1107: goto bb1105; bb1108:
+    t2213 = h0_t; t2214 = INT64_C(1); if (__builtin_add_overflow(t2213, t2214, &t2215)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1120, 13); h0_t = t2215; goto bb1105; bb1107: goto bb1105; bb1108:
 #line 1125
     t2222 = h0_t; t2223 = INT64_C(370); t2224 = t2222 == t2223; if (t2224) goto bb1112; else goto bb1113; bb1109:
 #line 1123
-    t2219 = h0_t; t2220 = INT64_C(1); if (__builtin_add_overflow(t2219, t2220, &t2221)) hero_panic_overflow(); h0_t = t2221; goto bb1108; bb1110: goto bb1108; bb1111:
+    t2219 = h0_t; t2220 = INT64_C(1); if (__builtin_add_overflow(t2219, t2220, &t2221)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1123, 13); h0_t = t2221; goto bb1108; bb1110: goto bb1108; bb1111:
 #line 1128
     t2228 = h0_t; t2229 = INT64_C(371); t2230 = t2228 == t2229; if (t2230) goto bb1115; else goto bb1116; bb1112:
 #line 1126
-    t2225 = h0_t; t2226 = INT64_C(1); if (__builtin_add_overflow(t2225, t2226, &t2227)) hero_panic_overflow(); h0_t = t2227; goto bb1111; bb1113: goto bb1111; bb1114:
+    t2225 = h0_t; t2226 = INT64_C(1); if (__builtin_add_overflow(t2225, t2226, &t2227)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1126, 13); h0_t = t2227; goto bb1111; bb1113: goto bb1111; bb1114:
 #line 1131
     t2234 = h0_t; t2235 = INT64_C(372); t2236 = t2234 == t2235; if (t2236) goto bb1118; else goto bb1119; bb1115:
 #line 1129
-    t2231 = h0_t; t2232 = INT64_C(1); if (__builtin_add_overflow(t2231, t2232, &t2233)) hero_panic_overflow(); h0_t = t2233; goto bb1114; bb1116: goto bb1114; bb1117:
+    t2231 = h0_t; t2232 = INT64_C(1); if (__builtin_add_overflow(t2231, t2232, &t2233)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1129, 13); h0_t = t2233; goto bb1114; bb1116: goto bb1114; bb1117:
 #line 1134
     t2240 = h0_t; t2241 = INT64_C(373); t2242 = t2240 == t2241; if (t2242) goto bb1121; else goto bb1122; bb1118:
 #line 1132
-    t2237 = h0_t; t2238 = INT64_C(1); if (__builtin_add_overflow(t2237, t2238, &t2239)) hero_panic_overflow(); h0_t = t2239; goto bb1117; bb1119: goto bb1117; bb1120:
+    t2237 = h0_t; t2238 = INT64_C(1); if (__builtin_add_overflow(t2237, t2238, &t2239)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1132, 13); h0_t = t2239; goto bb1117; bb1119: goto bb1117; bb1120:
 #line 1137
     t2246 = h0_t; t2247 = INT64_C(374); t2248 = t2246 == t2247; if (t2248) goto bb1124; else goto bb1125; bb1121:
 #line 1135
-    t2243 = h0_t; t2244 = INT64_C(1); if (__builtin_add_overflow(t2243, t2244, &t2245)) hero_panic_overflow(); h0_t = t2245; goto bb1120; bb1122: goto bb1120; bb1123:
+    t2243 = h0_t; t2244 = INT64_C(1); if (__builtin_add_overflow(t2243, t2244, &t2245)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1135, 13); h0_t = t2245; goto bb1120; bb1122: goto bb1120; bb1123:
 #line 1140
     t2252 = h0_t; t2253 = INT64_C(375); t2254 = t2252 == t2253; if (t2254) goto bb1127; else goto bb1128; bb1124:
 #line 1138
-    t2249 = h0_t; t2250 = INT64_C(1); if (__builtin_add_overflow(t2249, t2250, &t2251)) hero_panic_overflow(); h0_t = t2251; goto bb1123; bb1125: goto bb1123; bb1126:
+    t2249 = h0_t; t2250 = INT64_C(1); if (__builtin_add_overflow(t2249, t2250, &t2251)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1138, 13); h0_t = t2251; goto bb1123; bb1125: goto bb1123; bb1126:
 #line 1143
     t2258 = h0_t; t2259 = INT64_C(376); t2260 = t2258 == t2259; if (t2260) goto bb1130; else goto bb1131; bb1127:
 #line 1141
-    t2255 = h0_t; t2256 = INT64_C(1); if (__builtin_add_overflow(t2255, t2256, &t2257)) hero_panic_overflow(); h0_t = t2257; goto bb1126; bb1128: goto bb1126; bb1129:
+    t2255 = h0_t; t2256 = INT64_C(1); if (__builtin_add_overflow(t2255, t2256, &t2257)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1141, 13); h0_t = t2257; goto bb1126; bb1128: goto bb1126; bb1129:
 #line 1146
     t2264 = h0_t; t2265 = INT64_C(377); t2266 = t2264 == t2265; if (t2266) goto bb1133; else goto bb1134; bb1130:
 #line 1144
-    t2261 = h0_t; t2262 = INT64_C(1); if (__builtin_add_overflow(t2261, t2262, &t2263)) hero_panic_overflow(); h0_t = t2263; goto bb1129; bb1131: goto bb1129; bb1132:
+    t2261 = h0_t; t2262 = INT64_C(1); if (__builtin_add_overflow(t2261, t2262, &t2263)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1144, 13); h0_t = t2263; goto bb1129; bb1131: goto bb1129; bb1132:
 #line 1149
     t2270 = h0_t; t2271 = INT64_C(378); t2272 = t2270 == t2271; if (t2272) goto bb1136; else goto bb1137; bb1133:
 #line 1147
-    t2267 = h0_t; t2268 = INT64_C(1); if (__builtin_add_overflow(t2267, t2268, &t2269)) hero_panic_overflow(); h0_t = t2269; goto bb1132; bb1134: goto bb1132; bb1135:
+    t2267 = h0_t; t2268 = INT64_C(1); if (__builtin_add_overflow(t2267, t2268, &t2269)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1147, 13); h0_t = t2269; goto bb1132; bb1134: goto bb1132; bb1135:
 #line 1152
     t2276 = h0_t; t2277 = INT64_C(379); t2278 = t2276 == t2277; if (t2278) goto bb1139; else goto bb1140; bb1136:
 #line 1150
-    t2273 = h0_t; t2274 = INT64_C(1); if (__builtin_add_overflow(t2273, t2274, &t2275)) hero_panic_overflow(); h0_t = t2275; goto bb1135; bb1137: goto bb1135; bb1138:
+    t2273 = h0_t; t2274 = INT64_C(1); if (__builtin_add_overflow(t2273, t2274, &t2275)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1150, 13); h0_t = t2275; goto bb1135; bb1137: goto bb1135; bb1138:
 #line 1155
     t2282 = h0_t; t2283 = INT64_C(380); t2284 = t2282 == t2283; if (t2284) goto bb1142; else goto bb1143; bb1139:
 #line 1153
-    t2279 = h0_t; t2280 = INT64_C(1); if (__builtin_add_overflow(t2279, t2280, &t2281)) hero_panic_overflow(); h0_t = t2281; goto bb1138; bb1140: goto bb1138; bb1141:
+    t2279 = h0_t; t2280 = INT64_C(1); if (__builtin_add_overflow(t2279, t2280, &t2281)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1153, 13); h0_t = t2281; goto bb1138; bb1140: goto bb1138; bb1141:
 #line 1158
     t2288 = h0_t; t2289 = INT64_C(381); t2290 = t2288 == t2289; if (t2290) goto bb1145; else goto bb1146; bb1142:
 #line 1156
-    t2285 = h0_t; t2286 = INT64_C(1); if (__builtin_add_overflow(t2285, t2286, &t2287)) hero_panic_overflow(); h0_t = t2287; goto bb1141; bb1143: goto bb1141; bb1144:
+    t2285 = h0_t; t2286 = INT64_C(1); if (__builtin_add_overflow(t2285, t2286, &t2287)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1156, 13); h0_t = t2287; goto bb1141; bb1143: goto bb1141; bb1144:
 #line 1161
     t2294 = h0_t; t2295 = INT64_C(382); t2296 = t2294 == t2295; if (t2296) goto bb1148; else goto bb1149; bb1145:
 #line 1159
-    t2291 = h0_t; t2292 = INT64_C(1); if (__builtin_add_overflow(t2291, t2292, &t2293)) hero_panic_overflow(); h0_t = t2293; goto bb1144; bb1146: goto bb1144; bb1147:
+    t2291 = h0_t; t2292 = INT64_C(1); if (__builtin_add_overflow(t2291, t2292, &t2293)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1159, 13); h0_t = t2293; goto bb1144; bb1146: goto bb1144; bb1147:
 #line 1164
     t2300 = h0_t; t2301 = INT64_C(383); t2302 = t2300 == t2301; if (t2302) goto bb1151; else goto bb1152; bb1148:
 #line 1162
-    t2297 = h0_t; t2298 = INT64_C(1); if (__builtin_add_overflow(t2297, t2298, &t2299)) hero_panic_overflow(); h0_t = t2299; goto bb1147; bb1149: goto bb1147; bb1150:
+    t2297 = h0_t; t2298 = INT64_C(1); if (__builtin_add_overflow(t2297, t2298, &t2299)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1162, 13); h0_t = t2299; goto bb1147; bb1149: goto bb1147; bb1150:
 #line 1167
     t2306 = h0_t; t2307 = INT64_C(384); t2308 = t2306 == t2307; if (t2308) goto bb1154; else goto bb1155; bb1151:
 #line 1165
-    t2303 = h0_t; t2304 = INT64_C(1); if (__builtin_add_overflow(t2303, t2304, &t2305)) hero_panic_overflow(); h0_t = t2305; goto bb1150; bb1152: goto bb1150; bb1153:
+    t2303 = h0_t; t2304 = INT64_C(1); if (__builtin_add_overflow(t2303, t2304, &t2305)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1165, 13); h0_t = t2305; goto bb1150; bb1152: goto bb1150; bb1153:
 #line 1170
     t2312 = h0_t; t2313 = INT64_C(385); t2314 = t2312 == t2313; if (t2314) goto bb1157; else goto bb1158; bb1154:
 #line 1168
-    t2309 = h0_t; t2310 = INT64_C(1); if (__builtin_add_overflow(t2309, t2310, &t2311)) hero_panic_overflow(); h0_t = t2311; goto bb1153; bb1155: goto bb1153; bb1156:
+    t2309 = h0_t; t2310 = INT64_C(1); if (__builtin_add_overflow(t2309, t2310, &t2311)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1168, 13); h0_t = t2311; goto bb1153; bb1155: goto bb1153; bb1156:
 #line 1173
     t2318 = h0_t; t2319 = INT64_C(386); t2320 = t2318 == t2319; if (t2320) goto bb1160; else goto bb1161; bb1157:
 #line 1171
-    t2315 = h0_t; t2316 = INT64_C(1); if (__builtin_add_overflow(t2315, t2316, &t2317)) hero_panic_overflow(); h0_t = t2317; goto bb1156; bb1158: goto bb1156; bb1159:
+    t2315 = h0_t; t2316 = INT64_C(1); if (__builtin_add_overflow(t2315, t2316, &t2317)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1171, 13); h0_t = t2317; goto bb1156; bb1158: goto bb1156; bb1159:
 #line 1176
     t2324 = h0_t; t2325 = INT64_C(387); t2326 = t2324 == t2325; if (t2326) goto bb1163; else goto bb1164; bb1160:
 #line 1174
-    t2321 = h0_t; t2322 = INT64_C(1); if (__builtin_add_overflow(t2321, t2322, &t2323)) hero_panic_overflow(); h0_t = t2323; goto bb1159; bb1161: goto bb1159; bb1162:
+    t2321 = h0_t; t2322 = INT64_C(1); if (__builtin_add_overflow(t2321, t2322, &t2323)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1174, 13); h0_t = t2323; goto bb1159; bb1161: goto bb1159; bb1162:
 #line 1179
     t2330 = h0_t; t2331 = INT64_C(388); t2332 = t2330 == t2331; if (t2332) goto bb1166; else goto bb1167; bb1163:
 #line 1177
-    t2327 = h0_t; t2328 = INT64_C(1); if (__builtin_add_overflow(t2327, t2328, &t2329)) hero_panic_overflow(); h0_t = t2329; goto bb1162; bb1164: goto bb1162; bb1165:
+    t2327 = h0_t; t2328 = INT64_C(1); if (__builtin_add_overflow(t2327, t2328, &t2329)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1177, 13); h0_t = t2329; goto bb1162; bb1164: goto bb1162; bb1165:
 #line 1182
     t2336 = h0_t; t2337 = INT64_C(389); t2338 = t2336 == t2337; if (t2338) goto bb1169; else goto bb1170; bb1166:
 #line 1180
-    t2333 = h0_t; t2334 = INT64_C(1); if (__builtin_add_overflow(t2333, t2334, &t2335)) hero_panic_overflow(); h0_t = t2335; goto bb1165; bb1167: goto bb1165; bb1168:
+    t2333 = h0_t; t2334 = INT64_C(1); if (__builtin_add_overflow(t2333, t2334, &t2335)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1180, 13); h0_t = t2335; goto bb1165; bb1167: goto bb1165; bb1168:
 #line 1185
     t2342 = h0_t; t2343 = INT64_C(390); t2344 = t2342 == t2343; if (t2344) goto bb1172; else goto bb1173; bb1169:
 #line 1183
-    t2339 = h0_t; t2340 = INT64_C(1); if (__builtin_add_overflow(t2339, t2340, &t2341)) hero_panic_overflow(); h0_t = t2341; goto bb1168; bb1170: goto bb1168; bb1171:
+    t2339 = h0_t; t2340 = INT64_C(1); if (__builtin_add_overflow(t2339, t2340, &t2341)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1183, 13); h0_t = t2341; goto bb1168; bb1170: goto bb1168; bb1171:
 #line 1188
     t2348 = h0_t; t2349 = INT64_C(391); t2350 = t2348 == t2349; if (t2350) goto bb1175; else goto bb1176; bb1172:
 #line 1186
-    t2345 = h0_t; t2346 = INT64_C(1); if (__builtin_add_overflow(t2345, t2346, &t2347)) hero_panic_overflow(); h0_t = t2347; goto bb1171; bb1173: goto bb1171; bb1174:
+    t2345 = h0_t; t2346 = INT64_C(1); if (__builtin_add_overflow(t2345, t2346, &t2347)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1186, 13); h0_t = t2347; goto bb1171; bb1173: goto bb1171; bb1174:
 #line 1191
     t2354 = h0_t; t2355 = INT64_C(392); t2356 = t2354 == t2355; if (t2356) goto bb1178; else goto bb1179; bb1175:
 #line 1189
-    t2351 = h0_t; t2352 = INT64_C(1); if (__builtin_add_overflow(t2351, t2352, &t2353)) hero_panic_overflow(); h0_t = t2353; goto bb1174; bb1176: goto bb1174; bb1177:
+    t2351 = h0_t; t2352 = INT64_C(1); if (__builtin_add_overflow(t2351, t2352, &t2353)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1189, 13); h0_t = t2353; goto bb1174; bb1176: goto bb1174; bb1177:
 #line 1194
     t2360 = h0_t; t2361 = INT64_C(393); t2362 = t2360 == t2361; if (t2362) goto bb1181; else goto bb1182; bb1178:
 #line 1192
-    t2357 = h0_t; t2358 = INT64_C(1); if (__builtin_add_overflow(t2357, t2358, &t2359)) hero_panic_overflow(); h0_t = t2359; goto bb1177; bb1179: goto bb1177; bb1180:
+    t2357 = h0_t; t2358 = INT64_C(1); if (__builtin_add_overflow(t2357, t2358, &t2359)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1192, 13); h0_t = t2359; goto bb1177; bb1179: goto bb1177; bb1180:
 #line 1197
     t2366 = h0_t; t2367 = INT64_C(394); t2368 = t2366 == t2367; if (t2368) goto bb1184; else goto bb1185; bb1181:
 #line 1195
-    t2363 = h0_t; t2364 = INT64_C(1); if (__builtin_add_overflow(t2363, t2364, &t2365)) hero_panic_overflow(); h0_t = t2365; goto bb1180; bb1182: goto bb1180; bb1183:
+    t2363 = h0_t; t2364 = INT64_C(1); if (__builtin_add_overflow(t2363, t2364, &t2365)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1195, 13); h0_t = t2365; goto bb1180; bb1182: goto bb1180; bb1183:
 #line 1200
     t2372 = h0_t; t2373 = INT64_C(395); t2374 = t2372 == t2373; if (t2374) goto bb1187; else goto bb1188; bb1184:
 #line 1198
-    t2369 = h0_t; t2370 = INT64_C(1); if (__builtin_add_overflow(t2369, t2370, &t2371)) hero_panic_overflow(); h0_t = t2371; goto bb1183; bb1185: goto bb1183; bb1186:
+    t2369 = h0_t; t2370 = INT64_C(1); if (__builtin_add_overflow(t2369, t2370, &t2371)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1198, 13); h0_t = t2371; goto bb1183; bb1185: goto bb1183; bb1186:
 #line 1203
     t2378 = h0_t; t2379 = INT64_C(396); t2380 = t2378 == t2379; if (t2380) goto bb1190; else goto bb1191; bb1187:
 #line 1201
-    t2375 = h0_t; t2376 = INT64_C(1); if (__builtin_add_overflow(t2375, t2376, &t2377)) hero_panic_overflow(); h0_t = t2377; goto bb1186; bb1188: goto bb1186; bb1189:
+    t2375 = h0_t; t2376 = INT64_C(1); if (__builtin_add_overflow(t2375, t2376, &t2377)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1201, 13); h0_t = t2377; goto bb1186; bb1188: goto bb1186; bb1189:
 #line 1206
     t2384 = h0_t; t2385 = INT64_C(397); t2386 = t2384 == t2385; if (t2386) goto bb1193; else goto bb1194; bb1190:
 #line 1204
-    t2381 = h0_t; t2382 = INT64_C(1); if (__builtin_add_overflow(t2381, t2382, &t2383)) hero_panic_overflow(); h0_t = t2383; goto bb1189; bb1191: goto bb1189; bb1192:
+    t2381 = h0_t; t2382 = INT64_C(1); if (__builtin_add_overflow(t2381, t2382, &t2383)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1204, 13); h0_t = t2383; goto bb1189; bb1191: goto bb1189; bb1192:
 #line 1209
     t2390 = h0_t; t2391 = INT64_C(398); t2392 = t2390 == t2391; if (t2392) goto bb1196; else goto bb1197; bb1193:
 #line 1207
-    t2387 = h0_t; t2388 = INT64_C(1); if (__builtin_add_overflow(t2387, t2388, &t2389)) hero_panic_overflow(); h0_t = t2389; goto bb1192; bb1194: goto bb1192; bb1195:
+    t2387 = h0_t; t2388 = INT64_C(1); if (__builtin_add_overflow(t2387, t2388, &t2389)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1207, 13); h0_t = t2389; goto bb1192; bb1194: goto bb1192; bb1195:
 #line 1212
     t2396 = h0_t; t2397 = INT64_C(399); t2398 = t2396 == t2397; if (t2398) goto bb1199; else goto bb1200; bb1196:
 #line 1210
-    t2393 = h0_t; t2394 = INT64_C(1); if (__builtin_add_overflow(t2393, t2394, &t2395)) hero_panic_overflow(); h0_t = t2395; goto bb1195; bb1197: goto bb1195; bb1198:
+    t2393 = h0_t; t2394 = INT64_C(1); if (__builtin_add_overflow(t2393, t2394, &t2395)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1210, 13); h0_t = t2395; goto bb1195; bb1197: goto bb1195; bb1198:
 #line 1215
     t2402 = h0_t; t2403 = INT64_C(400); t2404 = t2402 == t2403; if (t2404) goto bb1202; else goto bb1203; bb1199:
 #line 1213
-    t2399 = h0_t; t2400 = INT64_C(1); if (__builtin_add_overflow(t2399, t2400, &t2401)) hero_panic_overflow(); h0_t = t2401; goto bb1198; bb1200: goto bb1198; bb1201:
+    t2399 = h0_t; t2400 = INT64_C(1); if (__builtin_add_overflow(t2399, t2400, &t2401)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1213, 13); h0_t = t2401; goto bb1198; bb1200: goto bb1198; bb1201:
 #line 1218
     t2408 = h0_t; t2409 = INT64_C(401); t2410 = t2408 == t2409; if (t2410) goto bb1205; else goto bb1206; bb1202:
 #line 1216
-    t2405 = h0_t; t2406 = INT64_C(1); if (__builtin_add_overflow(t2405, t2406, &t2407)) hero_panic_overflow(); h0_t = t2407; goto bb1201; bb1203: goto bb1201; bb1204:
+    t2405 = h0_t; t2406 = INT64_C(1); if (__builtin_add_overflow(t2405, t2406, &t2407)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1216, 13); h0_t = t2407; goto bb1201; bb1203: goto bb1201; bb1204:
 #line 1221
     t2414 = h0_t; t2415 = INT64_C(402); t2416 = t2414 == t2415; if (t2416) goto bb1208; else goto bb1209; bb1205:
 #line 1219
-    t2411 = h0_t; t2412 = INT64_C(1); if (__builtin_add_overflow(t2411, t2412, &t2413)) hero_panic_overflow(); h0_t = t2413; goto bb1204; bb1206: goto bb1204; bb1207:
+    t2411 = h0_t; t2412 = INT64_C(1); if (__builtin_add_overflow(t2411, t2412, &t2413)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1219, 13); h0_t = t2413; goto bb1204; bb1206: goto bb1204; bb1207:
 #line 1224
     t2420 = h0_t; t2421 = INT64_C(403); t2422 = t2420 == t2421; if (t2422) goto bb1211; else goto bb1212; bb1208:
 #line 1222
-    t2417 = h0_t; t2418 = INT64_C(1); if (__builtin_add_overflow(t2417, t2418, &t2419)) hero_panic_overflow(); h0_t = t2419; goto bb1207; bb1209: goto bb1207; bb1210:
+    t2417 = h0_t; t2418 = INT64_C(1); if (__builtin_add_overflow(t2417, t2418, &t2419)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1222, 13); h0_t = t2419; goto bb1207; bb1209: goto bb1207; bb1210:
 #line 1227
     t2426 = h0_t; t2427 = INT64_C(404); t2428 = t2426 == t2427; if (t2428) goto bb1214; else goto bb1215; bb1211:
 #line 1225
-    t2423 = h0_t; t2424 = INT64_C(1); if (__builtin_add_overflow(t2423, t2424, &t2425)) hero_panic_overflow(); h0_t = t2425; goto bb1210; bb1212: goto bb1210; bb1213:
+    t2423 = h0_t; t2424 = INT64_C(1); if (__builtin_add_overflow(t2423, t2424, &t2425)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1225, 13); h0_t = t2425; goto bb1210; bb1212: goto bb1210; bb1213:
 #line 1230
     t2432 = h0_t; t2433 = INT64_C(405); t2434 = t2432 == t2433; if (t2434) goto bb1217; else goto bb1218; bb1214:
 #line 1228
-    t2429 = h0_t; t2430 = INT64_C(1); if (__builtin_add_overflow(t2429, t2430, &t2431)) hero_panic_overflow(); h0_t = t2431; goto bb1213; bb1215: goto bb1213; bb1216:
+    t2429 = h0_t; t2430 = INT64_C(1); if (__builtin_add_overflow(t2429, t2430, &t2431)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1228, 13); h0_t = t2431; goto bb1213; bb1215: goto bb1213; bb1216:
 #line 1233
     t2438 = h0_t; t2439 = INT64_C(406); t2440 = t2438 == t2439; if (t2440) goto bb1220; else goto bb1221; bb1217:
 #line 1231
-    t2435 = h0_t; t2436 = INT64_C(1); if (__builtin_add_overflow(t2435, t2436, &t2437)) hero_panic_overflow(); h0_t = t2437; goto bb1216; bb1218: goto bb1216; bb1219:
+    t2435 = h0_t; t2436 = INT64_C(1); if (__builtin_add_overflow(t2435, t2436, &t2437)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1231, 13); h0_t = t2437; goto bb1216; bb1218: goto bb1216; bb1219:
 #line 1236
     t2444 = h0_t; t2445 = INT64_C(407); t2446 = t2444 == t2445; if (t2446) goto bb1223; else goto bb1224; bb1220:
 #line 1234
-    t2441 = h0_t; t2442 = INT64_C(1); if (__builtin_add_overflow(t2441, t2442, &t2443)) hero_panic_overflow(); h0_t = t2443; goto bb1219; bb1221: goto bb1219; bb1222:
+    t2441 = h0_t; t2442 = INT64_C(1); if (__builtin_add_overflow(t2441, t2442, &t2443)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1234, 13); h0_t = t2443; goto bb1219; bb1221: goto bb1219; bb1222:
 #line 1239
     t2450 = h0_t; t2451 = INT64_C(408); t2452 = t2450 == t2451; if (t2452) goto bb1226; else goto bb1227; bb1223:
 #line 1237
-    t2447 = h0_t; t2448 = INT64_C(1); if (__builtin_add_overflow(t2447, t2448, &t2449)) hero_panic_overflow(); h0_t = t2449; goto bb1222; bb1224: goto bb1222; bb1225:
+    t2447 = h0_t; t2448 = INT64_C(1); if (__builtin_add_overflow(t2447, t2448, &t2449)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1237, 13); h0_t = t2449; goto bb1222; bb1224: goto bb1222; bb1225:
 #line 1242
     t2456 = h0_t; t2457 = INT64_C(409); t2458 = t2456 == t2457; if (t2458) goto bb1229; else goto bb1230; bb1226:
 #line 1240
-    t2453 = h0_t; t2454 = INT64_C(1); if (__builtin_add_overflow(t2453, t2454, &t2455)) hero_panic_overflow(); h0_t = t2455; goto bb1225; bb1227: goto bb1225; bb1228:
+    t2453 = h0_t; t2454 = INT64_C(1); if (__builtin_add_overflow(t2453, t2454, &t2455)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1240, 13); h0_t = t2455; goto bb1225; bb1227: goto bb1225; bb1228:
 #line 1245
     t2462 = h0_t; t2463 = INT64_C(410); t2464 = t2462 == t2463; if (t2464) goto bb1232; else goto bb1233; bb1229:
 #line 1243
-    t2459 = h0_t; t2460 = INT64_C(1); if (__builtin_add_overflow(t2459, t2460, &t2461)) hero_panic_overflow(); h0_t = t2461; goto bb1228; bb1230: goto bb1228; bb1231:
+    t2459 = h0_t; t2460 = INT64_C(1); if (__builtin_add_overflow(t2459, t2460, &t2461)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1243, 13); h0_t = t2461; goto bb1228; bb1230: goto bb1228; bb1231:
 #line 1248
     t2468 = h0_t; t2469 = INT64_C(411); t2470 = t2468 == t2469; if (t2470) goto bb1235; else goto bb1236; bb1232:
 #line 1246
-    t2465 = h0_t; t2466 = INT64_C(1); if (__builtin_add_overflow(t2465, t2466, &t2467)) hero_panic_overflow(); h0_t = t2467; goto bb1231; bb1233: goto bb1231; bb1234:
+    t2465 = h0_t; t2466 = INT64_C(1); if (__builtin_add_overflow(t2465, t2466, &t2467)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1246, 13); h0_t = t2467; goto bb1231; bb1233: goto bb1231; bb1234:
 #line 1251
     t2474 = h0_t; t2475 = INT64_C(412); t2476 = t2474 == t2475; if (t2476) goto bb1238; else goto bb1239; bb1235:
 #line 1249
-    t2471 = h0_t; t2472 = INT64_C(1); if (__builtin_add_overflow(t2471, t2472, &t2473)) hero_panic_overflow(); h0_t = t2473; goto bb1234; bb1236: goto bb1234; bb1237:
+    t2471 = h0_t; t2472 = INT64_C(1); if (__builtin_add_overflow(t2471, t2472, &t2473)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1249, 13); h0_t = t2473; goto bb1234; bb1236: goto bb1234; bb1237:
 #line 1254
     t2480 = h0_t; t2481 = INT64_C(413); t2482 = t2480 == t2481; if (t2482) goto bb1241; else goto bb1242; bb1238:
 #line 1252
-    t2477 = h0_t; t2478 = INT64_C(1); if (__builtin_add_overflow(t2477, t2478, &t2479)) hero_panic_overflow(); h0_t = t2479; goto bb1237; bb1239: goto bb1237; bb1240:
+    t2477 = h0_t; t2478 = INT64_C(1); if (__builtin_add_overflow(t2477, t2478, &t2479)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1252, 13); h0_t = t2479; goto bb1237; bb1239: goto bb1237; bb1240:
 #line 1257
     t2486 = h0_t; t2487 = INT64_C(414); t2488 = t2486 == t2487; if (t2488) goto bb1244; else goto bb1245; bb1241:
 #line 1255
-    t2483 = h0_t; t2484 = INT64_C(1); if (__builtin_add_overflow(t2483, t2484, &t2485)) hero_panic_overflow(); h0_t = t2485; goto bb1240; bb1242: goto bb1240; bb1243:
+    t2483 = h0_t; t2484 = INT64_C(1); if (__builtin_add_overflow(t2483, t2484, &t2485)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1255, 13); h0_t = t2485; goto bb1240; bb1242: goto bb1240; bb1243:
 #line 1260
     t2492 = h0_t; t2493 = INT64_C(415); t2494 = t2492 == t2493; if (t2494) goto bb1247; else goto bb1248; bb1244:
 #line 1258
-    t2489 = h0_t; t2490 = INT64_C(1); if (__builtin_add_overflow(t2489, t2490, &t2491)) hero_panic_overflow(); h0_t = t2491; goto bb1243; bb1245: goto bb1243; bb1246:
+    t2489 = h0_t; t2490 = INT64_C(1); if (__builtin_add_overflow(t2489, t2490, &t2491)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1258, 13); h0_t = t2491; goto bb1243; bb1245: goto bb1243; bb1246:
 #line 1263
     t2498 = h0_t; t2499 = INT64_C(416); t2500 = t2498 == t2499; if (t2500) goto bb1250; else goto bb1251; bb1247:
 #line 1261
-    t2495 = h0_t; t2496 = INT64_C(1); if (__builtin_add_overflow(t2495, t2496, &t2497)) hero_panic_overflow(); h0_t = t2497; goto bb1246; bb1248: goto bb1246; bb1249:
+    t2495 = h0_t; t2496 = INT64_C(1); if (__builtin_add_overflow(t2495, t2496, &t2497)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1261, 13); h0_t = t2497; goto bb1246; bb1248: goto bb1246; bb1249:
 #line 1266
     t2504 = h0_t; t2505 = INT64_C(417); t2506 = t2504 == t2505; if (t2506) goto bb1253; else goto bb1254; bb1250:
 #line 1264
-    t2501 = h0_t; t2502 = INT64_C(1); if (__builtin_add_overflow(t2501, t2502, &t2503)) hero_panic_overflow(); h0_t = t2503; goto bb1249; bb1251: goto bb1249; bb1252:
+    t2501 = h0_t; t2502 = INT64_C(1); if (__builtin_add_overflow(t2501, t2502, &t2503)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1264, 13); h0_t = t2503; goto bb1249; bb1251: goto bb1249; bb1252:
 #line 1269
     t2510 = h0_t; t2511 = INT64_C(418); t2512 = t2510 == t2511; if (t2512) goto bb1256; else goto bb1257; bb1253:
 #line 1267
-    t2507 = h0_t; t2508 = INT64_C(1); if (__builtin_add_overflow(t2507, t2508, &t2509)) hero_panic_overflow(); h0_t = t2509; goto bb1252; bb1254: goto bb1252; bb1255:
+    t2507 = h0_t; t2508 = INT64_C(1); if (__builtin_add_overflow(t2507, t2508, &t2509)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1267, 13); h0_t = t2509; goto bb1252; bb1254: goto bb1252; bb1255:
 #line 1272
     t2516 = h0_t; t2517 = INT64_C(419); t2518 = t2516 == t2517; if (t2518) goto bb1259; else goto bb1260; bb1256:
 #line 1270
-    t2513 = h0_t; t2514 = INT64_C(1); if (__builtin_add_overflow(t2513, t2514, &t2515)) hero_panic_overflow(); h0_t = t2515; goto bb1255; bb1257: goto bb1255; bb1258:
+    t2513 = h0_t; t2514 = INT64_C(1); if (__builtin_add_overflow(t2513, t2514, &t2515)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1270, 13); h0_t = t2515; goto bb1255; bb1257: goto bb1255; bb1258:
 #line 1275
     t2522 = h0_t; t2523 = INT64_C(420); t2524 = t2522 == t2523; if (t2524) goto bb1262; else goto bb1263; bb1259:
 #line 1273
-    t2519 = h0_t; t2520 = INT64_C(1); if (__builtin_add_overflow(t2519, t2520, &t2521)) hero_panic_overflow(); h0_t = t2521; goto bb1258; bb1260: goto bb1258; bb1261:
+    t2519 = h0_t; t2520 = INT64_C(1); if (__builtin_add_overflow(t2519, t2520, &t2521)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1273, 13); h0_t = t2521; goto bb1258; bb1260: goto bb1258; bb1261:
 #line 1278
     t2528 = h0_t; t2529 = INT64_C(421); t2530 = t2528 == t2529; if (t2530) goto bb1265; else goto bb1266; bb1262:
 #line 1276
-    t2525 = h0_t; t2526 = INT64_C(1); if (__builtin_add_overflow(t2525, t2526, &t2527)) hero_panic_overflow(); h0_t = t2527; goto bb1261; bb1263: goto bb1261; bb1264:
+    t2525 = h0_t; t2526 = INT64_C(1); if (__builtin_add_overflow(t2525, t2526, &t2527)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1276, 13); h0_t = t2527; goto bb1261; bb1263: goto bb1261; bb1264:
 #line 1281
     t2534 = h0_t; t2535 = INT64_C(422); t2536 = t2534 == t2535; if (t2536) goto bb1268; else goto bb1269; bb1265:
 #line 1279
-    t2531 = h0_t; t2532 = INT64_C(1); if (__builtin_add_overflow(t2531, t2532, &t2533)) hero_panic_overflow(); h0_t = t2533; goto bb1264; bb1266: goto bb1264; bb1267:
+    t2531 = h0_t; t2532 = INT64_C(1); if (__builtin_add_overflow(t2531, t2532, &t2533)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1279, 13); h0_t = t2533; goto bb1264; bb1266: goto bb1264; bb1267:
 #line 1284
     t2540 = h0_t; t2541 = INT64_C(423); t2542 = t2540 == t2541; if (t2542) goto bb1271; else goto bb1272; bb1268:
 #line 1282
-    t2537 = h0_t; t2538 = INT64_C(1); if (__builtin_add_overflow(t2537, t2538, &t2539)) hero_panic_overflow(); h0_t = t2539; goto bb1267; bb1269: goto bb1267; bb1270:
+    t2537 = h0_t; t2538 = INT64_C(1); if (__builtin_add_overflow(t2537, t2538, &t2539)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1282, 13); h0_t = t2539; goto bb1267; bb1269: goto bb1267; bb1270:
 #line 1287
     t2546 = h0_t; t2547 = INT64_C(424); t2548 = t2546 == t2547; if (t2548) goto bb1274; else goto bb1275; bb1271:
 #line 1285
-    t2543 = h0_t; t2544 = INT64_C(1); if (__builtin_add_overflow(t2543, t2544, &t2545)) hero_panic_overflow(); h0_t = t2545; goto bb1270; bb1272: goto bb1270; bb1273:
+    t2543 = h0_t; t2544 = INT64_C(1); if (__builtin_add_overflow(t2543, t2544, &t2545)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1285, 13); h0_t = t2545; goto bb1270; bb1272: goto bb1270; bb1273:
 #line 1290
     t2552 = h0_t; t2553 = INT64_C(425); t2554 = t2552 == t2553; if (t2554) goto bb1277; else goto bb1278; bb1274:
 #line 1288
-    t2549 = h0_t; t2550 = INT64_C(1); if (__builtin_add_overflow(t2549, t2550, &t2551)) hero_panic_overflow(); h0_t = t2551; goto bb1273; bb1275: goto bb1273; bb1276:
+    t2549 = h0_t; t2550 = INT64_C(1); if (__builtin_add_overflow(t2549, t2550, &t2551)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1288, 13); h0_t = t2551; goto bb1273; bb1275: goto bb1273; bb1276:
 #line 1293
     t2558 = h0_t; t2559 = INT64_C(426); t2560 = t2558 == t2559; if (t2560) goto bb1280; else goto bb1281; bb1277:
 #line 1291
-    t2555 = h0_t; t2556 = INT64_C(1); if (__builtin_add_overflow(t2555, t2556, &t2557)) hero_panic_overflow(); h0_t = t2557; goto bb1276; bb1278: goto bb1276; bb1279:
+    t2555 = h0_t; t2556 = INT64_C(1); if (__builtin_add_overflow(t2555, t2556, &t2557)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1291, 13); h0_t = t2557; goto bb1276; bb1278: goto bb1276; bb1279:
 #line 1296
     t2564 = h0_t; t2565 = INT64_C(427); t2566 = t2564 == t2565; if (t2566) goto bb1283; else goto bb1284; bb1280:
 #line 1294
-    t2561 = h0_t; t2562 = INT64_C(1); if (__builtin_add_overflow(t2561, t2562, &t2563)) hero_panic_overflow(); h0_t = t2563; goto bb1279; bb1281: goto bb1279; bb1282:
+    t2561 = h0_t; t2562 = INT64_C(1); if (__builtin_add_overflow(t2561, t2562, &t2563)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1294, 13); h0_t = t2563; goto bb1279; bb1281: goto bb1279; bb1282:
 #line 1299
     t2570 = h0_t; t2571 = INT64_C(428); t2572 = t2570 == t2571; if (t2572) goto bb1286; else goto bb1287; bb1283:
 #line 1297
-    t2567 = h0_t; t2568 = INT64_C(1); if (__builtin_add_overflow(t2567, t2568, &t2569)) hero_panic_overflow(); h0_t = t2569; goto bb1282; bb1284: goto bb1282; bb1285:
+    t2567 = h0_t; t2568 = INT64_C(1); if (__builtin_add_overflow(t2567, t2568, &t2569)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1297, 13); h0_t = t2569; goto bb1282; bb1284: goto bb1282; bb1285:
 #line 1302
     t2576 = h0_t; t2577 = INT64_C(429); t2578 = t2576 == t2577; if (t2578) goto bb1289; else goto bb1290; bb1286:
 #line 1300
-    t2573 = h0_t; t2574 = INT64_C(1); if (__builtin_add_overflow(t2573, t2574, &t2575)) hero_panic_overflow(); h0_t = t2575; goto bb1285; bb1287: goto bb1285; bb1288:
+    t2573 = h0_t; t2574 = INT64_C(1); if (__builtin_add_overflow(t2573, t2574, &t2575)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1300, 13); h0_t = t2575; goto bb1285; bb1287: goto bb1285; bb1288:
 #line 1305
     t2582 = h0_t; t2583 = INT64_C(430); t2584 = t2582 == t2583; if (t2584) goto bb1292; else goto bb1293; bb1289:
 #line 1303
-    t2579 = h0_t; t2580 = INT64_C(1); if (__builtin_add_overflow(t2579, t2580, &t2581)) hero_panic_overflow(); h0_t = t2581; goto bb1288; bb1290: goto bb1288; bb1291:
+    t2579 = h0_t; t2580 = INT64_C(1); if (__builtin_add_overflow(t2579, t2580, &t2581)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1303, 13); h0_t = t2581; goto bb1288; bb1290: goto bb1288; bb1291:
 #line 1308
     t2588 = h0_t; t2589 = INT64_C(431); t2590 = t2588 == t2589; if (t2590) goto bb1295; else goto bb1296; bb1292:
 #line 1306
-    t2585 = h0_t; t2586 = INT64_C(1); if (__builtin_add_overflow(t2585, t2586, &t2587)) hero_panic_overflow(); h0_t = t2587; goto bb1291; bb1293: goto bb1291; bb1294:
+    t2585 = h0_t; t2586 = INT64_C(1); if (__builtin_add_overflow(t2585, t2586, &t2587)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1306, 13); h0_t = t2587; goto bb1291; bb1293: goto bb1291; bb1294:
 #line 1311
     t2594 = h0_t; t2595 = INT64_C(432); t2596 = t2594 == t2595; if (t2596) goto bb1298; else goto bb1299; bb1295:
 #line 1309
-    t2591 = h0_t; t2592 = INT64_C(1); if (__builtin_add_overflow(t2591, t2592, &t2593)) hero_panic_overflow(); h0_t = t2593; goto bb1294; bb1296: goto bb1294; bb1297:
+    t2591 = h0_t; t2592 = INT64_C(1); if (__builtin_add_overflow(t2591, t2592, &t2593)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1309, 13); h0_t = t2593; goto bb1294; bb1296: goto bb1294; bb1297:
 #line 1314
     t2600 = h0_t; t2601 = INT64_C(433); t2602 = t2600 == t2601; if (t2602) goto bb1301; else goto bb1302; bb1298:
 #line 1312
-    t2597 = h0_t; t2598 = INT64_C(1); if (__builtin_add_overflow(t2597, t2598, &t2599)) hero_panic_overflow(); h0_t = t2599; goto bb1297; bb1299: goto bb1297; bb1300:
+    t2597 = h0_t; t2598 = INT64_C(1); if (__builtin_add_overflow(t2597, t2598, &t2599)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1312, 13); h0_t = t2599; goto bb1297; bb1299: goto bb1297; bb1300:
 #line 1317
     t2606 = h0_t; t2607 = INT64_C(434); t2608 = t2606 == t2607; if (t2608) goto bb1304; else goto bb1305; bb1301:
 #line 1315
-    t2603 = h0_t; t2604 = INT64_C(1); if (__builtin_add_overflow(t2603, t2604, &t2605)) hero_panic_overflow(); h0_t = t2605; goto bb1300; bb1302: goto bb1300; bb1303:
+    t2603 = h0_t; t2604 = INT64_C(1); if (__builtin_add_overflow(t2603, t2604, &t2605)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1315, 13); h0_t = t2605; goto bb1300; bb1302: goto bb1300; bb1303:
 #line 1320
     t2612 = h0_t; t2613 = INT64_C(435); t2614 = t2612 == t2613; if (t2614) goto bb1307; else goto bb1308; bb1304:
 #line 1318
-    t2609 = h0_t; t2610 = INT64_C(1); if (__builtin_add_overflow(t2609, t2610, &t2611)) hero_panic_overflow(); h0_t = t2611; goto bb1303; bb1305: goto bb1303; bb1306:
+    t2609 = h0_t; t2610 = INT64_C(1); if (__builtin_add_overflow(t2609, t2610, &t2611)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1318, 13); h0_t = t2611; goto bb1303; bb1305: goto bb1303; bb1306:
 #line 1323
     t2618 = h0_t; t2619 = INT64_C(436); t2620 = t2618 == t2619; if (t2620) goto bb1310; else goto bb1311; bb1307:
 #line 1321
-    t2615 = h0_t; t2616 = INT64_C(1); if (__builtin_add_overflow(t2615, t2616, &t2617)) hero_panic_overflow(); h0_t = t2617; goto bb1306; bb1308: goto bb1306; bb1309:
+    t2615 = h0_t; t2616 = INT64_C(1); if (__builtin_add_overflow(t2615, t2616, &t2617)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1321, 13); h0_t = t2617; goto bb1306; bb1308: goto bb1306; bb1309:
 #line 1326
     t2624 = h0_t; t2625 = INT64_C(437); t2626 = t2624 == t2625; if (t2626) goto bb1313; else goto bb1314; bb1310:
 #line 1324
-    t2621 = h0_t; t2622 = INT64_C(1); if (__builtin_add_overflow(t2621, t2622, &t2623)) hero_panic_overflow(); h0_t = t2623; goto bb1309; bb1311: goto bb1309; bb1312:
+    t2621 = h0_t; t2622 = INT64_C(1); if (__builtin_add_overflow(t2621, t2622, &t2623)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1324, 13); h0_t = t2623; goto bb1309; bb1311: goto bb1309; bb1312:
 #line 1329
     t2630 = h0_t; t2631 = INT64_C(438); t2632 = t2630 == t2631; if (t2632) goto bb1316; else goto bb1317; bb1313:
 #line 1327
-    t2627 = h0_t; t2628 = INT64_C(1); if (__builtin_add_overflow(t2627, t2628, &t2629)) hero_panic_overflow(); h0_t = t2629; goto bb1312; bb1314: goto bb1312; bb1315:
+    t2627 = h0_t; t2628 = INT64_C(1); if (__builtin_add_overflow(t2627, t2628, &t2629)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1327, 13); h0_t = t2629; goto bb1312; bb1314: goto bb1312; bb1315:
 #line 1332
     t2636 = h0_t; t2637 = INT64_C(439); t2638 = t2636 == t2637; if (t2638) goto bb1319; else goto bb1320; bb1316:
 #line 1330
-    t2633 = h0_t; t2634 = INT64_C(1); if (__builtin_add_overflow(t2633, t2634, &t2635)) hero_panic_overflow(); h0_t = t2635; goto bb1315; bb1317: goto bb1315; bb1318:
+    t2633 = h0_t; t2634 = INT64_C(1); if (__builtin_add_overflow(t2633, t2634, &t2635)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1330, 13); h0_t = t2635; goto bb1315; bb1317: goto bb1315; bb1318:
 #line 1335
     t2642 = h0_t; t2643 = INT64_C(440); t2644 = t2642 == t2643; if (t2644) goto bb1322; else goto bb1323; bb1319:
 #line 1333
-    t2639 = h0_t; t2640 = INT64_C(1); if (__builtin_add_overflow(t2639, t2640, &t2641)) hero_panic_overflow(); h0_t = t2641; goto bb1318; bb1320: goto bb1318; bb1321:
+    t2639 = h0_t; t2640 = INT64_C(1); if (__builtin_add_overflow(t2639, t2640, &t2641)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1333, 13); h0_t = t2641; goto bb1318; bb1320: goto bb1318; bb1321:
 #line 1338
     t2648 = h0_t; t2649 = INT64_C(441); t2650 = t2648 == t2649; if (t2650) goto bb1325; else goto bb1326; bb1322:
 #line 1336
-    t2645 = h0_t; t2646 = INT64_C(1); if (__builtin_add_overflow(t2645, t2646, &t2647)) hero_panic_overflow(); h0_t = t2647; goto bb1321; bb1323: goto bb1321; bb1324:
+    t2645 = h0_t; t2646 = INT64_C(1); if (__builtin_add_overflow(t2645, t2646, &t2647)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1336, 13); h0_t = t2647; goto bb1321; bb1323: goto bb1321; bb1324:
 #line 1341
     t2654 = h0_t; t2655 = INT64_C(442); t2656 = t2654 == t2655; if (t2656) goto bb1328; else goto bb1329; bb1325:
 #line 1339
-    t2651 = h0_t; t2652 = INT64_C(1); if (__builtin_add_overflow(t2651, t2652, &t2653)) hero_panic_overflow(); h0_t = t2653; goto bb1324; bb1326: goto bb1324; bb1327:
+    t2651 = h0_t; t2652 = INT64_C(1); if (__builtin_add_overflow(t2651, t2652, &t2653)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1339, 13); h0_t = t2653; goto bb1324; bb1326: goto bb1324; bb1327:
 #line 1344
     t2660 = h0_t; t2661 = INT64_C(443); t2662 = t2660 == t2661; if (t2662) goto bb1331; else goto bb1332; bb1328:
 #line 1342
-    t2657 = h0_t; t2658 = INT64_C(1); if (__builtin_add_overflow(t2657, t2658, &t2659)) hero_panic_overflow(); h0_t = t2659; goto bb1327; bb1329: goto bb1327; bb1330:
+    t2657 = h0_t; t2658 = INT64_C(1); if (__builtin_add_overflow(t2657, t2658, &t2659)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1342, 13); h0_t = t2659; goto bb1327; bb1329: goto bb1327; bb1330:
 #line 1347
     t2666 = h0_t; t2667 = INT64_C(444); t2668 = t2666 == t2667; if (t2668) goto bb1334; else goto bb1335; bb1331:
 #line 1345
-    t2663 = h0_t; t2664 = INT64_C(1); if (__builtin_add_overflow(t2663, t2664, &t2665)) hero_panic_overflow(); h0_t = t2665; goto bb1330; bb1332: goto bb1330; bb1333:
+    t2663 = h0_t; t2664 = INT64_C(1); if (__builtin_add_overflow(t2663, t2664, &t2665)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1345, 13); h0_t = t2665; goto bb1330; bb1332: goto bb1330; bb1333:
 #line 1350
     t2672 = h0_t; t2673 = INT64_C(445); t2674 = t2672 == t2673; if (t2674) goto bb1337; else goto bb1338; bb1334:
 #line 1348
-    t2669 = h0_t; t2670 = INT64_C(1); if (__builtin_add_overflow(t2669, t2670, &t2671)) hero_panic_overflow(); h0_t = t2671; goto bb1333; bb1335: goto bb1333; bb1336:
+    t2669 = h0_t; t2670 = INT64_C(1); if (__builtin_add_overflow(t2669, t2670, &t2671)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1348, 13); h0_t = t2671; goto bb1333; bb1335: goto bb1333; bb1336:
 #line 1353
     t2678 = h0_t; t2679 = INT64_C(446); t2680 = t2678 == t2679; if (t2680) goto bb1340; else goto bb1341; bb1337:
 #line 1351
-    t2675 = h0_t; t2676 = INT64_C(1); if (__builtin_add_overflow(t2675, t2676, &t2677)) hero_panic_overflow(); h0_t = t2677; goto bb1336; bb1338: goto bb1336; bb1339:
+    t2675 = h0_t; t2676 = INT64_C(1); if (__builtin_add_overflow(t2675, t2676, &t2677)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1351, 13); h0_t = t2677; goto bb1336; bb1338: goto bb1336; bb1339:
 #line 1356
     t2684 = h0_t; t2685 = INT64_C(447); t2686 = t2684 == t2685; if (t2686) goto bb1343; else goto bb1344; bb1340:
 #line 1354
-    t2681 = h0_t; t2682 = INT64_C(1); if (__builtin_add_overflow(t2681, t2682, &t2683)) hero_panic_overflow(); h0_t = t2683; goto bb1339; bb1341: goto bb1339; bb1342:
+    t2681 = h0_t; t2682 = INT64_C(1); if (__builtin_add_overflow(t2681, t2682, &t2683)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1354, 13); h0_t = t2683; goto bb1339; bb1341: goto bb1339; bb1342:
 #line 1359
     t2690 = h0_t; t2691 = INT64_C(448); t2692 = t2690 == t2691; if (t2692) goto bb1346; else goto bb1347; bb1343:
 #line 1357
-    t2687 = h0_t; t2688 = INT64_C(1); if (__builtin_add_overflow(t2687, t2688, &t2689)) hero_panic_overflow(); h0_t = t2689; goto bb1342; bb1344: goto bb1342; bb1345:
+    t2687 = h0_t; t2688 = INT64_C(1); if (__builtin_add_overflow(t2687, t2688, &t2689)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1357, 13); h0_t = t2689; goto bb1342; bb1344: goto bb1342; bb1345:
 #line 1362
     t2696 = h0_t; t2697 = INT64_C(449); t2698 = t2696 == t2697; if (t2698) goto bb1349; else goto bb1350; bb1346:
 #line 1360
-    t2693 = h0_t; t2694 = INT64_C(1); if (__builtin_add_overflow(t2693, t2694, &t2695)) hero_panic_overflow(); h0_t = t2695; goto bb1345; bb1347: goto bb1345; bb1348:
+    t2693 = h0_t; t2694 = INT64_C(1); if (__builtin_add_overflow(t2693, t2694, &t2695)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1360, 13); h0_t = t2695; goto bb1345; bb1347: goto bb1345; bb1348:
 #line 1365
     t2702 = h0_t; t2703 = INT64_C(450); t2704 = t2702 == t2703; if (t2704) goto bb1352; else goto bb1353; bb1349:
 #line 1363
-    t2699 = h0_t; t2700 = INT64_C(1); if (__builtin_add_overflow(t2699, t2700, &t2701)) hero_panic_overflow(); h0_t = t2701; goto bb1348; bb1350: goto bb1348; bb1351:
+    t2699 = h0_t; t2700 = INT64_C(1); if (__builtin_add_overflow(t2699, t2700, &t2701)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1363, 13); h0_t = t2701; goto bb1348; bb1350: goto bb1348; bb1351:
 #line 1368
     t2708 = h0_t; t2709 = INT64_C(451); t2710 = t2708 == t2709; if (t2710) goto bb1355; else goto bb1356; bb1352:
 #line 1366
-    t2705 = h0_t; t2706 = INT64_C(1); if (__builtin_add_overflow(t2705, t2706, &t2707)) hero_panic_overflow(); h0_t = t2707; goto bb1351; bb1353: goto bb1351; bb1354:
+    t2705 = h0_t; t2706 = INT64_C(1); if (__builtin_add_overflow(t2705, t2706, &t2707)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1366, 13); h0_t = t2707; goto bb1351; bb1353: goto bb1351; bb1354:
 #line 1371
     t2714 = h0_t; t2715 = INT64_C(452); t2716 = t2714 == t2715; if (t2716) goto bb1358; else goto bb1359; bb1355:
 #line 1369
-    t2711 = h0_t; t2712 = INT64_C(1); if (__builtin_add_overflow(t2711, t2712, &t2713)) hero_panic_overflow(); h0_t = t2713; goto bb1354; bb1356: goto bb1354; bb1357:
+    t2711 = h0_t; t2712 = INT64_C(1); if (__builtin_add_overflow(t2711, t2712, &t2713)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1369, 13); h0_t = t2713; goto bb1354; bb1356: goto bb1354; bb1357:
 #line 1374
     t2720 = h0_t; t2721 = INT64_C(453); t2722 = t2720 == t2721; if (t2722) goto bb1361; else goto bb1362; bb1358:
 #line 1372
-    t2717 = h0_t; t2718 = INT64_C(1); if (__builtin_add_overflow(t2717, t2718, &t2719)) hero_panic_overflow(); h0_t = t2719; goto bb1357; bb1359: goto bb1357; bb1360:
+    t2717 = h0_t; t2718 = INT64_C(1); if (__builtin_add_overflow(t2717, t2718, &t2719)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1372, 13); h0_t = t2719; goto bb1357; bb1359: goto bb1357; bb1360:
 #line 1377
     t2726 = h0_t; t2727 = INT64_C(454); t2728 = t2726 == t2727; if (t2728) goto bb1364; else goto bb1365; bb1361:
 #line 1375
-    t2723 = h0_t; t2724 = INT64_C(1); if (__builtin_add_overflow(t2723, t2724, &t2725)) hero_panic_overflow(); h0_t = t2725; goto bb1360; bb1362: goto bb1360; bb1363:
+    t2723 = h0_t; t2724 = INT64_C(1); if (__builtin_add_overflow(t2723, t2724, &t2725)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1375, 13); h0_t = t2725; goto bb1360; bb1362: goto bb1360; bb1363:
 #line 1380
     t2732 = h0_t; t2733 = INT64_C(455); t2734 = t2732 == t2733; if (t2734) goto bb1367; else goto bb1368; bb1364:
 #line 1378
-    t2729 = h0_t; t2730 = INT64_C(1); if (__builtin_add_overflow(t2729, t2730, &t2731)) hero_panic_overflow(); h0_t = t2731; goto bb1363; bb1365: goto bb1363; bb1366:
+    t2729 = h0_t; t2730 = INT64_C(1); if (__builtin_add_overflow(t2729, t2730, &t2731)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1378, 13); h0_t = t2731; goto bb1363; bb1365: goto bb1363; bb1366:
 #line 1383
     t2738 = h0_t; t2739 = INT64_C(456); t2740 = t2738 == t2739; if (t2740) goto bb1370; else goto bb1371; bb1367:
 #line 1381
-    t2735 = h0_t; t2736 = INT64_C(1); if (__builtin_add_overflow(t2735, t2736, &t2737)) hero_panic_overflow(); h0_t = t2737; goto bb1366; bb1368: goto bb1366; bb1369:
+    t2735 = h0_t; t2736 = INT64_C(1); if (__builtin_add_overflow(t2735, t2736, &t2737)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1381, 13); h0_t = t2737; goto bb1366; bb1368: goto bb1366; bb1369:
 #line 1386
     t2744 = h0_t; t2745 = INT64_C(457); t2746 = t2744 == t2745; if (t2746) goto bb1373; else goto bb1374; bb1370:
 #line 1384
-    t2741 = h0_t; t2742 = INT64_C(1); if (__builtin_add_overflow(t2741, t2742, &t2743)) hero_panic_overflow(); h0_t = t2743; goto bb1369; bb1371: goto bb1369; bb1372:
+    t2741 = h0_t; t2742 = INT64_C(1); if (__builtin_add_overflow(t2741, t2742, &t2743)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1384, 13); h0_t = t2743; goto bb1369; bb1371: goto bb1369; bb1372:
 #line 1389
     t2750 = h0_t; t2751 = INT64_C(458); t2752 = t2750 == t2751; if (t2752) goto bb1376; else goto bb1377; bb1373:
 #line 1387
-    t2747 = h0_t; t2748 = INT64_C(1); if (__builtin_add_overflow(t2747, t2748, &t2749)) hero_panic_overflow(); h0_t = t2749; goto bb1372; bb1374: goto bb1372; bb1375:
+    t2747 = h0_t; t2748 = INT64_C(1); if (__builtin_add_overflow(t2747, t2748, &t2749)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1387, 13); h0_t = t2749; goto bb1372; bb1374: goto bb1372; bb1375:
 #line 1392
     t2756 = h0_t; t2757 = INT64_C(459); t2758 = t2756 == t2757; if (t2758) goto bb1379; else goto bb1380; bb1376:
 #line 1390
-    t2753 = h0_t; t2754 = INT64_C(1); if (__builtin_add_overflow(t2753, t2754, &t2755)) hero_panic_overflow(); h0_t = t2755; goto bb1375; bb1377: goto bb1375; bb1378:
+    t2753 = h0_t; t2754 = INT64_C(1); if (__builtin_add_overflow(t2753, t2754, &t2755)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1390, 13); h0_t = t2755; goto bb1375; bb1377: goto bb1375; bb1378:
 #line 1395
     t2762 = h0_t; t2763 = INT64_C(460); t2764 = t2762 == t2763; if (t2764) goto bb1382; else goto bb1383; bb1379:
 #line 1393
-    t2759 = h0_t; t2760 = INT64_C(1); if (__builtin_add_overflow(t2759, t2760, &t2761)) hero_panic_overflow(); h0_t = t2761; goto bb1378; bb1380: goto bb1378; bb1381:
+    t2759 = h0_t; t2760 = INT64_C(1); if (__builtin_add_overflow(t2759, t2760, &t2761)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1393, 13); h0_t = t2761; goto bb1378; bb1380: goto bb1378; bb1381:
 #line 1398
     t2768 = h0_t; t2769 = INT64_C(461); t2770 = t2768 == t2769; if (t2770) goto bb1385; else goto bb1386; bb1382:
 #line 1396
-    t2765 = h0_t; t2766 = INT64_C(1); if (__builtin_add_overflow(t2765, t2766, &t2767)) hero_panic_overflow(); h0_t = t2767; goto bb1381; bb1383: goto bb1381; bb1384:
+    t2765 = h0_t; t2766 = INT64_C(1); if (__builtin_add_overflow(t2765, t2766, &t2767)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1396, 13); h0_t = t2767; goto bb1381; bb1383: goto bb1381; bb1384:
 #line 1401
     t2774 = h0_t; t2775 = INT64_C(462); t2776 = t2774 == t2775; if (t2776) goto bb1388; else goto bb1389; bb1385:
 #line 1399
-    t2771 = h0_t; t2772 = INT64_C(1); if (__builtin_add_overflow(t2771, t2772, &t2773)) hero_panic_overflow(); h0_t = t2773; goto bb1384; bb1386: goto bb1384; bb1387:
+    t2771 = h0_t; t2772 = INT64_C(1); if (__builtin_add_overflow(t2771, t2772, &t2773)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1399, 13); h0_t = t2773; goto bb1384; bb1386: goto bb1384; bb1387:
 #line 1404
     t2780 = h0_t; t2781 = INT64_C(463); t2782 = t2780 == t2781; if (t2782) goto bb1391; else goto bb1392; bb1388:
 #line 1402
-    t2777 = h0_t; t2778 = INT64_C(1); if (__builtin_add_overflow(t2777, t2778, &t2779)) hero_panic_overflow(); h0_t = t2779; goto bb1387; bb1389: goto bb1387; bb1390:
+    t2777 = h0_t; t2778 = INT64_C(1); if (__builtin_add_overflow(t2777, t2778, &t2779)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1402, 13); h0_t = t2779; goto bb1387; bb1389: goto bb1387; bb1390:
 #line 1407
     t2786 = h0_t; t2787 = INT64_C(464); t2788 = t2786 == t2787; if (t2788) goto bb1394; else goto bb1395; bb1391:
 #line 1405
-    t2783 = h0_t; t2784 = INT64_C(1); if (__builtin_add_overflow(t2783, t2784, &t2785)) hero_panic_overflow(); h0_t = t2785; goto bb1390; bb1392: goto bb1390; bb1393:
+    t2783 = h0_t; t2784 = INT64_C(1); if (__builtin_add_overflow(t2783, t2784, &t2785)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1405, 13); h0_t = t2785; goto bb1390; bb1392: goto bb1390; bb1393:
 #line 1410
     t2792 = h0_t; t2793 = INT64_C(465); t2794 = t2792 == t2793; if (t2794) goto bb1397; else goto bb1398; bb1394:
 #line 1408
-    t2789 = h0_t; t2790 = INT64_C(1); if (__builtin_add_overflow(t2789, t2790, &t2791)) hero_panic_overflow(); h0_t = t2791; goto bb1393; bb1395: goto bb1393; bb1396:
+    t2789 = h0_t; t2790 = INT64_C(1); if (__builtin_add_overflow(t2789, t2790, &t2791)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1408, 13); h0_t = t2791; goto bb1393; bb1395: goto bb1393; bb1396:
 #line 1413
     t2798 = h0_t; t2799 = INT64_C(466); t2800 = t2798 == t2799; if (t2800) goto bb1400; else goto bb1401; bb1397:
 #line 1411
-    t2795 = h0_t; t2796 = INT64_C(1); if (__builtin_add_overflow(t2795, t2796, &t2797)) hero_panic_overflow(); h0_t = t2797; goto bb1396; bb1398: goto bb1396; bb1399:
+    t2795 = h0_t; t2796 = INT64_C(1); if (__builtin_add_overflow(t2795, t2796, &t2797)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1411, 13); h0_t = t2797; goto bb1396; bb1398: goto bb1396; bb1399:
 #line 1416
     t2804 = h0_t; t2805 = INT64_C(467); t2806 = t2804 == t2805; if (t2806) goto bb1403; else goto bb1404; bb1400:
 #line 1414
-    t2801 = h0_t; t2802 = INT64_C(1); if (__builtin_add_overflow(t2801, t2802, &t2803)) hero_panic_overflow(); h0_t = t2803; goto bb1399; bb1401: goto bb1399; bb1402:
+    t2801 = h0_t; t2802 = INT64_C(1); if (__builtin_add_overflow(t2801, t2802, &t2803)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1414, 13); h0_t = t2803; goto bb1399; bb1401: goto bb1399; bb1402:
 #line 1419
     t2810 = h0_t; t2811 = INT64_C(468); t2812 = t2810 == t2811; if (t2812) goto bb1406; else goto bb1407; bb1403:
 #line 1417
-    t2807 = h0_t; t2808 = INT64_C(1); if (__builtin_add_overflow(t2807, t2808, &t2809)) hero_panic_overflow(); h0_t = t2809; goto bb1402; bb1404: goto bb1402; bb1405:
+    t2807 = h0_t; t2808 = INT64_C(1); if (__builtin_add_overflow(t2807, t2808, &t2809)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1417, 13); h0_t = t2809; goto bb1402; bb1404: goto bb1402; bb1405:
 #line 1422
     t2816 = h0_t; t2817 = INT64_C(469); t2818 = t2816 == t2817; if (t2818) goto bb1409; else goto bb1410; bb1406:
 #line 1420
-    t2813 = h0_t; t2814 = INT64_C(1); if (__builtin_add_overflow(t2813, t2814, &t2815)) hero_panic_overflow(); h0_t = t2815; goto bb1405; bb1407: goto bb1405; bb1408:
+    t2813 = h0_t; t2814 = INT64_C(1); if (__builtin_add_overflow(t2813, t2814, &t2815)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1420, 13); h0_t = t2815; goto bb1405; bb1407: goto bb1405; bb1408:
 #line 1425
     t2822 = h0_t; t2823 = INT64_C(470); t2824 = t2822 == t2823; if (t2824) goto bb1412; else goto bb1413; bb1409:
 #line 1423
-    t2819 = h0_t; t2820 = INT64_C(1); if (__builtin_add_overflow(t2819, t2820, &t2821)) hero_panic_overflow(); h0_t = t2821; goto bb1408; bb1410: goto bb1408; bb1411:
+    t2819 = h0_t; t2820 = INT64_C(1); if (__builtin_add_overflow(t2819, t2820, &t2821)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1423, 13); h0_t = t2821; goto bb1408; bb1410: goto bb1408; bb1411:
 #line 1428
     t2828 = h0_t; t2829 = INT64_C(471); t2830 = t2828 == t2829; if (t2830) goto bb1415; else goto bb1416; bb1412:
 #line 1426
-    t2825 = h0_t; t2826 = INT64_C(1); if (__builtin_add_overflow(t2825, t2826, &t2827)) hero_panic_overflow(); h0_t = t2827; goto bb1411; bb1413: goto bb1411; bb1414:
+    t2825 = h0_t; t2826 = INT64_C(1); if (__builtin_add_overflow(t2825, t2826, &t2827)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1426, 13); h0_t = t2827; goto bb1411; bb1413: goto bb1411; bb1414:
 #line 1431
     t2834 = h0_t; t2835 = INT64_C(472); t2836 = t2834 == t2835; if (t2836) goto bb1418; else goto bb1419; bb1415:
 #line 1429
-    t2831 = h0_t; t2832 = INT64_C(1); if (__builtin_add_overflow(t2831, t2832, &t2833)) hero_panic_overflow(); h0_t = t2833; goto bb1414; bb1416: goto bb1414; bb1417:
+    t2831 = h0_t; t2832 = INT64_C(1); if (__builtin_add_overflow(t2831, t2832, &t2833)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1429, 13); h0_t = t2833; goto bb1414; bb1416: goto bb1414; bb1417:
 #line 1434
     t2840 = h0_t; t2841 = INT64_C(473); t2842 = t2840 == t2841; if (t2842) goto bb1421; else goto bb1422; bb1418:
 #line 1432
-    t2837 = h0_t; t2838 = INT64_C(1); if (__builtin_add_overflow(t2837, t2838, &t2839)) hero_panic_overflow(); h0_t = t2839; goto bb1417; bb1419: goto bb1417; bb1420:
+    t2837 = h0_t; t2838 = INT64_C(1); if (__builtin_add_overflow(t2837, t2838, &t2839)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1432, 13); h0_t = t2839; goto bb1417; bb1419: goto bb1417; bb1420:
 #line 1437
     t2846 = h0_t; t2847 = INT64_C(474); t2848 = t2846 == t2847; if (t2848) goto bb1424; else goto bb1425; bb1421:
 #line 1435
-    t2843 = h0_t; t2844 = INT64_C(1); if (__builtin_add_overflow(t2843, t2844, &t2845)) hero_panic_overflow(); h0_t = t2845; goto bb1420; bb1422: goto bb1420; bb1423:
+    t2843 = h0_t; t2844 = INT64_C(1); if (__builtin_add_overflow(t2843, t2844, &t2845)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1435, 13); h0_t = t2845; goto bb1420; bb1422: goto bb1420; bb1423:
 #line 1440
     t2852 = h0_t; t2853 = INT64_C(475); t2854 = t2852 == t2853; if (t2854) goto bb1427; else goto bb1428; bb1424:
 #line 1438
-    t2849 = h0_t; t2850 = INT64_C(1); if (__builtin_add_overflow(t2849, t2850, &t2851)) hero_panic_overflow(); h0_t = t2851; goto bb1423; bb1425: goto bb1423; bb1426:
+    t2849 = h0_t; t2850 = INT64_C(1); if (__builtin_add_overflow(t2849, t2850, &t2851)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1438, 13); h0_t = t2851; goto bb1423; bb1425: goto bb1423; bb1426:
 #line 1443
     t2858 = h0_t; t2859 = INT64_C(476); t2860 = t2858 == t2859; if (t2860) goto bb1430; else goto bb1431; bb1427:
 #line 1441
-    t2855 = h0_t; t2856 = INT64_C(1); if (__builtin_add_overflow(t2855, t2856, &t2857)) hero_panic_overflow(); h0_t = t2857; goto bb1426; bb1428: goto bb1426; bb1429:
+    t2855 = h0_t; t2856 = INT64_C(1); if (__builtin_add_overflow(t2855, t2856, &t2857)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1441, 13); h0_t = t2857; goto bb1426; bb1428: goto bb1426; bb1429:
 #line 1446
     t2864 = h0_t; t2865 = INT64_C(477); t2866 = t2864 == t2865; if (t2866) goto bb1433; else goto bb1434; bb1430:
 #line 1444
-    t2861 = h0_t; t2862 = INT64_C(1); if (__builtin_add_overflow(t2861, t2862, &t2863)) hero_panic_overflow(); h0_t = t2863; goto bb1429; bb1431: goto bb1429; bb1432:
+    t2861 = h0_t; t2862 = INT64_C(1); if (__builtin_add_overflow(t2861, t2862, &t2863)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1444, 13); h0_t = t2863; goto bb1429; bb1431: goto bb1429; bb1432:
 #line 1449
     t2870 = h0_t; t2871 = INT64_C(478); t2872 = t2870 == t2871; if (t2872) goto bb1436; else goto bb1437; bb1433:
 #line 1447
-    t2867 = h0_t; t2868 = INT64_C(1); if (__builtin_add_overflow(t2867, t2868, &t2869)) hero_panic_overflow(); h0_t = t2869; goto bb1432; bb1434: goto bb1432; bb1435:
+    t2867 = h0_t; t2868 = INT64_C(1); if (__builtin_add_overflow(t2867, t2868, &t2869)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1447, 13); h0_t = t2869; goto bb1432; bb1434: goto bb1432; bb1435:
 #line 1452
     t2876 = h0_t; t2877 = INT64_C(479); t2878 = t2876 == t2877; if (t2878) goto bb1439; else goto bb1440; bb1436:
 #line 1450
-    t2873 = h0_t; t2874 = INT64_C(1); if (__builtin_add_overflow(t2873, t2874, &t2875)) hero_panic_overflow(); h0_t = t2875; goto bb1435; bb1437: goto bb1435; bb1438:
+    t2873 = h0_t; t2874 = INT64_C(1); if (__builtin_add_overflow(t2873, t2874, &t2875)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1450, 13); h0_t = t2875; goto bb1435; bb1437: goto bb1435; bb1438:
 #line 1455
     t2882 = h0_t; t2883 = INT64_C(480); t2884 = t2882 == t2883; if (t2884) goto bb1442; else goto bb1443; bb1439:
 #line 1453
-    t2879 = h0_t; t2880 = INT64_C(1); if (__builtin_add_overflow(t2879, t2880, &t2881)) hero_panic_overflow(); h0_t = t2881; goto bb1438; bb1440: goto bb1438; bb1441:
+    t2879 = h0_t; t2880 = INT64_C(1); if (__builtin_add_overflow(t2879, t2880, &t2881)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1453, 13); h0_t = t2881; goto bb1438; bb1440: goto bb1438; bb1441:
 #line 1458
     t2888 = h0_t; t2889 = INT64_C(481); t2890 = t2888 == t2889; if (t2890) goto bb1445; else goto bb1446; bb1442:
 #line 1456
-    t2885 = h0_t; t2886 = INT64_C(1); if (__builtin_add_overflow(t2885, t2886, &t2887)) hero_panic_overflow(); h0_t = t2887; goto bb1441; bb1443: goto bb1441; bb1444:
+    t2885 = h0_t; t2886 = INT64_C(1); if (__builtin_add_overflow(t2885, t2886, &t2887)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1456, 13); h0_t = t2887; goto bb1441; bb1443: goto bb1441; bb1444:
 #line 1461
     t2894 = h0_t; t2895 = INT64_C(482); t2896 = t2894 == t2895; if (t2896) goto bb1448; else goto bb1449; bb1445:
 #line 1459
-    t2891 = h0_t; t2892 = INT64_C(1); if (__builtin_add_overflow(t2891, t2892, &t2893)) hero_panic_overflow(); h0_t = t2893; goto bb1444; bb1446: goto bb1444; bb1447:
+    t2891 = h0_t; t2892 = INT64_C(1); if (__builtin_add_overflow(t2891, t2892, &t2893)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1459, 13); h0_t = t2893; goto bb1444; bb1446: goto bb1444; bb1447:
 #line 1464
     t2900 = h0_t; t2901 = INT64_C(483); t2902 = t2900 == t2901; if (t2902) goto bb1451; else goto bb1452; bb1448:
 #line 1462
-    t2897 = h0_t; t2898 = INT64_C(1); if (__builtin_add_overflow(t2897, t2898, &t2899)) hero_panic_overflow(); h0_t = t2899; goto bb1447; bb1449: goto bb1447; bb1450:
+    t2897 = h0_t; t2898 = INT64_C(1); if (__builtin_add_overflow(t2897, t2898, &t2899)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1462, 13); h0_t = t2899; goto bb1447; bb1449: goto bb1447; bb1450:
 #line 1467
     t2906 = h0_t; t2907 = INT64_C(484); t2908 = t2906 == t2907; if (t2908) goto bb1454; else goto bb1455; bb1451:
 #line 1465
-    t2903 = h0_t; t2904 = INT64_C(1); if (__builtin_add_overflow(t2903, t2904, &t2905)) hero_panic_overflow(); h0_t = t2905; goto bb1450; bb1452: goto bb1450; bb1453:
+    t2903 = h0_t; t2904 = INT64_C(1); if (__builtin_add_overflow(t2903, t2904, &t2905)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1465, 13); h0_t = t2905; goto bb1450; bb1452: goto bb1450; bb1453:
 #line 1470
     t2912 = h0_t; t2913 = INT64_C(485); t2914 = t2912 == t2913; if (t2914) goto bb1457; else goto bb1458; bb1454:
 #line 1468
-    t2909 = h0_t; t2910 = INT64_C(1); if (__builtin_add_overflow(t2909, t2910, &t2911)) hero_panic_overflow(); h0_t = t2911; goto bb1453; bb1455: goto bb1453; bb1456:
+    t2909 = h0_t; t2910 = INT64_C(1); if (__builtin_add_overflow(t2909, t2910, &t2911)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1468, 13); h0_t = t2911; goto bb1453; bb1455: goto bb1453; bb1456:
 #line 1473
     t2918 = h0_t; t2919 = INT64_C(486); t2920 = t2918 == t2919; if (t2920) goto bb1460; else goto bb1461; bb1457:
 #line 1471
-    t2915 = h0_t; t2916 = INT64_C(1); if (__builtin_add_overflow(t2915, t2916, &t2917)) hero_panic_overflow(); h0_t = t2917; goto bb1456; bb1458: goto bb1456; bb1459:
+    t2915 = h0_t; t2916 = INT64_C(1); if (__builtin_add_overflow(t2915, t2916, &t2917)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1471, 13); h0_t = t2917; goto bb1456; bb1458: goto bb1456; bb1459:
 #line 1476
     t2924 = h0_t; t2925 = INT64_C(487); t2926 = t2924 == t2925; if (t2926) goto bb1463; else goto bb1464; bb1460:
 #line 1474
-    t2921 = h0_t; t2922 = INT64_C(1); if (__builtin_add_overflow(t2921, t2922, &t2923)) hero_panic_overflow(); h0_t = t2923; goto bb1459; bb1461: goto bb1459; bb1462:
+    t2921 = h0_t; t2922 = INT64_C(1); if (__builtin_add_overflow(t2921, t2922, &t2923)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1474, 13); h0_t = t2923; goto bb1459; bb1461: goto bb1459; bb1462:
 #line 1479
     t2930 = h0_t; t2931 = INT64_C(488); t2932 = t2930 == t2931; if (t2932) goto bb1466; else goto bb1467; bb1463:
 #line 1477
-    t2927 = h0_t; t2928 = INT64_C(1); if (__builtin_add_overflow(t2927, t2928, &t2929)) hero_panic_overflow(); h0_t = t2929; goto bb1462; bb1464: goto bb1462; bb1465:
+    t2927 = h0_t; t2928 = INT64_C(1); if (__builtin_add_overflow(t2927, t2928, &t2929)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1477, 13); h0_t = t2929; goto bb1462; bb1464: goto bb1462; bb1465:
 #line 1482
     t2936 = h0_t; t2937 = INT64_C(489); t2938 = t2936 == t2937; if (t2938) goto bb1469; else goto bb1470; bb1466:
 #line 1480
-    t2933 = h0_t; t2934 = INT64_C(1); if (__builtin_add_overflow(t2933, t2934, &t2935)) hero_panic_overflow(); h0_t = t2935; goto bb1465; bb1467: goto bb1465; bb1468:
+    t2933 = h0_t; t2934 = INT64_C(1); if (__builtin_add_overflow(t2933, t2934, &t2935)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1480, 13); h0_t = t2935; goto bb1465; bb1467: goto bb1465; bb1468:
 #line 1485
     t2942 = h0_t; t2943 = INT64_C(490); t2944 = t2942 == t2943; if (t2944) goto bb1472; else goto bb1473; bb1469:
 #line 1483
-    t2939 = h0_t; t2940 = INT64_C(1); if (__builtin_add_overflow(t2939, t2940, &t2941)) hero_panic_overflow(); h0_t = t2941; goto bb1468; bb1470: goto bb1468; bb1471:
+    t2939 = h0_t; t2940 = INT64_C(1); if (__builtin_add_overflow(t2939, t2940, &t2941)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1483, 13); h0_t = t2941; goto bb1468; bb1470: goto bb1468; bb1471:
 #line 1488
     t2948 = h0_t; t2949 = INT64_C(491); t2950 = t2948 == t2949; if (t2950) goto bb1475; else goto bb1476; bb1472:
 #line 1486
-    t2945 = h0_t; t2946 = INT64_C(1); if (__builtin_add_overflow(t2945, t2946, &t2947)) hero_panic_overflow(); h0_t = t2947; goto bb1471; bb1473: goto bb1471; bb1474:
+    t2945 = h0_t; t2946 = INT64_C(1); if (__builtin_add_overflow(t2945, t2946, &t2947)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1486, 13); h0_t = t2947; goto bb1471; bb1473: goto bb1471; bb1474:
 #line 1491
     t2954 = h0_t; t2955 = INT64_C(492); t2956 = t2954 == t2955; if (t2956) goto bb1478; else goto bb1479; bb1475:
 #line 1489
-    t2951 = h0_t; t2952 = INT64_C(1); if (__builtin_add_overflow(t2951, t2952, &t2953)) hero_panic_overflow(); h0_t = t2953; goto bb1474; bb1476: goto bb1474; bb1477:
+    t2951 = h0_t; t2952 = INT64_C(1); if (__builtin_add_overflow(t2951, t2952, &t2953)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1489, 13); h0_t = t2953; goto bb1474; bb1476: goto bb1474; bb1477:
 #line 1494
     t2960 = h0_t; t2961 = INT64_C(493); t2962 = t2960 == t2961; if (t2962) goto bb1481; else goto bb1482; bb1478:
 #line 1492
-    t2957 = h0_t; t2958 = INT64_C(1); if (__builtin_add_overflow(t2957, t2958, &t2959)) hero_panic_overflow(); h0_t = t2959; goto bb1477; bb1479: goto bb1477; bb1480:
+    t2957 = h0_t; t2958 = INT64_C(1); if (__builtin_add_overflow(t2957, t2958, &t2959)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1492, 13); h0_t = t2959; goto bb1477; bb1479: goto bb1477; bb1480:
 #line 1497
     t2966 = h0_t; t2967 = INT64_C(494); t2968 = t2966 == t2967; if (t2968) goto bb1484; else goto bb1485; bb1481:
 #line 1495
-    t2963 = h0_t; t2964 = INT64_C(1); if (__builtin_add_overflow(t2963, t2964, &t2965)) hero_panic_overflow(); h0_t = t2965; goto bb1480; bb1482: goto bb1480; bb1483:
+    t2963 = h0_t; t2964 = INT64_C(1); if (__builtin_add_overflow(t2963, t2964, &t2965)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1495, 13); h0_t = t2965; goto bb1480; bb1482: goto bb1480; bb1483:
 #line 1500
     t2972 = h0_t; t2973 = INT64_C(495); t2974 = t2972 == t2973; if (t2974) goto bb1487; else goto bb1488; bb1484:
 #line 1498
-    t2969 = h0_t; t2970 = INT64_C(1); if (__builtin_add_overflow(t2969, t2970, &t2971)) hero_panic_overflow(); h0_t = t2971; goto bb1483; bb1485: goto bb1483; bb1486:
+    t2969 = h0_t; t2970 = INT64_C(1); if (__builtin_add_overflow(t2969, t2970, &t2971)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1498, 13); h0_t = t2971; goto bb1483; bb1485: goto bb1483; bb1486:
 #line 1503
     t2978 = h0_t; t2979 = INT64_C(496); t2980 = t2978 == t2979; if (t2980) goto bb1490; else goto bb1491; bb1487:
 #line 1501
-    t2975 = h0_t; t2976 = INT64_C(1); if (__builtin_add_overflow(t2975, t2976, &t2977)) hero_panic_overflow(); h0_t = t2977; goto bb1486; bb1488: goto bb1486; bb1489:
+    t2975 = h0_t; t2976 = INT64_C(1); if (__builtin_add_overflow(t2975, t2976, &t2977)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1501, 13); h0_t = t2977; goto bb1486; bb1488: goto bb1486; bb1489:
 #line 1506
     t2984 = h0_t; t2985 = INT64_C(497); t2986 = t2984 == t2985; if (t2986) goto bb1493; else goto bb1494; bb1490:
 #line 1504
-    t2981 = h0_t; t2982 = INT64_C(1); if (__builtin_add_overflow(t2981, t2982, &t2983)) hero_panic_overflow(); h0_t = t2983; goto bb1489; bb1491: goto bb1489; bb1492:
+    t2981 = h0_t; t2982 = INT64_C(1); if (__builtin_add_overflow(t2981, t2982, &t2983)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1504, 13); h0_t = t2983; goto bb1489; bb1491: goto bb1489; bb1492:
 #line 1509
     t2990 = h0_t; t2991 = INT64_C(498); t2992 = t2990 == t2991; if (t2992) goto bb1496; else goto bb1497; bb1493:
 #line 1507
-    t2987 = h0_t; t2988 = INT64_C(1); if (__builtin_add_overflow(t2987, t2988, &t2989)) hero_panic_overflow(); h0_t = t2989; goto bb1492; bb1494: goto bb1492; bb1495:
+    t2987 = h0_t; t2988 = INT64_C(1); if (__builtin_add_overflow(t2987, t2988, &t2989)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1507, 13); h0_t = t2989; goto bb1492; bb1494: goto bb1492; bb1495:
 #line 1512
     t2996 = h0_t; t2997 = INT64_C(499); t2998 = t2996 == t2997; if (t2998) goto bb1499; else goto bb1500; bb1496:
 #line 1510
-    t2993 = h0_t; t2994 = INT64_C(1); if (__builtin_add_overflow(t2993, t2994, &t2995)) hero_panic_overflow(); h0_t = t2995; goto bb1495; bb1497: goto bb1495; bb1498:
+    t2993 = h0_t; t2994 = INT64_C(1); if (__builtin_add_overflow(t2993, t2994, &t2995)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1510, 13); h0_t = t2995; goto bb1495; bb1497: goto bb1495; bb1498:
 #line 1515
     t3002 = h0_t; t3003 = INT64_C(500); t3004 = t3002 == t3003; if (t3004) goto bb1502; else goto bb1503; bb1499:
 #line 1513
-    t2999 = h0_t; t3000 = INT64_C(1); if (__builtin_add_overflow(t2999, t3000, &t3001)) hero_panic_overflow(); h0_t = t3001; goto bb1498; bb1500: goto bb1498; bb1501:
+    t2999 = h0_t; t3000 = INT64_C(1); if (__builtin_add_overflow(t2999, t3000, &t3001)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1513, 13); h0_t = t3001; goto bb1498; bb1500: goto bb1498; bb1501:
 #line 1518
     t3008 = h0_t; t3009 = INT64_C(501); t3010 = t3008 == t3009; if (t3010) goto bb1505; else goto bb1506; bb1502:
 #line 1516
-    t3005 = h0_t; t3006 = INT64_C(1); if (__builtin_add_overflow(t3005, t3006, &t3007)) hero_panic_overflow(); h0_t = t3007; goto bb1501; bb1503: goto bb1501; bb1504:
+    t3005 = h0_t; t3006 = INT64_C(1); if (__builtin_add_overflow(t3005, t3006, &t3007)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1516, 13); h0_t = t3007; goto bb1501; bb1503: goto bb1501; bb1504:
 #line 1521
     t3014 = h0_t; t3015 = INT64_C(502); t3016 = t3014 == t3015; if (t3016) goto bb1508; else goto bb1509; bb1505:
 #line 1519
-    t3011 = h0_t; t3012 = INT64_C(1); if (__builtin_add_overflow(t3011, t3012, &t3013)) hero_panic_overflow(); h0_t = t3013; goto bb1504; bb1506: goto bb1504; bb1507:
+    t3011 = h0_t; t3012 = INT64_C(1); if (__builtin_add_overflow(t3011, t3012, &t3013)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1519, 13); h0_t = t3013; goto bb1504; bb1506: goto bb1504; bb1507:
 #line 1524
     t3020 = h0_t; t3021 = INT64_C(503); t3022 = t3020 == t3021; if (t3022) goto bb1511; else goto bb1512; bb1508:
 #line 1522
-    t3017 = h0_t; t3018 = INT64_C(1); if (__builtin_add_overflow(t3017, t3018, &t3019)) hero_panic_overflow(); h0_t = t3019; goto bb1507; bb1509: goto bb1507; bb1510:
+    t3017 = h0_t; t3018 = INT64_C(1); if (__builtin_add_overflow(t3017, t3018, &t3019)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1522, 13); h0_t = t3019; goto bb1507; bb1509: goto bb1507; bb1510:
 #line 1527
     t3026 = h0_t; t3027 = INT64_C(504); t3028 = t3026 == t3027; if (t3028) goto bb1514; else goto bb1515; bb1511:
 #line 1525
-    t3023 = h0_t; t3024 = INT64_C(1); if (__builtin_add_overflow(t3023, t3024, &t3025)) hero_panic_overflow(); h0_t = t3025; goto bb1510; bb1512: goto bb1510; bb1513:
+    t3023 = h0_t; t3024 = INT64_C(1); if (__builtin_add_overflow(t3023, t3024, &t3025)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1525, 13); h0_t = t3025; goto bb1510; bb1512: goto bb1510; bb1513:
 #line 1530
     t3032 = h0_t; t3033 = INT64_C(505); t3034 = t3032 == t3033; if (t3034) goto bb1517; else goto bb1518; bb1514:
 #line 1528
-    t3029 = h0_t; t3030 = INT64_C(1); if (__builtin_add_overflow(t3029, t3030, &t3031)) hero_panic_overflow(); h0_t = t3031; goto bb1513; bb1515: goto bb1513; bb1516:
+    t3029 = h0_t; t3030 = INT64_C(1); if (__builtin_add_overflow(t3029, t3030, &t3031)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1528, 13); h0_t = t3031; goto bb1513; bb1515: goto bb1513; bb1516:
 #line 1533
     t3038 = h0_t; t3039 = INT64_C(506); t3040 = t3038 == t3039; if (t3040) goto bb1520; else goto bb1521; bb1517:
 #line 1531
-    t3035 = h0_t; t3036 = INT64_C(1); if (__builtin_add_overflow(t3035, t3036, &t3037)) hero_panic_overflow(); h0_t = t3037; goto bb1516; bb1518: goto bb1516; bb1519:
+    t3035 = h0_t; t3036 = INT64_C(1); if (__builtin_add_overflow(t3035, t3036, &t3037)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1531, 13); h0_t = t3037; goto bb1516; bb1518: goto bb1516; bb1519:
 #line 1536
     t3044 = h0_t; t3045 = INT64_C(507); t3046 = t3044 == t3045; if (t3046) goto bb1523; else goto bb1524; bb1520:
 #line 1534
-    t3041 = h0_t; t3042 = INT64_C(1); if (__builtin_add_overflow(t3041, t3042, &t3043)) hero_panic_overflow(); h0_t = t3043; goto bb1519; bb1521: goto bb1519; bb1522:
+    t3041 = h0_t; t3042 = INT64_C(1); if (__builtin_add_overflow(t3041, t3042, &t3043)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1534, 13); h0_t = t3043; goto bb1519; bb1521: goto bb1519; bb1522:
 #line 1539
     t3050 = h0_t; t3051 = INT64_C(508); t3052 = t3050 == t3051; if (t3052) goto bb1526; else goto bb1527; bb1523:
 #line 1537
-    t3047 = h0_t; t3048 = INT64_C(1); if (__builtin_add_overflow(t3047, t3048, &t3049)) hero_panic_overflow(); h0_t = t3049; goto bb1522; bb1524: goto bb1522; bb1525:
+    t3047 = h0_t; t3048 = INT64_C(1); if (__builtin_add_overflow(t3047, t3048, &t3049)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1537, 13); h0_t = t3049; goto bb1522; bb1524: goto bb1522; bb1525:
 #line 1542
     t3056 = h0_t; t3057 = INT64_C(509); t3058 = t3056 == t3057; if (t3058) goto bb1529; else goto bb1530; bb1526:
 #line 1540
-    t3053 = h0_t; t3054 = INT64_C(1); if (__builtin_add_overflow(t3053, t3054, &t3055)) hero_panic_overflow(); h0_t = t3055; goto bb1525; bb1527: goto bb1525; bb1528:
+    t3053 = h0_t; t3054 = INT64_C(1); if (__builtin_add_overflow(t3053, t3054, &t3055)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1540, 13); h0_t = t3055; goto bb1525; bb1527: goto bb1525; bb1528:
 #line 1545
     t3062 = h0_t; t3063 = INT64_C(510); t3064 = t3062 == t3063; if (t3064) goto bb1532; else goto bb1533; bb1529:
 #line 1543
-    t3059 = h0_t; t3060 = INT64_C(1); if (__builtin_add_overflow(t3059, t3060, &t3061)) hero_panic_overflow(); h0_t = t3061; goto bb1528; bb1530: goto bb1528; bb1531:
+    t3059 = h0_t; t3060 = INT64_C(1); if (__builtin_add_overflow(t3059, t3060, &t3061)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1543, 13); h0_t = t3061; goto bb1528; bb1530: goto bb1528; bb1531:
 #line 1548
     t3068 = h0_t; t3069 = INT64_C(511); t3070 = t3068 == t3069; if (t3070) goto bb1535; else goto bb1536; bb1532:
 #line 1546
-    t3065 = h0_t; t3066 = INT64_C(1); if (__builtin_add_overflow(t3065, t3066, &t3067)) hero_panic_overflow(); h0_t = t3067; goto bb1531; bb1533: goto bb1531; bb1534:
+    t3065 = h0_t; t3066 = INT64_C(1); if (__builtin_add_overflow(t3065, t3066, &t3067)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1546, 13); h0_t = t3067; goto bb1531; bb1533: goto bb1531; bb1534:
 #line 1551
     t3074 = h0_t; t3075 = INT64_C(512); t3076 = t3074 == t3075; if (t3076) goto bb1538; else goto bb1539; bb1535:
 #line 1549
-    t3071 = h0_t; t3072 = INT64_C(1); if (__builtin_add_overflow(t3071, t3072, &t3073)) hero_panic_overflow(); h0_t = t3073; goto bb1534; bb1536: goto bb1534; bb1537:
+    t3071 = h0_t; t3072 = INT64_C(1); if (__builtin_add_overflow(t3071, t3072, &t3073)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1549, 13); h0_t = t3073; goto bb1534; bb1536: goto bb1534; bb1537:
 #line 1554
     t3080 = h0_t; t3081 = INT64_C(513); t3082 = t3080 == t3081; if (t3082) goto bb1541; else goto bb1542; bb1538:
 #line 1552
-    t3077 = h0_t; t3078 = INT64_C(1); if (__builtin_add_overflow(t3077, t3078, &t3079)) hero_panic_overflow(); h0_t = t3079; goto bb1537; bb1539: goto bb1537; bb1540:
+    t3077 = h0_t; t3078 = INT64_C(1); if (__builtin_add_overflow(t3077, t3078, &t3079)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1552, 13); h0_t = t3079; goto bb1537; bb1539: goto bb1537; bb1540:
 #line 1557
     t3086 = h0_t; t3087 = INT64_C(514); t3088 = t3086 == t3087; if (t3088) goto bb1544; else goto bb1545; bb1541:
 #line 1555
-    t3083 = h0_t; t3084 = INT64_C(1); if (__builtin_add_overflow(t3083, t3084, &t3085)) hero_panic_overflow(); h0_t = t3085; goto bb1540; bb1542: goto bb1540; bb1543:
+    t3083 = h0_t; t3084 = INT64_C(1); if (__builtin_add_overflow(t3083, t3084, &t3085)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1555, 13); h0_t = t3085; goto bb1540; bb1542: goto bb1540; bb1543:
 #line 1560
     t3092 = h0_t; t3093 = INT64_C(515); t3094 = t3092 == t3093; if (t3094) goto bb1547; else goto bb1548; bb1544:
 #line 1558
-    t3089 = h0_t; t3090 = INT64_C(1); if (__builtin_add_overflow(t3089, t3090, &t3091)) hero_panic_overflow(); h0_t = t3091; goto bb1543; bb1545: goto bb1543; bb1546:
+    t3089 = h0_t; t3090 = INT64_C(1); if (__builtin_add_overflow(t3089, t3090, &t3091)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1558, 13); h0_t = t3091; goto bb1543; bb1545: goto bb1543; bb1546:
 #line 1563
     t3098 = h0_t; t3099 = INT64_C(516); t3100 = t3098 == t3099; if (t3100) goto bb1550; else goto bb1551; bb1547:
 #line 1561
-    t3095 = h0_t; t3096 = INT64_C(1); if (__builtin_add_overflow(t3095, t3096, &t3097)) hero_panic_overflow(); h0_t = t3097; goto bb1546; bb1548: goto bb1546; bb1549:
+    t3095 = h0_t; t3096 = INT64_C(1); if (__builtin_add_overflow(t3095, t3096, &t3097)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1561, 13); h0_t = t3097; goto bb1546; bb1548: goto bb1546; bb1549:
 #line 1566
     t3104 = h0_t; t3105 = INT64_C(517); t3106 = t3104 == t3105; if (t3106) goto bb1553; else goto bb1554; bb1550:
 #line 1564
-    t3101 = h0_t; t3102 = INT64_C(1); if (__builtin_add_overflow(t3101, t3102, &t3103)) hero_panic_overflow(); h0_t = t3103; goto bb1549; bb1551: goto bb1549; bb1552:
+    t3101 = h0_t; t3102 = INT64_C(1); if (__builtin_add_overflow(t3101, t3102, &t3103)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1564, 13); h0_t = t3103; goto bb1549; bb1551: goto bb1549; bb1552:
 #line 1569
     t3110 = h0_t; t3111 = INT64_C(518); t3112 = t3110 == t3111; if (t3112) goto bb1556; else goto bb1557; bb1553:
 #line 1567
-    t3107 = h0_t; t3108 = INT64_C(1); if (__builtin_add_overflow(t3107, t3108, &t3109)) hero_panic_overflow(); h0_t = t3109; goto bb1552; bb1554: goto bb1552; bb1555:
+    t3107 = h0_t; t3108 = INT64_C(1); if (__builtin_add_overflow(t3107, t3108, &t3109)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1567, 13); h0_t = t3109; goto bb1552; bb1554: goto bb1552; bb1555:
 #line 1572
     t3116 = h0_t; t3117 = INT64_C(519); t3118 = t3116 == t3117; if (t3118) goto bb1559; else goto bb1560; bb1556:
 #line 1570
-    t3113 = h0_t; t3114 = INT64_C(1); if (__builtin_add_overflow(t3113, t3114, &t3115)) hero_panic_overflow(); h0_t = t3115; goto bb1555; bb1557: goto bb1555; bb1558:
+    t3113 = h0_t; t3114 = INT64_C(1); if (__builtin_add_overflow(t3113, t3114, &t3115)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1570, 13); h0_t = t3115; goto bb1555; bb1557: goto bb1555; bb1558:
 #line 1575
     t3122 = h0_t; t3123 = INT64_C(520); t3124 = t3122 == t3123; if (t3124) goto bb1562; else goto bb1563; bb1559:
 #line 1573
-    t3119 = h0_t; t3120 = INT64_C(1); if (__builtin_add_overflow(t3119, t3120, &t3121)) hero_panic_overflow(); h0_t = t3121; goto bb1558; bb1560: goto bb1558; bb1561:
+    t3119 = h0_t; t3120 = INT64_C(1); if (__builtin_add_overflow(t3119, t3120, &t3121)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1573, 13); h0_t = t3121; goto bb1558; bb1560: goto bb1558; bb1561:
 #line 1578
     t3128 = h0_t; t3129 = INT64_C(521); t3130 = t3128 == t3129; if (t3130) goto bb1565; else goto bb1566; bb1562:
 #line 1576
-    t3125 = h0_t; t3126 = INT64_C(1); if (__builtin_add_overflow(t3125, t3126, &t3127)) hero_panic_overflow(); h0_t = t3127; goto bb1561; bb1563: goto bb1561; bb1564:
+    t3125 = h0_t; t3126 = INT64_C(1); if (__builtin_add_overflow(t3125, t3126, &t3127)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1576, 13); h0_t = t3127; goto bb1561; bb1563: goto bb1561; bb1564:
 #line 1581
     t3134 = h0_t; t3135 = INT64_C(522); t3136 = t3134 == t3135; if (t3136) goto bb1568; else goto bb1569; bb1565:
 #line 1579
-    t3131 = h0_t; t3132 = INT64_C(1); if (__builtin_add_overflow(t3131, t3132, &t3133)) hero_panic_overflow(); h0_t = t3133; goto bb1564; bb1566: goto bb1564; bb1567:
+    t3131 = h0_t; t3132 = INT64_C(1); if (__builtin_add_overflow(t3131, t3132, &t3133)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1579, 13); h0_t = t3133; goto bb1564; bb1566: goto bb1564; bb1567:
 #line 1584
     t3140 = h0_t; t3141 = INT64_C(523); t3142 = t3140 == t3141; if (t3142) goto bb1571; else goto bb1572; bb1568:
 #line 1582
-    t3137 = h0_t; t3138 = INT64_C(1); if (__builtin_add_overflow(t3137, t3138, &t3139)) hero_panic_overflow(); h0_t = t3139; goto bb1567; bb1569: goto bb1567; bb1570:
+    t3137 = h0_t; t3138 = INT64_C(1); if (__builtin_add_overflow(t3137, t3138, &t3139)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1582, 13); h0_t = t3139; goto bb1567; bb1569: goto bb1567; bb1570:
 #line 1587
     t3146 = h0_t; t3147 = INT64_C(524); t3148 = t3146 == t3147; if (t3148) goto bb1574; else goto bb1575; bb1571:
 #line 1585
-    t3143 = h0_t; t3144 = INT64_C(1); if (__builtin_add_overflow(t3143, t3144, &t3145)) hero_panic_overflow(); h0_t = t3145; goto bb1570; bb1572: goto bb1570; bb1573:
+    t3143 = h0_t; t3144 = INT64_C(1); if (__builtin_add_overflow(t3143, t3144, &t3145)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1585, 13); h0_t = t3145; goto bb1570; bb1572: goto bb1570; bb1573:
 #line 1590
     t3152 = h0_t; t3153 = INT64_C(525); t3154 = t3152 == t3153; if (t3154) goto bb1577; else goto bb1578; bb1574:
 #line 1588
-    t3149 = h0_t; t3150 = INT64_C(1); if (__builtin_add_overflow(t3149, t3150, &t3151)) hero_panic_overflow(); h0_t = t3151; goto bb1573; bb1575: goto bb1573; bb1576:
+    t3149 = h0_t; t3150 = INT64_C(1); if (__builtin_add_overflow(t3149, t3150, &t3151)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1588, 13); h0_t = t3151; goto bb1573; bb1575: goto bb1573; bb1576:
 #line 1593
     t3158 = h0_t; t3159 = INT64_C(526); t3160 = t3158 == t3159; if (t3160) goto bb1580; else goto bb1581; bb1577:
 #line 1591
-    t3155 = h0_t; t3156 = INT64_C(1); if (__builtin_add_overflow(t3155, t3156, &t3157)) hero_panic_overflow(); h0_t = t3157; goto bb1576; bb1578: goto bb1576; bb1579:
+    t3155 = h0_t; t3156 = INT64_C(1); if (__builtin_add_overflow(t3155, t3156, &t3157)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1591, 13); h0_t = t3157; goto bb1576; bb1578: goto bb1576; bb1579:
 #line 1596
     t3164 = h0_t; t3165 = INT64_C(527); t3166 = t3164 == t3165; if (t3166) goto bb1583; else goto bb1584; bb1580:
 #line 1594
-    t3161 = h0_t; t3162 = INT64_C(1); if (__builtin_add_overflow(t3161, t3162, &t3163)) hero_panic_overflow(); h0_t = t3163; goto bb1579; bb1581: goto bb1579; bb1582:
+    t3161 = h0_t; t3162 = INT64_C(1); if (__builtin_add_overflow(t3161, t3162, &t3163)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1594, 13); h0_t = t3163; goto bb1579; bb1581: goto bb1579; bb1582:
 #line 1599
     t3170 = h0_t; t3171 = INT64_C(528); t3172 = t3170 == t3171; if (t3172) goto bb1586; else goto bb1587; bb1583:
 #line 1597
-    t3167 = h0_t; t3168 = INT64_C(1); if (__builtin_add_overflow(t3167, t3168, &t3169)) hero_panic_overflow(); h0_t = t3169; goto bb1582; bb1584: goto bb1582; bb1585:
+    t3167 = h0_t; t3168 = INT64_C(1); if (__builtin_add_overflow(t3167, t3168, &t3169)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1597, 13); h0_t = t3169; goto bb1582; bb1584: goto bb1582; bb1585:
 #line 1602
     t3176 = h0_t; t3177 = INT64_C(529); t3178 = t3176 == t3177; if (t3178) goto bb1589; else goto bb1590; bb1586:
 #line 1600
-    t3173 = h0_t; t3174 = INT64_C(1); if (__builtin_add_overflow(t3173, t3174, &t3175)) hero_panic_overflow(); h0_t = t3175; goto bb1585; bb1587: goto bb1585; bb1588:
+    t3173 = h0_t; t3174 = INT64_C(1); if (__builtin_add_overflow(t3173, t3174, &t3175)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1600, 13); h0_t = t3175; goto bb1585; bb1587: goto bb1585; bb1588:
 #line 1605
     t3182 = h0_t; t3183 = INT64_C(530); t3184 = t3182 == t3183; if (t3184) goto bb1592; else goto bb1593; bb1589:
 #line 1603
-    t3179 = h0_t; t3180 = INT64_C(1); if (__builtin_add_overflow(t3179, t3180, &t3181)) hero_panic_overflow(); h0_t = t3181; goto bb1588; bb1590: goto bb1588; bb1591:
+    t3179 = h0_t; t3180 = INT64_C(1); if (__builtin_add_overflow(t3179, t3180, &t3181)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1603, 13); h0_t = t3181; goto bb1588; bb1590: goto bb1588; bb1591:
 #line 1608
     t3188 = h0_t; t3189 = INT64_C(531); t3190 = t3188 == t3189; if (t3190) goto bb1595; else goto bb1596; bb1592:
 #line 1606
-    t3185 = h0_t; t3186 = INT64_C(1); if (__builtin_add_overflow(t3185, t3186, &t3187)) hero_panic_overflow(); h0_t = t3187; goto bb1591; bb1593: goto bb1591; bb1594:
+    t3185 = h0_t; t3186 = INT64_C(1); if (__builtin_add_overflow(t3185, t3186, &t3187)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1606, 13); h0_t = t3187; goto bb1591; bb1593: goto bb1591; bb1594:
 #line 1611
     t3194 = h0_t; t3195 = INT64_C(532); t3196 = t3194 == t3195; if (t3196) goto bb1598; else goto bb1599; bb1595:
 #line 1609
-    t3191 = h0_t; t3192 = INT64_C(1); if (__builtin_add_overflow(t3191, t3192, &t3193)) hero_panic_overflow(); h0_t = t3193; goto bb1594; bb1596: goto bb1594; bb1597:
+    t3191 = h0_t; t3192 = INT64_C(1); if (__builtin_add_overflow(t3191, t3192, &t3193)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1609, 13); h0_t = t3193; goto bb1594; bb1596: goto bb1594; bb1597:
 #line 1614
     t3200 = h0_t; t3201 = INT64_C(533); t3202 = t3200 == t3201; if (t3202) goto bb1601; else goto bb1602; bb1598:
 #line 1612
-    t3197 = h0_t; t3198 = INT64_C(1); if (__builtin_add_overflow(t3197, t3198, &t3199)) hero_panic_overflow(); h0_t = t3199; goto bb1597; bb1599: goto bb1597; bb1600:
+    t3197 = h0_t; t3198 = INT64_C(1); if (__builtin_add_overflow(t3197, t3198, &t3199)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1612, 13); h0_t = t3199; goto bb1597; bb1599: goto bb1597; bb1600:
 #line 1617
     t3206 = h0_t; t3207 = INT64_C(534); t3208 = t3206 == t3207; if (t3208) goto bb1604; else goto bb1605; bb1601:
 #line 1615
-    t3203 = h0_t; t3204 = INT64_C(1); if (__builtin_add_overflow(t3203, t3204, &t3205)) hero_panic_overflow(); h0_t = t3205; goto bb1600; bb1602: goto bb1600; bb1603:
+    t3203 = h0_t; t3204 = INT64_C(1); if (__builtin_add_overflow(t3203, t3204, &t3205)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1615, 13); h0_t = t3205; goto bb1600; bb1602: goto bb1600; bb1603:
 #line 1620
     t3212 = h0_t; t3213 = INT64_C(535); t3214 = t3212 == t3213; if (t3214) goto bb1607; else goto bb1608; bb1604:
 #line 1618
-    t3209 = h0_t; t3210 = INT64_C(1); if (__builtin_add_overflow(t3209, t3210, &t3211)) hero_panic_overflow(); h0_t = t3211; goto bb1603; bb1605: goto bb1603; bb1606:
+    t3209 = h0_t; t3210 = INT64_C(1); if (__builtin_add_overflow(t3209, t3210, &t3211)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1618, 13); h0_t = t3211; goto bb1603; bb1605: goto bb1603; bb1606:
 #line 1623
     t3218 = h0_t; t3219 = INT64_C(536); t3220 = t3218 == t3219; if (t3220) goto bb1610; else goto bb1611; bb1607:
 #line 1621
-    t3215 = h0_t; t3216 = INT64_C(1); if (__builtin_add_overflow(t3215, t3216, &t3217)) hero_panic_overflow(); h0_t = t3217; goto bb1606; bb1608: goto bb1606; bb1609:
+    t3215 = h0_t; t3216 = INT64_C(1); if (__builtin_add_overflow(t3215, t3216, &t3217)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1621, 13); h0_t = t3217; goto bb1606; bb1608: goto bb1606; bb1609:
 #line 1626
     t3224 = h0_t; t3225 = INT64_C(537); t3226 = t3224 == t3225; if (t3226) goto bb1613; else goto bb1614; bb1610:
 #line 1624
-    t3221 = h0_t; t3222 = INT64_C(1); if (__builtin_add_overflow(t3221, t3222, &t3223)) hero_panic_overflow(); h0_t = t3223; goto bb1609; bb1611: goto bb1609; bb1612:
+    t3221 = h0_t; t3222 = INT64_C(1); if (__builtin_add_overflow(t3221, t3222, &t3223)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1624, 13); h0_t = t3223; goto bb1609; bb1611: goto bb1609; bb1612:
 #line 1629
     t3230 = h0_t; t3231 = INT64_C(538); t3232 = t3230 == t3231; if (t3232) goto bb1616; else goto bb1617; bb1613:
 #line 1627
-    t3227 = h0_t; t3228 = INT64_C(1); if (__builtin_add_overflow(t3227, t3228, &t3229)) hero_panic_overflow(); h0_t = t3229; goto bb1612; bb1614: goto bb1612; bb1615:
+    t3227 = h0_t; t3228 = INT64_C(1); if (__builtin_add_overflow(t3227, t3228, &t3229)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1627, 13); h0_t = t3229; goto bb1612; bb1614: goto bb1612; bb1615:
 #line 1632
     t3236 = h0_t; t3237 = INT64_C(539); t3238 = t3236 == t3237; if (t3238) goto bb1619; else goto bb1620; bb1616:
 #line 1630
-    t3233 = h0_t; t3234 = INT64_C(1); if (__builtin_add_overflow(t3233, t3234, &t3235)) hero_panic_overflow(); h0_t = t3235; goto bb1615; bb1617: goto bb1615; bb1618:
+    t3233 = h0_t; t3234 = INT64_C(1); if (__builtin_add_overflow(t3233, t3234, &t3235)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1630, 13); h0_t = t3235; goto bb1615; bb1617: goto bb1615; bb1618:
 #line 1635
     t3242 = h0_t; t3243 = INT64_C(540); t3244 = t3242 == t3243; if (t3244) goto bb1622; else goto bb1623; bb1619:
 #line 1633
-    t3239 = h0_t; t3240 = INT64_C(1); if (__builtin_add_overflow(t3239, t3240, &t3241)) hero_panic_overflow(); h0_t = t3241; goto bb1618; bb1620: goto bb1618; bb1621:
+    t3239 = h0_t; t3240 = INT64_C(1); if (__builtin_add_overflow(t3239, t3240, &t3241)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1633, 13); h0_t = t3241; goto bb1618; bb1620: goto bb1618; bb1621:
 #line 1638
     t3248 = h0_t; t3249 = INT64_C(541); t3250 = t3248 == t3249; if (t3250) goto bb1625; else goto bb1626; bb1622:
 #line 1636
-    t3245 = h0_t; t3246 = INT64_C(1); if (__builtin_add_overflow(t3245, t3246, &t3247)) hero_panic_overflow(); h0_t = t3247; goto bb1621; bb1623: goto bb1621; bb1624:
+    t3245 = h0_t; t3246 = INT64_C(1); if (__builtin_add_overflow(t3245, t3246, &t3247)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1636, 13); h0_t = t3247; goto bb1621; bb1623: goto bb1621; bb1624:
 #line 1641
     t3254 = h0_t; t3255 = INT64_C(542); t3256 = t3254 == t3255; if (t3256) goto bb1628; else goto bb1629; bb1625:
 #line 1639
-    t3251 = h0_t; t3252 = INT64_C(1); if (__builtin_add_overflow(t3251, t3252, &t3253)) hero_panic_overflow(); h0_t = t3253; goto bb1624; bb1626: goto bb1624; bb1627:
+    t3251 = h0_t; t3252 = INT64_C(1); if (__builtin_add_overflow(t3251, t3252, &t3253)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1639, 13); h0_t = t3253; goto bb1624; bb1626: goto bb1624; bb1627:
 #line 1644
     t3260 = h0_t; t3261 = INT64_C(543); t3262 = t3260 == t3261; if (t3262) goto bb1631; else goto bb1632; bb1628:
 #line 1642
-    t3257 = h0_t; t3258 = INT64_C(1); if (__builtin_add_overflow(t3257, t3258, &t3259)) hero_panic_overflow(); h0_t = t3259; goto bb1627; bb1629: goto bb1627; bb1630:
+    t3257 = h0_t; t3258 = INT64_C(1); if (__builtin_add_overflow(t3257, t3258, &t3259)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1642, 13); h0_t = t3259; goto bb1627; bb1629: goto bb1627; bb1630:
 #line 1647
     t3266 = h0_t; t3267 = INT64_C(544); t3268 = t3266 == t3267; if (t3268) goto bb1634; else goto bb1635; bb1631:
 #line 1645
-    t3263 = h0_t; t3264 = INT64_C(1); if (__builtin_add_overflow(t3263, t3264, &t3265)) hero_panic_overflow(); h0_t = t3265; goto bb1630; bb1632: goto bb1630; bb1633:
+    t3263 = h0_t; t3264 = INT64_C(1); if (__builtin_add_overflow(t3263, t3264, &t3265)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1645, 13); h0_t = t3265; goto bb1630; bb1632: goto bb1630; bb1633:
 #line 1650
     t3272 = h0_t; t3273 = INT64_C(545); t3274 = t3272 == t3273; if (t3274) goto bb1637; else goto bb1638; bb1634:
 #line 1648
-    t3269 = h0_t; t3270 = INT64_C(1); if (__builtin_add_overflow(t3269, t3270, &t3271)) hero_panic_overflow(); h0_t = t3271; goto bb1633; bb1635: goto bb1633; bb1636:
+    t3269 = h0_t; t3270 = INT64_C(1); if (__builtin_add_overflow(t3269, t3270, &t3271)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1648, 13); h0_t = t3271; goto bb1633; bb1635: goto bb1633; bb1636:
 #line 1653
     t3278 = h0_t; t3279 = INT64_C(546); t3280 = t3278 == t3279; if (t3280) goto bb1640; else goto bb1641; bb1637:
 #line 1651
-    t3275 = h0_t; t3276 = INT64_C(1); if (__builtin_add_overflow(t3275, t3276, &t3277)) hero_panic_overflow(); h0_t = t3277; goto bb1636; bb1638: goto bb1636; bb1639:
+    t3275 = h0_t; t3276 = INT64_C(1); if (__builtin_add_overflow(t3275, t3276, &t3277)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1651, 13); h0_t = t3277; goto bb1636; bb1638: goto bb1636; bb1639:
 #line 1656
     t3284 = h0_t; t3285 = INT64_C(547); t3286 = t3284 == t3285; if (t3286) goto bb1643; else goto bb1644; bb1640:
 #line 1654
-    t3281 = h0_t; t3282 = INT64_C(1); if (__builtin_add_overflow(t3281, t3282, &t3283)) hero_panic_overflow(); h0_t = t3283; goto bb1639; bb1641: goto bb1639; bb1642:
+    t3281 = h0_t; t3282 = INT64_C(1); if (__builtin_add_overflow(t3281, t3282, &t3283)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1654, 13); h0_t = t3283; goto bb1639; bb1641: goto bb1639; bb1642:
 #line 1659
     t3290 = h0_t; t3291 = INT64_C(548); t3292 = t3290 == t3291; if (t3292) goto bb1646; else goto bb1647; bb1643:
 #line 1657
-    t3287 = h0_t; t3288 = INT64_C(1); if (__builtin_add_overflow(t3287, t3288, &t3289)) hero_panic_overflow(); h0_t = t3289; goto bb1642; bb1644: goto bb1642; bb1645:
+    t3287 = h0_t; t3288 = INT64_C(1); if (__builtin_add_overflow(t3287, t3288, &t3289)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1657, 13); h0_t = t3289; goto bb1642; bb1644: goto bb1642; bb1645:
 #line 1662
     t3296 = h0_t; t3297 = INT64_C(549); t3298 = t3296 == t3297; if (t3298) goto bb1649; else goto bb1650; bb1646:
 #line 1660
-    t3293 = h0_t; t3294 = INT64_C(1); if (__builtin_add_overflow(t3293, t3294, &t3295)) hero_panic_overflow(); h0_t = t3295; goto bb1645; bb1647: goto bb1645; bb1648:
+    t3293 = h0_t; t3294 = INT64_C(1); if (__builtin_add_overflow(t3293, t3294, &t3295)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1660, 13); h0_t = t3295; goto bb1645; bb1647: goto bb1645; bb1648:
 #line 1665
     t3302 = h0_t; t3303 = INT64_C(550); t3304 = t3302 == t3303; if (t3304) goto bb1652; else goto bb1653; bb1649:
 #line 1663
-    t3299 = h0_t; t3300 = INT64_C(1); if (__builtin_add_overflow(t3299, t3300, &t3301)) hero_panic_overflow(); h0_t = t3301; goto bb1648; bb1650: goto bb1648; bb1651:
+    t3299 = h0_t; t3300 = INT64_C(1); if (__builtin_add_overflow(t3299, t3300, &t3301)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1663, 13); h0_t = t3301; goto bb1648; bb1650: goto bb1648; bb1651:
 #line 1668
     t3308 = h0_t; t3309 = INT64_C(551); t3310 = t3308 == t3309; if (t3310) goto bb1655; else goto bb1656; bb1652:
 #line 1666
-    t3305 = h0_t; t3306 = INT64_C(1); if (__builtin_add_overflow(t3305, t3306, &t3307)) hero_panic_overflow(); h0_t = t3307; goto bb1651; bb1653: goto bb1651; bb1654:
+    t3305 = h0_t; t3306 = INT64_C(1); if (__builtin_add_overflow(t3305, t3306, &t3307)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1666, 13); h0_t = t3307; goto bb1651; bb1653: goto bb1651; bb1654:
 #line 1671
     t3314 = h0_t; t3315 = INT64_C(552); t3316 = t3314 == t3315; if (t3316) goto bb1658; else goto bb1659; bb1655:
 #line 1669
-    t3311 = h0_t; t3312 = INT64_C(1); if (__builtin_add_overflow(t3311, t3312, &t3313)) hero_panic_overflow(); h0_t = t3313; goto bb1654; bb1656: goto bb1654; bb1657:
+    t3311 = h0_t; t3312 = INT64_C(1); if (__builtin_add_overflow(t3311, t3312, &t3313)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1669, 13); h0_t = t3313; goto bb1654; bb1656: goto bb1654; bb1657:
 #line 1674
     t3320 = h0_t; t3321 = INT64_C(553); t3322 = t3320 == t3321; if (t3322) goto bb1661; else goto bb1662; bb1658:
 #line 1672
-    t3317 = h0_t; t3318 = INT64_C(1); if (__builtin_add_overflow(t3317, t3318, &t3319)) hero_panic_overflow(); h0_t = t3319; goto bb1657; bb1659: goto bb1657; bb1660:
+    t3317 = h0_t; t3318 = INT64_C(1); if (__builtin_add_overflow(t3317, t3318, &t3319)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1672, 13); h0_t = t3319; goto bb1657; bb1659: goto bb1657; bb1660:
 #line 1677
     t3326 = h0_t; t3327 = INT64_C(554); t3328 = t3326 == t3327; if (t3328) goto bb1664; else goto bb1665; bb1661:
 #line 1675
-    t3323 = h0_t; t3324 = INT64_C(1); if (__builtin_add_overflow(t3323, t3324, &t3325)) hero_panic_overflow(); h0_t = t3325; goto bb1660; bb1662: goto bb1660; bb1663:
+    t3323 = h0_t; t3324 = INT64_C(1); if (__builtin_add_overflow(t3323, t3324, &t3325)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1675, 13); h0_t = t3325; goto bb1660; bb1662: goto bb1660; bb1663:
 #line 1680
     t3332 = h0_t; t3333 = INT64_C(555); t3334 = t3332 == t3333; if (t3334) goto bb1667; else goto bb1668; bb1664:
 #line 1678
-    t3329 = h0_t; t3330 = INT64_C(1); if (__builtin_add_overflow(t3329, t3330, &t3331)) hero_panic_overflow(); h0_t = t3331; goto bb1663; bb1665: goto bb1663; bb1666:
+    t3329 = h0_t; t3330 = INT64_C(1); if (__builtin_add_overflow(t3329, t3330, &t3331)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1678, 13); h0_t = t3331; goto bb1663; bb1665: goto bb1663; bb1666:
 #line 1683
     t3338 = h0_t; t3339 = INT64_C(556); t3340 = t3338 == t3339; if (t3340) goto bb1670; else goto bb1671; bb1667:
 #line 1681
-    t3335 = h0_t; t3336 = INT64_C(1); if (__builtin_add_overflow(t3335, t3336, &t3337)) hero_panic_overflow(); h0_t = t3337; goto bb1666; bb1668: goto bb1666; bb1669:
+    t3335 = h0_t; t3336 = INT64_C(1); if (__builtin_add_overflow(t3335, t3336, &t3337)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1681, 13); h0_t = t3337; goto bb1666; bb1668: goto bb1666; bb1669:
 #line 1686
     t3344 = h0_t; t3345 = INT64_C(557); t3346 = t3344 == t3345; if (t3346) goto bb1673; else goto bb1674; bb1670:
 #line 1684
-    t3341 = h0_t; t3342 = INT64_C(1); if (__builtin_add_overflow(t3341, t3342, &t3343)) hero_panic_overflow(); h0_t = t3343; goto bb1669; bb1671: goto bb1669; bb1672:
+    t3341 = h0_t; t3342 = INT64_C(1); if (__builtin_add_overflow(t3341, t3342, &t3343)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1684, 13); h0_t = t3343; goto bb1669; bb1671: goto bb1669; bb1672:
 #line 1689
     t3350 = h0_t; t3351 = INT64_C(558); t3352 = t3350 == t3351; if (t3352) goto bb1676; else goto bb1677; bb1673:
 #line 1687
-    t3347 = h0_t; t3348 = INT64_C(1); if (__builtin_add_overflow(t3347, t3348, &t3349)) hero_panic_overflow(); h0_t = t3349; goto bb1672; bb1674: goto bb1672; bb1675:
+    t3347 = h0_t; t3348 = INT64_C(1); if (__builtin_add_overflow(t3347, t3348, &t3349)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1687, 13); h0_t = t3349; goto bb1672; bb1674: goto bb1672; bb1675:
 #line 1692
     t3356 = h0_t; t3357 = INT64_C(559); t3358 = t3356 == t3357; if (t3358) goto bb1679; else goto bb1680; bb1676:
 #line 1690
-    t3353 = h0_t; t3354 = INT64_C(1); if (__builtin_add_overflow(t3353, t3354, &t3355)) hero_panic_overflow(); h0_t = t3355; goto bb1675; bb1677: goto bb1675; bb1678:
+    t3353 = h0_t; t3354 = INT64_C(1); if (__builtin_add_overflow(t3353, t3354, &t3355)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1690, 13); h0_t = t3355; goto bb1675; bb1677: goto bb1675; bb1678:
 #line 1695
     t3362 = h0_t; t3363 = INT64_C(560); t3364 = t3362 == t3363; if (t3364) goto bb1682; else goto bb1683; bb1679:
 #line 1693
-    t3359 = h0_t; t3360 = INT64_C(1); if (__builtin_add_overflow(t3359, t3360, &t3361)) hero_panic_overflow(); h0_t = t3361; goto bb1678; bb1680: goto bb1678; bb1681:
+    t3359 = h0_t; t3360 = INT64_C(1); if (__builtin_add_overflow(t3359, t3360, &t3361)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1693, 13); h0_t = t3361; goto bb1678; bb1680: goto bb1678; bb1681:
 #line 1698
     t3368 = h0_t; t3369 = INT64_C(561); t3370 = t3368 == t3369; if (t3370) goto bb1685; else goto bb1686; bb1682:
 #line 1696
-    t3365 = h0_t; t3366 = INT64_C(1); if (__builtin_add_overflow(t3365, t3366, &t3367)) hero_panic_overflow(); h0_t = t3367; goto bb1681; bb1683: goto bb1681; bb1684:
+    t3365 = h0_t; t3366 = INT64_C(1); if (__builtin_add_overflow(t3365, t3366, &t3367)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1696, 13); h0_t = t3367; goto bb1681; bb1683: goto bb1681; bb1684:
 #line 1701
     t3374 = h0_t; t3375 = INT64_C(562); t3376 = t3374 == t3375; if (t3376) goto bb1688; else goto bb1689; bb1685:
 #line 1699
-    t3371 = h0_t; t3372 = INT64_C(1); if (__builtin_add_overflow(t3371, t3372, &t3373)) hero_panic_overflow(); h0_t = t3373; goto bb1684; bb1686: goto bb1684; bb1687:
+    t3371 = h0_t; t3372 = INT64_C(1); if (__builtin_add_overflow(t3371, t3372, &t3373)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1699, 13); h0_t = t3373; goto bb1684; bb1686: goto bb1684; bb1687:
 #line 1704
     t3380 = h0_t; t3381 = INT64_C(563); t3382 = t3380 == t3381; if (t3382) goto bb1691; else goto bb1692; bb1688:
 #line 1702
-    t3377 = h0_t; t3378 = INT64_C(1); if (__builtin_add_overflow(t3377, t3378, &t3379)) hero_panic_overflow(); h0_t = t3379; goto bb1687; bb1689: goto bb1687; bb1690:
+    t3377 = h0_t; t3378 = INT64_C(1); if (__builtin_add_overflow(t3377, t3378, &t3379)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1702, 13); h0_t = t3379; goto bb1687; bb1689: goto bb1687; bb1690:
 #line 1707
     t3386 = h0_t; t3387 = INT64_C(564); t3388 = t3386 == t3387; if (t3388) goto bb1694; else goto bb1695; bb1691:
 #line 1705
-    t3383 = h0_t; t3384 = INT64_C(1); if (__builtin_add_overflow(t3383, t3384, &t3385)) hero_panic_overflow(); h0_t = t3385; goto bb1690; bb1692: goto bb1690; bb1693:
+    t3383 = h0_t; t3384 = INT64_C(1); if (__builtin_add_overflow(t3383, t3384, &t3385)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1705, 13); h0_t = t3385; goto bb1690; bb1692: goto bb1690; bb1693:
 #line 1710
     t3392 = h0_t; t3393 = INT64_C(565); t3394 = t3392 == t3393; if (t3394) goto bb1697; else goto bb1698; bb1694:
 #line 1708
-    t3389 = h0_t; t3390 = INT64_C(1); if (__builtin_add_overflow(t3389, t3390, &t3391)) hero_panic_overflow(); h0_t = t3391; goto bb1693; bb1695: goto bb1693; bb1696:
+    t3389 = h0_t; t3390 = INT64_C(1); if (__builtin_add_overflow(t3389, t3390, &t3391)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1708, 13); h0_t = t3391; goto bb1693; bb1695: goto bb1693; bb1696:
 #line 1713
     t3398 = h0_t; t3399 = INT64_C(566); t3400 = t3398 == t3399; if (t3400) goto bb1700; else goto bb1701; bb1697:
 #line 1711
-    t3395 = h0_t; t3396 = INT64_C(1); if (__builtin_add_overflow(t3395, t3396, &t3397)) hero_panic_overflow(); h0_t = t3397; goto bb1696; bb1698: goto bb1696; bb1699:
+    t3395 = h0_t; t3396 = INT64_C(1); if (__builtin_add_overflow(t3395, t3396, &t3397)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1711, 13); h0_t = t3397; goto bb1696; bb1698: goto bb1696; bb1699:
 #line 1716
     t3404 = h0_t; t3405 = INT64_C(567); t3406 = t3404 == t3405; if (t3406) goto bb1703; else goto bb1704; bb1700:
 #line 1714
-    t3401 = h0_t; t3402 = INT64_C(1); if (__builtin_add_overflow(t3401, t3402, &t3403)) hero_panic_overflow(); h0_t = t3403; goto bb1699; bb1701: goto bb1699; bb1702:
+    t3401 = h0_t; t3402 = INT64_C(1); if (__builtin_add_overflow(t3401, t3402, &t3403)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1714, 13); h0_t = t3403; goto bb1699; bb1701: goto bb1699; bb1702:
 #line 1719
     t3410 = h0_t; t3411 = INT64_C(568); t3412 = t3410 == t3411; if (t3412) goto bb1706; else goto bb1707; bb1703:
 #line 1717
-    t3407 = h0_t; t3408 = INT64_C(1); if (__builtin_add_overflow(t3407, t3408, &t3409)) hero_panic_overflow(); h0_t = t3409; goto bb1702; bb1704: goto bb1702; bb1705:
+    t3407 = h0_t; t3408 = INT64_C(1); if (__builtin_add_overflow(t3407, t3408, &t3409)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1717, 13); h0_t = t3409; goto bb1702; bb1704: goto bb1702; bb1705:
 #line 1722
     t3416 = h0_t; t3417 = INT64_C(569); t3418 = t3416 == t3417; if (t3418) goto bb1709; else goto bb1710; bb1706:
 #line 1720
-    t3413 = h0_t; t3414 = INT64_C(1); if (__builtin_add_overflow(t3413, t3414, &t3415)) hero_panic_overflow(); h0_t = t3415; goto bb1705; bb1707: goto bb1705; bb1708:
+    t3413 = h0_t; t3414 = INT64_C(1); if (__builtin_add_overflow(t3413, t3414, &t3415)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1720, 13); h0_t = t3415; goto bb1705; bb1707: goto bb1705; bb1708:
 #line 1725
     t3422 = h0_t; t3423 = INT64_C(570); t3424 = t3422 == t3423; if (t3424) goto bb1712; else goto bb1713; bb1709:
 #line 1723
-    t3419 = h0_t; t3420 = INT64_C(1); if (__builtin_add_overflow(t3419, t3420, &t3421)) hero_panic_overflow(); h0_t = t3421; goto bb1708; bb1710: goto bb1708; bb1711:
+    t3419 = h0_t; t3420 = INT64_C(1); if (__builtin_add_overflow(t3419, t3420, &t3421)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1723, 13); h0_t = t3421; goto bb1708; bb1710: goto bb1708; bb1711:
 #line 1728
     t3428 = h0_t; t3429 = INT64_C(571); t3430 = t3428 == t3429; if (t3430) goto bb1715; else goto bb1716; bb1712:
 #line 1726
-    t3425 = h0_t; t3426 = INT64_C(1); if (__builtin_add_overflow(t3425, t3426, &t3427)) hero_panic_overflow(); h0_t = t3427; goto bb1711; bb1713: goto bb1711; bb1714:
+    t3425 = h0_t; t3426 = INT64_C(1); if (__builtin_add_overflow(t3425, t3426, &t3427)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1726, 13); h0_t = t3427; goto bb1711; bb1713: goto bb1711; bb1714:
 #line 1731
     t3434 = h0_t; t3435 = INT64_C(572); t3436 = t3434 == t3435; if (t3436) goto bb1718; else goto bb1719; bb1715:
 #line 1729
-    t3431 = h0_t; t3432 = INT64_C(1); if (__builtin_add_overflow(t3431, t3432, &t3433)) hero_panic_overflow(); h0_t = t3433; goto bb1714; bb1716: goto bb1714; bb1717:
+    t3431 = h0_t; t3432 = INT64_C(1); if (__builtin_add_overflow(t3431, t3432, &t3433)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1729, 13); h0_t = t3433; goto bb1714; bb1716: goto bb1714; bb1717:
 #line 1734
     t3440 = h0_t; t3441 = INT64_C(573); t3442 = t3440 == t3441; if (t3442) goto bb1721; else goto bb1722; bb1718:
 #line 1732
-    t3437 = h0_t; t3438 = INT64_C(1); if (__builtin_add_overflow(t3437, t3438, &t3439)) hero_panic_overflow(); h0_t = t3439; goto bb1717; bb1719: goto bb1717; bb1720:
+    t3437 = h0_t; t3438 = INT64_C(1); if (__builtin_add_overflow(t3437, t3438, &t3439)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1732, 13); h0_t = t3439; goto bb1717; bb1719: goto bb1717; bb1720:
 #line 1737
     t3446 = h0_t; t3447 = INT64_C(574); t3448 = t3446 == t3447; if (t3448) goto bb1724; else goto bb1725; bb1721:
 #line 1735
-    t3443 = h0_t; t3444 = INT64_C(1); if (__builtin_add_overflow(t3443, t3444, &t3445)) hero_panic_overflow(); h0_t = t3445; goto bb1720; bb1722: goto bb1720; bb1723:
+    t3443 = h0_t; t3444 = INT64_C(1); if (__builtin_add_overflow(t3443, t3444, &t3445)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1735, 13); h0_t = t3445; goto bb1720; bb1722: goto bb1720; bb1723:
 #line 1740
     t3452 = h0_t; t3453 = INT64_C(575); t3454 = t3452 == t3453; if (t3454) goto bb1727; else goto bb1728; bb1724:
 #line 1738
-    t3449 = h0_t; t3450 = INT64_C(1); if (__builtin_add_overflow(t3449, t3450, &t3451)) hero_panic_overflow(); h0_t = t3451; goto bb1723; bb1725: goto bb1723; bb1726:
+    t3449 = h0_t; t3450 = INT64_C(1); if (__builtin_add_overflow(t3449, t3450, &t3451)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1738, 13); h0_t = t3451; goto bb1723; bb1725: goto bb1723; bb1726:
 #line 1743
     t3458 = h0_t; t3459 = INT64_C(576); t3460 = t3458 == t3459; if (t3460) goto bb1730; else goto bb1731; bb1727:
 #line 1741
-    t3455 = h0_t; t3456 = INT64_C(1); if (__builtin_add_overflow(t3455, t3456, &t3457)) hero_panic_overflow(); h0_t = t3457; goto bb1726; bb1728: goto bb1726; bb1729:
+    t3455 = h0_t; t3456 = INT64_C(1); if (__builtin_add_overflow(t3455, t3456, &t3457)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1741, 13); h0_t = t3457; goto bb1726; bb1728: goto bb1726; bb1729:
 #line 1746
     t3464 = h0_t; t3465 = INT64_C(577); t3466 = t3464 == t3465; if (t3466) goto bb1733; else goto bb1734; bb1730:
 #line 1744
-    t3461 = h0_t; t3462 = INT64_C(1); if (__builtin_add_overflow(t3461, t3462, &t3463)) hero_panic_overflow(); h0_t = t3463; goto bb1729; bb1731: goto bb1729; bb1732:
+    t3461 = h0_t; t3462 = INT64_C(1); if (__builtin_add_overflow(t3461, t3462, &t3463)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1744, 13); h0_t = t3463; goto bb1729; bb1731: goto bb1729; bb1732:
 #line 1749
     t3470 = h0_t; t3471 = INT64_C(578); t3472 = t3470 == t3471; if (t3472) goto bb1736; else goto bb1737; bb1733:
 #line 1747
-    t3467 = h0_t; t3468 = INT64_C(1); if (__builtin_add_overflow(t3467, t3468, &t3469)) hero_panic_overflow(); h0_t = t3469; goto bb1732; bb1734: goto bb1732; bb1735:
+    t3467 = h0_t; t3468 = INT64_C(1); if (__builtin_add_overflow(t3467, t3468, &t3469)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1747, 13); h0_t = t3469; goto bb1732; bb1734: goto bb1732; bb1735:
 #line 1752
     t3476 = h0_t; t3477 = INT64_C(579); t3478 = t3476 == t3477; if (t3478) goto bb1739; else goto bb1740; bb1736:
 #line 1750
-    t3473 = h0_t; t3474 = INT64_C(1); if (__builtin_add_overflow(t3473, t3474, &t3475)) hero_panic_overflow(); h0_t = t3475; goto bb1735; bb1737: goto bb1735; bb1738:
+    t3473 = h0_t; t3474 = INT64_C(1); if (__builtin_add_overflow(t3473, t3474, &t3475)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1750, 13); h0_t = t3475; goto bb1735; bb1737: goto bb1735; bb1738:
 #line 1755
     t3482 = h0_t; t3483 = INT64_C(580); t3484 = t3482 == t3483; if (t3484) goto bb1742; else goto bb1743; bb1739:
 #line 1753
-    t3479 = h0_t; t3480 = INT64_C(1); if (__builtin_add_overflow(t3479, t3480, &t3481)) hero_panic_overflow(); h0_t = t3481; goto bb1738; bb1740: goto bb1738; bb1741:
+    t3479 = h0_t; t3480 = INT64_C(1); if (__builtin_add_overflow(t3479, t3480, &t3481)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1753, 13); h0_t = t3481; goto bb1738; bb1740: goto bb1738; bb1741:
 #line 1758
     t3488 = h0_t; t3489 = INT64_C(581); t3490 = t3488 == t3489; if (t3490) goto bb1745; else goto bb1746; bb1742:
 #line 1756
-    t3485 = h0_t; t3486 = INT64_C(1); if (__builtin_add_overflow(t3485, t3486, &t3487)) hero_panic_overflow(); h0_t = t3487; goto bb1741; bb1743: goto bb1741; bb1744:
+    t3485 = h0_t; t3486 = INT64_C(1); if (__builtin_add_overflow(t3485, t3486, &t3487)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1756, 13); h0_t = t3487; goto bb1741; bb1743: goto bb1741; bb1744:
 #line 1761
     t3494 = h0_t; t3495 = INT64_C(582); t3496 = t3494 == t3495; if (t3496) goto bb1748; else goto bb1749; bb1745:
 #line 1759
-    t3491 = h0_t; t3492 = INT64_C(1); if (__builtin_add_overflow(t3491, t3492, &t3493)) hero_panic_overflow(); h0_t = t3493; goto bb1744; bb1746: goto bb1744; bb1747:
+    t3491 = h0_t; t3492 = INT64_C(1); if (__builtin_add_overflow(t3491, t3492, &t3493)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1759, 13); h0_t = t3493; goto bb1744; bb1746: goto bb1744; bb1747:
 #line 1764
     t3500 = h0_t; t3501 = INT64_C(583); t3502 = t3500 == t3501; if (t3502) goto bb1751; else goto bb1752; bb1748:
 #line 1762
-    t3497 = h0_t; t3498 = INT64_C(1); if (__builtin_add_overflow(t3497, t3498, &t3499)) hero_panic_overflow(); h0_t = t3499; goto bb1747; bb1749: goto bb1747; bb1750:
+    t3497 = h0_t; t3498 = INT64_C(1); if (__builtin_add_overflow(t3497, t3498, &t3499)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1762, 13); h0_t = t3499; goto bb1747; bb1749: goto bb1747; bb1750:
 #line 1767
     t3506 = h0_t; t3507 = INT64_C(584); t3508 = t3506 == t3507; if (t3508) goto bb1754; else goto bb1755; bb1751:
 #line 1765
-    t3503 = h0_t; t3504 = INT64_C(1); if (__builtin_add_overflow(t3503, t3504, &t3505)) hero_panic_overflow(); h0_t = t3505; goto bb1750; bb1752: goto bb1750; bb1753:
+    t3503 = h0_t; t3504 = INT64_C(1); if (__builtin_add_overflow(t3503, t3504, &t3505)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1765, 13); h0_t = t3505; goto bb1750; bb1752: goto bb1750; bb1753:
 #line 1770
     t3512 = h0_t; t3513 = INT64_C(585); t3514 = t3512 == t3513; if (t3514) goto bb1757; else goto bb1758; bb1754:
 #line 1768
-    t3509 = h0_t; t3510 = INT64_C(1); if (__builtin_add_overflow(t3509, t3510, &t3511)) hero_panic_overflow(); h0_t = t3511; goto bb1753; bb1755: goto bb1753; bb1756:
+    t3509 = h0_t; t3510 = INT64_C(1); if (__builtin_add_overflow(t3509, t3510, &t3511)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1768, 13); h0_t = t3511; goto bb1753; bb1755: goto bb1753; bb1756:
 #line 1773
     t3518 = h0_t; t3519 = INT64_C(586); t3520 = t3518 == t3519; if (t3520) goto bb1760; else goto bb1761; bb1757:
 #line 1771
-    t3515 = h0_t; t3516 = INT64_C(1); if (__builtin_add_overflow(t3515, t3516, &t3517)) hero_panic_overflow(); h0_t = t3517; goto bb1756; bb1758: goto bb1756; bb1759:
+    t3515 = h0_t; t3516 = INT64_C(1); if (__builtin_add_overflow(t3515, t3516, &t3517)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1771, 13); h0_t = t3517; goto bb1756; bb1758: goto bb1756; bb1759:
 #line 1776
     t3524 = h0_t; t3525 = INT64_C(587); t3526 = t3524 == t3525; if (t3526) goto bb1763; else goto bb1764; bb1760:
 #line 1774
-    t3521 = h0_t; t3522 = INT64_C(1); if (__builtin_add_overflow(t3521, t3522, &t3523)) hero_panic_overflow(); h0_t = t3523; goto bb1759; bb1761: goto bb1759; bb1762:
+    t3521 = h0_t; t3522 = INT64_C(1); if (__builtin_add_overflow(t3521, t3522, &t3523)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1774, 13); h0_t = t3523; goto bb1759; bb1761: goto bb1759; bb1762:
 #line 1779
     t3530 = h0_t; t3531 = INT64_C(588); t3532 = t3530 == t3531; if (t3532) goto bb1766; else goto bb1767; bb1763:
 #line 1777
-    t3527 = h0_t; t3528 = INT64_C(1); if (__builtin_add_overflow(t3527, t3528, &t3529)) hero_panic_overflow(); h0_t = t3529; goto bb1762; bb1764: goto bb1762; bb1765:
+    t3527 = h0_t; t3528 = INT64_C(1); if (__builtin_add_overflow(t3527, t3528, &t3529)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1777, 13); h0_t = t3529; goto bb1762; bb1764: goto bb1762; bb1765:
 #line 1782
     t3536 = h0_t; t3537 = INT64_C(589); t3538 = t3536 == t3537; if (t3538) goto bb1769; else goto bb1770; bb1766:
 #line 1780
-    t3533 = h0_t; t3534 = INT64_C(1); if (__builtin_add_overflow(t3533, t3534, &t3535)) hero_panic_overflow(); h0_t = t3535; goto bb1765; bb1767: goto bb1765; bb1768:
+    t3533 = h0_t; t3534 = INT64_C(1); if (__builtin_add_overflow(t3533, t3534, &t3535)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1780, 13); h0_t = t3535; goto bb1765; bb1767: goto bb1765; bb1768:
 #line 1785
     t3542 = h0_t; t3543 = INT64_C(590); t3544 = t3542 == t3543; if (t3544) goto bb1772; else goto bb1773; bb1769:
 #line 1783
-    t3539 = h0_t; t3540 = INT64_C(1); if (__builtin_add_overflow(t3539, t3540, &t3541)) hero_panic_overflow(); h0_t = t3541; goto bb1768; bb1770: goto bb1768; bb1771:
+    t3539 = h0_t; t3540 = INT64_C(1); if (__builtin_add_overflow(t3539, t3540, &t3541)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1783, 13); h0_t = t3541; goto bb1768; bb1770: goto bb1768; bb1771:
 #line 1788
     t3548 = h0_t; t3549 = INT64_C(591); t3550 = t3548 == t3549; if (t3550) goto bb1775; else goto bb1776; bb1772:
 #line 1786
-    t3545 = h0_t; t3546 = INT64_C(1); if (__builtin_add_overflow(t3545, t3546, &t3547)) hero_panic_overflow(); h0_t = t3547; goto bb1771; bb1773: goto bb1771; bb1774:
+    t3545 = h0_t; t3546 = INT64_C(1); if (__builtin_add_overflow(t3545, t3546, &t3547)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1786, 13); h0_t = t3547; goto bb1771; bb1773: goto bb1771; bb1774:
 #line 1791
     t3554 = h0_t; t3555 = INT64_C(592); t3556 = t3554 == t3555; if (t3556) goto bb1778; else goto bb1779; bb1775:
 #line 1789
-    t3551 = h0_t; t3552 = INT64_C(1); if (__builtin_add_overflow(t3551, t3552, &t3553)) hero_panic_overflow(); h0_t = t3553; goto bb1774; bb1776: goto bb1774; bb1777:
+    t3551 = h0_t; t3552 = INT64_C(1); if (__builtin_add_overflow(t3551, t3552, &t3553)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1789, 13); h0_t = t3553; goto bb1774; bb1776: goto bb1774; bb1777:
 #line 1794
     t3560 = h0_t; t3561 = INT64_C(593); t3562 = t3560 == t3561; if (t3562) goto bb1781; else goto bb1782; bb1778:
 #line 1792
-    t3557 = h0_t; t3558 = INT64_C(1); if (__builtin_add_overflow(t3557, t3558, &t3559)) hero_panic_overflow(); h0_t = t3559; goto bb1777; bb1779: goto bb1777; bb1780:
+    t3557 = h0_t; t3558 = INT64_C(1); if (__builtin_add_overflow(t3557, t3558, &t3559)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1792, 13); h0_t = t3559; goto bb1777; bb1779: goto bb1777; bb1780:
 #line 1797
     t3566 = h0_t; t3567 = INT64_C(594); t3568 = t3566 == t3567; if (t3568) goto bb1784; else goto bb1785; bb1781:
 #line 1795
-    t3563 = h0_t; t3564 = INT64_C(1); if (__builtin_add_overflow(t3563, t3564, &t3565)) hero_panic_overflow(); h0_t = t3565; goto bb1780; bb1782: goto bb1780; bb1783:
+    t3563 = h0_t; t3564 = INT64_C(1); if (__builtin_add_overflow(t3563, t3564, &t3565)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1795, 13); h0_t = t3565; goto bb1780; bb1782: goto bb1780; bb1783:
 #line 1800
     t3572 = h0_t; t3573 = INT64_C(595); t3574 = t3572 == t3573; if (t3574) goto bb1787; else goto bb1788; bb1784:
 #line 1798
-    t3569 = h0_t; t3570 = INT64_C(1); if (__builtin_add_overflow(t3569, t3570, &t3571)) hero_panic_overflow(); h0_t = t3571; goto bb1783; bb1785: goto bb1783; bb1786:
+    t3569 = h0_t; t3570 = INT64_C(1); if (__builtin_add_overflow(t3569, t3570, &t3571)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1798, 13); h0_t = t3571; goto bb1783; bb1785: goto bb1783; bb1786:
 #line 1803
     t3578 = h0_t; t3579 = INT64_C(596); t3580 = t3578 == t3579; if (t3580) goto bb1790; else goto bb1791; bb1787:
 #line 1801
-    t3575 = h0_t; t3576 = INT64_C(1); if (__builtin_add_overflow(t3575, t3576, &t3577)) hero_panic_overflow(); h0_t = t3577; goto bb1786; bb1788: goto bb1786; bb1789:
+    t3575 = h0_t; t3576 = INT64_C(1); if (__builtin_add_overflow(t3575, t3576, &t3577)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1801, 13); h0_t = t3577; goto bb1786; bb1788: goto bb1786; bb1789:
 #line 1806
     t3584 = h0_t; t3585 = INT64_C(597); t3586 = t3584 == t3585; if (t3586) goto bb1793; else goto bb1794; bb1790:
 #line 1804
-    t3581 = h0_t; t3582 = INT64_C(1); if (__builtin_add_overflow(t3581, t3582, &t3583)) hero_panic_overflow(); h0_t = t3583; goto bb1789; bb1791: goto bb1789; bb1792:
+    t3581 = h0_t; t3582 = INT64_C(1); if (__builtin_add_overflow(t3581, t3582, &t3583)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1804, 13); h0_t = t3583; goto bb1789; bb1791: goto bb1789; bb1792:
 #line 1809
     t3590 = h0_t; t3591 = INT64_C(598); t3592 = t3590 == t3591; if (t3592) goto bb1796; else goto bb1797; bb1793:
 #line 1807
-    t3587 = h0_t; t3588 = INT64_C(1); if (__builtin_add_overflow(t3587, t3588, &t3589)) hero_panic_overflow(); h0_t = t3589; goto bb1792; bb1794: goto bb1792; bb1795:
+    t3587 = h0_t; t3588 = INT64_C(1); if (__builtin_add_overflow(t3587, t3588, &t3589)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1807, 13); h0_t = t3589; goto bb1792; bb1794: goto bb1792; bb1795:
 #line 1812
     t3596 = h0_t; t3597 = INT64_C(599); t3598 = t3596 == t3597; if (t3598) goto bb1799; else goto bb1800; bb1796:
 #line 1810
-    t3593 = h0_t; t3594 = INT64_C(1); if (__builtin_add_overflow(t3593, t3594, &t3595)) hero_panic_overflow(); h0_t = t3595; goto bb1795; bb1797: goto bb1795; bb1798:
+    t3593 = h0_t; t3594 = INT64_C(1); if (__builtin_add_overflow(t3593, t3594, &t3595)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1810, 13); h0_t = t3595; goto bb1795; bb1797: goto bb1795; bb1798:
 #line 1815
     t3602 = h0_t; t3603 = INT64_C(600); t3604 = t3602 == t3603; if (t3604) goto bb1802; else goto bb1803; bb1799:
 #line 1813
-    t3599 = h0_t; t3600 = INT64_C(1); if (__builtin_add_overflow(t3599, t3600, &t3601)) hero_panic_overflow(); h0_t = t3601; goto bb1798; bb1800: goto bb1798; bb1801:
+    t3599 = h0_t; t3600 = INT64_C(1); if (__builtin_add_overflow(t3599, t3600, &t3601)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1813, 13); h0_t = t3601; goto bb1798; bb1800: goto bb1798; bb1801:
 #line 1818
     t3608 = h0_t; t3609 = INT64_C(601); t3610 = t3608 == t3609; if (t3610) goto bb1805; else goto bb1806; bb1802:
 #line 1816
-    t3605 = h0_t; t3606 = INT64_C(1); if (__builtin_add_overflow(t3605, t3606, &t3607)) hero_panic_overflow(); h0_t = t3607; goto bb1801; bb1803: goto bb1801; bb1804:
+    t3605 = h0_t; t3606 = INT64_C(1); if (__builtin_add_overflow(t3605, t3606, &t3607)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1816, 13); h0_t = t3607; goto bb1801; bb1803: goto bb1801; bb1804:
 #line 1821
     t3614 = h0_t; t3615 = INT64_C(602); t3616 = t3614 == t3615; if (t3616) goto bb1808; else goto bb1809; bb1805:
 #line 1819
-    t3611 = h0_t; t3612 = INT64_C(1); if (__builtin_add_overflow(t3611, t3612, &t3613)) hero_panic_overflow(); h0_t = t3613; goto bb1804; bb1806: goto bb1804; bb1807:
+    t3611 = h0_t; t3612 = INT64_C(1); if (__builtin_add_overflow(t3611, t3612, &t3613)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1819, 13); h0_t = t3613; goto bb1804; bb1806: goto bb1804; bb1807:
 #line 1824
     t3620 = h0_t; t3621 = INT64_C(603); t3622 = t3620 == t3621; if (t3622) goto bb1811; else goto bb1812; bb1808:
 #line 1822
-    t3617 = h0_t; t3618 = INT64_C(1); if (__builtin_add_overflow(t3617, t3618, &t3619)) hero_panic_overflow(); h0_t = t3619; goto bb1807; bb1809: goto bb1807; bb1810:
+    t3617 = h0_t; t3618 = INT64_C(1); if (__builtin_add_overflow(t3617, t3618, &t3619)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1822, 13); h0_t = t3619; goto bb1807; bb1809: goto bb1807; bb1810:
 #line 1827
     t3626 = h0_t; t3627 = INT64_C(604); t3628 = t3626 == t3627; if (t3628) goto bb1814; else goto bb1815; bb1811:
 #line 1825
-    t3623 = h0_t; t3624 = INT64_C(1); if (__builtin_add_overflow(t3623, t3624, &t3625)) hero_panic_overflow(); h0_t = t3625; goto bb1810; bb1812: goto bb1810; bb1813:
+    t3623 = h0_t; t3624 = INT64_C(1); if (__builtin_add_overflow(t3623, t3624, &t3625)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1825, 13); h0_t = t3625; goto bb1810; bb1812: goto bb1810; bb1813:
 #line 1830
     t3632 = h0_t; t3633 = INT64_C(605); t3634 = t3632 == t3633; if (t3634) goto bb1817; else goto bb1818; bb1814:
 #line 1828
-    t3629 = h0_t; t3630 = INT64_C(1); if (__builtin_add_overflow(t3629, t3630, &t3631)) hero_panic_overflow(); h0_t = t3631; goto bb1813; bb1815: goto bb1813; bb1816:
+    t3629 = h0_t; t3630 = INT64_C(1); if (__builtin_add_overflow(t3629, t3630, &t3631)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1828, 13); h0_t = t3631; goto bb1813; bb1815: goto bb1813; bb1816:
 #line 1833
     t3638 = h0_t; t3639 = INT64_C(606); t3640 = t3638 == t3639; if (t3640) goto bb1820; else goto bb1821; bb1817:
 #line 1831
-    t3635 = h0_t; t3636 = INT64_C(1); if (__builtin_add_overflow(t3635, t3636, &t3637)) hero_panic_overflow(); h0_t = t3637; goto bb1816; bb1818: goto bb1816; bb1819:
+    t3635 = h0_t; t3636 = INT64_C(1); if (__builtin_add_overflow(t3635, t3636, &t3637)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1831, 13); h0_t = t3637; goto bb1816; bb1818: goto bb1816; bb1819:
 #line 1836
     t3644 = h0_t; t3645 = INT64_C(607); t3646 = t3644 == t3645; if (t3646) goto bb1823; else goto bb1824; bb1820:
 #line 1834
-    t3641 = h0_t; t3642 = INT64_C(1); if (__builtin_add_overflow(t3641, t3642, &t3643)) hero_panic_overflow(); h0_t = t3643; goto bb1819; bb1821: goto bb1819; bb1822:
+    t3641 = h0_t; t3642 = INT64_C(1); if (__builtin_add_overflow(t3641, t3642, &t3643)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1834, 13); h0_t = t3643; goto bb1819; bb1821: goto bb1819; bb1822:
 #line 1839
     t3650 = h0_t; t3651 = INT64_C(608); t3652 = t3650 == t3651; if (t3652) goto bb1826; else goto bb1827; bb1823:
 #line 1837
-    t3647 = h0_t; t3648 = INT64_C(1); if (__builtin_add_overflow(t3647, t3648, &t3649)) hero_panic_overflow(); h0_t = t3649; goto bb1822; bb1824: goto bb1822; bb1825:
+    t3647 = h0_t; t3648 = INT64_C(1); if (__builtin_add_overflow(t3647, t3648, &t3649)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1837, 13); h0_t = t3649; goto bb1822; bb1824: goto bb1822; bb1825:
 #line 1842
     t3656 = h0_t; t3657 = INT64_C(609); t3658 = t3656 == t3657; if (t3658) goto bb1829; else goto bb1830; bb1826:
 #line 1840
-    t3653 = h0_t; t3654 = INT64_C(1); if (__builtin_add_overflow(t3653, t3654, &t3655)) hero_panic_overflow(); h0_t = t3655; goto bb1825; bb1827: goto bb1825; bb1828:
+    t3653 = h0_t; t3654 = INT64_C(1); if (__builtin_add_overflow(t3653, t3654, &t3655)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1840, 13); h0_t = t3655; goto bb1825; bb1827: goto bb1825; bb1828:
 #line 1845
     t3662 = h0_t; t3663 = INT64_C(610); t3664 = t3662 == t3663; if (t3664) goto bb1832; else goto bb1833; bb1829:
 #line 1843
-    t3659 = h0_t; t3660 = INT64_C(1); if (__builtin_add_overflow(t3659, t3660, &t3661)) hero_panic_overflow(); h0_t = t3661; goto bb1828; bb1830: goto bb1828; bb1831:
+    t3659 = h0_t; t3660 = INT64_C(1); if (__builtin_add_overflow(t3659, t3660, &t3661)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1843, 13); h0_t = t3661; goto bb1828; bb1830: goto bb1828; bb1831:
 #line 1848
     t3668 = h0_t; t3669 = INT64_C(611); t3670 = t3668 == t3669; if (t3670) goto bb1835; else goto bb1836; bb1832:
 #line 1846
-    t3665 = h0_t; t3666 = INT64_C(1); if (__builtin_add_overflow(t3665, t3666, &t3667)) hero_panic_overflow(); h0_t = t3667; goto bb1831; bb1833: goto bb1831; bb1834:
+    t3665 = h0_t; t3666 = INT64_C(1); if (__builtin_add_overflow(t3665, t3666, &t3667)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1846, 13); h0_t = t3667; goto bb1831; bb1833: goto bb1831; bb1834:
 #line 1851
     t3674 = h0_t; t3675 = INT64_C(612); t3676 = t3674 == t3675; if (t3676) goto bb1838; else goto bb1839; bb1835:
 #line 1849
-    t3671 = h0_t; t3672 = INT64_C(1); if (__builtin_add_overflow(t3671, t3672, &t3673)) hero_panic_overflow(); h0_t = t3673; goto bb1834; bb1836: goto bb1834; bb1837:
+    t3671 = h0_t; t3672 = INT64_C(1); if (__builtin_add_overflow(t3671, t3672, &t3673)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1849, 13); h0_t = t3673; goto bb1834; bb1836: goto bb1834; bb1837:
 #line 1854
     t3680 = h0_t; t3681 = INT64_C(613); t3682 = t3680 == t3681; if (t3682) goto bb1841; else goto bb1842; bb1838:
 #line 1852
-    t3677 = h0_t; t3678 = INT64_C(1); if (__builtin_add_overflow(t3677, t3678, &t3679)) hero_panic_overflow(); h0_t = t3679; goto bb1837; bb1839: goto bb1837; bb1840:
+    t3677 = h0_t; t3678 = INT64_C(1); if (__builtin_add_overflow(t3677, t3678, &t3679)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1852, 13); h0_t = t3679; goto bb1837; bb1839: goto bb1837; bb1840:
 #line 1857
     t3686 = h0_t; t3687 = INT64_C(614); t3688 = t3686 == t3687; if (t3688) goto bb1844; else goto bb1845; bb1841:
 #line 1855
-    t3683 = h0_t; t3684 = INT64_C(1); if (__builtin_add_overflow(t3683, t3684, &t3685)) hero_panic_overflow(); h0_t = t3685; goto bb1840; bb1842: goto bb1840; bb1843:
+    t3683 = h0_t; t3684 = INT64_C(1); if (__builtin_add_overflow(t3683, t3684, &t3685)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1855, 13); h0_t = t3685; goto bb1840; bb1842: goto bb1840; bb1843:
 #line 1860
     t3692 = h0_t; t3693 = INT64_C(615); t3694 = t3692 == t3693; if (t3694) goto bb1847; else goto bb1848; bb1844:
 #line 1858
-    t3689 = h0_t; t3690 = INT64_C(1); if (__builtin_add_overflow(t3689, t3690, &t3691)) hero_panic_overflow(); h0_t = t3691; goto bb1843; bb1845: goto bb1843; bb1846:
+    t3689 = h0_t; t3690 = INT64_C(1); if (__builtin_add_overflow(t3689, t3690, &t3691)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1858, 13); h0_t = t3691; goto bb1843; bb1845: goto bb1843; bb1846:
 #line 1863
     t3698 = h0_t; t3699 = INT64_C(616); t3700 = t3698 == t3699; if (t3700) goto bb1850; else goto bb1851; bb1847:
 #line 1861
-    t3695 = h0_t; t3696 = INT64_C(1); if (__builtin_add_overflow(t3695, t3696, &t3697)) hero_panic_overflow(); h0_t = t3697; goto bb1846; bb1848: goto bb1846; bb1849:
+    t3695 = h0_t; t3696 = INT64_C(1); if (__builtin_add_overflow(t3695, t3696, &t3697)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1861, 13); h0_t = t3697; goto bb1846; bb1848: goto bb1846; bb1849:
 #line 1866
     t3704 = h0_t; t3705 = INT64_C(617); t3706 = t3704 == t3705; if (t3706) goto bb1853; else goto bb1854; bb1850:
 #line 1864
-    t3701 = h0_t; t3702 = INT64_C(1); if (__builtin_add_overflow(t3701, t3702, &t3703)) hero_panic_overflow(); h0_t = t3703; goto bb1849; bb1851: goto bb1849; bb1852:
+    t3701 = h0_t; t3702 = INT64_C(1); if (__builtin_add_overflow(t3701, t3702, &t3703)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1864, 13); h0_t = t3703; goto bb1849; bb1851: goto bb1849; bb1852:
 #line 1869
     t3710 = h0_t; t3711 = INT64_C(618); t3712 = t3710 == t3711; if (t3712) goto bb1856; else goto bb1857; bb1853:
 #line 1867
-    t3707 = h0_t; t3708 = INT64_C(1); if (__builtin_add_overflow(t3707, t3708, &t3709)) hero_panic_overflow(); h0_t = t3709; goto bb1852; bb1854: goto bb1852; bb1855:
+    t3707 = h0_t; t3708 = INT64_C(1); if (__builtin_add_overflow(t3707, t3708, &t3709)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1867, 13); h0_t = t3709; goto bb1852; bb1854: goto bb1852; bb1855:
 #line 1872
     t3716 = h0_t; t3717 = INT64_C(619); t3718 = t3716 == t3717; if (t3718) goto bb1859; else goto bb1860; bb1856:
 #line 1870
-    t3713 = h0_t; t3714 = INT64_C(1); if (__builtin_add_overflow(t3713, t3714, &t3715)) hero_panic_overflow(); h0_t = t3715; goto bb1855; bb1857: goto bb1855; bb1858:
+    t3713 = h0_t; t3714 = INT64_C(1); if (__builtin_add_overflow(t3713, t3714, &t3715)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1870, 13); h0_t = t3715; goto bb1855; bb1857: goto bb1855; bb1858:
 #line 1875
     t3722 = h0_t; t3723 = INT64_C(620); t3724 = t3722 == t3723; if (t3724) goto bb1862; else goto bb1863; bb1859:
 #line 1873
-    t3719 = h0_t; t3720 = INT64_C(1); if (__builtin_add_overflow(t3719, t3720, &t3721)) hero_panic_overflow(); h0_t = t3721; goto bb1858; bb1860: goto bb1858; bb1861:
+    t3719 = h0_t; t3720 = INT64_C(1); if (__builtin_add_overflow(t3719, t3720, &t3721)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1873, 13); h0_t = t3721; goto bb1858; bb1860: goto bb1858; bb1861:
 #line 1878
     t3728 = h0_t; t3729 = INT64_C(621); t3730 = t3728 == t3729; if (t3730) goto bb1865; else goto bb1866; bb1862:
 #line 1876
-    t3725 = h0_t; t3726 = INT64_C(1); if (__builtin_add_overflow(t3725, t3726, &t3727)) hero_panic_overflow(); h0_t = t3727; goto bb1861; bb1863: goto bb1861; bb1864:
+    t3725 = h0_t; t3726 = INT64_C(1); if (__builtin_add_overflow(t3725, t3726, &t3727)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1876, 13); h0_t = t3727; goto bb1861; bb1863: goto bb1861; bb1864:
 #line 1881
     t3734 = h0_t; t3735 = INT64_C(622); t3736 = t3734 == t3735; if (t3736) goto bb1868; else goto bb1869; bb1865:
 #line 1879
-    t3731 = h0_t; t3732 = INT64_C(1); if (__builtin_add_overflow(t3731, t3732, &t3733)) hero_panic_overflow(); h0_t = t3733; goto bb1864; bb1866: goto bb1864; bb1867:
+    t3731 = h0_t; t3732 = INT64_C(1); if (__builtin_add_overflow(t3731, t3732, &t3733)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1879, 13); h0_t = t3733; goto bb1864; bb1866: goto bb1864; bb1867:
 #line 1884
     t3740 = h0_t; t3741 = INT64_C(623); t3742 = t3740 == t3741; if (t3742) goto bb1871; else goto bb1872; bb1868:
 #line 1882
-    t3737 = h0_t; t3738 = INT64_C(1); if (__builtin_add_overflow(t3737, t3738, &t3739)) hero_panic_overflow(); h0_t = t3739; goto bb1867; bb1869: goto bb1867; bb1870:
+    t3737 = h0_t; t3738 = INT64_C(1); if (__builtin_add_overflow(t3737, t3738, &t3739)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1882, 13); h0_t = t3739; goto bb1867; bb1869: goto bb1867; bb1870:
 #line 1887
     t3746 = h0_t; t3747 = INT64_C(624); t3748 = t3746 == t3747; if (t3748) goto bb1874; else goto bb1875; bb1871:
 #line 1885
-    t3743 = h0_t; t3744 = INT64_C(1); if (__builtin_add_overflow(t3743, t3744, &t3745)) hero_panic_overflow(); h0_t = t3745; goto bb1870; bb1872: goto bb1870; bb1873:
+    t3743 = h0_t; t3744 = INT64_C(1); if (__builtin_add_overflow(t3743, t3744, &t3745)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1885, 13); h0_t = t3745; goto bb1870; bb1872: goto bb1870; bb1873:
 #line 1890
     t3752 = h0_t; t3753 = INT64_C(625); t3754 = t3752 == t3753; if (t3754) goto bb1877; else goto bb1878; bb1874:
 #line 1888
-    t3749 = h0_t; t3750 = INT64_C(1); if (__builtin_add_overflow(t3749, t3750, &t3751)) hero_panic_overflow(); h0_t = t3751; goto bb1873; bb1875: goto bb1873; bb1876:
+    t3749 = h0_t; t3750 = INT64_C(1); if (__builtin_add_overflow(t3749, t3750, &t3751)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1888, 13); h0_t = t3751; goto bb1873; bb1875: goto bb1873; bb1876:
 #line 1893
     t3758 = h0_t; t3759 = INT64_C(626); t3760 = t3758 == t3759; if (t3760) goto bb1880; else goto bb1881; bb1877:
 #line 1891
-    t3755 = h0_t; t3756 = INT64_C(1); if (__builtin_add_overflow(t3755, t3756, &t3757)) hero_panic_overflow(); h0_t = t3757; goto bb1876; bb1878: goto bb1876; bb1879:
+    t3755 = h0_t; t3756 = INT64_C(1); if (__builtin_add_overflow(t3755, t3756, &t3757)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1891, 13); h0_t = t3757; goto bb1876; bb1878: goto bb1876; bb1879:
 #line 1896
     t3764 = h0_t; t3765 = INT64_C(627); t3766 = t3764 == t3765; if (t3766) goto bb1883; else goto bb1884; bb1880:
 #line 1894
-    t3761 = h0_t; t3762 = INT64_C(1); if (__builtin_add_overflow(t3761, t3762, &t3763)) hero_panic_overflow(); h0_t = t3763; goto bb1879; bb1881: goto bb1879; bb1882:
+    t3761 = h0_t; t3762 = INT64_C(1); if (__builtin_add_overflow(t3761, t3762, &t3763)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1894, 13); h0_t = t3763; goto bb1879; bb1881: goto bb1879; bb1882:
 #line 1899
     t3770 = h0_t; t3771 = INT64_C(628); t3772 = t3770 == t3771; if (t3772) goto bb1886; else goto bb1887; bb1883:
 #line 1897
-    t3767 = h0_t; t3768 = INT64_C(1); if (__builtin_add_overflow(t3767, t3768, &t3769)) hero_panic_overflow(); h0_t = t3769; goto bb1882; bb1884: goto bb1882; bb1885:
+    t3767 = h0_t; t3768 = INT64_C(1); if (__builtin_add_overflow(t3767, t3768, &t3769)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1897, 13); h0_t = t3769; goto bb1882; bb1884: goto bb1882; bb1885:
 #line 1902
     t3776 = h0_t; t3777 = INT64_C(629); t3778 = t3776 == t3777; if (t3778) goto bb1889; else goto bb1890; bb1886:
 #line 1900
-    t3773 = h0_t; t3774 = INT64_C(1); if (__builtin_add_overflow(t3773, t3774, &t3775)) hero_panic_overflow(); h0_t = t3775; goto bb1885; bb1887: goto bb1885; bb1888:
+    t3773 = h0_t; t3774 = INT64_C(1); if (__builtin_add_overflow(t3773, t3774, &t3775)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1900, 13); h0_t = t3775; goto bb1885; bb1887: goto bb1885; bb1888:
 #line 1905
     t3782 = h0_t; t3783 = INT64_C(630); t3784 = t3782 == t3783; if (t3784) goto bb1892; else goto bb1893; bb1889:
 #line 1903
-    t3779 = h0_t; t3780 = INT64_C(1); if (__builtin_add_overflow(t3779, t3780, &t3781)) hero_panic_overflow(); h0_t = t3781; goto bb1888; bb1890: goto bb1888; bb1891:
+    t3779 = h0_t; t3780 = INT64_C(1); if (__builtin_add_overflow(t3779, t3780, &t3781)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1903, 13); h0_t = t3781; goto bb1888; bb1890: goto bb1888; bb1891:
 #line 1908
     t3788 = h0_t; t3789 = INT64_C(631); t3790 = t3788 == t3789; if (t3790) goto bb1895; else goto bb1896; bb1892:
 #line 1906
-    t3785 = h0_t; t3786 = INT64_C(1); if (__builtin_add_overflow(t3785, t3786, &t3787)) hero_panic_overflow(); h0_t = t3787; goto bb1891; bb1893: goto bb1891; bb1894:
+    t3785 = h0_t; t3786 = INT64_C(1); if (__builtin_add_overflow(t3785, t3786, &t3787)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1906, 13); h0_t = t3787; goto bb1891; bb1893: goto bb1891; bb1894:
 #line 1911
     t3794 = h0_t; t3795 = INT64_C(632); t3796 = t3794 == t3795; if (t3796) goto bb1898; else goto bb1899; bb1895:
 #line 1909
-    t3791 = h0_t; t3792 = INT64_C(1); if (__builtin_add_overflow(t3791, t3792, &t3793)) hero_panic_overflow(); h0_t = t3793; goto bb1894; bb1896: goto bb1894; bb1897:
+    t3791 = h0_t; t3792 = INT64_C(1); if (__builtin_add_overflow(t3791, t3792, &t3793)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1909, 13); h0_t = t3793; goto bb1894; bb1896: goto bb1894; bb1897:
 #line 1914
     t3800 = h0_t; t3801 = INT64_C(633); t3802 = t3800 == t3801; if (t3802) goto bb1901; else goto bb1902; bb1898:
 #line 1912
-    t3797 = h0_t; t3798 = INT64_C(1); if (__builtin_add_overflow(t3797, t3798, &t3799)) hero_panic_overflow(); h0_t = t3799; goto bb1897; bb1899: goto bb1897; bb1900:
+    t3797 = h0_t; t3798 = INT64_C(1); if (__builtin_add_overflow(t3797, t3798, &t3799)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1912, 13); h0_t = t3799; goto bb1897; bb1899: goto bb1897; bb1900:
 #line 1917
     t3806 = h0_t; t3807 = INT64_C(634); t3808 = t3806 == t3807; if (t3808) goto bb1904; else goto bb1905; bb1901:
 #line 1915
-    t3803 = h0_t; t3804 = INT64_C(1); if (__builtin_add_overflow(t3803, t3804, &t3805)) hero_panic_overflow(); h0_t = t3805; goto bb1900; bb1902: goto bb1900; bb1903:
+    t3803 = h0_t; t3804 = INT64_C(1); if (__builtin_add_overflow(t3803, t3804, &t3805)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1915, 13); h0_t = t3805; goto bb1900; bb1902: goto bb1900; bb1903:
 #line 1920
     t3812 = h0_t; t3813 = INT64_C(635); t3814 = t3812 == t3813; if (t3814) goto bb1907; else goto bb1908; bb1904:
 #line 1918
-    t3809 = h0_t; t3810 = INT64_C(1); if (__builtin_add_overflow(t3809, t3810, &t3811)) hero_panic_overflow(); h0_t = t3811; goto bb1903; bb1905: goto bb1903; bb1906:
+    t3809 = h0_t; t3810 = INT64_C(1); if (__builtin_add_overflow(t3809, t3810, &t3811)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1918, 13); h0_t = t3811; goto bb1903; bb1905: goto bb1903; bb1906:
 #line 1923
     t3818 = h0_t; t3819 = INT64_C(636); t3820 = t3818 == t3819; if (t3820) goto bb1910; else goto bb1911; bb1907:
 #line 1921
-    t3815 = h0_t; t3816 = INT64_C(1); if (__builtin_add_overflow(t3815, t3816, &t3817)) hero_panic_overflow(); h0_t = t3817; goto bb1906; bb1908: goto bb1906; bb1909:
+    t3815 = h0_t; t3816 = INT64_C(1); if (__builtin_add_overflow(t3815, t3816, &t3817)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1921, 13); h0_t = t3817; goto bb1906; bb1908: goto bb1906; bb1909:
 #line 1926
     t3824 = h0_t; t3825 = INT64_C(637); t3826 = t3824 == t3825; if (t3826) goto bb1913; else goto bb1914; bb1910:
 #line 1924
-    t3821 = h0_t; t3822 = INT64_C(1); if (__builtin_add_overflow(t3821, t3822, &t3823)) hero_panic_overflow(); h0_t = t3823; goto bb1909; bb1911: goto bb1909; bb1912:
+    t3821 = h0_t; t3822 = INT64_C(1); if (__builtin_add_overflow(t3821, t3822, &t3823)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1924, 13); h0_t = t3823; goto bb1909; bb1911: goto bb1909; bb1912:
 #line 1929
     t3830 = h0_t; t3831 = INT64_C(638); t3832 = t3830 == t3831; if (t3832) goto bb1916; else goto bb1917; bb1913:
 #line 1927
-    t3827 = h0_t; t3828 = INT64_C(1); if (__builtin_add_overflow(t3827, t3828, &t3829)) hero_panic_overflow(); h0_t = t3829; goto bb1912; bb1914: goto bb1912; bb1915:
+    t3827 = h0_t; t3828 = INT64_C(1); if (__builtin_add_overflow(t3827, t3828, &t3829)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1927, 13); h0_t = t3829; goto bb1912; bb1914: goto bb1912; bb1915:
 #line 1932
     t3836 = h0_t; t3837 = INT64_C(639); t3838 = t3836 == t3837; if (t3838) goto bb1919; else goto bb1920; bb1916:
 #line 1930
-    t3833 = h0_t; t3834 = INT64_C(1); if (__builtin_add_overflow(t3833, t3834, &t3835)) hero_panic_overflow(); h0_t = t3835; goto bb1915; bb1917: goto bb1915; bb1918:
+    t3833 = h0_t; t3834 = INT64_C(1); if (__builtin_add_overflow(t3833, t3834, &t3835)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1930, 13); h0_t = t3835; goto bb1915; bb1917: goto bb1915; bb1918:
 #line 1935
     t3842 = h0_t; t3843 = INT64_C(640); t3844 = t3842 == t3843; if (t3844) goto bb1922; else goto bb1923; bb1919:
 #line 1933
-    t3839 = h0_t; t3840 = INT64_C(1); if (__builtin_add_overflow(t3839, t3840, &t3841)) hero_panic_overflow(); h0_t = t3841; goto bb1918; bb1920: goto bb1918; bb1921:
+    t3839 = h0_t; t3840 = INT64_C(1); if (__builtin_add_overflow(t3839, t3840, &t3841)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1933, 13); h0_t = t3841; goto bb1918; bb1920: goto bb1918; bb1921:
 #line 1938
     t3848 = h0_t; t3849 = INT64_C(641); t3850 = t3848 == t3849; if (t3850) goto bb1925; else goto bb1926; bb1922:
 #line 1936
-    t3845 = h0_t; t3846 = INT64_C(1); if (__builtin_add_overflow(t3845, t3846, &t3847)) hero_panic_overflow(); h0_t = t3847; goto bb1921; bb1923: goto bb1921; bb1924:
+    t3845 = h0_t; t3846 = INT64_C(1); if (__builtin_add_overflow(t3845, t3846, &t3847)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1936, 13); h0_t = t3847; goto bb1921; bb1923: goto bb1921; bb1924:
 #line 1941
     t3854 = h0_t; t3855 = INT64_C(642); t3856 = t3854 == t3855; if (t3856) goto bb1928; else goto bb1929; bb1925:
 #line 1939
-    t3851 = h0_t; t3852 = INT64_C(1); if (__builtin_add_overflow(t3851, t3852, &t3853)) hero_panic_overflow(); h0_t = t3853; goto bb1924; bb1926: goto bb1924; bb1927:
+    t3851 = h0_t; t3852 = INT64_C(1); if (__builtin_add_overflow(t3851, t3852, &t3853)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1939, 13); h0_t = t3853; goto bb1924; bb1926: goto bb1924; bb1927:
 #line 1944
     t3860 = h0_t; t3861 = INT64_C(643); t3862 = t3860 == t3861; if (t3862) goto bb1931; else goto bb1932; bb1928:
 #line 1942
-    t3857 = h0_t; t3858 = INT64_C(1); if (__builtin_add_overflow(t3857, t3858, &t3859)) hero_panic_overflow(); h0_t = t3859; goto bb1927; bb1929: goto bb1927; bb1930:
+    t3857 = h0_t; t3858 = INT64_C(1); if (__builtin_add_overflow(t3857, t3858, &t3859)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1942, 13); h0_t = t3859; goto bb1927; bb1929: goto bb1927; bb1930:
 #line 1947
     t3866 = h0_t; t3867 = INT64_C(644); t3868 = t3866 == t3867; if (t3868) goto bb1934; else goto bb1935; bb1931:
 #line 1945
-    t3863 = h0_t; t3864 = INT64_C(1); if (__builtin_add_overflow(t3863, t3864, &t3865)) hero_panic_overflow(); h0_t = t3865; goto bb1930; bb1932: goto bb1930; bb1933:
+    t3863 = h0_t; t3864 = INT64_C(1); if (__builtin_add_overflow(t3863, t3864, &t3865)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1945, 13); h0_t = t3865; goto bb1930; bb1932: goto bb1930; bb1933:
 #line 1950
     t3872 = h0_t; t3873 = INT64_C(645); t3874 = t3872 == t3873; if (t3874) goto bb1937; else goto bb1938; bb1934:
 #line 1948
-    t3869 = h0_t; t3870 = INT64_C(1); if (__builtin_add_overflow(t3869, t3870, &t3871)) hero_panic_overflow(); h0_t = t3871; goto bb1933; bb1935: goto bb1933; bb1936:
+    t3869 = h0_t; t3870 = INT64_C(1); if (__builtin_add_overflow(t3869, t3870, &t3871)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1948, 13); h0_t = t3871; goto bb1933; bb1935: goto bb1933; bb1936:
 #line 1953
     t3878 = h0_t; t3879 = INT64_C(646); t3880 = t3878 == t3879; if (t3880) goto bb1940; else goto bb1941; bb1937:
 #line 1951
-    t3875 = h0_t; t3876 = INT64_C(1); if (__builtin_add_overflow(t3875, t3876, &t3877)) hero_panic_overflow(); h0_t = t3877; goto bb1936; bb1938: goto bb1936; bb1939:
+    t3875 = h0_t; t3876 = INT64_C(1); if (__builtin_add_overflow(t3875, t3876, &t3877)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1951, 13); h0_t = t3877; goto bb1936; bb1938: goto bb1936; bb1939:
 #line 1956
     t3884 = h0_t; t3885 = INT64_C(647); t3886 = t3884 == t3885; if (t3886) goto bb1943; else goto bb1944; bb1940:
 #line 1954
-    t3881 = h0_t; t3882 = INT64_C(1); if (__builtin_add_overflow(t3881, t3882, &t3883)) hero_panic_overflow(); h0_t = t3883; goto bb1939; bb1941: goto bb1939; bb1942:
+    t3881 = h0_t; t3882 = INT64_C(1); if (__builtin_add_overflow(t3881, t3882, &t3883)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1954, 13); h0_t = t3883; goto bb1939; bb1941: goto bb1939; bb1942:
 #line 1959
     t3890 = h0_t; t3891 = INT64_C(648); t3892 = t3890 == t3891; if (t3892) goto bb1946; else goto bb1947; bb1943:
 #line 1957
-    t3887 = h0_t; t3888 = INT64_C(1); if (__builtin_add_overflow(t3887, t3888, &t3889)) hero_panic_overflow(); h0_t = t3889; goto bb1942; bb1944: goto bb1942; bb1945:
+    t3887 = h0_t; t3888 = INT64_C(1); if (__builtin_add_overflow(t3887, t3888, &t3889)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1957, 13); h0_t = t3889; goto bb1942; bb1944: goto bb1942; bb1945:
 #line 1962
     t3896 = h0_t; t3897 = INT64_C(649); t3898 = t3896 == t3897; if (t3898) goto bb1949; else goto bb1950; bb1946:
 #line 1960
-    t3893 = h0_t; t3894 = INT64_C(1); if (__builtin_add_overflow(t3893, t3894, &t3895)) hero_panic_overflow(); h0_t = t3895; goto bb1945; bb1947: goto bb1945; bb1948:
+    t3893 = h0_t; t3894 = INT64_C(1); if (__builtin_add_overflow(t3893, t3894, &t3895)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1960, 13); h0_t = t3895; goto bb1945; bb1947: goto bb1945; bb1948:
 #line 1965
     t3902 = h0_t; t3903 = INT64_C(650); t3904 = t3902 == t3903; if (t3904) goto bb1952; else goto bb1953; bb1949:
 #line 1963
-    t3899 = h0_t; t3900 = INT64_C(1); if (__builtin_add_overflow(t3899, t3900, &t3901)) hero_panic_overflow(); h0_t = t3901; goto bb1948; bb1950: goto bb1948; bb1951:
+    t3899 = h0_t; t3900 = INT64_C(1); if (__builtin_add_overflow(t3899, t3900, &t3901)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1963, 13); h0_t = t3901; goto bb1948; bb1950: goto bb1948; bb1951:
 #line 1968
     t3908 = h0_t; t3909 = INT64_C(651); t3910 = t3908 == t3909; if (t3910) goto bb1955; else goto bb1956; bb1952:
 #line 1966
-    t3905 = h0_t; t3906 = INT64_C(1); if (__builtin_add_overflow(t3905, t3906, &t3907)) hero_panic_overflow(); h0_t = t3907; goto bb1951; bb1953: goto bb1951; bb1954:
+    t3905 = h0_t; t3906 = INT64_C(1); if (__builtin_add_overflow(t3905, t3906, &t3907)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1966, 13); h0_t = t3907; goto bb1951; bb1953: goto bb1951; bb1954:
 #line 1971
     t3914 = h0_t; t3915 = INT64_C(652); t3916 = t3914 == t3915; if (t3916) goto bb1958; else goto bb1959; bb1955:
 #line 1969
-    t3911 = h0_t; t3912 = INT64_C(1); if (__builtin_add_overflow(t3911, t3912, &t3913)) hero_panic_overflow(); h0_t = t3913; goto bb1954; bb1956: goto bb1954; bb1957:
+    t3911 = h0_t; t3912 = INT64_C(1); if (__builtin_add_overflow(t3911, t3912, &t3913)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1969, 13); h0_t = t3913; goto bb1954; bb1956: goto bb1954; bb1957:
 #line 1974
     t3920 = h0_t; t3921 = INT64_C(653); t3922 = t3920 == t3921; if (t3922) goto bb1961; else goto bb1962; bb1958:
 #line 1972
-    t3917 = h0_t; t3918 = INT64_C(1); if (__builtin_add_overflow(t3917, t3918, &t3919)) hero_panic_overflow(); h0_t = t3919; goto bb1957; bb1959: goto bb1957; bb1960:
+    t3917 = h0_t; t3918 = INT64_C(1); if (__builtin_add_overflow(t3917, t3918, &t3919)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1972, 13); h0_t = t3919; goto bb1957; bb1959: goto bb1957; bb1960:
 #line 1977
     t3926 = h0_t; t3927 = INT64_C(654); t3928 = t3926 == t3927; if (t3928) goto bb1964; else goto bb1965; bb1961:
 #line 1975
-    t3923 = h0_t; t3924 = INT64_C(1); if (__builtin_add_overflow(t3923, t3924, &t3925)) hero_panic_overflow(); h0_t = t3925; goto bb1960; bb1962: goto bb1960; bb1963:
+    t3923 = h0_t; t3924 = INT64_C(1); if (__builtin_add_overflow(t3923, t3924, &t3925)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1975, 13); h0_t = t3925; goto bb1960; bb1962: goto bb1960; bb1963:
 #line 1980
     t3932 = h0_t; t3933 = INT64_C(655); t3934 = t3932 == t3933; if (t3934) goto bb1967; else goto bb1968; bb1964:
 #line 1978
-    t3929 = h0_t; t3930 = INT64_C(1); if (__builtin_add_overflow(t3929, t3930, &t3931)) hero_panic_overflow(); h0_t = t3931; goto bb1963; bb1965: goto bb1963; bb1966:
+    t3929 = h0_t; t3930 = INT64_C(1); if (__builtin_add_overflow(t3929, t3930, &t3931)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1978, 13); h0_t = t3931; goto bb1963; bb1965: goto bb1963; bb1966:
 #line 1983
     t3938 = h0_t; t3939 = INT64_C(656); t3940 = t3938 == t3939; if (t3940) goto bb1970; else goto bb1971; bb1967:
 #line 1981
-    t3935 = h0_t; t3936 = INT64_C(1); if (__builtin_add_overflow(t3935, t3936, &t3937)) hero_panic_overflow(); h0_t = t3937; goto bb1966; bb1968: goto bb1966; bb1969:
+    t3935 = h0_t; t3936 = INT64_C(1); if (__builtin_add_overflow(t3935, t3936, &t3937)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1981, 13); h0_t = t3937; goto bb1966; bb1968: goto bb1966; bb1969:
 #line 1986
     t3944 = h0_t; t3945 = INT64_C(657); t3946 = t3944 == t3945; if (t3946) goto bb1973; else goto bb1974; bb1970:
 #line 1984
-    t3941 = h0_t; t3942 = INT64_C(1); if (__builtin_add_overflow(t3941, t3942, &t3943)) hero_panic_overflow(); h0_t = t3943; goto bb1969; bb1971: goto bb1969; bb1972:
+    t3941 = h0_t; t3942 = INT64_C(1); if (__builtin_add_overflow(t3941, t3942, &t3943)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1984, 13); h0_t = t3943; goto bb1969; bb1971: goto bb1969; bb1972:
 #line 1989
     t3950 = h0_t; t3951 = INT64_C(658); t3952 = t3950 == t3951; if (t3952) goto bb1976; else goto bb1977; bb1973:
 #line 1987
-    t3947 = h0_t; t3948 = INT64_C(1); if (__builtin_add_overflow(t3947, t3948, &t3949)) hero_panic_overflow(); h0_t = t3949; goto bb1972; bb1974: goto bb1972; bb1975:
+    t3947 = h0_t; t3948 = INT64_C(1); if (__builtin_add_overflow(t3947, t3948, &t3949)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1987, 13); h0_t = t3949; goto bb1972; bb1974: goto bb1972; bb1975:
 #line 1992
     t3956 = h0_t; t3957 = INT64_C(659); t3958 = t3956 == t3957; if (t3958) goto bb1979; else goto bb1980; bb1976:
 #line 1990
-    t3953 = h0_t; t3954 = INT64_C(1); if (__builtin_add_overflow(t3953, t3954, &t3955)) hero_panic_overflow(); h0_t = t3955; goto bb1975; bb1977: goto bb1975; bb1978:
+    t3953 = h0_t; t3954 = INT64_C(1); if (__builtin_add_overflow(t3953, t3954, &t3955)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1990, 13); h0_t = t3955; goto bb1975; bb1977: goto bb1975; bb1978:
 #line 1995
     t3962 = h0_t; t3963 = INT64_C(660); t3964 = t3962 == t3963; if (t3964) goto bb1982; else goto bb1983; bb1979:
 #line 1993
-    t3959 = h0_t; t3960 = INT64_C(1); if (__builtin_add_overflow(t3959, t3960, &t3961)) hero_panic_overflow(); h0_t = t3961; goto bb1978; bb1980: goto bb1978; bb1981:
+    t3959 = h0_t; t3960 = INT64_C(1); if (__builtin_add_overflow(t3959, t3960, &t3961)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1993, 13); h0_t = t3961; goto bb1978; bb1980: goto bb1978; bb1981:
 #line 1998
     t3968 = h0_t; t3969 = INT64_C(661); t3970 = t3968 == t3969; if (t3970) goto bb1985; else goto bb1986; bb1982:
 #line 1996
-    t3965 = h0_t; t3966 = INT64_C(1); if (__builtin_add_overflow(t3965, t3966, &t3967)) hero_panic_overflow(); h0_t = t3967; goto bb1981; bb1983: goto bb1981; bb1984:
+    t3965 = h0_t; t3966 = INT64_C(1); if (__builtin_add_overflow(t3965, t3966, &t3967)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1996, 13); h0_t = t3967; goto bb1981; bb1983: goto bb1981; bb1984:
 #line 2001
     t3974 = h0_t; t3975 = INT64_C(662); t3976 = t3974 == t3975; if (t3976) goto bb1988; else goto bb1989; bb1985:
 #line 1999
-    t3971 = h0_t; t3972 = INT64_C(1); if (__builtin_add_overflow(t3971, t3972, &t3973)) hero_panic_overflow(); h0_t = t3973; goto bb1984; bb1986: goto bb1984; bb1987:
+    t3971 = h0_t; t3972 = INT64_C(1); if (__builtin_add_overflow(t3971, t3972, &t3973)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 1999, 13); h0_t = t3973; goto bb1984; bb1986: goto bb1984; bb1987:
 #line 2004
     t3980 = h0_t; t3981 = INT64_C(663); t3982 = t3980 == t3981; if (t3982) goto bb1991; else goto bb1992; bb1988:
 #line 2002
-    t3977 = h0_t; t3978 = INT64_C(1); if (__builtin_add_overflow(t3977, t3978, &t3979)) hero_panic_overflow(); h0_t = t3979; goto bb1987; bb1989: goto bb1987; bb1990:
+    t3977 = h0_t; t3978 = INT64_C(1); if (__builtin_add_overflow(t3977, t3978, &t3979)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2002, 13); h0_t = t3979; goto bb1987; bb1989: goto bb1987; bb1990:
 #line 2007
     t3986 = h0_t; t3987 = INT64_C(664); t3988 = t3986 == t3987; if (t3988) goto bb1994; else goto bb1995; bb1991:
 #line 2005
-    t3983 = h0_t; t3984 = INT64_C(1); if (__builtin_add_overflow(t3983, t3984, &t3985)) hero_panic_overflow(); h0_t = t3985; goto bb1990; bb1992: goto bb1990; bb1993:
+    t3983 = h0_t; t3984 = INT64_C(1); if (__builtin_add_overflow(t3983, t3984, &t3985)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2005, 13); h0_t = t3985; goto bb1990; bb1992: goto bb1990; bb1993:
 #line 2010
     t3992 = h0_t; t3993 = INT64_C(665); t3994 = t3992 == t3993; if (t3994) goto bb1997; else goto bb1998; bb1994:
 #line 2008
-    t3989 = h0_t; t3990 = INT64_C(1); if (__builtin_add_overflow(t3989, t3990, &t3991)) hero_panic_overflow(); h0_t = t3991; goto bb1993; bb1995: goto bb1993; bb1996:
+    t3989 = h0_t; t3990 = INT64_C(1); if (__builtin_add_overflow(t3989, t3990, &t3991)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2008, 13); h0_t = t3991; goto bb1993; bb1995: goto bb1993; bb1996:
 #line 2013
     t3998 = h0_t; t3999 = INT64_C(666); t4000 = t3998 == t3999; if (t4000) goto bb2000; else goto bb2001; bb1997:
 #line 2011
-    t3995 = h0_t; t3996 = INT64_C(1); if (__builtin_add_overflow(t3995, t3996, &t3997)) hero_panic_overflow(); h0_t = t3997; goto bb1996; bb1998: goto bb1996; bb1999:
+    t3995 = h0_t; t3996 = INT64_C(1); if (__builtin_add_overflow(t3995, t3996, &t3997)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2011, 13); h0_t = t3997; goto bb1996; bb1998: goto bb1996; bb1999:
 #line 2016
     t4004 = h0_t; t4005 = INT64_C(667); t4006 = t4004 == t4005; if (t4006) goto bb2003; else goto bb2004; bb2000:
 #line 2014
-    t4001 = h0_t; t4002 = INT64_C(1); if (__builtin_add_overflow(t4001, t4002, &t4003)) hero_panic_overflow(); h0_t = t4003; goto bb1999; bb2001: goto bb1999; bb2002:
+    t4001 = h0_t; t4002 = INT64_C(1); if (__builtin_add_overflow(t4001, t4002, &t4003)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2014, 13); h0_t = t4003; goto bb1999; bb2001: goto bb1999; bb2002:
 #line 2019
     t4010 = h0_t; t4011 = INT64_C(668); t4012 = t4010 == t4011; if (t4012) goto bb2006; else goto bb2007; bb2003:
 #line 2017
-    t4007 = h0_t; t4008 = INT64_C(1); if (__builtin_add_overflow(t4007, t4008, &t4009)) hero_panic_overflow(); h0_t = t4009; goto bb2002; bb2004: goto bb2002; bb2005:
+    t4007 = h0_t; t4008 = INT64_C(1); if (__builtin_add_overflow(t4007, t4008, &t4009)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2017, 13); h0_t = t4009; goto bb2002; bb2004: goto bb2002; bb2005:
 #line 2022
     t4016 = h0_t; t4017 = INT64_C(669); t4018 = t4016 == t4017; if (t4018) goto bb2009; else goto bb2010; bb2006:
 #line 2020
-    t4013 = h0_t; t4014 = INT64_C(1); if (__builtin_add_overflow(t4013, t4014, &t4015)) hero_panic_overflow(); h0_t = t4015; goto bb2005; bb2007: goto bb2005; bb2008:
+    t4013 = h0_t; t4014 = INT64_C(1); if (__builtin_add_overflow(t4013, t4014, &t4015)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2020, 13); h0_t = t4015; goto bb2005; bb2007: goto bb2005; bb2008:
 #line 2025
     t4022 = h0_t; t4023 = INT64_C(670); t4024 = t4022 == t4023; if (t4024) goto bb2012; else goto bb2013; bb2009:
 #line 2023
-    t4019 = h0_t; t4020 = INT64_C(1); if (__builtin_add_overflow(t4019, t4020, &t4021)) hero_panic_overflow(); h0_t = t4021; goto bb2008; bb2010: goto bb2008; bb2011:
+    t4019 = h0_t; t4020 = INT64_C(1); if (__builtin_add_overflow(t4019, t4020, &t4021)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2023, 13); h0_t = t4021; goto bb2008; bb2010: goto bb2008; bb2011:
 #line 2028
     t4028 = h0_t; t4029 = INT64_C(671); t4030 = t4028 == t4029; if (t4030) goto bb2015; else goto bb2016; bb2012:
 #line 2026
-    t4025 = h0_t; t4026 = INT64_C(1); if (__builtin_add_overflow(t4025, t4026, &t4027)) hero_panic_overflow(); h0_t = t4027; goto bb2011; bb2013: goto bb2011; bb2014:
+    t4025 = h0_t; t4026 = INT64_C(1); if (__builtin_add_overflow(t4025, t4026, &t4027)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2026, 13); h0_t = t4027; goto bb2011; bb2013: goto bb2011; bb2014:
 #line 2031
     t4034 = h0_t; t4035 = INT64_C(672); t4036 = t4034 == t4035; if (t4036) goto bb2018; else goto bb2019; bb2015:
 #line 2029
-    t4031 = h0_t; t4032 = INT64_C(1); if (__builtin_add_overflow(t4031, t4032, &t4033)) hero_panic_overflow(); h0_t = t4033; goto bb2014; bb2016: goto bb2014; bb2017:
+    t4031 = h0_t; t4032 = INT64_C(1); if (__builtin_add_overflow(t4031, t4032, &t4033)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2029, 13); h0_t = t4033; goto bb2014; bb2016: goto bb2014; bb2017:
 #line 2034
     t4040 = h0_t; t4041 = INT64_C(673); t4042 = t4040 == t4041; if (t4042) goto bb2021; else goto bb2022; bb2018:
 #line 2032
-    t4037 = h0_t; t4038 = INT64_C(1); if (__builtin_add_overflow(t4037, t4038, &t4039)) hero_panic_overflow(); h0_t = t4039; goto bb2017; bb2019: goto bb2017; bb2020:
+    t4037 = h0_t; t4038 = INT64_C(1); if (__builtin_add_overflow(t4037, t4038, &t4039)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2032, 13); h0_t = t4039; goto bb2017; bb2019: goto bb2017; bb2020:
 #line 2037
     t4046 = h0_t; t4047 = INT64_C(674); t4048 = t4046 == t4047; if (t4048) goto bb2024; else goto bb2025; bb2021:
 #line 2035
-    t4043 = h0_t; t4044 = INT64_C(1); if (__builtin_add_overflow(t4043, t4044, &t4045)) hero_panic_overflow(); h0_t = t4045; goto bb2020; bb2022: goto bb2020; bb2023:
+    t4043 = h0_t; t4044 = INT64_C(1); if (__builtin_add_overflow(t4043, t4044, &t4045)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2035, 13); h0_t = t4045; goto bb2020; bb2022: goto bb2020; bb2023:
 #line 2040
     t4052 = h0_t; t4053 = INT64_C(675); t4054 = t4052 == t4053; if (t4054) goto bb2027; else goto bb2028; bb2024:
 #line 2038
-    t4049 = h0_t; t4050 = INT64_C(1); if (__builtin_add_overflow(t4049, t4050, &t4051)) hero_panic_overflow(); h0_t = t4051; goto bb2023; bb2025: goto bb2023; bb2026:
+    t4049 = h0_t; t4050 = INT64_C(1); if (__builtin_add_overflow(t4049, t4050, &t4051)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2038, 13); h0_t = t4051; goto bb2023; bb2025: goto bb2023; bb2026:
 #line 2043
     t4058 = h0_t; t4059 = INT64_C(676); t4060 = t4058 == t4059; if (t4060) goto bb2030; else goto bb2031; bb2027:
 #line 2041
-    t4055 = h0_t; t4056 = INT64_C(1); if (__builtin_add_overflow(t4055, t4056, &t4057)) hero_panic_overflow(); h0_t = t4057; goto bb2026; bb2028: goto bb2026; bb2029:
+    t4055 = h0_t; t4056 = INT64_C(1); if (__builtin_add_overflow(t4055, t4056, &t4057)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2041, 13); h0_t = t4057; goto bb2026; bb2028: goto bb2026; bb2029:
 #line 2046
     t4064 = h0_t; t4065 = INT64_C(677); t4066 = t4064 == t4065; if (t4066) goto bb2033; else goto bb2034; bb2030:
 #line 2044
-    t4061 = h0_t; t4062 = INT64_C(1); if (__builtin_add_overflow(t4061, t4062, &t4063)) hero_panic_overflow(); h0_t = t4063; goto bb2029; bb2031: goto bb2029; bb2032:
+    t4061 = h0_t; t4062 = INT64_C(1); if (__builtin_add_overflow(t4061, t4062, &t4063)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2044, 13); h0_t = t4063; goto bb2029; bb2031: goto bb2029; bb2032:
 #line 2049
     t4070 = h0_t; t4071 = INT64_C(678); t4072 = t4070 == t4071; if (t4072) goto bb2036; else goto bb2037; bb2033:
 #line 2047
-    t4067 = h0_t; t4068 = INT64_C(1); if (__builtin_add_overflow(t4067, t4068, &t4069)) hero_panic_overflow(); h0_t = t4069; goto bb2032; bb2034: goto bb2032; bb2035:
+    t4067 = h0_t; t4068 = INT64_C(1); if (__builtin_add_overflow(t4067, t4068, &t4069)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2047, 13); h0_t = t4069; goto bb2032; bb2034: goto bb2032; bb2035:
 #line 2052
     t4076 = h0_t; t4077 = INT64_C(679); t4078 = t4076 == t4077; if (t4078) goto bb2039; else goto bb2040; bb2036:
 #line 2050
-    t4073 = h0_t; t4074 = INT64_C(1); if (__builtin_add_overflow(t4073, t4074, &t4075)) hero_panic_overflow(); h0_t = t4075; goto bb2035; bb2037: goto bb2035; bb2038:
+    t4073 = h0_t; t4074 = INT64_C(1); if (__builtin_add_overflow(t4073, t4074, &t4075)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2050, 13); h0_t = t4075; goto bb2035; bb2037: goto bb2035; bb2038:
 #line 2055
     t4082 = h0_t; t4083 = INT64_C(680); t4084 = t4082 == t4083; if (t4084) goto bb2042; else goto bb2043; bb2039:
 #line 2053
-    t4079 = h0_t; t4080 = INT64_C(1); if (__builtin_add_overflow(t4079, t4080, &t4081)) hero_panic_overflow(); h0_t = t4081; goto bb2038; bb2040: goto bb2038; bb2041:
+    t4079 = h0_t; t4080 = INT64_C(1); if (__builtin_add_overflow(t4079, t4080, &t4081)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2053, 13); h0_t = t4081; goto bb2038; bb2040: goto bb2038; bb2041:
 #line 2058
     t4088 = h0_t; t4089 = INT64_C(681); t4090 = t4088 == t4089; if (t4090) goto bb2045; else goto bb2046; bb2042:
 #line 2056
-    t4085 = h0_t; t4086 = INT64_C(1); if (__builtin_add_overflow(t4085, t4086, &t4087)) hero_panic_overflow(); h0_t = t4087; goto bb2041; bb2043: goto bb2041; bb2044:
+    t4085 = h0_t; t4086 = INT64_C(1); if (__builtin_add_overflow(t4085, t4086, &t4087)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2056, 13); h0_t = t4087; goto bb2041; bb2043: goto bb2041; bb2044:
 #line 2061
     t4094 = h0_t; t4095 = INT64_C(682); t4096 = t4094 == t4095; if (t4096) goto bb2048; else goto bb2049; bb2045:
 #line 2059
-    t4091 = h0_t; t4092 = INT64_C(1); if (__builtin_add_overflow(t4091, t4092, &t4093)) hero_panic_overflow(); h0_t = t4093; goto bb2044; bb2046: goto bb2044; bb2047:
+    t4091 = h0_t; t4092 = INT64_C(1); if (__builtin_add_overflow(t4091, t4092, &t4093)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2059, 13); h0_t = t4093; goto bb2044; bb2046: goto bb2044; bb2047:
 #line 2064
     t4100 = h0_t; t4101 = INT64_C(683); t4102 = t4100 == t4101; if (t4102) goto bb2051; else goto bb2052; bb2048:
 #line 2062
-    t4097 = h0_t; t4098 = INT64_C(1); if (__builtin_add_overflow(t4097, t4098, &t4099)) hero_panic_overflow(); h0_t = t4099; goto bb2047; bb2049: goto bb2047; bb2050:
+    t4097 = h0_t; t4098 = INT64_C(1); if (__builtin_add_overflow(t4097, t4098, &t4099)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2062, 13); h0_t = t4099; goto bb2047; bb2049: goto bb2047; bb2050:
 #line 2067
     t4106 = h0_t; t4107 = INT64_C(684); t4108 = t4106 == t4107; if (t4108) goto bb2054; else goto bb2055; bb2051:
 #line 2065
-    t4103 = h0_t; t4104 = INT64_C(1); if (__builtin_add_overflow(t4103, t4104, &t4105)) hero_panic_overflow(); h0_t = t4105; goto bb2050; bb2052: goto bb2050; bb2053:
+    t4103 = h0_t; t4104 = INT64_C(1); if (__builtin_add_overflow(t4103, t4104, &t4105)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2065, 13); h0_t = t4105; goto bb2050; bb2052: goto bb2050; bb2053:
 #line 2070
     t4112 = h0_t; t4113 = INT64_C(685); t4114 = t4112 == t4113; if (t4114) goto bb2057; else goto bb2058; bb2054:
 #line 2068
-    t4109 = h0_t; t4110 = INT64_C(1); if (__builtin_add_overflow(t4109, t4110, &t4111)) hero_panic_overflow(); h0_t = t4111; goto bb2053; bb2055: goto bb2053; bb2056:
+    t4109 = h0_t; t4110 = INT64_C(1); if (__builtin_add_overflow(t4109, t4110, &t4111)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2068, 13); h0_t = t4111; goto bb2053; bb2055: goto bb2053; bb2056:
 #line 2073
     t4118 = h0_t; t4119 = INT64_C(686); t4120 = t4118 == t4119; if (t4120) goto bb2060; else goto bb2061; bb2057:
 #line 2071
-    t4115 = h0_t; t4116 = INT64_C(1); if (__builtin_add_overflow(t4115, t4116, &t4117)) hero_panic_overflow(); h0_t = t4117; goto bb2056; bb2058: goto bb2056; bb2059:
+    t4115 = h0_t; t4116 = INT64_C(1); if (__builtin_add_overflow(t4115, t4116, &t4117)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2071, 13); h0_t = t4117; goto bb2056; bb2058: goto bb2056; bb2059:
 #line 2076
     t4124 = h0_t; t4125 = INT64_C(687); t4126 = t4124 == t4125; if (t4126) goto bb2063; else goto bb2064; bb2060:
 #line 2074
-    t4121 = h0_t; t4122 = INT64_C(1); if (__builtin_add_overflow(t4121, t4122, &t4123)) hero_panic_overflow(); h0_t = t4123; goto bb2059; bb2061: goto bb2059; bb2062:
+    t4121 = h0_t; t4122 = INT64_C(1); if (__builtin_add_overflow(t4121, t4122, &t4123)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2074, 13); h0_t = t4123; goto bb2059; bb2061: goto bb2059; bb2062:
 #line 2079
     t4130 = h0_t; t4131 = INT64_C(688); t4132 = t4130 == t4131; if (t4132) goto bb2066; else goto bb2067; bb2063:
 #line 2077
-    t4127 = h0_t; t4128 = INT64_C(1); if (__builtin_add_overflow(t4127, t4128, &t4129)) hero_panic_overflow(); h0_t = t4129; goto bb2062; bb2064: goto bb2062; bb2065:
+    t4127 = h0_t; t4128 = INT64_C(1); if (__builtin_add_overflow(t4127, t4128, &t4129)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2077, 13); h0_t = t4129; goto bb2062; bb2064: goto bb2062; bb2065:
 #line 2082
     t4136 = h0_t; t4137 = INT64_C(689); t4138 = t4136 == t4137; if (t4138) goto bb2069; else goto bb2070; bb2066:
 #line 2080
-    t4133 = h0_t; t4134 = INT64_C(1); if (__builtin_add_overflow(t4133, t4134, &t4135)) hero_panic_overflow(); h0_t = t4135; goto bb2065; bb2067: goto bb2065; bb2068:
+    t4133 = h0_t; t4134 = INT64_C(1); if (__builtin_add_overflow(t4133, t4134, &t4135)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2080, 13); h0_t = t4135; goto bb2065; bb2067: goto bb2065; bb2068:
 #line 2085
     t4142 = h0_t; t4143 = INT64_C(690); t4144 = t4142 == t4143; if (t4144) goto bb2072; else goto bb2073; bb2069:
 #line 2083
-    t4139 = h0_t; t4140 = INT64_C(1); if (__builtin_add_overflow(t4139, t4140, &t4141)) hero_panic_overflow(); h0_t = t4141; goto bb2068; bb2070: goto bb2068; bb2071:
+    t4139 = h0_t; t4140 = INT64_C(1); if (__builtin_add_overflow(t4139, t4140, &t4141)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2083, 13); h0_t = t4141; goto bb2068; bb2070: goto bb2068; bb2071:
 #line 2088
     t4148 = h0_t; t4149 = INT64_C(691); t4150 = t4148 == t4149; if (t4150) goto bb2075; else goto bb2076; bb2072:
 #line 2086
-    t4145 = h0_t; t4146 = INT64_C(1); if (__builtin_add_overflow(t4145, t4146, &t4147)) hero_panic_overflow(); h0_t = t4147; goto bb2071; bb2073: goto bb2071; bb2074:
+    t4145 = h0_t; t4146 = INT64_C(1); if (__builtin_add_overflow(t4145, t4146, &t4147)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2086, 13); h0_t = t4147; goto bb2071; bb2073: goto bb2071; bb2074:
 #line 2091
     t4154 = h0_t; t4155 = INT64_C(692); t4156 = t4154 == t4155; if (t4156) goto bb2078; else goto bb2079; bb2075:
 #line 2089
-    t4151 = h0_t; t4152 = INT64_C(1); if (__builtin_add_overflow(t4151, t4152, &t4153)) hero_panic_overflow(); h0_t = t4153; goto bb2074; bb2076: goto bb2074; bb2077:
+    t4151 = h0_t; t4152 = INT64_C(1); if (__builtin_add_overflow(t4151, t4152, &t4153)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2089, 13); h0_t = t4153; goto bb2074; bb2076: goto bb2074; bb2077:
 #line 2094
     t4160 = h0_t; t4161 = INT64_C(693); t4162 = t4160 == t4161; if (t4162) goto bb2081; else goto bb2082; bb2078:
 #line 2092
-    t4157 = h0_t; t4158 = INT64_C(1); if (__builtin_add_overflow(t4157, t4158, &t4159)) hero_panic_overflow(); h0_t = t4159; goto bb2077; bb2079: goto bb2077; bb2080:
+    t4157 = h0_t; t4158 = INT64_C(1); if (__builtin_add_overflow(t4157, t4158, &t4159)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2092, 13); h0_t = t4159; goto bb2077; bb2079: goto bb2077; bb2080:
 #line 2097
     t4166 = h0_t; t4167 = INT64_C(694); t4168 = t4166 == t4167; if (t4168) goto bb2084; else goto bb2085; bb2081:
 #line 2095
-    t4163 = h0_t; t4164 = INT64_C(1); if (__builtin_add_overflow(t4163, t4164, &t4165)) hero_panic_overflow(); h0_t = t4165; goto bb2080; bb2082: goto bb2080; bb2083:
+    t4163 = h0_t; t4164 = INT64_C(1); if (__builtin_add_overflow(t4163, t4164, &t4165)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2095, 13); h0_t = t4165; goto bb2080; bb2082: goto bb2080; bb2083:
 #line 2100
     t4172 = h0_t; t4173 = INT64_C(695); t4174 = t4172 == t4173; if (t4174) goto bb2087; else goto bb2088; bb2084:
 #line 2098
-    t4169 = h0_t; t4170 = INT64_C(1); if (__builtin_add_overflow(t4169, t4170, &t4171)) hero_panic_overflow(); h0_t = t4171; goto bb2083; bb2085: goto bb2083; bb2086:
+    t4169 = h0_t; t4170 = INT64_C(1); if (__builtin_add_overflow(t4169, t4170, &t4171)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2098, 13); h0_t = t4171; goto bb2083; bb2085: goto bb2083; bb2086:
 #line 2103
     t4178 = h0_t; t4179 = INT64_C(696); t4180 = t4178 == t4179; if (t4180) goto bb2090; else goto bb2091; bb2087:
 #line 2101
-    t4175 = h0_t; t4176 = INT64_C(1); if (__builtin_add_overflow(t4175, t4176, &t4177)) hero_panic_overflow(); h0_t = t4177; goto bb2086; bb2088: goto bb2086; bb2089:
+    t4175 = h0_t; t4176 = INT64_C(1); if (__builtin_add_overflow(t4175, t4176, &t4177)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2101, 13); h0_t = t4177; goto bb2086; bb2088: goto bb2086; bb2089:
 #line 2106
     t4184 = h0_t; t4185 = INT64_C(697); t4186 = t4184 == t4185; if (t4186) goto bb2093; else goto bb2094; bb2090:
 #line 2104
-    t4181 = h0_t; t4182 = INT64_C(1); if (__builtin_add_overflow(t4181, t4182, &t4183)) hero_panic_overflow(); h0_t = t4183; goto bb2089; bb2091: goto bb2089; bb2092:
+    t4181 = h0_t; t4182 = INT64_C(1); if (__builtin_add_overflow(t4181, t4182, &t4183)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2104, 13); h0_t = t4183; goto bb2089; bb2091: goto bb2089; bb2092:
 #line 2109
     t4190 = h0_t; t4191 = INT64_C(698); t4192 = t4190 == t4191; if (t4192) goto bb2096; else goto bb2097; bb2093:
 #line 2107
-    t4187 = h0_t; t4188 = INT64_C(1); if (__builtin_add_overflow(t4187, t4188, &t4189)) hero_panic_overflow(); h0_t = t4189; goto bb2092; bb2094: goto bb2092; bb2095:
+    t4187 = h0_t; t4188 = INT64_C(1); if (__builtin_add_overflow(t4187, t4188, &t4189)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2107, 13); h0_t = t4189; goto bb2092; bb2094: goto bb2092; bb2095:
 #line 2112
     t4196 = h0_t; t4197 = INT64_C(699); t4198 = t4196 == t4197; if (t4198) goto bb2099; else goto bb2100; bb2096:
 #line 2110
-    t4193 = h0_t; t4194 = INT64_C(1); if (__builtin_add_overflow(t4193, t4194, &t4195)) hero_panic_overflow(); h0_t = t4195; goto bb2095; bb2097: goto bb2095; bb2098:
+    t4193 = h0_t; t4194 = INT64_C(1); if (__builtin_add_overflow(t4193, t4194, &t4195)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2110, 13); h0_t = t4195; goto bb2095; bb2097: goto bb2095; bb2098:
 #line 2115
     t4202 = h0_t; t4203 = INT64_C(700); t4204 = t4202 == t4203; if (t4204) goto bb2102; else goto bb2103; bb2099:
 #line 2113
-    t4199 = h0_t; t4200 = INT64_C(1); if (__builtin_add_overflow(t4199, t4200, &t4201)) hero_panic_overflow(); h0_t = t4201; goto bb2098; bb2100: goto bb2098; bb2101:
+    t4199 = h0_t; t4200 = INT64_C(1); if (__builtin_add_overflow(t4199, t4200, &t4201)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2113, 13); h0_t = t4201; goto bb2098; bb2100: goto bb2098; bb2101:
 #line 2118
     t4208 = h0_t; t4209 = INT64_C(701); t4210 = t4208 == t4209; if (t4210) goto bb2105; else goto bb2106; bb2102:
 #line 2116
-    t4205 = h0_t; t4206 = INT64_C(1); if (__builtin_add_overflow(t4205, t4206, &t4207)) hero_panic_overflow(); h0_t = t4207; goto bb2101; bb2103: goto bb2101; bb2104:
+    t4205 = h0_t; t4206 = INT64_C(1); if (__builtin_add_overflow(t4205, t4206, &t4207)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2116, 13); h0_t = t4207; goto bb2101; bb2103: goto bb2101; bb2104:
 #line 2121
     t4214 = h0_t; t4215 = INT64_C(702); t4216 = t4214 == t4215; if (t4216) goto bb2108; else goto bb2109; bb2105:
 #line 2119
-    t4211 = h0_t; t4212 = INT64_C(1); if (__builtin_add_overflow(t4211, t4212, &t4213)) hero_panic_overflow(); h0_t = t4213; goto bb2104; bb2106: goto bb2104; bb2107:
+    t4211 = h0_t; t4212 = INT64_C(1); if (__builtin_add_overflow(t4211, t4212, &t4213)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2119, 13); h0_t = t4213; goto bb2104; bb2106: goto bb2104; bb2107:
 #line 2124
     t4220 = h0_t; t4221 = INT64_C(703); t4222 = t4220 == t4221; if (t4222) goto bb2111; else goto bb2112; bb2108:
 #line 2122
-    t4217 = h0_t; t4218 = INT64_C(1); if (__builtin_add_overflow(t4217, t4218, &t4219)) hero_panic_overflow(); h0_t = t4219; goto bb2107; bb2109: goto bb2107; bb2110:
+    t4217 = h0_t; t4218 = INT64_C(1); if (__builtin_add_overflow(t4217, t4218, &t4219)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2122, 13); h0_t = t4219; goto bb2107; bb2109: goto bb2107; bb2110:
 #line 2127
     t4226 = h0_t; t4227 = INT64_C(704); t4228 = t4226 == t4227; if (t4228) goto bb2114; else goto bb2115; bb2111:
 #line 2125
-    t4223 = h0_t; t4224 = INT64_C(1); if (__builtin_add_overflow(t4223, t4224, &t4225)) hero_panic_overflow(); h0_t = t4225; goto bb2110; bb2112: goto bb2110; bb2113:
+    t4223 = h0_t; t4224 = INT64_C(1); if (__builtin_add_overflow(t4223, t4224, &t4225)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2125, 13); h0_t = t4225; goto bb2110; bb2112: goto bb2110; bb2113:
 #line 2130
     t4232 = h0_t; t4233 = INT64_C(705); t4234 = t4232 == t4233; if (t4234) goto bb2117; else goto bb2118; bb2114:
 #line 2128
-    t4229 = h0_t; t4230 = INT64_C(1); if (__builtin_add_overflow(t4229, t4230, &t4231)) hero_panic_overflow(); h0_t = t4231; goto bb2113; bb2115: goto bb2113; bb2116:
+    t4229 = h0_t; t4230 = INT64_C(1); if (__builtin_add_overflow(t4229, t4230, &t4231)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2128, 13); h0_t = t4231; goto bb2113; bb2115: goto bb2113; bb2116:
 #line 2133
     t4238 = h0_t; t4239 = INT64_C(706); t4240 = t4238 == t4239; if (t4240) goto bb2120; else goto bb2121; bb2117:
 #line 2131
-    t4235 = h0_t; t4236 = INT64_C(1); if (__builtin_add_overflow(t4235, t4236, &t4237)) hero_panic_overflow(); h0_t = t4237; goto bb2116; bb2118: goto bb2116; bb2119:
+    t4235 = h0_t; t4236 = INT64_C(1); if (__builtin_add_overflow(t4235, t4236, &t4237)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2131, 13); h0_t = t4237; goto bb2116; bb2118: goto bb2116; bb2119:
 #line 2136
     t4244 = h0_t; t4245 = INT64_C(707); t4246 = t4244 == t4245; if (t4246) goto bb2123; else goto bb2124; bb2120:
 #line 2134
-    t4241 = h0_t; t4242 = INT64_C(1); if (__builtin_add_overflow(t4241, t4242, &t4243)) hero_panic_overflow(); h0_t = t4243; goto bb2119; bb2121: goto bb2119; bb2122:
+    t4241 = h0_t; t4242 = INT64_C(1); if (__builtin_add_overflow(t4241, t4242, &t4243)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2134, 13); h0_t = t4243; goto bb2119; bb2121: goto bb2119; bb2122:
 #line 2139
     t4250 = h0_t; t4251 = INT64_C(708); t4252 = t4250 == t4251; if (t4252) goto bb2126; else goto bb2127; bb2123:
 #line 2137
-    t4247 = h0_t; t4248 = INT64_C(1); if (__builtin_add_overflow(t4247, t4248, &t4249)) hero_panic_overflow(); h0_t = t4249; goto bb2122; bb2124: goto bb2122; bb2125:
+    t4247 = h0_t; t4248 = INT64_C(1); if (__builtin_add_overflow(t4247, t4248, &t4249)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2137, 13); h0_t = t4249; goto bb2122; bb2124: goto bb2122; bb2125:
 #line 2142
     t4256 = h0_t; t4257 = INT64_C(709); t4258 = t4256 == t4257; if (t4258) goto bb2129; else goto bb2130; bb2126:
 #line 2140
-    t4253 = h0_t; t4254 = INT64_C(1); if (__builtin_add_overflow(t4253, t4254, &t4255)) hero_panic_overflow(); h0_t = t4255; goto bb2125; bb2127: goto bb2125; bb2128:
+    t4253 = h0_t; t4254 = INT64_C(1); if (__builtin_add_overflow(t4253, t4254, &t4255)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2140, 13); h0_t = t4255; goto bb2125; bb2127: goto bb2125; bb2128:
 #line 2145
     t4262 = h0_t; t4263 = INT64_C(710); t4264 = t4262 == t4263; if (t4264) goto bb2132; else goto bb2133; bb2129:
 #line 2143
-    t4259 = h0_t; t4260 = INT64_C(1); if (__builtin_add_overflow(t4259, t4260, &t4261)) hero_panic_overflow(); h0_t = t4261; goto bb2128; bb2130: goto bb2128; bb2131:
+    t4259 = h0_t; t4260 = INT64_C(1); if (__builtin_add_overflow(t4259, t4260, &t4261)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2143, 13); h0_t = t4261; goto bb2128; bb2130: goto bb2128; bb2131:
 #line 2148
     t4268 = h0_t; t4269 = INT64_C(711); t4270 = t4268 == t4269; if (t4270) goto bb2135; else goto bb2136; bb2132:
 #line 2146
-    t4265 = h0_t; t4266 = INT64_C(1); if (__builtin_add_overflow(t4265, t4266, &t4267)) hero_panic_overflow(); h0_t = t4267; goto bb2131; bb2133: goto bb2131; bb2134:
+    t4265 = h0_t; t4266 = INT64_C(1); if (__builtin_add_overflow(t4265, t4266, &t4267)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2146, 13); h0_t = t4267; goto bb2131; bb2133: goto bb2131; bb2134:
 #line 2151
     t4274 = h0_t; t4275 = INT64_C(712); t4276 = t4274 == t4275; if (t4276) goto bb2138; else goto bb2139; bb2135:
 #line 2149
-    t4271 = h0_t; t4272 = INT64_C(1); if (__builtin_add_overflow(t4271, t4272, &t4273)) hero_panic_overflow(); h0_t = t4273; goto bb2134; bb2136: goto bb2134; bb2137:
+    t4271 = h0_t; t4272 = INT64_C(1); if (__builtin_add_overflow(t4271, t4272, &t4273)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2149, 13); h0_t = t4273; goto bb2134; bb2136: goto bb2134; bb2137:
 #line 2154
     t4280 = h0_t; t4281 = INT64_C(713); t4282 = t4280 == t4281; if (t4282) goto bb2141; else goto bb2142; bb2138:
 #line 2152
-    t4277 = h0_t; t4278 = INT64_C(1); if (__builtin_add_overflow(t4277, t4278, &t4279)) hero_panic_overflow(); h0_t = t4279; goto bb2137; bb2139: goto bb2137; bb2140:
+    t4277 = h0_t; t4278 = INT64_C(1); if (__builtin_add_overflow(t4277, t4278, &t4279)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2152, 13); h0_t = t4279; goto bb2137; bb2139: goto bb2137; bb2140:
 #line 2157
     t4286 = h0_t; t4287 = INT64_C(714); t4288 = t4286 == t4287; if (t4288) goto bb2144; else goto bb2145; bb2141:
 #line 2155
-    t4283 = h0_t; t4284 = INT64_C(1); if (__builtin_add_overflow(t4283, t4284, &t4285)) hero_panic_overflow(); h0_t = t4285; goto bb2140; bb2142: goto bb2140; bb2143:
+    t4283 = h0_t; t4284 = INT64_C(1); if (__builtin_add_overflow(t4283, t4284, &t4285)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2155, 13); h0_t = t4285; goto bb2140; bb2142: goto bb2140; bb2143:
 #line 2160
     t4292 = h0_t; t4293 = INT64_C(715); t4294 = t4292 == t4293; if (t4294) goto bb2147; else goto bb2148; bb2144:
 #line 2158
-    t4289 = h0_t; t4290 = INT64_C(1); if (__builtin_add_overflow(t4289, t4290, &t4291)) hero_panic_overflow(); h0_t = t4291; goto bb2143; bb2145: goto bb2143; bb2146:
+    t4289 = h0_t; t4290 = INT64_C(1); if (__builtin_add_overflow(t4289, t4290, &t4291)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2158, 13); h0_t = t4291; goto bb2143; bb2145: goto bb2143; bb2146:
 #line 2163
     t4298 = h0_t; t4299 = INT64_C(716); t4300 = t4298 == t4299; if (t4300) goto bb2150; else goto bb2151; bb2147:
 #line 2161
-    t4295 = h0_t; t4296 = INT64_C(1); if (__builtin_add_overflow(t4295, t4296, &t4297)) hero_panic_overflow(); h0_t = t4297; goto bb2146; bb2148: goto bb2146; bb2149:
+    t4295 = h0_t; t4296 = INT64_C(1); if (__builtin_add_overflow(t4295, t4296, &t4297)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2161, 13); h0_t = t4297; goto bb2146; bb2148: goto bb2146; bb2149:
 #line 2166
     t4304 = h0_t; t4305 = INT64_C(717); t4306 = t4304 == t4305; if (t4306) goto bb2153; else goto bb2154; bb2150:
 #line 2164
-    t4301 = h0_t; t4302 = INT64_C(1); if (__builtin_add_overflow(t4301, t4302, &t4303)) hero_panic_overflow(); h0_t = t4303; goto bb2149; bb2151: goto bb2149; bb2152:
+    t4301 = h0_t; t4302 = INT64_C(1); if (__builtin_add_overflow(t4301, t4302, &t4303)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2164, 13); h0_t = t4303; goto bb2149; bb2151: goto bb2149; bb2152:
 #line 2169
     t4310 = h0_t; t4311 = INT64_C(718); t4312 = t4310 == t4311; if (t4312) goto bb2156; else goto bb2157; bb2153:
 #line 2167
-    t4307 = h0_t; t4308 = INT64_C(1); if (__builtin_add_overflow(t4307, t4308, &t4309)) hero_panic_overflow(); h0_t = t4309; goto bb2152; bb2154: goto bb2152; bb2155:
+    t4307 = h0_t; t4308 = INT64_C(1); if (__builtin_add_overflow(t4307, t4308, &t4309)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2167, 13); h0_t = t4309; goto bb2152; bb2154: goto bb2152; bb2155:
 #line 2172
     t4316 = h0_t; t4317 = INT64_C(719); t4318 = t4316 == t4317; if (t4318) goto bb2159; else goto bb2160; bb2156:
 #line 2170
-    t4313 = h0_t; t4314 = INT64_C(1); if (__builtin_add_overflow(t4313, t4314, &t4315)) hero_panic_overflow(); h0_t = t4315; goto bb2155; bb2157: goto bb2155; bb2158:
+    t4313 = h0_t; t4314 = INT64_C(1); if (__builtin_add_overflow(t4313, t4314, &t4315)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2170, 13); h0_t = t4315; goto bb2155; bb2157: goto bb2155; bb2158:
 #line 2175
     t4322 = h0_t; t4323 = INT64_C(720); t4324 = t4322 == t4323; if (t4324) goto bb2162; else goto bb2163; bb2159:
 #line 2173
-    t4319 = h0_t; t4320 = INT64_C(1); if (__builtin_add_overflow(t4319, t4320, &t4321)) hero_panic_overflow(); h0_t = t4321; goto bb2158; bb2160: goto bb2158; bb2161:
+    t4319 = h0_t; t4320 = INT64_C(1); if (__builtin_add_overflow(t4319, t4320, &t4321)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2173, 13); h0_t = t4321; goto bb2158; bb2160: goto bb2158; bb2161:
 #line 2178
     t4328 = h0_t; t4329 = INT64_C(721); t4330 = t4328 == t4329; if (t4330) goto bb2165; else goto bb2166; bb2162:
 #line 2176
-    t4325 = h0_t; t4326 = INT64_C(1); if (__builtin_add_overflow(t4325, t4326, &t4327)) hero_panic_overflow(); h0_t = t4327; goto bb2161; bb2163: goto bb2161; bb2164:
+    t4325 = h0_t; t4326 = INT64_C(1); if (__builtin_add_overflow(t4325, t4326, &t4327)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2176, 13); h0_t = t4327; goto bb2161; bb2163: goto bb2161; bb2164:
 #line 2181
     t4334 = h0_t; t4335 = INT64_C(722); t4336 = t4334 == t4335; if (t4336) goto bb2168; else goto bb2169; bb2165:
 #line 2179
-    t4331 = h0_t; t4332 = INT64_C(1); if (__builtin_add_overflow(t4331, t4332, &t4333)) hero_panic_overflow(); h0_t = t4333; goto bb2164; bb2166: goto bb2164; bb2167:
+    t4331 = h0_t; t4332 = INT64_C(1); if (__builtin_add_overflow(t4331, t4332, &t4333)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2179, 13); h0_t = t4333; goto bb2164; bb2166: goto bb2164; bb2167:
 #line 2184
     t4340 = h0_t; t4341 = INT64_C(723); t4342 = t4340 == t4341; if (t4342) goto bb2171; else goto bb2172; bb2168:
 #line 2182
-    t4337 = h0_t; t4338 = INT64_C(1); if (__builtin_add_overflow(t4337, t4338, &t4339)) hero_panic_overflow(); h0_t = t4339; goto bb2167; bb2169: goto bb2167; bb2170:
+    t4337 = h0_t; t4338 = INT64_C(1); if (__builtin_add_overflow(t4337, t4338, &t4339)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2182, 13); h0_t = t4339; goto bb2167; bb2169: goto bb2167; bb2170:
 #line 2187
     t4346 = h0_t; t4347 = INT64_C(724); t4348 = t4346 == t4347; if (t4348) goto bb2174; else goto bb2175; bb2171:
 #line 2185
-    t4343 = h0_t; t4344 = INT64_C(1); if (__builtin_add_overflow(t4343, t4344, &t4345)) hero_panic_overflow(); h0_t = t4345; goto bb2170; bb2172: goto bb2170; bb2173:
+    t4343 = h0_t; t4344 = INT64_C(1); if (__builtin_add_overflow(t4343, t4344, &t4345)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2185, 13); h0_t = t4345; goto bb2170; bb2172: goto bb2170; bb2173:
 #line 2190
     t4352 = h0_t; t4353 = INT64_C(725); t4354 = t4352 == t4353; if (t4354) goto bb2177; else goto bb2178; bb2174:
 #line 2188
-    t4349 = h0_t; t4350 = INT64_C(1); if (__builtin_add_overflow(t4349, t4350, &t4351)) hero_panic_overflow(); h0_t = t4351; goto bb2173; bb2175: goto bb2173; bb2176:
+    t4349 = h0_t; t4350 = INT64_C(1); if (__builtin_add_overflow(t4349, t4350, &t4351)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2188, 13); h0_t = t4351; goto bb2173; bb2175: goto bb2173; bb2176:
 #line 2193
     t4358 = h0_t; t4359 = INT64_C(726); t4360 = t4358 == t4359; if (t4360) goto bb2180; else goto bb2181; bb2177:
 #line 2191
-    t4355 = h0_t; t4356 = INT64_C(1); if (__builtin_add_overflow(t4355, t4356, &t4357)) hero_panic_overflow(); h0_t = t4357; goto bb2176; bb2178: goto bb2176; bb2179:
+    t4355 = h0_t; t4356 = INT64_C(1); if (__builtin_add_overflow(t4355, t4356, &t4357)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2191, 13); h0_t = t4357; goto bb2176; bb2178: goto bb2176; bb2179:
 #line 2196
     t4364 = h0_t; t4365 = INT64_C(727); t4366 = t4364 == t4365; if (t4366) goto bb2183; else goto bb2184; bb2180:
 #line 2194
-    t4361 = h0_t; t4362 = INT64_C(1); if (__builtin_add_overflow(t4361, t4362, &t4363)) hero_panic_overflow(); h0_t = t4363; goto bb2179; bb2181: goto bb2179; bb2182:
+    t4361 = h0_t; t4362 = INT64_C(1); if (__builtin_add_overflow(t4361, t4362, &t4363)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2194, 13); h0_t = t4363; goto bb2179; bb2181: goto bb2179; bb2182:
 #line 2199
     t4370 = h0_t; t4371 = INT64_C(728); t4372 = t4370 == t4371; if (t4372) goto bb2186; else goto bb2187; bb2183:
 #line 2197
-    t4367 = h0_t; t4368 = INT64_C(1); if (__builtin_add_overflow(t4367, t4368, &t4369)) hero_panic_overflow(); h0_t = t4369; goto bb2182; bb2184: goto bb2182; bb2185:
+    t4367 = h0_t; t4368 = INT64_C(1); if (__builtin_add_overflow(t4367, t4368, &t4369)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2197, 13); h0_t = t4369; goto bb2182; bb2184: goto bb2182; bb2185:
 #line 2202
     t4376 = h0_t; t4377 = INT64_C(729); t4378 = t4376 == t4377; if (t4378) goto bb2189; else goto bb2190; bb2186:
 #line 2200
-    t4373 = h0_t; t4374 = INT64_C(1); if (__builtin_add_overflow(t4373, t4374, &t4375)) hero_panic_overflow(); h0_t = t4375; goto bb2185; bb2187: goto bb2185; bb2188:
+    t4373 = h0_t; t4374 = INT64_C(1); if (__builtin_add_overflow(t4373, t4374, &t4375)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2200, 13); h0_t = t4375; goto bb2185; bb2187: goto bb2185; bb2188:
 #line 2205
     t4382 = h0_t; t4383 = INT64_C(730); t4384 = t4382 == t4383; if (t4384) goto bb2192; else goto bb2193; bb2189:
 #line 2203
-    t4379 = h0_t; t4380 = INT64_C(1); if (__builtin_add_overflow(t4379, t4380, &t4381)) hero_panic_overflow(); h0_t = t4381; goto bb2188; bb2190: goto bb2188; bb2191:
+    t4379 = h0_t; t4380 = INT64_C(1); if (__builtin_add_overflow(t4379, t4380, &t4381)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2203, 13); h0_t = t4381; goto bb2188; bb2190: goto bb2188; bb2191:
 #line 2208
     t4388 = h0_t; t4389 = INT64_C(731); t4390 = t4388 == t4389; if (t4390) goto bb2195; else goto bb2196; bb2192:
 #line 2206
-    t4385 = h0_t; t4386 = INT64_C(1); if (__builtin_add_overflow(t4385, t4386, &t4387)) hero_panic_overflow(); h0_t = t4387; goto bb2191; bb2193: goto bb2191; bb2194:
+    t4385 = h0_t; t4386 = INT64_C(1); if (__builtin_add_overflow(t4385, t4386, &t4387)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2206, 13); h0_t = t4387; goto bb2191; bb2193: goto bb2191; bb2194:
 #line 2211
     t4394 = h0_t; t4395 = INT64_C(732); t4396 = t4394 == t4395; if (t4396) goto bb2198; else goto bb2199; bb2195:
 #line 2209
-    t4391 = h0_t; t4392 = INT64_C(1); if (__builtin_add_overflow(t4391, t4392, &t4393)) hero_panic_overflow(); h0_t = t4393; goto bb2194; bb2196: goto bb2194; bb2197:
+    t4391 = h0_t; t4392 = INT64_C(1); if (__builtin_add_overflow(t4391, t4392, &t4393)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2209, 13); h0_t = t4393; goto bb2194; bb2196: goto bb2194; bb2197:
 #line 2214
     t4400 = h0_t; t4401 = INT64_C(733); t4402 = t4400 == t4401; if (t4402) goto bb2201; else goto bb2202; bb2198:
 #line 2212
-    t4397 = h0_t; t4398 = INT64_C(1); if (__builtin_add_overflow(t4397, t4398, &t4399)) hero_panic_overflow(); h0_t = t4399; goto bb2197; bb2199: goto bb2197; bb2200:
+    t4397 = h0_t; t4398 = INT64_C(1); if (__builtin_add_overflow(t4397, t4398, &t4399)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2212, 13); h0_t = t4399; goto bb2197; bb2199: goto bb2197; bb2200:
 #line 2217
     t4406 = h0_t; t4407 = INT64_C(734); t4408 = t4406 == t4407; if (t4408) goto bb2204; else goto bb2205; bb2201:
 #line 2215
-    t4403 = h0_t; t4404 = INT64_C(1); if (__builtin_add_overflow(t4403, t4404, &t4405)) hero_panic_overflow(); h0_t = t4405; goto bb2200; bb2202: goto bb2200; bb2203:
+    t4403 = h0_t; t4404 = INT64_C(1); if (__builtin_add_overflow(t4403, t4404, &t4405)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2215, 13); h0_t = t4405; goto bb2200; bb2202: goto bb2200; bb2203:
 #line 2220
     t4412 = h0_t; t4413 = INT64_C(735); t4414 = t4412 == t4413; if (t4414) goto bb2207; else goto bb2208; bb2204:
 #line 2218
-    t4409 = h0_t; t4410 = INT64_C(1); if (__builtin_add_overflow(t4409, t4410, &t4411)) hero_panic_overflow(); h0_t = t4411; goto bb2203; bb2205: goto bb2203; bb2206:
+    t4409 = h0_t; t4410 = INT64_C(1); if (__builtin_add_overflow(t4409, t4410, &t4411)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2218, 13); h0_t = t4411; goto bb2203; bb2205: goto bb2203; bb2206:
 #line 2223
     t4418 = h0_t; t4419 = INT64_C(736); t4420 = t4418 == t4419; if (t4420) goto bb2210; else goto bb2211; bb2207:
 #line 2221
-    t4415 = h0_t; t4416 = INT64_C(1); if (__builtin_add_overflow(t4415, t4416, &t4417)) hero_panic_overflow(); h0_t = t4417; goto bb2206; bb2208: goto bb2206; bb2209:
+    t4415 = h0_t; t4416 = INT64_C(1); if (__builtin_add_overflow(t4415, t4416, &t4417)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2221, 13); h0_t = t4417; goto bb2206; bb2208: goto bb2206; bb2209:
 #line 2226
     t4424 = h0_t; t4425 = INT64_C(737); t4426 = t4424 == t4425; if (t4426) goto bb2213; else goto bb2214; bb2210:
 #line 2224
-    t4421 = h0_t; t4422 = INT64_C(1); if (__builtin_add_overflow(t4421, t4422, &t4423)) hero_panic_overflow(); h0_t = t4423; goto bb2209; bb2211: goto bb2209; bb2212:
+    t4421 = h0_t; t4422 = INT64_C(1); if (__builtin_add_overflow(t4421, t4422, &t4423)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2224, 13); h0_t = t4423; goto bb2209; bb2211: goto bb2209; bb2212:
 #line 2229
     t4430 = h0_t; t4431 = INT64_C(738); t4432 = t4430 == t4431; if (t4432) goto bb2216; else goto bb2217; bb2213:
 #line 2227
-    t4427 = h0_t; t4428 = INT64_C(1); if (__builtin_add_overflow(t4427, t4428, &t4429)) hero_panic_overflow(); h0_t = t4429; goto bb2212; bb2214: goto bb2212; bb2215:
+    t4427 = h0_t; t4428 = INT64_C(1); if (__builtin_add_overflow(t4427, t4428, &t4429)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2227, 13); h0_t = t4429; goto bb2212; bb2214: goto bb2212; bb2215:
 #line 2232
     t4436 = h0_t; t4437 = INT64_C(739); t4438 = t4436 == t4437; if (t4438) goto bb2219; else goto bb2220; bb2216:
 #line 2230
-    t4433 = h0_t; t4434 = INT64_C(1); if (__builtin_add_overflow(t4433, t4434, &t4435)) hero_panic_overflow(); h0_t = t4435; goto bb2215; bb2217: goto bb2215; bb2218:
+    t4433 = h0_t; t4434 = INT64_C(1); if (__builtin_add_overflow(t4433, t4434, &t4435)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2230, 13); h0_t = t4435; goto bb2215; bb2217: goto bb2215; bb2218:
 #line 2235
     t4442 = h0_t; t4443 = INT64_C(740); t4444 = t4442 == t4443; if (t4444) goto bb2222; else goto bb2223; bb2219:
 #line 2233
-    t4439 = h0_t; t4440 = INT64_C(1); if (__builtin_add_overflow(t4439, t4440, &t4441)) hero_panic_overflow(); h0_t = t4441; goto bb2218; bb2220: goto bb2218; bb2221:
+    t4439 = h0_t; t4440 = INT64_C(1); if (__builtin_add_overflow(t4439, t4440, &t4441)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2233, 13); h0_t = t4441; goto bb2218; bb2220: goto bb2218; bb2221:
 #line 2238
     t4448 = h0_t; t4449 = INT64_C(741); t4450 = t4448 == t4449; if (t4450) goto bb2225; else goto bb2226; bb2222:
 #line 2236
-    t4445 = h0_t; t4446 = INT64_C(1); if (__builtin_add_overflow(t4445, t4446, &t4447)) hero_panic_overflow(); h0_t = t4447; goto bb2221; bb2223: goto bb2221; bb2224:
+    t4445 = h0_t; t4446 = INT64_C(1); if (__builtin_add_overflow(t4445, t4446, &t4447)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2236, 13); h0_t = t4447; goto bb2221; bb2223: goto bb2221; bb2224:
 #line 2241
     t4454 = h0_t; t4455 = INT64_C(742); t4456 = t4454 == t4455; if (t4456) goto bb2228; else goto bb2229; bb2225:
 #line 2239
-    t4451 = h0_t; t4452 = INT64_C(1); if (__builtin_add_overflow(t4451, t4452, &t4453)) hero_panic_overflow(); h0_t = t4453; goto bb2224; bb2226: goto bb2224; bb2227:
+    t4451 = h0_t; t4452 = INT64_C(1); if (__builtin_add_overflow(t4451, t4452, &t4453)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2239, 13); h0_t = t4453; goto bb2224; bb2226: goto bb2224; bb2227:
 #line 2244
     t4460 = h0_t; t4461 = INT64_C(743); t4462 = t4460 == t4461; if (t4462) goto bb2231; else goto bb2232; bb2228:
 #line 2242
-    t4457 = h0_t; t4458 = INT64_C(1); if (__builtin_add_overflow(t4457, t4458, &t4459)) hero_panic_overflow(); h0_t = t4459; goto bb2227; bb2229: goto bb2227; bb2230:
+    t4457 = h0_t; t4458 = INT64_C(1); if (__builtin_add_overflow(t4457, t4458, &t4459)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2242, 13); h0_t = t4459; goto bb2227; bb2229: goto bb2227; bb2230:
 #line 2247
     t4466 = h0_t; t4467 = INT64_C(744); t4468 = t4466 == t4467; if (t4468) goto bb2234; else goto bb2235; bb2231:
 #line 2245
-    t4463 = h0_t; t4464 = INT64_C(1); if (__builtin_add_overflow(t4463, t4464, &t4465)) hero_panic_overflow(); h0_t = t4465; goto bb2230; bb2232: goto bb2230; bb2233:
+    t4463 = h0_t; t4464 = INT64_C(1); if (__builtin_add_overflow(t4463, t4464, &t4465)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2245, 13); h0_t = t4465; goto bb2230; bb2232: goto bb2230; bb2233:
 #line 2250
     t4472 = h0_t; t4473 = INT64_C(745); t4474 = t4472 == t4473; if (t4474) goto bb2237; else goto bb2238; bb2234:
 #line 2248
-    t4469 = h0_t; t4470 = INT64_C(1); if (__builtin_add_overflow(t4469, t4470, &t4471)) hero_panic_overflow(); h0_t = t4471; goto bb2233; bb2235: goto bb2233; bb2236:
+    t4469 = h0_t; t4470 = INT64_C(1); if (__builtin_add_overflow(t4469, t4470, &t4471)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2248, 13); h0_t = t4471; goto bb2233; bb2235: goto bb2233; bb2236:
 #line 2253
     t4478 = h0_t; t4479 = INT64_C(746); t4480 = t4478 == t4479; if (t4480) goto bb2240; else goto bb2241; bb2237:
 #line 2251
-    t4475 = h0_t; t4476 = INT64_C(1); if (__builtin_add_overflow(t4475, t4476, &t4477)) hero_panic_overflow(); h0_t = t4477; goto bb2236; bb2238: goto bb2236; bb2239:
+    t4475 = h0_t; t4476 = INT64_C(1); if (__builtin_add_overflow(t4475, t4476, &t4477)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2251, 13); h0_t = t4477; goto bb2236; bb2238: goto bb2236; bb2239:
 #line 2256
     t4484 = h0_t; t4485 = INT64_C(747); t4486 = t4484 == t4485; if (t4486) goto bb2243; else goto bb2244; bb2240:
 #line 2254
-    t4481 = h0_t; t4482 = INT64_C(1); if (__builtin_add_overflow(t4481, t4482, &t4483)) hero_panic_overflow(); h0_t = t4483; goto bb2239; bb2241: goto bb2239; bb2242:
+    t4481 = h0_t; t4482 = INT64_C(1); if (__builtin_add_overflow(t4481, t4482, &t4483)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2254, 13); h0_t = t4483; goto bb2239; bb2241: goto bb2239; bb2242:
 #line 2259
     t4490 = h0_t; t4491 = INT64_C(748); t4492 = t4490 == t4491; if (t4492) goto bb2246; else goto bb2247; bb2243:
 #line 2257
-    t4487 = h0_t; t4488 = INT64_C(1); if (__builtin_add_overflow(t4487, t4488, &t4489)) hero_panic_overflow(); h0_t = t4489; goto bb2242; bb2244: goto bb2242; bb2245:
+    t4487 = h0_t; t4488 = INT64_C(1); if (__builtin_add_overflow(t4487, t4488, &t4489)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2257, 13); h0_t = t4489; goto bb2242; bb2244: goto bb2242; bb2245:
 #line 2262
     t4496 = h0_t; t4497 = INT64_C(749); t4498 = t4496 == t4497; if (t4498) goto bb2249; else goto bb2250; bb2246:
 #line 2260
-    t4493 = h0_t; t4494 = INT64_C(1); if (__builtin_add_overflow(t4493, t4494, &t4495)) hero_panic_overflow(); h0_t = t4495; goto bb2245; bb2247: goto bb2245; bb2248:
+    t4493 = h0_t; t4494 = INT64_C(1); if (__builtin_add_overflow(t4493, t4494, &t4495)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2260, 13); h0_t = t4495; goto bb2245; bb2247: goto bb2245; bb2248:
 #line 2265
     t4502 = h0_t; t4503 = INT64_C(750); t4504 = t4502 == t4503; if (t4504) goto bb2252; else goto bb2253; bb2249:
 #line 2263
-    t4499 = h0_t; t4500 = INT64_C(1); if (__builtin_add_overflow(t4499, t4500, &t4501)) hero_panic_overflow(); h0_t = t4501; goto bb2248; bb2250: goto bb2248; bb2251:
+    t4499 = h0_t; t4500 = INT64_C(1); if (__builtin_add_overflow(t4499, t4500, &t4501)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2263, 13); h0_t = t4501; goto bb2248; bb2250: goto bb2248; bb2251:
 #line 2268
     t4508 = h0_t; t4509 = INT64_C(751); t4510 = t4508 == t4509; if (t4510) goto bb2255; else goto bb2256; bb2252:
 #line 2266
-    t4505 = h0_t; t4506 = INT64_C(1); if (__builtin_add_overflow(t4505, t4506, &t4507)) hero_panic_overflow(); h0_t = t4507; goto bb2251; bb2253: goto bb2251; bb2254:
+    t4505 = h0_t; t4506 = INT64_C(1); if (__builtin_add_overflow(t4505, t4506, &t4507)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2266, 13); h0_t = t4507; goto bb2251; bb2253: goto bb2251; bb2254:
 #line 2271
     t4514 = h0_t; t4515 = INT64_C(752); t4516 = t4514 == t4515; if (t4516) goto bb2258; else goto bb2259; bb2255:
 #line 2269
-    t4511 = h0_t; t4512 = INT64_C(1); if (__builtin_add_overflow(t4511, t4512, &t4513)) hero_panic_overflow(); h0_t = t4513; goto bb2254; bb2256: goto bb2254; bb2257:
+    t4511 = h0_t; t4512 = INT64_C(1); if (__builtin_add_overflow(t4511, t4512, &t4513)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2269, 13); h0_t = t4513; goto bb2254; bb2256: goto bb2254; bb2257:
 #line 2274
     t4520 = h0_t; t4521 = INT64_C(753); t4522 = t4520 == t4521; if (t4522) goto bb2261; else goto bb2262; bb2258:
 #line 2272
-    t4517 = h0_t; t4518 = INT64_C(1); if (__builtin_add_overflow(t4517, t4518, &t4519)) hero_panic_overflow(); h0_t = t4519; goto bb2257; bb2259: goto bb2257; bb2260:
+    t4517 = h0_t; t4518 = INT64_C(1); if (__builtin_add_overflow(t4517, t4518, &t4519)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2272, 13); h0_t = t4519; goto bb2257; bb2259: goto bb2257; bb2260:
 #line 2277
     t4526 = h0_t; t4527 = INT64_C(754); t4528 = t4526 == t4527; if (t4528) goto bb2264; else goto bb2265; bb2261:
 #line 2275
-    t4523 = h0_t; t4524 = INT64_C(1); if (__builtin_add_overflow(t4523, t4524, &t4525)) hero_panic_overflow(); h0_t = t4525; goto bb2260; bb2262: goto bb2260; bb2263:
+    t4523 = h0_t; t4524 = INT64_C(1); if (__builtin_add_overflow(t4523, t4524, &t4525)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2275, 13); h0_t = t4525; goto bb2260; bb2262: goto bb2260; bb2263:
 #line 2280
     t4532 = h0_t; t4533 = INT64_C(755); t4534 = t4532 == t4533; if (t4534) goto bb2267; else goto bb2268; bb2264:
 #line 2278
-    t4529 = h0_t; t4530 = INT64_C(1); if (__builtin_add_overflow(t4529, t4530, &t4531)) hero_panic_overflow(); h0_t = t4531; goto bb2263; bb2265: goto bb2263; bb2266:
+    t4529 = h0_t; t4530 = INT64_C(1); if (__builtin_add_overflow(t4529, t4530, &t4531)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2278, 13); h0_t = t4531; goto bb2263; bb2265: goto bb2263; bb2266:
 #line 2283
     t4538 = h0_t; t4539 = INT64_C(756); t4540 = t4538 == t4539; if (t4540) goto bb2270; else goto bb2271; bb2267:
 #line 2281
-    t4535 = h0_t; t4536 = INT64_C(1); if (__builtin_add_overflow(t4535, t4536, &t4537)) hero_panic_overflow(); h0_t = t4537; goto bb2266; bb2268: goto bb2266; bb2269:
+    t4535 = h0_t; t4536 = INT64_C(1); if (__builtin_add_overflow(t4535, t4536, &t4537)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2281, 13); h0_t = t4537; goto bb2266; bb2268: goto bb2266; bb2269:
 #line 2286
     t4544 = h0_t; t4545 = INT64_C(757); t4546 = t4544 == t4545; if (t4546) goto bb2273; else goto bb2274; bb2270:
 #line 2284
-    t4541 = h0_t; t4542 = INT64_C(1); if (__builtin_add_overflow(t4541, t4542, &t4543)) hero_panic_overflow(); h0_t = t4543; goto bb2269; bb2271: goto bb2269; bb2272:
+    t4541 = h0_t; t4542 = INT64_C(1); if (__builtin_add_overflow(t4541, t4542, &t4543)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2284, 13); h0_t = t4543; goto bb2269; bb2271: goto bb2269; bb2272:
 #line 2289
     t4550 = h0_t; t4551 = INT64_C(758); t4552 = t4550 == t4551; if (t4552) goto bb2276; else goto bb2277; bb2273:
 #line 2287
-    t4547 = h0_t; t4548 = INT64_C(1); if (__builtin_add_overflow(t4547, t4548, &t4549)) hero_panic_overflow(); h0_t = t4549; goto bb2272; bb2274: goto bb2272; bb2275:
+    t4547 = h0_t; t4548 = INT64_C(1); if (__builtin_add_overflow(t4547, t4548, &t4549)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2287, 13); h0_t = t4549; goto bb2272; bb2274: goto bb2272; bb2275:
 #line 2292
     t4556 = h0_t; t4557 = INT64_C(759); t4558 = t4556 == t4557; if (t4558) goto bb2279; else goto bb2280; bb2276:
 #line 2290
-    t4553 = h0_t; t4554 = INT64_C(1); if (__builtin_add_overflow(t4553, t4554, &t4555)) hero_panic_overflow(); h0_t = t4555; goto bb2275; bb2277: goto bb2275; bb2278:
+    t4553 = h0_t; t4554 = INT64_C(1); if (__builtin_add_overflow(t4553, t4554, &t4555)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2290, 13); h0_t = t4555; goto bb2275; bb2277: goto bb2275; bb2278:
 #line 2295
     t4562 = h0_t; t4563 = INT64_C(760); t4564 = t4562 == t4563; if (t4564) goto bb2282; else goto bb2283; bb2279:
 #line 2293
-    t4559 = h0_t; t4560 = INT64_C(1); if (__builtin_add_overflow(t4559, t4560, &t4561)) hero_panic_overflow(); h0_t = t4561; goto bb2278; bb2280: goto bb2278; bb2281:
+    t4559 = h0_t; t4560 = INT64_C(1); if (__builtin_add_overflow(t4559, t4560, &t4561)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2293, 13); h0_t = t4561; goto bb2278; bb2280: goto bb2278; bb2281:
 #line 2298
     t4568 = h0_t; t4569 = INT64_C(761); t4570 = t4568 == t4569; if (t4570) goto bb2285; else goto bb2286; bb2282:
 #line 2296
-    t4565 = h0_t; t4566 = INT64_C(1); if (__builtin_add_overflow(t4565, t4566, &t4567)) hero_panic_overflow(); h0_t = t4567; goto bb2281; bb2283: goto bb2281; bb2284:
+    t4565 = h0_t; t4566 = INT64_C(1); if (__builtin_add_overflow(t4565, t4566, &t4567)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2296, 13); h0_t = t4567; goto bb2281; bb2283: goto bb2281; bb2284:
 #line 2301
     t4574 = h0_t; t4575 = INT64_C(762); t4576 = t4574 == t4575; if (t4576) goto bb2288; else goto bb2289; bb2285:
 #line 2299
-    t4571 = h0_t; t4572 = INT64_C(1); if (__builtin_add_overflow(t4571, t4572, &t4573)) hero_panic_overflow(); h0_t = t4573; goto bb2284; bb2286: goto bb2284; bb2287:
+    t4571 = h0_t; t4572 = INT64_C(1); if (__builtin_add_overflow(t4571, t4572, &t4573)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2299, 13); h0_t = t4573; goto bb2284; bb2286: goto bb2284; bb2287:
 #line 2304
     t4580 = h0_t; t4581 = INT64_C(763); t4582 = t4580 == t4581; if (t4582) goto bb2291; else goto bb2292; bb2288:
 #line 2302
-    t4577 = h0_t; t4578 = INT64_C(1); if (__builtin_add_overflow(t4577, t4578, &t4579)) hero_panic_overflow(); h0_t = t4579; goto bb2287; bb2289: goto bb2287; bb2290:
+    t4577 = h0_t; t4578 = INT64_C(1); if (__builtin_add_overflow(t4577, t4578, &t4579)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2302, 13); h0_t = t4579; goto bb2287; bb2289: goto bb2287; bb2290:
 #line 2307
     t4586 = h0_t; t4587 = INT64_C(764); t4588 = t4586 == t4587; if (t4588) goto bb2294; else goto bb2295; bb2291:
 #line 2305
-    t4583 = h0_t; t4584 = INT64_C(1); if (__builtin_add_overflow(t4583, t4584, &t4585)) hero_panic_overflow(); h0_t = t4585; goto bb2290; bb2292: goto bb2290; bb2293:
+    t4583 = h0_t; t4584 = INT64_C(1); if (__builtin_add_overflow(t4583, t4584, &t4585)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2305, 13); h0_t = t4585; goto bb2290; bb2292: goto bb2290; bb2293:
 #line 2310
     t4592 = h0_t; t4593 = INT64_C(765); t4594 = t4592 == t4593; if (t4594) goto bb2297; else goto bb2298; bb2294:
 #line 2308
-    t4589 = h0_t; t4590 = INT64_C(1); if (__builtin_add_overflow(t4589, t4590, &t4591)) hero_panic_overflow(); h0_t = t4591; goto bb2293; bb2295: goto bb2293; bb2296:
+    t4589 = h0_t; t4590 = INT64_C(1); if (__builtin_add_overflow(t4589, t4590, &t4591)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2308, 13); h0_t = t4591; goto bb2293; bb2295: goto bb2293; bb2296:
 #line 2313
     t4598 = h0_t; t4599 = INT64_C(766); t4600 = t4598 == t4599; if (t4600) goto bb2300; else goto bb2301; bb2297:
 #line 2311
-    t4595 = h0_t; t4596 = INT64_C(1); if (__builtin_add_overflow(t4595, t4596, &t4597)) hero_panic_overflow(); h0_t = t4597; goto bb2296; bb2298: goto bb2296; bb2299:
+    t4595 = h0_t; t4596 = INT64_C(1); if (__builtin_add_overflow(t4595, t4596, &t4597)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2311, 13); h0_t = t4597; goto bb2296; bb2298: goto bb2296; bb2299:
 #line 2316
     t4604 = h0_t; t4605 = INT64_C(767); t4606 = t4604 == t4605; if (t4606) goto bb2303; else goto bb2304; bb2300:
 #line 2314
-    t4601 = h0_t; t4602 = INT64_C(1); if (__builtin_add_overflow(t4601, t4602, &t4603)) hero_panic_overflow(); h0_t = t4603; goto bb2299; bb2301: goto bb2299; bb2302:
+    t4601 = h0_t; t4602 = INT64_C(1); if (__builtin_add_overflow(t4601, t4602, &t4603)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2314, 13); h0_t = t4603; goto bb2299; bb2301: goto bb2299; bb2302:
 #line 2319
     t4610 = h0_t; t4611 = INT64_C(768); t4612 = t4610 == t4611; if (t4612) goto bb2306; else goto bb2307; bb2303:
 #line 2317
-    t4607 = h0_t; t4608 = INT64_C(1); if (__builtin_add_overflow(t4607, t4608, &t4609)) hero_panic_overflow(); h0_t = t4609; goto bb2302; bb2304: goto bb2302; bb2305:
+    t4607 = h0_t; t4608 = INT64_C(1); if (__builtin_add_overflow(t4607, t4608, &t4609)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2317, 13); h0_t = t4609; goto bb2302; bb2304: goto bb2302; bb2305:
 #line 2322
     t4616 = h0_t; t4617 = INT64_C(769); t4618 = t4616 == t4617; if (t4618) goto bb2309; else goto bb2310; bb2306:
 #line 2320
-    t4613 = h0_t; t4614 = INT64_C(1); if (__builtin_add_overflow(t4613, t4614, &t4615)) hero_panic_overflow(); h0_t = t4615; goto bb2305; bb2307: goto bb2305; bb2308:
+    t4613 = h0_t; t4614 = INT64_C(1); if (__builtin_add_overflow(t4613, t4614, &t4615)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2320, 13); h0_t = t4615; goto bb2305; bb2307: goto bb2305; bb2308:
 #line 2325
     t4622 = h0_t; t4623 = INT64_C(770); t4624 = t4622 == t4623; if (t4624) goto bb2312; else goto bb2313; bb2309:
 #line 2323
-    t4619 = h0_t; t4620 = INT64_C(1); if (__builtin_add_overflow(t4619, t4620, &t4621)) hero_panic_overflow(); h0_t = t4621; goto bb2308; bb2310: goto bb2308; bb2311:
+    t4619 = h0_t; t4620 = INT64_C(1); if (__builtin_add_overflow(t4619, t4620, &t4621)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2323, 13); h0_t = t4621; goto bb2308; bb2310: goto bb2308; bb2311:
 #line 2328
     t4628 = h0_t; t4629 = INT64_C(771); t4630 = t4628 == t4629; if (t4630) goto bb2315; else goto bb2316; bb2312:
 #line 2326
-    t4625 = h0_t; t4626 = INT64_C(1); if (__builtin_add_overflow(t4625, t4626, &t4627)) hero_panic_overflow(); h0_t = t4627; goto bb2311; bb2313: goto bb2311; bb2314:
+    t4625 = h0_t; t4626 = INT64_C(1); if (__builtin_add_overflow(t4625, t4626, &t4627)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2326, 13); h0_t = t4627; goto bb2311; bb2313: goto bb2311; bb2314:
 #line 2331
     t4634 = h0_t; t4635 = INT64_C(772); t4636 = t4634 == t4635; if (t4636) goto bb2318; else goto bb2319; bb2315:
 #line 2329
-    t4631 = h0_t; t4632 = INT64_C(1); if (__builtin_add_overflow(t4631, t4632, &t4633)) hero_panic_overflow(); h0_t = t4633; goto bb2314; bb2316: goto bb2314; bb2317:
+    t4631 = h0_t; t4632 = INT64_C(1); if (__builtin_add_overflow(t4631, t4632, &t4633)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2329, 13); h0_t = t4633; goto bb2314; bb2316: goto bb2314; bb2317:
 #line 2334
     t4640 = h0_t; t4641 = INT64_C(773); t4642 = t4640 == t4641; if (t4642) goto bb2321; else goto bb2322; bb2318:
 #line 2332
-    t4637 = h0_t; t4638 = INT64_C(1); if (__builtin_add_overflow(t4637, t4638, &t4639)) hero_panic_overflow(); h0_t = t4639; goto bb2317; bb2319: goto bb2317; bb2320:
+    t4637 = h0_t; t4638 = INT64_C(1); if (__builtin_add_overflow(t4637, t4638, &t4639)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2332, 13); h0_t = t4639; goto bb2317; bb2319: goto bb2317; bb2320:
 #line 2337
     t4646 = h0_t; t4647 = INT64_C(774); t4648 = t4646 == t4647; if (t4648) goto bb2324; else goto bb2325; bb2321:
 #line 2335
-    t4643 = h0_t; t4644 = INT64_C(1); if (__builtin_add_overflow(t4643, t4644, &t4645)) hero_panic_overflow(); h0_t = t4645; goto bb2320; bb2322: goto bb2320; bb2323:
+    t4643 = h0_t; t4644 = INT64_C(1); if (__builtin_add_overflow(t4643, t4644, &t4645)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2335, 13); h0_t = t4645; goto bb2320; bb2322: goto bb2320; bb2323:
 #line 2340
     t4652 = h0_t; t4653 = INT64_C(775); t4654 = t4652 == t4653; if (t4654) goto bb2327; else goto bb2328; bb2324:
 #line 2338
-    t4649 = h0_t; t4650 = INT64_C(1); if (__builtin_add_overflow(t4649, t4650, &t4651)) hero_panic_overflow(); h0_t = t4651; goto bb2323; bb2325: goto bb2323; bb2326:
+    t4649 = h0_t; t4650 = INT64_C(1); if (__builtin_add_overflow(t4649, t4650, &t4651)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2338, 13); h0_t = t4651; goto bb2323; bb2325: goto bb2323; bb2326:
 #line 2343
     t4658 = h0_t; t4659 = INT64_C(776); t4660 = t4658 == t4659; if (t4660) goto bb2330; else goto bb2331; bb2327:
 #line 2341
-    t4655 = h0_t; t4656 = INT64_C(1); if (__builtin_add_overflow(t4655, t4656, &t4657)) hero_panic_overflow(); h0_t = t4657; goto bb2326; bb2328: goto bb2326; bb2329:
+    t4655 = h0_t; t4656 = INT64_C(1); if (__builtin_add_overflow(t4655, t4656, &t4657)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2341, 13); h0_t = t4657; goto bb2326; bb2328: goto bb2326; bb2329:
 #line 2346
     t4664 = h0_t; t4665 = INT64_C(777); t4666 = t4664 == t4665; if (t4666) goto bb2333; else goto bb2334; bb2330:
 #line 2344
-    t4661 = h0_t; t4662 = INT64_C(1); if (__builtin_add_overflow(t4661, t4662, &t4663)) hero_panic_overflow(); h0_t = t4663; goto bb2329; bb2331: goto bb2329; bb2332:
+    t4661 = h0_t; t4662 = INT64_C(1); if (__builtin_add_overflow(t4661, t4662, &t4663)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2344, 13); h0_t = t4663; goto bb2329; bb2331: goto bb2329; bb2332:
 #line 2349
     t4670 = h0_t; t4671 = INT64_C(778); t4672 = t4670 == t4671; if (t4672) goto bb2336; else goto bb2337; bb2333:
 #line 2347
-    t4667 = h0_t; t4668 = INT64_C(1); if (__builtin_add_overflow(t4667, t4668, &t4669)) hero_panic_overflow(); h0_t = t4669; goto bb2332; bb2334: goto bb2332; bb2335:
+    t4667 = h0_t; t4668 = INT64_C(1); if (__builtin_add_overflow(t4667, t4668, &t4669)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2347, 13); h0_t = t4669; goto bb2332; bb2334: goto bb2332; bb2335:
 #line 2352
     t4676 = h0_t; t4677 = INT64_C(779); t4678 = t4676 == t4677; if (t4678) goto bb2339; else goto bb2340; bb2336:
 #line 2350
-    t4673 = h0_t; t4674 = INT64_C(1); if (__builtin_add_overflow(t4673, t4674, &t4675)) hero_panic_overflow(); h0_t = t4675; goto bb2335; bb2337: goto bb2335; bb2338:
+    t4673 = h0_t; t4674 = INT64_C(1); if (__builtin_add_overflow(t4673, t4674, &t4675)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2350, 13); h0_t = t4675; goto bb2335; bb2337: goto bb2335; bb2338:
 #line 2355
     t4682 = h0_t; t4683 = INT64_C(780); t4684 = t4682 == t4683; if (t4684) goto bb2342; else goto bb2343; bb2339:
 #line 2353
-    t4679 = h0_t; t4680 = INT64_C(1); if (__builtin_add_overflow(t4679, t4680, &t4681)) hero_panic_overflow(); h0_t = t4681; goto bb2338; bb2340: goto bb2338; bb2341:
+    t4679 = h0_t; t4680 = INT64_C(1); if (__builtin_add_overflow(t4679, t4680, &t4681)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2353, 13); h0_t = t4681; goto bb2338; bb2340: goto bb2338; bb2341:
 #line 2358
     t4688 = h0_t; t4689 = INT64_C(781); t4690 = t4688 == t4689; if (t4690) goto bb2345; else goto bb2346; bb2342:
 #line 2356
-    t4685 = h0_t; t4686 = INT64_C(1); if (__builtin_add_overflow(t4685, t4686, &t4687)) hero_panic_overflow(); h0_t = t4687; goto bb2341; bb2343: goto bb2341; bb2344:
+    t4685 = h0_t; t4686 = INT64_C(1); if (__builtin_add_overflow(t4685, t4686, &t4687)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2356, 13); h0_t = t4687; goto bb2341; bb2343: goto bb2341; bb2344:
 #line 2361
     t4694 = h0_t; t4695 = INT64_C(782); t4696 = t4694 == t4695; if (t4696) goto bb2348; else goto bb2349; bb2345:
 #line 2359
-    t4691 = h0_t; t4692 = INT64_C(1); if (__builtin_add_overflow(t4691, t4692, &t4693)) hero_panic_overflow(); h0_t = t4693; goto bb2344; bb2346: goto bb2344; bb2347:
+    t4691 = h0_t; t4692 = INT64_C(1); if (__builtin_add_overflow(t4691, t4692, &t4693)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2359, 13); h0_t = t4693; goto bb2344; bb2346: goto bb2344; bb2347:
 #line 2364
     t4700 = h0_t; t4701 = INT64_C(783); t4702 = t4700 == t4701; if (t4702) goto bb2351; else goto bb2352; bb2348:
 #line 2362
-    t4697 = h0_t; t4698 = INT64_C(1); if (__builtin_add_overflow(t4697, t4698, &t4699)) hero_panic_overflow(); h0_t = t4699; goto bb2347; bb2349: goto bb2347; bb2350:
+    t4697 = h0_t; t4698 = INT64_C(1); if (__builtin_add_overflow(t4697, t4698, &t4699)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2362, 13); h0_t = t4699; goto bb2347; bb2349: goto bb2347; bb2350:
 #line 2367
     t4706 = h0_t; t4707 = INT64_C(784); t4708 = t4706 == t4707; if (t4708) goto bb2354; else goto bb2355; bb2351:
 #line 2365
-    t4703 = h0_t; t4704 = INT64_C(1); if (__builtin_add_overflow(t4703, t4704, &t4705)) hero_panic_overflow(); h0_t = t4705; goto bb2350; bb2352: goto bb2350; bb2353:
+    t4703 = h0_t; t4704 = INT64_C(1); if (__builtin_add_overflow(t4703, t4704, &t4705)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2365, 13); h0_t = t4705; goto bb2350; bb2352: goto bb2350; bb2353:
 #line 2370
     t4712 = h0_t; t4713 = INT64_C(785); t4714 = t4712 == t4713; if (t4714) goto bb2357; else goto bb2358; bb2354:
 #line 2368
-    t4709 = h0_t; t4710 = INT64_C(1); if (__builtin_add_overflow(t4709, t4710, &t4711)) hero_panic_overflow(); h0_t = t4711; goto bb2353; bb2355: goto bb2353; bb2356:
+    t4709 = h0_t; t4710 = INT64_C(1); if (__builtin_add_overflow(t4709, t4710, &t4711)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2368, 13); h0_t = t4711; goto bb2353; bb2355: goto bb2353; bb2356:
 #line 2373
     t4718 = h0_t; t4719 = INT64_C(786); t4720 = t4718 == t4719; if (t4720) goto bb2360; else goto bb2361; bb2357:
 #line 2371
-    t4715 = h0_t; t4716 = INT64_C(1); if (__builtin_add_overflow(t4715, t4716, &t4717)) hero_panic_overflow(); h0_t = t4717; goto bb2356; bb2358: goto bb2356; bb2359:
+    t4715 = h0_t; t4716 = INT64_C(1); if (__builtin_add_overflow(t4715, t4716, &t4717)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2371, 13); h0_t = t4717; goto bb2356; bb2358: goto bb2356; bb2359:
 #line 2376
     t4724 = h0_t; t4725 = INT64_C(787); t4726 = t4724 == t4725; if (t4726) goto bb2363; else goto bb2364; bb2360:
 #line 2374
-    t4721 = h0_t; t4722 = INT64_C(1); if (__builtin_add_overflow(t4721, t4722, &t4723)) hero_panic_overflow(); h0_t = t4723; goto bb2359; bb2361: goto bb2359; bb2362:
+    t4721 = h0_t; t4722 = INT64_C(1); if (__builtin_add_overflow(t4721, t4722, &t4723)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2374, 13); h0_t = t4723; goto bb2359; bb2361: goto bb2359; bb2362:
 #line 2379
     t4730 = h0_t; t4731 = INT64_C(788); t4732 = t4730 == t4731; if (t4732) goto bb2366; else goto bb2367; bb2363:
 #line 2377
-    t4727 = h0_t; t4728 = INT64_C(1); if (__builtin_add_overflow(t4727, t4728, &t4729)) hero_panic_overflow(); h0_t = t4729; goto bb2362; bb2364: goto bb2362; bb2365:
+    t4727 = h0_t; t4728 = INT64_C(1); if (__builtin_add_overflow(t4727, t4728, &t4729)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2377, 13); h0_t = t4729; goto bb2362; bb2364: goto bb2362; bb2365:
 #line 2382
     t4736 = h0_t; t4737 = INT64_C(789); t4738 = t4736 == t4737; if (t4738) goto bb2369; else goto bb2370; bb2366:
 #line 2380
-    t4733 = h0_t; t4734 = INT64_C(1); if (__builtin_add_overflow(t4733, t4734, &t4735)) hero_panic_overflow(); h0_t = t4735; goto bb2365; bb2367: goto bb2365; bb2368:
+    t4733 = h0_t; t4734 = INT64_C(1); if (__builtin_add_overflow(t4733, t4734, &t4735)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2380, 13); h0_t = t4735; goto bb2365; bb2367: goto bb2365; bb2368:
 #line 2385
     t4742 = h0_t; t4743 = INT64_C(790); t4744 = t4742 == t4743; if (t4744) goto bb2372; else goto bb2373; bb2369:
 #line 2383
-    t4739 = h0_t; t4740 = INT64_C(1); if (__builtin_add_overflow(t4739, t4740, &t4741)) hero_panic_overflow(); h0_t = t4741; goto bb2368; bb2370: goto bb2368; bb2371:
+    t4739 = h0_t; t4740 = INT64_C(1); if (__builtin_add_overflow(t4739, t4740, &t4741)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2383, 13); h0_t = t4741; goto bb2368; bb2370: goto bb2368; bb2371:
 #line 2388
     t4748 = h0_t; t4749 = INT64_C(791); t4750 = t4748 == t4749; if (t4750) goto bb2375; else goto bb2376; bb2372:
 #line 2386
-    t4745 = h0_t; t4746 = INT64_C(1); if (__builtin_add_overflow(t4745, t4746, &t4747)) hero_panic_overflow(); h0_t = t4747; goto bb2371; bb2373: goto bb2371; bb2374:
+    t4745 = h0_t; t4746 = INT64_C(1); if (__builtin_add_overflow(t4745, t4746, &t4747)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2386, 13); h0_t = t4747; goto bb2371; bb2373: goto bb2371; bb2374:
 #line 2391
     t4754 = h0_t; t4755 = INT64_C(792); t4756 = t4754 == t4755; if (t4756) goto bb2378; else goto bb2379; bb2375:
 #line 2389
-    t4751 = h0_t; t4752 = INT64_C(1); if (__builtin_add_overflow(t4751, t4752, &t4753)) hero_panic_overflow(); h0_t = t4753; goto bb2374; bb2376: goto bb2374; bb2377:
+    t4751 = h0_t; t4752 = INT64_C(1); if (__builtin_add_overflow(t4751, t4752, &t4753)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2389, 13); h0_t = t4753; goto bb2374; bb2376: goto bb2374; bb2377:
 #line 2394
     t4760 = h0_t; t4761 = INT64_C(793); t4762 = t4760 == t4761; if (t4762) goto bb2381; else goto bb2382; bb2378:
 #line 2392
-    t4757 = h0_t; t4758 = INT64_C(1); if (__builtin_add_overflow(t4757, t4758, &t4759)) hero_panic_overflow(); h0_t = t4759; goto bb2377; bb2379: goto bb2377; bb2380:
+    t4757 = h0_t; t4758 = INT64_C(1); if (__builtin_add_overflow(t4757, t4758, &t4759)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2392, 13); h0_t = t4759; goto bb2377; bb2379: goto bb2377; bb2380:
 #line 2397
     t4766 = h0_t; t4767 = INT64_C(794); t4768 = t4766 == t4767; if (t4768) goto bb2384; else goto bb2385; bb2381:
 #line 2395
-    t4763 = h0_t; t4764 = INT64_C(1); if (__builtin_add_overflow(t4763, t4764, &t4765)) hero_panic_overflow(); h0_t = t4765; goto bb2380; bb2382: goto bb2380; bb2383:
+    t4763 = h0_t; t4764 = INT64_C(1); if (__builtin_add_overflow(t4763, t4764, &t4765)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2395, 13); h0_t = t4765; goto bb2380; bb2382: goto bb2380; bb2383:
 #line 2400
     t4772 = h0_t; t4773 = INT64_C(795); t4774 = t4772 == t4773; if (t4774) goto bb2387; else goto bb2388; bb2384:
 #line 2398
-    t4769 = h0_t; t4770 = INT64_C(1); if (__builtin_add_overflow(t4769, t4770, &t4771)) hero_panic_overflow(); h0_t = t4771; goto bb2383; bb2385: goto bb2383; bb2386:
+    t4769 = h0_t; t4770 = INT64_C(1); if (__builtin_add_overflow(t4769, t4770, &t4771)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2398, 13); h0_t = t4771; goto bb2383; bb2385: goto bb2383; bb2386:
 #line 2403
     t4778 = h0_t; t4779 = INT64_C(796); t4780 = t4778 == t4779; if (t4780) goto bb2390; else goto bb2391; bb2387:
 #line 2401
-    t4775 = h0_t; t4776 = INT64_C(1); if (__builtin_add_overflow(t4775, t4776, &t4777)) hero_panic_overflow(); h0_t = t4777; goto bb2386; bb2388: goto bb2386; bb2389:
+    t4775 = h0_t; t4776 = INT64_C(1); if (__builtin_add_overflow(t4775, t4776, &t4777)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2401, 13); h0_t = t4777; goto bb2386; bb2388: goto bb2386; bb2389:
 #line 2406
     t4784 = h0_t; t4785 = INT64_C(797); t4786 = t4784 == t4785; if (t4786) goto bb2393; else goto bb2394; bb2390:
 #line 2404
-    t4781 = h0_t; t4782 = INT64_C(1); if (__builtin_add_overflow(t4781, t4782, &t4783)) hero_panic_overflow(); h0_t = t4783; goto bb2389; bb2391: goto bb2389; bb2392:
+    t4781 = h0_t; t4782 = INT64_C(1); if (__builtin_add_overflow(t4781, t4782, &t4783)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2404, 13); h0_t = t4783; goto bb2389; bb2391: goto bb2389; bb2392:
 #line 2409
     t4790 = h0_t; t4791 = INT64_C(798); t4792 = t4790 == t4791; if (t4792) goto bb2396; else goto bb2397; bb2393:
 #line 2407
-    t4787 = h0_t; t4788 = INT64_C(1); if (__builtin_add_overflow(t4787, t4788, &t4789)) hero_panic_overflow(); h0_t = t4789; goto bb2392; bb2394: goto bb2392; bb2395:
+    t4787 = h0_t; t4788 = INT64_C(1); if (__builtin_add_overflow(t4787, t4788, &t4789)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2407, 13); h0_t = t4789; goto bb2392; bb2394: goto bb2392; bb2395:
 #line 2412
     t4796 = h0_t; t4797 = INT64_C(799); t4798 = t4796 == t4797; if (t4798) goto bb2399; else goto bb2400; bb2396:
 #line 2410
-    t4793 = h0_t; t4794 = INT64_C(1); if (__builtin_add_overflow(t4793, t4794, &t4795)) hero_panic_overflow(); h0_t = t4795; goto bb2395; bb2397: goto bb2395; bb2398:
+    t4793 = h0_t; t4794 = INT64_C(1); if (__builtin_add_overflow(t4793, t4794, &t4795)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2410, 13); h0_t = t4795; goto bb2395; bb2397: goto bb2395; bb2398:
 #line 2414
     t4802 = h0_t; hero_print_int(t4802); hero_print_end(); return; bb2399:
 #line 2413
-    t4799 = h0_t; t4800 = INT64_C(1); if (__builtin_add_overflow(t4799, t4800, &t4801)) hero_panic_overflow(); h0_t = t4801; goto bb2398; bb2400: goto bb2398;
-#line 3303 "fixedbugs218afunctionof800ifsbuildsandruns.c"
+    t4799 = h0_t; t4800 = INT64_C(1); if (__builtin_add_overflow(t4799, t4800, &t4801)) hero_panic_overflow_at("fixedbugs-218-a-function-of-800-ifs-builds-and-runs.hero", "fixedbugs-218-a-function-of-800-ifs-builds-and-runs.main", 2413, 13); h0_t = t4801; goto bb2398; bb2400: goto bb2398;
+#line 3315 "fixedbugs218afunctionof800ifsbuildsandruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -3365,10 +3377,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("038b5e520eedb80e", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ae24efe01c1bb42", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs218afunctionof800ifsbuildsandruns\tfixedbugs-218-a-function-of-800-ifs-builds-and-runs\n");
     h_fixedbugs218afunctionof800ifsbuildsandruns_main();
     hero_runtime_check_leaks();
     return 0;

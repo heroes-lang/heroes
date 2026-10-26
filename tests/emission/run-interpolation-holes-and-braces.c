@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -123,11 +123,11 @@ void h_interpolationholesandbraces_main(void) { int64_t h0_n; HeroStr h1_word = 
     t1 = INT64_C(3); h0_n = t1;
     t2 = HERO_STR_LIT(hero_str_724db1e0); t61 = h1_word; hero_str_incref(t2); h1_word = t2; hero_str_decref(t61);
     t3 = h0_n; t4 = h1_word; t5 = HERO_STR_LIT(hero_str_75f7c07a); t6 = hero_int_to_str(t3); t62 = h6_own6; h6_own6 = t6; hero_str_decref(t62); t7 = HERO_STR_LIT(hero_str_1dce); t8 = hero_str_concat(t5, t6); t63 = h7_own7; h7_own7 = t8; hero_str_decref(t63); t9 = hero_str_concat(t8, t7); t64 = h8_own8; h8_own8 = t9; hero_str_decref(t64); t10 = hero_str_concat(t9, t4); t65 = h9_own9; h9_own9 = t10; hero_str_decref(t65); hero_print_str(t10); hero_print_end();
-    t11 = h0_n; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); t14 = h1_word; t15 = hero_str_len(t14); t16 = hero_int_to_str(t13); t66 = h10_own10; h10_own10 = t16; hero_str_decref(t66); t17 = HERO_STR_LIT(hero_str_56ec3c47); t18 = hero_int_to_str(t15); t67 = h11_own11; h11_own11 = t18; hero_str_decref(t67); t19 = hero_str_concat(t16, t17); t68 = h12_own12; h12_own12 = t19; hero_str_decref(t68); t20 = hero_str_concat(t19, t18); t69 = h13_own13; h13_own13 = t20; hero_str_decref(t69); hero_print_str(t20); hero_print_end();
+    t11 = h0_n; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("interpolation-holes-and-braces.hero", "interpolation-holes-and-braces.main", 18, 14); t14 = h1_word; t15 = hero_str_len(t14); t16 = hero_int_to_str(t13); t66 = h10_own10; h10_own10 = t16; hero_str_decref(t66); t17 = HERO_STR_LIT(hero_str_56ec3c47); t18 = hero_int_to_str(t15); t67 = h11_own11; h11_own11 = t18; hero_str_decref(t67); t19 = hero_str_concat(t16, t17); t68 = h12_own12; h12_own12 = t19; hero_str_decref(t68); t20 = hero_str_concat(t19, t18); t69 = h13_own13; h13_own13 = t20; hero_str_decref(t69); hero_print_str(t20); hero_print_end();
     t21 = HERO_STR_LIT(hero_str_3c921d75); hero_print_str(t21); hero_print_end();
     t22 = HERO_STR_LIT(hero_str_0); hero_print_str(t22); hero_print_end();
-    t23 = HERO_STR_LIT(hero_str_6b); t24 = INT64_C(7); t25 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t25, &t23, &t24); t70 = h14_own14; h14_own14 = t25; hero_map_decref(t70); t71 = h2_m; hero_map_incref(t25); h2_m = t25; hero_map_decref(t71);
-    t26 = h2_m; t27 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG const void *found = hero_map_find(t26, &t27); if (found == NULL) { t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t28 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t28.as.ok, found); } } t72 = h15_own15; h15_own15 = t28; h_0opt_e201354_release(&t72); t73 = h3_f0; h_0opt_e201354_retain(&t28); h3_f0 = t28; h_0opt_e201354_release(&t73); t29 = h3_f0; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb1; else goto bb2; bb1: t35 = h3_f0; t36 = t35.as.ok; t37 = h0_n; t38 = HERO_STR_LIT(hero_str_1bb71b); t39 = hero_int_to_str(t37); t74 = h16_own16; h16_own16 = t39; hero_str_decref(t74); t40 = hero_str_concat(t38, t39); t75 = h17_own17; h17_own17 = t40; hero_str_decref(t75); t41 = HERO_STR_LIT(hero_str_eb4aad8); t42 = hero_int_to_str(t36); t76 = h18_own18; h18_own18 = t42; hero_str_decref(t76); t43 = HERO_STR_LIT(hero_str_6f33a5d2); t44 = hero_str_concat(t41, t42); t77 = h19_own19; h19_own19 = t44; hero_str_decref(t77); t45 = hero_str_concat(t44, t43); t78 = h20_own20; h20_own20 = t45; hero_str_decref(t78); t46 = hero_str_concat(t45, t40); t79 = h21_own21; h21_own21 = t46; hero_str_decref(t79); hero_print_str(t46); hero_print_end();
+    t23 = HERO_STR_LIT(hero_str_6b); t24 = INT64_C(7); t25 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"interpolation-holes-and-braces.hero", "interpolation-holes-and-braces.main", 21, 21}; hero_map_put_at(t25, &t23, &t24, &hero_here); } t70 = h14_own14; h14_own14 = t25; hero_map_decref(t70); t71 = h2_m; hero_map_incref(t25); h2_m = t25; hero_map_decref(t71);
+    t26 = h2_m; t27 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"interpolation-holes-and-braces.hero", "interpolation-holes-and-braces.main", 22, 18}; HERO_NODEBUG const void *found = hero_map_find_at(t26, &t27, &hero_here); if (found == NULL) { t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t28 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t28.as.ok, found); } } t72 = h15_own15; h15_own15 = t28; h_0opt_e201354_release(&t72); t73 = h3_f0; h_0opt_e201354_retain(&t28); h3_f0 = t28; h_0opt_e201354_release(&t73); t29 = h3_f0; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb1; else goto bb2; bb1: t35 = h3_f0; t36 = t35.as.ok; t37 = h0_n; t38 = HERO_STR_LIT(hero_str_1bb71b); t39 = hero_int_to_str(t37); t74 = h16_own16; h16_own16 = t39; hero_str_decref(t74); t40 = hero_str_concat(t38, t39); t75 = h17_own17; h17_own17 = t40; hero_str_decref(t75); t41 = HERO_STR_LIT(hero_str_eb4aad8); t42 = hero_int_to_str(t36); t76 = h18_own18; h18_own18 = t42; hero_str_decref(t76); t43 = HERO_STR_LIT(hero_str_6f33a5d2); t44 = hero_str_concat(t41, t42); t77 = h19_own19; h19_own19 = t44; hero_str_decref(t77); t45 = hero_str_concat(t44, t43); t78 = h20_own20; h20_own20 = t45; hero_str_decref(t78); t46 = hero_str_concat(t45, t40); t79 = h21_own21; h21_own21 = t46; hero_str_decref(t79); hero_print_str(t46); hero_print_end();
     t47 = 0x1.4p+1; h4_x = t47;
     t48 = true; h5_flag = t48;
     t49 = h4_x; t50 = h5_flag; t51 = INT64_C(97); t52 = hero_f64_to_str(t49); t80 = h22_own22; h22_own22 = t52; hero_str_decref(t80); t53 = HERO_STR_LIT(hero_str_20); t54 = hero_bool_to_str(t50); t81 = h23_own23; h23_own23 = t54; hero_str_decref(t81); t55 = HERO_STR_LIT(hero_str_20); t56 = hero_int_to_str(t51); t82 = h24_own24; h24_own24 = t56; hero_str_decref(t82); t57 = hero_str_concat(t52, t53); t83 = h25_own25; h25_own25 = t57; hero_str_decref(t83); t58 = hero_str_concat(t57, t54); t84 = h26_own26; h26_own26 = t58; hero_str_decref(t84); t59 = hero_str_concat(t58, t55); t85 = h27_own27; h27_own27 = t59; hero_str_decref(t85); t60 = hero_str_concat(t59, t56); t86 = h28_own28; h28_own28 = t60; hero_str_decref(t86); hero_print_str(t60); hero_print_end();
@@ -163,7 +163,7 @@ bb2:
 #line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
     t33 = h3_f0; t34 = t33.as.err;
 #line 166 "interpolationholesandbraces.c"
-    hero_panic_must(t34);
+    hero_panic_must_at(t34, "interpolation-holes-and-braces.hero", "interpolation-holes-and-braces.main", 22, 18);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -263,9 +263,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d1c70c6257596c8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09055fcd084673ed", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("interpolationholesandbraces\tinterpolation-holes-and-braces\n");
     h_interpolationholesandbraces_main();
     hero_runtime_check_leaks();
     return 0;

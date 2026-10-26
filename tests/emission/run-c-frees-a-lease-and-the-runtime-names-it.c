@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -111,6 +111,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -139,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "cfreesaleaseandtheruntimenamesit.c"
+#line 151 "cfreesaleaseandtheruntimenamesit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -150,17 +158,21 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_cfreesaleaseandtheruntimenamesit_main(void);
 
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 void h_cfreesaleaseandtheruntimenamesit_main(void) { HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1, t2, t6; HERO_NODEBUG const char *t3, *t5; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b); t6 = h0_x; hero_str_incref(t1); h0_x = t1; hero_str_decref(t6);
-    t2 = h0_x; t3 = hero_str_held(t2); h1_c = t3;
+    t2 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-and-the-runtime-names-it.hero", "c-frees-a-lease-and-the-runtime-names-it.main", 28, 16}; t3 = hero_str_held_at(t2, &hero_here); } h1_c = t3;
     t4 = INT64_C(1); hero_print_int(t4); hero_print_end();
-    t5 = h1_c; (void)eat(hero_cstr_nonnull(t5));
-    hero_held_release(&h1_c);
-#line 164 "cfreesaleaseandtheruntimenamesit.c"
+    t5 = h1_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-and-the-runtime-names-it.hero", "c-frees-a-lease-and-the-runtime-names-it.main", 30, 5}; (void)eat(hero_cstr_nonnull_at(t5, &hero_here)); }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-and-the-runtime-names-it.hero", "c-frees-a-lease-and-the-runtime-names-it.main", 31, 5}; hero_held_release_at(&h1_c, &hero_here); }
+#line 176 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }
@@ -228,10 +240,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("514ee6ea0a967e7e", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f08b42406fbc017", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("cfreesaleaseandtheruntimenamesit\tc-frees-a-lease-and-the-runtime-names-it\n");
     h_cfreesaleaseandtheruntimenamesit_main();
     hero_runtime_check_leaks();
     return 0;

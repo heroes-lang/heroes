@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -127,6 +127,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -155,13 +163,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "ffirestzeroaunionwithonemembernamed.c"
+#line 167 "ffirestzeroaunionwithonemembernamed.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_SA_eq(const SA *a, const SA *b);
-HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_SA_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_UD_eq(const UD *a, const UD *b);
-HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_UD_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_0SA_eq(const SA *a, const SA *b);
+HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_0SA_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_0UD_eq(const UD *a, const UD *b);
+HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_0UD_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -170,6 +178,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 SA h_ffirestzeroaunionwithonemembernamed_wide(void);
 SA h_ffirestzeroaunionwithonemembernamed_narrow(void);
@@ -199,19 +211,19 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 SA h_ffirestzeroaunionwithonemembernamed_wide(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG SA t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2); t2 = 0x1.4p+1; t3 = (SA){0}; __builtin_memset(&t3, 0, sizeof t3); t3.kind = t1; t3.d = t2; return t3;
-#line 203 "ffirestzeroaunionwithonemembernamed.c"
+#line 215 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 SA h_ffirestzeroaunionwithonemembernamed_narrow(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG SA t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = INT64_C(7); t3 = (SA){0}; __builtin_memset(&t3, 0, sizeof t3); t3.kind = t1; t3.c = t2; return t3;
-#line 209 "ffirestzeroaunionwithonemembernamed.c"
+#line 221 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 UD h_ffirestzeroaunionwithonemembernamed_a_union_type(void) { HERO_NODEBUG double t1; HERO_NODEBUG UD t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.8p+0; t2 = (UD){0}; __builtin_memset(&t2, 0, sizeof t2); t2.d = t1; return t2;
-#line 215 "ffirestzeroaunionwithonemembernamed.c"
+#line 227 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
@@ -222,18 +234,18 @@ void h_ffirestzeroaunionwithonemembernamed_main(void) {
 #define h1_n (*hero_lend_h1_n)
 #line 31
     SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w"); SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n"); HERO_NODEBUG SA t1, t7; HERO_NODEBUG int32_t t2, t8; HERO_NODEBUG HeroStr t3, t5, t9, t11; HERO_NODEBUG double t4, t14; HERO_NODEBUG int64_t t6, t12; HERO_NODEBUG int8_t t10; HERO_NODEBUG UD t13; HERO_ENTRY_STOP; goto bb0; bb0:
-    (void)dirty();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-with-one-member-named.hero", "ffi-rest-zero-a-union-with-one-member-named.main", 32, 5}; (void)dirty(); }
     t1 = h_ffirestzeroaunionwithonemembernamed_wide(); h0_w = t1; hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_w.kind; t3 = HERO_STR_LIT(hero_str_20); t4 = h0_w.d; t5 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_w, "sa_x", "s"); hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t6 = sa_x(&h0_w); hero_print_int(t2); hero_print_str(t3); hero_print_f64(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end();
-    (void)dirty();
+    t2 = h0_w.kind; t3 = HERO_STR_LIT(hero_str_20); t4 = h0_w.d; t5 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-with-one-member-named.hero", "ffi-rest-zero-a-union-with-one-member-named.main", 34, 34}; hero_lend_local_name(hero_lend_h0_w, "sa_x", "s"); hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t6 = sa_x(&h0_w); } hero_print_int(t2); hero_print_str(t3); hero_print_f64(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-with-one-member-named.hero", "ffi-rest-zero-a-union-with-one-member-named.main", 35, 5}; (void)dirty(); }
     t7 = h_ffirestzeroaunionwithonemembernamed_narrow(); h1_n = t7; hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t8 = h1_n.kind; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_n.c; t11 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h1_n, "sa_x", "s"); hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t12 = sa_x(&h1_n); hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_end();
+    t8 = h1_n.kind; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_n.c; t11 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-union-with-one-member-named.hero", "ffi-rest-zero-a-union-with-one-member-named.main", 37, 34}; hero_lend_local_name(hero_lend_h1_n, "sa_x", "s"); hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t12 = sa_x(&h1_n); } hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_end();
     t13 = h_ffirestzeroaunionwithonemembernamed_a_union_type(); t14 = t13.d; hero_print_f64(t14); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_w); return;
-#line 233 "ffirestzeroaunionwithonemembernamed.c"
+#line 245 "ffirestzeroaunionwithonemembernamed.c"
 }
 #undef h0_w
 #undef h1_n
-HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_SA_eq(const SA *a, const SA *b) {
+HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_0SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->c == b->c)) return false;
     if (!(a->d == b->d)) return false;
@@ -241,7 +253,7 @@ HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_SA_eq(const SA *a, cons
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_SA_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_0SA_hash(const void *elem) {
     const SA *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->kind)) * UINT64_C(0x100000001b3);
@@ -251,13 +263,13 @@ HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_SA_hash(const void 
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_UD_eq(const UD *a, const UD *b) {
+HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_0UD_eq(const UD *a, const UD *b) {
     if (!(a->c == b->c)) return false;
     if (!(a->d == b->d)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_UD_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffirestzeroaunionwithonemembernamed_0UD_hash(const void *elem) {
     const UD *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i8)->hash(&v->c)) * UINT64_C(0x100000001b3);
@@ -329,10 +341,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1aefff792fbbb6ea", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1087f4777e89631e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffirestzeroaunionwithonemembernamed\tffi-rest-zero-a-union-with-one-member-named\n");
     h_ffirestzeroaunionwithonemembernamed_main();
     hero_runtime_check_leaks();
     return 0;

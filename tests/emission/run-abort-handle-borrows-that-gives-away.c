@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -112,6 +112,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -142,11 +150,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "aborthandleborrowsthatgivesaway.c"
+#line 154 "aborthandleborrowsthatgivesaway.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b);
-HERO_TU_LOCAL uint64_t h_aborthandleborrowsthatgivesaway_Slot_hash(const void *elem);
+HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_0Slot_eq(Slot * const *a, Slot * const *b);
+HERO_TU_LOCAL uint64_t h_aborthandleborrowsthatgivesaway_0Slot_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -155,21 +163,25 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_aborthandleborrowsthatgivesaway_main(void);
 
 #line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
 void h_aborthandleborrowsthatgivesaway_main(void) { Slot * h0_a; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot *t2, *t3, *t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); t2 = slot_open(t1); hero_handle_lent(t2); h0_a = t2;
-    t3 = h0_a; hero_handle_alive(t3, "the argument `s` of `slot_value`"); t4 = slot_value(t3); hero_print_int(t4); hero_print_end();
-    t5 = h0_a; { hero_handle_alive(t5, "the argument `s` of `slot_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "slot_close", NULL); (void)slot_close(t5); if (hero_handle_ended(t5, hero_life_0_0) && h0_a == t5) h0_a = hero_handle_dead(); } return;
-#line 167 "aborthandleborrowsthatgivesaway.c"
+    t1 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-handle-borrows-that-gives-away.hero", "abort-handle-borrows-that-gives-away.main", 25, 9}; t2 = slot_open(t1); hero_handle_lent(t2); } h0_a = t2;
+    t3 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-handle-borrows-that-gives-away.hero", "abort-handle-borrows-that-gives-away.main", 26, 11}; hero_handle_alive_at(t3, "the argument `s` of `slot_value`", &hero_here); t4 = slot_value(t3); } hero_print_int(t4); hero_print_end();
+    t5 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-handle-borrows-that-gives-away.hero", "abort-handle-borrows-that-gives-away.main", 27, 5}; { hero_handle_alive_at(t5, "the argument `s` of `slot_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "slot_close", NULL, &hero_here); (void)slot_close(t5); if (hero_handle_ended(t5, hero_life_0_0) && h0_a == t5) h0_a = hero_handle_dead(); } } return;
+#line 179 "aborthandleborrowsthatgivesaway.c"
 }
-HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b) {
+HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_0Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_aborthandleborrowsthatgivesaway_Slot_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_aborthandleborrowsthatgivesaway_0Slot_hash(const void *elem) {
     Slot * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -240,10 +252,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("67f64f1b1d9afc57", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("38b7aba62c7a6a47", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("aborthandleborrowsthatgivesaway\tabort-handle-borrows-that-gives-away\n");
     h_aborthandleborrowsthatgivesaway_main();
     hero_runtime_check_leaks();
     return 0;

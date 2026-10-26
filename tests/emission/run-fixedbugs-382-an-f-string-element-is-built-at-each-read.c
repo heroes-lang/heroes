@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -73,6 +73,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -87,7 +95,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugs382anfstringelementisbuiltateachread.c"
+#line 99 "fixedbugs382anfstringelementisbuiltateachread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,6 +106,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs382anfstringelementisbuiltateachread_BASE(void);
 HeroArrayHeader * h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(void);
@@ -106,13 +118,13 @@ void h_fixedbugs382anfstringelementisbuiltateachread_main(void);
 #line 7 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
 int64_t h_fixedbugs382anfstringelementisbuiltateachread_BASE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(40); return t1;
-#line 110 "fixedbugs382anfstringelementisbuiltateachread.c"
+#line 122 "fixedbugs382anfstringelementisbuiltateachread.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
 HeroArrayHeader * h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t5, t6, t7, t11, t13, t14, t15, t16; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t12, *t17; HERO_NODEBUG int64_t t1, t8, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs382anfstringelementisbuiltateachread_BASE(); t2 = HERO_STR_LIT(hero_str_61); t3 = hero_int_to_str(t1); t13 = h0_own0; h0_own0 = t3; hero_str_decref(t13); t4 = HERO_STR_LIT(hero_str_62); t5 = hero_str_concat(t2, t3); t14 = h1_own1; h1_own1 = t5; hero_str_decref(t14); t6 = hero_str_concat(t5, t4); t15 = h2_own2; h2_own2 = t6; hero_str_decref(t15); t7 = HERO_STR_LIT(hero_str_3c921d75); t8 = h_fixedbugs382anfstringelementisbuiltateachread_BASE(); t9 = INT64_C(2); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); t11 = hero_int_to_str(t10); t16 = h3_own3; h3_own3 = t11; hero_str_decref(t16); t12 = hero_array_new(&hero_desc_str, 3); hero_array_push_owned(&t12, &t6); hero_array_push_owned(&t12, &t7); hero_array_push_owned(&t12, &t11); t17 = h4_own4; h4_own4 = t12; hero_array_decref(t17);
-#line 116 "fixedbugs382anfstringelementisbuiltateachread.c"
+    t1 = h_fixedbugs382anfstringelementisbuiltateachread_BASE(); t2 = HERO_STR_LIT(hero_str_61); t3 = hero_int_to_str(t1); t13 = h0_own0; h0_own0 = t3; hero_str_decref(t13); t4 = HERO_STR_LIT(hero_str_62); t5 = hero_str_concat(t2, t3); t14 = h1_own1; h1_own1 = t5; hero_str_decref(t14); t6 = hero_str_concat(t5, t4); t15 = h2_own2; h2_own2 = t6; hero_str_decref(t15); t7 = HERO_STR_LIT(hero_str_3c921d75); t8 = h_fixedbugs382anfstringelementisbuiltateachread_BASE(); t9 = INT64_C(2); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.SHOUTS", 11, 31); t11 = hero_int_to_str(t10); t16 = h3_own3; h3_own3 = t11; hero_str_decref(t16); t12 = hero_array_new(&hero_desc_str, 3); hero_array_push_owned(&t12, &t6); hero_array_push_owned(&t12, &t7); hero_array_push_owned(&t12, &t11); t17 = h4_own4; h4_own4 = t12; hero_array_decref(t17);
+#line 128 "fixedbugs382anfstringelementisbuiltateachread.c"
     hero_array_incref(t12);
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
@@ -128,14 +140,14 @@ void h_fixedbugs382anfstringelementisbuiltateachread_main(void) { int64_t h0_let
     t2 = INT64_C(0); h1_at = t2; goto bb1; bb1:
 #line 17
     t3 = h1_at; t4 = INT64_C(300); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h0_letters; t7 = h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(); t32 = h3_own3; h3_own3 = t7; hero_array_decref(t32); t8 = h1_at; t9 = INT64_C(3); if (t9 == 0) hero_panic("division by zero"); if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t10 = t8 % t9; t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t10]); t12 = hero_str_len(t11); if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow(); h0_letters = t13;
-    t14 = h1_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h1_at = t16; goto bb1; bb3:
+    t6 = h0_letters; t7 = h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(); t32 = h3_own3; h3_own3 = t7; hero_array_decref(t32); t8 = h1_at; t9 = INT64_C(3); if (t9 == 0) hero_panic_at("division by zero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 18, 36); if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 18, 36); t10 = t8 % t9; t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? hero_panic_index_at(t7, t10, "fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 18, 29) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t10]); t12 = hero_str_len(t11); if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow_at("fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 18, 19); h0_letters = t13;
+    t14 = h1_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 19, 14); h1_at = t16; goto bb1; bb3:
 #line 21
     t17 = h0_letters; t18 = HERO_STR_LIT(hero_str_20); t19 = h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(); t33 = h4_own4; h4_own4 = t19; hero_array_decref(t33); t20 = HERO_STR_LIT(hero_str_2c); t21 = hero_str_join(t19, t20); t34 = h5_own5; h5_own5 = t21; hero_str_decref(t34); hero_print_int(t17); hero_print_str(t18); hero_print_str(t21); hero_print_end();
     t22 = h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(); t35 = h6_own6; h6_own6 = t22; hero_array_decref(t35); t36 = h2_copy; hero_array_incref(t22); h2_copy = t22; hero_array_decref(t36);
-    t23 = INT64_C(0); t24 = HERO_STR_LIT(hero_str_473ed093); hero_str_incref(t24); hero_array_set(&(h2_copy), t23, &t24);
-    t25 = h2_copy; t26 = INT64_C(0); t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t25 + 1))[t26]); t28 = HERO_STR_LIT(hero_str_20); t29 = h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(); t37 = h7_own7; h7_own7 = t29; hero_array_decref(t37); t30 = INT64_C(0); t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? ((void)hero_array_at(t29, t30), hero_unreachable()) : (void)0), (void)(t29->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t29 + 1))[t30]); hero_print_str(t27); hero_print_str(t28); hero_print_str(t31); hero_print_end();
-#line 139 "fixedbugs382anfstringelementisbuiltateachread.c"
+    t23 = INT64_C(0); t24 = HERO_STR_LIT(hero_str_473ed093); hero_str_incref(t24); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h2_copy); if (*hero_slot == NULL || t23 < 0 || t23 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t23, "fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 23, 5); hero_array_set(hero_slot, t23, &t24); }
+    t25 = h2_copy; t26 = INT64_C(0); t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? hero_panic_index_at(t25, t26, "fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 24, 11) : (void)0), (void)(t25->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t25 + 1))[t26]); t28 = HERO_STR_LIT(hero_str_20); t29 = h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(); t37 = h7_own7; h7_own7 = t29; hero_array_decref(t37); t30 = INT64_C(0); t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? hero_panic_index_at(t29, t30, "fixedbugs-382-an-f-string-element-is-built-at-each-read.hero", "fixedbugs-382-an-f-string-element-is-built-at-each-read.main", 24, 25) : (void)0), (void)(t29->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t29 + 1))[t30]); hero_print_str(t27); hero_print_str(t28); hero_print_str(t31); hero_print_end();
+#line 151 "fixedbugs382anfstringelementisbuiltateachread.c"
     hero_array_release_at(&h2_copy);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -208,10 +220,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7397b92b1c118848", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bfa268f1725dda7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs382anfstringelementisbuiltateachread\tfixedbugs-382-an-f-string-element-is-built-at-each-read\n");
     h_fixedbugs382anfstringelementisbuiltateachread_main();
     hero_runtime_check_leaks();
     return 0;

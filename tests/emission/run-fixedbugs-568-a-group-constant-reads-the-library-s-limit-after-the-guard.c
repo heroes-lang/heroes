@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -108,6 +108,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -134,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 146 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -145,6 +153,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(void);
 double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(void);
@@ -153,7 +165,7 @@ void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(void) {
-#line 157 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 169 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
     _Static_assert(HERO_RET_I32(CASE_LIMIT), "heroes-ffi-return CASE_LIMIT i32");
     _Static_assert(__builtin_constant_p(CASE_LIMIT), "heroes-ffi-const CASE_LIMIT");
 #pragma clang diagnostic push
@@ -165,7 +177,7 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LIMIT;
-#line 169 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 181 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -183,12 +195,12 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(void) {
-#line 187 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 199 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
     _Static_assert(HERO_RET_F64(CASE_HUGE), "heroes-ffi-return CASE_HUGE f64");
     _Static_assert(__builtin_constant_p(CASE_HUGE), "heroes-ffi-const CASE_HUGE");
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_HUGE;
-#line 192 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 204 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -205,7 +217,7 @@ double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(
 
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(void) {
-#line 209 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 221 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
     _Static_assert(HERO_RET_INT(CASE_LOW), "heroes-ffi-return CASE_LOW i64");
     _Static_assert(__builtin_constant_p(CASE_LOW), "heroes-ffi-const CASE_LOW");
 #pragma clang diagnostic push
@@ -217,7 +229,7 @@ int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LOW;
-#line 221 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 233 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -236,9 +248,9 @@ int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(
 #line 15 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2, t3; HERO_NODEBUG bool t4, t7; HERO_NODEBUG int64_t t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(); hero_print_int(t1); hero_print_end();
-    t2 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(); t3 = 0x1.e848p+19; if (t2 != t2 || t3 != t3) hero_panic("a nan in `>`: it is neither less nor greater, so both arms would be false"); t4 = t2 > t3; hero_print_bool(t4); hero_print_end();
+    t2 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(); t3 = 0x1.e848p+19; if (t2 != t2 || t3 != t3) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero", "fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.main", 17, 11); t4 = t2 > t3; hero_print_bool(t4); hero_print_end();
     t5 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(); t6 = INT64_C(0); t7 = t5 < t6; hero_print_bool(t7); hero_print_end(); return;
-#line 242 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 254 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -304,10 +316,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("72ecbab0631afe4e", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4568dd69572c7879", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard\tfixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard\n");
     h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main();
     hero_runtime_check_leaks();
     return 0;

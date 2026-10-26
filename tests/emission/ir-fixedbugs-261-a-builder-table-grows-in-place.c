@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,19 +63,19 @@ typedef struct h_fixedbugs261abuildertablegrowsinplace_Grid {
     HeroArrayHeader * f_rows;
 } h_fixedbugs261abuildertablegrowsinplace_Grid;
 
-typedef enum h_fixedbugs261abuildertablegrowsinplace_Pick_tag {
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_a = 0,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_b = 1,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_c = 2,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_d = 3,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_e = 4,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_f = 5,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_g = 6,
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag_h = 7,
-} h_fixedbugs261abuildertablegrowsinplace_Pick_tag;
+typedef enum h_fixedbugs261abuildertablegrowsinplace_0Pick_tag {
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_a = 0,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_b = 1,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_c = 2,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_d = 3,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_e = 4,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_f = 5,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_g = 6,
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_h = 7,
+} h_fixedbugs261abuildertablegrowsinplace_0Pick_tag;
 
 typedef struct h_fixedbugs261abuildertablegrowsinplace_Pick {
-    h_fixedbugs261abuildertablegrowsinplace_Pick_tag tag;
+    h_fixedbugs261abuildertablegrowsinplace_0Pick_tag tag;
 } h_fixedbugs261abuildertablegrowsinplace_Pick;
 
 typedef struct h_0opt_f87774a {
@@ -93,6 +93,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -107,19 +115,19 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugs261abuildertablegrowsinplace.c"
+#line 119 "fixedbugs261abuildertablegrowsinplace.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Row_retain(const h_fixedbugs261abuildertablegrowsinplace_Row *v);
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Row_release(h_fixedbugs261abuildertablegrowsinplace_Row *v);
-HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_Row_eq(const h_fixedbugs261abuildertablegrowsinplace_Row *a, const h_fixedbugs261abuildertablegrowsinplace_Row *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_Row_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Grid_retain(const h_fixedbugs261abuildertablegrowsinplace_Grid *v);
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Grid_release(h_fixedbugs261abuildertablegrowsinplace_Grid *v);
-HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_Grid_eq(const h_fixedbugs261abuildertablegrowsinplace_Grid *a, const h_fixedbugs261abuildertablegrowsinplace_Grid *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_Grid_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_Pick_eq(const h_fixedbugs261abuildertablegrowsinplace_Pick *a, const h_fixedbugs261abuildertablegrowsinplace_Pick *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_Pick_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Row_retain(const h_fixedbugs261abuildertablegrowsinplace_Row *v);
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Row_release(h_fixedbugs261abuildertablegrowsinplace_Row *v);
+HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_0Row_eq(const h_fixedbugs261abuildertablegrowsinplace_Row *a, const h_fixedbugs261abuildertablegrowsinplace_Row *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_0Row_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Grid_retain(const h_fixedbugs261abuildertablegrowsinplace_Grid *v);
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Grid_release(h_fixedbugs261abuildertablegrowsinplace_Grid *v);
+HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_0Grid_eq(const h_fixedbugs261abuildertablegrowsinplace_Grid *a, const h_fixedbugs261abuildertablegrowsinplace_Grid *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_0Grid_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_0Pick_eq(const h_fixedbugs261abuildertablegrowsinplace_Pick *a, const h_fixedbugs261abuildertablegrowsinplace_Pick *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_0Pick_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -128,23 +136,27 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_fixedbugs261abuildertablegrowsinplace_Row_desc_copy(void *dst, const void *src) {
+static void h_fixedbugs261abuildertablegrowsinplace_0Row_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_fixedbugs261abuildertablegrowsinplace_Row));
-    h_fixedbugs261abuildertablegrowsinplace_Row_retain((const h_fixedbugs261abuildertablegrowsinplace_Row *)dst);
+    h_fixedbugs261abuildertablegrowsinplace_0Row_retain((const h_fixedbugs261abuildertablegrowsinplace_Row *)dst);
 }
-static void h_fixedbugs261abuildertablegrowsinplace_Row_desc_drop(void *elem) {
-    h_fixedbugs261abuildertablegrowsinplace_Row_release((h_fixedbugs261abuildertablegrowsinplace_Row *)elem);
+static void h_fixedbugs261abuildertablegrowsinplace_0Row_desc_drop(void *elem) {
+    h_fixedbugs261abuildertablegrowsinplace_0Row_release((h_fixedbugs261abuildertablegrowsinplace_Row *)elem);
 }
-static bool h_fixedbugs261abuildertablegrowsinplace_Row_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs261abuildertablegrowsinplace_Row_eq((const h_fixedbugs261abuildertablegrowsinplace_Row *)a, (const h_fixedbugs261abuildertablegrowsinplace_Row *)b);
+static bool h_fixedbugs261abuildertablegrowsinplace_0Row_desc_eq(const void *a, const void *b) {
+    return h_fixedbugs261abuildertablegrowsinplace_0Row_eq((const h_fixedbugs261abuildertablegrowsinplace_Row *)a, (const h_fixedbugs261abuildertablegrowsinplace_Row *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugs261abuildertablegrowsinplace_Row_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugs261abuildertablegrowsinplace_0Row_desc = {
     sizeof(h_fixedbugs261abuildertablegrowsinplace_Row),
-    h_fixedbugs261abuildertablegrowsinplace_Row_desc_copy,
-    h_fixedbugs261abuildertablegrowsinplace_Row_desc_drop,
-    h_fixedbugs261abuildertablegrowsinplace_Row_desc_eq,
-    h_fixedbugs261abuildertablegrowsinplace_Row_hash,
+    h_fixedbugs261abuildertablegrowsinplace_0Row_desc_copy,
+    h_fixedbugs261abuildertablegrowsinplace_0Row_desc_drop,
+    h_fixedbugs261abuildertablegrowsinplace_0Row_desc_eq,
+    h_fixedbugs261abuildertablegrowsinplace_0Row_hash,
 };
 
 int64_t h_fixedbugs261abuildertablegrowsinplace_score(h_fixedbugs261abuildertablegrowsinplace_Pick h0_p);
@@ -185,7 +197,7 @@ int64_t h_fixedbugs261abuildertablegrowsinplace_score(h_fixedbugs261abuildertabl
     t11 = INT64_C(8);
 #line 33
     h2_r0 = t11; goto bb1;
-#line 189 "fixedbugs261abuildertablegrowsinplace.c"
+#line 201 "fixedbugs261abuildertablegrowsinplace.c"
 }
 
 #line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
@@ -196,9 +208,9 @@ void h_fixedbugs261abuildertablegrowsinplace_fill(h_fixedbugs261abuildertablegro
     t11 = h7_s2; t28 = (*ph1_first); hero_str_incref(t11); (*ph1_first) = t11; hero_str_decref(t28);
     t12 = h6_s1; t29 = (*ph2_second); hero_str_incref(t12); (*ph2_second) = t12; hero_str_decref(t29);
     t13 = h5_s0; t30 = (*ph3_third); hero_str_incref(t13); (*ph3_third) = t13; hero_str_decref(t30);
-    t14 = INT64_C(0); t15 = INT64_C(0); t16 = h4_n; hero_array_unshare(&((*ph0_g).f_rows)); hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t14 < 0 || t14 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t14), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), (h_fixedbugs261abuildertablegrowsinplace_Row *)(void *)((*ph0_g).f_rows + 1) + t14)).f_cells), t15, &t16);
-    t17 = INT64_C(0); t18 = INT64_C(1); t19 = (h_fixedbugs261abuildertablegrowsinplace_Pick){.tag = h_fixedbugs261abuildertablegrowsinplace_Pick_tag_c}; t20 = h_fixedbugs261abuildertablegrowsinplace_score(t19); hero_array_unshare(&((*ph0_g).f_rows)); hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t17 < 0 || t17 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t17), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), (h_fixedbugs261abuildertablegrowsinplace_Row *)(void *)((*ph0_g).f_rows + 1) + t17)).f_cells), t18, &t20);
-#line 202 "fixedbugs261abuildertablegrowsinplace.c"
+    t14 = INT64_C(0); t15 = INT64_C(0); t16 = h4_n; hero_array_unshare(&((*ph0_g).f_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)(((*ph0_g).f_rows == NULL || t14 < 0 || t14 >= (*ph0_g).f_rows->len) ? hero_panic_index_at((*ph0_g).f_rows, t14, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.fill", 50, 5) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), (h_fixedbugs261abuildertablegrowsinplace_Row *)(void *)((*ph0_g).f_rows + 1) + t14)).f_cells); if (*hero_slot == NULL || t15 < 0 || t15 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t15, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.fill", 50, 5); hero_array_set(hero_slot, t15, &t16); }
+    t17 = INT64_C(0); t18 = INT64_C(1); t19 = (h_fixedbugs261abuildertablegrowsinplace_Pick){.tag = h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_c}; t20 = h_fixedbugs261abuildertablegrowsinplace_score(t19); hero_array_unshare(&((*ph0_g).f_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)(((*ph0_g).f_rows == NULL || t17 < 0 || t17 >= (*ph0_g).f_rows->len) ? hero_panic_index_at((*ph0_g).f_rows, t17, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.fill", 51, 5) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), (h_fixedbugs261abuildertablegrowsinplace_Row *)(void *)((*ph0_g).f_rows + 1) + t17)).f_cells); if (*hero_slot == NULL || t18 < 0 || t18 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t18, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.fill", 51, 5); hero_array_set(hero_slot, t18, &t20); }
+#line 214 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_release_at(&h5_s0);
     hero_str_release_at(&h6_s1);
     hero_str_release_at(&h7_s2);
@@ -211,91 +223,91 @@ void h_fixedbugs261abuildertablegrowsinplace_fill(h_fixedbugs261abuildertablegro
 
 #line 53 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
 void h_fixedbugs261abuildertablegrowsinplace_main(void) { h_fixedbugs261abuildertablegrowsinplace_Grid h0_g = {0}; HeroStr h1_x = {0}; HeroStr h2_y = {0}; HeroStr h3_z = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h6_own6 = {0}, *t3, *t5, *t14, *t17, *t20, *t23, *t26, *t28; HERO_NODEBUG h_fixedbugs261abuildertablegrowsinplace_Row h5_own5 = {0}, t4, t16, t22, t27; HERO_NODEBUG h_fixedbugs261abuildertablegrowsinplace_Grid h7_own7 = {0}, t6, t29, t30; HERO_NODEBUG int64_t t1, t2, t10, t15, t18, t19, t21, t24, t25; HERO_NODEBUG HeroStr t7, t8, t9, t11, t12, t13, t31, t32, t33; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); t2 = INT64_C(0); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t26 = h4_own4; h4_own4 = t3; hero_array_decref(t26); hero_array_incref(t3); t4 = (h_fixedbugs261abuildertablegrowsinplace_Row){.f_cells = t3}; t27 = h5_own5; h5_own5 = t4; h_fixedbugs261abuildertablegrowsinplace_Row_release(&t27); t5 = hero_array_new(&h_fixedbugs261abuildertablegrowsinplace_Row_desc, 1); hero_array_push_owned(&t5, &t4); t28 = h6_own6; h6_own6 = t5; hero_array_decref(t28); hero_array_incref(t5); t6 = (h_fixedbugs261abuildertablegrowsinplace_Grid){.f_rows = t5}; t29 = h7_own7; h7_own7 = t6; h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t29); t30 = h0_g; h_fixedbugs261abuildertablegrowsinplace_Grid_retain(&t6); h0_g = t6; h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t30);
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t26 = h4_own4; h4_own4 = t3; hero_array_decref(t26); hero_array_incref(t3); t4 = (h_fixedbugs261abuildertablegrowsinplace_Row){.f_cells = t3}; t27 = h5_own5; h5_own5 = t4; h_fixedbugs261abuildertablegrowsinplace_0Row_release(&t27); t5 = hero_array_new(&h_fixedbugs261abuildertablegrowsinplace_0Row_desc, 1); hero_array_push_owned(&t5, &t4); t28 = h6_own6; h6_own6 = t5; hero_array_decref(t28); hero_array_incref(t5); t6 = (h_fixedbugs261abuildertablegrowsinplace_Grid){.f_rows = t5}; t29 = h7_own7; h7_own7 = t6; h_fixedbugs261abuildertablegrowsinplace_0Grid_release(&t29); t30 = h0_g; h_fixedbugs261abuildertablegrowsinplace_0Grid_retain(&t6); h0_g = t6; h_fixedbugs261abuildertablegrowsinplace_0Grid_release(&t30);
     t7 = HERO_STR_LIT(hero_str_78); t31 = h1_x; hero_str_incref(t7); h1_x = t7; hero_str_decref(t31);
     t8 = HERO_STR_LIT(hero_str_79); t32 = h2_y; hero_str_incref(t8); h2_y = t8; hero_str_decref(t32);
     t9 = HERO_STR_LIT(hero_str_7a); t33 = h3_z; hero_str_incref(t9); h3_z = t9; hero_str_decref(t33);
     t10 = INT64_C(4); h_fixedbugs261abuildertablegrowsinplace_fill(&h0_g, &h1_x, &h2_y, &h3_z, t10);
-    t11 = h1_x; t12 = h2_y; t13 = h3_z; t14 = h0_g.f_rows; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t14 + 1))[t15]); t17 = t16.f_cells; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); t20 = h0_g.f_rows; t21 = INT64_C(0); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t20 + 1))[t21]); t23 = t22.f_cells; t24 = INT64_C(1); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]); hero_print_str(t11); hero_print_str(t12); hero_print_str(t13); hero_print_int(t19); hero_print_int(t25); hero_print_end();
-#line 221 "fixedbugs261abuildertablegrowsinplace.c"
-    h_fixedbugs261abuildertablegrowsinplace_Grid_release(hero_slot_escape(&h0_g));
+    t11 = h1_x; t12 = h2_y; t13 = h3_z; t14 = h0_g.f_rows; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.main", 59, 20) : (void)0), (void)(t14->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t14 + 1))[t15]); t17 = t16.f_cells; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.main", 59, 20) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); t20 = h0_g.f_rows; t21 = INT64_C(0); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.main", 59, 40) : (void)0), (void)(t20->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t20 + 1))[t21]); t23 = t22.f_cells; t24 = INT64_C(1); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "fixedbugs-261-a-builder-table-grows-in-place.hero", "fixedbugs-261-a-builder-table-grows-in-place.main", 59, 40) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]); hero_print_str(t11); hero_print_str(t12); hero_print_str(t13); hero_print_int(t19); hero_print_int(t25); hero_print_end();
+#line 233 "fixedbugs261abuildertablegrowsinplace.c"
+    h_fixedbugs261abuildertablegrowsinplace_0Grid_release(hero_slot_escape(&h0_g));
     hero_str_release_at(&h1_x);
     hero_str_release_at(&h2_y);
     hero_str_release_at(&h3_z);
     hero_array_release_at(&h4_own4);
-    h_fixedbugs261abuildertablegrowsinplace_Row_release(hero_slot_escape(&h5_own5));
+    h_fixedbugs261abuildertablegrowsinplace_0Row_release(hero_slot_escape(&h5_own5));
     hero_array_release_at(&h6_own6);
-    h_fixedbugs261abuildertablegrowsinplace_Grid_release(hero_slot_escape(&h7_own7));
+    h_fixedbugs261abuildertablegrowsinplace_0Grid_release(hero_slot_escape(&h7_own7));
     return;
 }
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Row_retain(const h_fixedbugs261abuildertablegrowsinplace_Row *v) {
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Row_retain(const h_fixedbugs261abuildertablegrowsinplace_Row *v) {
     hero_array_incref(v->f_cells);
 }
 
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Row_release(h_fixedbugs261abuildertablegrowsinplace_Row *v) {
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Row_release(h_fixedbugs261abuildertablegrowsinplace_Row *v) {
     hero_array_decref(v->f_cells);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_Row_eq(const h_fixedbugs261abuildertablegrowsinplace_Row *a, const h_fixedbugs261abuildertablegrowsinplace_Row *b) {
+HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_0Row_eq(const h_fixedbugs261abuildertablegrowsinplace_Row *a, const h_fixedbugs261abuildertablegrowsinplace_Row *b) {
     if (!(hero_array_eq(a->f_cells, b->f_cells))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_Row_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_0Row_hash(const void *elem) {
     const h_fixedbugs261abuildertablegrowsinplace_Row *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Grid_retain(const h_fixedbugs261abuildertablegrowsinplace_Grid *v) {
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Grid_retain(const h_fixedbugs261abuildertablegrowsinplace_Grid *v) {
     hero_array_incref(v->f_rows);
 }
 
-HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Grid_release(h_fixedbugs261abuildertablegrowsinplace_Grid *v) {
+HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_0Grid_release(h_fixedbugs261abuildertablegrowsinplace_Grid *v) {
     hero_array_decref(v->f_rows);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_Grid_eq(const h_fixedbugs261abuildertablegrowsinplace_Grid *a, const h_fixedbugs261abuildertablegrowsinplace_Grid *b) {
+HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_0Grid_eq(const h_fixedbugs261abuildertablegrowsinplace_Grid *a, const h_fixedbugs261abuildertablegrowsinplace_Grid *b) {
     if (!(hero_array_eq(a->f_rows, b->f_rows))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_Grid_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_0Grid_hash(const void *elem) {
     const h_fixedbugs261abuildertablegrowsinplace_Grid *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_rows)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_Pick_eq(const h_fixedbugs261abuildertablegrowsinplace_Pick *a, const h_fixedbugs261abuildertablegrowsinplace_Pick *b) {
+HERO_TU_LOCAL bool h_fixedbugs261abuildertablegrowsinplace_0Pick_eq(const h_fixedbugs261abuildertablegrowsinplace_Pick *a, const h_fixedbugs261abuildertablegrowsinplace_Pick *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_a: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_b: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_c: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_d: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_e: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_f: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_g: return true;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_h: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_a: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_b: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_c: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_d: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_e: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_f: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_g: return true;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_h: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_Pick_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs261abuildertablegrowsinplace_0Pick_hash(const void *elem) {
     const h_fixedbugs261abuildertablegrowsinplace_Pick *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_a: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_b: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_c: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_d: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_e: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_f: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_g: return h;
-        case h_fixedbugs261abuildertablegrowsinplace_Pick_tag_h: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_a: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_b: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_c: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_d: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_e: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_f: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_g: return h;
+        case h_fixedbugs261abuildertablegrowsinplace_0Pick_tag_h: return h;
     }
     hero_unreachable();
 }
@@ -364,10 +376,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e9a04b536b04e81", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("632ed05e4f913f26", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs261abuildertablegrowsinplace\tfixedbugs-261-a-builder-table-grows-in-place\n");
     h_fixedbugs261abuildertablegrowsinplace_main();
     hero_runtime_check_leaks();
     return 0;

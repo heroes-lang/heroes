@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -148,11 +156,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
+#line 160 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_FdSet_eq(fd_set * const *a, fd_set * const *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_FdSet_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_0FdSet_eq(fd_set * const *a, fd_set * const *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_0FdSet_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -161,25 +169,29 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
 void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void) { fd_set * h0_s; HERO_NODEBUG int32_t t1, t2, t5, t7, t9, t10, t12; HERO_NODEBUG fd_set *t3, *t4, *t6, *t8, *t11, *t13; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(256); t2 = hero_wexitstatus(t1); hero_print_int(t2); hero_print_end();
-    t3 = hero_fd_new(); hero_handle_acquired(t3, "hero_fd_free"); h0_s = t3;
-    t4 = h0_s; hero_handle_alive(t4, "the argument `s` of `hero_fd_zero`"); (void)hero_fd_zero(t4);
-    t5 = INT64_C(3); t6 = h0_s; hero_handle_alive(t6, "the argument `s` of `hero_fd_set`"); (void)hero_fd_set(t5, t6);
-    t7 = INT64_C(3); t8 = h0_s; hero_handle_alive(t8, "the argument `s` of `hero_fd_isset`"); t9 = hero_fd_isset(t7, t8); hero_print_int(t9); hero_print_end();
-    t10 = INT64_C(4); t11 = h0_s; hero_handle_alive(t11, "the argument `s` of `hero_fd_isset`"); t12 = hero_fd_isset(t10, t11); hero_print_int(t12); hero_print_end();
-    t13 = h0_s; { hero_handle_alive(t13, "the argument `s` of `hero_fd_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t13, "hero_fd_free", NULL); (void)hero_fd_free(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_s == t13) h0_s = hero_handle_dead(); } return;
-#line 177 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
+    t1 = INT64_C(256); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 21, 11}; t2 = hero_wexitstatus(t1); } hero_print_int(t2); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 22, 9}; t3 = hero_fd_new(); hero_handle_acquired_at(t3, "hero_fd_free", &hero_here); } h0_s = t3;
+    t4 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 23, 5}; hero_handle_alive_at(t4, "the argument `s` of `hero_fd_zero`", &hero_here); (void)hero_fd_zero(t4); }
+    t5 = INT64_C(3); t6 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 24, 5}; hero_handle_alive_at(t6, "the argument `s` of `hero_fd_set`", &hero_here); (void)hero_fd_set(t5, t6); }
+    t7 = INT64_C(3); t8 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 25, 11}; hero_handle_alive_at(t8, "the argument `s` of `hero_fd_isset`", &hero_here); t9 = hero_fd_isset(t7, t8); } hero_print_int(t9); hero_print_end();
+    t10 = INT64_C(4); t11 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 26, 11}; hero_handle_alive_at(t11, "the argument `s` of `hero_fd_isset`", &hero_here); t12 = hero_fd_isset(t10, t11); } hero_print_int(t12); hero_print_end();
+    t13 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 27, 5}; { hero_handle_alive_at(t13, "the argument `s` of `hero_fd_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "hero_fd_free", NULL, &hero_here); (void)hero_fd_free(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_s == t13) h0_s = hero_handle_dead(); } } return;
+#line 189 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_FdSet_eq(fd_set * const *a, fd_set * const *b) {
+HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_0FdSet_eq(fd_set * const *a, fd_set * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_FdSet_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_0FdSet_hash(const void *elem) {
     fd_set * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -250,10 +262,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4184d69b34192051", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("464a35307e9d8c67", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs143systemmacrosthroughfunctionsoftheprogramsown\tfixedbugs-143-system-macros-through-functions-of-the-programs-own\n");
     h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main();
     hero_runtime_check_leaks();
     return 0;

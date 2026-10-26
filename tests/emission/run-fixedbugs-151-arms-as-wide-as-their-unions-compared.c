@@ -59,7 +59,7 @@
 #pragma pop_macro("i")
 #pragma pop_macro("p")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -199,16 +199,16 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 200 "fixedbugs151armsaswideastheirunionscompared.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SA_eq(const SA *a, const SA *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SA_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SB_eq(const SB *a, const SB *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SB_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SARR_eq(const SARR *a, const SARR *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SARR_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SPTR_eq(const SPTR *a, const SPTR *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SPTR_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_Box_eq(const h_fixedbugs151armsaswideastheirunionscompared_Box *a, const h_fixedbugs151armsaswideastheirunionscompared_Box *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_Box_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SA_eq(const SA *a, const SA *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SA_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SB_eq(const SB *a, const SB *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SB_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SARR_eq(const SARR *a, const SARR *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SARR_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SPTR_eq(const SPTR *a, const SPTR *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SPTR_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0Box_eq(const h_fixedbugs151armsaswideastheirunionscompared_Box *a, const h_fixedbugs151armsaswideastheirunionscompared_Box *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0Box_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -222,56 +222,56 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_fixedbugs151armsaswideastheirunionscompared_SA_desc_copy(void *dst, const void *src) {
+static void h_fixedbugs151armsaswideastheirunionscompared_0SA_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(SA));
 }
-static void h_fixedbugs151armsaswideastheirunionscompared_SA_desc_drop(void *elem) {
+static void h_fixedbugs151armsaswideastheirunionscompared_0SA_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_fixedbugs151armsaswideastheirunionscompared_SA_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs151armsaswideastheirunionscompared_SA_eq((const SA *)a, (const SA *)b);
+static bool h_fixedbugs151armsaswideastheirunionscompared_0SA_desc_eq(const void *a, const void *b) {
+    return h_fixedbugs151armsaswideastheirunionscompared_0SA_eq((const SA *)a, (const SA *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugs151armsaswideastheirunionscompared_SA_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugs151armsaswideastheirunionscompared_0SA_desc = {
     sizeof(SA),
-    h_fixedbugs151armsaswideastheirunionscompared_SA_desc_copy,
-    h_fixedbugs151armsaswideastheirunionscompared_SA_desc_drop,
-    h_fixedbugs151armsaswideastheirunionscompared_SA_desc_eq,
-    h_fixedbugs151armsaswideastheirunionscompared_SA_hash,
+    h_fixedbugs151armsaswideastheirunionscompared_0SA_desc_copy,
+    h_fixedbugs151armsaswideastheirunionscompared_0SA_desc_drop,
+    h_fixedbugs151armsaswideastheirunionscompared_0SA_desc_eq,
+    h_fixedbugs151armsaswideastheirunionscompared_0SA_hash,
 };
 
 void h_fixedbugs151armsaswideastheirunionscompared_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 void h_fixedbugs151armsaswideastheirunionscompared_main(void) { HeroMapHeader * h0_seen = {0}; HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t16, *t26, *t56, *t57; HERO_NODEBUG int32_t t1, t4, t9, t12, t17, t20, t23; HERO_NODEBUG SA t2, t5, t10, t13, t18, t21, t24; HERO_NODEBUG h_fixedbugs151armsaswideastheirunionscompared_Box t3, t6, t11, t14; HERO_NODEBUG bool t7, t15, t32, t38, t44, t49, t55; HERO_NODEBUG HeroStr t8, t33, t39, t50; HERO_NODEBUG int64_t t19, t22, t25, t27, t28, t30, t40, t42, t45, t47; HERO_NODEBUG SB t29, t31, t46, t48; HERO_NODEBUG uint32_t t34, t36, t51, t53; HERO_NODEBUG SARR t35, t37, t52, t54; HERO_NODEBUG SPTR t41, t43; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(5); t2 = make_sa(t1); t3 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t2}; t4 = INT64_C(6); t5 = make_sa(t4); t6 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t5}; t7 = h_fixedbugs151armsaswideastheirunionscompared_Box_eq(&t3, &t6); t8 = HERO_STR_LIT(hero_str_20); t9 = INT64_C(5); t10 = make_sa(t9); t11 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t10}; t12 = INT64_C(5); t13 = make_sa(t12); t14 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t13}; t15 = h_fixedbugs151armsaswideastheirunionscompared_Box_eq(&t11, &t14); hero_print_bool(t7); hero_print_str(t8); hero_print_bool(t15); hero_print_end();
-    t16 = hero_map_new(&h_fixedbugs151armsaswideastheirunionscompared_SA_desc, &hero_desc_int, 0); t56 = h1_own1; h1_own1 = t16; hero_map_decref(t56); t57 = h0_seen; hero_map_incref(t16); h0_seen = t16; hero_map_decref(t57);
-    t17 = INT64_C(5); t18 = make_sa(t17); t19 = INT64_C(1); hero_map_set(&(h0_seen), &t18, &t19);
-    t20 = INT64_C(5); t21 = make_sa(t20); t22 = INT64_C(2); hero_map_set(&(h0_seen), &t21, &t22);
-    t23 = INT64_C(6); t24 = make_sa(t23); t25 = INT64_C(3); hero_map_set(&(h0_seen), &t24, &t25);
+    t1 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 34, 18}; t2 = make_sa(t1); } t3 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t2}; t4 = INT64_C(6); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 34, 43}; t5 = make_sa(t4); } t6 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t5}; t7 = h_fixedbugs151armsaswideastheirunionscompared_0Box_eq(&t3, &t6); t8 = HERO_STR_LIT(hero_str_20); t9 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 34, 71}; t10 = make_sa(t9); } t11 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t10}; t12 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 34, 96}; t13 = make_sa(t12); } t14 = (h_fixedbugs151armsaswideastheirunionscompared_Box){.f_s = t13}; t15 = h_fixedbugs151armsaswideastheirunionscompared_0Box_eq(&t11, &t14); hero_print_bool(t7); hero_print_str(t8); hero_print_bool(t15); hero_print_end();
+    t16 = hero_map_new(&h_fixedbugs151armsaswideastheirunionscompared_0SA_desc, &hero_desc_int, 0); t56 = h1_own1; h1_own1 = t16; hero_map_decref(t56); t57 = h0_seen; hero_map_incref(t16); h0_seen = t16; hero_map_decref(t57);
+    t17 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 36, 10}; t18 = make_sa(t17); } t19 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 36, 5}; hero_map_set_at(&(h0_seen), &t18, &t19, &hero_here); }
+    t20 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 37, 10}; t21 = make_sa(t20); } t22 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 37, 5}; hero_map_set_at(&(h0_seen), &t21, &t22, &hero_here); }
+    t23 = INT64_C(6); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 38, 10}; t24 = make_sa(t23); } t25 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 38, 5}; hero_map_set_at(&(h0_seen), &t24, &t25, &hero_here); }
     t26 = h0_seen; t27 = hero_map_len(t26); hero_print_int(t27); hero_print_end();
 #line 41
-    t28 = INT64_C(1); t29 = make_sb(t28); t30 = INT64_C(257); t31 = make_sb(t30); t32 = h_fixedbugs151armsaswideastheirunionscompared_SB_eq(&t29, &t31);
+    t28 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 41, 9}; t29 = make_sb(t28); } t30 = INT64_C(257); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 41, 26}; t31 = make_sb(t30); } t32 = h_fixedbugs151armsaswideastheirunionscompared_0SB_eq(&t29, &t31);
     t33 = HERO_STR_LIT(hero_str_20);
-    t34 = UINT64_C(1); t35 = make_sarr(t34); t36 = UINT64_C(256); t37 = make_sarr(t36); t38 = h_fixedbugs151armsaswideastheirunionscompared_SARR_eq(&t35, &t37);
+    t34 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 43, 9}; t35 = make_sarr(t34); } t36 = UINT64_C(256); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 43, 28}; t37 = make_sarr(t36); } t38 = h_fixedbugs151armsaswideastheirunionscompared_0SARR_eq(&t35, &t37);
     t39 = HERO_STR_LIT(hero_str_20);
-    t40 = INT64_C(1); t41 = make_sptr(t40); t42 = INT64_C(2); t43 = make_sptr(t42); t44 = h_fixedbugs151armsaswideastheirunionscompared_SPTR_eq(&t41, &t43);
+    t40 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 45, 9}; t41 = make_sptr(t40); } t42 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 45, 28}; t43 = make_sptr(t42); } t44 = h_fixedbugs151armsaswideastheirunionscompared_0SPTR_eq(&t41, &t43);
 #line 40
     hero_print_bool(t32); hero_print_str(t33); hero_print_bool(t38); hero_print_str(t39); hero_print_bool(t44); hero_print_end();
 #line 47
-    t45 = INT64_C(257); t46 = make_sb(t45); t47 = INT64_C(257); t48 = make_sb(t47); t49 = h_fixedbugs151armsaswideastheirunionscompared_SB_eq(&t46, &t48); t50 = HERO_STR_LIT(hero_str_20); t51 = UINT64_C(256); t52 = make_sarr(t51); t53 = UINT64_C(256); t54 = make_sarr(t53); t55 = h_fixedbugs151armsaswideastheirunionscompared_SARR_eq(&t52, &t54); hero_print_bool(t49); hero_print_str(t50); hero_print_bool(t55); hero_print_end();
+    t45 = INT64_C(257); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 47, 11}; t46 = make_sb(t45); } t47 = INT64_C(257); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 47, 30}; t48 = make_sb(t47); } t49 = h_fixedbugs151armsaswideastheirunionscompared_0SB_eq(&t46, &t48); t50 = HERO_STR_LIT(hero_str_20); t51 = UINT64_C(256); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 47, 52}; t52 = make_sarr(t51); } t53 = UINT64_C(256); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-as-wide-as-their-unions-compared.hero", "fixedbugs-151-arms-as-wide-as-their-unions-compared.main", 47, 73}; t54 = make_sarr(t53); } t55 = h_fixedbugs151armsaswideastheirunionscompared_0SARR_eq(&t52, &t54); hero_print_bool(t49); hero_print_str(t50); hero_print_bool(t55); hero_print_end();
 #line 263 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_release_at(&h0_seen);
     hero_map_release_at(&h1_own1);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SA_eq(const SA *a, const SA *b) {
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->i == b->i)) return false;
     if (!(a->x == b->x)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SA_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SA_hash(const void *elem) {
     const SA *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->kind)) * UINT64_C(0x100000001b3);
@@ -280,13 +280,13 @@ HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SA_hash(con
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SB_eq(const SB *a, const SB *b) {
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->q == b->q)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SB_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SB_hash(const void *elem) {
     const SB *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->kind)) * UINT64_C(0x100000001b3);
@@ -294,13 +294,13 @@ HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SB_hash(con
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SARR_eq(const SARR *a, const SARR *b) {
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SARR_eq(const SARR *a, const SARR *b) {
     if (!(a->kind == b->kind)) return false;
     if (!((a->bytes[0] == b->bytes[0] && a->bytes[1] == b->bytes[1] && a->bytes[2] == b->bytes[2] && a->bytes[3] == b->bytes[3]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SARR_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SARR_hash(const void *elem) {
     const SARR *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->kind)) * UINT64_C(0x100000001b3);
@@ -311,13 +311,13 @@ HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SARR_hash(c
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SPTR_eq(const SPTR *a, const SPTR *b) {
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0SPTR_eq(const SPTR *a, const SPTR *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->p == b->p)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SPTR_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0SPTR_hash(const void *elem) {
     const SPTR *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->kind)) * UINT64_C(0x100000001b3);
@@ -325,15 +325,15 @@ HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_SPTR_hash(c
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_Box_eq(const h_fixedbugs151armsaswideastheirunionscompared_Box *a, const h_fixedbugs151armsaswideastheirunionscompared_Box *b) {
-    if (!(h_fixedbugs151armsaswideastheirunionscompared_SA_eq(&a->f_s, &b->f_s))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_0Box_eq(const h_fixedbugs151armsaswideastheirunionscompared_Box *a, const h_fixedbugs151armsaswideastheirunionscompared_Box *b) {
+    if (!(h_fixedbugs151armsaswideastheirunionscompared_0SA_eq(&a->f_s, &b->f_s))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_Box_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151armsaswideastheirunionscompared_0Box_hash(const void *elem) {
     const h_fixedbugs151armsaswideastheirunionscompared_Box *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151armsaswideastheirunionscompared_SA_hash(&v->f_s)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs151armsaswideastheirunionscompared_0SA_hash(&v->f_s)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -434,9 +434,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ff5eefe7d5f10da", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("174cdfab7033140e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs151armsaswideastheirunionscompared\tfixedbugs-151-arms-as-wide-as-their-unions-compared\n");
     h_fixedbugs151armsaswideastheirunionscompared_main();
     hero_runtime_check_leaks();
     return 0;

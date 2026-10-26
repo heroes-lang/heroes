@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -149,8 +149,8 @@ void h_fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning_main(void
     t8 = h0_x; t9 = HERO_STR_LIT(hero_str_2ac84c6f); t10 = hero_int_to_str(t8); t31 = h3_own3; h3_own3 = t10; hero_str_decref(t31); t11 = HERO_STR_LIT(hero_str_109f9c); t12 = hero_str_concat(t9, t10); t32 = h4_own4; h4_own4 = t12; hero_str_decref(t32); t13 = hero_str_concat(t12, t11); t33 = h5_own5; h5_own5 = t13; hero_str_decref(t33); hero_print_str(t13); hero_print_end();
     t14 = h_fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning_SPELLED(); t34 = h6_own6; h6_own6 = t14; hero_str_decref(t34); hero_print_str(t14); hero_print_end();
     t15 = HERO_STR_LIT(hero_str_eabaa9c); t16 = h_fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning_kind(t15); hero_print_int(t16); hero_print_end();
-    t17 = HERO_STR_LIT(hero_str_e670f6a); t18 = INT64_C(3); t19 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t19, &t17, &t18); t35 = h7_own7; h7_own7 = t19; hero_map_decref(t35); t36 = h1_m; hero_map_incref(t19); h1_m = t19; hero_map_decref(t36);
-    t20 = h1_m; t21 = HERO_STR_LIT(hero_str_e670f6a); { HERO_NODEBUG const void *found = hero_map_find(t20, &t21); if (found == NULL) { t22 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t22 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t22.as.ok, found); } } t37 = h8_own8; h8_own8 = t22; h_0opt_e201354_release(&t37); t38 = h2_f0; h_0opt_e201354_retain(&t22); h2_f0 = t22; h_0opt_e201354_release(&t38); t23 = h2_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb1; else goto bb2; bb1: t29 = h2_f0; t30 = t29.as.ok; hero_print_int(t30); hero_print_end();
+    t17 = HERO_STR_LIT(hero_str_e670f6a); t18 = INT64_C(3); t19 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero", "fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.main", 36, 9}; hero_map_put_at(t19, &t17, &t18, &hero_here); } t35 = h7_own7; h7_own7 = t19; hero_map_decref(t35); t36 = h1_m; hero_map_incref(t19); h1_m = t19; hero_map_decref(t36);
+    t20 = h1_m; t21 = HERO_STR_LIT(hero_str_e670f6a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero", "fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.main", 37, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t20, &t21, &hero_here); if (found == NULL) { t22 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t22 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t22.as.ok, found); } } t37 = h8_own8; h8_own8 = t22; h_0opt_e201354_release(&t37); t38 = h2_f0; h_0opt_e201354_retain(&t22); h2_f0 = t22; h_0opt_e201354_release(&t38); t23 = h2_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb1; else goto bb2; bb1: t29 = h2_f0; t30 = t29.as.ok; hero_print_int(t30); hero_print_end();
 #line 155 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
     hero_map_release_at(&h1_m);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -165,7 +165,7 @@ bb2:
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t27 = h2_f0; t28 = t27.as.err;
 #line 168 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
-    hero_panic_must(t28);
+    hero_panic_must_at(t28, "fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero", "fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.main", 37, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -265,9 +265,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b488a3c0f13e273", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7107026c743ee3f5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning\tfixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning\n");
     h_fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning_main();
     hero_runtime_check_leaks();
     return 0;

@@ -48,7 +48,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -118,6 +118,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -148,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "ffireadbackacstr.c"
+#line 160 "ffireadbackacstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -159,19 +167,24 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffireadbackacstr_main(void);
 int64_t h_library_HERO_STR_OK(void);
-h_0opt_f87774a h_library_validated(const char * h0_c);
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 void h_ffireadbackacstr_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h2_f1 = {0}, h5_s0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t3, t4, t8, t10, t14, t15, t19, t21, t34, t35, t37, t40, t44, t45, t47, t48, t50, t51; HeroStr h1_first = {0}; HeroStr h3_second = {0}; const char * h4_absent; HeroStr h6_text = {0}; HeroFailure h7_e = {0}; HERO_NODEBUG int32_t t1, t12; HERO_NODEBUG const char *t2, *t13, *t31, *t32, *t33; HERO_NODEBUG int64_t t5, t6, t16, t17, t27, t28, t36; HERO_NODEBUG bool t7, t18, t25, t29; HERO_NODEBUG HeroFailure t9, t20, t41, t53; HERO_NODEBUG HeroStr t11, t22, t23, t24, t26, t30, t38, t39, t42, t43, t46, t49, t52; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); t2 = (const char *)strerror(t1); t3 = h_library_validated(t2); t44 = h8_own8; h8_own8 = t3; h_0opt_f87774a_release(&t44); t45 = h0_f0; h_0opt_f87774a_retain(&t3); h0_f0 = t3; h_0opt_f87774a_release(&t45); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h0_f0; t11 = t10.as.ok; t46 = h1_first; hero_str_incref(t11); h1_first = t11; hero_str_decref(t46);
-    t12 = INT64_C(2); t13 = (const char *)strerror(t12); t14 = h_library_validated(t13); t47 = h9_own9; h9_own9 = t14; h_0opt_f87774a_release(&t47); t48 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t48); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
+    t1 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 44, 13}; t2 = (const char *)strerror(t1); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 44, 13}; t3 = h_library_validated(t2, &hero_here); } t44 = h8_own8; h8_own8 = t3; h_0opt_f87774a_release(&t44); t45 = h0_f0; h_0opt_f87774a_retain(&t3); h0_f0 = t3; h_0opt_f87774a_release(&t45); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h0_f0; t11 = t10.as.ok; t46 = h1_first; hero_str_incref(t11); h1_first = t11; hero_str_decref(t46);
+    t12 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 45, 14}; t13 = (const char *)strerror(t12); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 45, 14}; t14 = h_library_validated(t13, &hero_here); } t47 = h9_own9; h9_own9 = t14; h_0opt_f87774a_release(&t47); t48 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t48); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
 #line 44
     t8 = h0_f0; t9 = t8.as.err;
-#line 174 "ffireadbackacstr.c"
-    hero_panic_must(t9);
+#line 187 "ffireadbackacstr.c"
+    hero_panic_must_at(t9, "ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 44, 13);
     hero_unreachable();
 bb3:
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -180,13 +193,13 @@ bb3:
     t23 = h1_first; t24 = h3_second; t25 = hero_str_eq(t23, t24); hero_print_bool(t25); hero_print_end();
     t26 = h1_first; t27 = hero_str_len(t26); t28 = INT64_C(0); t29 = t27 > t28; hero_print_bool(t29); hero_print_end();
 #line 56
-    t30 = HERO_STR_LIT(hero_str_733f7b5b); t31 = hero_str_lend(t30); t32 = (const char *)getenv(hero_cstr_nonnull(t31)); h4_absent = t32;
+    t30 = HERO_STR_LIT(hero_str_733f7b5b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 56, 27}; t31 = hero_str_lend_at(t30, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 56, 14}; t32 = (const char *)getenv(hero_cstr_nonnull_at(t31, &hero_here)); } h4_absent = t32;
 #line 58
-    t33 = h4_absent; t34 = h_library_validated(t33); t50 = h10_own10; h10_own10 = t34; h_0opt_f87774a_release(&t50); t51 = h5_s0; h_0opt_f87774a_retain(&t34); h5_s0 = t34; h_0opt_f87774a_release(&t51); t35 = h5_s0; t36 = t35.tag; switch (t36) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb4:
+    t33 = h4_absent; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 58, 11}; t34 = h_library_validated(t33, &hero_here); } t50 = h10_own10; h10_own10 = t34; h_0opt_f87774a_release(&t50); t51 = h5_s0; h_0opt_f87774a_retain(&t34); h5_s0 = t34; h_0opt_f87774a_release(&t51); t35 = h5_s0; t36 = t35.tag; switch (t36) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb4:
 #line 45
     t19 = h2_f1; t20 = t19.as.err;
-#line 189 "ffireadbackacstr.c"
-    hero_panic_must(t20);
+#line 202 "ffireadbackacstr.c"
+    hero_panic_must_at(t20, "ffi-read-back-a-cstr.hero", "ffi-read-back-a-cstr.main", 45, 14);
     hero_unreachable();
 bb5:
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
@@ -204,16 +217,16 @@ bb6:
 #line 59 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t37 = h5_s0; t38 = t37.as.ok; t52 = h6_text; hero_str_incref(t38); h6_text = t38; hero_str_decref(t52); t39 = h6_text; hero_print_str(t39); hero_print_end(); goto bb5; bb7:
     t40 = h5_s0; t41 = t40.as.err; t53 = h7_e; hero_failure_retain(&t41); h7_e = t41; hero_failure_release(&t53); t42 = HERO_STR_LIT(hero_str_63ebf303); t43 = h7_e.code; hero_print_str(t42); hero_print_str(t43); hero_print_end(); goto bb5;
-#line 208 "ffireadbackacstr.c"
+#line 221 "ffireadbackacstr.c"
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 213 "ffireadbackacstr.c"
+#line 226 "ffireadbackacstr.c"
 }
 
 #line 153 "<heroes library>"
-h_0opt_f87774a h_library_validated(const char * h0_c) {
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
 #line 153
 #define h1_status (*hero_lend_h1_status)
 #line 153
@@ -221,7 +234,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 156
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status); t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
 #line 155
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
@@ -229,7 +242,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 233 "ffireadbackacstr.c"
+#line 246 "ffireadbackacstr.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -241,6 +254,10 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     return t18;
 }
 #undef h1_status
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    return h_library_validated(h0_c, &hero_here);
+}
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
@@ -305,10 +322,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("112e2a162396de09", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("31feb8962efe7431", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffireadbackacstr\tffi-read-back-a-cstr\n");
     h_ffireadbackacstr_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -153,8 +153,8 @@ void h_fixedbugs173aclosingbracewrittentwiceisonebrace_main(void) { int64_t h0_x
     t35 = h_fixedbugs173aclosingbracewrittentwiceisonebrace_BRACED(); t68 = h18_own18; h18_own18 = t35; hero_str_decref(t68); hero_print_str(t35); hero_print_end();
     t36 = INT64_C(7); t37 = h_fixedbugs173aclosingbracewrittentwiceisonebrace_wrapped(t36); t69 = h19_own19; h19_own19 = t37; hero_str_decref(t69); hero_print_str(t37); hero_print_end();
     t38 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t70 = h20_own20; h20_own20 = t38; hero_map_decref(t70); t71 = h2_m; hero_map_incref(t38); h2_m = t38; hero_map_decref(t71);
-    t39 = HERO_STR_LIT(hero_str_206c91); t40 = INT64_C(1); hero_map_set(&(h2_m), &t39, &t40);
-    t41 = h2_m; t42 = HERO_STR_LIT(hero_str_206c91); { HERO_NODEBUG const void *found = hero_map_find(t41, &t42); if (found == NULL) { t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t43 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t43.as.ok, found); } } t72 = h21_own21; h21_own21 = t43; h_0opt_e201354_release(&t72); t73 = h3_f0; h_0opt_e201354_retain(&t43); h3_f0 = t43; h_0opt_e201354_release(&t73); t44 = h3_f0; t45 = t44.tag; t46 = INT64_C(0); t47 = t45 == t46; if (t47) goto bb1; else goto bb2; bb1: t50 = h3_f0; t51 = t50.as.ok; hero_print_int(t51); hero_print_end();
+    t39 = HERO_STR_LIT(hero_str_206c91); t40 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero", "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.main", 31, 5}; hero_map_set_at(&(h2_m), &t39, &t40, &hero_here); }
+    t41 = h2_m; t42 = HERO_STR_LIT(hero_str_206c91); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero", "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.main", 32, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t41, &t42, &hero_here); if (found == NULL) { t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t43 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t43.as.ok, found); } } t72 = h21_own21; h21_own21 = t43; h_0opt_e201354_release(&t72); t73 = h3_f0; h_0opt_e201354_retain(&t43); h3_f0 = t43; h_0opt_e201354_release(&t73); t44 = h3_f0; t45 = t44.tag; t46 = INT64_C(0); t47 = t45 == t46; if (t47) goto bb1; else goto bb2; bb1: t50 = h3_f0; t51 = t50.as.ok; hero_print_int(t51); hero_print_end();
     t52 = HERO_STR_LIT(hero_str_14fec1fb); hero_print_str(t52); hero_print_end();
 #line 160 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_release_at(&h1_word);
@@ -183,7 +183,7 @@ bb2:
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t48 = h3_f0; t49 = t48.as.err;
 #line 186 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
-    hero_panic_must(t49);
+    hero_panic_must_at(t49, "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero", "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.main", 32, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -283,9 +283,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("723e71033802dfb9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("346ed87f02b45808", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs173aclosingbracewrittentwiceisonebrace\tfixedbugs-173-a-closing-brace-written-twice-is-one-brace\n");
     h_fixedbugs173aclosingbracewrittentwiceisonebrace_main();
     hero_runtime_check_leaks();
     return 0;

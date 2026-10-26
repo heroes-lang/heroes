@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -122,6 +122,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -150,11 +158,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 162 "fixedbugs151anarmaswideasapackedunioncompared.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(const PK *a, const PK *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151anarmaswideasapackedunioncompared_PK_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(const PK *a, const PK *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151anarmaswideasapackedunioncompared_0PK_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -163,21 +171,25 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs151anarmaswideasapackedunioncompared_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 void h_fixedbugs151anarmaswideasapackedunioncompared_main(void) { HERO_NODEBUG uint8_t t1, t3, t7, t9; HERO_NODEBUG PK t2, t4, t8, t10; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(1); t2 = make_pk(t1); t3 = UINT64_C(1); t4 = make_pk(t3); t5 = h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(&t2, &t4); t6 = HERO_STR_LIT(hero_str_20); t7 = UINT64_C(1); t8 = make_pk(t7); t9 = UINT64_C(2); t10 = make_pk(t9); t11 = h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(&t8, &t10); hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_end(); return;
-#line 173 "fixedbugs151anarmaswideasapackedunioncompared.c"
+    t1 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 11}; t2 = make_pk(t1); } t3 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 31}; t4 = make_pk(t3); } t5 = h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(&t2, &t4); t6 = HERO_STR_LIT(hero_str_20); t7 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 54}; t8 = make_pk(t7); } t9 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 74}; t10 = make_pk(t9); } t11 = h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(&t8, &t10); hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_end(); return;
+#line 185 "fixedbugs151anarmaswideasapackedunioncompared.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(const PK *a, const PK *b) {
+HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(const PK *a, const PK *b) {
     if (!(a->k == b->k)) return false;
     if (!((a->c[0] == b->c[0] && a->c[1] == b->c[1] && a->c[2] == b->c[2] && a->c[3] == b->c[3] && a->c[4] == b->c[4]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151anarmaswideasapackedunioncompared_PK_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs151anarmaswideasapackedunioncompared_0PK_hash(const void *elem) {
     const PK *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->k)) * UINT64_C(0x100000001b3);
@@ -253,10 +265,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ccaea9f3b643aab", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("552d58023678900a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs151anarmaswideasapackedunioncompared\tfixedbugs-151-an-arm-as-wide-as-a-packed-union-compared\n");
     h_fixedbugs151anarmaswideasapackedunioncompared_main();
     hero_runtime_check_leaks();
     return 0;

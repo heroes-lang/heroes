@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -117,7 +117,7 @@ void h_fixedbugsadiscardedtemporarywarnsinc_main(void);
 h_0opt_e201354 h_fixedbugsadiscardedtemporarywarnsinc_risky(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t7, t8, t9; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(0); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 38
-    t7 = h0_n; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
+    t7 = h0_n; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-a-discarded-temporary-warns-in-c.hero", "fixedbugs-a-discarded-temporary-warns-in-c.risky", 38, 15); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
 #line 37
     t4 = HERO_STR_LIT(hero_str_2cc761e); t5 = HERO_STR_LIT(hero_str_1ad3678f); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t13 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t13); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
 #line 124 "fixedbugsadiscardedtemporarywarnsinc.c"
@@ -146,8 +146,8 @@ h_0opt_a8ea2 h_fixedbugsadiscardedtemporarywarnsinc_unit_risky(int64_t h0_n) { H
 #line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 void h_fixedbugsadiscardedtemporarywarnsinc_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h6_own6 = {0}, t4, t5, t38, t39; HERO_NODEBUG h_0opt_a8ea2 h1_f1 = {0}, h7_own7 = {0}, t12, t13, t40, t41; HeroStr h2_a = {0}; HeroStr h3_b = {0}; HeroArrayHeader * h4_xs = {0}; HeroArrayHeader * h5_ys = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t24, *t27, *t28, *t29, *t44, *t45, *t46, *t47; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t10, t11, t14, t15, t22, t23, t25, t26, t37; HERO_NODEBUG __attribute__((unused)) bool t8, t16, t21, t30, t33; HERO_NODEBUG HeroStr t17, t18, t19, t20, t34, t35, t42, t43; HERO_NODEBUG double t31, t32; HERO_NODEBUG bool t36; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 48
-    t1 = INT64_C(0); t2 = INT64_C(1); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = h_fixedbugsadiscardedtemporarywarnsinc_risky(t3); t38 = h6_own6; h6_own6 = t4; h_0opt_e201354_release(&t38); t39 = h0_f0; h_0opt_e201354_retain(&t4); h0_f0 = t4; h_0opt_e201354_release(&t39); t5 = h0_f0; t6 = t5.tag; t7 = INT64_C(1); t8 = t6 == t7;
-    t9 = INT64_C(0); t10 = INT64_C(1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow(); t12 = h_fixedbugsadiscardedtemporarywarnsinc_unit_risky(t11); t40 = h7_own7; h7_own7 = t12; h_0opt_a8ea2_release(&t40); t41 = h1_f1; h_0opt_a8ea2_retain(&t12); h1_f1 = t12; h_0opt_a8ea2_release(&t41); t13 = h1_f1; t14 = t13.tag; t15 = INT64_C(1); t16 = t14 == t15;
+    t1 = INT64_C(0); t2 = INT64_C(1); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-discarded-temporary-warns-in-c.hero", "fixedbugs-a-discarded-temporary-warns-in-c.main", 48, 15); t4 = h_fixedbugsadiscardedtemporarywarnsinc_risky(t3); t38 = h6_own6; h6_own6 = t4; h_0opt_e201354_release(&t38); t39 = h0_f0; h_0opt_e201354_retain(&t4); h0_f0 = t4; h_0opt_e201354_release(&t39); t5 = h0_f0; t6 = t5.tag; t7 = INT64_C(1); t8 = t6 == t7;
+    t9 = INT64_C(0); t10 = INT64_C(1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-a-discarded-temporary-warns-in-c.hero", "fixedbugs-a-discarded-temporary-warns-in-c.main", 49, 20); t12 = h_fixedbugsadiscardedtemporarywarnsinc_unit_risky(t11); t40 = h7_own7; h7_own7 = t12; h_0opt_a8ea2_release(&t40); t41 = h1_f1; h_0opt_a8ea2_retain(&t12); h1_f1 = t12; h_0opt_a8ea2_release(&t41); t13 = h1_f1; t14 = t13.tag; t15 = INT64_C(1); t16 = t14 == t15;
 #line 54
     t17 = HERO_STR_LIT(hero_str_6bb5e50a); t42 = h2_a; hero_str_incref(t17); h2_a = t17; hero_str_decref(t42);
     t18 = HERO_STR_LIT(hero_str_47b33001); t43 = h3_b; hero_str_incref(t18); h3_b = t18; hero_str_decref(t43);
@@ -273,9 +273,10 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b998e561d8aff13", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("10589f01014b72b9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsadiscardedtemporarywarnsinc\tfixedbugs-a-discarded-temporary-warns-in-c\n");
     h_fixedbugsadiscardedtemporarywarnsinc_main();
     hero_runtime_check_leaks();
     return 0;

@@ -48,7 +48,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -123,6 +123,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -154,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "ffiownedcellisfreed.c"
+#line 166 "ffiownedcellisfreed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -165,10 +173,15 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffiownedcellisfreed_main(void);
 int64_t h_library_HERO_STR_OK(void);
-h_0opt_f87774a h_library_validated(const char * h0_c);
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 void h_ffiownedcellisfreed_main(void) {
@@ -181,20 +194,20 @@ void h_ffiownedcellisfreed_main(void) {
 #line 47
     h_0opt_f87774a h0_first = {0}; HERO_NODEBUG const char * *const hero_lend_h1_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell0"); HERO_NODEBUG const char *h2_owned0, *h8_owned2, *h18_owned4, *t5, *t7, *t8, *t10, *t11, *t13, *t29, *t31, *t32, *t34, *t35, *t37, *t72, *t74, *t75, *t77, *t78, *t80; HERO_NODEBUG h_0opt_f87774a h3_owned1 = {0}, h4_f0 = {0}, h9_owned3 = {0}, h10_f1 = {0}, h12_f2 = {0}, h14_f3 = {0}, h19_owned5 = {0}, h20_s0 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t3, t9, t15, t16, t17, t21, t27, t33, t39, t40, t41, t45, t49, t50, t54, t58, t59, t63, t70, t76, t82, t83, t84, t86, t90, t94, t95, t96, t97, t98, t99, t102, t103, t104, t105, t106, t107, t110, t113, t116, t117, t118, t119, t120, t121; HERO_NODEBUG HeroStr h5_r0 = {0}, h11_r1 = {0}, h13_r2 = {0}, h15_r3 = {0}, t1, t2, t22, t23, t24, t25, t26, t46, t47, t48, t55, t56, t57, t64, t65, t66, t68, t69, t87, t88, t89, t92, t93, t100, t101, t108, t109, t111, t112, t114, t115, t122; h_0opt_f87774a h6_second = {0}; HERO_NODEBUG const char * *const hero_lend_h7_cell1 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell1"); h_0opt_f87774a h16_quiet = {0}; HERO_NODEBUG const char * *const hero_lend_h17_cell2 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell2"); HeroStr h21_text = {0}; HeroFailure h22_e = {0}; HERO_NODEBUG int32_t t4, t28, t71; HERO_NODEBUG bool t12, t20, t36, t44, t53, t62, t67, t79; HERO_NODEBUG void *t14, *t38, *t81; HERO_NODEBUG int64_t t18, t19, t42, t43, t51, t52, t60, t61, t85; HERO_NODEBUG HeroFailure t91, t123; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_edaa230); t2 = HERO_STR_LIT(hero_str_37c08f66); hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t94 = h23_own23; h23_own23 = t3; h_0opt_f87774a_release(&t94); t95 = h0_first; h_0opt_f87774a_retain(&t3); h0_first = t3; h_0opt_f87774a_release(&t95);
-    t4 = INT64_C(0); t5 = ((void *)0); h1_cell0 = t5; hero_lend_local_name(hero_lend_h1_cell0, "hero_owned_describe", "out"); (void)hero_owned_describe(t4, (char **)&h1_cell0); t7 = h1_cell0; h2_owned0 = t7; t8 = h2_owned0; t9 = h_library_validated(t8); t96 = h24_own24; h24_own24 = t9; h_0opt_f87774a_release(&t96); t97 = h3_owned1; h_0opt_f87774a_retain(&t9); h3_owned1 = t9; h_0opt_f87774a_release(&t97); t10 = ((void *)0); t11 = h2_owned0; t12 = t11 != t10; if (t12) goto bb1; else goto bb2; bb1: t13 = h2_owned0; t14 = (void *)(char *)t13; (void)free(t14); goto bb2; bb2: t15 = h3_owned1; t98 = h0_first; h_0opt_f87774a_retain(&t15); h0_first = t15; h_0opt_f87774a_release(&t98);
+    t4 = INT64_C(0); t5 = ((void *)0); h1_cell0 = t5; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 49, 9}; hero_lend_local_name(hero_lend_h1_cell0, "hero_owned_describe", "out"); (void)hero_owned_describe(t4, (char **)&h1_cell0); } t7 = h1_cell0; h2_owned0 = t7; t8 = h2_owned0; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 49, 9}; t9 = h_library_validated(t8, &hero_here); } t96 = h24_own24; h24_own24 = t9; h_0opt_f87774a_release(&t96); t97 = h3_owned1; h_0opt_f87774a_retain(&t9); h3_owned1 = t9; h_0opt_f87774a_release(&t97); t10 = ((void *)0); t11 = h2_owned0; t12 = t11 != t10; if (t12) goto bb1; else goto bb2; bb1: t13 = h2_owned0; t14 = (void *)(char *)t13; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 49, 9}; (void)free(t14); } goto bb2; bb2: t15 = h3_owned1; t98 = h0_first; h_0opt_f87774a_retain(&t15); h0_first = t15; h_0opt_f87774a_release(&t98);
     t16 = h0_first; t99 = h4_f0; h_0opt_f87774a_retain(&t16); h4_f0 = t16; h_0opt_f87774a_release(&t99); t17 = h4_f0; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb3: t21 = h4_f0; t22 = t21.as.ok; t100 = h5_r0; hero_str_incref(t22); h5_r0 = t22; hero_str_decref(t100); goto bb5; bb4: t23 = HERO_STR_LIT(hero_str_41624d2f); t101 = h5_r0; hero_str_incref(t23); h5_r0 = t23; hero_str_decref(t101); goto bb5; bb5: t24 = h5_r0; hero_print_str(t24); hero_print_end();
 #line 54
     t25 = HERO_STR_LIT(hero_str_edaa230); t26 = HERO_STR_LIT(hero_str_37c08f66); hero_str_incref(t25); hero_str_incref(t26); t27 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t25, .msg = t26}}; t102 = h25_own25; h25_own25 = t27; h_0opt_f87774a_release(&t102); t103 = h6_second; h_0opt_f87774a_retain(&t27); h6_second = t27; h_0opt_f87774a_release(&t103);
-    t28 = INT64_C(7); t29 = ((void *)0); h7_cell1 = t29; hero_lend_local_name(hero_lend_h7_cell1, "hero_owned_describe", "out"); (void)hero_owned_describe(t28, (char **)&h7_cell1); t31 = h7_cell1; h8_owned2 = t31; t32 = h8_owned2; t33 = h_library_validated(t32); t104 = h26_own26; h26_own26 = t33; h_0opt_f87774a_release(&t104); t105 = h9_owned3; h_0opt_f87774a_retain(&t33); h9_owned3 = t33; h_0opt_f87774a_release(&t105); t34 = ((void *)0); t35 = h8_owned2; t36 = t35 != t34; if (t36) goto bb6; else goto bb7; bb6: t37 = h8_owned2; t38 = (void *)(char *)t37; (void)free(t38); goto bb7; bb7: t39 = h9_owned3; t106 = h6_second; h_0opt_f87774a_retain(&t39); h6_second = t39; h_0opt_f87774a_release(&t106);
+    t28 = INT64_C(7); t29 = ((void *)0); h7_cell1 = t29; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 55, 9}; hero_lend_local_name(hero_lend_h7_cell1, "hero_owned_describe", "out"); (void)hero_owned_describe(t28, (char **)&h7_cell1); } t31 = h7_cell1; h8_owned2 = t31; t32 = h8_owned2; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 55, 9}; t33 = h_library_validated(t32, &hero_here); } t104 = h26_own26; h26_own26 = t33; h_0opt_f87774a_release(&t104); t105 = h9_owned3; h_0opt_f87774a_retain(&t33); h9_owned3 = t33; h_0opt_f87774a_release(&t105); t34 = ((void *)0); t35 = h8_owned2; t36 = t35 != t34; if (t36) goto bb6; else goto bb7; bb6: t37 = h8_owned2; t38 = (void *)(char *)t37; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 55, 9}; (void)free(t38); } goto bb7; bb7: t39 = h9_owned3; t106 = h6_second; h_0opt_f87774a_retain(&t39); h6_second = t39; h_0opt_f87774a_release(&t106);
     t40 = h6_second; t107 = h10_f1; h_0opt_f87774a_retain(&t40); h10_f1 = t40; h_0opt_f87774a_release(&t107); t41 = h10_f1; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb8; else goto bb9; bb8: t45 = h10_f1; t46 = t45.as.ok; t108 = h11_r1; hero_str_incref(t46); h11_r1 = t46; hero_str_decref(t108); goto bb10; bb9: t47 = HERO_STR_LIT(hero_str_41624d2f); t109 = h11_r1; hero_str_incref(t47); h11_r1 = t47; hero_str_decref(t109); goto bb10; bb10: t48 = h11_r1; hero_print_str(t48); hero_print_end();
 #line 59
     t49 = h0_first; t110 = h12_f2; h_0opt_f87774a_retain(&t49); h12_f2 = t49; h_0opt_f87774a_release(&t110); t50 = h12_f2; t51 = t50.tag; t52 = INT64_C(0); t53 = t51 == t52; if (t53) goto bb11; else goto bb12; bb11: t54 = h12_f2; t55 = t54.as.ok; t111 = h13_r2; hero_str_incref(t55); h13_r2 = t55; hero_str_decref(t111); goto bb13; bb12: t56 = HERO_STR_LIT(hero_str_0); t112 = h13_r2; hero_str_incref(t56); h13_r2 = t56; hero_str_decref(t112); goto bb13; bb13: t57 = h13_r2; t58 = h6_second; t113 = h14_f3; h_0opt_f87774a_retain(&t58); h14_f3 = t58; h_0opt_f87774a_release(&t113); t59 = h14_f3; t60 = t59.tag; t61 = INT64_C(0); t62 = t60 == t61; if (t62) goto bb14; else goto bb15; bb14: t63 = h14_f3; t64 = t63.as.ok; t114 = h15_r3; hero_str_incref(t64); h15_r3 = t64; hero_str_decref(t114); goto bb16; bb15: t65 = HERO_STR_LIT(hero_str_0); t115 = h15_r3; hero_str_incref(t65); h15_r3 = t65; hero_str_decref(t115); goto bb16; bb16: t66 = h15_r3; t67 = hero_str_eq(t57, t66); hero_print_bool(t67); hero_print_end();
 #line 63
     t68 = HERO_STR_LIT(hero_str_edaa230); t69 = HERO_STR_LIT(hero_str_37c08f66); hero_str_incref(t68); hero_str_incref(t69); t70 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t68, .msg = t69}}; t116 = h27_own27; h27_own27 = t70; h_0opt_f87774a_release(&t116); t117 = h16_quiet; h_0opt_f87774a_retain(&t70); h16_quiet = t70; h_0opt_f87774a_release(&t117);
-    t71 = INT64_C(3); t72 = ((void *)0); h17_cell2 = t72; hero_lend_local_name(hero_lend_h17_cell2, "hero_owned_silent", "out"); (void)hero_owned_silent(t71, (char **)&h17_cell2); t74 = h17_cell2; h18_owned4 = t74; t75 = h18_owned4; t76 = h_library_validated(t75); t118 = h28_own28; h28_own28 = t76; h_0opt_f87774a_release(&t118); t119 = h19_owned5; h_0opt_f87774a_retain(&t76); h19_owned5 = t76; h_0opt_f87774a_release(&t119); t77 = ((void *)0); t78 = h18_owned4; t79 = t78 != t77; if (t79) goto bb17; else goto bb18; bb17: t80 = h18_owned4; t81 = (void *)(char *)t80; (void)free(t81); goto bb18; bb18: t82 = h19_owned5; t120 = h16_quiet; h_0opt_f87774a_retain(&t82); h16_quiet = t82; h_0opt_f87774a_release(&t120);
+    t71 = INT64_C(3); t72 = ((void *)0); h17_cell2 = t72; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; hero_lend_local_name(hero_lend_h17_cell2, "hero_owned_silent", "out"); (void)hero_owned_silent(t71, (char **)&h17_cell2); } t74 = h17_cell2; h18_owned4 = t74; t75 = h18_owned4; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; t76 = h_library_validated(t75, &hero_here); } t118 = h28_own28; h28_own28 = t76; h_0opt_f87774a_release(&t118); t119 = h19_owned5; h_0opt_f87774a_retain(&t76); h19_owned5 = t76; h_0opt_f87774a_release(&t119); t77 = ((void *)0); t78 = h18_owned4; t79 = t78 != t77; if (t79) goto bb17; else goto bb18; bb17: t80 = h18_owned4; t81 = (void *)(char *)t80; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; (void)free(t81); } goto bb18; bb18: t82 = h19_owned5; t120 = h16_quiet; h_0opt_f87774a_retain(&t82); h16_quiet = t82; h_0opt_f87774a_release(&t120);
 #line 66
     t83 = h16_quiet; t121 = h20_s0; h_0opt_f87774a_retain(&t83); h20_s0 = t83; h_0opt_f87774a_release(&t121); t84 = h20_s0; t85 = t84.tag; switch (t85) { case 0: goto bb20; case 1: goto bb21; default: hero_unreachable(); } bb19:
-#line 198 "ffiownedcellisfreed.c"
+#line 211 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_first));
     h_0opt_f87774a_release(hero_slot_escape(&h3_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -226,7 +239,7 @@ bb20:
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t86 = h20_s0; t87 = t86.as.ok; t122 = h21_text; hero_str_incref(t87); h21_text = t87; hero_str_decref(t122); t88 = HERO_STR_LIT(hero_str_2c0c20d2); t89 = h21_text; hero_print_str(t88); hero_print_str(t89); hero_print_end(); goto bb19; bb21:
     t90 = h20_s0; t91 = t90.as.err; t123 = h22_e; hero_failure_retain(&t91); h22_e = t91; hero_failure_release(&t123); t92 = HERO_STR_LIT(hero_str_5d6883a8); t93 = h22_e.code; hero_print_str(t92); hero_print_str(t93); hero_print_end(); goto bb19;
-#line 230 "ffiownedcellisfreed.c"
+#line 243 "ffiownedcellisfreed.c"
 }
 #undef h1_cell0
 #undef h7_cell1
@@ -234,11 +247,11 @@ bb20:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 238 "ffiownedcellisfreed.c"
+#line 251 "ffiownedcellisfreed.c"
 }
 
 #line 153 "<heroes library>"
-h_0opt_f87774a h_library_validated(const char * h0_c) {
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
 #line 153
 #define h1_status (*hero_lend_h1_status)
 #line 153
@@ -246,7 +259,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 156
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status); t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
 #line 155
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
@@ -254,7 +267,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 258 "ffiownedcellisfreed.c"
+#line 271 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -266,6 +279,10 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     return t18;
 }
 #undef h1_status
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    return h_library_validated(h0_c, &hero_here);
+}
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
@@ -330,10 +347,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5224511a4655de75", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("79ede3b13a920e2a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffiownedcellisfreed\tffi-owned-cell-is-freed\n");
     h_ffiownedcellisfreed_main();
     hero_runtime_check_leaks();
     return 0;

@@ -63,7 +63,7 @@
 #pragma pop_macro("n")
 #pragma pop_macro("v")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -251,6 +251,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -279,91 +287,91 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 283 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 291 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_eq(const D0 *a, const D0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D1_eq(const D1 *a, const D1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D2_eq(const D2 *a, const D2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D3_eq(const D3 *a, const D3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D4_eq(const D4 *a, const D4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D5_eq(const D5 *a, const D5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D6_eq(const D6 *a, const D6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D6_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D7_eq(const D7 *a, const D7 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D7_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D8_eq(const D8 *a, const D8 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D8_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D9_eq(const D9 *a, const D9 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D9_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D10_eq(const D10 *a, const D10 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D10_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D11_eq(const D11 *a, const D11 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D11_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D12_eq(const D12 *a, const D12 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D12_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D13_eq(const D13 *a, const D13 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D13_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D14_eq(const D14 *a, const D14 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D14_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D15_eq(const D15 *a, const D15 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D15_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D16_eq(const D16 *a, const D16 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D16_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D17_eq(const D17 *a, const D17 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D17_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D18_eq(const D18 *a, const D18 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D18_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D19_eq(const D19 *a, const D19 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D19_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D20_eq(const D20 *a, const D20 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D20_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D21_eq(const D21 *a, const D21 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D21_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D22_eq(const D22 *a, const D22 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D22_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D23_eq(const D23 *a, const D23 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D23_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D24_eq(const D24 *a, const D24 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D24_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D25_eq(const D25 *a, const D25 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D25_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D26_eq(const D26 *a, const D26 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D26_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D27_eq(const D27 *a, const D27 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D27_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D28_eq(const D28 *a, const D28 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D28_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D29_eq(const D29 *a, const D29 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D29_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D30_eq(const D30 *a, const D30 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D30_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D31_eq(const D31 *a, const D31 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D31_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D32_eq(const D32 *a, const D32 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D32_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D33_eq(const D33 *a, const D33 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D33_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D34_eq(const D34 *a, const D34 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D34_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D35_eq(const D35 *a, const D35 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D35_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D36_eq(const D36 *a, const D36 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D36_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D37_eq(const D37 *a, const D37 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D37_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_eq(const D38 *a, const D38 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D39_eq(const D39 *a, const D39 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D39_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_W_eq(const W *a, const W *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_W_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_eq(const D0 *a, const D0 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D1_eq(const D1 *a, const D1 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D1_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D2_eq(const D2 *a, const D2 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D3_eq(const D3 *a, const D3 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D3_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D4_eq(const D4 *a, const D4 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D4_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D5_eq(const D5 *a, const D5 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D5_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D6_eq(const D6 *a, const D6 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D6_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D7_eq(const D7 *a, const D7 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D7_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D8_eq(const D8 *a, const D8 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D8_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D9_eq(const D9 *a, const D9 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D9_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D10_eq(const D10 *a, const D10 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D10_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D11_eq(const D11 *a, const D11 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D11_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D12_eq(const D12 *a, const D12 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D12_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D13_eq(const D13 *a, const D13 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D13_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D14_eq(const D14 *a, const D14 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D14_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D15_eq(const D15 *a, const D15 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D15_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D16_eq(const D16 *a, const D16 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D16_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D17_eq(const D17 *a, const D17 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D17_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D18_eq(const D18 *a, const D18 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D18_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D19_eq(const D19 *a, const D19 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D19_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D20_eq(const D20 *a, const D20 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D20_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D21_eq(const D21 *a, const D21 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D21_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D22_eq(const D22 *a, const D22 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D22_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D23_eq(const D23 *a, const D23 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D23_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D24_eq(const D24 *a, const D24 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D24_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D25_eq(const D25 *a, const D25 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D25_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D26_eq(const D26 *a, const D26 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D26_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D27_eq(const D27 *a, const D27 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D27_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D28_eq(const D28 *a, const D28 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D28_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D29_eq(const D29 *a, const D29 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D29_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D30_eq(const D30 *a, const D30 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D30_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D31_eq(const D31 *a, const D31 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D31_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D32_eq(const D32 *a, const D32 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D32_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D33_eq(const D33 *a, const D33 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D33_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D34_eq(const D34 *a, const D34 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D34_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D35_eq(const D35 *a, const D35 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D35_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D36_eq(const D36 *a, const D36 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D36_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D37_eq(const D37 *a, const D37 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D37_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_eq(const D38 *a, const D38 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D39_eq(const D39 *a, const D39 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D39_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0W_eq(const W *a, const W *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0W_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -372,6 +380,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs2058restzeropastthedepthiswritteninc11_main(void);
 void *hero_pad_nowhere(void);
@@ -453,20 +465,20 @@ void h_fixedbugs2058restzeropastthedepthiswritteninc11_main(void) {
     W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1, t3, t5, t7; HERO_NODEBUG W t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG D33 t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = *(W *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.tag = t1; h0_w = t2; hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38); }
     t3 = h0_w.tag; hero_print_int(t3); hero_print_end();
-    hero_lend_local_name(hero_lend_h0_w, "w_deepest", "w"); hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38); } t4 = w_deepest(&h0_w); hero_print_int(t4); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero", "fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.main", 146, 11}; hero_lend_local_name(hero_lend_h0_w, "w_deepest", "w"); hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38); } t4 = w_deepest(&h0_w); } hero_print_int(t4); hero_print_end();
     t5 = INT64_C(3); t6 = *(D33 *)__builtin_memset(&t6, 0, sizeof t6); __builtin_memset(&t6, 0, sizeof t6); t6.n = t5; h1_d = t6; hero_pad_fill(&h1_d, sizeof(D33), 1, hero_pad_g_33, hero_pad_n_33);
     t7 = h1_d.n; hero_print_int(t7); hero_print_end(); hero_lend_local_give(hero_lend_h0_w); return;
-#line 460 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 472 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 }
 #undef h0_w
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_eq(const D0 *a, const D0 *b) {
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_eq(const D0 *a, const D0 *b) {
     if (!(a->i == b->i)) return false;
     if (!(a->f == b->f)) return false;
     if (!(a->v == b->v)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_hash(const void *elem) {
     const D0 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->i)) * UINT64_C(0x100000001b3);
@@ -475,565 +487,565 @@ HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_hash
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D1_eq(const D1 *a, const D1 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D1_eq(const D1 *a, const D1 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D1_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D1_hash(const void *elem) {
     const D1 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D0_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D2_eq(const D2 *a, const D2 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D1_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D2_eq(const D2 *a, const D2 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D1_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D2_hash(const void *elem) {
     const D2 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D1_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D1_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D3_eq(const D3 *a, const D3 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D2_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D3_eq(const D3 *a, const D3 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D2_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D3_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D3_hash(const void *elem) {
     const D3 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D2_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D2_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D4_eq(const D4 *a, const D4 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D3_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D4_eq(const D4 *a, const D4 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D3_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D4_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D4_hash(const void *elem) {
     const D4 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D3_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D3_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D5_eq(const D5 *a, const D5 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D4_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D5_eq(const D5 *a, const D5 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D4_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D5_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D5_hash(const void *elem) {
     const D5 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D4_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D4_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D6_eq(const D6 *a, const D6 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D5_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D6_eq(const D6 *a, const D6 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D5_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D6_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D6_hash(const void *elem) {
     const D6 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D5_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D5_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D7_eq(const D7 *a, const D7 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D6_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D7_eq(const D7 *a, const D7 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D6_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D7_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D7_hash(const void *elem) {
     const D7 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D6_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D6_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D8_eq(const D8 *a, const D8 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D7_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D8_eq(const D8 *a, const D8 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D7_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D8_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D8_hash(const void *elem) {
     const D8 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D7_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D7_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D9_eq(const D9 *a, const D9 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D8_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D9_eq(const D9 *a, const D9 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D8_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D9_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D9_hash(const void *elem) {
     const D9 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D8_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D8_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D10_eq(const D10 *a, const D10 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D9_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D10_eq(const D10 *a, const D10 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D9_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D10_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D10_hash(const void *elem) {
     const D10 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D9_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D9_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D11_eq(const D11 *a, const D11 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D10_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D11_eq(const D11 *a, const D11 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D10_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D11_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D11_hash(const void *elem) {
     const D11 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D10_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D10_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D12_eq(const D12 *a, const D12 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D11_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D12_eq(const D12 *a, const D12 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D11_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D12_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D12_hash(const void *elem) {
     const D12 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D11_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D11_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D13_eq(const D13 *a, const D13 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D12_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D13_eq(const D13 *a, const D13 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D12_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D13_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D13_hash(const void *elem) {
     const D13 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D12_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D12_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D14_eq(const D14 *a, const D14 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D13_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D14_eq(const D14 *a, const D14 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D13_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D14_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D14_hash(const void *elem) {
     const D14 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D13_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D13_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D15_eq(const D15 *a, const D15 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D14_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D15_eq(const D15 *a, const D15 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D14_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D15_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D15_hash(const void *elem) {
     const D15 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D14_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D14_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D16_eq(const D16 *a, const D16 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D15_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D16_eq(const D16 *a, const D16 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D15_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D16_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D16_hash(const void *elem) {
     const D16 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D15_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D15_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D17_eq(const D17 *a, const D17 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D16_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D17_eq(const D17 *a, const D17 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D16_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D17_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D17_hash(const void *elem) {
     const D17 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D16_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D16_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D18_eq(const D18 *a, const D18 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D17_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D18_eq(const D18 *a, const D18 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D17_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D18_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D18_hash(const void *elem) {
     const D18 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D17_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D17_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D19_eq(const D19 *a, const D19 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D18_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D19_eq(const D19 *a, const D19 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D18_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D19_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D19_hash(const void *elem) {
     const D19 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D18_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D18_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D20_eq(const D20 *a, const D20 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D19_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D20_eq(const D20 *a, const D20 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D19_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D20_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D20_hash(const void *elem) {
     const D20 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D19_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D19_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D21_eq(const D21 *a, const D21 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D20_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D21_eq(const D21 *a, const D21 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D20_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D21_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D21_hash(const void *elem) {
     const D21 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D20_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D20_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D22_eq(const D22 *a, const D22 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D21_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D22_eq(const D22 *a, const D22 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D21_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D22_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D22_hash(const void *elem) {
     const D22 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D21_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D21_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D23_eq(const D23 *a, const D23 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D22_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D23_eq(const D23 *a, const D23 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D22_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D23_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D23_hash(const void *elem) {
     const D23 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D22_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D22_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D24_eq(const D24 *a, const D24 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D23_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D24_eq(const D24 *a, const D24 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D23_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D24_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D24_hash(const void *elem) {
     const D24 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D23_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D23_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D25_eq(const D25 *a, const D25 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D24_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D25_eq(const D25 *a, const D25 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D24_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D25_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D25_hash(const void *elem) {
     const D25 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D24_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D24_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D26_eq(const D26 *a, const D26 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D25_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D26_eq(const D26 *a, const D26 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D25_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D26_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D26_hash(const void *elem) {
     const D26 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D25_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D25_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D27_eq(const D27 *a, const D27 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D26_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D27_eq(const D27 *a, const D27 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D26_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D27_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D27_hash(const void *elem) {
     const D27 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D26_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D26_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D28_eq(const D28 *a, const D28 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D27_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D28_eq(const D28 *a, const D28 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D27_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D28_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D28_hash(const void *elem) {
     const D28 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D27_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D27_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D29_eq(const D29 *a, const D29 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D28_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D29_eq(const D29 *a, const D29 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D28_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D29_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D29_hash(const void *elem) {
     const D29 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D28_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D28_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D30_eq(const D30 *a, const D30 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D29_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D30_eq(const D30 *a, const D30 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D29_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D30_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D30_hash(const void *elem) {
     const D30 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D29_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D29_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D31_eq(const D31 *a, const D31 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D30_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D31_eq(const D31 *a, const D31 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D30_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D31_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D31_hash(const void *elem) {
     const D31 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D30_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D30_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D32_eq(const D32 *a, const D32 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D31_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D32_eq(const D32 *a, const D32 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D31_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D32_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D32_hash(const void *elem) {
     const D32 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D31_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D31_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D33_eq(const D33 *a, const D33 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D32_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D33_eq(const D33 *a, const D33 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D32_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D33_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D33_hash(const void *elem) {
     const D33 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D32_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D32_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D34_eq(const D34 *a, const D34 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D33_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D34_eq(const D34 *a, const D34 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D33_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D34_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D34_hash(const void *elem) {
     const D34 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D33_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D33_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D35_eq(const D35 *a, const D35 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D34_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D35_eq(const D35 *a, const D35 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D34_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D35_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D35_hash(const void *elem) {
     const D35 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D34_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D34_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D36_eq(const D36 *a, const D36 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D35_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D36_eq(const D36 *a, const D36 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D35_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D36_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D36_hash(const void *elem) {
     const D36 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D35_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D35_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D37_eq(const D37 *a, const D37 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D36_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D37_eq(const D37 *a, const D37 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D36_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D37_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D37_hash(const void *elem) {
     const D37 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D36_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D36_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_eq(const D38 *a, const D38 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D37_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_eq(const D38 *a, const D38 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D37_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_hash(const void *elem) {
     const D38 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D37_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D37_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D39_eq(const D39 *a, const D39 *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0D39_eq(const D39 *a, const D39 *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_eq(&a->inner, &b->inner))) return false;
     if (!(a->n == b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_D39_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0D39_hash(const void *elem) {
     const D39 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_hash(&v->inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_W_eq(const W *a, const W *b) {
-    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_D39_eq(&a->deep, &b->deep))) return false;
-    if (!((h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_eq(&a->pair[0], &b->pair[0]) && h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_eq(&a->pair[1], &b->pair[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_0W_eq(const W *a, const W *b) {
+    if (!(h_fixedbugs2058restzeropastthedepthiswritteninc11_0D39_eq(&a->deep, &b->deep))) return false;
+    if (!((h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_eq(&a->pair[0], &b->pair[0]) && h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_eq(&a->pair[1], &b->pair[1])))) return false;
     if (!(a->tag == b->tag)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_W_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs2058restzeropastthedepthiswritteninc11_0W_hash(const void *elem) {
     const W *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D39_hash(&v->deep)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_hash(&v->pair[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_D38_hash(&v->pair[1])) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D39_hash(&v->deep)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_hash(&v->pair[0])) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs2058restzeropastthedepthiswritteninc11_0D38_hash(&v->pair[1])) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_i32)->hash(&v->tag)) * UINT64_C(0x100000001b3);
     return h;
 }
@@ -1102,10 +1114,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("324038943a90d62b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("58d79a82205a00b6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs2058restzeropastthedepthiswritteninc11\tfixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11\n");
     h_fixedbugs2058restzeropastthedepthiswritteninc11_main();
     hero_runtime_check_leaks();
     return 0;

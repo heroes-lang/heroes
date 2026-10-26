@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -112,6 +112,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -140,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 152 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -151,6 +159,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void);
 
@@ -162,9 +174,9 @@ void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
     uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); HERO_NODEBUG uint8_t t1, t5; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); h0_m = t1;
     t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
-    hero_lend_local_name(hero_lend_h0_m, "digest32", "md"); t3 = digest32((void *)&h0_m); hero_print_int(t3); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero", "fixedbugs-396-a-one-cell-local-c-overruns-aborts.main", 12, 11}; hero_lend_local_name(hero_lend_h0_m, "digest32", "md"); t3 = digest32((void *)&h0_m); } hero_print_int(t3); hero_print_end();
     t4 = HERO_STR_LIT(hero_str_5687795c); t5 = h0_m; hero_print_str(t4); hero_print_int(t5); hero_print_end(); hero_lend_local_give(hero_lend_h0_m); return;
-#line 168 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 180 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 }
 #undef h0_m
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -231,10 +243,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d2ab9e546edac16", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7839c24f578059dc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs396aonecelllocalcoverrunsaborts\tfixedbugs-396-a-one-cell-local-c-overruns-aborts\n");
     h_fixedbugs396aonecelllocalcoverrunsaborts_main();
     hero_runtime_check_leaks();
     return 0;

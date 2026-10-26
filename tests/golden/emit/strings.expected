@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -70,6 +70,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -84,7 +92,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "strings.c"
+#line 96 "strings.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,6 +103,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal);
 void h_strings_main(void);
@@ -106,7 +118,7 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) { HeroStr h2_prefix = {
     t2 = h1_formal; if (t2) goto bb2; else goto bb3; bb1:
 #line 12
     t4 = h2_prefix; t5 = h0_name; t6 = hero_str_concat(t4, t5); t8 = h3_own3; h3_own3 = t6; hero_str_decref(t8);
-#line 110 "strings.c"
+#line 122 "strings.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_prefix);
     hero_str_release_at(&h3_own3);
@@ -114,13 +126,13 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) { HeroStr h2_prefix = {
 bb2:
 #line 11 "tests/golden/emit/strings.hero"
     t3 = HERO_STR_LIT(hero_str_2d678ad8); t9 = h2_prefix; hero_str_incref(t3); h2_prefix = t3; hero_str_decref(t9); goto bb1; bb3: goto bb1;
-#line 118 "strings.c"
+#line 130 "strings.c"
 }
 
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t4; HERO_NODEBUG bool t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_39ff1ae6); t2 = true; t3 = h_strings_greet(t1, t2); t4 = h0_own0; h0_own0 = t3; hero_str_decref(t4); hero_print_str(t3); hero_print_end();
-#line 124 "strings.c"
+#line 136 "strings.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -188,8 +200,40 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a8185a727a3a9c7", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5fce47d24a93341d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_strings_main();

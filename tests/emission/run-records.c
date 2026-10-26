@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -76,6 +76,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -90,13 +98,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "records.c"
+#line 102 "records.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b);
-HERO_TU_LOCAL uint64_t h_records_Point_hash(const void *elem);
-HERO_TU_LOCAL bool h_records_Pair_eq(const h_records_Pair *a, const h_records_Pair *b);
-HERO_TU_LOCAL uint64_t h_records_Pair_hash(const void *elem);
+HERO_TU_LOCAL bool h_records_0Point_eq(const h_records_Point *a, const h_records_Point *b);
+HERO_TU_LOCAL uint64_t h_records_0Point_hash(const void *elem);
+HERO_TU_LOCAL bool h_records_0Pair_eq(const h_records_Pair *a, const h_records_Pair *b);
+HERO_TU_LOCAL uint64_t h_records_0Pair_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -105,6 +113,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b);
 h_records_Point h_records_moved(h_records_Point h0_p);
@@ -112,16 +124,16 @@ void h_records_main(void);
 
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) { int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_a.f_x; t2 = h1_b.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); h2_dx = t3;
-    t4 = h0_a.f_y; t5 = h1_b.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow(); h3_dy = t6;
-    t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow(); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow(); return t13;
-#line 119 "records.c"
+    t1 = h0_a.f_x; t2 = h1_b.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("records.hero", "records.dist2", 19, 10); h2_dx = t3;
+    t4 = h0_a.f_y; t5 = h1_b.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("records.hero", "records.dist2", 20, 10); h3_dy = t6;
+    t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("records.hero", "records.dist2", 21, 12); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow_at("records.hero", "records.dist2", 21, 22); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow_at("records.hero", "records.dist2", 21, 12); return t13;
+#line 131 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_records_Point t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_p.f_x; t2 = INT64_C(10); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = h0_p.f_y; t5 = (h_records_Point){.f_x = t3, .f_y = t4}; return t5;
-#line 125 "records.c"
+    t1 = h0_p.f_x; t2 = INT64_C(10); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("records.hero", "records.moved", 24, 21); t4 = h0_p.f_y; t5 = (h_records_Point){.f_x = t3, .f_y = t4}; return t5;
+#line 137 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
@@ -129,10 +141,10 @@ void h_records_main(void) { h_records_Point h0_p; h_records_Point h1_q; h_record
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = (h_records_Point){.f_x = t1, .f_y = t2}; h0_p = t3;
     t4 = INT64_C(3); t5 = INT64_C(4); t6 = (h_records_Point){.f_x = t4, .f_y = t5}; h1_q = t6;
     t7 = h0_p; t8 = h1_q; t9 = h_records_dist2(t7, t8); hero_print_int(t9); hero_print_end();
-    t10 = h0_p; t11 = h1_q; t12 = h_records_Point_eq(&t10, &t11); t13 = h0_p; t14 = INT64_C(0); t15 = INT64_C(0); t16 = (h_records_Point){.f_x = t14, .f_y = t15}; t17 = h_records_Point_eq(&t13, &t16); hero_print_bool(t12); hero_print_bool(t17); hero_print_end();
+    t10 = h0_p; t11 = h1_q; t12 = h_records_0Point_eq(&t10, &t11); t13 = h0_p; t14 = INT64_C(0); t15 = INT64_C(0); t16 = (h_records_Point){.f_x = t14, .f_y = t15}; t17 = h_records_0Point_eq(&t13, &t16); hero_print_bool(t12); hero_print_bool(t17); hero_print_end();
     t18 = h0_p; t19 = h1_q; t20 = (h_records_Pair){.f_one = t18, .f_two = t19}; h2_both = t20;
     t21 = h2_both.f_two.f_y; hero_print_int(t21); hero_print_end();
-    t22 = h2_both; t23 = h0_p; t24 = h1_q; t25 = (h_records_Pair){.f_one = t23, .f_two = t24}; t26 = h_records_Pair_eq(&t22, &t25); hero_print_bool(t26); hero_print_end();
+    t22 = h2_both; t23 = h0_p; t24 = h1_q; t25 = (h_records_Pair){.f_one = t23, .f_two = t24}; t26 = h_records_0Pair_eq(&t22, &t25); hero_print_bool(t26); hero_print_end();
 #line 36
     t27 = h0_p; h3_r = t27;
     t28 = h3_r; t29 = h_records_moved(t28); h3_r = t29;
@@ -140,16 +152,16 @@ void h_records_main(void) { h_records_Point h0_p; h_records_Point h1_q; h_record
     t30 = h3_r.f_x; hero_print_int(t30); hero_print_end();
     t31 = h0_p.f_x; hero_print_int(t31); hero_print_end();
 #line 47
-    t32 = h0_p; t33 = h0_p; t34 = (h_records_Pair){.f_one = t32, .f_two = t33}; t35 = h0_p; t36 = h1_q; t37 = (h_records_Pair){.f_one = t35, .f_two = t36}; t38 = h_records_Pair_eq(&t34, &t37); hero_print_bool(t38); hero_print_end(); return;
-#line 145 "records.c"
+    t32 = h0_p; t33 = h0_p; t34 = (h_records_Pair){.f_one = t32, .f_two = t33}; t35 = h0_p; t36 = h1_q; t37 = (h_records_Pair){.f_one = t35, .f_two = t36}; t38 = h_records_0Pair_eq(&t34, &t37); hero_print_bool(t38); hero_print_end(); return;
+#line 157 "records.c"
 }
-HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
+HERO_TU_LOCAL bool h_records_0Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
     if (!(a->f_y == b->f_y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_records_Point_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_records_0Point_hash(const void *elem) {
     const h_records_Point *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
@@ -157,17 +169,17 @@ HERO_TU_LOCAL uint64_t h_records_Point_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_records_Pair_eq(const h_records_Pair *a, const h_records_Pair *b) {
-    if (!(h_records_Point_eq(&a->f_one, &b->f_one))) return false;
-    if (!(h_records_Point_eq(&a->f_two, &b->f_two))) return false;
+HERO_TU_LOCAL bool h_records_0Pair_eq(const h_records_Pair *a, const h_records_Pair *b) {
+    if (!(h_records_0Point_eq(&a->f_one, &b->f_one))) return false;
+    if (!(h_records_0Point_eq(&a->f_two, &b->f_two))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_records_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_records_0Pair_hash(const void *elem) {
     const h_records_Pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_records_Point_hash(&v->f_one)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_records_Point_hash(&v->f_two)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_records_0Point_hash(&v->f_one)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_records_0Point_hash(&v->f_two)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -235,8 +247,40 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("279905d37d626c5b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ce5c7fe2051f6b2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_records_main();

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,6 +71,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,11 +93,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "specthedocumentsownexample.c"
+#line 97 "specthedocumentsownexample.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_specthedocumentsownexample_Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b);
-HERO_TU_LOCAL uint64_t h_specthedocumentsownexample_Point_hash(const void *elem);
+HERO_TU_LOCAL bool h_specthedocumentsownexample_0Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b);
+HERO_TU_LOCAL uint64_t h_specthedocumentsownexample_0Point_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -98,30 +106,34 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b);
 void h_specthedocumentsownexample_main(void);
 
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
 int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b) { int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_b.f_x; t2 = h0_a.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); h2_dx = t3;
-    t4 = h1_b.f_y; t5 = h0_a.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow(); h3_dy = t6;
-    t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow(); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow(); return t13;
-#line 111 "specthedocumentsownexample.c"
+    t1 = h1_b.f_x; t2 = h0_a.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 30, 10); h2_dx = t3;
+    t4 = h1_b.f_y; t5 = h0_a.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 31, 10); h3_dy = t6;
+    t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 32, 12); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 32, 22); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 32, 12); return t13;
+#line 123 "specthedocumentsownexample.c"
 }
 
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
 void h_specthedocumentsownexample_main(void) { HERO_NODEBUG int64_t t1, t2, t4, t5, t7; HERO_NODEBUG h_specthedocumentsownexample_Point t3, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = (h_specthedocumentsownexample_Point){.f_x = t1, .f_y = t2}; t4 = INT64_C(3); t5 = INT64_C(4); t6 = (h_specthedocumentsownexample_Point){.f_x = t4, .f_y = t5}; t7 = h_specthedocumentsownexample_dist2(t3, t6); hero_print_int(t7); hero_print_end(); return;
-#line 117 "specthedocumentsownexample.c"
+#line 129 "specthedocumentsownexample.c"
 }
-HERO_TU_LOCAL bool h_specthedocumentsownexample_Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b) {
+HERO_TU_LOCAL bool h_specthedocumentsownexample_0Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
     if (!(a->f_y == b->f_y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_specthedocumentsownexample_Point_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_specthedocumentsownexample_0Point_hash(const void *elem) {
     const h_specthedocumentsownexample_Point *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
@@ -193,10 +205,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7873157d70f193cc", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("245c048453c270f1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("specthedocumentsownexample\tspec-the-documents-own-example\n");
     h_specthedocumentsownexample_main();
     hero_runtime_check_leaks();
     return 0;

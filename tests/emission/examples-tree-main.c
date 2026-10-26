@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,46 +71,46 @@ typedef struct h_0opt_c7472a6 {
     } as;
 } h_0opt_c7472a6;
 
-typedef enum h_node_Node_tag {
-    h_node_Node_tag_number = 0,
-    h_node_Node_tag_add = 1,
-    h_node_Node_tag_multiply = 2,
-    h_node_Node_tag_negate = 3,
-    h_node_Node_tag_annotated = 4,
-    h_node_Node_tag_unreadable = 5,
-} h_node_Node_tag;
+typedef enum h_node_0Node_tag {
+    h_node_0Node_tag_number = 0,
+    h_node_0Node_tag_add = 1,
+    h_node_0Node_tag_multiply = 2,
+    h_node_0Node_tag_negate = 3,
+    h_node_0Node_tag_annotated = 4,
+    h_node_0Node_tag_unreadable = 5,
+} h_node_0Node_tag;
 
-typedef struct h_node_Node_c_number {
+typedef struct h_node_0Node_c_number {
     int64_t f_value;
-} h_node_Node_c_number;
+} h_node_0Node_c_number;
 
-typedef struct h_node_Node_c_add {
+typedef struct h_node_0Node_c_add {
     int64_t f_left;
     int64_t f_right;
-} h_node_Node_c_add;
+} h_node_0Node_c_add;
 
-typedef struct h_node_Node_c_multiply {
+typedef struct h_node_0Node_c_multiply {
     int64_t f_left;
     int64_t f_right;
-} h_node_Node_c_multiply;
+} h_node_0Node_c_multiply;
 
-typedef struct h_node_Node_c_negate {
+typedef struct h_node_0Node_c_negate {
     int64_t f_operand;
-} h_node_Node_c_negate;
+} h_node_0Node_c_negate;
 
-typedef struct h_node_Node_c_annotated {
+typedef struct h_node_0Node_c_annotated {
     int64_t f_operand;
     h_0opt_c7472a6 f_note;
-} h_node_Node_c_annotated;
+} h_node_0Node_c_annotated;
 
 typedef struct h_node_Node {
-    h_node_Node_tag tag;
+    h_node_0Node_tag tag;
     union {
-        h_node_Node_c_number c_number;
-        h_node_Node_c_add c_add;
-        h_node_Node_c_multiply c_multiply;
-        h_node_Node_c_negate c_negate;
-        h_node_Node_c_annotated c_annotated;
+        h_node_0Node_c_number c_number;
+        h_node_0Node_c_add c_add;
+        h_node_0Node_c_multiply c_multiply;
+        h_node_0Node_c_negate c_negate;
+        h_node_0Node_c_annotated c_annotated;
     } as;
 } h_node_Node;
 
@@ -133,6 +133,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -147,33 +155,33 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "main.c"
+#line 159 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_node_Note_retain(const h_node_Note *v);
-HERO_TU_LOCAL void h_node_Note_release(h_node_Note *v);
-HERO_TU_LOCAL bool h_node_Note_eq(const h_node_Note *a, const h_node_Note *b);
-HERO_TU_LOCAL uint64_t h_node_Note_hash(const void *elem);
-HERO_TU_LOCAL bool h_node_Node_c_number_eq(const h_node_Node_c_number *a, const h_node_Node_c_number *b);
-HERO_TU_LOCAL uint64_t h_node_Node_c_number_hash(const void *elem);
-HERO_TU_LOCAL bool h_node_Node_c_add_eq(const h_node_Node_c_add *a, const h_node_Node_c_add *b);
-HERO_TU_LOCAL uint64_t h_node_Node_c_add_hash(const void *elem);
-HERO_TU_LOCAL bool h_node_Node_c_multiply_eq(const h_node_Node_c_multiply *a, const h_node_Node_c_multiply *b);
-HERO_TU_LOCAL uint64_t h_node_Node_c_multiply_hash(const void *elem);
-HERO_TU_LOCAL bool h_node_Node_c_negate_eq(const h_node_Node_c_negate *a, const h_node_Node_c_negate *b);
-HERO_TU_LOCAL uint64_t h_node_Node_c_negate_hash(const void *elem);
-HERO_TU_LOCAL void h_node_Node_c_annotated_retain(const h_node_Node_c_annotated *v);
-HERO_TU_LOCAL void h_node_Node_c_annotated_release(h_node_Node_c_annotated *v);
-HERO_TU_LOCAL bool h_node_Node_c_annotated_eq(const h_node_Node_c_annotated *a, const h_node_Node_c_annotated *b);
-HERO_TU_LOCAL uint64_t h_node_Node_c_annotated_hash(const void *elem);
-HERO_TU_LOCAL void h_node_Node_retain(const h_node_Node *v);
-HERO_TU_LOCAL void h_node_Node_release(h_node_Node *v);
-HERO_TU_LOCAL bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b);
-HERO_TU_LOCAL uint64_t h_node_Node_hash(const void *elem);
-HERO_TU_LOCAL void h_node_Tree_retain(const h_node_Tree *v);
-HERO_TU_LOCAL void h_node_Tree_release(h_node_Tree *v);
-HERO_TU_LOCAL bool h_node_Tree_eq(const h_node_Tree *a, const h_node_Tree *b);
-HERO_TU_LOCAL uint64_t h_node_Tree_hash(const void *elem);
+HERO_TU_LOCAL void h_node_0Note_retain(const h_node_Note *v);
+HERO_TU_LOCAL void h_node_0Note_release(h_node_Note *v);
+HERO_TU_LOCAL bool h_node_0Note_eq(const h_node_Note *a, const h_node_Note *b);
+HERO_TU_LOCAL uint64_t h_node_0Note_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_0Node_c_number_eq(const h_node_0Node_c_number *a, const h_node_0Node_c_number *b);
+HERO_TU_LOCAL uint64_t h_node_0Node_c_number_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_0Node_c_add_eq(const h_node_0Node_c_add *a, const h_node_0Node_c_add *b);
+HERO_TU_LOCAL uint64_t h_node_0Node_c_add_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_0Node_c_multiply_eq(const h_node_0Node_c_multiply *a, const h_node_0Node_c_multiply *b);
+HERO_TU_LOCAL uint64_t h_node_0Node_c_multiply_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_0Node_c_negate_eq(const h_node_0Node_c_negate *a, const h_node_0Node_c_negate *b);
+HERO_TU_LOCAL uint64_t h_node_0Node_c_negate_hash(const void *elem);
+HERO_TU_LOCAL void h_node_0Node_c_annotated_retain(const h_node_0Node_c_annotated *v);
+HERO_TU_LOCAL void h_node_0Node_c_annotated_release(h_node_0Node_c_annotated *v);
+HERO_TU_LOCAL bool h_node_0Node_c_annotated_eq(const h_node_0Node_c_annotated *a, const h_node_0Node_c_annotated *b);
+HERO_TU_LOCAL uint64_t h_node_0Node_c_annotated_hash(const void *elem);
+HERO_TU_LOCAL void h_node_0Node_retain(const h_node_Node *v);
+HERO_TU_LOCAL void h_node_0Node_release(h_node_Node *v);
+HERO_TU_LOCAL bool h_node_0Node_eq(const h_node_Node *a, const h_node_Node *b);
+HERO_TU_LOCAL uint64_t h_node_0Node_hash(const void *elem);
+HERO_TU_LOCAL void h_node_0Tree_retain(const h_node_Tree *v);
+HERO_TU_LOCAL void h_node_0Tree_release(h_node_Tree *v);
+HERO_TU_LOCAL bool h_node_0Tree_eq(const h_node_Tree *a, const h_node_Tree *b);
+HERO_TU_LOCAL uint64_t h_node_0Tree_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v);
 HERO_TU_LOCAL void h_0opt_c7472a6_release(h_0opt_c7472a6 *v);
 HERO_TU_LOCAL bool h_0opt_c7472a6_eq(const h_0opt_c7472a6 *a, const h_0opt_c7472a6 *b);
@@ -186,41 +194,45 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_node_Node_desc_copy(void *dst, const void *src) {
+static void h_node_0Node_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_node_Node));
-    h_node_Node_retain((const h_node_Node *)dst);
+    h_node_0Node_retain((const h_node_Node *)dst);
 }
-static void h_node_Node_desc_drop(void *elem) {
-    h_node_Node_release((h_node_Node *)elem);
+static void h_node_0Node_desc_drop(void *elem) {
+    h_node_0Node_release((h_node_Node *)elem);
 }
-static bool h_node_Node_desc_eq(const void *a, const void *b) {
-    return h_node_Node_eq((const h_node_Node *)a, (const h_node_Node *)b);
+static bool h_node_0Node_desc_eq(const void *a, const void *b) {
+    return h_node_0Node_eq((const h_node_Node *)a, (const h_node_Node *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_node_Node_desc = {
+HERO_TU_QUIET static const HeroDesc h_node_0Node_desc = {
     sizeof(h_node_Node),
-    h_node_Node_desc_copy,
-    h_node_Node_desc_drop,
-    h_node_Node_desc_eq,
-    h_node_Node_hash,
+    h_node_0Node_desc_copy,
+    h_node_0Node_desc_drop,
+    h_node_0Node_desc_eq,
+    h_node_0Node_hash,
 };
 
-static void h_node_Note_desc_copy(void *dst, const void *src) {
+static void h_node_0Note_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_node_Note));
-    h_node_Note_retain((const h_node_Note *)dst);
+    h_node_0Note_retain((const h_node_Note *)dst);
 }
-static void h_node_Note_desc_drop(void *elem) {
-    h_node_Note_release((h_node_Note *)elem);
+static void h_node_0Note_desc_drop(void *elem) {
+    h_node_0Note_release((h_node_Note *)elem);
 }
-static bool h_node_Note_desc_eq(const void *a, const void *b) {
-    return h_node_Note_eq((const h_node_Note *)a, (const h_node_Note *)b);
+static bool h_node_0Note_desc_eq(const void *a, const void *b) {
+    return h_node_0Note_eq((const h_node_Note *)a, (const h_node_Note *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_node_Note_desc = {
+HERO_TU_QUIET static const HeroDesc h_node_0Note_desc = {
     sizeof(h_node_Note),
-    h_node_Note_desc_copy,
-    h_node_Note_desc_drop,
-    h_node_Note_desc_eq,
-    h_node_Note_hash,
+    h_node_0Note_desc_copy,
+    h_node_0Note_desc_drop,
+    h_node_0Note_desc_eq,
+    h_node_0Note_hash,
 };
 
 static void h_0opt_c7472a6_desc_copy(void *dst, const void *src) {
@@ -251,84 +263,84 @@ HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at);
 
 #line 14 "examples/tree/main.hero"
 void h_main_main(void) { h_node_Tree h0_t = {0}; int64_t h1_two; int64_t h2_three; int64_t h3_four; int64_t h4_five; int64_t h5_sum; int64_t h6_product; int64_t h7_negated; int64_t h8_whole; h_node_Tree h9_u = {0}; h_node_Tree h10_v = {0}; h_node_Node h11_absent = {0}; HERO_NODEBUG h_node_Tree h12_own12 = {0}, h22_own22 = {0}, h24_own24 = {0}, t1, t29, t32, t35, t40, t44, t59, t60, t70, t71, t73, t74; HERO_NODEBUG h_node_Node h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h23_own23 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t3, t6, t9, t12, t16, t20, t23, t27, t42, t46, t51, t52, t53, t55, t57, t61, t62, t63, t64, t65, t66, t67, t68, t72, t75, t76, t77, t78, t79; HERO_NODEBUG HeroStr h21_own21 = {0}, t31, t69; HERO_NODEBUG int64_t t2, t4, t5, t7, t8, t10, t11, t13, t14, t15, t17, t18, t19, t21, t22, t24, t25, t26, t28, t30, t33, t34, t36, t37, t39, t41, t45, t56; HERO_NODEBUG HeroArrayHeader *t38, *t48, *t49; HERO_NODEBUG bool t50, t54, t58; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_node_new_tree(); t59 = h12_own12; h12_own12 = t1; h_node_Tree_release(&t59); t60 = h0_t; h_node_Tree_retain(&t1); h0_t = t1; h_node_Tree_release(&t60);
+    t1 = h_node_new_tree(); t59 = h12_own12; h12_own12 = t1; h_node_0Tree_release(&t59); t60 = h0_t; h_node_0Tree_retain(&t1); h0_t = t1; h_node_0Tree_release(&t60);
 #line 18
-    t2 = INT64_C(2); t3 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t2}}; t61 = h13_own13; h13_own13 = t3; h_node_Node_release(&t61); t4 = h_node_add_node(&h0_t, t3); h1_two = t4;
-    t5 = INT64_C(3); t6 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t5}}; t62 = h14_own14; h14_own14 = t6; h_node_Node_release(&t62); t7 = h_node_add_node(&h0_t, t6); h2_three = t7;
-    t8 = INT64_C(4); t9 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t8}}; t63 = h15_own15; h15_own15 = t9; h_node_Node_release(&t63); t10 = h_node_add_node(&h0_t, t9); h3_four = t10;
-    t11 = INT64_C(5); t12 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t11}}; t64 = h16_own16; h16_own16 = t12; h_node_Node_release(&t64); t13 = h_node_add_node(&h0_t, t12); h4_five = t13;
+    t2 = INT64_C(2); t3 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t2}}; t61 = h13_own13; h13_own13 = t3; h_node_0Node_release(&t61); t4 = h_node_add_node(&h0_t, t3); h1_two = t4;
+    t5 = INT64_C(3); t6 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t5}}; t62 = h14_own14; h14_own14 = t6; h_node_0Node_release(&t62); t7 = h_node_add_node(&h0_t, t6); h2_three = t7;
+    t8 = INT64_C(4); t9 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t8}}; t63 = h15_own15; h15_own15 = t9; h_node_0Node_release(&t63); t10 = h_node_add_node(&h0_t, t9); h3_four = t10;
+    t11 = INT64_C(5); t12 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t11}}; t64 = h16_own16; h16_own16 = t12; h_node_0Node_release(&t64); t13 = h_node_add_node(&h0_t, t12); h4_five = t13;
 #line 24
-    t14 = h2_three; t15 = h3_four; t16 = (h_node_Node){.tag = h_node_Node_tag_add, .as.c_add = {.f_left = t14, .f_right = t15}}; t65 = h17_own17; h17_own17 = t16; h_node_Node_release(&t65); t17 = h_node_add_node(&h0_t, t16); h5_sum = t17;
-    t18 = h1_two; t19 = h5_sum; t20 = (h_node_Node){.tag = h_node_Node_tag_multiply, .as.c_multiply = {.f_left = t18, .f_right = t19}}; t66 = h18_own18; h18_own18 = t20; h_node_Node_release(&t66); t21 = h_node_add_node(&h0_t, t20); h6_product = t21;
-    t22 = h6_product; t23 = (h_node_Node){.tag = h_node_Node_tag_negate, .as.c_negate = {.f_operand = t22}}; t67 = h19_own19; h19_own19 = t23; h_node_Node_release(&t67); t24 = h_node_add_node(&h0_t, t23); h7_negated = t24;
-    t25 = h7_negated; t26 = h4_five; t27 = (h_node_Node){.tag = h_node_Node_tag_add, .as.c_add = {.f_left = t25, .f_right = t26}}; t68 = h20_own20; h20_own20 = t27; h_node_Node_release(&t68); t28 = h_node_add_node(&h0_t, t27); h8_whole = t28;
+    t14 = h2_three; t15 = h3_four; t16 = (h_node_Node){.tag = h_node_0Node_tag_add, .as.c_add = {.f_left = t14, .f_right = t15}}; t65 = h17_own17; h17_own17 = t16; h_node_0Node_release(&t65); t17 = h_node_add_node(&h0_t, t16); h5_sum = t17;
+    t18 = h1_two; t19 = h5_sum; t20 = (h_node_Node){.tag = h_node_0Node_tag_multiply, .as.c_multiply = {.f_left = t18, .f_right = t19}}; t66 = h18_own18; h18_own18 = t20; h_node_0Node_release(&t66); t21 = h_node_add_node(&h0_t, t20); h6_product = t21;
+    t22 = h6_product; t23 = (h_node_Node){.tag = h_node_0Node_tag_negate, .as.c_negate = {.f_operand = t22}}; t67 = h19_own19; h19_own19 = t23; h_node_0Node_release(&t67); t24 = h_node_add_node(&h0_t, t23); h7_negated = t24;
+    t25 = h7_negated; t26 = h4_five; t27 = (h_node_Node){.tag = h_node_0Node_tag_add, .as.c_add = {.f_left = t25, .f_right = t26}}; t68 = h20_own20; h20_own20 = t27; h_node_0Node_release(&t68); t28 = h_node_add_node(&h0_t, t27); h8_whole = t28;
 #line 29
     t29 = h0_t; t30 = h8_whole; t31 = h_node_render(t29, t30); t69 = h21_own21; h21_own21 = t31; hero_str_decref(t69); hero_print_str(t31); hero_print_end();
     t32 = h0_t; t33 = h8_whole; t34 = h_node_evaluate(t32, t33); hero_print_int(t34); hero_print_end();
     t35 = h0_t; t36 = h8_whole; t37 = h_node_depth(t35, t36); hero_print_int(t37); hero_print_end();
     t38 = h0_t.f_nodes; t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len); hero_print_int(t39); hero_print_end();
 #line 37
-    t40 = h_node_new_tree(); t70 = h22_own22; h22_own22 = t40; h_node_Tree_release(&t70); t71 = h9_u; h_node_Tree_retain(&t40); h9_u = t40; h_node_Tree_release(&t71);
-    t41 = INT64_C(2); t42 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t41}}; t72 = h23_own23; h23_own23 = t42; h_node_Node_release(&t72); h_node_add_node(&h9_u, t42);
-    t44 = h_node_new_tree(); t73 = h24_own24; h24_own24 = t44; h_node_Tree_release(&t73); t74 = h10_v; h_node_Tree_retain(&t44); h10_v = t44; h_node_Tree_release(&t74);
-    t45 = INT64_C(2); t46 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t45}}; t75 = h25_own25; h25_own25 = t46; h_node_Node_release(&t75); h_node_add_node(&h10_v, t46);
+    t40 = h_node_new_tree(); t70 = h22_own22; h22_own22 = t40; h_node_0Tree_release(&t70); t71 = h9_u; h_node_0Tree_retain(&t40); h9_u = t40; h_node_0Tree_release(&t71);
+    t41 = INT64_C(2); t42 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t41}}; t72 = h23_own23; h23_own23 = t42; h_node_0Node_release(&t72); h_node_add_node(&h9_u, t42);
+    t44 = h_node_new_tree(); t73 = h24_own24; h24_own24 = t44; h_node_0Tree_release(&t73); t74 = h10_v; h_node_0Tree_retain(&t44); h10_v = t44; h_node_0Tree_release(&t74);
+    t45 = INT64_C(2); t46 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t45}}; t75 = h25_own25; h25_own25 = t46; h_node_0Node_release(&t75); h_node_add_node(&h10_v, t46);
     t48 = h9_u.f_nodes; t49 = h10_v.f_nodes; t50 = hero_array_eq(t48, t49); hero_print_bool(t50); hero_print_end();
 #line 44
-    t51 = (h_node_Node){.tag = h_node_Node_tag_unreadable}; t76 = h26_own26; h26_own26 = t51; h_node_Node_release(&t76); t77 = h11_absent; h_node_Node_retain(&t51); h11_absent = t51; h_node_Node_release(&t77);
-    t52 = h11_absent; t53 = (h_node_Node){.tag = h_node_Node_tag_unreadable}; t78 = h27_own27; h27_own27 = t53; h_node_Node_release(&t78); t54 = h_node_Node_eq(&t52, &t53); hero_print_bool(t54); hero_print_end();
-    t55 = h11_absent; t56 = INT64_C(0); t57 = (h_node_Node){.tag = h_node_Node_tag_number, .as.c_number = {.f_value = t56}}; t79 = h28_own28; h28_own28 = t57; h_node_Node_release(&t79); t58 = h_node_Node_eq(&t55, &t57); hero_print_bool(t58); hero_print_end();
-#line 281 "main.c"
-    h_node_Tree_release(hero_slot_escape(&h0_t));
-    h_node_Tree_release(hero_slot_escape(&h9_u));
-    h_node_Tree_release(hero_slot_escape(&h10_v));
-    h_node_Node_release(hero_slot_escape(&h11_absent));
-    h_node_Tree_release(hero_slot_escape(&h12_own12));
-    h_node_Node_release(hero_slot_escape(&h13_own13));
-    h_node_Node_release(hero_slot_escape(&h14_own14));
-    h_node_Node_release(hero_slot_escape(&h15_own15));
-    h_node_Node_release(hero_slot_escape(&h16_own16));
-    h_node_Node_release(hero_slot_escape(&h17_own17));
-    h_node_Node_release(hero_slot_escape(&h18_own18));
-    h_node_Node_release(hero_slot_escape(&h19_own19));
-    h_node_Node_release(hero_slot_escape(&h20_own20));
+    t51 = (h_node_Node){.tag = h_node_0Node_tag_unreadable}; t76 = h26_own26; h26_own26 = t51; h_node_0Node_release(&t76); t77 = h11_absent; h_node_0Node_retain(&t51); h11_absent = t51; h_node_0Node_release(&t77);
+    t52 = h11_absent; t53 = (h_node_Node){.tag = h_node_0Node_tag_unreadable}; t78 = h27_own27; h27_own27 = t53; h_node_0Node_release(&t78); t54 = h_node_0Node_eq(&t52, &t53); hero_print_bool(t54); hero_print_end();
+    t55 = h11_absent; t56 = INT64_C(0); t57 = (h_node_Node){.tag = h_node_0Node_tag_number, .as.c_number = {.f_value = t56}}; t79 = h28_own28; h28_own28 = t57; h_node_0Node_release(&t79); t58 = h_node_0Node_eq(&t55, &t57); hero_print_bool(t58); hero_print_end();
+#line 293 "main.c"
+    h_node_0Tree_release(hero_slot_escape(&h0_t));
+    h_node_0Tree_release(hero_slot_escape(&h9_u));
+    h_node_0Tree_release(hero_slot_escape(&h10_v));
+    h_node_0Node_release(hero_slot_escape(&h11_absent));
+    h_node_0Tree_release(hero_slot_escape(&h12_own12));
+    h_node_0Node_release(hero_slot_escape(&h13_own13));
+    h_node_0Node_release(hero_slot_escape(&h14_own14));
+    h_node_0Node_release(hero_slot_escape(&h15_own15));
+    h_node_0Node_release(hero_slot_escape(&h16_own16));
+    h_node_0Node_release(hero_slot_escape(&h17_own17));
+    h_node_0Node_release(hero_slot_escape(&h18_own18));
+    h_node_0Node_release(hero_slot_escape(&h19_own19));
+    h_node_0Node_release(hero_slot_escape(&h20_own20));
     hero_str_release_at(&h21_own21);
-    h_node_Tree_release(hero_slot_escape(&h22_own22));
-    h_node_Node_release(hero_slot_escape(&h23_own23));
-    h_node_Tree_release(hero_slot_escape(&h24_own24));
-    h_node_Node_release(hero_slot_escape(&h25_own25));
-    h_node_Node_release(hero_slot_escape(&h26_own26));
-    h_node_Node_release(hero_slot_escape(&h27_own27));
-    h_node_Node_release(hero_slot_escape(&h28_own28));
+    h_node_0Tree_release(hero_slot_escape(&h22_own22));
+    h_node_0Node_release(hero_slot_escape(&h23_own23));
+    h_node_0Tree_release(hero_slot_escape(&h24_own24));
+    h_node_0Node_release(hero_slot_escape(&h25_own25));
+    h_node_0Node_release(hero_slot_escape(&h26_own26));
+    h_node_0Node_release(hero_slot_escape(&h27_own27));
+    h_node_0Node_release(hero_slot_escape(&h28_own28));
     return;
 }
 
 #line 56 "examples/tree/node.hero"
 h_node_Tree h_node_new_tree(void) { HeroArrayHeader * h0_nodes = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5; HERO_NODEBUG h_node_Tree h2_own2 = {0}, t3, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = hero_array_new(&h_node_Node_desc, 1); t4 = h1_own1; h1_own1 = t1; hero_array_decref(t4); t5 = h0_nodes; hero_array_incref(t1); h0_nodes = t1; hero_array_decref(t5);
-    t2 = h0_nodes; hero_array_incref(t2); t3 = (h_node_Tree){.f_nodes = t2}; t6 = h2_own2; h2_own2 = t3; h_node_Tree_release(&t6);
-#line 310 "main.c"
-    h_node_Tree_retain(&t3);
+    t1 = hero_array_new(&h_node_0Node_desc, 1); t4 = h1_own1; h1_own1 = t1; hero_array_decref(t4); t5 = h0_nodes; hero_array_incref(t1); h0_nodes = t1; hero_array_decref(t5);
+    t2 = h0_nodes; hero_array_incref(t2); t3 = (h_node_Tree){.f_nodes = t2}; t6 = h2_own2; h2_own2 = t3; h_node_0Tree_release(&t6);
+#line 322 "main.c"
+    h_node_0Tree_retain(&t3);
     hero_array_release_at(&h0_nodes);
     hero_array_release_at(&h1_own1);
-    h_node_Tree_release(hero_slot_escape(&h2_own2));
+    h_node_0Tree_release(hero_slot_escape(&h2_own2));
     return t3;
 }
 
 #line 60 "examples/tree/node.hero"
 int64_t h_node_add_node(h_node_Tree *ph0_t, h_node_Node h1_node) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t4, *t8, *t9; HERO_NODEBUG h_node_Node t2; HERO_NODEBUG int64_t t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_t).f_nodes; t2 = h1_node; t3 = hero_array_push(t1, &t2); t8 = h2_own2; h2_own2 = t3; hero_array_decref(t8); t9 = (*ph0_t).f_nodes; hero_array_incref(t3); (*ph0_t).f_nodes = t3; hero_array_decref(t9);
-    t4 = (*ph0_t).f_nodes; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 322 "main.c"
+    t4 = (*ph0_t).f_nodes; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("node.hero", "node.add_node", 62, 12);
+#line 334 "main.c"
     hero_array_release_at(&h2_own2);
     return t7;
 }
 
 #line 69 "examples/tree/node.hero"
-int64_t h_node_evaluate(h_node_Tree h0_t, int64_t h1_at) { HERO_NODEBUG h_node_Node h2_s0 = {0}, t3, t4, t6, t9, t18, t27, t33, t40; HERO_NODEBUG int64_t h3_r0, t2, t5, t8, t12, t13, t15, t16, t17, t21, t22, t24, t25, t26, t30, t31, t32, t36, t37, t38, t39; h_node_Node_c_number h4_n; h_node_Node_c_add h5_a; h_node_Node_c_multiply h6_m; h_node_Node_c_negate h7_n; h_node_Node_c_annotated h8_a = {0}; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_node_Node_c_number t7; HERO_NODEBUG h_node_Node_c_add t10; HERO_NODEBUG h_node_Tree t11, t14, t20, t23, t29, t35; HERO_NODEBUG h_node_Node_c_multiply t19; HERO_NODEBUG h_node_Node_c_negate t28; HERO_NODEBUG h_node_Node_c_annotated t34, t41; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t.f_nodes; t2 = h1_at; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t1 + 1))[t2]); t40 = h2_s0; h_node_Node_retain(&t3); h2_s0 = t3; h_node_Node_release(&t40); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t39 = h3_r0;
-#line 330 "main.c"
-    h_node_Node_release(hero_slot_escape(&h2_s0));
-    h_node_Node_c_annotated_release(hero_slot_escape(&h8_a));
+int64_t h_node_evaluate(h_node_Tree h0_t, int64_t h1_at) { HERO_NODEBUG h_node_Node h2_s0 = {0}, t3, t4, t6, t9, t18, t27, t33, t40; HERO_NODEBUG int64_t h3_r0, t2, t5, t8, t12, t13, t15, t16, t17, t21, t22, t24, t25, t26, t30, t31, t32, t36, t37, t38, t39; h_node_0Node_c_number h4_n; h_node_0Node_c_add h5_a; h_node_0Node_c_multiply h6_m; h_node_0Node_c_negate h7_n; h_node_0Node_c_annotated h8_a = {0}; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_node_0Node_c_number t7; HERO_NODEBUG h_node_0Node_c_add t10; HERO_NODEBUG h_node_Tree t11, t14, t20, t23, t29, t35; HERO_NODEBUG h_node_0Node_c_multiply t19; HERO_NODEBUG h_node_0Node_c_negate t28; HERO_NODEBUG h_node_0Node_c_annotated t34, t41; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_t.f_nodes; t2 = h1_at; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "node.hero", "node.evaluate", 70, 18) : (void)0), (void)(t1->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t1 + 1))[t2]); t40 = h2_s0; h_node_0Node_retain(&t3); h2_s0 = t3; h_node_0Node_release(&t40); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t39 = h3_r0;
+#line 342 "main.c"
+    h_node_0Node_release(hero_slot_escape(&h2_s0));
+    h_node_0Node_c_annotated_release(hero_slot_escape(&h8_a));
     return t39;
 bb2:
 #line 71 "examples/tree/node.hero"
@@ -336,34 +348,34 @@ bb2:
 #line 70
     h3_r0 = t8; goto bb1; bb3:
 #line 72
-    t9 = h2_s0; t10 = t9.as.c_add; h5_a = t10; t11 = h0_t; t12 = h5_a.f_left; t13 = h_node_evaluate(t11, t12); t14 = h0_t; t15 = h5_a.f_right; t16 = h_node_evaluate(t14, t15); if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
+    t9 = h2_s0; t10 = t9.as.c_add; h5_a = t10; t11 = h0_t; t12 = h5_a.f_left; t13 = h_node_evaluate(t11, t12); t14 = h0_t; t15 = h5_a.f_right; t16 = h_node_evaluate(t14, t15); if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("node.hero", "node.evaluate", 72, 25);
 #line 70
     h3_r0 = t17; goto bb1; bb4:
 #line 73
-    t18 = h2_s0; t19 = t18.as.c_multiply; h6_m = t19; t20 = h0_t; t21 = h6_m.f_left; t22 = h_node_evaluate(t20, t21); t23 = h0_t; t24 = h6_m.f_right; t25 = h_node_evaluate(t23, t24); if (__builtin_mul_overflow(t22, t25, &t26)) hero_panic_overflow();
+    t18 = h2_s0; t19 = t18.as.c_multiply; h6_m = t19; t20 = h0_t; t21 = h6_m.f_left; t22 = h_node_evaluate(t20, t21); t23 = h0_t; t24 = h6_m.f_right; t25 = h_node_evaluate(t23, t24); if (__builtin_mul_overflow(t22, t25, &t26)) hero_panic_overflow_at("node.hero", "node.evaluate", 73, 25);
 #line 70
     h3_r0 = t26; goto bb1; bb5:
 #line 74
-    t27 = h2_s0; t28 = t27.as.c_negate; h7_n = t28; t29 = h0_t; t30 = h7_n.f_operand; t31 = h_node_evaluate(t29, t30); if (__builtin_sub_overflow(INT64_C(0), t31, &t32)) hero_panic_overflow();
+    t27 = h2_s0; t28 = t27.as.c_negate; h7_n = t28; t29 = h0_t; t30 = h7_n.f_operand; t31 = h_node_evaluate(t29, t30); if (__builtin_sub_overflow(INT64_C(0), t31, &t32)) hero_panic_overflow_at("node.hero", "node.evaluate", 74, 25);
 #line 70
     h3_r0 = t32; goto bb1; bb6:
 #line 75
-    t33 = h2_s0; t34 = t33.as.c_annotated; t41 = h8_a; h_node_Node_c_annotated_retain(&t34); h8_a = t34; h_node_Node_c_annotated_release(&t41); t35 = h0_t; t36 = h8_a.f_operand; t37 = h_node_evaluate(t35, t36);
+    t33 = h2_s0; t34 = t33.as.c_annotated; t41 = h8_a; h_node_0Node_c_annotated_retain(&t34); h8_a = t34; h_node_0Node_c_annotated_release(&t41); t35 = h0_t; t36 = h8_a.f_operand; t37 = h_node_evaluate(t35, t36);
 #line 70
     h3_r0 = t37; goto bb1; bb7:
 #line 76
     t38 = INT64_C(0);
 #line 70
     h3_r0 = t38; goto bb1;
-#line 359 "main.c"
+#line 371 "main.c"
 }
 
 #line 79 "examples/tree/node.hero"
-int64_t h_node_depth(h_node_Tree h0_t, int64_t h1_at) { HERO_NODEBUG h_node_Node h2_s0 = {0}, t3, t4, t7, t18, t29, t36, t45; HERO_NODEBUG int64_t h3_r0, t2, t5, t6, t9, t11, t12, t14, t15, t16, t17, t20, t22, t23, t25, t26, t27, t28, t31, t33, t34, t35, t38, t40, t41, t42, t43, t44; h_node_Node_c_add h4_a; h_node_Node_c_multiply h5_m; h_node_Node_c_negate h6_n; h_node_Node_c_annotated h7_a = {0}; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_node_Node_c_add t8; HERO_NODEBUG h_node_Tree t10, t13, t21, t24, t32, t39; HERO_NODEBUG h_node_Node_c_multiply t19; HERO_NODEBUG h_node_Node_c_negate t30; HERO_NODEBUG h_node_Node_c_annotated t37, t46; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t.f_nodes; t2 = h1_at; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t1 + 1))[t2]); t45 = h2_s0; h_node_Node_retain(&t3); h2_s0 = t3; h_node_Node_release(&t45); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t44 = h3_r0;
-#line 365 "main.c"
-    h_node_Node_release(hero_slot_escape(&h2_s0));
-    h_node_Node_c_annotated_release(hero_slot_escape(&h7_a));
+int64_t h_node_depth(h_node_Tree h0_t, int64_t h1_at) { HERO_NODEBUG h_node_Node h2_s0 = {0}, t3, t4, t7, t18, t29, t36, t45; HERO_NODEBUG int64_t h3_r0, t2, t5, t6, t9, t11, t12, t14, t15, t16, t17, t20, t22, t23, t25, t26, t27, t28, t31, t33, t34, t35, t38, t40, t41, t42, t43, t44; h_node_0Node_c_add h4_a; h_node_0Node_c_multiply h5_m; h_node_0Node_c_negate h6_n; h_node_0Node_c_annotated h7_a = {0}; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_node_0Node_c_add t8; HERO_NODEBUG h_node_Tree t10, t13, t21, t24, t32, t39; HERO_NODEBUG h_node_0Node_c_multiply t19; HERO_NODEBUG h_node_0Node_c_negate t30; HERO_NODEBUG h_node_0Node_c_annotated t37, t46; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_t.f_nodes; t2 = h1_at; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "node.hero", "node.depth", 80, 18) : (void)0), (void)(t1->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t1 + 1))[t2]); t45 = h2_s0; h_node_0Node_retain(&t3); h2_s0 = t3; h_node_0Node_release(&t45); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t44 = h3_r0;
+#line 377 "main.c"
+    h_node_0Node_release(hero_slot_escape(&h2_s0));
+    h_node_0Node_c_annotated_release(hero_slot_escape(&h7_a));
     return t44;
 bb2:
 #line 81 "examples/tree/node.hero"
@@ -371,26 +383,26 @@ bb2:
 #line 80
     h3_r0 = t6; goto bb1; bb3:
 #line 82
-    t7 = h2_s0; t8 = t7.as.c_add; h4_a = t8; t9 = INT64_C(1); t10 = h0_t; t11 = h4_a.f_left; t12 = h_node_depth(t10, t11); t13 = h0_t; t14 = h4_a.f_right; t15 = h_node_depth(t13, t14); t16 = h_node_deeper(t12, t15); if (__builtin_add_overflow(t9, t16, &t17)) hero_panic_overflow();
+    t7 = h2_s0; t8 = t7.as.c_add; h4_a = t8; t9 = INT64_C(1); t10 = h0_t; t11 = h4_a.f_left; t12 = h_node_depth(t10, t11); t13 = h0_t; t14 = h4_a.f_right; t15 = h_node_depth(t13, t14); t16 = h_node_deeper(t12, t15); if (__builtin_add_overflow(t9, t16, &t17)) hero_panic_overflow_at("node.hero", "node.depth", 82, 25);
 #line 80
     h3_r0 = t17; goto bb1; bb4:
 #line 83
-    t18 = h2_s0; t19 = t18.as.c_multiply; h5_m = t19; t20 = INT64_C(1); t21 = h0_t; t22 = h5_m.f_left; t23 = h_node_depth(t21, t22); t24 = h0_t; t25 = h5_m.f_right; t26 = h_node_depth(t24, t25); t27 = h_node_deeper(t23, t26); if (__builtin_add_overflow(t20, t27, &t28)) hero_panic_overflow();
+    t18 = h2_s0; t19 = t18.as.c_multiply; h5_m = t19; t20 = INT64_C(1); t21 = h0_t; t22 = h5_m.f_left; t23 = h_node_depth(t21, t22); t24 = h0_t; t25 = h5_m.f_right; t26 = h_node_depth(t24, t25); t27 = h_node_deeper(t23, t26); if (__builtin_add_overflow(t20, t27, &t28)) hero_panic_overflow_at("node.hero", "node.depth", 83, 25);
 #line 80
     h3_r0 = t28; goto bb1; bb5:
 #line 84
-    t29 = h2_s0; t30 = t29.as.c_negate; h6_n = t30; t31 = INT64_C(1); t32 = h0_t; t33 = h6_n.f_operand; t34 = h_node_depth(t32, t33); if (__builtin_add_overflow(t31, t34, &t35)) hero_panic_overflow();
+    t29 = h2_s0; t30 = t29.as.c_negate; h6_n = t30; t31 = INT64_C(1); t32 = h0_t; t33 = h6_n.f_operand; t34 = h_node_depth(t32, t33); if (__builtin_add_overflow(t31, t34, &t35)) hero_panic_overflow_at("node.hero", "node.depth", 84, 25);
 #line 80
     h3_r0 = t35; goto bb1; bb6:
 #line 85
-    t36 = h2_s0; t37 = t36.as.c_annotated; t46 = h7_a; h_node_Node_c_annotated_retain(&t37); h7_a = t37; h_node_Node_c_annotated_release(&t46); t38 = INT64_C(1); t39 = h0_t; t40 = h7_a.f_operand; t41 = h_node_depth(t39, t40); if (__builtin_add_overflow(t38, t41, &t42)) hero_panic_overflow();
+    t36 = h2_s0; t37 = t36.as.c_annotated; t46 = h7_a; h_node_0Node_c_annotated_retain(&t37); h7_a = t37; h_node_0Node_c_annotated_release(&t46); t38 = INT64_C(1); t39 = h0_t; t40 = h7_a.f_operand; t41 = h_node_depth(t39, t40); if (__builtin_add_overflow(t38, t41, &t42)) hero_panic_overflow_at("node.hero", "node.depth", 85, 25);
 #line 80
     h3_r0 = t42; goto bb1; bb7:
 #line 86
     t43 = INT64_C(1);
 #line 80
     h3_r0 = t43; goto bb1;
-#line 394 "main.c"
+#line 406 "main.c"
 }
 
 #line 88 "examples/tree/node.hero"
@@ -400,19 +412,19 @@ int64_t h_node_deeper(int64_t h0_left, int64_t h1_right) { HERO_NODEBUG int64_t 
     t5 = h1_right; h2_ret0 = t5; goto bb4; bb2:
 #line 90
     t4 = h0_left; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 404 "main.c"
+#line 416 "main.c"
     t6 = h2_ret0;
     return t6;
 }
 
 #line 95 "examples/tree/node.hero"
-HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at) { HERO_NODEBUG h_node_Node h2_s0 = {0}, t3, t4, t6, t10, t25, t40, t47, t54; HERO_NODEBUG HeroStr h3_r0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, t9, t12, t15, t16, t17, t18, t21, t22, t23, t24, t27, t30, t31, t32, t33, t36, t37, t38, t39, t42, t45, t46, t51, t52, t53, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t75, t76, t77; h_node_Node_c_number h4_n; h_node_Node_c_add h5_a; h_node_Node_c_multiply h6_m; h_node_Node_c_negate h7_n; h_node_Node_c_annotated h8_a = {0}; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t5, t8, t14, t20, t29, t35, t44, t50; HERO_NODEBUG h_node_Node_c_number t7; HERO_NODEBUG h_node_Node_c_add t11; HERO_NODEBUG h_node_Tree t13, t19, t28, t34, t43, t49; HERO_NODEBUG h_node_Node_c_multiply t26; HERO_NODEBUG h_node_Node_c_negate t41; HERO_NODEBUG h_node_Node_c_annotated t48, t74; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t.f_nodes; t2 = h1_at; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t1 + 1))[t2]); t54 = h2_s0; h_node_Node_retain(&t3); h2_s0 = t3; h_node_Node_release(&t54); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t53 = h3_r0;
-#line 412 "main.c"
+HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at) { HERO_NODEBUG h_node_Node h2_s0 = {0}, t3, t4, t6, t10, t25, t40, t47, t54; HERO_NODEBUG HeroStr h3_r0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, t9, t12, t15, t16, t17, t18, t21, t22, t23, t24, t27, t30, t31, t32, t33, t36, t37, t38, t39, t42, t45, t46, t51, t52, t53, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t75, t76, t77; h_node_0Node_c_number h4_n; h_node_0Node_c_add h5_a; h_node_0Node_c_multiply h6_m; h_node_0Node_c_negate h7_n; h_node_0Node_c_annotated h8_a = {0}; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t5, t8, t14, t20, t29, t35, t44, t50; HERO_NODEBUG h_node_0Node_c_number t7; HERO_NODEBUG h_node_0Node_c_add t11; HERO_NODEBUG h_node_Tree t13, t19, t28, t34, t43, t49; HERO_NODEBUG h_node_0Node_c_multiply t26; HERO_NODEBUG h_node_0Node_c_negate t41; HERO_NODEBUG h_node_0Node_c_annotated t48, t74; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_t.f_nodes; t2 = h1_at; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "node.hero", "node.render", 96, 18) : (void)0), (void)(t1->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t1 + 1))[t2]); t54 = h2_s0; h_node_0Node_retain(&t3); h2_s0 = t3; h_node_0Node_release(&t54); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t53 = h3_r0;
+#line 424 "main.c"
     hero_str_incref(t53);
-    h_node_Node_release(hero_slot_escape(&h2_s0));
+    h_node_0Node_release(hero_slot_escape(&h2_s0));
     hero_str_release_at(&h3_r0);
-    h_node_Node_c_annotated_release(hero_slot_escape(&h8_a));
+    h_node_0Node_c_annotated_release(hero_slot_escape(&h8_a));
     hero_str_release_at(&h9_own9);
     hero_str_release_at(&h10_own10);
     hero_str_release_at(&h11_own11);
@@ -448,30 +460,30 @@ bb2:
 #line 96
     t73 = h3_r0; hero_str_incref(t46); h3_r0 = t46; hero_str_decref(t73); goto bb1; bb6:
 #line 101
-    t47 = h2_s0; t48 = t47.as.c_annotated; t74 = h8_a; h_node_Node_c_annotated_retain(&t48); h8_a = t48; h_node_Node_c_annotated_release(&t74); t49 = h0_t; t50 = h8_a.f_operand; t51 = h_node_render(t49, t50); t75 = h24_own24; h24_own24 = t51; hero_str_decref(t75);
+    t47 = h2_s0; t48 = t47.as.c_annotated; t74 = h8_a; h_node_0Node_c_annotated_retain(&t48); h8_a = t48; h_node_0Node_c_annotated_release(&t74); t49 = h0_t; t50 = h8_a.f_operand; t51 = h_node_render(t49, t50); t75 = h24_own24; h24_own24 = t51; hero_str_decref(t75);
 #line 96
     t76 = h3_r0; hero_str_incref(t51); h3_r0 = t51; hero_str_decref(t76); goto bb1; bb7:
 #line 102
     t52 = HERO_STR_LIT(hero_str_109fb3);
 #line 96
     t77 = h3_r0; hero_str_incref(t52); h3_r0 = t52; hero_str_decref(t77); goto bb1;
-#line 459 "main.c"
+#line 471 "main.c"
 }
-HERO_TU_LOCAL void h_node_Note_retain(const h_node_Note *v) {
+HERO_TU_LOCAL void h_node_0Note_retain(const h_node_Note *v) {
     hero_str_incref(v->f_text);
 }
 
-HERO_TU_LOCAL void h_node_Note_release(h_node_Note *v) {
+HERO_TU_LOCAL void h_node_0Note_release(h_node_Note *v) {
     hero_str_decref(v->f_text);
 }
 
-HERO_TU_LOCAL bool h_node_Note_eq(const h_node_Note *a, const h_node_Note *b) {
+HERO_TU_LOCAL bool h_node_0Note_eq(const h_node_Note *a, const h_node_Note *b) {
     if (!(hero_str_eq(a->f_text, b->f_text))) return false;
     if (!(a->f_line == b->f_line)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Note_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_0Note_hash(const void *elem) {
     const h_node_Note *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
@@ -479,136 +491,136 @@ HERO_TU_LOCAL uint64_t h_node_Note_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_node_Node_c_number_eq(const h_node_Node_c_number *a, const h_node_Node_c_number *b) {
+HERO_TU_LOCAL bool h_node_0Node_c_number_eq(const h_node_0Node_c_number *a, const h_node_0Node_c_number *b) {
     if (!(a->f_value == b->f_value)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Node_c_number_hash(const void *elem) {
-    const h_node_Node_c_number *v = elem;
+HERO_TU_LOCAL uint64_t h_node_0Node_c_number_hash(const void *elem) {
+    const h_node_0Node_c_number *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_node_Node_c_add_eq(const h_node_Node_c_add *a, const h_node_Node_c_add *b) {
+HERO_TU_LOCAL bool h_node_0Node_c_add_eq(const h_node_0Node_c_add *a, const h_node_0Node_c_add *b) {
     if (!(a->f_left == b->f_left)) return false;
     if (!(a->f_right == b->f_right)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Node_c_add_hash(const void *elem) {
-    const h_node_Node_c_add *v = elem;
+HERO_TU_LOCAL uint64_t h_node_0Node_c_add_hash(const void *elem) {
+    const h_node_0Node_c_add *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_left)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_int)->hash(&v->f_right)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_node_Node_c_multiply_eq(const h_node_Node_c_multiply *a, const h_node_Node_c_multiply *b) {
+HERO_TU_LOCAL bool h_node_0Node_c_multiply_eq(const h_node_0Node_c_multiply *a, const h_node_0Node_c_multiply *b) {
     if (!(a->f_left == b->f_left)) return false;
     if (!(a->f_right == b->f_right)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Node_c_multiply_hash(const void *elem) {
-    const h_node_Node_c_multiply *v = elem;
+HERO_TU_LOCAL uint64_t h_node_0Node_c_multiply_hash(const void *elem) {
+    const h_node_0Node_c_multiply *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_left)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_int)->hash(&v->f_right)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_node_Node_c_negate_eq(const h_node_Node_c_negate *a, const h_node_Node_c_negate *b) {
+HERO_TU_LOCAL bool h_node_0Node_c_negate_eq(const h_node_0Node_c_negate *a, const h_node_0Node_c_negate *b) {
     if (!(a->f_operand == b->f_operand)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Node_c_negate_hash(const void *elem) {
-    const h_node_Node_c_negate *v = elem;
+HERO_TU_LOCAL uint64_t h_node_0Node_c_negate_hash(const void *elem) {
+    const h_node_0Node_c_negate *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_operand)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_node_Node_c_annotated_retain(const h_node_Node_c_annotated *v) {
+HERO_TU_LOCAL void h_node_0Node_c_annotated_retain(const h_node_0Node_c_annotated *v) {
     h_0opt_c7472a6_retain(&v->f_note);
 }
 
-HERO_TU_LOCAL void h_node_Node_c_annotated_release(h_node_Node_c_annotated *v) {
+HERO_TU_LOCAL void h_node_0Node_c_annotated_release(h_node_0Node_c_annotated *v) {
     h_0opt_c7472a6_release(&v->f_note);
 }
 
-HERO_TU_LOCAL bool h_node_Node_c_annotated_eq(const h_node_Node_c_annotated *a, const h_node_Node_c_annotated *b) {
+HERO_TU_LOCAL bool h_node_0Node_c_annotated_eq(const h_node_0Node_c_annotated *a, const h_node_0Node_c_annotated *b) {
     if (!(a->f_operand == b->f_operand)) return false;
     if (!(h_0opt_c7472a6_eq(&a->f_note, &b->f_note))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Node_c_annotated_hash(const void *elem) {
-    const h_node_Node_c_annotated *v = elem;
+HERO_TU_LOCAL uint64_t h_node_0Node_c_annotated_hash(const void *elem) {
+    const h_node_0Node_c_annotated *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_operand)) * UINT64_C(0x100000001b3);
     h = (h ^ (&h_0opt_c7472a6_desc)->hash(&v->f_note)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_node_Node_retain(const h_node_Node *v) {
+HERO_TU_LOCAL void h_node_0Node_retain(const h_node_Node *v) {
     switch (v->tag) {
-        case h_node_Node_tag_annotated: h_node_Node_c_annotated_retain(&v->as.c_annotated); break;
+        case h_node_0Node_tag_annotated: h_node_0Node_c_annotated_retain(&v->as.c_annotated); break;
         default: break;
     }
 }
 
-HERO_TU_LOCAL void h_node_Node_release(h_node_Node *v) {
+HERO_TU_LOCAL void h_node_0Node_release(h_node_Node *v) {
     switch (v->tag) {
-        case h_node_Node_tag_annotated: h_node_Node_c_annotated_release(&v->as.c_annotated); break;
+        case h_node_0Node_tag_annotated: h_node_0Node_c_annotated_release(&v->as.c_annotated); break;
         default: break;
     }
 }
 
-HERO_TU_LOCAL bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b) {
+HERO_TU_LOCAL bool h_node_0Node_eq(const h_node_Node *a, const h_node_Node *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_node_Node_tag_number: return h_node_Node_c_number_eq(&a->as.c_number, &b->as.c_number);
-        case h_node_Node_tag_add: return h_node_Node_c_add_eq(&a->as.c_add, &b->as.c_add);
-        case h_node_Node_tag_multiply: return h_node_Node_c_multiply_eq(&a->as.c_multiply, &b->as.c_multiply);
-        case h_node_Node_tag_negate: return h_node_Node_c_negate_eq(&a->as.c_negate, &b->as.c_negate);
-        case h_node_Node_tag_annotated: return h_node_Node_c_annotated_eq(&a->as.c_annotated, &b->as.c_annotated);
-        case h_node_Node_tag_unreadable: return true;
+        case h_node_0Node_tag_number: return h_node_0Node_c_number_eq(&a->as.c_number, &b->as.c_number);
+        case h_node_0Node_tag_add: return h_node_0Node_c_add_eq(&a->as.c_add, &b->as.c_add);
+        case h_node_0Node_tag_multiply: return h_node_0Node_c_multiply_eq(&a->as.c_multiply, &b->as.c_multiply);
+        case h_node_0Node_tag_negate: return h_node_0Node_c_negate_eq(&a->as.c_negate, &b->as.c_negate);
+        case h_node_0Node_tag_annotated: return h_node_0Node_c_annotated_eq(&a->as.c_annotated, &b->as.c_annotated);
+        case h_node_0Node_tag_unreadable: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_node_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_0Node_hash(const void *elem) {
     const h_node_Node *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_node_Node_tag_number: return (h ^ h_node_Node_c_number_hash(&v->as.c_number)) * UINT64_C(0x100000001b3);
-        case h_node_Node_tag_add: return (h ^ h_node_Node_c_add_hash(&v->as.c_add)) * UINT64_C(0x100000001b3);
-        case h_node_Node_tag_multiply: return (h ^ h_node_Node_c_multiply_hash(&v->as.c_multiply)) * UINT64_C(0x100000001b3);
-        case h_node_Node_tag_negate: return (h ^ h_node_Node_c_negate_hash(&v->as.c_negate)) * UINT64_C(0x100000001b3);
-        case h_node_Node_tag_annotated: return (h ^ h_node_Node_c_annotated_hash(&v->as.c_annotated)) * UINT64_C(0x100000001b3);
-        case h_node_Node_tag_unreadable: return h;
+        case h_node_0Node_tag_number: return (h ^ h_node_0Node_c_number_hash(&v->as.c_number)) * UINT64_C(0x100000001b3);
+        case h_node_0Node_tag_add: return (h ^ h_node_0Node_c_add_hash(&v->as.c_add)) * UINT64_C(0x100000001b3);
+        case h_node_0Node_tag_multiply: return (h ^ h_node_0Node_c_multiply_hash(&v->as.c_multiply)) * UINT64_C(0x100000001b3);
+        case h_node_0Node_tag_negate: return (h ^ h_node_0Node_c_negate_hash(&v->as.c_negate)) * UINT64_C(0x100000001b3);
+        case h_node_0Node_tag_annotated: return (h ^ h_node_0Node_c_annotated_hash(&v->as.c_annotated)) * UINT64_C(0x100000001b3);
+        case h_node_0Node_tag_unreadable: return h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_node_Tree_retain(const h_node_Tree *v) {
+HERO_TU_LOCAL void h_node_0Tree_retain(const h_node_Tree *v) {
     hero_array_incref(v->f_nodes);
 }
 
-HERO_TU_LOCAL void h_node_Tree_release(h_node_Tree *v) {
+HERO_TU_LOCAL void h_node_0Tree_release(h_node_Tree *v) {
     hero_array_decref(v->f_nodes);
 }
 
-HERO_TU_LOCAL bool h_node_Tree_eq(const h_node_Tree *a, const h_node_Tree *b) {
+HERO_TU_LOCAL bool h_node_0Tree_eq(const h_node_Tree *a, const h_node_Tree *b) {
     if (!(hero_array_eq(a->f_nodes, b->f_nodes))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_node_Tree_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_0Tree_hash(const void *elem) {
     const h_node_Tree *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_nodes)) * UINT64_C(0x100000001b3);
@@ -617,7 +629,7 @@ HERO_TU_LOCAL uint64_t h_node_Tree_hash(const void *elem) {
 
 HERO_TU_LOCAL void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v) {
     if (v->tag == INT64_C(0)) {
-        h_node_Note_retain(&v->as.ok);
+        h_node_0Note_retain(&v->as.ok);
     } else {
         hero_failure_retain(&v->as.err);
     }
@@ -625,7 +637,7 @@ HERO_TU_LOCAL void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v) {
 
 HERO_TU_LOCAL void h_0opt_c7472a6_release(h_0opt_c7472a6 *v) {
     if (v->tag == INT64_C(0)) {
-        h_node_Note_release(&v->as.ok);
+        h_node_0Note_release(&v->as.ok);
     } else {
         hero_failure_release(&v->as.err);
     }
@@ -634,7 +646,7 @@ HERO_TU_LOCAL void h_0opt_c7472a6_release(h_0opt_c7472a6 *v) {
 HERO_TU_LOCAL bool h_0opt_c7472a6_eq(const h_0opt_c7472a6 *a, const h_0opt_c7472a6 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_node_Note_desc)->eq(&a->as.ok, &b->as.ok);
+    return (&h_node_0Note_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_c7472a6_hash(const void *elem) {
@@ -644,7 +656,7 @@ HERO_TU_LOCAL uint64_t h_0opt_c7472a6_hash(const void *elem) {
     if (v->tag != INT64_C(0)) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_node_Note_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (h ^ (&h_node_0Note_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -711,8 +723,40 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d7ad9760d95f494", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("23de2463628dad2e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

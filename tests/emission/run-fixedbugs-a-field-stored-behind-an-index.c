@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -113,14 +113,14 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 114 "fixedbugsafieldstoredbehindanindex.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Cell_retain(const h_fixedbugsafieldstoredbehindanindex_Cell *v);
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Cell_release(h_fixedbugsafieldstoredbehindanindex_Cell *v);
-HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_Cell_eq(const h_fixedbugsafieldstoredbehindanindex_Cell *a, const h_fixedbugsafieldstoredbehindanindex_Cell *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_Cell_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Row_retain(const h_fixedbugsafieldstoredbehindanindex_Row *v);
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Row_release(h_fixedbugsafieldstoredbehindanindex_Row *v);
-HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_Row_eq(const h_fixedbugsafieldstoredbehindanindex_Row *a, const h_fixedbugsafieldstoredbehindanindex_Row *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_Row_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Cell_retain(const h_fixedbugsafieldstoredbehindanindex_Cell *v);
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Cell_release(h_fixedbugsafieldstoredbehindanindex_Cell *v);
+HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_0Cell_eq(const h_fixedbugsafieldstoredbehindanindex_Cell *a, const h_fixedbugsafieldstoredbehindanindex_Cell *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_0Cell_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Row_retain(const h_fixedbugsafieldstoredbehindanindex_Row *v);
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Row_release(h_fixedbugsafieldstoredbehindanindex_Row *v);
+HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_0Row_eq(const h_fixedbugsafieldstoredbehindanindex_Row *a, const h_fixedbugsafieldstoredbehindanindex_Row *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_0Row_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -134,69 +134,69 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_fixedbugsafieldstoredbehindanindex_Cell_desc_copy(void *dst, const void *src) {
+static void h_fixedbugsafieldstoredbehindanindex_0Cell_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_fixedbugsafieldstoredbehindanindex_Cell));
-    h_fixedbugsafieldstoredbehindanindex_Cell_retain((const h_fixedbugsafieldstoredbehindanindex_Cell *)dst);
+    h_fixedbugsafieldstoredbehindanindex_0Cell_retain((const h_fixedbugsafieldstoredbehindanindex_Cell *)dst);
 }
-static void h_fixedbugsafieldstoredbehindanindex_Cell_desc_drop(void *elem) {
-    h_fixedbugsafieldstoredbehindanindex_Cell_release((h_fixedbugsafieldstoredbehindanindex_Cell *)elem);
+static void h_fixedbugsafieldstoredbehindanindex_0Cell_desc_drop(void *elem) {
+    h_fixedbugsafieldstoredbehindanindex_0Cell_release((h_fixedbugsafieldstoredbehindanindex_Cell *)elem);
 }
-static bool h_fixedbugsafieldstoredbehindanindex_Cell_desc_eq(const void *a, const void *b) {
-    return h_fixedbugsafieldstoredbehindanindex_Cell_eq((const h_fixedbugsafieldstoredbehindanindex_Cell *)a, (const h_fixedbugsafieldstoredbehindanindex_Cell *)b);
+static bool h_fixedbugsafieldstoredbehindanindex_0Cell_desc_eq(const void *a, const void *b) {
+    return h_fixedbugsafieldstoredbehindanindex_0Cell_eq((const h_fixedbugsafieldstoredbehindanindex_Cell *)a, (const h_fixedbugsafieldstoredbehindanindex_Cell *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugsafieldstoredbehindanindex_Cell_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugsafieldstoredbehindanindex_0Cell_desc = {
     sizeof(h_fixedbugsafieldstoredbehindanindex_Cell),
-    h_fixedbugsafieldstoredbehindanindex_Cell_desc_copy,
-    h_fixedbugsafieldstoredbehindanindex_Cell_desc_drop,
-    h_fixedbugsafieldstoredbehindanindex_Cell_desc_eq,
-    h_fixedbugsafieldstoredbehindanindex_Cell_hash,
+    h_fixedbugsafieldstoredbehindanindex_0Cell_desc_copy,
+    h_fixedbugsafieldstoredbehindanindex_0Cell_desc_drop,
+    h_fixedbugsafieldstoredbehindanindex_0Cell_desc_eq,
+    h_fixedbugsafieldstoredbehindanindex_0Cell_hash,
 };
 
-static void h_fixedbugsafieldstoredbehindanindex_Row_desc_copy(void *dst, const void *src) {
+static void h_fixedbugsafieldstoredbehindanindex_0Row_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_fixedbugsafieldstoredbehindanindex_Row));
-    h_fixedbugsafieldstoredbehindanindex_Row_retain((const h_fixedbugsafieldstoredbehindanindex_Row *)dst);
+    h_fixedbugsafieldstoredbehindanindex_0Row_retain((const h_fixedbugsafieldstoredbehindanindex_Row *)dst);
 }
-static void h_fixedbugsafieldstoredbehindanindex_Row_desc_drop(void *elem) {
-    h_fixedbugsafieldstoredbehindanindex_Row_release((h_fixedbugsafieldstoredbehindanindex_Row *)elem);
+static void h_fixedbugsafieldstoredbehindanindex_0Row_desc_drop(void *elem) {
+    h_fixedbugsafieldstoredbehindanindex_0Row_release((h_fixedbugsafieldstoredbehindanindex_Row *)elem);
 }
-static bool h_fixedbugsafieldstoredbehindanindex_Row_desc_eq(const void *a, const void *b) {
-    return h_fixedbugsafieldstoredbehindanindex_Row_eq((const h_fixedbugsafieldstoredbehindanindex_Row *)a, (const h_fixedbugsafieldstoredbehindanindex_Row *)b);
+static bool h_fixedbugsafieldstoredbehindanindex_0Row_desc_eq(const void *a, const void *b) {
+    return h_fixedbugsafieldstoredbehindanindex_0Row_eq((const h_fixedbugsafieldstoredbehindanindex_Row *)a, (const h_fixedbugsafieldstoredbehindanindex_Row *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugsafieldstoredbehindanindex_Row_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugsafieldstoredbehindanindex_0Row_desc = {
     sizeof(h_fixedbugsafieldstoredbehindanindex_Row),
-    h_fixedbugsafieldstoredbehindanindex_Row_desc_copy,
-    h_fixedbugsafieldstoredbehindanindex_Row_desc_drop,
-    h_fixedbugsafieldstoredbehindanindex_Row_desc_eq,
-    h_fixedbugsafieldstoredbehindanindex_Row_hash,
+    h_fixedbugsafieldstoredbehindanindex_0Row_desc_copy,
+    h_fixedbugsafieldstoredbehindanindex_0Row_desc_drop,
+    h_fixedbugsafieldstoredbehindanindex_0Row_desc_eq,
+    h_fixedbugsafieldstoredbehindanindex_0Row_hash,
 };
 
 void h_fixedbugsafieldstoredbehindanindex_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 void h_fixedbugsafieldstoredbehindanindex_main(void) { HeroArrayHeader * h0_rows = {0}; HeroArrayHeader * h1_kept = {0}; HeroMapHeader * h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h12_own12 = {0}, t75, t76, t80, t82, t95, t96; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell h4_own4 = {0}, h10_own10 = {0}, t3, t33, t43, t51, t64, t71, t84, t92; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *t4, *t7, *t23, *t28, *t31, *t38, *t41, *t55, *t59, *t62, *t66, *t69, *t85, *t87, *t88, *t91; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row h6_own6 = {0}, t6, t30, t40, t57, t61, t68, t86; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t2, t5, t9, t15, t16, t17, t20, t21, t22, t27, t37, t50, t53, t58, t72, t74, t89, t90; HERO_NODEBUG HeroMapHeader *h11_own11 = {0}, *t52, *t73, *t93, *t94; HERO_NODEBUG int64_t t1, t8, t10, t11, t12, t13, t14, t18, t19, t24, t25, t26, t29, t32, t34, t35, t39, t42, t44, t45, t47, t48, t49, t54, t56, t60, t63, t65, t67, t70, t77, t78, t83; HERO_NODEBUG bool t36, t46, t79; HERO_NODEBUG HeroFailure t81; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); t2 = HERO_STR_LIT(hero_str_78); hero_str_incref(t2); t3 = (h_fixedbugsafieldstoredbehindanindex_Cell){.f_n = t1, .f_tag = t2}; t84 = h4_own4; h4_own4 = t3; h_fixedbugsafieldstoredbehindanindex_Cell_release(&t84); t4 = hero_array_new(&h_fixedbugsafieldstoredbehindanindex_Cell_desc, 1); hero_array_push_owned(&t4, &t3); t85 = h5_own5; h5_own5 = t4; hero_array_decref(t85); t5 = HERO_STR_LIT(hero_str_61); hero_array_incref(t4); hero_str_incref(t5); t6 = (h_fixedbugsafieldstoredbehindanindex_Row){.f_cells = t4, .f_label = t5}; t86 = h6_own6; h6_own6 = t6; h_fixedbugsafieldstoredbehindanindex_Row_release(&t86); t7 = hero_array_new(&h_fixedbugsafieldstoredbehindanindex_Row_desc, 1); hero_array_push_owned(&t7, &t6); t87 = h7_own7; h7_own7 = t7; hero_array_decref(t87); t88 = h0_rows; hero_array_incref(t7); h0_rows = t7; hero_array_decref(t88);
+    t1 = INT64_C(1); t2 = HERO_STR_LIT(hero_str_78); hero_str_incref(t2); t3 = (h_fixedbugsafieldstoredbehindanindex_Cell){.f_n = t1, .f_tag = t2}; t84 = h4_own4; h4_own4 = t3; h_fixedbugsafieldstoredbehindanindex_0Cell_release(&t84); t4 = hero_array_new(&h_fixedbugsafieldstoredbehindanindex_0Cell_desc, 1); hero_array_push_owned(&t4, &t3); t85 = h5_own5; h5_own5 = t4; hero_array_decref(t85); t5 = HERO_STR_LIT(hero_str_61); hero_array_incref(t4); hero_str_incref(t5); t6 = (h_fixedbugsafieldstoredbehindanindex_Row){.f_cells = t4, .f_label = t5}; t86 = h6_own6; h6_own6 = t6; h_fixedbugsafieldstoredbehindanindex_0Row_release(&t86); t7 = hero_array_new(&h_fixedbugsafieldstoredbehindanindex_0Row_desc, 1); hero_array_push_owned(&t7, &t6); t87 = h7_own7; h7_own7 = t7; hero_array_decref(t87); t88 = h0_rows; hero_array_incref(t7); h0_rows = t7; hero_array_decref(t88);
 #line 37
-    t8 = INT64_C(0); t9 = HERO_STR_LIT(hero_str_62); hero_str_incref(t9); hero_array_unshare(&(h0_rows)); hero_str_decref((*((void)((h0_rows == NULL || t8 < 0 || t8 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t8), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t8)).f_label); (*((void)((h0_rows == NULL || t8 < 0 || t8 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t8), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t8)).f_label = t9;
-    t10 = INT64_C(0); t11 = INT64_C(0); t12 = INT64_C(9); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t10 < 0 || t10 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t10), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t10)).f_cells)); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t10 < 0 || t10 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t10), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t10)).f_cells, t11)).f_n = t12;
+    t8 = INT64_C(0); t9 = HERO_STR_LIT(hero_str_62); hero_str_incref(t9); hero_array_unshare(&(h0_rows)); hero_str_decref((*((void)((h0_rows == NULL || t8 < 0 || t8 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t8, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 37, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t8)).f_label); (*((void)((h0_rows == NULL || t8 < 0 || t8 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t8, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 37, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t8)).f_label = t9;
+    t10 = INT64_C(0); t11 = INT64_C(0); t12 = INT64_C(9); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t10 < 0 || t10 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t10, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 38, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t10)).f_cells)); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t10 < 0 || t10 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t10, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 38, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t10)).f_cells, t11, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 38, 5)).f_n = t12;
 #line 41
-    t13 = INT64_C(0); t14 = INT64_C(0); t15 = HERO_STR_LIT(hero_str_3204); t16 = HERO_STR_LIT(hero_str_3288); t17 = hero_str_concat(t15, t16); t89 = h8_own8; h8_own8 = t17; hero_str_decref(t89); hero_str_incref(t17); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells)); hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells, t14)).f_tag); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells, t14)).f_tag = t17;
-    t18 = INT64_C(0); t19 = INT64_C(0); t20 = HERO_STR_LIT(hero_str_330c); t21 = HERO_STR_LIT(hero_str_3390); t22 = hero_str_concat(t20, t21); t90 = h9_own9; h9_own9 = t22; hero_str_decref(t90); hero_str_incref(t22); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t18), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells)); hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t18), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells, t19)).f_tag); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t18), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells, t19)).f_tag = t22;
+    t13 = INT64_C(0); t14 = INT64_C(0); t15 = HERO_STR_LIT(hero_str_3204); t16 = HERO_STR_LIT(hero_str_3288); t17 = hero_str_concat(t15, t16); t89 = h8_own8; h8_own8 = t17; hero_str_decref(t89); hero_str_incref(t17); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t13, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 41, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells)); hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t13, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 41, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells, t14, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 41, 5)).f_tag); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t13, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 41, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells, t14, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 41, 5)).f_tag = t17;
+    t18 = INT64_C(0); t19 = INT64_C(0); t20 = HERO_STR_LIT(hero_str_330c); t21 = HERO_STR_LIT(hero_str_3390); t22 = hero_str_concat(t20, t21); t90 = h9_own9; h9_own9 = t22; hero_str_decref(t90); hero_str_incref(t22); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t18, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 42, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells)); hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t18, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 42, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells, t19, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 42, 5)).f_tag); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t18, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 42, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells, t19, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 42, 5)).f_tag = t22;
 #line 46
     t23 = h0_rows; t91 = h1_kept; hero_array_incref(t23); h1_kept = t23; hero_array_decref(t91);
-    t24 = INT64_C(0); t25 = INT64_C(0); t26 = INT64_C(10); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t24), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells)); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t24), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells, t25)).f_n = t26;
-    t27 = HERO_STR_LIT(hero_str_3ed3d9ee); t28 = h1_kept; t29 = INT64_C(0); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t28 + 1))[t29]); t31 = t30.f_cells; t32 = INT64_C(0); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t31 + 1))[t32]); t34 = t33.f_n; t35 = INT64_C(9); t36 = t34 == t35; if (t36) goto bb1; else goto bb2; bb1:
-    t37 = HERO_STR_LIT(hero_str_6185c9b); t38 = h0_rows; t39 = INT64_C(0); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t38 + 1))[t39]); t41 = t40.f_cells; t42 = INT64_C(0); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t41 + 1))[t42]); t44 = t43.f_n; t45 = INT64_C(10); t46 = t44 == t45; if (t46) goto bb3; else goto bb4; bb2:
+    t24 = INT64_C(0); t25 = INT64_C(0); t26 = INT64_C(10); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t24, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 47, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells)); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t24, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 47, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells, t25, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 47, 5)).f_n = t26;
+    t27 = HERO_STR_LIT(hero_str_3ed3d9ee); t28 = h1_kept; t29 = INT64_C(0); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? hero_panic_index_at(t28, t29, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 48, 12) : (void)0), (void)(t28->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t28 + 1))[t29]); t31 = t30.f_cells; t32 = INT64_C(0); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 48, 12) : (void)0), (void)(t31->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t31 + 1))[t32]); t34 = t33.f_n; t35 = INT64_C(9); t36 = t34 == t35; if (t36) goto bb1; else goto bb2; bb1:
+    t37 = HERO_STR_LIT(hero_str_6185c9b); t38 = h0_rows; t39 = INT64_C(0); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? hero_panic_index_at(t38, t39, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 49, 12) : (void)0), (void)(t38->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t38 + 1))[t39]); t41 = t40.f_cells; t42 = INT64_C(0); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 49, 12) : (void)0), (void)(t41->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t41 + 1))[t42]); t44 = t43.f_n; t45 = INT64_C(10); t46 = t44 == t45; if (t46) goto bb3; else goto bb4; bb2:
 #line 190 "fixedbugsafieldstoredbehindanindex.c"
-    hero_panic_assert_sides(t27, hero_int_to_str(t34), hero_int_to_str(t35));
+    hero_panic_assert_shown_at(t27, hero_show_i64, &t34, &t35, 1, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 48, 12);
     hero_unreachable();
 bb3:
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t47 = INT64_C(0); t48 = INT64_C(0); t49 = INT64_C(7); t50 = HERO_STR_LIT(hero_str_7a); hero_str_incref(t50); t51 = (h_fixedbugsafieldstoredbehindanindex_Cell){.f_n = t49, .f_tag = t50}; t92 = h10_own10; h10_own10 = t51; h_fixedbugsafieldstoredbehindanindex_Cell_release(&t92); h_fixedbugsafieldstoredbehindanindex_Cell_retain(&t51); hero_array_unshare(&(h0_rows)); hero_array_set(&((*((void)((h0_rows == NULL || t47 < 0 || t47 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t47), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t47)).f_cells), t48, &t51);
+    t47 = INT64_C(0); t48 = INT64_C(0); t49 = INT64_C(7); t50 = HERO_STR_LIT(hero_str_7a); hero_str_incref(t50); t51 = (h_fixedbugsafieldstoredbehindanindex_Cell){.f_n = t49, .f_tag = t50}; t92 = h10_own10; h10_own10 = t51; h_fixedbugsafieldstoredbehindanindex_0Cell_release(&t92); h_fixedbugsafieldstoredbehindanindex_0Cell_retain(&t51); hero_array_unshare(&(h0_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)((h0_rows == NULL || t47 < 0 || t47 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t47, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 52, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t47)).f_cells); if (*hero_slot == NULL || t48 < 0 || t48 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t48, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 52, 5); hero_array_set(hero_slot, t48, &t51); }
     t52 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t93 = h11_own11; h11_own11 = t52; hero_map_decref(t93); t94 = h2_m; hero_map_incref(t52); h2_m = t52; hero_map_decref(t94);
-    t53 = HERO_STR_LIT(hero_str_6b); t54 = INT64_C(3); hero_map_set(&(h2_m), &t53, &t54);
-    t55 = h0_rows; t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t55 + 1))[t56]); t58 = t57.f_label; t59 = h0_rows; t60 = INT64_C(0); t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t59 + 1))[t60]); t62 = t61.f_cells; t63 = INT64_C(0); t64 = ((void)((t62 == NULL || t63 < 0 || t63 >= t62->len) ? ((void)hero_array_at(t62, t63), hero_unreachable()) : (void)0), (void)(t62->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t62 + 1))[t63]); t65 = t64.f_n; t66 = h0_rows; t67 = INT64_C(0); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? ((void)hero_array_at(t66, t67), hero_unreachable()) : (void)0), (void)(t66->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t66 + 1))[t67]); t69 = t68.f_cells; t70 = INT64_C(0); t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t69 + 1))[t70]); t72 = t71.f_tag; t73 = h2_m; t74 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG const void *found = hero_map_find(t73, &t74); if (found == NULL) { t75 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t75 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t75.as.ok, found); } } t95 = h12_own12; h12_own12 = t75; h_0opt_e201354_release(&t95); t96 = h3_f0; h_0opt_e201354_retain(&t75); h3_f0 = t75; h_0opt_e201354_release(&t96); t76 = h3_f0; t77 = t76.tag; t78 = INT64_C(0); t79 = t77 == t78; if (t79) goto bb5; else goto bb6; bb4:
+    t53 = HERO_STR_LIT(hero_str_6b); t54 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 54, 5}; hero_map_set_at(&(h2_m), &t53, &t54, &hero_here); }
+    t55 = h0_rows; t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 11) : (void)0), (void)(t55->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t55 + 1))[t56]); t58 = t57.f_label; t59 = h0_rows; t60 = INT64_C(0); t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? hero_panic_index_at(t59, t60, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 26) : (void)0), (void)(t59->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t59 + 1))[t60]); t62 = t61.f_cells; t63 = INT64_C(0); t64 = ((void)((t62 == NULL || t63 < 0 || t63 >= t62->len) ? hero_panic_index_at(t62, t63, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 26) : (void)0), (void)(t62->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t62 + 1))[t63]); t65 = t64.f_n; t66 = h0_rows; t67 = INT64_C(0); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? hero_panic_index_at(t66, t67, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 46) : (void)0), (void)(t66->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t66 + 1))[t67]); t69 = t68.f_cells; t70 = INT64_C(0); t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? hero_panic_index_at(t69, t70, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 46) : (void)0), (void)(t69->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t69 + 1))[t70]); t72 = t71.f_tag; t73 = h2_m; t74 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 68}; HERO_NODEBUG const void *found = hero_map_find_at(t73, &t74, &hero_here); if (found == NULL) { t75 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t75 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t75.as.ok, found); } } t95 = h12_own12; h12_own12 = t75; h_0opt_e201354_release(&t95); t96 = h3_f0; h_0opt_e201354_retain(&t75); h3_f0 = t75; h_0opt_e201354_release(&t96); t76 = h3_f0; t77 = t76.tag; t78 = INT64_C(0); t79 = t77 == t78; if (t79) goto bb5; else goto bb6; bb4:
 #line 199 "fixedbugsafieldstoredbehindanindex.c"
-    hero_panic_assert_sides(t37, hero_int_to_str(t44), hero_int_to_str(t45));
+    hero_panic_assert_shown_at(t37, hero_show_i64, &t44, &t45, 1, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 49, 12);
     hero_unreachable();
 bb5:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -206,13 +206,13 @@ bb5:
     hero_array_release_at(&h1_kept);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
-    h_fixedbugsafieldstoredbehindanindex_Cell_release(hero_slot_escape(&h4_own4));
+    h_fixedbugsafieldstoredbehindanindex_0Cell_release(hero_slot_escape(&h4_own4));
     hero_array_release_at(&h5_own5);
-    h_fixedbugsafieldstoredbehindanindex_Row_release(hero_slot_escape(&h6_own6));
+    h_fixedbugsafieldstoredbehindanindex_0Row_release(hero_slot_escape(&h6_own6));
     hero_array_release_at(&h7_own7);
     hero_str_release_at(&h8_own8);
     hero_str_release_at(&h9_own9);
-    h_fixedbugsafieldstoredbehindanindex_Cell_release(hero_slot_escape(&h10_own10));
+    h_fixedbugsafieldstoredbehindanindex_0Cell_release(hero_slot_escape(&h10_own10));
     hero_map_release_at(&h11_own11);
     h_0opt_e201354_release(hero_slot_escape(&h12_own12));
     return;
@@ -220,24 +220,24 @@ bb6:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t80 = h3_f0; t81 = t80.as.err;
 #line 223 "fixedbugsafieldstoredbehindanindex.c"
-    hero_panic_must(t81);
+    hero_panic_must_at(t81, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 68);
     hero_unreachable();
 }
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Cell_retain(const h_fixedbugsafieldstoredbehindanindex_Cell *v) {
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Cell_retain(const h_fixedbugsafieldstoredbehindanindex_Cell *v) {
     hero_str_incref(v->f_tag);
 }
 
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Cell_release(h_fixedbugsafieldstoredbehindanindex_Cell *v) {
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Cell_release(h_fixedbugsafieldstoredbehindanindex_Cell *v) {
     hero_str_decref(v->f_tag);
 }
 
-HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_Cell_eq(const h_fixedbugsafieldstoredbehindanindex_Cell *a, const h_fixedbugsafieldstoredbehindanindex_Cell *b) {
+HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_0Cell_eq(const h_fixedbugsafieldstoredbehindanindex_Cell *a, const h_fixedbugsafieldstoredbehindanindex_Cell *b) {
     if (!(a->f_n == b->f_n)) return false;
     if (!(hero_str_eq(a->f_tag, b->f_tag))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_Cell_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_0Cell_hash(const void *elem) {
     const h_fixedbugsafieldstoredbehindanindex_Cell *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_n)) * UINT64_C(0x100000001b3);
@@ -245,23 +245,23 @@ HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_Cell_hash(const void
     return h;
 }
 
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Row_retain(const h_fixedbugsafieldstoredbehindanindex_Row *v) {
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Row_retain(const h_fixedbugsafieldstoredbehindanindex_Row *v) {
     hero_array_incref(v->f_cells);
     hero_str_incref(v->f_label);
 }
 
-HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Row_release(h_fixedbugsafieldstoredbehindanindex_Row *v) {
+HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Row_release(h_fixedbugsafieldstoredbehindanindex_Row *v) {
     hero_array_decref(v->f_cells);
     hero_str_decref(v->f_label);
 }
 
-HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_Row_eq(const h_fixedbugsafieldstoredbehindanindex_Row *a, const h_fixedbugsafieldstoredbehindanindex_Row *b) {
+HERO_TU_LOCAL bool h_fixedbugsafieldstoredbehindanindex_0Row_eq(const h_fixedbugsafieldstoredbehindanindex_Row *a, const h_fixedbugsafieldstoredbehindanindex_Row *b) {
     if (!(hero_array_eq(a->f_cells, b->f_cells))) return false;
     if (!(hero_str_eq(a->f_label, b->f_label))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_Row_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsafieldstoredbehindanindex_0Row_hash(const void *elem) {
     const h_fixedbugsafieldstoredbehindanindex_Row *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
@@ -366,9 +366,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6717c2e629e2bf5e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14d19021264800f7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsafieldstoredbehindanindex\tfixedbugs-a-field-stored-behind-an-index\n");
     h_fixedbugsafieldstoredbehindanindex_main();
     hero_runtime_check_leaks();
     return 0;

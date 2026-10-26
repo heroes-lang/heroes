@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,7 +115,7 @@ int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) { HERO_NODEBUG h_0opt_e201
     t6 = h0_v; t27 = h2_f1; h_0opt_e201354_retain(&t6); h2_f1 = t6; h_0opt_e201354_release(&t27); t7 = h2_f1; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3: goto bb1; bb4: t11 = h2_f1; t12 = t11.as.ok; h3_r0 = t12; goto bb6; bb5: t13 = INT64_C(0); h3_r0 = t13; goto bb6; bb6: t14 = h3_r0; h5_ret0 = t14; goto bb9; bb7:
     t22 = h4_f2; t23 = t22.as.ok; h5_ret0 = t23; goto bb9; bb8: t20 = h4_f2; t21 = t20.as.err;
 #line 118 "sugarfallibleops.c"
-    hero_panic_must(t21);
+    hero_panic_must_at(t21, "sugar-fallible-ops.hero", "sugar-fallible-ops.widen", 7, 12);
     hero_unreachable();
 bb9:
     t24 = h5_ret0;

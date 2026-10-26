@@ -55,7 +55,7 @@
 #pragma pop_macro("n")
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -125,6 +125,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -153,11 +161,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "ffirestzeroarecordoflongarrays.c"
+#line 165 "ffirestzeroarecordoflongarrays.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_Big_eq(const struct big *a, const struct big *b);
-HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_Big_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_0Big_eq(const struct big *a, const struct big *b);
+HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_0Big_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -166,6 +174,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 struct big h_ffirestzeroarecordoflongarrays_one_named(void);
 struct big h_ffirestzeroarecordoflongarrays_none_named(void);
@@ -194,13 +206,13 @@ struct big h_ffirestzeroarecordoflongarrays_one_named(void) { HERO_NODEBUG int32
     t1 = INT64_C(7);
 #line 20
     t2 = (struct big){0}; __builtin_memset(&t2, 0, sizeof t2); t2.n = t1; return t2;
-#line 198 "ffirestzeroarecordoflongarrays.c"
+#line 210 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 struct big h_ffirestzeroarecordoflongarrays_none_named(void) { HERO_NODEBUG struct big t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (struct big){0}; __builtin_memset(&t1, 0, sizeof t1); return t1;
-#line 204 "ffirestzeroarecordoflongarrays.c"
+#line 216 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
@@ -211,24 +223,24 @@ void h_ffirestzeroarecordoflongarrays_main(void) {
 #define h1_b (*hero_lend_h1_b)
 #line 29
     struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a"); struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b"); HERO_NODEBUG struct big t1, t5; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7; HERO_NODEBUG int64_t t4, t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    (void)dirty();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 30, 5}; (void)dirty(); }
     t1 = h_ffirestzeroarecordoflongarrays_one_named(); h0_a = t1; hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_a.n; t3 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_a, "big_arrays", "b"); hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t4 = big_arrays(&h0_a); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end();
-    (void)dirty();
+    t2 = h0_a.n; t3 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 32, 21}; hero_lend_local_name(hero_lend_h0_a, "big_arrays", "b"); hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t4 = big_arrays(&h0_a); } hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 33, 5}; (void)dirty(); }
     t5 = h_ffirestzeroarecordoflongarrays_none_named(); h1_b = t5; hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
-    t6 = h1_b.n; t7 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h1_b, "big_arrays", "b"); hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t8 = big_arrays(&h1_b); hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
-#line 221 "ffirestzeroarecordoflongarrays.c"
+    t6 = h1_b.n; t7 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 35, 21}; hero_lend_local_name(hero_lend_h1_b, "big_arrays", "b"); hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t8 = big_arrays(&h1_b); } hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
+#line 233 "ffirestzeroarecordoflongarrays.c"
 }
 #undef h0_a
 #undef h1_b
-HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_Big_eq(const struct big *a, const struct big *b) {
+HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_0Big_eq(const struct big *a, const struct big *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7] && a->name[8] == b->name[8] && a->name[9] == b->name[9] && a->name[10] == b->name[10] && a->name[11] == b->name[11] && a->name[12] == b->name[12] && a->name[13] == b->name[13] && a->name[14] == b->name[14] && a->name[15] == b->name[15] && a->name[16] == b->name[16] && a->name[17] == b->name[17] && a->name[18] == b->name[18] && a->name[19] == b->name[19] && a->name[20] == b->name[20] && a->name[21] == b->name[21] && a->name[22] == b->name[22] && a->name[23] == b->name[23] && a->name[24] == b->name[24] && a->name[25] == b->name[25] && a->name[26] == b->name[26] && a->name[27] == b->name[27] && a->name[28] == b->name[28] && a->name[29] == b->name[29] && a->name[30] == b->name[30] && a->name[31] == b->name[31] && a->name[32] == b->name[32] && a->name[33] == b->name[33] && a->name[34] == b->name[34] && a->name[35] == b->name[35] && a->name[36] == b->name[36] && a->name[37] == b->name[37] && a->name[38] == b->name[38] && a->name[39] == b->name[39] && a->name[40] == b->name[40] && a->name[41] == b->name[41] && a->name[42] == b->name[42] && a->name[43] == b->name[43] && a->name[44] == b->name[44] && a->name[45] == b->name[45] && a->name[46] == b->name[46] && a->name[47] == b->name[47] && a->name[48] == b->name[48] && a->name[49] == b->name[49] && a->name[50] == b->name[50] && a->name[51] == b->name[51] && a->name[52] == b->name[52] && a->name[53] == b->name[53] && a->name[54] == b->name[54] && a->name[55] == b->name[55] && a->name[56] == b->name[56] && a->name[57] == b->name[57] && a->name[58] == b->name[58] && a->name[59] == b->name[59] && a->name[60] == b->name[60] && a->name[61] == b->name[61] && a->name[62] == b->name[62] && a->name[63] == b->name[63] && a->name[64] == b->name[64] && a->name[65] == b->name[65] && a->name[66] == b->name[66] && a->name[67] == b->name[67] && a->name[68] == b->name[68] && a->name[69] == b->name[69] && a->name[70] == b->name[70] && a->name[71] == b->name[71] && a->name[72] == b->name[72] && a->name[73] == b->name[73] && a->name[74] == b->name[74] && a->name[75] == b->name[75] && a->name[76] == b->name[76] && a->name[77] == b->name[77] && a->name[78] == b->name[78] && a->name[79] == b->name[79] && a->name[80] == b->name[80] && a->name[81] == b->name[81] && a->name[82] == b->name[82] && a->name[83] == b->name[83] && a->name[84] == b->name[84] && a->name[85] == b->name[85] && a->name[86] == b->name[86] && a->name[87] == b->name[87] && a->name[88] == b->name[88] && a->name[89] == b->name[89] && a->name[90] == b->name[90] && a->name[91] == b->name[91] && a->name[92] == b->name[92] && a->name[93] == b->name[93] && a->name[94] == b->name[94] && a->name[95] == b->name[95] && a->name[96] == b->name[96] && a->name[97] == b->name[97] && a->name[98] == b->name[98] && a->name[99] == b->name[99] && a->name[100] == b->name[100] && a->name[101] == b->name[101] && a->name[102] == b->name[102] && a->name[103] == b->name[103] && a->name[104] == b->name[104] && a->name[105] == b->name[105] && a->name[106] == b->name[106] && a->name[107] == b->name[107] && a->name[108] == b->name[108] && a->name[109] == b->name[109] && a->name[110] == b->name[110] && a->name[111] == b->name[111] && a->name[112] == b->name[112] && a->name[113] == b->name[113] && a->name[114] == b->name[114] && a->name[115] == b->name[115] && a->name[116] == b->name[116] && a->name[117] == b->name[117] && a->name[118] == b->name[118] && a->name[119] == b->name[119] && a->name[120] == b->name[120] && a->name[121] == b->name[121] && a->name[122] == b->name[122] && a->name[123] == b->name[123] && a->name[124] == b->name[124] && a->name[125] == b->name[125] && a->name[126] == b->name[126] && a->name[127] == b->name[127] && a->name[128] == b->name[128] && a->name[129] == b->name[129] && a->name[130] == b->name[130] && a->name[131] == b->name[131] && a->name[132] == b->name[132] && a->name[133] == b->name[133] && a->name[134] == b->name[134] && a->name[135] == b->name[135] && a->name[136] == b->name[136] && a->name[137] == b->name[137] && a->name[138] == b->name[138] && a->name[139] == b->name[139] && a->name[140] == b->name[140] && a->name[141] == b->name[141] && a->name[142] == b->name[142] && a->name[143] == b->name[143] && a->name[144] == b->name[144] && a->name[145] == b->name[145] && a->name[146] == b->name[146] && a->name[147] == b->name[147] && a->name[148] == b->name[148] && a->name[149] == b->name[149] && a->name[150] == b->name[150] && a->name[151] == b->name[151] && a->name[152] == b->name[152] && a->name[153] == b->name[153] && a->name[154] == b->name[154] && a->name[155] == b->name[155] && a->name[156] == b->name[156] && a->name[157] == b->name[157] && a->name[158] == b->name[158] && a->name[159] == b->name[159] && a->name[160] == b->name[160] && a->name[161] == b->name[161] && a->name[162] == b->name[162] && a->name[163] == b->name[163] && a->name[164] == b->name[164] && a->name[165] == b->name[165] && a->name[166] == b->name[166] && a->name[167] == b->name[167] && a->name[168] == b->name[168] && a->name[169] == b->name[169] && a->name[170] == b->name[170] && a->name[171] == b->name[171] && a->name[172] == b->name[172] && a->name[173] == b->name[173] && a->name[174] == b->name[174] && a->name[175] == b->name[175] && a->name[176] == b->name[176] && a->name[177] == b->name[177] && a->name[178] == b->name[178] && a->name[179] == b->name[179] && a->name[180] == b->name[180] && a->name[181] == b->name[181] && a->name[182] == b->name[182] && a->name[183] == b->name[183] && a->name[184] == b->name[184] && a->name[185] == b->name[185] && a->name[186] == b->name[186] && a->name[187] == b->name[187] && a->name[188] == b->name[188] && a->name[189] == b->name[189] && a->name[190] == b->name[190] && a->name[191] == b->name[191] && a->name[192] == b->name[192] && a->name[193] == b->name[193] && a->name[194] == b->name[194] && a->name[195] == b->name[195] && a->name[196] == b->name[196] && a->name[197] == b->name[197] && a->name[198] == b->name[198] && a->name[199] == b->name[199] && a->name[200] == b->name[200] && a->name[201] == b->name[201] && a->name[202] == b->name[202] && a->name[203] == b->name[203] && a->name[204] == b->name[204] && a->name[205] == b->name[205] && a->name[206] == b->name[206] && a->name[207] == b->name[207] && a->name[208] == b->name[208] && a->name[209] == b->name[209] && a->name[210] == b->name[210] && a->name[211] == b->name[211] && a->name[212] == b->name[212] && a->name[213] == b->name[213] && a->name[214] == b->name[214] && a->name[215] == b->name[215] && a->name[216] == b->name[216] && a->name[217] == b->name[217] && a->name[218] == b->name[218] && a->name[219] == b->name[219] && a->name[220] == b->name[220] && a->name[221] == b->name[221] && a->name[222] == b->name[222] && a->name[223] == b->name[223] && a->name[224] == b->name[224] && a->name[225] == b->name[225] && a->name[226] == b->name[226] && a->name[227] == b->name[227] && a->name[228] == b->name[228] && a->name[229] == b->name[229] && a->name[230] == b->name[230] && a->name[231] == b->name[231] && a->name[232] == b->name[232] && a->name[233] == b->name[233] && a->name[234] == b->name[234] && a->name[235] == b->name[235] && a->name[236] == b->name[236] && a->name[237] == b->name[237] && a->name[238] == b->name[238] && a->name[239] == b->name[239] && a->name[240] == b->name[240] && a->name[241] == b->name[241] && a->name[242] == b->name[242] && a->name[243] == b->name[243] && a->name[244] == b->name[244] && a->name[245] == b->name[245] && a->name[246] == b->name[246] && a->name[247] == b->name[247] && a->name[248] == b->name[248] && a->name[249] == b->name[249] && a->name[250] == b->name[250] && a->name[251] == b->name[251] && a->name[252] == b->name[252] && a->name[253] == b->name[253] && a->name[254] == b->name[254] && a->name[255] == b->name[255]))) return false;
     if (!(a->n == b->n)) return false;
     if (!((a->tail[0] == b->tail[0] && a->tail[1] == b->tail[1] && a->tail[2] == b->tail[2] && a->tail[3] == b->tail[3] && a->tail[4] == b->tail[4] && a->tail[5] == b->tail[5] && a->tail[6] == b->tail[6] && a->tail[7] == b->tail[7] && a->tail[8] == b->tail[8] && a->tail[9] == b->tail[9] && a->tail[10] == b->tail[10] && a->tail[11] == b->tail[11] && a->tail[12] == b->tail[12] && a->tail[13] == b->tail[13] && a->tail[14] == b->tail[14] && a->tail[15] == b->tail[15] && a->tail[16] == b->tail[16] && a->tail[17] == b->tail[17] && a->tail[18] == b->tail[18] && a->tail[19] == b->tail[19] && a->tail[20] == b->tail[20] && a->tail[21] == b->tail[21] && a->tail[22] == b->tail[22] && a->tail[23] == b->tail[23] && a->tail[24] == b->tail[24] && a->tail[25] == b->tail[25] && a->tail[26] == b->tail[26] && a->tail[27] == b->tail[27] && a->tail[28] == b->tail[28] && a->tail[29] == b->tail[29] && a->tail[30] == b->tail[30] && a->tail[31] == b->tail[31] && a->tail[32] == b->tail[32] && a->tail[33] == b->tail[33] && a->tail[34] == b->tail[34] && a->tail[35] == b->tail[35] && a->tail[36] == b->tail[36] && a->tail[37] == b->tail[37] && a->tail[38] == b->tail[38] && a->tail[39] == b->tail[39] && a->tail[40] == b->tail[40] && a->tail[41] == b->tail[41] && a->tail[42] == b->tail[42] && a->tail[43] == b->tail[43] && a->tail[44] == b->tail[44] && a->tail[45] == b->tail[45] && a->tail[46] == b->tail[46] && a->tail[47] == b->tail[47] && a->tail[48] == b->tail[48] && a->tail[49] == b->tail[49] && a->tail[50] == b->tail[50] && a->tail[51] == b->tail[51] && a->tail[52] == b->tail[52] && a->tail[53] == b->tail[53] && a->tail[54] == b->tail[54] && a->tail[55] == b->tail[55] && a->tail[56] == b->tail[56] && a->tail[57] == b->tail[57] && a->tail[58] == b->tail[58] && a->tail[59] == b->tail[59] && a->tail[60] == b->tail[60] && a->tail[61] == b->tail[61] && a->tail[62] == b->tail[62] && a->tail[63] == b->tail[63] && a->tail[64] == b->tail[64] && a->tail[65] == b->tail[65] && a->tail[66] == b->tail[66] && a->tail[67] == b->tail[67] && a->tail[68] == b->tail[68] && a->tail[69] == b->tail[69] && a->tail[70] == b->tail[70] && a->tail[71] == b->tail[71] && a->tail[72] == b->tail[72] && a->tail[73] == b->tail[73] && a->tail[74] == b->tail[74] && a->tail[75] == b->tail[75] && a->tail[76] == b->tail[76] && a->tail[77] == b->tail[77] && a->tail[78] == b->tail[78] && a->tail[79] == b->tail[79] && a->tail[80] == b->tail[80] && a->tail[81] == b->tail[81] && a->tail[82] == b->tail[82] && a->tail[83] == b->tail[83] && a->tail[84] == b->tail[84] && a->tail[85] == b->tail[85] && a->tail[86] == b->tail[86] && a->tail[87] == b->tail[87] && a->tail[88] == b->tail[88] && a->tail[89] == b->tail[89] && a->tail[90] == b->tail[90] && a->tail[91] == b->tail[91] && a->tail[92] == b->tail[92] && a->tail[93] == b->tail[93] && a->tail[94] == b->tail[94] && a->tail[95] == b->tail[95] && a->tail[96] == b->tail[96] && a->tail[97] == b->tail[97] && a->tail[98] == b->tail[98] && a->tail[99] == b->tail[99]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_Big_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_0Big_hash(const void *elem) {
     const struct big *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i8)->hash(&v->name[0])) * UINT64_C(0x100000001b3);
@@ -655,10 +667,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("26f99a9f5a49d07f", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("41be63493cab6e7c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffirestzeroarecordoflongarrays\tffi-rest-zero-a-record-of-long-arrays\n");
     h_ffirestzeroarecordoflongarrays_main();
     hero_runtime_check_leaks();
     return 0;

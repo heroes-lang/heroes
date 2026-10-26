@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -69,6 +69,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -83,7 +91,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "adversarialstrselfassign.c"
+#line 95 "adversarialstrselfassign.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,6 +102,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_adversarialstrselfassign_main(void);
 
@@ -108,12 +120,12 @@ void h_adversarialstrselfassign_main(void) { HeroStr h0_s = {0}; HeroStr h1_out 
     t9 = INT64_C(0); h2_i = t9; goto bb1; bb1:
 #line 21
     t10 = h2_i; t11 = INT64_C(50); t12 = t10 < t11; if (t12) goto bb2; else goto bb3; bb2:
-    t13 = h1_out; t14 = h2_i; t15 = INT64_C(10); if (t15 == 0) hero_panic("division by zero"); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t16 = t14 % t15; t17 = hero_int_to_str(t16); t33 = h4_own4; h4_own4 = t17; hero_str_decref(t33); t18 = hero_str_concat(t13, t17); t34 = h5_own5; h5_own5 = t18; hero_str_decref(t34); t35 = h1_out; hero_str_incref(t18); h1_out = t18; hero_str_decref(t35);
-    t19 = h2_i; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); h2_i = t21; goto bb1; bb3:
+    t13 = h1_out; t14 = h2_i; t15 = INT64_C(10); if (t15 == 0) hero_panic_at("division by zero", "adversarial-str-self-assign.hero", "adversarial-str-self-assign.main", 22, 28); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "adversarial-str-self-assign.hero", "adversarial-str-self-assign.main", 22, 28); t16 = t14 % t15; t17 = hero_int_to_str(t16); t33 = h4_own4; h4_own4 = t17; hero_str_decref(t33); t18 = hero_str_concat(t13, t17); t34 = h5_own5; h5_own5 = t18; hero_str_decref(t34); t35 = h1_out; hero_str_incref(t18); h1_out = t18; hero_str_decref(t35);
+    t19 = h2_i; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("adversarial-str-self-assign.hero", "adversarial-str-self-assign.main", 23, 13); h2_i = t21; goto bb1; bb3:
 #line 25
     t22 = h1_out; t23 = hero_str_len(t22); hero_print_int(t23); hero_print_end();
-    t24 = h1_out; t25 = INT64_C(0); t26 = INT64_C(10); t27 = hero_str_slice(t24, t25, t26); t36 = h6_own6; h6_own6 = t27; hero_str_decref(t36); hero_print_str(t27); hero_print_end();
-#line 117 "adversarialstrselfassign.c"
+    t24 = h1_out; t25 = INT64_C(0); t26 = INT64_C(10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"adversarial-str-self-assign.hero", "adversarial-str-self-assign.main", 26, 11}; t27 = hero_str_slice_at(t24, t25, t26, &hero_here); } t36 = h6_own6; h6_own6 = t27; hero_str_decref(t36); hero_print_str(t27); hero_print_end();
+#line 129 "adversarialstrselfassign.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h3_own3);
@@ -186,10 +198,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e1d8f4a4e19ba1b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("286870811975eced", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("adversarialstrselfassign\tadversarial-str-self-assign\n");
     h_adversarialstrselfassign_main();
     hero_runtime_check_leaks();
     return 0;

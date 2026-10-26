@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -144,11 +152,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "deadaddressrememberedthroughamillionlaterends.c"
+#line 156 "deadaddressrememberedthroughamillionlaterends.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b);
-HERO_TU_LOCAL uint64_t h_deadaddressrememberedthroughamillionlaterends_Big_hash(const void *elem);
+HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_0Big_eq(big * const *a, big * const *b);
+HERO_TU_LOCAL uint64_t h_deadaddressrememberedthroughamillionlaterends_0Big_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -157,30 +165,34 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_deadaddressrememberedthroughamillionlaterends_main(void);
 
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 void h_deadaddressrememberedthroughamillionlaterends_main(void) { big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big *t1, *t2, *t3, *t8, *t9, *t16; HERO_NODEBUG int64_t t4, t5, t6, t10, t11, t12, t14, t17; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t13, t15; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = big_new(); hero_handle_acquired(t1, "big_free"); h0_target = t1;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 20, 14}; t1 = big_new(); hero_handle_acquired_at(t1, "big_free", &hero_here); } h0_target = t1;
     t2 = h0_target; h1_keep = t2;
-    t3 = h0_target; { hero_handle_alive(t3, "the argument `n` of `big_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "big_free", NULL); (void)big_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_target == t3) h0_target = hero_handle_dead(); }
+    t3 = h0_target; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 22, 5}; { hero_handle_alive_at(t3, "the argument `n` of `big_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t3, "big_free", NULL, &hero_here); (void)big_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_target == t3) h0_target = hero_handle_dead(); } }
     t4 = INT64_C(0); h2_i = t4; goto bb1; bb1:
 #line 25
     t5 = h2_i; t6 = INT64_C(1048575); t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
-    t8 = big_new(); hero_handle_acquired(t8, "big_free"); h3_n = t8;
-    t9 = h3_n; { hero_handle_alive(t9, "the argument `n` of `big_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "big_free", NULL); (void)big_free(t9); if (hero_handle_ended(t9, hero_life_0_0) && h3_n == t9) h3_n = hero_handle_dead(); }
-    t10 = h2_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h2_i = t12; goto bb1; bb3:
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 26, 13}; t8 = big_new(); hero_handle_acquired_at(t8, "big_free", &hero_here); } h3_n = t8;
+    t9 = h3_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 27, 9}; { hero_handle_alive_at(t9, "the argument `n` of `big_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t9, "big_free", NULL, &hero_here); (void)big_free(t9); if (hero_handle_ended(t9, hero_life_0_0) && h3_n == t9) h3_n = hero_handle_dead(); } }
+    t10 = h2_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 28, 13); h2_i = t12; goto bb1; bb3:
 #line 30
     t13 = HERO_STR_LIT(hero_str_11c935bc); t14 = h2_i; hero_print_str(t13); hero_print_int(t14); hero_print_end();
-    t15 = HERO_STR_LIT(hero_str_eb0c0ab); t16 = h1_keep; hero_handle_alive(t16, "the argument `n` of `big_value`"); t17 = big_value(t16); hero_print_str(t15); hero_print_int(t17); hero_print_end(); return;
-#line 178 "deadaddressrememberedthroughamillionlaterends.c"
+    t15 = HERO_STR_LIT(hero_str_eb0c0ab); t16 = h1_keep; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 31, 33}; hero_handle_alive_at(t16, "the argument `n` of `big_value`", &hero_here); t17 = big_value(t16); } hero_print_str(t15); hero_print_int(t17); hero_print_end(); return;
+#line 190 "deadaddressrememberedthroughamillionlaterends.c"
 }
-HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b) {
+HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_0Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_deadaddressrememberedthroughamillionlaterends_Big_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_deadaddressrememberedthroughamillionlaterends_0Big_hash(const void *elem) {
     big * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -251,10 +263,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b8ce0d111b6bc32", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14dc770971fc3b74", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("deadaddressrememberedthroughamillionlaterends\tdead-address-remembered-through-a-million-later-ends\n");
     h_deadaddressrememberedthroughamillionlaterends_main();
     hero_runtime_check_leaks();
     return 0;

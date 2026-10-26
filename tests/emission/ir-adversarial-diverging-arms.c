@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -51,13 +51,13 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 54 "adversarialdivergingarms.c"
-typedef enum h_adversarialdivergingarms_Step_tag {
-    h_adversarialdivergingarms_Step_tag_stop = 0,
-    h_adversarialdivergingarms_Step_tag_skip = 1,
-} h_adversarialdivergingarms_Step_tag;
+typedef enum h_adversarialdivergingarms_0Step_tag {
+    h_adversarialdivergingarms_0Step_tag_stop = 0,
+    h_adversarialdivergingarms_0Step_tag_skip = 1,
+} h_adversarialdivergingarms_0Step_tag;
 
 typedef struct h_adversarialdivergingarms_Step {
-    h_adversarialdivergingarms_Step_tag tag;
+    h_adversarialdivergingarms_0Step_tag tag;
 } h_adversarialdivergingarms_Step;
 
 typedef struct h_0opt_f87774a {
@@ -75,6 +75,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,11 +97,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "adversarialdivergingarms.c"
+#line 101 "adversarialdivergingarms.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_adversarialdivergingarms_Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b);
-HERO_TU_LOCAL uint64_t h_adversarialdivergingarms_Step_hash(const void *elem);
+HERO_TU_LOCAL bool h_adversarialdivergingarms_0Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b);
+HERO_TU_LOCAL uint64_t h_adversarialdivergingarms_0Step_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -102,6 +110,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 
@@ -109,13 +121,13 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) { int64_t h1_seen; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t13, t14, t15, t16, t17; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_seen = t1;
 #line 14
-    t2 = h0_xs; t18 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t18); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialdivergingarms_Step) ? hero_unreachable() : (void)0), ((h_adversarialdivergingarms_Step const *)(const void *)(t8 + 1))[t9]); h4_s = t10;
+    t2 = h0_xs; t18 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t18); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "adversarial-diverging-arms.hero", "adversarial-diverging-arms.walk", 14, 9) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialdivergingarms_Step) ? hero_unreachable() : (void)0), ((h_adversarialdivergingarms_Step const *)(const void *)(t8 + 1))[t9]); h4_s = t10;
     t11 = h4_s; h5_s0 = t11; t12 = h5_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb3:
 #line 14
-    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h3_i0 = t16; goto bb1; bb4:
+    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("adversarial-diverging-arms.hero", "adversarial-diverging-arms.walk", 14, 9); h3_i0 = t16; goto bb1; bb4:
 #line 21
     t17 = h1_seen;
-#line 119 "adversarialdivergingarms.c"
+#line 131 "adversarialdivergingarms.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 bb6:
@@ -123,22 +135,22 @@ bb6:
 bb7:
     goto bb3;
 }
-HERO_TU_LOCAL bool h_adversarialdivergingarms_Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b) {
+HERO_TU_LOCAL bool h_adversarialdivergingarms_0Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_adversarialdivergingarms_Step_tag_stop: return true;
-        case h_adversarialdivergingarms_Step_tag_skip: return true;
+        case h_adversarialdivergingarms_0Step_tag_stop: return true;
+        case h_adversarialdivergingarms_0Step_tag_skip: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_adversarialdivergingarms_Step_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_adversarialdivergingarms_0Step_hash(const void *elem) {
     const h_adversarialdivergingarms_Step *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_adversarialdivergingarms_Step_tag_stop: return h;
-        case h_adversarialdivergingarms_Step_tag_skip: return h;
+        case h_adversarialdivergingarms_0Step_tag_stop: return h;
+        case h_adversarialdivergingarms_0Step_tag_skip: return h;
     }
     hero_unreachable();
 }
@@ -205,5 +217,37 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return h;
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 

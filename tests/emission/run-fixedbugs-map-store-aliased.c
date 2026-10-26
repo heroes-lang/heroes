@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -112,12 +112,12 @@ void h_fixedbugsmapstorealiased_main(void);
 #line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
 void h_fixedbugsmapstorealiased_main(void) { HeroMapHeader * h0_m = {0}; HeroMapHeader * h1_n = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_own5 = {0}, t13, t14, t18, t25, t26; HERO_NODEBUG int64_t h3_r0, t3, t6, t8, t10, t15, t16, t19, t20, t21; HERO_NODEBUG HeroMapHeader *h4_own4 = {0}, *t1, *t4, *t7, *t9, *t11, *t22, *t23, *t24; HERO_NODEBUG HeroStr t2, t5, t12; HERO_NODEBUG bool t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t22 = h4_own4; h4_own4 = t1; hero_map_decref(t22); t23 = h0_m; hero_map_incref(t1); h0_m = t1; hero_map_decref(t23);
-    t2 = HERO_STR_LIT(hero_str_61); t3 = INT64_C(1); hero_map_set(&(h0_m), &t2, &t3);
+    t2 = HERO_STR_LIT(hero_str_61); t3 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-map-store-aliased.hero", "fixedbugs-map-store-aliased.main", 33, 5}; hero_map_set_at(&(h0_m), &t2, &t3, &hero_here); }
     t4 = h0_m; t24 = h1_n; hero_map_incref(t4); h1_n = t4; hero_map_decref(t24);
-    t5 = HERO_STR_LIT(hero_str_62); t6 = INT64_C(2); hero_map_set(&(h0_m), &t5, &t6);
+    t5 = HERO_STR_LIT(hero_str_62); t6 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-map-store-aliased.hero", "fixedbugs-map-store-aliased.main", 35, 5}; hero_map_set_at(&(h0_m), &t5, &t6, &hero_here); }
     t7 = h1_n; t8 = hero_map_len(t7); hero_print_int(t8); hero_print_end();
     t9 = h0_m; t10 = hero_map_len(t9); hero_print_int(t10); hero_print_end();
-    t11 = h1_n; t12 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG const void *found = hero_map_find(t11, &t12); if (found == NULL) { t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t13 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t13.as.ok, found); } } t25 = h5_own5; h5_own5 = t13; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t13); h2_f0 = t13; h_0opt_e201354_release(&t26); t14 = h2_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb1; else goto bb2; bb1: t18 = h2_f0; t19 = t18.as.ok; h3_r0 = t19; goto bb3; bb2: t20 = INT64_C(-1); h3_r0 = t20; goto bb3; bb3: t21 = h3_r0; hero_print_int(t21); hero_print_end();
+    t11 = h1_n; t12 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-map-store-aliased.hero", "fixedbugs-map-store-aliased.main", 38, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t11, &t12, &hero_here); if (found == NULL) { t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t13 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t13.as.ok, found); } } t25 = h5_own5; h5_own5 = t13; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t13); h2_f0 = t13; h_0opt_e201354_release(&t26); t14 = h2_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb1; else goto bb2; bb1: t18 = h2_f0; t19 = t18.as.ok; h3_r0 = t19; goto bb3; bb2: t20 = INT64_C(-1); h3_r0 = t20; goto bb3; bb3: t21 = h3_r0; hero_print_int(t21); hero_print_end();
 #line 122 "fixedbugsmapstorealiased.c"
     hero_map_release_at(&h0_m);
     hero_map_release_at(&h1_n);
@@ -223,9 +223,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e5797b54bf0eea0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08a278ec174d2172", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsmapstorealiased\tfixedbugs-map-store-aliased\n");
     h_fixedbugsmapstorealiased_main();
     hero_runtime_check_leaks();
     return 0;

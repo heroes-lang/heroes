@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -70,6 +70,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -84,7 +92,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 96 "fixedbugsequalitywasdecidedbyanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,6 +103,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsequalitywasdecidedbyanaddress_main(void);
 
@@ -107,9 +119,9 @@ void h_fixedbugsequalitywasdecidedbyanaddress_main(void) { double h0_n; HeroArra
     t7 = h0_n; t8 = hero_array_new(&hero_desc_f64, 1); hero_array_push_owned(&t8, &t7); t69 = h14_own14; h14_own14 = t8; hero_array_decref(t69); t70 = h3_c; hero_array_incref(t8); h3_c = t8; hero_array_decref(t70);
     t9 = h1_a; t10 = h2_b; t11 = hero_array_eq(t9, t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h1_a; t14 = h3_c; t15 = hero_array_eq(t13, t14); hero_print_bool(t11); hero_print_str(t12); hero_print_bool(t15); hero_print_end();
 #line 58
-    t16 = HERO_STR_LIT(hero_str_6b); t17 = h0_n; t18 = hero_map_new(&hero_desc_str, &hero_desc_f64, 1); hero_map_put(t18, &t16, &t17); t71 = h15_own15; h15_own15 = t18; hero_map_decref(t71); t72 = h4_ma; hero_map_incref(t18); h4_ma = t18; hero_map_decref(t72);
+    t16 = HERO_STR_LIT(hero_str_6b); t17 = h0_n; t18 = hero_map_new(&hero_desc_str, &hero_desc_f64, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-equality-was-decided-by-an-address.hero", "fixedbugs-equality-was-decided-by-an-address.main", 58, 22}; hero_map_put_at(t18, &t16, &t17, &hero_here); } t71 = h15_own15; h15_own15 = t18; hero_map_decref(t71); t72 = h4_ma; hero_map_incref(t18); h4_ma = t18; hero_map_decref(t72);
     t19 = h4_ma; t73 = h5_mb; hero_map_incref(t19); h5_mb = t19; hero_map_decref(t73);
-    t20 = HERO_STR_LIT(hero_str_6b); t21 = h0_n; t22 = hero_map_new(&hero_desc_str, &hero_desc_f64, 1); hero_map_put(t22, &t20, &t21); t74 = h16_own16; h16_own16 = t22; hero_map_decref(t74); t75 = h6_mc; hero_map_incref(t22); h6_mc = t22; hero_map_decref(t75);
+    t20 = HERO_STR_LIT(hero_str_6b); t21 = h0_n; t22 = hero_map_new(&hero_desc_str, &hero_desc_f64, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-equality-was-decided-by-an-address.hero", "fixedbugs-equality-was-decided-by-an-address.main", 60, 22}; hero_map_put_at(t22, &t20, &t21, &hero_here); } t74 = h16_own16; h16_own16 = t22; hero_map_decref(t74); t75 = h6_mc; hero_map_incref(t22); h6_mc = t22; hero_map_decref(t75);
     t23 = h4_ma; t24 = h5_mb; t25 = hero_map_eq(t23, t24); t26 = HERO_STR_LIT(hero_str_20); t27 = h4_ma; t28 = h6_mc; t29 = hero_map_eq(t27, t28); hero_print_bool(t25); hero_print_str(t26); hero_print_bool(t29); hero_print_end();
 #line 67
     t30 = 0x1p+0; t31 = 0x1p+1; t32 = 0x1.8p+1; t33 = hero_array_new(&hero_desc_f64, 3); hero_array_push_owned(&t33, &t30); hero_array_push_owned(&t33, &t31); hero_array_push_owned(&t33, &t32); t76 = h17_own17; h17_own17 = t33; hero_array_decref(t76); t77 = h7_xs; hero_array_incref(t33); h7_xs = t33; hero_array_decref(t77);
@@ -117,13 +129,13 @@ void h_fixedbugsequalitywasdecidedbyanaddress_main(void) { double h0_n; HeroArra
     t35 = 0x1p+0; t36 = 0x1p+1; t37 = 0x1.8p+1; t38 = hero_array_new(&hero_desc_f64, 3); hero_array_push_owned(&t38, &t35); hero_array_push_owned(&t38, &t36); hero_array_push_owned(&t38, &t37); t79 = h18_own18; h18_own18 = t38; hero_array_decref(t79); t80 = h9_zs; hero_array_incref(t38); h9_zs = t38; hero_array_decref(t80);
     t39 = h7_xs; t40 = h8_ys; t41 = hero_array_eq(t39, t40); t42 = HERO_STR_LIT(hero_str_20); t43 = h7_xs; t44 = h9_zs; t45 = hero_array_eq(t43, t44); hero_print_bool(t41); hero_print_str(t42); hero_print_bool(t45); hero_print_end();
 #line 72
-    t46 = HERO_STR_LIT(hero_str_61); t47 = INT64_C(1); t48 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t48, &t46, &t47); t81 = h19_own19; h19_own19 = t48; hero_map_decref(t81); t82 = h10_ns; hero_map_incref(t48); h10_ns = t48; hero_map_decref(t82);
+    t46 = HERO_STR_LIT(hero_str_61); t47 = INT64_C(1); t48 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-equality-was-decided-by-an-address.hero", "fixedbugs-equality-was-decided-by-an-address.main", 72, 22}; hero_map_put_at(t48, &t46, &t47, &hero_here); } t81 = h19_own19; h19_own19 = t48; hero_map_decref(t81); t82 = h10_ns; hero_map_incref(t48); h10_ns = t48; hero_map_decref(t82);
     t49 = h10_ns; t83 = h11_os; hero_map_incref(t49); h11_os = t49; hero_map_decref(t83);
-    t50 = HERO_STR_LIT(hero_str_61); t51 = INT64_C(1); t52 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t52, &t50, &t51); t84 = h20_own20; h20_own20 = t52; hero_map_decref(t84); t85 = h12_ps; hero_map_incref(t52); h12_ps = t52; hero_map_decref(t85);
+    t50 = HERO_STR_LIT(hero_str_61); t51 = INT64_C(1); t52 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-equality-was-decided-by-an-address.hero", "fixedbugs-equality-was-decided-by-an-address.main", 74, 22}; hero_map_put_at(t52, &t50, &t51, &hero_here); } t84 = h20_own20; h20_own20 = t52; hero_map_decref(t84); t85 = h12_ps; hero_map_incref(t52); h12_ps = t52; hero_map_decref(t85);
     t53 = h10_ns; t54 = h11_os; t55 = hero_map_eq(t53, t54); t56 = HERO_STR_LIT(hero_str_20); t57 = h10_ns; t58 = h12_ps; t59 = hero_map_eq(t57, t58); hero_print_bool(t55); hero_print_str(t56); hero_print_bool(t59); hero_print_end();
 #line 79
     t60 = 0x1p+0; t61 = hero_array_new(&hero_desc_f64, 1); hero_array_push_owned(&t61, &t60); t86 = h21_own21; h21_own21 = t61; hero_array_decref(t86); t62 = 0x1p+0; t63 = 0x1p+1; t64 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t64, &t62); hero_array_push_owned(&t64, &t63); t87 = h22_own22; h22_own22 = t64; hero_array_decref(t87); t65 = hero_array_eq(t61, t64); hero_print_bool(t65); hero_print_end();
-#line 127 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 139 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_release_at(&h1_a);
     hero_array_release_at(&h2_b);
     hero_array_release_at(&h3_c);
@@ -212,10 +224,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("34b7ea9c52236b6f", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("294cb6456b045c14", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsequalitywasdecidedbyanaddress\tfixedbugs-equality-was-decided-by-an-address\n");
     h_fixedbugsequalitywasdecidedbyanaddress_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,6 +71,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,13 +93,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 97 "fixedbugsadeepvaluecompareswithoutastack.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(const h_fixedbugsadeepvaluecompareswithoutastack_Node *v);
-HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_Node_release(h_fixedbugsadeepvaluecompareswithoutastack_Node *v);
-HERO_TU_LOCAL bool h_fixedbugsadeepvaluecompareswithoutastack_Node_eq(const h_fixedbugsadeepvaluecompareswithoutastack_Node *a, const h_fixedbugsadeepvaluecompareswithoutastack_Node *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsadeepvaluecompareswithoutastack_Node_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(const h_fixedbugsadeepvaluecompareswithoutastack_Node *v);
+HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(h_fixedbugsadeepvaluecompareswithoutastack_Node *v);
+HERO_TU_LOCAL bool h_fixedbugsadeepvaluecompareswithoutastack_0Node_eq(const h_fixedbugsadeepvaluecompareswithoutastack_Node *a, const h_fixedbugsadeepvaluecompareswithoutastack_Node *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsadeepvaluecompareswithoutastack_0Node_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -100,23 +108,27 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_copy(void *dst, const void *src) {
+static void h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_fixedbugsadeepvaluecompareswithoutastack_Node));
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_retain((const h_fixedbugsadeepvaluecompareswithoutastack_Node *)dst);
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain((const h_fixedbugsadeepvaluecompareswithoutastack_Node *)dst);
 }
-static void h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_drop(void *elem) {
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release((h_fixedbugsadeepvaluecompareswithoutastack_Node *)elem);
+static void h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc_drop(void *elem) {
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release((h_fixedbugsadeepvaluecompareswithoutastack_Node *)elem);
 }
-static bool h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_eq(const void *a, const void *b) {
-    return h_fixedbugsadeepvaluecompareswithoutastack_Node_eq((const h_fixedbugsadeepvaluecompareswithoutastack_Node *)a, (const h_fixedbugsadeepvaluecompareswithoutastack_Node *)b);
+static bool h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc_eq(const void *a, const void *b) {
+    return h_fixedbugsadeepvaluecompareswithoutastack_0Node_eq((const h_fixedbugsadeepvaluecompareswithoutastack_Node *)a, (const h_fixedbugsadeepvaluecompareswithoutastack_Node *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugsadeepvaluecompareswithoutastack_Node_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc = {
     sizeof(h_fixedbugsadeepvaluecompareswithoutastack_Node),
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_copy,
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_drop,
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_eq,
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_hash,
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc_copy,
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc_drop,
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc_eq,
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_hash,
 };
 
 h_fixedbugsadeepvaluecompareswithoutastack_Node h_fixedbugsadeepvaluecompareswithoutastack_chain(int64_t h0_depth, int64_t h1_tip);
@@ -124,40 +136,40 @@ void h_fixedbugsadeepvaluecompareswithoutastack_main(void);
 
 #line 37 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 h_fixedbugsadeepvaluecompareswithoutastack_Node h_fixedbugsadeepvaluecompareswithoutastack_chain(int64_t h0_depth, int64_t h1_tip) { h_fixedbugsadeepvaluecompareswithoutastack_Node h2_n = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h6_own6 = {0}, *t2, *t10, *t16, *t19; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h5_own5 = {0}, h7_own7 = {0}, t3, t9, t11, t15, t17, t18, t20, t21; HERO_NODEBUG int64_t t1, t4, t5, t6, t8, t12, t13, t14; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_tip; t2 = hero_array_new(&h_fixedbugsadeepvaluecompareswithoutastack_Node_desc, 1); t16 = h4_own4; h4_own4 = t2; hero_array_decref(t16); hero_array_incref(t2); t3 = (h_fixedbugsadeepvaluecompareswithoutastack_Node){.f_label = t1, .f_children = t2}; t17 = h5_own5; h5_own5 = t3; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t17); t18 = h2_n; h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t3); h2_n = t3; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t18);
+    t1 = h1_tip; t2 = hero_array_new(&h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc, 1); t16 = h4_own4; h4_own4 = t2; hero_array_decref(t16); hero_array_incref(t2); t3 = (h_fixedbugsadeepvaluecompareswithoutastack_Node){.f_label = t1, .f_children = t2}; t17 = h5_own5; h5_own5 = t3; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t17); t18 = h2_n; h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(&t3); h2_n = t3; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t18);
     t4 = INT64_C(0); h3_i = t4; goto bb1; bb1:
 #line 41
     t5 = h3_i; t6 = h0_depth; t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
-    t8 = h3_i; t9 = h2_n; t10 = hero_array_new(&h_fixedbugsadeepvaluecompareswithoutastack_Node_desc, 1); hero_array_push_owned(&t10, &t9); t19 = h6_own6; h6_own6 = t10; hero_array_decref(t19); hero_array_incref(t10); t11 = (h_fixedbugsadeepvaluecompareswithoutastack_Node){.f_label = t8, .f_children = t10}; t20 = h7_own7; h7_own7 = t11; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t20); t21 = h2_n; h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t11); h2_n = t11; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t21);
-    t12 = h3_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); h3_i = t14; goto bb1; bb3:
+    t8 = h3_i; t9 = h2_n; t10 = hero_array_new(&h_fixedbugsadeepvaluecompareswithoutastack_0Node_desc, 1); hero_array_push_owned(&t10, &t9); t19 = h6_own6; h6_own6 = t10; hero_array_decref(t19); hero_array_incref(t10); t11 = (h_fixedbugsadeepvaluecompareswithoutastack_Node){.f_label = t8, .f_children = t10}; t20 = h7_own7; h7_own7 = t11; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t20); t21 = h2_n; h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(&t11); h2_n = t11; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t21);
+    t12 = h3_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-a-deep-value-compares-without-a-stack.hero", "fixedbugs-a-deep-value-compares-without-a-stack.chain", 43, 13); h3_i = t14; goto bb1; bb3:
 #line 45
     t15 = h2_n;
-#line 136 "fixedbugsadeepvaluecompareswithoutastack.c"
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t15);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h2_n));
+#line 148 "fixedbugsadeepvaluecompareswithoutastack.c"
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(&t15);
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h2_n));
     hero_array_release_at(&h4_own4);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h5_own5));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h5_own5));
     hero_array_release_at(&h6_own6);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h7_own7));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h7_own7));
     return t15;
 }
 
 #line 47 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 void h_fixedbugsadeepvaluecompareswithoutastack_main(void) { h_fixedbugsadeepvaluecompareswithoutastack_Node h0_a = {0}; h_fixedbugsadeepvaluecompareswithoutastack_Node h1_b = {0}; h_fixedbugsadeepvaluecompareswithoutastack_Node h2_c = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t3, t6, t7, t8, t12, t13, t14, t42, t43, t44, t45, t46, t47; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *t18, *t20, *t21, *t24, *t26, *t27, *t31, *t33, *t34, *t37, *t39, *t40, *t48, *t49, *t50, *t51, *t52, *t53, *t54, *t55, *t56, *t57, *t58, *t59; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t11, t16, t17, t19, t22, t23, t25, t29, t30, t32, t35, t36, t38; HERO_NODEBUG bool t9, t15, t28, t41; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(60000); t2 = INT64_C(0); t3 = h_fixedbugsadeepvaluecompareswithoutastack_chain(t1, t2); t42 = h3_own3; h3_own3 = t3; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t42); t43 = h0_a; h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t3); h0_a = t3; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t43);
-    t4 = INT64_C(60000); t5 = INT64_C(0); t6 = h_fixedbugsadeepvaluecompareswithoutastack_chain(t4, t5); t44 = h4_own4; h4_own4 = t6; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t44); t45 = h1_b; h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t6); h1_b = t6; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t45);
-    t7 = h0_a; t8 = h1_b; t9 = h_fixedbugsadeepvaluecompareswithoutastack_Node_eq(&t7, &t8); hero_print_bool(t9); hero_print_end();
-    t10 = INT64_C(60000); t11 = INT64_C(9); t12 = h_fixedbugsadeepvaluecompareswithoutastack_chain(t10, t11); t46 = h5_own5; h5_own5 = t12; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t46); t47 = h2_c; h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t12); h2_c = t12; h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t47);
-    t13 = h0_a; t14 = h2_c; t15 = h_fixedbugsadeepvaluecompareswithoutastack_Node_eq(&t13, &t14); hero_print_bool(t15); hero_print_end();
+    t1 = INT64_C(60000); t2 = INT64_C(0); t3 = h_fixedbugsadeepvaluecompareswithoutastack_chain(t1, t2); t42 = h3_own3; h3_own3 = t3; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t42); t43 = h0_a; h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(&t3); h0_a = t3; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t43);
+    t4 = INT64_C(60000); t5 = INT64_C(0); t6 = h_fixedbugsadeepvaluecompareswithoutastack_chain(t4, t5); t44 = h4_own4; h4_own4 = t6; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t44); t45 = h1_b; h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(&t6); h1_b = t6; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t45);
+    t7 = h0_a; t8 = h1_b; t9 = h_fixedbugsadeepvaluecompareswithoutastack_0Node_eq(&t7, &t8); hero_print_bool(t9); hero_print_end();
+    t10 = INT64_C(60000); t11 = INT64_C(9); t12 = h_fixedbugsadeepvaluecompareswithoutastack_chain(t10, t11); t46 = h5_own5; h5_own5 = t12; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t46); t47 = h2_c; h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(&t12); h2_c = t12; h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(&t47);
+    t13 = h0_a; t14 = h2_c; t15 = h_fixedbugsadeepvaluecompareswithoutastack_0Node_eq(&t13, &t14); hero_print_bool(t15); hero_print_end();
     t16 = INT64_C(1); t17 = INT64_C(2); t18 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t18, &t16); hero_array_push_owned(&t18, &t17); t48 = h6_own6; h6_own6 = t18; hero_array_decref(t48); t19 = INT64_C(3); t20 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t20, &t19); t49 = h7_own7; h7_own7 = t20; hero_array_decref(t49); t21 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t21, &t18); hero_array_push_owned(&t21, &t20); t50 = h8_own8; h8_own8 = t21; hero_array_decref(t50); t22 = INT64_C(1); t23 = INT64_C(2); t24 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t51 = h9_own9; h9_own9 = t24; hero_array_decref(t51); t25 = INT64_C(3); t26 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t26, &t25); t52 = h10_own10; h10_own10 = t26; hero_array_decref(t52); t27 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t27, &t24); hero_array_push_owned(&t27, &t26); t53 = h11_own11; h11_own11 = t27; hero_array_decref(t53); t28 = hero_array_eq(t21, t27); hero_print_bool(t28); hero_print_end();
     t29 = INT64_C(1); t30 = INT64_C(2); t31 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t31, &t29); hero_array_push_owned(&t31, &t30); t54 = h12_own12; h12_own12 = t31; hero_array_decref(t54); t32 = INT64_C(3); t33 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t33, &t32); t55 = h13_own13; h13_own13 = t33; hero_array_decref(t55); t34 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t34, &t31); hero_array_push_owned(&t34, &t33); t56 = h14_own14; h14_own14 = t34; hero_array_decref(t56); t35 = INT64_C(1); t36 = INT64_C(2); t37 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t37, &t35); hero_array_push_owned(&t37, &t36); t57 = h15_own15; h15_own15 = t37; hero_array_decref(t57); t38 = INT64_C(4); t39 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t39, &t38); t58 = h16_own16; h16_own16 = t39; hero_array_decref(t58); t40 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t40, &t37); hero_array_push_owned(&t40, &t39); t59 = h17_own17; h17_own17 = t40; hero_array_decref(t59); t41 = hero_array_eq(t34, t40); hero_print_bool(t41); hero_print_end();
-#line 155 "fixedbugsadeepvaluecompareswithoutastack.c"
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h0_a));
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h1_b));
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h2_c));
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h3_own3));
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h4_own4));
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h5_own5));
+#line 167 "fixedbugsadeepvaluecompareswithoutastack.c"
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h0_a));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h1_b));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h2_c));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h3_own3));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h4_own4));
+    h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(hero_slot_escape(&h5_own5));
     hero_array_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);
     hero_array_release_at(&h8_own8);
@@ -172,21 +184,21 @@ void h_fixedbugsadeepvaluecompareswithoutastack_main(void) { h_fixedbugsadeepval
     hero_array_release_at(&h17_own17);
     return;
 }
-HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(const h_fixedbugsadeepvaluecompareswithoutastack_Node *v) {
+HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_0Node_retain(const h_fixedbugsadeepvaluecompareswithoutastack_Node *v) {
     hero_array_incref(v->f_children);
 }
 
-HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_Node_release(h_fixedbugsadeepvaluecompareswithoutastack_Node *v) {
+HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_0Node_release(h_fixedbugsadeepvaluecompareswithoutastack_Node *v) {
     hero_array_decref(v->f_children);
 }
 
-HERO_TU_LOCAL bool h_fixedbugsadeepvaluecompareswithoutastack_Node_eq(const h_fixedbugsadeepvaluecompareswithoutastack_Node *a, const h_fixedbugsadeepvaluecompareswithoutastack_Node *b) {
+HERO_TU_LOCAL bool h_fixedbugsadeepvaluecompareswithoutastack_0Node_eq(const h_fixedbugsadeepvaluecompareswithoutastack_Node *a, const h_fixedbugsadeepvaluecompareswithoutastack_Node *b) {
     if (!(a->f_label == b->f_label)) return false;
     if (!(hero_array_eq(a->f_children, b->f_children))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsadeepvaluecompareswithoutastack_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsadeepvaluecompareswithoutastack_0Node_hash(const void *elem) {
     const h_fixedbugsadeepvaluecompareswithoutastack_Node *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_label)) * UINT64_C(0x100000001b3);
@@ -258,10 +270,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("728c55ca622d355b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77f26a833fde47d9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsadeepvaluecompareswithoutastack\tfixedbugs-a-deep-value-compares-without-a-stack\n");
     h_fixedbugsadeepvaluecompareswithoutastack_main();
     hero_runtime_check_leaks();
     return 0;

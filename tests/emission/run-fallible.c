@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -112,11 +112,11 @@ void h_fallible_main(void);
 
 #line 18 "tests/golden/run/fallible.hero"
 h_0opt_e201354 h_fallible_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fallible.hero", "fallible.half", 19, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fallible.hero", "fallible.half", 19, 8); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 21
     t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_7fc615fd); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 20
-    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
+    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fallible.hero", "fallible.half", 20, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fallible.hero", "fallible.half", 20, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
 #line 121 "fallible.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
@@ -254,7 +254,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("40892996278770db", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ea2f38746884183", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fallible_main();

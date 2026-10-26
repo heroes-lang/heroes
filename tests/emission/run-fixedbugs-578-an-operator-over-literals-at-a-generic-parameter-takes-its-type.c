@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 92 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,19 +99,23 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_shown(uint8_t h0_v);
 void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(void);
-HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_3c17(uint8_t h0_a);
-HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_3c17(uint8_t h0_a, uint8_t h1_b);
-HERO_TU_LOCAL int8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_35f3(int8_t h0_a);
-HERO_TU_LOCAL int64_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_1b9a87(int64_t h0_a, int64_t h1_b);
-HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b);
+HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(uint8_t h0_a);
+HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_3c17(uint8_t h0_a, uint8_t h1_b);
+HERO_TU_LOCAL int8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_35f3(int8_t h0_a);
+HERO_TU_LOCAL int64_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_1b9a87(int64_t h0_a, int64_t h1_b);
+HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b);
 
 #line 24 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 HeroStr h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_shown(uint8_t h0_v) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t2 = hero_int_to_str(t1); t3 = h1_own1; h1_own1 = t2; hero_str_decref(t3);
-#line 107 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 119 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -112,24 +124,24 @@ HeroStr h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_show
 #line 27 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(void) { uint8_t h0_b8; uint8_t h1_y; uint8_t h2_w; int8_t h3_n; uint8_t h4_g; uint8_t h5_h; HERO_NODEBUG HeroStr h6_own6 = {0}, t35, t70; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *t59, *t60, *t61, *t63, *t67, *t68, *t71, *t72, *t73, *t74, *t75, *t76; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45; HERO_NODEBUG int8_t t13, t14, t15, t16, t17, t18; HERO_NODEBUG int64_t t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t62, t64, t65, t66, t69; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); h0_b8 = t1;
-    t2 = UINT64_C(2); t3 = UINT64_C(3); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow(); t5 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_3c17(t4); h1_y = t5;
+    t2 = UINT64_C(2); t3 = UINT64_C(3); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 29, 19); t5 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(t4); h1_y = t5;
     t6 = h1_y; hero_print_int(t6); hero_print_end();
-    t7 = UINT64_C(2); t8 = UINT64_C(3); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = UINT64_C(1); t11 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_3c17(t9, t10); h2_w = t11;
+    t7 = UINT64_C(2); t8 = UINT64_C(3); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 31, 22); t10 = UINT64_C(1); t11 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_3c17(t9, t10); h2_w = t11;
     t12 = h2_w; hero_print_int(t12); hero_print_end();
-    t13 = INT64_C(2); t14 = INT64_C(3); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); if (__builtin_sub_overflow(INT64_C(0), t15, &t16)) hero_panic_overflow(); t17 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_35f3(t16); h3_n = t17;
+    t13 = INT64_C(2); t14 = INT64_C(3); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 33, 21); if (__builtin_sub_overflow(INT64_C(0), t15, &t16)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 33, 19); t17 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_35f3(t16); h3_n = t17;
     t18 = h3_n; hero_print_int(t18); hero_print_end();
-    t19 = UINT64_C(2); t20 = UINT64_C(3); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); t22 = UINT64_C(4); if (__builtin_mul_overflow(t21, t22, &t23)) hero_panic_overflow(); t24 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_3c17(t23); h4_g = t24;
+    t19 = UINT64_C(2); t20 = UINT64_C(3); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 35, 20); t22 = UINT64_C(4); if (__builtin_mul_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 35, 19); t24 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(t23); h4_g = t24;
     t25 = h4_g; hero_print_int(t25); hero_print_end();
-    t26 = UINT64_C(2); t27 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_3c17(t26); t28 = UINT64_C(3); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); t30 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_3c17(t29); h5_h = t30;
+    t26 = UINT64_C(2); t27 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(t26); t28 = UINT64_C(3); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 37, 19); t30 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(t29); h5_h = t30;
     t31 = h5_h; hero_print_int(t31); hero_print_end();
-    t32 = UINT64_C(2); t33 = UINT64_C(3); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow(); t35 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_shown(t34); t70 = h6_own6; h6_own6 = t35; hero_str_decref(t70); hero_print_str(t35); hero_print_end();
-    t36 = UINT64_C(2); t37 = UINT64_C(3); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow(); t39 = h0_b8; t40 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_3c17(t38, t39); hero_print_int(t40); hero_print_end();
-    t41 = h0_b8; t42 = UINT64_C(2); t43 = UINT64_C(3); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow(); t45 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_3c17(t41, t44); hero_print_int(t45); hero_print_end();
-    t46 = INT64_C(2); t47 = INT64_C(3); if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow(); t49 = INT64_C(1); t50 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_1b9a87(t48, t49); hero_print_int(t50); hero_print_end();
-    t51 = INT64_C(1); t52 = INT64_C(2); t53 = INT64_C(3); if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow(); t55 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_1b9a87(t51, t54); hero_print_int(t55); hero_print_end();
-    t56 = INT64_C(2); t57 = INT64_C(3); if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow(); t59 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t59, &t58); t71 = h7_own7; h7_own7 = t59; hero_array_decref(t71); t60 = hero_array_new(&hero_desc_int, 1); t72 = h8_own8; h8_own8 = t60; hero_array_decref(t72); t61 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_4b7fe249(t59, t60); t73 = h9_own9; h9_own9 = t61; hero_array_decref(t73); t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len); hero_print_int(t62); hero_print_end();
-    t63 = hero_array_new(&hero_desc_int, 1); t74 = h10_own10; h10_own10 = t63; hero_array_decref(t74); t64 = INT64_C(2); t65 = INT64_C(3); if (__builtin_add_overflow(t64, t65, &t66)) hero_panic_overflow(); t67 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t67, &t66); t75 = h11_own11; h11_own11 = t67; hero_array_decref(t75); t68 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_4b7fe249(t63, t67); t76 = h12_own12; h12_own12 = t68; hero_array_decref(t76); t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len); hero_print_int(t69); hero_print_end();
-#line 133 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+    t32 = UINT64_C(2); t33 = UINT64_C(3); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 39, 12); t35 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_shown(t34); t70 = h6_own6; h6_own6 = t35; hero_str_decref(t70); hero_print_str(t35); hero_print_end();
+    t36 = UINT64_C(2); t37 = UINT64_C(3); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 40, 20); t39 = h0_b8; t40 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_3c17(t38, t39); hero_print_int(t40); hero_print_end();
+    t41 = h0_b8; t42 = UINT64_C(2); t43 = UINT64_C(3); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 41, 27); t45 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_3c17(t41, t44); hero_print_int(t45); hero_print_end();
+    t46 = INT64_C(2); t47 = INT64_C(3); if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 42, 20); t49 = INT64_C(1); t50 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_1b9a87(t48, t49); hero_print_int(t50); hero_print_end();
+    t51 = INT64_C(1); t52 = INT64_C(2); t53 = INT64_C(3); if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 43, 26); t55 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_1b9a87(t51, t54); hero_print_int(t55); hero_print_end();
+    t56 = INT64_C(2); t57 = INT64_C(3); if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 44, 21); t59 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t59, &t58); t71 = h7_own7; h7_own7 = t59; hero_array_decref(t71); t60 = hero_array_new(&hero_desc_int, 1); t72 = h8_own8; h8_own8 = t60; hero_array_decref(t72); t61 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(t59, t60); t73 = h9_own9; h9_own9 = t61; hero_array_decref(t73); t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len); hero_print_int(t62); hero_print_end();
+    t63 = hero_array_new(&hero_desc_int, 1); t74 = h10_own10; h10_own10 = t63; hero_array_decref(t74); t64 = INT64_C(2); t65 = INT64_C(3); if (__builtin_add_overflow(t64, t65, &t66)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 45, 28); t67 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t67, &t66); t75 = h11_own11; h11_own11 = t67; hero_array_decref(t75); t68 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(t63, t67); t76 = h12_own12; h12_own12 = t68; hero_array_decref(t76); t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len); hero_print_int(t69); hero_print_end();
+#line 145 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_str_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);
     hero_array_release_at(&h8_own8);
@@ -141,42 +153,42 @@ void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(vo
 }
 
 #line 17 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-/* id<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_3c17(uint8_t h0_a) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* id<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(uint8_t h0_a) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; return t1;
-#line 147 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 159 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-/* first<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_3c17(uint8_t h0_a, uint8_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_3c17(uint8_t h0_a, uint8_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
-    t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t4 + 1))[t5]);
-#line 154 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+    t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t4 + 1))[t5]);
+#line 166 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
 }
 
 #line 17 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-/* id<i8> */ HERO_TU_LOCAL int8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_id_35f3(int8_t h0_a) { HERO_NODEBUG int8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* id<i8> */ HERO_TU_LOCAL int8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_35f3(int8_t h0_a) { HERO_NODEBUG int8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; return t1;
-#line 163 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 175 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-/* first<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_1b9a87(int64_t h0_a, int64_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_1b9a87(int64_t h0_a, int64_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
-    t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
-#line 170 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+    t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
+#line 182 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
 }
 
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-/* first<[i64]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first<[i64]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
-    t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 180 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+    t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t4 + 1))[t5]);
+#line 192 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_array_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -246,10 +258,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("39ba5e17393e5afd", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f61be77274a345f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype\tfixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type\n");
     h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -124,6 +124,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -159,13 +167,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "main.c"
+#line 171 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b);
-HERO_TU_LOCAL uint64_t h_main_Db_hash(const void *elem);
-HERO_TU_LOCAL bool h_main_Stmt_eq(sqlite3_stmt * const *a, sqlite3_stmt * const *b);
-HERO_TU_LOCAL uint64_t h_main_Stmt_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_0Db_eq(sqlite3 * const *a, sqlite3 * const *b);
+HERO_TU_LOCAL uint64_t h_main_0Db_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_0Stmt_eq(sqlite3_stmt * const *a, sqlite3_stmt * const *b);
+HERO_TU_LOCAL uint64_t h_main_0Stmt_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -174,6 +182,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_main_SQLITE_OK(void);
 int64_t h_main_SQLITE_ROW(void);
@@ -183,7 +195,7 @@ void h_main_main(void);
 
 #line 32 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_OK(void) {
-#line 187 "main.c"
+#line 199 "main.c"
     _Static_assert(HERO_RET_INT(SQLITE_OK), "heroes-ffi-return SQLITE_OK i64");
     _Static_assert(__builtin_constant_p(SQLITE_OK), "heroes-ffi-const SQLITE_OK");
 #pragma clang diagnostic push
@@ -195,7 +207,7 @@ int64_t h_main_SQLITE_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 32 "examples/sqlite/main.hero"
     return SQLITE_OK;
-#line 199 "main.c"
+#line 211 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -213,7 +225,7 @@ int64_t h_main_SQLITE_OK(void) {
 
 #line 33 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_ROW(void) {
-#line 217 "main.c"
+#line 229 "main.c"
     _Static_assert(HERO_RET_INT(SQLITE_ROW), "heroes-ffi-return SQLITE_ROW i64");
     _Static_assert(__builtin_constant_p(SQLITE_ROW), "heroes-ffi-const SQLITE_ROW");
 #pragma clang diagnostic push
@@ -225,7 +237,7 @@ int64_t h_main_SQLITE_ROW(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 33 "examples/sqlite/main.hero"
     return SQLITE_ROW;
-#line 229 "main.c"
+#line 241 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -243,8 +255,8 @@ int64_t h_main_SQLITE_ROW(void) {
 
 #line 76 "examples/sqlite/main.hero"
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) { HERO_NODEBUG sqlite3 *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4, *t5, *t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_db; t2 = h1_sql; t3 = hero_str_lend(t2); t4 = ((void *)0); t5 = ((void *)0); t6 = ((void *)0); hero_handle_alive(t1, "the argument `db` of `sqlite3_exec`"); t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6); return t7;
-#line 248 "main.c"
+    t1 = h0_db; t2 = h1_sql; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.run", 77, 38}; t3 = hero_str_lend_at(t2, &hero_here); } t4 = ((void *)0); t5 = ((void *)0); t6 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.run", 77, 12}; hero_handle_alive_at(t1, "the argument `db` of `sqlite3_exec`", &hero_here); t7 = sqlite3_exec(t1, hero_cstr_nonnull_at(t3, &hero_here), t4, t5, t6); } return t7;
+#line 260 "main.c"
 }
 
 #line 80 "examples/sqlite/main.hero"
@@ -259,24 +271,24 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
     t2 = ((void *)0); h3_tail = t2;
 #line 84
     t3 = h0_db;
-    t4 = h1_sql; t5 = hero_str_lend(t4);
+    t4 = h1_sql; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.first_int", 85, 14}; t5 = hero_str_lend_at(t4, &hero_here); }
     t6 = INT64_C(-1);
 #line 83
-    hero_lend_local_name(hero_lend_h2_statement, "sqlite3_prepare_v2", "statement"); hero_lend_local_name(hero_lend_h3_tail, "sqlite3_prepare_v2", "tail"); hero_handle_alive(t3, "the argument `db` of `sqlite3_prepare_v2`"); t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail); hero_handle_acquired(h2_statement, "sqlite3_finalize"); h4_rc = t7;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.first_int", 83, 10}; hero_lend_local_name(hero_lend_h2_statement, "sqlite3_prepare_v2", "statement"); hero_lend_local_name(hero_lend_h3_tail, "sqlite3_prepare_v2", "tail"); hero_handle_alive_at(t3, "the argument `db` of `sqlite3_prepare_v2`", &hero_here); t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull_at(t5, &hero_here), t6, &h2_statement, &h3_tail); hero_handle_acquired_at(h2_statement, "sqlite3_finalize", &hero_here); } h4_rc = t7;
 #line 91
     t8 = h4_rc; t9 = h_main_SQLITE_OK(); t10 = t8 != t9; if (t10) goto bb2; else goto bb3; bb1:
 #line 93
-    t14 = INT64_C(0); t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow(); h5_value = t16;
+    t14 = INT64_C(0); t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow_at("main.hero", "main.first_int", 93, 19); h5_value = t16;
 #line 95
-    t17 = h2_statement; hero_handle_alive(t17, "the argument `statement` of `sqlite3_step`"); t18 = sqlite3_step(t17); t19 = h_main_SQLITE_ROW(); t20 = t18 == t19; if (t20) goto bb5; else goto bb6; bb2:
+    t17 = h2_statement; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.first_int", 95, 8}; hero_handle_alive_at(t17, "the argument `statement` of `sqlite3_step`", &hero_here); t18 = sqlite3_step(t17); } t19 = h_main_SQLITE_ROW(); t20 = t18 == t19; if (t20) goto bb5; else goto bb6; bb2:
 #line 92
-    t11 = INT64_C(0); t12 = INT64_C(1); if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow(); h6_ret0 = t13; goto bb7; bb3: goto bb1; bb4:
+    t11 = INT64_C(0); t12 = INT64_C(1); if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow_at("main.hero", "main.first_int", 92, 16); h6_ret0 = t13; goto bb7; bb3: goto bb1; bb4:
 #line 97
-    t24 = h2_statement; { hero_handle_alive(t24, "the argument `statement` of `sqlite3_finalize`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_finalize", NULL); (void)sqlite3_finalize(t24); if (hero_handle_ended(t24, hero_life_0_0) && h2_statement == t24) h2_statement = hero_handle_dead(); }
+    t24 = h2_statement; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.first_int", 97, 9}; { hero_handle_alive_at(t24, "the argument `statement` of `sqlite3_finalize`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "sqlite3_finalize", NULL, &hero_here); (void)sqlite3_finalize(t24); if (hero_handle_ended(t24, hero_life_0_0) && h2_statement == t24) h2_statement = hero_handle_dead(); } }
     t26 = h5_value; h6_ret0 = t26; goto bb7; bb5:
 #line 96
-    t21 = h2_statement; t22 = INT64_C(0); hero_handle_alive(t21, "the argument `statement` of `sqlite3_column_int`"); t23 = sqlite3_column_int(t21, t22); h5_value = t23; goto bb4; bb6: goto bb4; bb7:
-#line 280 "main.c"
+    t21 = h2_statement; t22 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.first_int", 96, 17}; hero_handle_alive_at(t21, "the argument `statement` of `sqlite3_column_int`", &hero_here); t23 = sqlite3_column_int(t21, t22); } h5_value = t23; goto bb4; bb6: goto bb4; bb7:
+#line 292 "main.c"
     t27 = h6_ret0;
     hero_lend_local_give(hero_lend_h3_tail);
     hero_lend_local_give(hero_lend_h2_statement);
@@ -293,35 +305,35 @@ void h_main_main(void) {
     sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db"); HERO_NODEBUG sqlite3 *t1, *t8, *t10, *t13, *t17, *t21, *t24; HERO_NODEBUG HeroStr t2, t7, t11, t14, t16, t18, t20, t22; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5, t19, t23; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = ((void *)0); h0_db = t1;
 #line 103
-    t2 = HERO_STR_LIT(hero_str_41b4cad0); t3 = hero_str_lend(t2); hero_lend_local_name(hero_lend_h0_db, "sqlite3_open", "out"); t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db); hero_handle_acquired(h0_db, "sqlite3_close"); t5 = h_main_SQLITE_OK(); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = HERO_STR_LIT(hero_str_41b4cad0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 103, 21}; t3 = hero_str_lend_at(t2, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 103, 8}; hero_lend_local_name(hero_lend_h0_db, "sqlite3_open", "out"); t4 = sqlite3_open(hero_cstr_nonnull_at(t3, &hero_here), &h0_db); hero_handle_acquired_at(h0_db, "sqlite3_close", &hero_here); } t5 = h_main_SQLITE_OK(); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
 #line 115
     t10 = h0_db; t11 = HERO_STR_LIT(hero_str_58d8efb7); h_main_run(t10, t11);
     t13 = h0_db; t14 = HERO_STR_LIT(hero_str_37763c95); h_main_run(t13, t14);
     t16 = HERO_STR_LIT(hero_str_2d6bfc4a); t17 = h0_db; t18 = HERO_STR_LIT(hero_str_4a7e2e7); t19 = h_main_first_int(t17, t18); hero_print_str(t16); hero_print_int(t19); hero_print_end();
     t20 = HERO_STR_LIT(hero_str_31daf47e); t21 = h0_db; t22 = HERO_STR_LIT(hero_str_4ea48131); t23 = h_main_first_int(t21, t22); hero_print_str(t20); hero_print_int(t23); hero_print_end();
-    t24 = h0_db; { hero_handle_alive(t24, "the argument `db` of `sqlite3_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_close", NULL); (void)sqlite3_close(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_db == t24) h0_db = hero_handle_dead(); } goto bb4; bb2:
+    t24 = h0_db; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 119, 9}; { hero_handle_alive_at(t24, "the argument `db` of `sqlite3_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "sqlite3_close", NULL, &hero_here); (void)sqlite3_close(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_db == t24) h0_db = hero_handle_dead(); } } goto bb4; bb2:
 #line 112
     t7 = HERO_STR_LIT(hero_str_4e2b1705); hero_print_str(t7); hero_print_end();
-    t8 = h0_db; { hero_handle_alive(t8, "the argument `db` of `sqlite3_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "sqlite3_close", NULL); (void)sqlite3_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_db == t8) h0_db = hero_handle_dead(); } goto bb4; bb3: goto bb1; bb4: hero_lend_local_give(hero_lend_h0_db); return;
-#line 307 "main.c"
+    t8 = h0_db; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 113, 13}; { hero_handle_alive_at(t8, "the argument `db` of `sqlite3_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "sqlite3_close", NULL, &hero_here); (void)sqlite3_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_db == t8) h0_db = hero_handle_dead(); } } goto bb4; bb3: goto bb1; bb4: hero_lend_local_give(hero_lend_h0_db); return;
+#line 319 "main.c"
 }
 #undef h0_db
-HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
+HERO_TU_LOCAL bool h_main_0Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_main_Db_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_main_0Db_hash(const void *elem) {
     sqlite3 * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_main_Stmt_eq(sqlite3_stmt * const *a, sqlite3_stmt * const *b) {
+HERO_TU_LOCAL bool h_main_0Stmt_eq(sqlite3_stmt * const *a, sqlite3_stmt * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_main_Stmt_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_main_0Stmt_hash(const void *elem) {
     sqlite3_stmt * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -392,8 +404,40 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e58a98945c36456", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57d32bcf4cf1b2c9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

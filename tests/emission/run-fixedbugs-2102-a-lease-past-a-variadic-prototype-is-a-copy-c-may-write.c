@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -117,6 +117,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -146,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
+#line 158 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -157,23 +165,28 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite_main(void);
 int64_t h_library_HERO_STR_OK(void);
-h_0opt_f87774a h_library_validated(const char * h0_c);
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 
 #line 15 "tests/golden/run/fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero"
 void h_fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite_main(void) { HeroStr h0_a = {0}; HeroStr h1_b = {0}; const char * h2_x; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_own5 = {0}, t14, t15, t19, t21, t28, t29; HERO_NODEBUG HeroStr h4_own4 = {0}, t1, t2, t3, t4, t5, t22, t23, t24, t25, t26, t27; HERO_NODEBUG const char *t6, *t8, *t11, *t13; HERO_NODEBUG int32_t t7, t10; HERO_NODEBUG int64_t t9, t12, t16, t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1b6fc3); t2 = HERO_STR_LIT(hero_str_37b3); t3 = hero_str_concat(t1, t2); t25 = h4_own4; h4_own4 = t3; hero_str_decref(t25); t26 = h0_a; hero_str_incref(t3); h0_a = t3; hero_str_decref(t26);
     t4 = h0_a; t27 = h1_b; hero_str_incref(t4); h1_b = t4; hero_str_decref(t27);
-    t5 = h0_a; t6 = hero_str_held(t5); h2_x = t6;
-    t7 = INT64_C(1); t8 = h2_x; t9 = va_scribble(t7, hero_cstr_nonnull(t8)); hero_print_int(t9); hero_print_end();
-    t10 = INT64_C(2); t11 = h2_x; t12 = va_length(t10, hero_cstr_nonnull(t11)); hero_print_int(t12); hero_print_end();
-    t13 = h2_x; t14 = h_library_validated(t13); t28 = h5_own5; h5_own5 = t14; h_0opt_f87774a_release(&t28); t29 = h3_f0; h_0opt_f87774a_retain(&t14); h3_f0 = t14; h_0opt_f87774a_release(&t29); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb1; else goto bb2; bb1: t21 = h3_f0; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
-    hero_held_release(&h2_x);
+    t5 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero", "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.main", 18, 16}; t6 = hero_str_held_at(t5, &hero_here); } h2_x = t6;
+    t7 = INT64_C(1); t8 = h2_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero", "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.main", 19, 11}; t9 = va_scribble(t7, hero_cstr_nonnull_at(t8, &hero_here)); } hero_print_int(t9); hero_print_end();
+    t10 = INT64_C(2); t11 = h2_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero", "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.main", 20, 11}; t12 = va_length(t10, hero_cstr_nonnull_at(t11, &hero_here)); } hero_print_int(t12); hero_print_end();
+    t13 = h2_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero", "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.main", 21, 11}; t14 = h_library_validated(t13, &hero_here); } t28 = h5_own5; h5_own5 = t14; h_0opt_f87774a_release(&t28); t29 = h3_f0; h_0opt_f87774a_retain(&t14); h3_f0 = t14; h_0opt_f87774a_release(&t29); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb1; else goto bb2; bb1: t21 = h3_f0; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero", "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.main", 22, 5}; hero_held_release_at(&h2_x, &hero_here); }
     t23 = h0_a; hero_print_str(t23); hero_print_end();
     t24 = h1_b; hero_print_str(t24); hero_print_end();
-#line 177 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
+#line 190 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
     hero_str_release_at(&h0_a);
     hero_str_release_at(&h1_b);
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -183,18 +196,18 @@ void h_fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite_main(void) { He
 bb2:
 #line 21 "tests/golden/run/fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero"
     t19 = h3_f0; t20 = t19.as.err;
-#line 187 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
-    hero_panic_must(t20);
+#line 200 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
+    hero_panic_must_at(t20, "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero", "fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.main", 21, 11);
     hero_unreachable();
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 194 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
+#line 207 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
 }
 
 #line 153 "<heroes library>"
-h_0opt_f87774a h_library_validated(const char * h0_c) {
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
 #line 153
 #define h1_status (*hero_lend_h1_status)
 #line 153
@@ -202,7 +215,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 156
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status); t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
 #line 155
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
@@ -210,7 +223,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 214 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
+#line 227 "fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -222,6 +235,10 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     return t18;
 }
 #undef h1_status
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    return h_library_validated(h0_c, &hero_here);
+}
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
@@ -286,10 +303,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e1ba7831f56e73f", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6805b20925eaf288", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite\tfixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write\n");
     h_fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite_main();
     hero_runtime_check_leaks();
     return 0;

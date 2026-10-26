@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -111,6 +111,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -139,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "lendinsidealoop.c"
+#line 151 "lendinsidealoop.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -150,6 +158,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_lendinsidealoop_main(void);
 
@@ -159,11 +171,11 @@ void h_lendinsidealoop_main(void) { int64_t h0_at; uint64_t h1_total; HERO_NODEB
     t2 = UINT64_C(0); h1_total = t2; goto bb1; bb1:
 #line 16
     t3 = h0_at; t4 = INT64_C(5); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_total; t7 = HERO_STR_LIT(hero_str_f63dcff); t8 = h0_at; t9 = hero_int_to_str(t8); t18 = h2_own2; h2_own2 = t9; hero_str_decref(t18); t10 = hero_str_concat(t7, t9); t19 = h3_own3; h3_own3 = t10; hero_str_decref(t19); t11 = hero_str_lend(t10); t12 = strlen(hero_cstr_nonnull(t11)); if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow(); h1_total = t13;
-    t14 = h0_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h0_at = t16; goto bb1; bb3:
+    t6 = h1_total; t7 = HERO_STR_LIT(hero_str_f63dcff); t8 = h0_at; t9 = hero_int_to_str(t8); t18 = h2_own2; h2_own2 = t9; hero_str_decref(t18); t10 = hero_str_concat(t7, t9); t19 = h3_own3; h3_own3 = t10; hero_str_decref(t19); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lend-inside-a-loop.hero", "lend-inside-a-loop.main", 17, 35}; t11 = hero_str_lend_at(t10, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lend-inside-a-loop.hero", "lend-inside-a-loop.main", 17, 25}; t12 = strlen(hero_cstr_nonnull_at(t11, &hero_here)); } if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow_at("lend-inside-a-loop.hero", "lend-inside-a-loop.main", 17, 17); h1_total = t13;
+    t14 = h0_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lend-inside-a-loop.hero", "lend-inside-a-loop.main", 18, 14); h0_at = t16; goto bb1; bb3:
 #line 20
     t17 = h1_total; hero_print_uint(t17); hero_print_end();
-#line 167 "lendinsidealoop.c"
+#line 179 "lendinsidealoop.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;
@@ -232,10 +244,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3089feda529037b8", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55761d7677881f06", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("lendinsidealoop\tlend-inside-a-loop\n");
     h_lendinsidealoop_main();
     hero_runtime_check_leaks();
     return 0;

@@ -55,7 +55,7 @@
 #pragma pop_macro("code")
 #pragma pop_macro("type")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -143,6 +143,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -173,15 +181,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 177 "ffiaconstructionpollsansdl3event.c"
+#line 185 "ffiaconstructionpollsansdl3event.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_Event_eq(const SDL_Event *a, const SDL_Event *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_Event_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_Event_eq(const SDL_Event *a, const SDL_Event *b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_Event_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -190,6 +198,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffiaconstructionpollsansdl3event_main(void);
 void *hero_pad_nowhere(void);
@@ -500,13 +512,13 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
 #define h6_got (*hero_lend_h6_got)
 #line 46
     SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; HERO_NODEBUG bool h5_b0, h7_b1, t2, t12, t13, t17, t18, t21, t22, t25, t28, t29, t30, t36, t40; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); HERO_NODEBUG uint32_t t1, t3, t4, t6, t15, t23, t26, t27, t32, t38, t39; HERO_NODEBUG uint64_t t5; HERO_NODEBUG int32_t t7, t14, t31, t37; HERO_NODEBUG void *t8, *t9; HERO_NODEBUG SDL_UserEvent t10; HERO_NODEBUG SDL_Event t11, t24; HERO_NODEBUG int64_t t16, t19, t20, t33, t34, t35; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(16384); t2 = SDL_Init(t1); hero_print_bool(t2); hero_print_end();
+    t1 = UINT64_C(16384); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 47, 11}; t2 = SDL_Init(t1); } hero_print_bool(t2); hero_print_end();
 #line 49
     t3 = UINT64_C(32768); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = INT64_C(42); t8 = ((void *)0); t9 = ((void *)0); t10 = (SDL_UserEvent){.type = t3, .reserved = t4, .timestamp = t5, .windowID = t6, .code = t7, .data1 = t8, .data2 = t9};
 #line 48
     t11 = (SDL_Event){.user = t10}; h0_sent = t11; hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2);
 #line 51
-    hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event"); hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t12 = SDL_PushEvent(&h0_sent); hero_print_bool(t12); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 51, 11}; hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event"); hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t12 = SDL_PushEvent(&h0_sent); } hero_print_bool(t12); hero_print_end();
     t13 = false; h1_found = t13;
     t14 = INT64_C(0); h2_code = t14;
     t15 = UINT64_C(0); h3_keyed = t15;
@@ -515,33 +527,33 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
     t17 = h1_found; t18 = !t17; h5_b0 = t18; if (t18) goto bb4; else goto bb5; bb2:
     t23 = UINT64_C(0); t24 = (SDL_Event){.type = t23}; h6_got = t24; hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2);
 #line 60
-    hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event"); hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t25 = SDL_PollEvent(&h6_got); h7_b1 = t25; if (t25) goto bb7; else goto bb8; bb3:
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 60, 12}; hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event"); hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t25 = SDL_PollEvent(&h6_got); } h7_b1 = t25; if (t25) goto bb7; else goto bb8; bb3:
 #line 66
     t36 = h1_found; hero_print_bool(t36); hero_print_end();
     t37 = h2_code; hero_print_int(t37); hero_print_end();
     t38 = h3_keyed; t39 = UINT64_C(32768); t40 = t38 == t39; hero_print_bool(t40); hero_print_end();
-    (void)SDL_Quit(); hero_lend_local_give(hero_lend_h6_got); hero_lend_local_give(hero_lend_h0_sent); return; bb4:
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 69, 5}; (void)SDL_Quit(); } hero_lend_local_give(hero_lend_h6_got); hero_lend_local_give(hero_lend_h0_sent); return; bb4:
 #line 57
     t19 = h4_tries; t20 = INT64_C(64); t21 = t19 < t20; h5_b0 = t21; goto bb5; bb5: t22 = h5_b0; if (t22) goto bb2; else goto bb3; bb6:
 #line 64
-    t33 = h4_tries; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow(); h4_tries = t35; goto bb1; bb7:
+    t33 = h4_tries; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 64, 17); h4_tries = t35; goto bb1; bb7:
 #line 60
     t26 = h6_got.type; t27 = UINT64_C(32768); t28 = t26 == t27; h7_b1 = t28; goto bb8; bb8: t29 = h7_b1; if (t29) goto bb9; else goto bb10; bb9:
     t30 = true; h1_found = t30;
     t31 = h6_got.user.code; h2_code = t31;
     t32 = h6_got.common.type; h3_keyed = t32; goto bb6; bb10: goto bb6;
-#line 534 "ffiaconstructionpollsansdl3event.c"
+#line 546 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b) {
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b) {
     if (!(a->type == b->type)) return false;
     if (!(a->reserved == b->reserved)) return false;
     if (!(a->timestamp == b->timestamp)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(const void *elem) {
     const SDL_CommonEvent *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
@@ -550,7 +562,7 @@ HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(c
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b) {
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b) {
     if (!(a->type == b->type)) return false;
     if (!(a->reserved == b->reserved)) return false;
     if (!(a->timestamp == b->timestamp)) return false;
@@ -561,7 +573,7 @@ HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_UserEvent_eq(const SDL
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(const void *elem) {
     const SDL_UserEvent *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
@@ -574,19 +586,19 @@ HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(con
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_Event_eq(const SDL_Event *a, const SDL_Event *b) {
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_Event_eq(const SDL_Event *a, const SDL_Event *b) {
     if (!(a->type == b->type)) return false;
-    if (!(h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(&a->common, &b->common))) return false;
-    if (!(h_ffiaconstructionpollsansdl3event_SDL_UserEvent_eq(&a->user, &b->user))) return false;
+    if (!(h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(&a->common, &b->common))) return false;
+    if (!(h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(&a->user, &b->user))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_Event_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_Event_hash(const void *elem) {
     const SDL_Event *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(&v->common)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(&v->user)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(&v->common)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(&v->user)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -654,10 +666,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13af13f34d1250c6", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e3430c6601fa588", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffiaconstructionpollsansdl3event\tffi-a-construction-polls-an-sdl3-event\n");
     h_ffiaconstructionpollsansdl3event_main();
     hero_runtime_check_leaks();
     return 0;

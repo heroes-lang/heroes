@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs567everynarrowquotientthatfitsprints.c"
+#line 92 "fixedbugs567everynarrowquotientthatfitsprints.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs567everynarrowquotientthatfitsprints_main(void);
 
@@ -98,19 +110,19 @@ void h_fixedbugs567everynarrowquotientthatfitsprints_main(void);
 void h_fixedbugs567everynarrowquotientthatfitsprints_main(void) { int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; uint8_t h6_g; uint16_t h7_h; uint32_t h8_i; uint64_t h9_j; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_NODEBUG int16_t t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG int32_t t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51; HERO_NODEBUG uint8_t t52, t56, t57, t58, t59, t60, t61; HERO_NODEBUG uint16_t t53, t62, t63, t64, t65, t66, t67; HERO_NODEBUG uint32_t t54, t68, t69, t70, t71, t72, t73; HERO_NODEBUG uint64_t t55, t74, t75, t76, t77, t78, t79; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-128); h0_a = t1;
     t2 = INT64_C(-127); h1_b = t2;
-    t3 = h0_a; t4 = INT64_C(1); if (t4 == 0) hero_panic("division by zero"); if (t3 == INT8_MIN && t4 == INT8_C(-1)) hero_panic_overflow(); t5 = t3 / t4; t6 = h0_a; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT8_MIN && t7 == INT8_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = h1_b; t10 = INT64_C(-1); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT8_MIN && t10 == INT8_C(-1)) hero_panic_overflow(); t11 = t9 / t10; t12 = h0_a; t13 = INT64_C(1); if (t13 == 0) hero_panic("division by zero"); if (t12 == INT8_MIN && t13 == INT8_C(-1)) hero_panic("`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8"); t14 = t12 % t13; t15 = h1_b; t16 = INT64_C(-1); if (t16 == 0) hero_panic("division by zero"); if (t15 == INT8_MIN && t16 == INT8_C(-1)) hero_panic("`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8"); t17 = t15 % t16; hero_print_int(t5); hero_print_int(t8); hero_print_int(t11); hero_print_int(t14); hero_print_int(t17); hero_print_end();
+    t3 = h0_a; t4 = INT64_C(1); if (t4 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 11); if (t3 == INT8_MIN && t4 == INT8_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 11); t5 = t3 / t4; t6 = h0_a; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 18); if (t6 == INT8_MIN && t7 == INT8_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 18); t8 = t6 / t7; t9 = h1_b; t10 = INT64_C(-1); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 25); if (t9 == INT8_MIN && t10 == INT8_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 25); t11 = t9 / t10; t12 = h0_a; t13 = INT64_C(1); if (t13 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 33); if (t12 == INT8_MIN && t13 == INT8_C(-1)) hero_panic_at("`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 33); t14 = t12 % t13; t15 = h1_b; t16 = INT64_C(-1); if (t16 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 40); if (t15 == INT8_MIN && t16 == INT8_C(-1)) hero_panic_at("`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 16, 40); t17 = t15 % t16; hero_print_int(t5); hero_print_int(t8); hero_print_int(t11); hero_print_int(t14); hero_print_int(t17); hero_print_end();
     t18 = INT64_C(-32768); h2_c = t18;
     t19 = INT64_C(-32767); h3_d = t19;
-    t20 = h2_c; t21 = INT64_C(1); if (t21 == 0) hero_panic("division by zero"); if (t20 == INT16_MIN && t21 == INT16_C(-1)) hero_panic_overflow(); t22 = t20 / t21; t23 = h2_c; t24 = INT64_C(2); if (t24 == 0) hero_panic("division by zero"); if (t23 == INT16_MIN && t24 == INT16_C(-1)) hero_panic_overflow(); t25 = t23 / t24; t26 = h3_d; t27 = INT64_C(-1); if (t27 == 0) hero_panic("division by zero"); if (t26 == INT16_MIN && t27 == INT16_C(-1)) hero_panic_overflow(); t28 = t26 / t27; t29 = h2_c; t30 = INT64_C(7); if (t30 == 0) hero_panic("division by zero"); if (t29 == INT16_MIN && t30 == INT16_C(-1)) hero_panic("`%` by -1 at the smallest i16: the remainder is 0, but the quotient it is the rest of has no i16"); t31 = t29 % t30; t32 = h3_d; t33 = INT64_C(-1); if (t33 == 0) hero_panic("division by zero"); if (t32 == INT16_MIN && t33 == INT16_C(-1)) hero_panic("`%` by -1 at the smallest i16: the remainder is 0, but the quotient it is the rest of has no i16"); t34 = t32 % t33; hero_print_int(t22); hero_print_int(t25); hero_print_int(t28); hero_print_int(t31); hero_print_int(t34); hero_print_end();
+    t20 = h2_c; t21 = INT64_C(1); if (t21 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 11); if (t20 == INT16_MIN && t21 == INT16_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 11); t22 = t20 / t21; t23 = h2_c; t24 = INT64_C(2); if (t24 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 18); if (t23 == INT16_MIN && t24 == INT16_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 18); t25 = t23 / t24; t26 = h3_d; t27 = INT64_C(-1); if (t27 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 25); if (t26 == INT16_MIN && t27 == INT16_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 25); t28 = t26 / t27; t29 = h2_c; t30 = INT64_C(7); if (t30 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 33); if (t29 == INT16_MIN && t30 == INT16_C(-1)) hero_panic_at("`%` by -1 at the smallest i16: the remainder is 0, but the quotient it is the rest of has no i16", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 33); t31 = t29 % t30; t32 = h3_d; t33 = INT64_C(-1); if (t33 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 40); if (t32 == INT16_MIN && t33 == INT16_C(-1)) hero_panic_at("`%` by -1 at the smallest i16: the remainder is 0, but the quotient it is the rest of has no i16", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 19, 40); t34 = t32 % t33; hero_print_int(t22); hero_print_int(t25); hero_print_int(t28); hero_print_int(t31); hero_print_int(t34); hero_print_end();
     t35 = INT64_C(-2147483648); h4_e = t35;
     t36 = INT64_C(-2147483647); h5_f = t36;
-    t37 = h4_e; t38 = INT64_C(1); if (t38 == 0) hero_panic("division by zero"); if (t37 == INT32_MIN && t38 == INT32_C(-1)) hero_panic_overflow(); t39 = t37 / t38; t40 = h4_e; t41 = INT64_C(2); if (t41 == 0) hero_panic("division by zero"); if (t40 == INT32_MIN && t41 == INT32_C(-1)) hero_panic_overflow(); t42 = t40 / t41; t43 = h5_f; t44 = INT64_C(-1); if (t44 == 0) hero_panic("division by zero"); if (t43 == INT32_MIN && t44 == INT32_C(-1)) hero_panic_overflow(); t45 = t43 / t44; t46 = h4_e; t47 = INT64_C(9); if (t47 == 0) hero_panic("division by zero"); if (t46 == INT32_MIN && t47 == INT32_C(-1)) hero_panic("`%` by -1 at the smallest i32: the remainder is 0, but the quotient it is the rest of has no i32"); t48 = t46 % t47; t49 = h5_f; t50 = INT64_C(-1); if (t50 == 0) hero_panic("division by zero"); if (t49 == INT32_MIN && t50 == INT32_C(-1)) hero_panic("`%` by -1 at the smallest i32: the remainder is 0, but the quotient it is the rest of has no i32"); t51 = t49 % t50; hero_print_int(t39); hero_print_int(t42); hero_print_int(t45); hero_print_int(t48); hero_print_int(t51); hero_print_end();
+    t37 = h4_e; t38 = INT64_C(1); if (t38 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 11); if (t37 == INT32_MIN && t38 == INT32_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 11); t39 = t37 / t38; t40 = h4_e; t41 = INT64_C(2); if (t41 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 18); if (t40 == INT32_MIN && t41 == INT32_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 18); t42 = t40 / t41; t43 = h5_f; t44 = INT64_C(-1); if (t44 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 25); if (t43 == INT32_MIN && t44 == INT32_C(-1)) hero_panic_overflow_at("fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 25); t45 = t43 / t44; t46 = h4_e; t47 = INT64_C(9); if (t47 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 33); if (t46 == INT32_MIN && t47 == INT32_C(-1)) hero_panic_at("`%` by -1 at the smallest i32: the remainder is 0, but the quotient it is the rest of has no i32", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 33); t48 = t46 % t47; t49 = h5_f; t50 = INT64_C(-1); if (t50 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 40); if (t49 == INT32_MIN && t50 == INT32_C(-1)) hero_panic_at("`%` by -1 at the smallest i32: the remainder is 0, but the quotient it is the rest of has no i32", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 22, 40); t51 = t49 % t50; hero_print_int(t39); hero_print_int(t42); hero_print_int(t45); hero_print_int(t48); hero_print_int(t51); hero_print_end();
     t52 = UINT64_C(255); h6_g = t52;
     t53 = UINT64_C(65535); h7_h = t53;
     t54 = UINT64_C(4294967295); h8_i = t54;
     t55 = UINT64_C(18446744073709551615); h9_j = t55;
-    t56 = h6_g; t57 = UINT64_C(2); if (t57 == 0) hero_panic("division by zero"); t58 = t56 / t57; t59 = h6_g; t60 = UINT64_C(2); if (t60 == 0) hero_panic("division by zero"); t61 = t59 % t60; t62 = h7_h; t63 = UINT64_C(3); if (t63 == 0) hero_panic("division by zero"); t64 = t62 / t63; t65 = h7_h; t66 = UINT64_C(4); if (t66 == 0) hero_panic("division by zero"); t67 = t65 % t66; t68 = h8_i; t69 = UINT64_C(5); if (t69 == 0) hero_panic("division by zero"); t70 = t68 / t69; t71 = h8_i; t72 = UINT64_C(6); if (t72 == 0) hero_panic("division by zero"); t73 = t71 % t72; t74 = h9_j; t75 = UINT64_C(7); if (t75 == 0) hero_panic("division by zero"); t76 = t74 / t75; t77 = h9_j; t78 = UINT64_C(8); if (t78 == 0) hero_panic("division by zero"); t79 = t77 % t78; hero_print_int(t58); hero_print_int(t61); hero_print_int(t64); hero_print_int(t67); hero_print_int(t70); hero_print_int(t73); hero_print_uint(t76); hero_print_uint(t79); hero_print_end(); return;
-#line 114 "fixedbugs567everynarrowquotientthatfitsprints.c"
+    t56 = h6_g; t57 = UINT64_C(2); if (t57 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 11); t58 = t56 / t57; t59 = h6_g; t60 = UINT64_C(2); if (t60 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 18); t61 = t59 % t60; t62 = h7_h; t63 = UINT64_C(3); if (t63 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 25); t64 = t62 / t63; t65 = h7_h; t66 = UINT64_C(4); if (t66 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 32); t67 = t65 % t66; t68 = h8_i; t69 = UINT64_C(5); if (t69 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 39); t70 = t68 / t69; t71 = h8_i; t72 = UINT64_C(6); if (t72 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 46); t73 = t71 % t72; t74 = h9_j; t75 = UINT64_C(7); if (t75 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 53); t76 = t74 / t75; t77 = h9_j; t78 = UINT64_C(8); if (t78 == 0) hero_panic_at("division by zero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.hero", "fixedbugs-567-every-narrow-quotient-that-fits-prints.main", 27, 60); t79 = t77 % t78; hero_print_int(t58); hero_print_int(t61); hero_print_int(t64); hero_print_int(t67); hero_print_int(t70); hero_print_int(t73); hero_print_uint(t76); hero_print_uint(t79); hero_print_end(); return;
+#line 126 "fixedbugs567everynarrowquotientthatfitsprints.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -176,10 +188,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ff3454e28adf3b0", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2942db8608f372f3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs567everynarrowquotientthatfitsprints\tfixedbugs-567-every-narrow-quotient-that-fits-prints\n");
     h_fixedbugs567everynarrowquotientthatfitsprints_main();
     hero_runtime_check_leaks();
     return 0;

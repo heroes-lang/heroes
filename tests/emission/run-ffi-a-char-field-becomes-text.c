@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -167,8 +167,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 168 "ffiacharfieldbecomestext.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b);
-HERO_TU_LOCAL uint64_t h_ffiacharfieldbecomestext_Tag_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_0Tag_eq(const Tag *a, const Tag *b);
+HERO_TU_LOCAL uint64_t h_ffiacharfieldbecomestext_0Tag_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -207,7 +207,7 @@ void h_ffiacharfieldbecomestext_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_f8777
 #line 47
     t28 = h1_f0; t29 = t28.as.err;
 #line 210 "ffiacharfieldbecomestext.c"
-    hero_panic_must(t29);
+    hero_panic_must_at(t29, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 47, 11);
     hero_unreachable();
 bb3:
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -218,7 +218,7 @@ bb3:
 #line 51
     t39 = h2_f1; t40 = t39.as.err;
 #line 221 "ffiacharfieldbecomestext.c"
-    hero_panic_must(t40);
+    hero_panic_must_at(t40, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 51, 11);
     hero_unreachable();
 bb5:
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -228,7 +228,7 @@ bb5:
 #line 56
     t70 = h4_f2; t71 = t70.as.err;
 #line 231 "ffiacharfieldbecomestext.c"
-    hero_panic_must(t71);
+    hero_panic_must_at(t71, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 56, 11);
     hero_unreachable();
 bb7:
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -240,11 +240,11 @@ bb7:
 #line 59
     t82 = h5_f3; t83 = t82.as.err;
 #line 243 "ffiacharfieldbecomestext.c"
-    hero_panic_must(t83);
+    hero_panic_must_at(t83, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 59, 16);
     hero_unreachable();
 bb9:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t119 = h0_t; t120 = tag_id(t119); t121 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t120}; t140 = h16_own16; h16_own16 = t121; h_0opt_e201354_release(&t140); t141 = h10_f4; h_0opt_e201354_retain(&t121); h10_f4 = t121; h_0opt_e201354_release(&t141); t122 = h10_f4; t123 = t122.tag; t124 = INT64_C(0); t125 = t123 == t124; if (t125) goto bb12; else goto bb13; bb10:
+    t119 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 75, 11}; t120 = tag_id(t119); } t121 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t120}; t140 = h16_own16; h16_own16 = t121; h_0opt_e201354_release(&t140); t141 = h10_f4; h_0opt_e201354_retain(&t121); h10_f4 = t121; h_0opt_e201354_release(&t141); t122 = h10_f4; t123 = t122.tag; t124 = INT64_C(0); t125 = t123 == t124; if (t125) goto bb12; else goto bb13; bb10:
 #line 71
     t112 = h7_s0; t113 = t112.as.ok; t142 = h8_text; hero_str_incref(t113); h8_text = t113; hero_str_decref(t142); t114 = HERO_STR_LIT(hero_str_6044c9d2); t115 = h8_text; hero_print_str(t114); hero_print_str(t115); hero_print_end(); goto bb9; bb11:
     t116 = h7_s0; t117 = t116.as.err; t143 = h9_e; hero_failure_retain(&t117); h9_e = t117; hero_failure_release(&t143); t118 = h9_e.code; hero_print_str(t118); hero_print_end(); goto bb9; bb12:
@@ -270,17 +270,17 @@ bb13:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t126 = h10_f4; t127 = t126.as.err;
 #line 273 "ffiacharfieldbecomestext.c"
-    hero_panic_must(t127);
+    hero_panic_must_at(t127, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 75, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b) {
+HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_0Tag_eq(const Tag *a, const Tag *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
     if (!((a->raw[0] == b->raw[0] && a->raw[1] == b->raw[1] && a->raw[2] == b->raw[2] && a->raw[3] == b->raw[3] && a->raw[4] == b->raw[4] && a->raw[5] == b->raw[5] && a->raw[6] == b->raw[6] && a->raw[7] == b->raw[7]))) return false;
     if (!(a->id == b->id)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiacharfieldbecomestext_Tag_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiacharfieldbecomestext_0Tag_hash(const void *elem) {
     const Tag *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i8)->hash(&v->name[0])) * UINT64_C(0x100000001b3);
@@ -400,9 +400,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("029b8b706d7a2337", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("20af422a38260ed0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffiacharfieldbecomestext\tffi-a-char-field-becomes-text\n");
     h_ffiacharfieldbecomestext_main();
     hero_runtime_check_leaks();
     return 0;

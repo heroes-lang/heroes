@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -113,16 +113,17 @@ int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(HeroA
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(HeroArrayHeader * h0_xs, int64_t h1_n);
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_later(int64_t h0_n, HeroArrayHeader * h1_xs);
 void h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_main(void);
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 9 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 h_0opt_e201354 h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.half", 10, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.half", 10, 8); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 12
     t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 11
-    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 126 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.half", 11, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.half", 11, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
+#line 127 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -134,76 +135,76 @@ h_0opt_e201354 h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t2 = INT64_C(100); hero_array_push_owned(&(*ph0_xs), &t2);
     t4 = (*ph0_xs); t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); return t5;
-#line 138 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 139 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t6, *t7; HERO_NODEBUG int64_t t1, t2, t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(9); t2 = INT64_C(9); t3 = INT64_C(9); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t6 = h1_own1; h1_own1 = t4; hero_array_decref(t6); t7 = (*ph0_xs); hero_array_incref(t4); (*ph0_xs) = t4; hero_array_decref(t7);
     t5 = INT64_C(0);
-#line 145 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 146 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_release_at(&h1_own1);
     return t5;
 }
 
 #line 22 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(HeroArrayHeader * h0_xs, int64_t h1_n) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(1000); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); t5 = h1_n; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); return t6;
-#line 153 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(1000); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.total", 23, 12); t5 = h1_n; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.total", 23, 12); return t6;
+#line 154 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_later(int64_t h0_n, HeroArrayHeader * h1_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(1000); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); t5 = h0_n; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); return t6;
-#line 159 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    t1 = h1_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(1000); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.later", 26, 12); t5 = h0_n; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.later", 26, 12); return t6;
+#line 160 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 void h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_main(void) { HeroArrayHeader * h0_a = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h11_f3 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h24_own24 = {0}, t7, t8, t12, t14, t28, t29, t33, t35, t48, t49, t53, t55, t81, t82, t86, t88, t104, t105, t109, t110, t114, t115, t121, t122; HeroArrayHeader * h2_b = {0}; HeroArrayHeader * h4_c = {0}; HeroArrayHeader * h6_d = {0}; int64_t h7_sum; HERO_NODEBUG HeroArrayHeader *h8_xs0 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t1, *t5, *t20, *t22, *t26, *t37, *t42, *t58, *t60, *t67, *t70, *t73, *t77, *t99, *t101, *t102, *t103, *t106, *t107, *t108, *t111, *t112, *t113, *t116, *t117, *t118, *t119, *t120; HERO_NODEBUG int64_t h9_i0, t3, t6, t9, t10, t15, t16, t17, t18, t21, t24, t27, t30, t31, t36, t38, t39, t40, t41, t44, t46, t47, t50, t51, t56, t57, t59, t62, t64, t65, t66, t68, t69, t71, t74, t75, t76, t78, t79, t80, t83, t84, t89, t90, t91, t92, t93, t94, t95, t96, t97, t100; int64_t h10_at; HERO_NODEBUG bool t11, t32, t52, t72, t85; HERO_NODEBUG HeroFailure t13, t34, t54, t87; HERO_NODEBUG HeroStr t19, t98; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t101 = h12_own12; h12_own12 = t1; hero_array_decref(t101); t102 = h0_a; hero_array_incref(t1); h0_a = t1; hero_array_decref(t102);
     t3 = INT64_C(5); hero_array_push_owned(&h0_a, &t3);
-    t5 = h0_a; hero_array_incref(t5); t103 = h13_own13; h13_own13 = t5; hero_array_decref(t103); t6 = INT64_C(4); t7 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(t6); t104 = h14_own14; h14_own14 = t7; h_0opt_e201354_release(&t104); t105 = h1_f0; h_0opt_e201354_retain(&t7); h1_f0 = t7; h_0opt_e201354_release(&t105); t8 = h1_f0; t9 = t8.tag; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb1; else goto bb2; bb1: t14 = h1_f0; t15 = t14.as.ok; t16 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(&h0_a); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); t18 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t5, t17); t19 = HERO_STR_LIT(hero_str_20); t20 = h0_a; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); hero_print_int(t18); hero_print_str(t19); hero_print_int(t21); hero_print_end();
+    t5 = h0_a; hero_array_incref(t5); t103 = h13_own13; h13_own13 = t5; hero_array_decref(t103); t6 = INT64_C(4); t7 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(t6); t104 = h14_own14; h14_own14 = t7; h_0opt_e201354_release(&t104); t105 = h1_f0; h_0opt_e201354_retain(&t7); h1_f0 = t7; h_0opt_e201354_release(&t105); t8 = h1_f0; t9 = t8.tag; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb1; else goto bb2; bb1: t14 = h1_f0; t15 = t14.as.ok; t16 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(&h0_a); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 31, 20); t18 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t5, t17); t19 = HERO_STR_LIT(hero_str_20); t20 = h0_a; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); hero_print_int(t18); hero_print_str(t19); hero_print_int(t21); hero_print_end();
     t22 = hero_array_new(&hero_desc_int, 1); t106 = h15_own15; h15_own15 = t22; hero_array_decref(t106); t107 = h2_b; hero_array_incref(t22); h2_b = t22; hero_array_decref(t107);
     t24 = INT64_C(5); hero_array_push_owned(&h2_b, &t24);
     t26 = h2_b; hero_array_incref(t26); t108 = h16_own16; h16_own16 = t26; hero_array_decref(t108); t27 = INT64_C(4); t28 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(t27); t109 = h17_own17; h17_own17 = t28; h_0opt_e201354_release(&t109); t110 = h3_f1; h_0opt_e201354_retain(&t28); h3_f1 = t28; h_0opt_e201354_release(&t110); t29 = h3_f1; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb3; else goto bb4; bb2:
 #line 31
     t12 = h1_f0; t13 = t12.as.err;
-#line 172 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    hero_panic_must(t13);
+#line 173 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    hero_panic_must_at(t13, "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 31, 20);
     hero_unreachable();
 bb3:
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    t35 = h3_f1; t36 = t35.as.ok; t37 = h2_b; hero_array_incref(t37); t111 = h18_own18; h18_own18 = t37; hero_array_decref(t111); t38 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(&h2_b); t39 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t37, t38); if (__builtin_add_overflow(t36, t39, &t40)) hero_panic_overflow(); t41 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t26, t40); hero_print_int(t41); hero_print_end();
+    t35 = h3_f1; t36 = t35.as.ok; t37 = h2_b; hero_array_incref(t37); t111 = h18_own18; h18_own18 = t37; hero_array_decref(t111); t38 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(&h2_b); t39 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t37, t38); if (__builtin_add_overflow(t36, t39, &t40)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 34, 20); t41 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t26, t40); hero_print_int(t41); hero_print_end();
     t42 = hero_array_new(&hero_desc_int, 1); t112 = h19_own19; h19_own19 = t42; hero_array_decref(t112); t113 = h4_c; hero_array_incref(t42); h4_c = t42; hero_array_decref(t113);
     t44 = INT64_C(5); hero_array_push_owned(&h4_c, &t44);
     t46 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(&h4_c); t47 = INT64_C(4); t48 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(t47); t114 = h20_own20; h20_own20 = t48; h_0opt_e201354_release(&t114); t115 = h5_f2; h_0opt_e201354_retain(&t48); h5_f2 = t48; h_0opt_e201354_release(&t115); t49 = h5_f2; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb5; else goto bb6; bb4:
 #line 34
     t33 = h3_f1; t34 = t33.as.err;
-#line 183 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    hero_panic_must(t34);
+#line 184 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    hero_panic_must_at(t34, "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 34, 20);
     hero_unreachable();
 bb5:
 #line 37 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    t55 = h5_f2; t56 = t55.as.ok; if (__builtin_add_overflow(t46, t56, &t57)) hero_panic_overflow(); t58 = h4_c; t59 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_later(t57, t58); hero_print_int(t59); hero_print_end();
+    t55 = h5_f2; t56 = t55.as.ok; if (__builtin_add_overflow(t46, t56, &t57)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 37, 17); t58 = h4_c; t59 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_later(t57, t58); hero_print_int(t59); hero_print_end();
     t60 = hero_array_new(&hero_desc_int, 1); t116 = h21_own21; h21_own21 = t60; hero_array_decref(t116); t117 = h6_d; hero_array_incref(t60); h6_d = t60; hero_array_decref(t117);
     t62 = INT64_C(5); hero_array_push_owned(&h6_d, &t62);
     t64 = INT64_C(0); h7_sum = t64;
 #line 42
-    t65 = INT64_C(0); t66 = INT64_C(4); t67 = h_library_range(t65, t66); t118 = h22_own22; h22_own22 = t67; hero_array_decref(t118); t119 = h8_xs0; hero_array_incref(t67); h8_xs0 = t67; hero_array_decref(t119); t68 = INT64_C(0); h9_i0 = t68; goto bb7; bb6:
+    t65 = INT64_C(0); t66 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 42, 15}; t67 = h_library_range(t65, t66, &hero_here); } t118 = h22_own22; h22_own22 = t67; hero_array_decref(t118); t119 = h8_xs0; hero_array_incref(t67); h8_xs0 = t67; hero_array_decref(t119); t68 = INT64_C(0); h9_i0 = t68; goto bb7; bb6:
 #line 37
     t53 = h5_f2; t54 = t53.as.err;
-#line 196 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    hero_panic_must(t54);
+#line 197 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    hero_panic_must_at(t54, "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 37, 28);
     hero_unreachable();
 bb7:
 #line 42 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    t69 = h9_i0; t70 = h8_xs0; t71 = ((void)(t70 == NULL ? ((void)hero_array_len(t70), hero_unreachable()) : (void)0), t70->len); t72 = t69 < t71; if (t72) goto bb8; else goto bb10; bb8: t73 = h8_xs0; t74 = h9_i0; t75 = ((void)((t73 == NULL || t74 < 0 || t74 >= t73->len) ? ((void)hero_array_at(t73, t74), hero_unreachable()) : (void)0), (void)(t73->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t73 + 1))[t74]); h10_at = t75;
-    t76 = h7_sum; t77 = h6_d; hero_array_incref(t77); t120 = h23_own23; h23_own23 = t77; hero_array_decref(t120); t78 = h10_at; t79 = INT64_C(2); if (__builtin_mul_overflow(t78, t79, &t80)) hero_panic_overflow(); t81 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(t80); t121 = h24_own24; h24_own24 = t81; h_0opt_e201354_release(&t121); t122 = h11_f3; h_0opt_e201354_retain(&t81); h11_f3 = t81; h_0opt_e201354_release(&t122); t82 = h11_f3; t83 = t82.tag; t84 = INT64_C(0); t85 = t83 == t84; if (t85) goto bb11; else goto bb12; bb9:
+    t69 = h9_i0; t70 = h8_xs0; t71 = ((void)(t70 == NULL ? ((void)hero_array_len(t70), hero_unreachable()) : (void)0), t70->len); t72 = t69 < t71; if (t72) goto bb8; else goto bb10; bb8: t73 = h8_xs0; t74 = h9_i0; t75 = ((void)((t73 == NULL || t74 < 0 || t74 >= t73->len) ? hero_panic_index_at(t73, t74, "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 42, 9) : (void)0), (void)(t73->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t73 + 1))[t74]); h10_at = t75;
+    t76 = h7_sum; t77 = h6_d; hero_array_incref(t77); t120 = h23_own23; h23_own23 = t77; hero_array_decref(t120); t78 = h10_at; t79 = INT64_C(2); if (__builtin_mul_overflow(t78, t79, &t80)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 43, 35); t81 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(t80); t121 = h24_own24; h24_own24 = t81; h_0opt_e201354_release(&t121); t122 = h11_f3; h_0opt_e201354_retain(&t81); h11_f3 = t81; h_0opt_e201354_release(&t122); t82 = h11_f3; t83 = t82.tag; t84 = INT64_C(0); t85 = t83 == t84; if (t85) goto bb11; else goto bb12; bb9:
 #line 42
-    t94 = h9_i0; t95 = INT64_C(1); if (__builtin_add_overflow(t94, t95, &t96)) hero_panic_overflow(); h9_i0 = t96; goto bb7; bb10:
+    t94 = h9_i0; t95 = INT64_C(1); if (__builtin_add_overflow(t94, t95, &t96)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 42, 9); h9_i0 = t96; goto bb7; bb10:
 #line 45
     t97 = h7_sum; t98 = HERO_STR_LIT(hero_str_20); t99 = h6_d; t100 = ((void)(t99 == NULL ? ((void)hero_array_len(t99), hero_unreachable()) : (void)0), t99->len); hero_print_int(t97); hero_print_str(t98); hero_print_int(t100); hero_print_end();
-#line 207 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 208 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_release_at(&h0_a);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_array_release_at(&h2_b);
@@ -229,25 +230,29 @@ bb7:
     return;
 bb11:
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    t88 = h11_f3; t89 = t88.as.ok; t90 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(&h6_d); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow(); t92 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t77, t91); if (__builtin_add_overflow(t76, t92, &t93)) hero_panic_overflow(); h7_sum = t93; goto bb9; bb12: t86 = h11_f3; t87 = t86.as.err;
-#line 234 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    hero_panic_must(t87);
+    t88 = h11_f3; t89 = t88.as.ok; t90 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(&h6_d); if (__builtin_add_overflow(t89, t90, &t91)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 43, 30); t92 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(t77, t91); if (__builtin_add_overflow(t76, t92, &t93)) hero_panic_overflow_at("fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 43, 15); h7_sum = t93; goto bb9; bb12: t86 = h11_f3; t87 = t86.as.err;
+#line 235 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    hero_panic_must_at(t87, "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero", "fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.main", 43, 30);
     hero_unreachable();
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto bb1; bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 247 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 248 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
@@ -346,9 +351,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("69fc1c7572ff2b9a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55f03bce505f22ad", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs387awritebyastoreanestedcallorinaloopaftertheread\tfixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read\n");
     h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "adversarialshortcircuit.c"
+#line 92 "adversarialshortcircuit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_adversarialshortcircuit_main(void);
 
@@ -102,16 +114,16 @@ void h_adversarialshortcircuit_main(void) { HERO_NODEBUG bool h0_b0, h2_b1, t1, 
 #line 16
     t11 = h1_n; t12 = INT64_C(0); t13 = t11 != t12; h2_b1 = t13; if (t13) goto bb7; else goto bb8; bb2:
 #line 10
-    t2 = INT64_C(1); t3 = INT64_C(0); if (t3 == 0) hero_panic("division by zero"); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_overflow(); t4 = t2 / t3; t5 = INT64_C(0); t6 = t4 == t5; h0_b0 = t6; goto bb3; bb3: t7 = h0_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t2 = INT64_C(1); t3 = INT64_C(0); if (t3 == 0) hero_panic_at("division by zero", "adversarial-short-circuit.hero", "adversarial-short-circuit.main", 10, 17); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_overflow_at("adversarial-short-circuit.hero", "adversarial-short-circuit.main", 10, 17); t4 = t2 / t3; t5 = INT64_C(0); t6 = t4 == t5; h0_b0 = t6; goto bb3; bb3: t7 = h0_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = INT64_C(9); hero_print_int(t8); hero_print_end(); goto bb1; bb5:
 #line 13
     t9 = INT64_C(0); hero_print_int(t9); hero_print_end(); goto bb1; bb6: return; bb7:
 #line 16
-    t14 = INT64_C(10); t15 = h1_n; if (t15 == 0) hero_panic("division by zero"); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow(); t16 = t14 / t15; t17 = INT64_C(1); t18 = t16 > t17; h2_b1 = t18; goto bb8; bb8: t19 = h2_b1; if (t19) goto bb9; else goto bb10; bb9:
+    t14 = INT64_C(10); t15 = h1_n; if (t15 == 0) hero_panic_at("division by zero", "adversarial-short-circuit.hero", "adversarial-short-circuit.main", 16, 18); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow_at("adversarial-short-circuit.hero", "adversarial-short-circuit.main", 16, 18); t16 = t14 / t15; t17 = INT64_C(1); t18 = t16 > t17; h2_b1 = t18; goto bb8; bb8: t19 = h2_b1; if (t19) goto bb9; else goto bb10; bb9:
     t20 = INT64_C(9); hero_print_int(t20); hero_print_end(); goto bb6; bb10:
 #line 19
     t21 = INT64_C(1); hero_print_int(t21); hero_print_end(); goto bb6;
-#line 115 "adversarialshortcircuit.c"
+#line 127 "adversarialshortcircuit.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -177,10 +189,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("318499277fb92012", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6178edfa1860e1e8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("adversarialshortcircuit\tadversarial-short-circuit\n");
     h_adversarialshortcircuit_main();
     hero_runtime_check_leaks();
     return 0;

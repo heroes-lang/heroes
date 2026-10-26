@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -70,6 +70,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -84,7 +92,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 96 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,18 +103,22 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs355anassertwritesitssideswholeandbytheircode_main(void);
 
-#line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
+#line 11 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
 void h_fixedbugs355anassertwritesitssideswholeandbytheircode_main(void) { HeroArrayHeader * h0_b = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h6_own6 = {0}, t7, t8, t12, t14, t25, t26; HeroStr h2_x = {0}; HERO_NODEBUG HeroStr h3_assert0 = {0}, h4_assert1 = {0}, h7_own7 = {0}, t5, t15, t16, t17, t18, t19, t21, t22, t27, t28, t29, t30; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t4, *t6, *t23, *t24; HERO_NODEBUG uint8_t t1, t2, t3; HERO_NODEBUG int64_t t9, t10; HERO_NODEBUG bool t11, t20; HERO_NODEBUG HeroFailure t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(97); t2 = UINT64_C(0); t3 = UINT64_C(98); t4 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t23 = h5_own5; h5_own5 = t4; hero_array_decref(t23); t24 = h0_b; hero_array_incref(t4); h0_b = t4; hero_array_decref(t24);
     t5 = HERO_STR_LIT(hero_str_2cf99681); t6 = h0_b; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t6, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t7 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t7 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t25 = h6_own6; h6_own6 = t7; h_0opt_f87774a_release(&t25); t26 = h1_f0; h_0opt_f87774a_retain(&t7); h1_f0 = t7; h_0opt_f87774a_release(&t26); t8 = h1_f0; t9 = t8.tag; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb1; else goto bb2; bb1: t14 = h1_f0; t15 = t14.as.ok; t16 = hero_str_concat(t5, t15); t27 = h7_own7; h7_own7 = t16; hero_str_decref(t27); t28 = h2_x; hero_str_incref(t16); h2_x = t16; hero_str_decref(t28);
     t17 = HERO_STR_LIT(hero_str_31d87148); t18 = h2_x; t19 = HERO_STR_LIT(hero_str_79); t20 = hero_str_eq(t18, t19); t29 = h3_assert0; hero_str_incref(t18); h3_assert0 = t18; hero_str_decref(t29); t30 = h4_assert1; hero_str_incref(t19); h4_assert1 = t19; hero_str_decref(t30); if (t20) goto bb3; else goto bb4; bb2:
-#line 9
+#line 13
     t12 = h1_f0; t13 = t12.as.err;
-#line 109 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
-    hero_panic_must(t13);
+#line 121 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+    hero_panic_must_at(t13, "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero", "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.main", 13, 40);
     hero_unreachable();
 bb3:
     hero_array_release_at(&h0_b);
@@ -119,10 +131,10 @@ bb3:
     hero_str_release_at(&h7_own7);
     return;
 bb4:
-#line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
+#line 14 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t21 = h3_assert0; t22 = h4_assert1;
-#line 125 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
-    hero_panic_assert_sides(t17, hero_str_identity(t21), hero_str_identity(t22));
+#line 137 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+    hero_panic_assert_shown_at(t17, hero_show_str, &t21, &t22, 1, "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero", "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.main", 14, 12);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -189,10 +201,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2704df622bf09613", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("56e5e8cf12bce2ed", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs355anassertwritesitssideswholeandbytheircode\tfixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code\n");
     h_fixedbugs355anassertwritesitssideswholeandbytheircode_main();
     hero_runtime_check_leaks();
     return 0;

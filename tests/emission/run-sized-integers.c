@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -164,12 +164,12 @@ void h_sizedintegers_main(void) { uint8_t h0_a; int8_t h1_b; int32_t h2_c; uint1
     t15 = HERO_STR_LIT(hero_str_fa87493); t16 = h4_top; t17 = HERO_STR_LIT(hero_str_20); t18 = h5_hex; t19 = HERO_STR_LIT(hero_str_20); t20 = h4_top; t21 = h5_hex; t22 = t20 == t21; hero_print_str(t15); hero_print_uint(t16); hero_print_str(t17); hero_print_uint(t18); hero_print_str(t19); hero_print_bool(t22); hero_print_end();
 #line 38
     t23 = UINT64_C(7); h6_byte = t23;
-    t24 = HERO_STR_LIT(hero_str_2b1fdd99); t25 = h6_byte; t26 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t25}; t77 = h12_own12; h12_own12 = t26; h_0opt_e201354_release(&t77); t78 = h7_f0; h_0opt_e201354_retain(&t26); h7_f0 = t26; h_0opt_e201354_release(&t78); t27 = h7_f0; t28 = t27.tag; t29 = INT64_C(0); t30 = t28 == t29; if (t30) goto bb1; else goto bb2; bb1: t33 = h7_f0; t34 = t33.as.ok; t35 = INT64_C(100); if (__builtin_mul_overflow(t34, t35, &t36)) hero_panic_overflow(); hero_print_str(t24); hero_print_int(t36); hero_print_end();
+    t24 = HERO_STR_LIT(hero_str_2b1fdd99); t25 = h6_byte; t26 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t25}; t77 = h12_own12; h12_own12 = t26; h_0opt_e201354_release(&t77); t78 = h7_f0; h_0opt_e201354_retain(&t26); h7_f0 = t26; h_0opt_e201354_release(&t78); t27 = h7_f0; t28 = t27.tag; t29 = INT64_C(0); t30 = t28 == t29; if (t30) goto bb1; else goto bb2; bb1: t33 = h7_f0; t34 = t33.as.ok; t35 = INT64_C(100); if (__builtin_mul_overflow(t34, t35, &t36)) hero_panic_overflow_at("sized-integers.hero", "sized-integers.main", 39, 21); hero_print_str(t24); hero_print_int(t36); hero_print_end();
     t37 = HERO_STR_LIT(hero_str_526294ee); t38 = INT64_C(300); if (t38 >= 0LL && t38 <= 255LL) { t39 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t38}; } else { t39 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t79 = h13_own13; h13_own13 = t39; h_0opt_1ec004_release(&t79); t80 = h8_f1; h_0opt_1ec004_retain(&t39); h8_f1 = t39; h_0opt_1ec004_release(&t80); t40 = h8_f1; t41 = t40.tag; t42 = INT64_C(1); t43 = t41 == t42; t44 = HERO_STR_LIT(hero_str_20); t45 = INT64_C(42); if (t45 >= 0LL && t45 <= 255LL) { t46 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t45}; } else { t46 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t81 = h14_own14; h14_own14 = t46; h_0opt_1ec004_release(&t81); t82 = h9_f2; h_0opt_1ec004_retain(&t46); h9_f2 = t46; h_0opt_1ec004_release(&t82); t47 = h9_f2; t48 = t47.tag; t49 = INT64_C(0); t50 = t48 == t49; if (t50) goto bb3; else goto bb4; bb2:
 #line 39
     t31 = h7_f0; t32 = t31.as.err;
 #line 172 "sizedintegers.c"
-    hero_panic_must(t32);
+    hero_panic_must_at(t32, "sized-integers.hero", "sized-integers.main", 39, 21);
     hero_unreachable();
 bb3:
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -177,7 +177,7 @@ bb3:
     t55 = HERO_STR_LIT(hero_str_745f764e); t56 = INT64_C(-1); if (t56 >= 0LL && t56 <= 255LL) { t57 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t56}; } else { t57 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t83 = h15_own15; h15_own15 = t57; h_0opt_1ec004_release(&t83); t84 = h10_f3; h_0opt_1ec004_retain(&t57); h10_f3 = t57; h_0opt_1ec004_release(&t84); t58 = h10_f3; t59 = t58.tag; t60 = INT64_C(1); t61 = t59 == t60; hero_print_str(t55); hero_print_bool(t61); hero_print_end();
 #line 43
     t62 = HERO_STR_LIT(hero_str_217c); t85 = h11_text; hero_str_incref(t62); h11_text = t62; hero_str_decref(t85);
-    t63 = HERO_STR_LIT(hero_str_2445ed02); t64 = h11_text; t65 = INT64_C(0); t66 = ((void)((t64.ptr == NULL || t65 < 0 || t65 >= t64.len) ? ((void)hero_str_byte(t64, t65), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t64.ptr[t65]); t67 = HERO_STR_LIT(hero_str_20); t68 = h11_text; t69 = INT64_C(1); t70 = ((void)((t68.ptr == NULL || t69 < 0 || t69 >= t68.len) ? ((void)hero_str_byte(t68, t69), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t68.ptr[t69]); t71 = HERO_STR_LIT(hero_str_20); t72 = h11_text; t73 = INT64_C(0); t74 = ((void)((t72.ptr == NULL || t73 < 0 || t73 >= t72.len) ? ((void)hero_str_byte(t72, t73), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t72.ptr[t73]); t75 = UINT64_C(65); t76 = t74 == t75; hero_print_str(t63); hero_print_int(t66); hero_print_str(t67); hero_print_int(t70); hero_print_str(t71); hero_print_bool(t76); hero_print_end();
+    t63 = HERO_STR_LIT(hero_str_2445ed02); t64 = h11_text; t65 = INT64_C(0); t66 = ((void)((t64.ptr == NULL || t65 < 0 || t65 >= t64.len) ? hero_panic_byte_at(t64, t65, "sized-integers.hero", "sized-integers.main", 44, 21) : (void)0), (int64_t)(unsigned char)t64.ptr[t65]); t67 = HERO_STR_LIT(hero_str_20); t68 = h11_text; t69 = INT64_C(1); t70 = ((void)((t68.ptr == NULL || t69 < 0 || t69 >= t68.len) ? hero_panic_byte_at(t68, t69, "sized-integers.hero", "sized-integers.main", 44, 35) : (void)0), (int64_t)(unsigned char)t68.ptr[t69]); t71 = HERO_STR_LIT(hero_str_20); t72 = h11_text; t73 = INT64_C(0); t74 = ((void)((t72.ptr == NULL || t73 < 0 || t73 >= t72.len) ? hero_panic_byte_at(t72, t73, "sized-integers.hero", "sized-integers.main", 44, 49) : (void)0), (int64_t)(unsigned char)t72.ptr[t73]); t75 = UINT64_C(65); t76 = t74 == t75; hero_print_str(t63); hero_print_int(t66); hero_print_str(t67); hero_print_int(t70); hero_print_str(t71); hero_print_bool(t76); hero_print_end();
 #line 182 "sizedintegers.c"
     h_0opt_e201354_release(hero_slot_escape(&h7_f0));
     h_0opt_1ec004_release(hero_slot_escape(&h8_f1));
@@ -193,7 +193,7 @@ bb4:
 #line 40 "tests/golden/run/sized-integers.hero"
     t51 = h9_f2; t52 = t51.as.err;
 #line 196 "sizedintegers.c"
-    hero_panic_must(t52);
+    hero_panic_must_at(t52, "sized-integers.hero", "sized-integers.main", 40, 48);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -389,9 +389,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2122d84502e66856", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c06776e42d417f5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("sizedintegers\tsized-integers\n");
     h_sizedintegers_main();
     hero_runtime_check_leaks();
     return 0;

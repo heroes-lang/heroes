@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -72,6 +72,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -86,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "fixedbugsconcatleaked.c"
+#line 98 "fixedbugsconcatleaked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -97,6 +105,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name);
 void h_fixedbugsconcatleaked_main(void);
@@ -104,7 +116,7 @@ void h_fixedbugsconcatleaked_main(void);
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183); t2 = h0_name; t3 = hero_str_concat(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4);
-#line 108 "fixedbugsconcatleaked.c"
+#line 120 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -120,10 +132,10 @@ void h_fixedbugsconcatleaked_main(void) { HeroStr h0_s = {0}; HeroStr h1_out = {
 #line 27
     t9 = h2_i; t10 = INT64_C(200); t11 = t9 < t10; if (t11) goto bb2; else goto bb3; bb2:
     t12 = h1_out; t13 = HERO_STR_LIT(hero_str_78); t14 = hero_str_concat(t12, t13); t24 = h5_own5; h5_own5 = t14; hero_str_decref(t24); t25 = h1_out; hero_str_incref(t14); h1_out = t14; hero_str_decref(t25);
-    t15 = h2_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h2_i = t17; goto bb1; bb3:
+    t15 = h2_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-concat-leaked.hero", "fixedbugs-concat-leaked.main", 29, 13); h2_i = t17; goto bb1; bb3:
 #line 31
     t18 = h1_out; t19 = hero_str_len(t18); hero_print_int(t19); hero_print_end();
-#line 127 "fixedbugsconcatleaked.c"
+#line 139 "fixedbugsconcatleaked.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h3_own3);
@@ -195,10 +207,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2606b79706bc6db9", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4dd04a2e7af89d6d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsconcatleaked\tfixedbugs-concat-leaked\n");
     h_fixedbugsconcatleaked_main();
     hero_runtime_check_leaks();
     return 0;

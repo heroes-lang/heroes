@@ -23,6 +23,7 @@
 #include <fixedbugs-094-values.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
+#pragma push_macro("line")
 #include "heroes_guard_close.h"
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
@@ -51,11 +52,14 @@
 #undef a
 #pragma push_macro("b")
 #undef b
+#pragma push_macro("line")
+#undef line
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 #pragma pop_macro("b")
+#pragma pop_macro("line")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,7 +75,7 @@ _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((str
 #line 11
 _Static_assert(_Generic(&((struct line *)0)->a, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->a) == sizeof(struct pt), "heroes-ffi-field Line a");
 _Static_assert(_Generic(&((struct line *)0)->b, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->b) == sizeof(struct pt), "heroes-ffi-field Line b");
-#line 75 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 79 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -123,6 +127,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -149,13 +161,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 165 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Line_eq(const struct line *a, const struct line *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_Line_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(const struct pt *a, const struct pt *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Line_eq(const struct line *a, const struct line *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Line_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -164,6 +176,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void);
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void);
@@ -179,7 +195,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void) {
-#line 183 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 199 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -191,7 +207,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     static struct line hero_constant_value = LINE_INIT;
-#line 195 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 211 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -210,7 +226,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void) {
-#line 214 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 230 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -222,7 +238,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     static struct line hero_constant_value = LINE_FLAT;
-#line 226 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 242 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -247,16 +263,16 @@ void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) { struct li
     t4 = h0_l.b.x; hero_print_int(t4); hero_print_end();
     t5 = h0_l.b.y; hero_print_int(t5); hero_print_end();
     t6 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(); h1_f = t6; hero_pad_fill(&h1_f, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
-    t7 = h1_f.a.x; t8 = h1_f.b.y; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end(); return;
-#line 252 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+    t7 = h1_f.a.x; t8 = h1_f.b.y; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero", "fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.main", 23, 11); hero_print_int(t9); hero_print_end(); return;
+#line 268 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b) {
+HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;
     if (!(a->y == b->y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_hash(const void *elem) {
     const struct pt *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->x)) * UINT64_C(0x100000001b3);
@@ -264,17 +280,17 @@ HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_h
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Line_eq(const struct line *a, const struct line *b) {
-    if (!(h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(&a->a, &b->a))) return false;
-    if (!(h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(&a->b, &b->b))) return false;
+HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Line_eq(const struct line *a, const struct line *b) {
+    if (!(h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(&a->a, &b->a))) return false;
+    if (!(h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(&a->b, &b->b))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_Line_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Line_hash(const void *elem) {
     const struct line *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_hash(&v->a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_hash(&v->b)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_hash(&v->a)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_hash(&v->b)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -342,10 +358,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cd54b1c34bdff43", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1636839e0eb77162", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs094anestedbracelistbuildsarecordofrecords\tfixedbugs-094-a-nested-brace-list-builds-a-record-of-records\n");
     h_fixedbugs094anestedbracelistbuildsarecordofrecords_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -122,6 +122,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -151,11 +159,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "ffilentonanoutparameter.c"
+#line 163 "ffilentonanoutparameter.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffilentonanoutparameter_Span_eq(const struct span *a, const struct span *b);
-HERO_TU_LOCAL uint64_t h_ffilentonanoutparameter_Span_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffilentonanoutparameter_0Span_eq(const struct span *a, const struct span *b);
+HERO_TU_LOCAL uint64_t h_ffilentonanoutparameter_0Span_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -164,6 +172,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffilentonanoutparameter_main(void);
 void *hero_pad_nowhere(void);
@@ -184,21 +196,21 @@ void h_ffilentonanoutparameter_main(void) {
 #line 13
     int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3; HERO_NODEBUG HeroStr t4, t10; HERO_NODEBUG int64_t t6, t7, t9, t11; HERO_NODEBUG struct span t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h0_e = t1;
-    t2 = 0x1.8p+1; hero_lend_local_name(hero_lend_h0_e, "halve", "e"); t3 = halve(t2, (void *)&h0_e); t4 = HERO_STR_LIT(hero_str_20); t5 = h0_e; hero_print_f64(t3); hero_print_str(t4); hero_print_int(t5); hero_print_end();
+    t2 = 0x1.8p+1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-lent-on-an-out-parameter.hero", "ffi-lent-on-an-out-parameter.main", 15, 11}; hero_lend_local_name(hero_lend_h0_e, "halve", "e"); t3 = halve(t2, (void *)&h0_e); } t4 = HERO_STR_LIT(hero_str_20); t5 = h0_e; hero_print_f64(t3); hero_print_str(t4); hero_print_int(t5); hero_print_end();
     t6 = INT64_C(10); t7 = INT64_C(20); t8 = (struct span){.lo = t6, .hi = t7}; h1_s = t8; hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h1_s, "widen", "s"); hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0); (void)widen(&h1_s);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-lent-on-an-out-parameter.hero", "ffi-lent-on-an-out-parameter.main", 17, 5}; hero_lend_local_name(hero_lend_h1_s, "widen", "s"); hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0); (void)widen(&h1_s); }
     t9 = h1_s.lo; t10 = HERO_STR_LIT(hero_str_20); t11 = h1_s.hi; hero_print_int(t9); hero_print_str(t10); hero_print_int(t11); hero_print_end(); hero_lend_local_give(hero_lend_h1_s); hero_lend_local_give(hero_lend_h0_e); return;
-#line 192 "ffilentonanoutparameter.c"
+#line 204 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s
-HERO_TU_LOCAL bool h_ffilentonanoutparameter_Span_eq(const struct span *a, const struct span *b) {
+HERO_TU_LOCAL bool h_ffilentonanoutparameter_0Span_eq(const struct span *a, const struct span *b) {
     if (!(a->lo == b->lo)) return false;
     if (!(a->hi == b->hi)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffilentonanoutparameter_Span_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffilentonanoutparameter_0Span_hash(const void *elem) {
     const struct span *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->lo)) * UINT64_C(0x100000001b3);
@@ -270,10 +282,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ab9580e10badc0d", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("56dd049551e1d6b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffilentonanoutparameter\tffi-lent-on-an-out-parameter\n");
     h_ffilentonanoutparameter_main();
     hero_runtime_check_leaks();
     return 0;

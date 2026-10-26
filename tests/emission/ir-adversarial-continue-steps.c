@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "adversarialcontinuesteps.c"
+#line 92 "adversarialcontinuesteps.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs);
 
@@ -98,19 +110,19 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs);
 int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) { int64_t h1_count; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t23; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22; int64_t h4_x; HERO_NODEBUG bool t7, t15; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_count = t1;
 #line 10
-    t2 = h0_xs; t23 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t23); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
-    t11 = h4_x; t12 = INT64_C(2); if (t12 == 0) hero_panic("division by zero"); if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t13 = t11 % t12; t14 = INT64_C(1); t15 = t13 == t14; if (t15) goto bb6; else goto bb7; bb3:
+    t2 = h0_xs; t23 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t23); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "adversarial-continue-steps.hero", "adversarial-continue-steps.evens_in", 10, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t11 = h4_x; t12 = INT64_C(2); if (t12 == 0) hero_panic_at("division by zero", "adversarial-continue-steps.hero", "adversarial-continue-steps.evens_in", 11, 12); if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "adversarial-continue-steps.hero", "adversarial-continue-steps.evens_in", 11, 12); t13 = t11 % t12; t14 = INT64_C(1); t15 = t13 == t14; if (t15) goto bb6; else goto bb7; bb3:
 #line 10
-    t19 = h3_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); h3_i0 = t21; goto bb1; bb4:
+    t19 = h3_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("adversarial-continue-steps.hero", "adversarial-continue-steps.evens_in", 10, 9); h3_i0 = t21; goto bb1; bb4:
 #line 15
     t22 = h1_count;
-#line 108 "adversarialcontinuesteps.c"
+#line 120 "adversarialcontinuesteps.c"
     hero_array_release_at(&h2_xs0);
     return t22;
 bb5:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
-    t16 = h1_count; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h1_count = t18; goto bb3; bb6: goto bb3; bb7: goto bb5;
-#line 114 "adversarialcontinuesteps.c"
+    t16 = h1_count; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("adversarial-continue-steps.hero", "adversarial-continue-steps.evens_in", 13, 17); h1_count = t18; goto bb3; bb6: goto bb3; bb7: goto bb5;
+#line 126 "adversarialcontinuesteps.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -174,5 +186,37 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return h;
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 

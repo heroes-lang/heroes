@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,6 +68,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -82,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 94 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,6 +101,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(int64_t *ph0_n, int64_t h1_k);
 int64_t h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(int64_t h0_k);
@@ -101,22 +113,22 @@ void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main(void);
 #line 7 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(int64_t *ph0_n, int64_t h1_k) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_k; (*ph0_n) = t1; return;
-#line 105 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 117 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(int64_t h0_k) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6fc4002a); t2 = h0_k; hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = h0_k; return t3;
-#line 112 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 124 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t6, *t9, *t10; HERO_NODEBUG int64_t t1, t3, t4, t5, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t9 = h1_own1; h1_own1 = t2; hero_array_decref(t9); t10 = h0_xs; hero_array_incref(t2); h0_xs = t2; hero_array_decref(t10);
-    t3 = INT64_C(3); t4 = INT64_C(5); t5 = h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(t4); hero_array_unshare(&(h0_xs)); h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(&(*((void)((h0_xs == NULL || t3 < 0 || t3 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t3), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t3)), t5);
-    t6 = h0_xs; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]); hero_print_int(t8); hero_print_end();
-#line 120 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+    t3 = INT64_C(3); t4 = INT64_C(5); t5 = h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(t4); hero_array_unshare(&(h0_xs)); h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(&(*((void)((h0_xs == NULL || t3 < 0 || t3 >= h0_xs->len) ? hero_panic_index_at(h0_xs, t3, "fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero", "fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.main", 16, 5) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t3)), t5);
+    t6 = h0_xs; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero", "fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.main", 17, 11) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]); hero_print_int(t8); hero_print_end();
+#line 132 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;
@@ -185,10 +197,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("33ee6ccd6ad0d185", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6dd877537164dcce", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs413anelementpasttheendisrefusedwhenthecallismade\tfixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made\n");
     h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,6 +68,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -82,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 94 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,6 +101,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(void);
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(void);
@@ -103,14 +115,14 @@ void h_fixedbugs382aconstantoffloatsreadsbackitsvalues_main(void);
 #if HERO_STATIC_CONSTANTS
 #line 7 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF_5, float, &hero_desc_f32, 4, 0x1p-1, 0x1.4p+0, 0x1.999999999999ap-4, 0x1p+24); HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF_5);
-#line 107 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 119 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
 }
 #else
 
 #line 7 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG float t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1p-1; t2 = 0x1.4p+0; t3 = 0x1.999999999999ap-4; t4 = 0x1p+24; t5 = hero_array_new(&hero_desc_f32, 4); hero_array_push_owned(&t5, &t1); hero_array_push_owned(&t5, &t2); hero_array_push_owned(&t5, &t3); hero_array_push_owned(&t5, &t4); t6 = h0_own0; h0_own0 = t5; hero_array_decref(t6);
-#line 114 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 126 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -120,14 +132,14 @@ HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(void) {
 #if HERO_STATIC_CONSTANTS
 #line 10 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE_4, double, &hero_desc_f64, 3, 0x1.999999999999ap-4, 0x1.5af1d78b58c4p+66, 0x1.12e0be826d695p-32); HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE_4);
-#line 124 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 136 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
 }
 #else
 
 #line 10 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t4, *t5; HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.999999999999ap-4; t2 = 0x1.5af1d78b58c4p+66; t3 = 0x1.12e0be826d695p-32; t4 = hero_array_new(&hero_desc_f64, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t5 = h0_own0; h0_own0 = t4; hero_array_decref(t5);
-#line 131 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 143 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -137,14 +149,14 @@ HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(void) {
 #if HERO_STATIC_CONSTANTS
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS_3, bool, &hero_desc_bool, 2, true, false); HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS_3);
-#line 141 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 153 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
 }
 #else
 
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG bool t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = true; t2 = false; t3 = hero_array_new(&hero_desc_bool, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t4 = h0_own0; h0_own0 = t3; hero_array_decref(t4);
-#line 148 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 160 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -154,7 +166,7 @@ HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(void) 
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t4, *t5; HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.6p+1; t2 = -t1; t3 = 0x1.8p+0; t4 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t5 = h0_own0; h0_own0 = t4; hero_array_decref(t5);
-#line 158 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 170 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -162,11 +174,11 @@ HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(void)
 
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 void h_fixedbugs382aconstantoffloatsreadsbackitsvalues_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *t1, *t5, *t9, *t13, *t17, *t20, *t24, *t28, *t32, *t35, *t39, *t43, *t46, *t48, *t52, *t56, *t57, *t60, *t61, *t62, *t63, *t64, *t65, *t66, *t67, *t68, *t69, *t70, *t71, *t72, *t73, *t74, *t75, *t76; HERO_NODEBUG int64_t t2, t6, t10, t14, t18, t21, t25, t29, t33, t36, t40, t49, t53, t58; HERO_NODEBUG float t3, t7, t11, t15, t19, t22, t23; HERO_NODEBUG HeroStr t4, t8, t12, t16, t27, t31, t38, t42, t51, t55; HERO_NODEBUG double t26, t30, t34, t50, t54, t59; HERO_NODEBUG bool t37, t41, t44, t45, t47; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t60 = h0_own0; h0_own0 = t1; hero_array_decref(t60); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t1 + 1))[t2]); t4 = HERO_STR_LIT(hero_str_20); t5 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t61 = h1_own1; h1_own1 = t5; hero_array_decref(t61); t6 = INT64_C(1); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_20); t9 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t62 = h2_own2; h2_own2 = t9; hero_array_decref(t62); t10 = INT64_C(2); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t9 + 1))[t10]); t12 = HERO_STR_LIT(hero_str_20); t13 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t63 = h3_own3; h3_own3 = t13; hero_array_decref(t63); t14 = INT64_C(3); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t13 + 1))[t14]); t16 = HERO_STR_LIT(hero_str_20); t17 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t64 = h4_own4; h4_own4 = t17; hero_array_decref(t64); t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t17 + 1))[t18]); t20 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t65 = h5_own5; h5_own5 = t20; hero_array_decref(t65); t21 = INT64_C(1); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t20 + 1))[t21]); t23 = t19 + t22; hero_print_f32(t3); hero_print_str(t4); hero_print_f32(t7); hero_print_str(t8); hero_print_f32(t11); hero_print_str(t12); hero_print_f32(t15); hero_print_str(t16); hero_print_f32(t23); hero_print_end();
-    t24 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(); t66 = h6_own6; h6_own6 = t24; hero_array_decref(t66); t25 = INT64_C(0); t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t24 + 1))[t25]); t27 = HERO_STR_LIT(hero_str_20); t28 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(); t67 = h7_own7; h7_own7 = t28; hero_array_decref(t67); t29 = INT64_C(1); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t28 + 1))[t29]); t31 = HERO_STR_LIT(hero_str_20); t32 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(); t68 = h8_own8; h8_own8 = t32; hero_array_decref(t68); t33 = INT64_C(2); t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t32 + 1))[t33]); hero_print_f64(t26); hero_print_str(t27); hero_print_f64(t30); hero_print_str(t31); hero_print_f64(t34); hero_print_end();
-    t35 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(); t69 = h9_own9; h9_own9 = t35; hero_array_decref(t69); t36 = INT64_C(0); t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t35 + 1))[t36]); t38 = HERO_STR_LIT(hero_str_20); t39 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(); t70 = h10_own10; h10_own10 = t39; hero_array_decref(t70); t40 = INT64_C(1); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t39 + 1))[t40]); t42 = HERO_STR_LIT(hero_str_20); t43 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(); t71 = h11_own11; h11_own11 = t43; hero_array_decref(t71); t44 = true; t45 = false; t46 = hero_array_new(&hero_desc_bool, 2); hero_array_push_owned(&t46, &t44); hero_array_push_owned(&t46, &t45); t72 = h12_own12; h12_own12 = t46; hero_array_decref(t72); t47 = hero_array_eq(t43, t46); hero_print_bool(t37); hero_print_str(t38); hero_print_bool(t41); hero_print_str(t42); hero_print_bool(t47); hero_print_end();
-    t48 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(); t73 = h13_own13; h13_own13 = t48; hero_array_decref(t73); t49 = INT64_C(0); t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? ((void)hero_array_at(t48, t49), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t48 + 1))[t49]); t51 = HERO_STR_LIT(hero_str_20); t52 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(); t74 = h14_own14; h14_own14 = t52; hero_array_decref(t74); t53 = INT64_C(1); t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? ((void)hero_array_at(t52, t53), hero_unreachable()) : (void)0), (void)(t52->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t52 + 1))[t53]); t55 = HERO_STR_LIT(hero_str_20); t56 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(); t75 = h15_own15; h15_own15 = t56; hero_array_decref(t75); t57 = hero_array_sort(t56); t76 = h16_own16; h16_own16 = t57; hero_array_decref(t76); t58 = INT64_C(0); t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t57 + 1))[t58]); hero_print_f64(t50); hero_print_str(t51); hero_print_f64(t54); hero_print_str(t55); hero_print_f64(t59); hero_print_end();
-#line 170 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+    t1 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t60 = h0_own0; h0_own0 = t1; hero_array_decref(t60); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 20, 11) : (void)0), (void)(t1->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t1 + 1))[t2]); t4 = HERO_STR_LIT(hero_str_20); t5 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t61 = h1_own1; h1_own1 = t5; hero_array_decref(t61); t6 = INT64_C(1); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 20, 25) : (void)0), (void)(t5->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_20); t9 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t62 = h2_own2; h2_own2 = t9; hero_array_decref(t62); t10 = INT64_C(2); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 20, 39) : (void)0), (void)(t9->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t9 + 1))[t10]); t12 = HERO_STR_LIT(hero_str_20); t13 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t63 = h3_own3; h3_own3 = t13; hero_array_decref(t63); t14 = INT64_C(3); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 20, 53) : (void)0), (void)(t13->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t13 + 1))[t14]); t16 = HERO_STR_LIT(hero_str_20); t17 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t64 = h4_own4; h4_own4 = t17; hero_array_decref(t64); t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 20, 67) : (void)0), (void)(t17->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t17 + 1))[t18]); t20 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(); t65 = h5_own5; h5_own5 = t20; hero_array_decref(t65); t21 = INT64_C(1); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 20, 77) : (void)0), (void)(t20->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t20 + 1))[t21]); t23 = t19 + t22; hero_print_f32(t3); hero_print_str(t4); hero_print_f32(t7); hero_print_str(t8); hero_print_f32(t11); hero_print_str(t12); hero_print_f32(t15); hero_print_str(t16); hero_print_f32(t23); hero_print_end();
+    t24 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(); t66 = h6_own6; h6_own6 = t24; hero_array_decref(t66); t25 = INT64_C(0); t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? hero_panic_index_at(t24, t25, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 21, 11) : (void)0), (void)(t24->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t24 + 1))[t25]); t27 = HERO_STR_LIT(hero_str_20); t28 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(); t67 = h7_own7; h7_own7 = t28; hero_array_decref(t67); t29 = INT64_C(1); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? hero_panic_index_at(t28, t29, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 21, 25) : (void)0), (void)(t28->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t28 + 1))[t29]); t31 = HERO_STR_LIT(hero_str_20); t32 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(); t68 = h8_own8; h8_own8 = t32; hero_array_decref(t68); t33 = INT64_C(2); t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? hero_panic_index_at(t32, t33, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 21, 39) : (void)0), (void)(t32->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t32 + 1))[t33]); hero_print_f64(t26); hero_print_str(t27); hero_print_f64(t30); hero_print_str(t31); hero_print_f64(t34); hero_print_end();
+    t35 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(); t69 = h9_own9; h9_own9 = t35; hero_array_decref(t69); t36 = INT64_C(0); t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? hero_panic_index_at(t35, t36, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 22, 11) : (void)0), (void)(t35->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t35 + 1))[t36]); t38 = HERO_STR_LIT(hero_str_20); t39 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(); t70 = h10_own10; h10_own10 = t39; hero_array_decref(t70); t40 = INT64_C(1); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 22, 26) : (void)0), (void)(t39->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t39 + 1))[t40]); t42 = HERO_STR_LIT(hero_str_20); t43 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(); t71 = h11_own11; h11_own11 = t43; hero_array_decref(t71); t44 = true; t45 = false; t46 = hero_array_new(&hero_desc_bool, 2); hero_array_push_owned(&t46, &t44); hero_array_push_owned(&t46, &t45); t72 = h12_own12; h12_own12 = t46; hero_array_decref(t72); t47 = hero_array_eq(t43, t46); hero_print_bool(t37); hero_print_str(t38); hero_print_bool(t41); hero_print_str(t42); hero_print_bool(t47); hero_print_end();
+    t48 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(); t73 = h13_own13; h13_own13 = t48; hero_array_decref(t73); t49 = INT64_C(0); t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? hero_panic_index_at(t48, t49, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 23, 11) : (void)0), (void)(t48->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t48 + 1))[t49]); t51 = HERO_STR_LIT(hero_str_20); t52 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(); t74 = h14_own14; h14_own14 = t52; hero_array_decref(t74); t53 = INT64_C(1); t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? hero_panic_index_at(t52, t53, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 23, 27) : (void)0), (void)(t52->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t52 + 1))[t53]); t55 = HERO_STR_LIT(hero_str_20); t56 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(); t75 = h15_own15; h15_own15 = t56; hero_array_decref(t75); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 23, 43}; t57 = hero_array_sort_at(t56, &hero_here); } t76 = h16_own16; h16_own16 = t57; hero_array_decref(t76); t58 = INT64_C(0); t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? hero_panic_index_at(t57, t58, "fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero", "fixedbugs-382-a-constant-of-floats-reads-back-its-values.main", 23, 43) : (void)0), (void)(t57->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t57 + 1))[t58]); hero_print_f64(t50); hero_print_str(t51); hero_print_f64(t54); hero_print_str(t55); hero_print_f64(t59); hero_print_end();
+#line 182 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -250,10 +262,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38a6e1a03644edf8", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ad7491b00f66647", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs382aconstantoffloatsreadsbackitsvalues\tfixedbugs-382-a-constant-of-floats-reads-back-its-values\n");
     h_fixedbugs382aconstantoffloatsreadsbackitsvalues_main();
     hero_runtime_check_leaks();
     return 0;

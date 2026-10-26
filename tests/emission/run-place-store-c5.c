@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -73,6 +73,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -87,13 +95,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "placestorec5.c"
+#line 99 "placestorec5.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_placestorec5_Node_retain(const h_placestorec5_Node *v);
-HERO_TU_LOCAL void h_placestorec5_Node_release(h_placestorec5_Node *v);
-HERO_TU_LOCAL bool h_placestorec5_Node_eq(const h_placestorec5_Node *a, const h_placestorec5_Node *b);
-HERO_TU_LOCAL uint64_t h_placestorec5_Node_hash(const void *elem);
+HERO_TU_LOCAL void h_placestorec5_0Node_retain(const h_placestorec5_Node *v);
+HERO_TU_LOCAL void h_placestorec5_0Node_release(h_placestorec5_Node *v);
+HERO_TU_LOCAL bool h_placestorec5_0Node_eq(const h_placestorec5_Node *a, const h_placestorec5_Node *b);
+HERO_TU_LOCAL uint64_t h_placestorec5_0Node_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -102,23 +110,27 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_placestorec5_Node_desc_copy(void *dst, const void *src) {
+static void h_placestorec5_0Node_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_placestorec5_Node));
-    h_placestorec5_Node_retain((const h_placestorec5_Node *)dst);
+    h_placestorec5_0Node_retain((const h_placestorec5_Node *)dst);
 }
-static void h_placestorec5_Node_desc_drop(void *elem) {
-    h_placestorec5_Node_release((h_placestorec5_Node *)elem);
+static void h_placestorec5_0Node_desc_drop(void *elem) {
+    h_placestorec5_0Node_release((h_placestorec5_Node *)elem);
 }
-static bool h_placestorec5_Node_desc_eq(const void *a, const void *b) {
-    return h_placestorec5_Node_eq((const h_placestorec5_Node *)a, (const h_placestorec5_Node *)b);
+static bool h_placestorec5_0Node_desc_eq(const void *a, const void *b) {
+    return h_placestorec5_0Node_eq((const h_placestorec5_Node *)a, (const h_placestorec5_Node *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_placestorec5_Node_desc = {
+HERO_TU_QUIET static const HeroDesc h_placestorec5_0Node_desc = {
     sizeof(h_placestorec5_Node),
-    h_placestorec5_Node_desc_copy,
-    h_placestorec5_Node_desc_drop,
-    h_placestorec5_Node_desc_eq,
-    h_placestorec5_Node_hash,
+    h_placestorec5_0Node_desc_copy,
+    h_placestorec5_0Node_desc_drop,
+    h_placestorec5_0Node_desc_eq,
+    h_placestorec5_0Node_hash,
 };
 
 int64_t h_placestorec5_bump(HeroArrayHeader * *ph0_v);
@@ -128,7 +140,7 @@ void h_placestorec5_main(void);
 int64_t h_placestorec5_bump(HeroArrayHeader * *ph0_v) { HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t2 = INT64_C(99); hero_array_push_owned(&(*ph0_v), &t2);
     t4 = (*ph0_v); t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); return t5;
-#line 132 "placestorec5.c"
+#line 144 "placestorec5.c"
 }
 
 #line 30 "tests/golden/run/place-store-c5.hero"
@@ -144,45 +156,45 @@ void h_placestorec5_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader 
     t17 = h0_xs; t18 = INT64_C(4); t19 = hero_array_push(t17, &t18); t94 = h9_own9; h9_own9 = t19; hero_array_decref(t94); t95 = h2_zs; hero_array_incref(t19); h2_zs = t19; hero_array_decref(t95);
     t20 = h0_xs; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); t22 = HERO_STR_LIT(hero_str_20); t23 = h2_zs; t24 = ((void)(t23 == NULL ? ((void)hero_array_len(t23), hero_unreachable()) : (void)0), t23->len); hero_print_int(t21); hero_print_str(t22); hero_print_int(t24); hero_print_end();
 #line 44
-    t25 = hero_array_new(&h_placestorec5_Node_desc, 1); t96 = h10_own10; h10_own10 = t25; hero_array_decref(t96); t97 = h3_hs; hero_array_incref(t25); h3_hs = t25; hero_array_decref(t97);
-    t27 = hero_array_new(&h_placestorec5_Node_desc, 1); t98 = h11_own11; h11_own11 = t27; hero_array_decref(t98); hero_array_incref(t27); t28 = (h_placestorec5_Node){.f_kids = t27}; t99 = h12_own12; h12_own12 = t28; h_placestorec5_Node_release(&t99); hero_array_push_owned(&h3_hs, &t28);
-    t30 = h3_hs; hero_array_incref(t30); t31 = (h_placestorec5_Node){.f_kids = t30}; t100 = h13_own13; h13_own13 = t31; h_placestorec5_Node_release(&t100); t101 = h4_root; h_placestorec5_Node_retain(&t31); h4_root = t31; h_placestorec5_Node_release(&t101);
+    t25 = hero_array_new(&h_placestorec5_0Node_desc, 1); t96 = h10_own10; h10_own10 = t25; hero_array_decref(t96); t97 = h3_hs; hero_array_incref(t25); h3_hs = t25; hero_array_decref(t97);
+    t27 = hero_array_new(&h_placestorec5_0Node_desc, 1); t98 = h11_own11; h11_own11 = t27; hero_array_decref(t98); hero_array_incref(t27); t28 = (h_placestorec5_Node){.f_kids = t27}; t99 = h12_own12; h12_own12 = t28; h_placestorec5_0Node_release(&t99); hero_array_push_owned(&h3_hs, &t28);
+    t30 = h3_hs; hero_array_incref(t30); t31 = (h_placestorec5_Node){.f_kids = t30}; t100 = h13_own13; h13_own13 = t31; h_placestorec5_0Node_release(&t100); t101 = h4_root; h_placestorec5_0Node_retain(&t31); h4_root = t31; h_placestorec5_0Node_release(&t101);
     t33 = h4_root; hero_array_push_owned(&h3_hs, &t33);
-    t35 = h3_hs; t36 = ((void)(t35 == NULL ? ((void)hero_array_len(t35), hero_unreachable()) : (void)0), t35->len); t37 = HERO_STR_LIT(hero_str_20); t38 = h4_root.f_kids; t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len); t40 = HERO_STR_LIT(hero_str_20); t41 = h3_hs; t42 = INT64_C(1); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_placestorec5_Node) ? hero_unreachable() : (void)0), ((h_placestorec5_Node const *)(const void *)(t41 + 1))[t42]); t44 = t43.f_kids; t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); hero_print_int(t36); hero_print_str(t37); hero_print_int(t39); hero_print_str(t40); hero_print_int(t45); hero_print_end();
+    t35 = h3_hs; t36 = ((void)(t35 == NULL ? ((void)hero_array_len(t35), hero_unreachable()) : (void)0), t35->len); t37 = HERO_STR_LIT(hero_str_20); t38 = h4_root.f_kids; t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len); t40 = HERO_STR_LIT(hero_str_20); t41 = h3_hs; t42 = INT64_C(1); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "place-store-c5.hero", "place-store-c5.main", 48, 48) : (void)0), (void)(t41->elem->size != sizeof(h_placestorec5_Node) ? hero_unreachable() : (void)0), ((h_placestorec5_Node const *)(const void *)(t41 + 1))[t42]); t44 = t43.f_kids; t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); hero_print_int(t36); hero_print_str(t37); hero_print_int(t39); hero_print_str(t40); hero_print_int(t45); hero_print_end();
 #line 52
-    t46 = hero_array_new(&h_placestorec5_Node_desc, 1); t102 = h14_own14; h14_own14 = t46; hero_array_decref(t102); hero_array_incref(t46); t47 = (h_placestorec5_Node){.f_kids = t46}; t103 = h15_own15; h15_own15 = t47; h_placestorec5_Node_release(&t103); t104 = h5_holder; h_placestorec5_Node_retain(&t47); h5_holder = t47; h_placestorec5_Node_release(&t104);
-    t48 = h5_holder.f_kids; t49 = hero_array_new(&h_placestorec5_Node_desc, 1); t105 = h16_own16; h16_own16 = t49; hero_array_decref(t105); hero_array_incref(t49); t50 = (h_placestorec5_Node){.f_kids = t49}; t106 = h17_own17; h17_own17 = t50; h_placestorec5_Node_release(&t106); t51 = hero_array_push(t48, &t50); t107 = h18_own18; h18_own18 = t51; hero_array_decref(t107); t108 = h5_holder.f_kids; hero_array_incref(t51); h5_holder.f_kids = t51; hero_array_decref(t108);
+    t46 = hero_array_new(&h_placestorec5_0Node_desc, 1); t102 = h14_own14; h14_own14 = t46; hero_array_decref(t102); hero_array_incref(t46); t47 = (h_placestorec5_Node){.f_kids = t46}; t103 = h15_own15; h15_own15 = t47; h_placestorec5_0Node_release(&t103); t104 = h5_holder; h_placestorec5_0Node_retain(&t47); h5_holder = t47; h_placestorec5_0Node_release(&t104);
+    t48 = h5_holder.f_kids; t49 = hero_array_new(&h_placestorec5_0Node_desc, 1); t105 = h16_own16; h16_own16 = t49; hero_array_decref(t105); hero_array_incref(t49); t50 = (h_placestorec5_Node){.f_kids = t49}; t106 = h17_own17; h17_own17 = t50; h_placestorec5_0Node_release(&t106); t51 = hero_array_push(t48, &t50); t107 = h18_own18; h18_own18 = t51; hero_array_decref(t107); t108 = h5_holder.f_kids; hero_array_incref(t51); h5_holder.f_kids = t51; hero_array_decref(t108);
     t52 = h5_holder.f_kids; t53 = h5_holder; t54 = hero_array_push(t52, &t53); t109 = h19_own19; h19_own19 = t54; hero_array_decref(t109); t110 = h5_holder.f_kids; hero_array_incref(t54); h5_holder.f_kids = t54; hero_array_decref(t110);
-    t55 = h5_holder.f_kids; t56 = ((void)(t55 == NULL ? ((void)hero_array_len(t55), hero_unreachable()) : (void)0), t55->len); t57 = HERO_STR_LIT(hero_str_20); t58 = h5_holder.f_kids; t59 = INT64_C(1); t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(h_placestorec5_Node) ? hero_unreachable() : (void)0), ((h_placestorec5_Node const *)(const void *)(t58 + 1))[t59]); t61 = t60.f_kids; t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len); hero_print_int(t56); hero_print_str(t57); hero_print_int(t62); hero_print_end();
+    t55 = h5_holder.f_kids; t56 = ((void)(t55 == NULL ? ((void)hero_array_len(t55), hero_unreachable()) : (void)0), t55->len); t57 = HERO_STR_LIT(hero_str_20); t58 = h5_holder.f_kids; t59 = INT64_C(1); t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? hero_panic_index_at(t58, t59, "place-store-c5.hero", "place-store-c5.main", 55, 35) : (void)0), (void)(t58->elem->size != sizeof(h_placestorec5_Node) ? hero_unreachable() : (void)0), ((h_placestorec5_Node const *)(const void *)(t58 + 1))[t59]); t61 = t60.f_kids; t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len); hero_print_int(t56); hero_print_str(t57); hero_print_int(t62); hero_print_end();
 #line 58
     t63 = hero_array_new(&hero_desc_str, 1); t111 = h20_own20; h20_own20 = t63; hero_array_decref(t111); t112 = h6_ws; hero_array_incref(t63); h6_ws = t63; hero_array_decref(t112);
     t65 = HERO_STR_LIT(hero_str_61); hero_array_push_owned(&h6_ws, &t65);
-    t68 = h6_ws; t69 = INT64_C(0); t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t68 + 1))[t69]); hero_array_push_owned(&h6_ws, &t70);
-    t72 = h6_ws; t73 = ((void)(t72 == NULL ? ((void)hero_array_len(t72), hero_unreachable()) : (void)0), t72->len); t74 = HERO_STR_LIT(hero_str_20); t75 = h6_ws; t76 = INT64_C(1); t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t75 + 1))[t76]); hero_print_int(t73); hero_print_str(t74); hero_print_str(t77); hero_print_end();
+    t68 = h6_ws; t69 = INT64_C(0); t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? hero_panic_index_at(t68, t69, "place-store-c5.hero", "place-store-c5.main", 60, 18) : (void)0), (void)(t68->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t68 + 1))[t69]); hero_array_push_owned(&h6_ws, &t70);
+    t72 = h6_ws; t73 = ((void)(t72 == NULL ? ((void)hero_array_len(t72), hero_unreachable()) : (void)0), t72->len); t74 = HERO_STR_LIT(hero_str_20); t75 = h6_ws; t76 = INT64_C(1); t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? hero_panic_index_at(t75, t76, "place-store-c5.hero", "place-store-c5.main", 61, 26) : (void)0), (void)(t75->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t75 + 1))[t76]); hero_print_int(t73); hero_print_str(t74); hero_print_str(t77); hero_print_end();
 #line 64
     t78 = hero_array_new(&hero_desc_int, 1); t113 = h21_own21; h21_own21 = t78; hero_array_decref(t113); t114 = h7_qs; hero_array_incref(t78); h7_qs = t78; hero_array_decref(t114);
     t80 = INT64_C(1); hero_array_push_owned(&h7_qs, &t80);
     t82 = h7_qs; hero_array_incref(t82); t115 = h22_own22; h22_own22 = t82; hero_array_decref(t115); t83 = h_placestorec5_bump(&h7_qs); t84 = hero_array_push(t82, &t83); t116 = h23_own23; h23_own23 = t84; hero_array_decref(t116); t117 = h7_qs; hero_array_incref(t84); h7_qs = t84; hero_array_decref(t117);
-    t85 = h7_qs; t86 = ((void)(t85 == NULL ? ((void)hero_array_len(t85), hero_unreachable()) : (void)0), t85->len); t87 = HERO_STR_LIT(hero_str_20); t88 = h7_qs; t89 = INT64_C(1); t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? ((void)hero_array_at(t88, t89), hero_unreachable()) : (void)0), (void)(t88->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t88 + 1))[t89]); hero_print_int(t86); hero_print_str(t87); hero_print_int(t90); hero_print_end();
-#line 168 "placestorec5.c"
+    t85 = h7_qs; t86 = ((void)(t85 == NULL ? ((void)hero_array_len(t85), hero_unreachable()) : (void)0), t85->len); t87 = HERO_STR_LIT(hero_str_20); t88 = h7_qs; t89 = INT64_C(1); t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? hero_panic_index_at(t88, t89, "place-store-c5.hero", "place-store-c5.main", 67, 26) : (void)0), (void)(t88->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t88 + 1))[t89]); hero_print_int(t86); hero_print_str(t87); hero_print_int(t90); hero_print_end();
+#line 180 "placestorec5.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_zs);
     hero_array_release_at(&h3_hs);
-    h_placestorec5_Node_release(hero_slot_escape(&h4_root));
-    h_placestorec5_Node_release(hero_slot_escape(&h5_holder));
+    h_placestorec5_0Node_release(hero_slot_escape(&h4_root));
+    h_placestorec5_0Node_release(hero_slot_escape(&h5_holder));
     hero_array_release_at(&h6_ws);
     hero_array_release_at(&h7_qs);
     hero_array_release_at(&h8_own8);
     hero_array_release_at(&h9_own9);
     hero_array_release_at(&h10_own10);
     hero_array_release_at(&h11_own11);
-    h_placestorec5_Node_release(hero_slot_escape(&h12_own12));
-    h_placestorec5_Node_release(hero_slot_escape(&h13_own13));
+    h_placestorec5_0Node_release(hero_slot_escape(&h12_own12));
+    h_placestorec5_0Node_release(hero_slot_escape(&h13_own13));
     hero_array_release_at(&h14_own14);
-    h_placestorec5_Node_release(hero_slot_escape(&h15_own15));
+    h_placestorec5_0Node_release(hero_slot_escape(&h15_own15));
     hero_array_release_at(&h16_own16);
-    h_placestorec5_Node_release(hero_slot_escape(&h17_own17));
+    h_placestorec5_0Node_release(hero_slot_escape(&h17_own17));
     hero_array_release_at(&h18_own18);
     hero_array_release_at(&h19_own19);
     hero_array_release_at(&h20_own20);
@@ -191,20 +203,20 @@ void h_placestorec5_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader 
     hero_array_release_at(&h23_own23);
     return;
 }
-HERO_TU_LOCAL void h_placestorec5_Node_retain(const h_placestorec5_Node *v) {
+HERO_TU_LOCAL void h_placestorec5_0Node_retain(const h_placestorec5_Node *v) {
     hero_array_incref(v->f_kids);
 }
 
-HERO_TU_LOCAL void h_placestorec5_Node_release(h_placestorec5_Node *v) {
+HERO_TU_LOCAL void h_placestorec5_0Node_release(h_placestorec5_Node *v) {
     hero_array_decref(v->f_kids);
 }
 
-HERO_TU_LOCAL bool h_placestorec5_Node_eq(const h_placestorec5_Node *a, const h_placestorec5_Node *b) {
+HERO_TU_LOCAL bool h_placestorec5_0Node_eq(const h_placestorec5_Node *a, const h_placestorec5_Node *b) {
     if (!(hero_array_eq(a->f_kids, b->f_kids))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_placestorec5_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_placestorec5_0Node_hash(const void *elem) {
     const h_placestorec5_Node *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_kids)) * UINT64_C(0x100000001b3);
@@ -275,10 +287,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1e23bb4808ec3749", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("29075a7148d9e6e8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("placestorec5\tplace-store-c5\n");
     h_placestorec5_main();
     hero_runtime_check_leaks();
     return 0;

@@ -52,7 +52,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("sqrt")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -114,6 +114,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -142,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fficonstant.c"
+#line 154 "fficonstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -153,6 +161,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 double h_fficonstant_M_PI(void);
 int64_t h_fficonstant_SEEK_SET(void);
@@ -161,12 +173,12 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 165 "fficonstant.c"
+#line 177 "fficonstant.c"
     _Static_assert(HERO_RET_F64(M_PI), "heroes-ffi-return M_PI f64");
     _Static_assert(__builtin_constant_p(M_PI), "heroes-ffi-const M_PI");
 #line 45 "tests/golden/run/ffi-constant.hero"
     return M_PI;
-#line 170 "fficonstant.c"
+#line 182 "fficonstant.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -183,7 +195,7 @@ double h_fficonstant_M_PI(void) {
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 187 "fficonstant.c"
+#line 199 "fficonstant.c"
     _Static_assert(HERO_RET_INT(SEEK_SET), "heroes-ffi-return SEEK_SET i64");
     _Static_assert(__builtin_constant_p(SEEK_SET), "heroes-ffi-const SEEK_SET");
 #pragma clang diagnostic push
@@ -195,7 +207,7 @@ int64_t h_fficonstant_SEEK_SET(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 49 "tests/golden/run/ffi-constant.hero"
     return SEEK_SET;
-#line 199 "fficonstant.c"
+#line 211 "fficonstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -213,7 +225,7 @@ int64_t h_fficonstant_SEEK_SET(void) {
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 217 "fficonstant.c"
+#line 229 "fficonstant.c"
     _Static_assert(HERO_RET_INT(SEEK_END), "heroes-ffi-return SEEK_END i64");
     _Static_assert(__builtin_constant_p(SEEK_END), "heroes-ffi-const SEEK_END");
 #pragma clang diagnostic push
@@ -225,7 +237,7 @@ int64_t h_fficonstant_SEEK_END(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 50 "tests/golden/run/ffi-constant.hero"
     return SEEK_END;
-#line 229 "fficonstant.c"
+#line 241 "fficonstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -245,11 +257,11 @@ int64_t h_fficonstant_SEEK_END(void) {
 void h_fficonstant_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 54
     t1 = h_fficonstant_M_PI(); hero_print_f64(t1); hero_print_end();
-    t2 = h_fficonstant_M_PI(); t3 = h_fficonstant_M_PI(); t4 = t2 * t3; t5 = sqrt(t4); hero_print_f64(t5); hero_print_end();
+    t2 = h_fficonstant_M_PI(); t3 = h_fficonstant_M_PI(); t4 = t2 * t3; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-constant.hero", "ffi-constant.main", 55, 11}; t5 = sqrt(t4); } hero_print_f64(t5); hero_print_end();
 #line 58
     t6 = h_fficonstant_SEEK_SET(); hero_print_int(t6); hero_print_end();
-    t7 = h_fficonstant_SEEK_END(); t8 = h_fficonstant_SEEK_SET(); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end(); return;
-#line 253 "fficonstant.c"
+    t7 = h_fficonstant_SEEK_END(); t8 = h_fficonstant_SEEK_SET(); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow_at("ffi-constant.hero", "ffi-constant.main", 59, 11); hero_print_int(t9); hero_print_end(); return;
+#line 265 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -315,10 +327,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("35bbd6ce68f88401", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("39ce6e9f0a3626ca", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fficonstant\tffi-constant\n");
     h_fficonstant_main();
     hero_runtime_check_leaks();
     return 0;

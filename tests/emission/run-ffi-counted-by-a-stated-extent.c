@@ -55,7 +55,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -139,6 +139,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -172,13 +180,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "fficountedbyastatedextent.c"
+#line 184 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b);
-HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_Held_hash(const void *elem);
-HERO_TU_LOCAL bool h_fficountedbyastatedextent_Pair_eq(const struct pair *a, const struct pair *b);
-HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_Pair_hash(const void *elem);
+HERO_TU_LOCAL bool h_fficountedbyastatedextent_0Held_eq(const struct held *a, const struct held *b);
+HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_0Held_hash(const void *elem);
+HERO_TU_LOCAL bool h_fficountedbyastatedextent_0Pair_eq(const struct pair *a, const struct pair *b);
+HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_0Pair_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -187,6 +195,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fficountedbyastatedextent_HELD_LEN(void);
 struct held h_fficountedbyastatedextent_zero(void);
@@ -206,7 +218,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 210 "fficountedbyastatedextent.c"
+#line 222 "fficountedbyastatedextent.c"
     _Static_assert(HERO_RET_INT(HELD_LEN), "heroes-ffi-return HELD_LEN i64");
     _Static_assert(__builtin_constant_p(HELD_LEN), "heroes-ffi-const HELD_LEN");
 #pragma clang diagnostic push
@@ -218,7 +230,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return HELD_LEN;
-#line 222 "fficountedbyastatedextent.c"
+#line 234 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -237,7 +249,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 struct held h_fficountedbyastatedextent_zero(void) { HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18; HERO_NODEBUG struct held t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(0); t10 = UINT64_C(0); t11 = UINT64_C(0); t12 = UINT64_C(0); t13 = UINT64_C(0); t14 = UINT64_C(0); t15 = UINT64_C(0); t16 = UINT64_C(0); t18 = INT64_C(7); t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18}; return t19;
-#line 241 "fficountedbyastatedextent.c"
+#line 253 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -247,33 +259,33 @@ void h_fficountedbyastatedextent_main(void) {
 #line 31
     struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); HERO_NODEBUG struct held t1, t5, t10, t16, t20, t25, t31, t35, t41, t45, t51, t55, t60; HERO_NODEBUG void *t4, *t19, *t34, *t44, *t54; HERO_NODEBUG int64_t t7, t12, t15, t22, t27, t30, t37, t40, t47, t50, t57, t62, t65; HERO_NODEBUG uint8_t t8, t13, t23, t28, t38, t48, t58, t63; HERO_NODEBUG HeroStr t9, t14, t24, t29, t39, t49, t59, t64, t70; HERO_NODEBUG int32_t t66, t67, t69, t71; HERO_NODEBUG struct pair t68; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fficountedbyastatedextent_zero(); h0_h = t1; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
-    t4 = (void *)(h0_h.buf); _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16 p 16 1499 1510 16 bytes unsigned char *"); _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16 p 16 1499 1510 16 unit unsigned char *"); (void)fill16(t4);
-    t5 = h0_h; t7 = INT64_C(0); t8 = t5.buf[((uint64_t)(t7) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t7))]; t9 = HERO_STR_LIT(hero_str_20); t10 = h0_h; t12 = INT64_C(15); t13 = t10.buf[((uint64_t)(t12) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t12))]; t14 = HERO_STR_LIT(hero_str_20); t15 = h0_h.after; hero_print_int(t8); hero_print_str(t9); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end();
+    t4 = (void *)(h0_h.buf); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 33, 5}; _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16 p 16 1499 1510 16 bytes unsigned char *"); _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16 p 16 1499 1510 16 unit unsigned char *"); (void)fill16(t4); }
+    t5 = h0_h; t7 = INT64_C(0); t8 = t5.buf[((uint64_t)(t7) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 34, 11), (int64_t)0) : (t7))]; t9 = HERO_STR_LIT(hero_str_20); t10 = h0_h; t12 = INT64_C(15); t13 = t10.buf[((uint64_t)(t12) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 34, 26), (int64_t)0) : (t12))]; t14 = HERO_STR_LIT(hero_str_20); t15 = h0_h.after; hero_print_int(t8); hero_print_str(t9); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end();
     t16 = h_fficountedbyastatedextent_zero(); h0_h = t16; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
-    t19 = (void *)(h0_h.buf); _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 bytes unsigned char *"); _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 unit unsigned char *"); (void)fill16_const(t19);
-    t20 = h0_h; t22 = INT64_C(0); t23 = t20.buf[((uint64_t)(t22) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t22))]; t24 = HERO_STR_LIT(hero_str_20); t25 = h0_h; t27 = INT64_C(15); t28 = t25.buf[((uint64_t)(t27) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))]; t29 = HERO_STR_LIT(hero_str_20); t30 = h0_h.after; hero_print_int(t23); hero_print_str(t24); hero_print_int(t28); hero_print_str(t29); hero_print_int(t30); hero_print_end();
+    t19 = (void *)(h0_h.buf); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 36, 5}; _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 bytes unsigned char *"); _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 unit unsigned char *"); (void)fill16_const(t19); }
+    t20 = h0_h; t22 = INT64_C(0); t23 = t20.buf[((uint64_t)(t22) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 37, 11), (int64_t)0) : (t22))]; t24 = HERO_STR_LIT(hero_str_20); t25 = h0_h; t27 = INT64_C(15); t28 = t25.buf[((uint64_t)(t27) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 37, 26), (int64_t)0) : (t27))]; t29 = HERO_STR_LIT(hero_str_20); t30 = h0_h.after; hero_print_int(t23); hero_print_str(t24); hero_print_int(t28); hero_print_str(t29); hero_print_int(t30); hero_print_end();
     t31 = h_fficountedbyastatedextent_zero(); h0_h = t31; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
-    t34 = (void *)(h0_h.buf); _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 bytes unsigned char *"); _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 unit unsigned char *"); (void)fill16_under(t34);
-    t35 = h0_h; t37 = INT64_C(15); t38 = t35.buf[((uint64_t)(t37) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t37))]; t39 = HERO_STR_LIT(hero_str_20); t40 = h0_h.after; hero_print_int(t38); hero_print_str(t39); hero_print_int(t40); hero_print_end();
+    t34 = (void *)(h0_h.buf); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 39, 5}; _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 bytes unsigned char *"); _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 unit unsigned char *"); (void)fill16_under(t34); }
+    t35 = h0_h; t37 = INT64_C(15); t38 = t35.buf[((uint64_t)(t37) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 40, 11), (int64_t)0) : (t37))]; t39 = HERO_STR_LIT(hero_str_20); t40 = h0_h.after; hero_print_int(t38); hero_print_str(t39); hero_print_int(t40); hero_print_end();
     t41 = h_fficountedbyastatedextent_zero(); h0_h = t41; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
-    t44 = (void *)(h0_h.buf); _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 bytes void *"); _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 unit void *"); (void)fill16_hex(t44);
-    t45 = h0_h; t47 = INT64_C(15); t48 = t45.buf[((uint64_t)(t47) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t47))]; t49 = HERO_STR_LIT(hero_str_20); t50 = h0_h.after; hero_print_int(t48); hero_print_str(t49); hero_print_int(t50); hero_print_end();
+    t44 = (void *)(h0_h.buf); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 42, 5}; _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 bytes void *"); _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 unit void *"); (void)fill16_hex(t44); }
+    t45 = h0_h; t47 = INT64_C(15); t48 = t45.buf[((uint64_t)(t47) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 43, 11), (int64_t)0) : (t47))]; t49 = HERO_STR_LIT(hero_str_20); t50 = h0_h.after; hero_print_int(t48); hero_print_str(t49); hero_print_int(t50); hero_print_end();
     t51 = h_fficountedbyastatedextent_zero(); h0_h = t51; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
-    t54 = (void *)(h0_h.buf); _Static_assert(sizeof(*(int32_t *)0) != 1 || ((uint64_t)(4) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 bytes int32_t *"); _Static_assert(sizeof(*(int32_t *)0) == 1 || ((uint64_t)(4) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int32_t *)0))), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 unit int32_t *"); (void)fill_ints4(t54);
-    t55 = h0_h; t57 = INT64_C(0); t58 = t55.buf[((uint64_t)(t57) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t57))]; t59 = HERO_STR_LIT(hero_str_20); t60 = h0_h; t62 = INT64_C(12); t63 = t60.buf[((uint64_t)(t62) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t62))]; t64 = HERO_STR_LIT(hero_str_20); t65 = h0_h.after; hero_print_int(t58); hero_print_str(t59); hero_print_int(t63); hero_print_str(t64); hero_print_int(t65); hero_print_end();
+    t54 = (void *)(h0_h.buf); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 45, 5}; _Static_assert(sizeof(*(int32_t *)0) != 1 || ((uint64_t)(4) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 bytes int32_t *"); _Static_assert(sizeof(*(int32_t *)0) == 1 || ((uint64_t)(4) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int32_t *)0))), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 unit int32_t *"); (void)fill_ints4(t54); }
+    t55 = h0_h; t57 = INT64_C(0); t58 = t55.buf[((uint64_t)(t57) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 46, 11), (int64_t)0) : (t57))]; t59 = HERO_STR_LIT(hero_str_20); t60 = h0_h; t62 = INT64_C(12); t63 = t60.buf[((uint64_t)(t62) >= UINT64_C(16) ? (hero_panic_at("index out of range for a fixed array", "ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 46, 26), (int64_t)0) : (t62))]; t64 = HERO_STR_LIT(hero_str_20); t65 = h0_h.after; hero_print_int(t58); hero_print_str(t59); hero_print_int(t63); hero_print_str(t64); hero_print_int(t65); hero_print_end();
     t66 = INT64_C(0); t67 = INT64_C(0); t68 = (struct pair){.a = t66, .b = t67}; h1_pair = t68; hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2);
-    _Static_assert(sizeof(*(struct pair *)0) != 1 || ((uint64_t)(1) <= (uint64_t)sizeof(h1_pair)), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 bytes struct pair *"); _Static_assert(sizeof(*(struct pair *)0) == 1 || ((uint64_t)(1) <= (uint64_t)(sizeof(h1_pair) / sizeof(*(struct pair *)0))), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 unit struct pair *"); hero_lend_local_name(hero_lend_h1_pair, "fill_pair", "p"); hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2); (void)fill_pair(&h1_pair);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 48, 5}; _Static_assert(sizeof(*(struct pair *)0) != 1 || ((uint64_t)(1) <= (uint64_t)sizeof(h1_pair)), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 bytes struct pair *"); _Static_assert(sizeof(*(struct pair *)0) == 1 || ((uint64_t)(1) <= (uint64_t)(sizeof(h1_pair) / sizeof(*(struct pair *)0))), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 unit struct pair *"); hero_lend_local_name(hero_lend_h1_pair, "fill_pair", "p"); hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2); (void)fill_pair(&h1_pair); }
     t69 = h1_pair.a; t70 = HERO_STR_LIT(hero_str_20); t71 = h1_pair.b; hero_print_int(t69); hero_print_str(t70); hero_print_int(t71); hero_print_end(); hero_lend_local_give(hero_lend_h1_pair); return;
-#line 268 "fficountedbyastatedextent.c"
+#line 280 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
-HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {
+HERO_TU_LOCAL bool h_fficountedbyastatedextent_0Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_Held_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_0Held_hash(const void *elem) {
     const struct held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->buf[0])) * UINT64_C(0x100000001b3);
@@ -296,13 +308,13 @@ HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_Held_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_fficountedbyastatedextent_Pair_eq(const struct pair *a, const struct pair *b) {
+HERO_TU_LOCAL bool h_fficountedbyastatedextent_0Pair_eq(const struct pair *a, const struct pair *b) {
     if (!(a->a == b->a)) return false;
     if (!(a->b == b->b)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fficountedbyastatedextent_0Pair_hash(const void *elem) {
     const struct pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->a)) * UINT64_C(0x100000001b3);
@@ -374,10 +386,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("614989610a58af9f", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d3278686d298cc3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fficountedbyastatedextent\tffi-counted-by-a-stated-extent\n");
     h_fficountedbyastatedextent_main();
     hero_runtime_check_leaks();
     return 0;

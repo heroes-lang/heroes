@@ -55,7 +55,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("n")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -158,6 +158,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -191,23 +199,23 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 195 "ffithebitsbesideabitfieldarezero.c"
+#line 203 "ffithebitsbesideabitfieldarezero.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Bf_eq(const struct bf *a, const struct bf *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Bf_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Ux_eq(const struct ux *a, const struct ux *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Ux_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Gp_eq(const struct gp *a, const struct gp *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Gp_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Md_eq(const struct md *a, const struct md *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Md_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Ob_eq(const struct ob *a, const struct ob *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Ob_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Ar_eq(const struct ar *a, const struct ar *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Ar_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Held_eq(const h_ffithebitsbesideabitfieldarezero_Held *a, const h_ffithebitsbesideabitfieldarezero_Held *b);
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Held_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Bf_eq(const struct bf *a, const struct bf *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Bf_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Ux_eq(const struct ux *a, const struct ux *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Ux_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Gp_eq(const struct gp *a, const struct gp *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Gp_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Md_eq(const struct md *a, const struct md *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Md_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Ob_eq(const struct ob *a, const struct ob *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Ob_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Ar_eq(const struct ar *a, const struct ar *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Ar_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Held_eq(const h_ffithebitsbesideabitfieldarezero_Held *a, const h_ffithebitsbesideabitfieldarezero_Held *b);
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -216,6 +224,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffithebitsbesideabitfieldarezero_main(void);
 void *hero_pad_nowhere(void);
@@ -364,84 +376,84 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 50 "tests/golden/run/ffi-the-bits-beside-a-bit-field-are-zero.hero"
 void h_ffithebitsbesideabitfieldarezero_main(void) { __attribute__((unused)) h_ffithebitsbesideabitfieldarezero_Held h0_h; int64_t h1_a; int64_t h2_b; int64_t h3_c; int64_t h4_d; int64_t h5_e; int64_t h6_f; HERO_NODEBUG struct bf t1; HERO_NODEBUG struct ux t2; HERO_NODEBUG struct gp t3; HERO_NODEBUG struct md t4; HERO_NODEBUG struct ob t5; HERO_NODEBUG struct ar t6; HERO_NODEBUG int64_t t7, t9, t10, t11, t12, t13, t14, t15, t17, t19, t21, t23, t25; HERO_NODEBUG h_ffithebitsbesideabitfieldarezero_Held t8; HERO_NODEBUG HeroStr t16, t18, t20, t22, t24; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = mk_bf(); t2 = mk_ux(); t3 = mk_gp(); t4 = mk_md(); t5 = mk_ob(); t6 = mk_ar(); t7 = INT64_C(1); t8 = (h_ffithebitsbesideabitfieldarezero_Held){.f_bf = t1, .f_ux = t2, .f_gp = t3, .f_md = t4, .f_ob = t5, .f_ar = t6, .f_k = t7}; h0_h = t8;
-    hero_pad_fill(&h0_h.f_bf, sizeof(struct bf), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_bf, sizeof(struct bf), 1, hero_pad_m_0, hero_pad_mn_0); t9 = check_bf(&h0_h.f_bf); h1_a = t9;
-    hero_pad_fill(&h0_h.f_ux, sizeof(struct ux), 1, hero_pad_g_1, hero_pad_n_1); hero_pad_clear(&h0_h.f_ux, sizeof(struct ux), 1, hero_pad_m_1, hero_pad_mn_1); t10 = check_ux(&h0_h.f_ux); h2_b = t10;
-    hero_pad_fill(&h0_h.f_gp, sizeof(struct gp), 1, hero_pad_g_2, hero_pad_n_2); hero_pad_clear(&h0_h.f_gp, sizeof(struct gp), 1, hero_pad_m_2, hero_pad_mn_2); t11 = check_gp(&h0_h.f_gp); h3_c = t11;
-    hero_pad_fill(&h0_h.f_md, sizeof(struct md), 1, hero_pad_g_3, hero_pad_n_3); hero_pad_clear(&h0_h.f_md, sizeof(struct md), 1, hero_pad_m_3, hero_pad_mn_3); t12 = check_md(&h0_h.f_md); h4_d = t12;
-    hero_pad_fill(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_g_4, hero_pad_n_4); hero_pad_clear(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_m_4, hero_pad_mn_4); t13 = check_ob(&h0_h.f_ob); h5_e = t13;
-    hero_pad_fill(&h0_h.f_ar, sizeof(struct ar), 1, hero_pad_g_5, hero_pad_n_5); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_m_0, hero_pad_mn_0); } t14 = check_ar(&h0_h.f_ar); h6_f = t14;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 51, 25}; t1 = mk_bf(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 51, 38}; t2 = mk_ux(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 51, 51}; t3 = mk_gp(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 51, 64}; t4 = mk_md(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 51, 77}; t5 = mk_ob(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 51, 90}; t6 = mk_ar(); } t7 = INT64_C(1); t8 = (h_ffithebitsbesideabitfieldarezero_Held){.f_bf = t1, .f_ux = t2, .f_gp = t3, .f_md = t4, .f_ob = t5, .f_ar = t6, .f_k = t7}; h0_h = t8;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 52, 9}; hero_pad_fill(&h0_h.f_bf, sizeof(struct bf), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_bf, sizeof(struct bf), 1, hero_pad_m_0, hero_pad_mn_0); t9 = check_bf(&h0_h.f_bf); } h1_a = t9;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 53, 9}; hero_pad_fill(&h0_h.f_ux, sizeof(struct ux), 1, hero_pad_g_1, hero_pad_n_1); hero_pad_clear(&h0_h.f_ux, sizeof(struct ux), 1, hero_pad_m_1, hero_pad_mn_1); t10 = check_ux(&h0_h.f_ux); } h2_b = t10;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 54, 9}; hero_pad_fill(&h0_h.f_gp, sizeof(struct gp), 1, hero_pad_g_2, hero_pad_n_2); hero_pad_clear(&h0_h.f_gp, sizeof(struct gp), 1, hero_pad_m_2, hero_pad_mn_2); t11 = check_gp(&h0_h.f_gp); } h3_c = t11;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 55, 9}; hero_pad_fill(&h0_h.f_md, sizeof(struct md), 1, hero_pad_g_3, hero_pad_n_3); hero_pad_clear(&h0_h.f_md, sizeof(struct md), 1, hero_pad_m_3, hero_pad_mn_3); t12 = check_md(&h0_h.f_md); } h4_d = t12;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 56, 9}; hero_pad_fill(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_g_4, hero_pad_n_4); hero_pad_clear(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_m_4, hero_pad_mn_4); t13 = check_ob(&h0_h.f_ob); } h5_e = t13;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 57, 9}; hero_pad_fill(&h0_h.f_ar, sizeof(struct ar), 1, hero_pad_g_5, hero_pad_n_5); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_m_0, hero_pad_mn_0); } t14 = check_ar(&h0_h.f_ar); } h6_f = t14;
     t15 = h1_a; t16 = HERO_STR_LIT(hero_str_20); t17 = h2_b; t18 = HERO_STR_LIT(hero_str_20); t19 = h3_c; t20 = HERO_STR_LIT(hero_str_20); t21 = h4_d; t22 = HERO_STR_LIT(hero_str_20); t23 = h5_e; t24 = HERO_STR_LIT(hero_str_20); t25 = h6_f; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_int(t23); hero_print_str(t24); hero_print_int(t25); hero_print_end(); return;
-#line 376 "ffithebitsbesideabitfieldarezero.c"
+#line 388 "ffithebitsbesideabitfieldarezero.c"
 }
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Bf_eq(const struct bf *a, const struct bf *b) {
-    hero_panic("h_ffithebitsbesideabitfieldarezero_Bf_eq: a partial record has no structural equality");
-}
-
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Bf_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_Bf_hash: a partial record has no structural hash");
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Bf_eq(const struct bf *a, const struct bf *b) {
+    hero_panic("h_ffithebitsbesideabitfieldarezero_0Bf_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Ux_eq(const struct ux *a, const struct ux *b) {
-    hero_panic("h_ffithebitsbesideabitfieldarezero_Ux_eq: a partial record has no structural equality");
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Bf_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_0Bf_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Ux_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_Ux_hash: a partial record has no structural hash");
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Ux_eq(const struct ux *a, const struct ux *b) {
+    hero_panic("h_ffithebitsbesideabitfieldarezero_0Ux_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Gp_eq(const struct gp *a, const struct gp *b) {
-    hero_panic("h_ffithebitsbesideabitfieldarezero_Gp_eq: a partial record has no structural equality");
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Ux_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_0Ux_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Gp_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_Gp_hash: a partial record has no structural hash");
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Gp_eq(const struct gp *a, const struct gp *b) {
+    hero_panic("h_ffithebitsbesideabitfieldarezero_0Gp_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Md_eq(const struct md *a, const struct md *b) {
-    hero_panic("h_ffithebitsbesideabitfieldarezero_Md_eq: a partial record has no structural equality");
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Gp_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_0Gp_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Md_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_Md_hash: a partial record has no structural hash");
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Md_eq(const struct md *a, const struct md *b) {
+    hero_panic("h_ffithebitsbesideabitfieldarezero_0Md_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Ob_eq(const struct ob *a, const struct ob *b) {
-    hero_panic("h_ffithebitsbesideabitfieldarezero_Ob_eq: a partial record has no structural equality");
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Md_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_0Md_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Ob_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_Ob_hash: a partial record has no structural hash");
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Ob_eq(const struct ob *a, const struct ob *b) {
+    hero_panic("h_ffithebitsbesideabitfieldarezero_0Ob_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Ar_eq(const struct ar *a, const struct ar *b) {
-    hero_panic("h_ffithebitsbesideabitfieldarezero_Ar_eq: a partial record has no structural equality");
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Ob_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_0Ob_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Ar_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_Ar_hash: a partial record has no structural hash");
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Ar_eq(const struct ar *a, const struct ar *b) {
+    hero_panic("h_ffithebitsbesideabitfieldarezero_0Ar_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_Held_eq(const h_ffithebitsbesideabitfieldarezero_Held *a, const h_ffithebitsbesideabitfieldarezero_Held *b) {
-    if (!(h_ffithebitsbesideabitfieldarezero_Bf_eq(&a->f_bf, &b->f_bf))) return false;
-    if (!(h_ffithebitsbesideabitfieldarezero_Ux_eq(&a->f_ux, &b->f_ux))) return false;
-    if (!(h_ffithebitsbesideabitfieldarezero_Gp_eq(&a->f_gp, &b->f_gp))) return false;
-    if (!(h_ffithebitsbesideabitfieldarezero_Md_eq(&a->f_md, &b->f_md))) return false;
-    if (!(h_ffithebitsbesideabitfieldarezero_Ob_eq(&a->f_ob, &b->f_ob))) return false;
-    if (!(h_ffithebitsbesideabitfieldarezero_Ar_eq(&a->f_ar, &b->f_ar))) return false;
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Ar_hash(const void *elem) {
+    (void)elem; hero_panic("h_ffithebitsbesideabitfieldarezero_0Ar_hash: a partial record has no structural hash");
+}
+
+HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Held_eq(const h_ffithebitsbesideabitfieldarezero_Held *a, const h_ffithebitsbesideabitfieldarezero_Held *b) {
+    if (!(h_ffithebitsbesideabitfieldarezero_0Bf_eq(&a->f_bf, &b->f_bf))) return false;
+    if (!(h_ffithebitsbesideabitfieldarezero_0Ux_eq(&a->f_ux, &b->f_ux))) return false;
+    if (!(h_ffithebitsbesideabitfieldarezero_0Gp_eq(&a->f_gp, &b->f_gp))) return false;
+    if (!(h_ffithebitsbesideabitfieldarezero_0Md_eq(&a->f_md, &b->f_md))) return false;
+    if (!(h_ffithebitsbesideabitfieldarezero_0Ob_eq(&a->f_ob, &b->f_ob))) return false;
+    if (!(h_ffithebitsbesideabitfieldarezero_0Ar_eq(&a->f_ar, &b->f_ar))) return false;
     if (!(a->f_k == b->f_k)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_Held_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffithebitsbesideabitfieldarezero_0Held_hash(const void *elem) {
     const h_ffithebitsbesideabitfieldarezero_Held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_ffithebitsbesideabitfieldarezero_Bf_hash(&v->f_bf)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithebitsbesideabitfieldarezero_Ux_hash(&v->f_ux)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithebitsbesideabitfieldarezero_Gp_hash(&v->f_gp)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithebitsbesideabitfieldarezero_Md_hash(&v->f_md)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithebitsbesideabitfieldarezero_Ob_hash(&v->f_ob)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithebitsbesideabitfieldarezero_Ar_hash(&v->f_ar)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithebitsbesideabitfieldarezero_0Bf_hash(&v->f_bf)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithebitsbesideabitfieldarezero_0Ux_hash(&v->f_ux)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithebitsbesideabitfieldarezero_0Gp_hash(&v->f_gp)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithebitsbesideabitfieldarezero_0Md_hash(&v->f_md)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithebitsbesideabitfieldarezero_0Ob_hash(&v->f_ob)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithebitsbesideabitfieldarezero_0Ar_hash(&v->f_ar)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_int)->hash(&v->f_k)) * UINT64_C(0x100000001b3);
     return h;
 }
@@ -510,10 +522,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("190ad59e2c2c5a5a", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("46c4a2d828919bf3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffithebitsbesideabitfieldarezero\tffi-the-bits-beside-a-bit-field-are-zero\n");
     h_ffithebitsbesideabitfieldarezero_main();
     hero_runtime_check_leaks();
     return 0;

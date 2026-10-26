@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -69,6 +69,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -83,7 +91,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "exitstatus.c"
+#line 95 "exitstatus.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,22 +102,34 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_exitstatus_main(void);
-void h_library_exit(int64_t h0_code);
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
 
 #line 18 "tests/golden/run/exit-status.hero"
-void h_exitstatus_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_exitstatus_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
-    t2 = INT64_C(3); h_library_exit(t2); hero_unreachable();
+    t2 = UINT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"exit-status.hero", "exit-status.main", 20, 5}; h_library_exit(t2, &hero_here); } hero_unreachable();
     t3 = HERO_STR_LIT(hero_str_347b94b5); hero_print_str(t3); hero_print_end(); return;
-#line 107 "exitstatus.c"
+#line 120 "exitstatus.c"
 }
 
-#line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; (void)hero_exit(t1); return;
-#line 113 "exitstatus.c"
+#line 235 "<heroes library>"
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
+#line 126 "exitstatus.c"
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return;
+}
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+    h_library_exit(h0_code, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -175,10 +195,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("25256fe731f2b929", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6423f90449b0414b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("exitstatus\texit-status\n");
     h_exitstatus_main();
     hero_runtime_check_leaks();
     return 0;

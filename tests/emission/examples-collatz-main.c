@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -72,6 +72,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "main.c"
+#line 101 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,6 +108,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_main_BANDS(void);
 int64_t h_main_PER_BAND(void);
@@ -119,13 +131,13 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 21 "examples/collatz/main.hero"
 int64_t h_main_BANDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(8); return t1;
-#line 123 "main.c"
+#line 135 "main.c"
 }
 
 #line 24 "examples/collatz/main.hero"
 int64_t h_main_PER_BAND(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2500); return t1;
-#line 129 "main.c"
+#line 141 "main.c"
 }
 
 #line 29 "examples/collatz/main.hero"
@@ -134,34 +146,34 @@ int64_t h_main_steps(int64_t h0_n) { int64_t h1_count; int64_t h2_v; HERO_NODEBU
     t2 = h0_n; h2_v = t2; goto bb1; bb1:
 #line 33
     t3 = h2_v; t4 = INT64_C(1); t5 = t3 != t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h2_v; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t8 = t6 % t7; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb3:
+    t6 = h2_v; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "main.hero", "main.steps", 34, 12); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.steps", 34, 12); t8 = t6 % t7; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb3:
 #line 40
     t22 = h1_count; return t22; bb4:
 #line 38
-    t19 = h1_count; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); h1_count = t21; goto bb1; bb5:
+    t19 = h1_count; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("main.hero", "main.steps", 38, 17); h1_count = t21; goto bb1; bb5:
 #line 35
-    t11 = h2_v; t12 = INT64_C(2); if (t12 == 0) hero_panic("division by zero"); if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic_overflow(); t13 = t11 / t12; h2_v = t13; goto bb4; bb6:
+    t11 = h2_v; t12 = INT64_C(2); if (t12 == 0) hero_panic_at("division by zero", "main.hero", "main.steps", 35, 17); if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic_overflow_at("main.hero", "main.steps", 35, 17); t13 = t11 / t12; h2_v = t13; goto bb4; bb6:
 #line 37
-    t14 = INT64_C(3); t15 = h2_v; if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow(); t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h2_v = t18; goto bb4;
-#line 147 "main.c"
+    t14 = INT64_C(3); t15 = h2_v; if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow_at("main.hero", "main.steps", 37, 17); t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("main.hero", "main.steps", 37, 17); h2_v = t18; goto bb4;
+#line 159 "main.c"
 }
 
 #line 43 "examples/collatz/main.hero"
 int64_t h_main_longest_in(int64_t h0_index) { hero_thread_guard("main.longest_in"); int64_t h1_best; int64_t h2_n; int64_t h3_s; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t14, t15, t16, t17, t19, t20, t21, t22, t23; HERO_NODEBUG bool t13, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_best = t1;
-    t2 = h0_index; t3 = h_main_PER_BAND(); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); h2_n = t6; goto bb1; bb1:
+    t2 = h0_index; t3 = h_main_PER_BAND(); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow_at("main.hero", "main.longest_in", 45, 15); t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.longest_in", 45, 15); h2_n = t6; goto bb1; bb1:
 #line 47
-    t7 = h2_n; t8 = h0_index; t9 = h_main_PER_BAND(); if (__builtin_mul_overflow(t8, t9, &t10)) hero_panic_overflow(); t11 = h_main_PER_BAND(); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); t13 = t7 <= t12; if (t13) goto bb2; else goto bb3; bb2:
+    t7 = h2_n; t8 = h0_index; t9 = h_main_PER_BAND(); if (__builtin_mul_overflow(t8, t9, &t10)) hero_panic_overflow_at("main.hero", "main.longest_in", 47, 16); t11 = h_main_PER_BAND(); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.longest_in", 47, 16); t13 = t7 <= t12; if (t13) goto bb2; else goto bb3; bb2:
     t14 = h2_n; t15 = h_main_steps(t14); h3_s = t15;
 #line 50
     t16 = h3_s; t17 = h1_best; t18 = t16 > t17; if (t18) goto bb5; else goto bb6; bb3:
 #line 54
     t23 = h1_best; return t23; bb4:
 #line 52
-    t20 = h2_n; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow(); h2_n = t22; goto bb1; bb5:
+    t20 = h2_n; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("main.hero", "main.longest_in", 52, 13); h2_n = t22; goto bb1; bb5:
 #line 51
     t19 = h3_s; h1_best = t19; goto bb4; bb6: goto bb4;
-#line 165 "main.c"
+#line 177 "main.c"
 }
 
 int64_t h_0cb_main_longest_in(int64_t h0_index) {
@@ -175,20 +187,20 @@ int64_t h_main_longest_at_once(void) { HeroArrayHeader * h0_handles = {0}; int64
     t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
 #line 60
     t3 = h1_i; t4 = h_main_BANDS(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t7 = h_main_longest_in; t8 = h1_i; t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8); hero_array_push_owned(&h0_handles, &t9);
-    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h1_i = t13; goto bb1; bb3:
+    t7 = h_main_longest_in; t8 = h1_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.longest_at_once", 61, 32}; t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8); } hero_array_push_owned(&h0_handles, &t9);
+    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("main.hero", "main.longest_at_once", 62, 13); h1_i = t13; goto bb1; bb3:
 #line 64
     t14 = INT64_C(0); h2_best = t14;
 #line 66
-    t15 = h0_handles; t36 = h3_xs0; hero_array_incref(t15); h3_xs0 = t15; hero_array_decref(t36); t16 = INT64_C(0); h4_i0 = t16; goto bb4; bb4: t17 = h4_i0; t18 = h3_xs0; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 < t19; if (t20) goto bb5; else goto bb7; bb5: t21 = h3_xs0; t22 = h4_i0; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]); h5_h = t23;
-    t24 = h5_h; t25 = hero_thread_join(t24); h6_found = t25;
+    t15 = h0_handles; t36 = h3_xs0; hero_array_incref(t15); h3_xs0 = t15; hero_array_decref(t36); t16 = INT64_C(0); h4_i0 = t16; goto bb4; bb4: t17 = h4_i0; t18 = h3_xs0; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 < t19; if (t20) goto bb5; else goto bb7; bb5: t21 = h3_xs0; t22 = h4_i0; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? hero_panic_index_at(t21, t22, "main.hero", "main.longest_at_once", 66, 9) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]); h5_h = t23;
+    t24 = h5_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.longest_at_once", 67, 17}; t25 = hero_thread_join(t24); } h6_found = t25;
 #line 69
     t26 = h6_found; t27 = h2_best; t28 = t26 > t27; if (t28) goto bb9; else goto bb10; bb6:
 #line 66
-    t30 = h4_i0; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow(); h4_i0 = t32; goto bb4; bb7:
+    t30 = h4_i0; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("main.hero", "main.longest_at_once", 66, 9); h4_i0 = t32; goto bb4; bb7:
 #line 72
     t33 = h2_best;
-#line 192 "main.c"
+#line 204 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h7_own7);
@@ -198,7 +210,7 @@ bb8:
 bb9:
 #line 70 "examples/collatz/main.hero"
     t29 = h6_found; h2_best = t29; goto bb8; bb10: goto bb8;
-#line 202 "main.c"
+#line 214 "main.c"
 }
 
 #line 75 "examples/collatz/main.hero"
@@ -206,23 +218,23 @@ int64_t h_main_longest_alone(void) { int64_t h0_best; int64_t h1_n; int64_t h2_s
     t1 = INT64_C(0); h0_best = t1;
     t2 = INT64_C(1); h1_n = t2; goto bb1; bb1:
 #line 79
-    t3 = h1_n; t4 = h_main_BANDS(); t5 = h_main_PER_BAND(); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow(); t7 = t3 <= t6; if (t7) goto bb2; else goto bb3; bb2:
+    t3 = h1_n; t4 = h_main_BANDS(); t5 = h_main_PER_BAND(); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.longest_alone", 79, 16); t7 = t3 <= t6; if (t7) goto bb2; else goto bb3; bb2:
     t8 = h1_n; t9 = h_main_steps(t8); h2_s = t9;
 #line 82
     t10 = h2_s; t11 = h0_best; t12 = t10 > t11; if (t12) goto bb5; else goto bb6; bb3:
 #line 86
     t17 = h0_best; return t17; bb4:
 #line 84
-    t14 = h1_n; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h1_n = t16; goto bb1; bb5:
+    t14 = h1_n; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("main.hero", "main.longest_alone", 84, 13); h1_n = t16; goto bb1; bb5:
 #line 83
     t13 = h2_s; h0_best = t13; goto bb4; bb6: goto bb4;
-#line 220 "main.c"
+#line 232 "main.c"
 }
 
 #line 88 "examples/collatz/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t5; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_58d299d3); t2 = h_main_BANDS(); t3 = h_main_PER_BAND(); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); t5 = HERO_STR_LIT(hero_str_1dce); t6 = h_main_longest_at_once(); hero_print_str(t1); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
-#line 226 "main.c"
+    t1 = HERO_STR_LIT(hero_str_58d299d3); t2 = h_main_BANDS(); t3 = h_main_PER_BAND(); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow_at("main.hero", "main.main", 89, 35); t5 = HERO_STR_LIT(hero_str_1dce); t6 = h_main_longest_at_once(); hero_print_str(t1); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
+#line 238 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -288,8 +300,40 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a8bf1ca6c8145f3", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7406741073af9466", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

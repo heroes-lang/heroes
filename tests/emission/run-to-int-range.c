@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -113,7 +113,7 @@ void h_tointrange_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = 
 #line 20
     t7 = h0_f0; t8 = t7.as.err;
 #line 116 "tointrange.c"
-    hero_panic_must(t8);
+    hero_panic_must_at(t8, "to-int-range.hero", "to-int-range.main", 20, 11);
     hero_unreachable();
 bb3:
 #line 21 "tests/golden/run/to-int-range.hero"
@@ -122,7 +122,7 @@ bb3:
 #line 21
     t18 = h1_f1; t19 = t18.as.err;
 #line 125 "tointrange.c"
-    hero_panic_must(t19);
+    hero_panic_must_at(t19, "to-int-range.hero", "to-int-range.main", 21, 11);
     hero_unreachable();
 bb5:
 #line 22 "tests/golden/run/to-int-range.hero"
@@ -132,7 +132,7 @@ bb5:
 #line 22
     t28 = h2_f2; t29 = t28.as.err;
 #line 135 "tointrange.c"
-    hero_panic_must(t29);
+    hero_panic_must_at(t29, "to-int-range.hero", "to-int-range.main", 22, 11);
     hero_unreachable();
 bb7:
 #line 24 "tests/golden/run/to-int-range.hero"
@@ -156,7 +156,7 @@ bb8:
 #line 24 "tests/golden/run/to-int-range.hero"
     t45 = h4_f4; t46 = t45.as.err;
 #line 159 "tointrange.c"
-    hero_panic_must(t46);
+    hero_panic_must_at(t46, "to-int-range.hero", "to-int-range.main", 24, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -256,9 +256,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("23a04be77b52fcaf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("27b2e3b81c909f78", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("tointrange\tto-int-range\n");
     h_tointrange_main();
     hero_runtime_check_leaks();
     return 0;

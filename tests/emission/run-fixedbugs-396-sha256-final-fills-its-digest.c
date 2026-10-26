@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -124,6 +124,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -160,13 +168,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 172 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_MdCtx_eq(EVP_MD_CTX * const *a, EVP_MD_CTX * const *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_MdCtx_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_0MdCtx_eq(EVP_MD_CTX * const *a, EVP_MD_CTX * const *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_0MdCtx_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -175,6 +183,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void);
@@ -208,7 +220,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 212 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 224 "fixedbugs396sha256finalfillsitsdigest.c"
     _Static_assert(HERO_RET_INT(SHA256_DIGEST_LENGTH), "heroes-ffi-return SHA256_DIGEST_LENGTH i64");
     _Static_assert(__builtin_constant_p(SHA256_DIGEST_LENGTH), "heroes-ffi-const SHA256_DIGEST_LENGTH");
 #pragma clang diagnostic push
@@ -220,7 +232,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
-#line 224 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 236 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -238,7 +250,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 242 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 254 "fixedbugs396sha256finalfillsitsdigest.c"
     _Static_assert(HERO_RET_INT(EVP_MAX_MD_SIZE), "heroes-ffi-return EVP_MAX_MD_SIZE i64");
     _Static_assert(__builtin_constant_p(EVP_MAX_MD_SIZE), "heroes-ffi-const EVP_MAX_MD_SIZE");
 #pragma clang diagnostic push
@@ -250,7 +262,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return EVP_MAX_MD_SIZE;
-#line 254 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 266 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -277,23 +289,23 @@ void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
     t1 = UINT64_C(0); t2 = (struct SHA256state_st){.num = t1}; h0_c = t2; hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = UINT64_C(9); t4 = UINT64_C(9); t5 = UINT64_C(9); t6 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t6, &t3); hero_array_push_owned(&t6, &t4); hero_array_push_owned(&t6, &t5); t62 = h6_own6; h6_own6 = t6; hero_array_decref(t62); t63 = h1_md; hero_array_incref(t6); h1_md = t6; hero_array_decref(t63);
     t7 = h1_md; t64 = h2_kept; hero_array_incref(t7); h2_kept = t7; hero_array_decref(t64);
-    hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2); t8 = SHA256_Init(&h0_c); t9 = HERO_STR_LIT(hero_str_20); t10 = HERO_STR_LIT(hero_str_1998f2); t11 = hero_str_lend(t10); t12 = UINT64_C(3); hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2); t13 = SHA256_Update(&h0_c, hero_cstr_nonnull(t11), t12); t14 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer SHA256_Final md 1215 1217 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e8_0 = hero_lend_count_u64((uint64_t)(SHA256_DIGEST_LENGTH), "SHA256_Final", "md"); HERO_NODEBUG void *hero_lend_b8_0 = hero_lend_take(h1_md, hero_lend_e8_0, "SHA256_Final", "md"); t15 = SHA256_Final((void *)hero_lend_b8_0, &h0_c); h1_md = hero_lend_give(h1_md, hero_lend_b8_0, hero_lend_e8_0); } hero_print_int(t8); hero_print_str(t9); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end();
-    t16 = h1_md; t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); t18 = HERO_STR_LIT(hero_str_20); t19 = h1_md; t20 = INT64_C(0); t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t19 + 1))[t20]); t22 = HERO_STR_LIT(hero_str_20); t23 = h1_md; t24 = INT64_C(31); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t23 + 1))[t24]); t26 = HERO_STR_LIT(hero_str_20); t27 = h2_kept; t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len); t29 = HERO_STR_LIT(hero_str_20); t30 = h2_kept; t31 = INT64_C(0); t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t30 + 1))[t31]); hero_print_int(t17); hero_print_str(t18); hero_print_int(t21); hero_print_str(t22); hero_print_int(t25); hero_print_str(t26); hero_print_int(t28); hero_print_str(t29); hero_print_int(t32); hero_print_end();
-    t33 = EVP_MD_CTX_new(); hero_handle_acquired(t33, "EVP_MD_CTX_free"); h3_ctx = t33;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 34, 11}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2); t8 = SHA256_Init(&h0_c); } t9 = HERO_STR_LIT(hero_str_20); t10 = HERO_STR_LIT(hero_str_1998f2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 34, 57}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = UINT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 34, 33}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2); t13 = SHA256_Update(&h0_c, hero_cstr_nonnull_at(t11, &hero_here), t12); } t14 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 34, 85}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer SHA256_Final md 1215 1217 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e8_0 = hero_lend_count_u64_at((uint64_t)(SHA256_DIGEST_LENGTH), "SHA256_Final", "md", &hero_here); HERO_NODEBUG void *hero_lend_b8_0 = hero_lend_take_at(h1_md, hero_lend_e8_0, "SHA256_Final", "md", &hero_here); t15 = SHA256_Final((void *)hero_lend_b8_0, &h0_c); h1_md = hero_lend_give_at(h1_md, hero_lend_b8_0, hero_lend_e8_0, &hero_here); } } hero_print_int(t8); hero_print_str(t9); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end();
+    t16 = h1_md; t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); t18 = HERO_STR_LIT(hero_str_20); t19 = h1_md; t20 = INT64_C(0); t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? hero_panic_index_at(t19, t20, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 35, 26) : (void)0), (void)(t19->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t19 + 1))[t20]); t22 = HERO_STR_LIT(hero_str_20); t23 = h1_md; t24 = INT64_C(31); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 35, 38) : (void)0), (void)(t23->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t23 + 1))[t24]); t26 = HERO_STR_LIT(hero_str_20); t27 = h2_kept; t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len); t29 = HERO_STR_LIT(hero_str_20); t30 = h2_kept; t31 = INT64_C(0); t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? hero_panic_index_at(t30, t31, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 35, 68) : (void)0), (void)(t30->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t30 + 1))[t31]); hero_print_int(t17); hero_print_str(t18); hero_print_int(t21); hero_print_str(t22); hero_print_int(t25); hero_print_str(t26); hero_print_int(t28); hero_print_str(t29); hero_print_int(t32); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 36, 11}; t33 = EVP_MD_CTX_new(); hero_handle_acquired_at(t33, "EVP_MD_CTX_free", &hero_here); } h3_ctx = t33;
     t34 = hero_array_new(&hero_desc_u8, 1); t65 = h7_own7; h7_own7 = t34; hero_array_decref(t65); t66 = h4_out; hero_array_incref(t34); h4_out = t34; hero_array_decref(t66);
     t35 = UINT64_C(0); h5_s = t35;
 #line 40
-    t36 = h3_ctx; t37 = (void *)EVP_sha512(); t38 = ((void *)0); hero_handle_alive(t36, "the argument `ctx` of `EVP_DigestInit_ex`"); t39 = EVP_DigestInit_ex(t36, t37, t38);
+    t36 = h3_ctx; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 40, 41}; t37 = (void *)EVP_sha512(); } t38 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 40, 9}; hero_handle_alive_at(t36, "the argument `ctx` of `EVP_DigestInit_ex`", &hero_here); t39 = EVP_DigestInit_ex(t36, t37, t38); }
     t40 = HERO_STR_LIT(hero_str_20);
-    t41 = h3_ctx; t42 = HERO_STR_LIT(hero_str_1998f2); t43 = hero_str_lend(t42); t44 = UINT64_C(3); hero_handle_alive(t41, "the argument `ctx` of `EVP_DigestUpdate`"); t45 = EVP_DigestUpdate(t41, hero_cstr_nonnull(t43), t44);
+    t41 = h3_ctx; t42 = HERO_STR_LIT(hero_str_1998f2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 42, 42}; t43 = hero_str_lend_at(t42, &hero_here); } t44 = UINT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 42, 9}; hero_handle_alive_at(t41, "the argument `ctx` of `EVP_DigestUpdate`", &hero_here); t45 = EVP_DigestUpdate(t41, hero_cstr_nonnull_at(t43, &hero_here), t44); }
     t46 = HERO_STR_LIT(hero_str_20);
-    t47 = h3_ctx; hero_lend_local_name(hero_lend_h5_s, "EVP_DigestFinal_ex", "s"); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer EVP_DigestFinal_ex md 1624 1626 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e32_1 = hero_lend_count_u64((uint64_t)(EVP_MAX_MD_SIZE), "EVP_DigestFinal_ex", "md"); HERO_NODEBUG void *hero_lend_b32_1 = hero_lend_take(h4_out, hero_lend_e32_1, "EVP_DigestFinal_ex", "md"); hero_handle_alive(t47, "the argument `ctx` of `EVP_DigestFinal_ex`"); t48 = EVP_DigestFinal_ex(t47, (void *)hero_lend_b32_1, (void *)&h5_s); h4_out = hero_lend_give(h4_out, hero_lend_b32_1, hero_lend_e32_1); }
+    t47 = h3_ctx; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 44, 9}; hero_lend_local_name(hero_lend_h5_s, "EVP_DigestFinal_ex", "s"); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer EVP_DigestFinal_ex md 1624 1626 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e32_1 = hero_lend_count_u64_at((uint64_t)(EVP_MAX_MD_SIZE), "EVP_DigestFinal_ex", "md", &hero_here); HERO_NODEBUG void *hero_lend_b32_1 = hero_lend_take_at(h4_out, hero_lend_e32_1, "EVP_DigestFinal_ex", "md", &hero_here); hero_handle_alive_at(t47, "the argument `ctx` of `EVP_DigestFinal_ex`", &hero_here); t48 = EVP_DigestFinal_ex(t47, (void *)hero_lend_b32_1, (void *)&h5_s); h4_out = hero_lend_give_at(h4_out, hero_lend_b32_1, hero_lend_e32_1, &hero_here); } }
 #line 39
     hero_print_int(t39); hero_print_str(t40); hero_print_int(t45); hero_print_str(t46); hero_print_int(t48); hero_print_end();
 #line 46
-    t49 = h5_s; t50 = HERO_STR_LIT(hero_str_20); t51 = h4_out; t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len); t53 = HERO_STR_LIT(hero_str_20); t54 = h4_out; t55 = INT64_C(0); t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t54 + 1))[t55]); t57 = HERO_STR_LIT(hero_str_20); t58 = h4_out; t59 = INT64_C(63); t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t58 + 1))[t59]); hero_print_int(t49); hero_print_str(t50); hero_print_int(t52); hero_print_str(t53); hero_print_int(t56); hero_print_str(t57); hero_print_int(t60); hero_print_end();
-    t61 = h3_ctx; { hero_handle_alive(t61, "the argument `ctx` of `EVP_MD_CTX_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t61, "EVP_MD_CTX_free", NULL); (void)EVP_MD_CTX_free(t61); if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead(); }
-#line 297 "fixedbugs396sha256finalfillsitsdigest.c"
+    t49 = h5_s; t50 = HERO_STR_LIT(hero_str_20); t51 = h4_out; t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len); t53 = HERO_STR_LIT(hero_str_20); t54 = h4_out; t55 = INT64_C(0); t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? hero_panic_index_at(t54, t55, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 46, 35) : (void)0), (void)(t54->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t54 + 1))[t55]); t57 = HERO_STR_LIT(hero_str_20); t58 = h4_out; t59 = INT64_C(63); t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? hero_panic_index_at(t58, t59, "fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 46, 48) : (void)0), (void)(t58->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t58 + 1))[t59]); hero_print_int(t49); hero_print_str(t50); hero_print_int(t52); hero_print_str(t53); hero_print_int(t56); hero_print_str(t57); hero_print_int(t60); hero_print_end();
+    t61 = h3_ctx; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-fills-its-digest.hero", "fixedbugs-396-sha256-final-fills-its-digest.main", 47, 5}; { hero_handle_alive_at(t61, "the argument `ctx` of `EVP_MD_CTX_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t61, "EVP_MD_CTX_free", NULL, &hero_here); (void)EVP_MD_CTX_free(t61); if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead(); } }
+#line 309 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);
@@ -305,19 +317,19 @@ void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
 }
 #undef h0_c
 #undef h5_s
-HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b) {
-    hero_panic("h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq: a partial record has no structural equality");
+HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b) {
+    hero_panic("h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_hash(const void *elem) {
-    (void)elem; hero_panic("h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_hash(const void *elem) {
+    (void)elem; hero_panic("h_fixedbugs396sha256finalfillsitsdigest_0Sha256Ctx_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_MdCtx_eq(EVP_MD_CTX * const *a, EVP_MD_CTX * const *b) {
+HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_0MdCtx_eq(EVP_MD_CTX * const *a, EVP_MD_CTX * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_MdCtx_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs396sha256finalfillsitsdigest_0MdCtx_hash(const void *elem) {
     EVP_MD_CTX * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -388,10 +400,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("46c9b16100c14c75", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c61a65f4f8ef8a9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs396sha256finalfillsitsdigest\tfixedbugs-396-sha256-final-fills-its-digest\n");
     h_fixedbugs396sha256finalfillsitsdigest_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -134,6 +134,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -172,13 +180,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "fixedbugs395acountincsownunitruns.c"
+#line 184 "fixedbugs395acountincsownunitruns.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_Held_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Ten_eq(const struct ten *a, const struct ten *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_Ten_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_0Held_eq(const struct held *a, const struct held *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_0Held_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_0Ten_eq(const struct ten *a, const struct ten *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_0Ten_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -187,6 +195,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void);
 uint64_t h_fixedbugs395acountincsownunitruns_at_run_time(uint64_t h0_k);
@@ -206,7 +218,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
-#line 210 "fixedbugs395acountincsownunitruns.c"
+#line 222 "fixedbugs395acountincsownunitruns.c"
     _Static_assert(HERO_RET_U64(HELD_INTS), "heroes-ffi-return HELD_INTS u64");
     _Static_assert(__builtin_constant_p(HELD_INTS), "heroes-ffi-const HELD_INTS");
 #pragma clang diagnostic push
@@ -218,7 +230,7 @@ uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return HELD_INTS;
-#line 222 "fixedbugs395acountincsownunitruns.c"
+#line 234 "fixedbugs395acountincsownunitruns.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -237,7 +249,7 @@ uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
 #line 34 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_at_run_time(uint64_t h0_k) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; return t1;
-#line 241 "fixedbugs395acountincsownunitruns.c"
+#line 253 "fixedbugs395acountincsownunitruns.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -248,33 +260,33 @@ void h_fixedbugs395acountincsownunitruns_main(void) {
     struct held h0_h; struct ten h1_t; uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n"); HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29; HERO_NODEBUG int64_t t18, t31, t37, t42, t48, t53, t58, t74, t79, t85, t90, t98, t103, t108, t109, t110; HERO_NODEBUG struct held t19; HERO_NODEBUG struct ten t32; HERO_NODEBUG void *t35, *t40, *t45, *t51, *t56, *t61, *t66, *t72, *t77, *t82, *t88, *t93, *t96, *t101, *t107; HERO_NODEBUG uint64_t t36, t41, t46, t47, t52, t57, t62, t67, t68, t73, t78, t83, t84, t89, t97, t102; HERO_NODEBUG int32_t t63, t69; HERO_NODEBUG uint32_t t104; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(0); t10 = UINT64_C(0); t11 = UINT64_C(0); t12 = UINT64_C(0); t13 = UINT64_C(0); t14 = UINT64_C(0); t15 = UINT64_C(0); t16 = UINT64_C(0); t18 = INT64_C(7); t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18}; h0_h = t19; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
     t20 = UINT64_C(0); t21 = UINT64_C(0); t22 = UINT64_C(0); t23 = UINT64_C(0); t24 = UINT64_C(0); t25 = UINT64_C(0); t26 = UINT64_C(0); t27 = UINT64_C(0); t28 = UINT64_C(0); t29 = UINT64_C(0); t31 = INT64_C(7); t32 = (struct ten){.buf = {t20, t21, t22, t23, t24, t25, t26, t27, t28, t29}, .after = t31}; h1_t = t32; hero_pad_fill(&h1_t, sizeof(struct ten), 1, hero_pad_g_2, hero_pad_n_2);
-    t35 = (void *)(h0_h.buf); t36 = UINT64_C(4); _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2082 2093 2098 2099 16"); _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2082 2093 2098 2099 16 int *"); t37 = fill_ints(t35, t36); hero_print_int(t37); hero_print_end();
-    t40 = (void *)(h0_h.buf); t41 = h_fixedbugs395acountincsownunitruns_HELD_INTS(); _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2125 2136 2141 2150 16"); _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2125 2136 2141 2150 16 int *"); t42 = fill_ints(t40, t41); hero_print_int(t42); hero_print_end();
-    t45 = (void *)(h0_h.buf); t46 = UINT64_C(4); t47 = h_fixedbugs395acountincsownunitruns_at_run_time(t46); if ((uint64_t)(t47) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic(sizeof(*(int *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:42: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:42: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at"); t48 = fill_ints(t45, t47); hero_print_int(t48); hero_print_end();
-    t51 = (void *)(h1_t.buf); t52 = UINT64_C(5); _Static_assert(sizeof(*(int16_t *)0) != 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_shorts a n 2237 2248 2253 2254 10"); _Static_assert(sizeof(*(int16_t *)0) == 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int16_t *)0))), "heroes-ffi-extent-unit fill_shorts a n 2237 2248 2253 2254 10 int16_t *"); t53 = fill_shorts(t51, t52); hero_print_int(t53); hero_print_end();
-    t56 = (void *)(h1_t.buf); t57 = UINT64_C(2); _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_ints a n 2280 2291 2296 2297 10"); _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2280 2291 2296 2297 10 int *"); t58 = fill_ints(t56, t57); hero_print_int(t58); hero_print_end();
-    t61 = (void *)(h0_h.buf); t62 = UINT64_C(2); _Static_assert(sizeof(*(struct pfd *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent poll_like fds nfds 2325 2336 2344 2345 16"); _Static_assert(sizeof(*(struct pfd *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(struct pfd *)0))), "heroes-ffi-extent-unit poll_like fds nfds 2325 2336 2344 2345 16 struct pfd *"); t63 = poll_like(t61, t62); hero_print_int(t63); hero_print_end();
-    t66 = (void *)(h0_h.buf); t67 = UINT64_C(2); t68 = h_fixedbugs395acountincsownunitruns_at_run_time(t67); if ((uint64_t)(t68) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(LPPFD)0))) hero_panic(sizeof(*(LPPFD)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:46: `poll_typedef` was given an extent past the 16 bytes of the field lent to it, read from `nfds` at run time" : "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:46: `poll_typedef` was given an extent past the 16 bytes of the field lent to it, read from `nfds` at run time and counted in what the header's `LPPFD` points at"); t69 = poll_typedef(t66, t68); hero_print_int(t69); hero_print_end();
-    t72 = (void *)(h0_h.buf); t73 = UINT64_C(1); _Static_assert(sizeof(*(int (*)[4])0) != 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_rows rows n 2441 2452 2457 2458 16"); _Static_assert(sizeof(*(int (*)[4])0) == 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int (*)[4])0))), "heroes-ffi-extent-unit fill_rows rows n 2441 2452 2457 2458 16 int (*)[4]"); t74 = fill_rows(t72, t73); hero_print_int(t74); hero_print_end();
-    t77 = (void *)(h0_h.buf); t78 = UINT64_C(16); _Static_assert(sizeof(*(char *)0) != 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_bytes buf n 2487 2498 2503 2505 16"); _Static_assert(sizeof(*(char *)0) == 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(char *)0))), "heroes-ffi-extent-unit fill_bytes buf n 2487 2498 2503 2505 16 char *"); t79 = fill_bytes(t77, t78); hero_print_int(t79); hero_print_end();
-    t82 = (void *)(h0_h.buf); t83 = UINT64_C(16); t84 = h_fixedbugs395acountincsownunitruns_at_run_time(t83); if ((uint64_t)(t84) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(LPVOID)0))) hero_panic(sizeof(*(LPVOID)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:49: `fill_lpvoid` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:49: `fill_lpvoid` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `LPVOID` points at"); t85 = fill_lpvoid(t82, t84); hero_print_int(t85); hero_print_end();
-    t88 = (void *)(h0_h.buf); t89 = UINT64_C(4); _Static_assert(sizeof(*(wchar_t *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_wide dst n 2597 2608 2613 2614 16"); _Static_assert(sizeof(*(wchar_t *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(wchar_t *)0))), "heroes-ffi-extent-unit fill_wide dst n 2597 2608 2613 2614 16 wchar_t *"); t90 = fill_wide(t88, t89); hero_print_int(t90); hero_print_end();
-    t93 = (void *)(h0_h.buf); t96 = (void *)(h1_t.buf); t97 = UINT64_C(10); _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent copy_n dst n 2639 2650 2673 2675 16"); _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-unit copy_n dst n 2639 2650 2673 2675 16 void *"); _Static_assert(sizeof(*(const void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent copy_n src n 2657 2668 2673 2675 10"); _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit copy_n src n 2657 2668 2673 2675 10 const void *"); t98 = copy_n(t93, t96, t97); hero_print_int(t98); hero_print_end();
-    t101 = (void *)(h0_h.buf); t102 = UINT64_C(2); _Static_assert(sizeof(*(const int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent read_ints a n 2701 2712 2717 2718 16"); _Static_assert(sizeof(*(const int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(const int *)0))), "heroes-ffi-extent-unit read_ints a n 2701 2712 2717 2718 16 const int *"); t103 = read_ints(t101, t102); hero_print_int(t103); hero_print_end();
+    t35 = (void *)(h0_h.buf); t36 = UINT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 40, 11}; _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2082 2093 2098 2099 16"); _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2082 2093 2098 2099 16 int *"); t37 = fill_ints(t35, t36); } hero_print_int(t37); hero_print_end();
+    t40 = (void *)(h0_h.buf); t41 = h_fixedbugs395acountincsownunitruns_HELD_INTS(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 41, 11}; _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2125 2136 2141 2150 16"); _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2125 2136 2141 2150 16 int *"); t42 = fill_ints(t40, t41); } hero_print_int(t42); hero_print_end();
+    t45 = (void *)(h0_h.buf); t46 = UINT64_C(4); t47 = h_fixedbugs395acountincsownunitruns_at_run_time(t46); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 42, 11}; if ((uint64_t)(t47) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic_at(sizeof(*(int *)0) == 1 ? "`fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "`fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at", "fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 42, 24); t48 = fill_ints(t45, t47); } hero_print_int(t48); hero_print_end();
+    t51 = (void *)(h1_t.buf); t52 = UINT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 43, 11}; _Static_assert(sizeof(*(int16_t *)0) != 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_shorts a n 2237 2248 2253 2254 10"); _Static_assert(sizeof(*(int16_t *)0) == 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int16_t *)0))), "heroes-ffi-extent-unit fill_shorts a n 2237 2248 2253 2254 10 int16_t *"); t53 = fill_shorts(t51, t52); } hero_print_int(t53); hero_print_end();
+    t56 = (void *)(h1_t.buf); t57 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 44, 11}; _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_ints a n 2280 2291 2296 2297 10"); _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2280 2291 2296 2297 10 int *"); t58 = fill_ints(t56, t57); } hero_print_int(t58); hero_print_end();
+    t61 = (void *)(h0_h.buf); t62 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 45, 11}; _Static_assert(sizeof(*(struct pfd *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent poll_like fds nfds 2325 2336 2344 2345 16"); _Static_assert(sizeof(*(struct pfd *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(struct pfd *)0))), "heroes-ffi-extent-unit poll_like fds nfds 2325 2336 2344 2345 16 struct pfd *"); t63 = poll_like(t61, t62); } hero_print_int(t63); hero_print_end();
+    t66 = (void *)(h0_h.buf); t67 = UINT64_C(2); t68 = h_fixedbugs395acountincsownunitruns_at_run_time(t67); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 46, 11}; if ((uint64_t)(t68) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(LPPFD)0))) hero_panic_at(sizeof(*(LPPFD)0) == 1 ? "`poll_typedef` was given an extent past the 16 bytes of the field lent to it, read from `nfds` at run time" : "`poll_typedef` was given an extent past the 16 bytes of the field lent to it, read from `nfds` at run time and counted in what the header's `LPPFD` points at", "fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 46, 29); t69 = poll_typedef(t66, t68); } hero_print_int(t69); hero_print_end();
+    t72 = (void *)(h0_h.buf); t73 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 47, 11}; _Static_assert(sizeof(*(int (*)[4])0) != 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_rows rows n 2441 2452 2457 2458 16"); _Static_assert(sizeof(*(int (*)[4])0) == 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int (*)[4])0))), "heroes-ffi-extent-unit fill_rows rows n 2441 2452 2457 2458 16 int (*)[4]"); t74 = fill_rows(t72, t73); } hero_print_int(t74); hero_print_end();
+    t77 = (void *)(h0_h.buf); t78 = UINT64_C(16); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 48, 11}; _Static_assert(sizeof(*(char *)0) != 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_bytes buf n 2487 2498 2503 2505 16"); _Static_assert(sizeof(*(char *)0) == 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(char *)0))), "heroes-ffi-extent-unit fill_bytes buf n 2487 2498 2503 2505 16 char *"); t79 = fill_bytes(t77, t78); } hero_print_int(t79); hero_print_end();
+    t82 = (void *)(h0_h.buf); t83 = UINT64_C(16); t84 = h_fixedbugs395acountincsownunitruns_at_run_time(t83); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 49, 11}; if ((uint64_t)(t84) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(LPVOID)0))) hero_panic_at(sizeof(*(LPVOID)0) == 1 ? "`fill_lpvoid` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "`fill_lpvoid` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `LPVOID` points at", "fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 49, 28); t85 = fill_lpvoid(t82, t84); } hero_print_int(t85); hero_print_end();
+    t88 = (void *)(h0_h.buf); t89 = UINT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 50, 11}; _Static_assert(sizeof(*(wchar_t *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_wide dst n 2597 2608 2613 2614 16"); _Static_assert(sizeof(*(wchar_t *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(wchar_t *)0))), "heroes-ffi-extent-unit fill_wide dst n 2597 2608 2613 2614 16 wchar_t *"); t90 = fill_wide(t88, t89); } hero_print_int(t90); hero_print_end();
+    t93 = (void *)(h0_h.buf); t96 = (void *)(h1_t.buf); t97 = UINT64_C(10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 51, 11}; _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent copy_n dst n 2639 2650 2673 2675 16"); _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-unit copy_n dst n 2639 2650 2673 2675 16 void *"); _Static_assert(sizeof(*(const void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent copy_n src n 2657 2668 2673 2675 10"); _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit copy_n src n 2657 2668 2673 2675 10 const void *"); t98 = copy_n(t93, t96, t97); } hero_print_int(t98); hero_print_end();
+    t101 = (void *)(h0_h.buf); t102 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 52, 11}; _Static_assert(sizeof(*(const int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent read_ints a n 2701 2712 2717 2718 16"); _Static_assert(sizeof(*(const int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(const int *)0))), "heroes-ffi-extent-unit read_ints a n 2701 2712 2717 2718 16 const int *"); t103 = read_ints(t101, t102); } hero_print_int(t103); hero_print_end();
     t104 = UINT64_C(16); h2_n = t104;
-    t107 = (void *)(h0_h.buf); if ((uint64_t)(h2_n) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))) hero_panic(sizeof(*(void *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:54: `fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:54: `fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `void *` points at"); hero_lend_local_name(hero_lend_h2_n, "fill_len", "n"); t108 = fill_len(t107, (void *)&h2_n); hero_print_int(t108); hero_print_end();
+    t107 = (void *)(h0_h.buf); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 54, 11}; if ((uint64_t)(h2_n) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))) hero_panic_at(sizeof(*(void *)0) == 1 ? "`fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "`fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `void *` points at", "fixedbugs-395-a-count-in-c-s-own-unit-runs.hero", "fixedbugs-395-a-count-in-c-s-own-unit-runs.main", 54, 25); hero_lend_local_name(hero_lend_h2_n, "fill_len", "n"); t108 = fill_len(t107, (void *)&h2_n); } hero_print_int(t108); hero_print_end();
     t109 = h0_h.after; hero_print_int(t109); hero_print_end();
     t110 = h1_t.after; hero_print_int(t110); hero_print_end(); hero_lend_local_give(hero_lend_h2_n); return;
-#line 269 "fixedbugs395acountincsownunitruns.c"
+#line 281 "fixedbugs395acountincsownunitruns.c"
 }
 #undef h2_n
-HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {
+HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_0Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_Held_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_0Held_hash(const void *elem) {
     const struct held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->buf[0])) * UINT64_C(0x100000001b3);
@@ -297,13 +309,13 @@ HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_Held_hash(const void 
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Ten_eq(const struct ten *a, const struct ten *b) {
+HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_0Ten_eq(const struct ten *a, const struct ten *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9]))) return false;
     if (!(a->after == b->after)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_Ten_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs395acountincsownunitruns_0Ten_hash(const void *elem) {
     const struct ten *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->buf[0])) * UINT64_C(0x100000001b3);
@@ -384,10 +396,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d0d42db74392216", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11cc538657f995bc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs395acountincsownunitruns\tfixedbugs-395-a-count-in-c-s-own-unit-runs\n");
     h_fixedbugs395acountincsownunitruns_main();
     hero_runtime_check_leaks();
     return 0;

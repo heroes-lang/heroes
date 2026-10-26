@@ -55,7 +55,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -176,8 +176,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 177 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color *a, const Color *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_Color_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *a, const Color *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_0Color_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *v);
 HERO_TU_LOCAL void h_0opt_31fbd75_release(h_0opt_31fbd75 *v);
 HERO_TU_LOCAL bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *a, const h_0opt_31fbd75 *b);
@@ -195,21 +195,21 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_fixedbugsagrouprecordineverycontainer_Color_desc_copy(void *dst, const void *src) {
+static void h_fixedbugsagrouprecordineverycontainer_0Color_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(Color));
 }
-static void h_fixedbugsagrouprecordineverycontainer_Color_desc_drop(void *elem) {
+static void h_fixedbugsagrouprecordineverycontainer_0Color_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_fixedbugsagrouprecordineverycontainer_Color_desc_eq(const void *a, const void *b) {
-    return h_fixedbugsagrouprecordineverycontainer_Color_eq((const Color *)a, (const Color *)b);
+static bool h_fixedbugsagrouprecordineverycontainer_0Color_desc_eq(const void *a, const void *b) {
+    return h_fixedbugsagrouprecordineverycontainer_0Color_eq((const Color *)a, (const Color *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_Color_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_0Color_desc = {
     sizeof(Color),
-    h_fixedbugsagrouprecordineverycontainer_Color_desc_copy,
-    h_fixedbugsagrouprecordineverycontainer_Color_desc_drop,
-    h_fixedbugsagrouprecordineverycontainer_Color_desc_eq,
-    h_fixedbugsagrouprecordineverycontainer_Color_hash,
+    h_fixedbugsagrouprecordineverycontainer_0Color_desc_copy,
+    h_fixedbugsagrouprecordineverycontainer_0Color_desc_drop,
+    h_fixedbugsagrouprecordineverycontainer_0Color_desc_eq,
+    h_fixedbugsagrouprecordineverycontainer_0Color_hash,
 };
 
 void h_fixedbugsagrouprecordineverycontainer_main(void);
@@ -228,23 +228,23 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) { Color h0_a; Color h1_b
     t6 = UINT64_C(1); t7 = UINT64_C(2); t8 = UINT64_C(3); t9 = UINT64_C(4); t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9}; h1_b = t10; hero_pad_fill(&h1_b, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t11 = UINT64_C(9); t12 = UINT64_C(9); t13 = UINT64_C(9); t14 = UINT64_C(9); t15 = (Color){.r = t11, .g = t12, .b = t13, .a = t14}; h2_c = t15; hero_pad_fill(&h2_c, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
 #line 47
-    t16 = h0_a; t17 = h1_b; t18 = h_fixedbugsagrouprecordineverycontainer_Color_eq(&t16, &t17); hero_print_bool(t18); hero_print_end();
-    t19 = h0_a; t20 = h2_c; t21 = h_fixedbugsagrouprecordineverycontainer_Color_eq(&t19, &t20); hero_print_bool(t21); hero_print_end();
+    t16 = h0_a; t17 = h1_b; t18 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t16, &t17); hero_print_bool(t18); hero_print_end();
+    t19 = h0_a; t20 = h2_c; t21 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t19, &t20); hero_print_bool(t21); hero_print_end();
 #line 51
-    t22 = h0_a; t23 = h2_c; t24 = hero_array_new(&h_fixedbugsagrouprecordineverycontainer_Color_desc, 2); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t71 = h10_own10; h10_own10 = t24; hero_array_decref(t71); t72 = h3_xs; hero_array_incref(t24); h3_xs = t24; hero_array_decref(t72);
+    t22 = h0_a; t23 = h2_c; t24 = hero_array_new(&h_fixedbugsagrouprecordineverycontainer_0Color_desc, 2); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t71 = h10_own10; h10_own10 = t24; hero_array_decref(t71); t72 = h3_xs; hero_array_incref(t24); h3_xs = t24; hero_array_decref(t72);
     t25 = h3_xs; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); hero_print_int(t26); hero_print_end();
-    t27 = h3_xs; t28 = INT64_C(0); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(Color) ? hero_unreachable() : (void)0), ((Color const *)(const void *)(t27 + 1))[t28]); t30 = h0_a; t31 = h_fixedbugsagrouprecordineverycontainer_Color_eq(&t29, &t30); hero_print_bool(t31); hero_print_end();
+    t27 = h3_xs; t28 = INT64_C(0); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 53, 11) : (void)0), (void)(t27->elem->size != sizeof(Color) ? hero_unreachable() : (void)0), ((Color const *)(const void *)(t27 + 1))[t28]); t30 = h0_a; t31 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t29, &t30); hero_print_bool(t31); hero_print_end();
 #line 56
-    t32 = hero_map_new(&hero_desc_int, &h_fixedbugsagrouprecordineverycontainer_Color_desc, 0); t73 = h11_own11; h11_own11 = t32; hero_map_decref(t73); t74 = h4_m; hero_map_incref(t32); h4_m = t32; hero_map_decref(t74);
-    t33 = INT64_C(1); t34 = h0_a; hero_map_set(&(h4_m), &t33, &t34);
-    t35 = h4_m; t36 = INT64_C(1); { HERO_NODEBUG const void *found = hero_map_find(t35, &t36); if (found == NULL) { t37 = (h_0opt_31fbd75){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t37 = (h_0opt_31fbd75){.tag = INT64_C(0)}; (&h_fixedbugsagrouprecordineverycontainer_Color_desc)->copy(&t37.as.ok, found); } } t75 = h12_own12; h12_own12 = t37; h_0opt_31fbd75_release(&t75); t76 = h5_f0; h_0opt_31fbd75_retain(&t37); h5_f0 = t37; h_0opt_31fbd75_release(&t76); t38 = h5_f0; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb1; else goto bb2; bb1: t44 = h5_f0; t45 = t44.as.ok; t46 = h0_a; t47 = h_fixedbugsagrouprecordineverycontainer_Color_eq(&t45, &t46); hero_print_bool(t47); hero_print_end();
-    t48 = hero_map_new(&h_fixedbugsagrouprecordineverycontainer_Color_desc, &hero_desc_int, 0); t77 = h13_own13; h13_own13 = t48; hero_map_decref(t77); t78 = h6_keyed; hero_map_incref(t48); h6_keyed = t48; hero_map_decref(t78);
-    t49 = h0_a; t50 = INT64_C(7); hero_map_set(&(h6_keyed), &t49, &t50);
-    t51 = h6_keyed; t52 = h1_b; { HERO_NODEBUG const void *found = hero_map_find(t51, &t52); if (found == NULL) { t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t53 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t53.as.ok, found); } } t79 = h14_own14; h14_own14 = t53; h_0opt_e201354_release(&t79); t80 = h7_f1; h_0opt_e201354_retain(&t53); h7_f1 = t53; h_0opt_e201354_release(&t80); t54 = h7_f1; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb3; else goto bb4; bb2:
+    t32 = hero_map_new(&hero_desc_int, &h_fixedbugsagrouprecordineverycontainer_0Color_desc, 0); t73 = h11_own11; h11_own11 = t32; hero_map_decref(t73); t74 = h4_m; hero_map_incref(t32); h4_m = t32; hero_map_decref(t74);
+    t33 = INT64_C(1); t34 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 57, 5}; hero_map_set_at(&(h4_m), &t33, &t34, &hero_here); }
+    t35 = h4_m; t36 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 58, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t35, &t36, &hero_here); if (found == NULL) { t37 = (h_0opt_31fbd75){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t37 = (h_0opt_31fbd75){.tag = INT64_C(0)}; (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->copy(&t37.as.ok, found); } } t75 = h12_own12; h12_own12 = t37; h_0opt_31fbd75_release(&t75); t76 = h5_f0; h_0opt_31fbd75_retain(&t37); h5_f0 = t37; h_0opt_31fbd75_release(&t76); t38 = h5_f0; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb1; else goto bb2; bb1: t44 = h5_f0; t45 = t44.as.ok; t46 = h0_a; t47 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t45, &t46); hero_print_bool(t47); hero_print_end();
+    t48 = hero_map_new(&h_fixedbugsagrouprecordineverycontainer_0Color_desc, &hero_desc_int, 0); t77 = h13_own13; h13_own13 = t48; hero_map_decref(t77); t78 = h6_keyed; hero_map_incref(t48); h6_keyed = t48; hero_map_decref(t78);
+    t49 = h0_a; t50 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 60, 5}; hero_map_set_at(&(h6_keyed), &t49, &t50, &hero_here); }
+    t51 = h6_keyed; t52 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t51, &t52, &hero_here); if (found == NULL) { t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t53 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t53.as.ok, found); } } t79 = h14_own14; h14_own14 = t53; h_0opt_e201354_release(&t79); t80 = h7_f1; h_0opt_e201354_retain(&t53); h7_f1 = t53; h_0opt_e201354_release(&t80); t54 = h7_f1; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb3; else goto bb4; bb2:
 #line 58
     t42 = h5_f0; t43 = t42.as.err;
 #line 247 "fixedbugsagrouprecordineverycontainer.c"
-    hero_panic_must(t43);
+    hero_panic_must_at(t43, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 58, 11);
     hero_unreachable();
 bb3:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -253,7 +253,7 @@ bb3:
     t62 = h2_c; t63 = (h_0opt_31fbd75){.tag = INT64_C(0), .as.ok = t62}; t81 = h15_own15; h15_own15 = t63; h_0opt_31fbd75_release(&t81); t82 = h8_maybe; h_0opt_31fbd75_retain(&t63); h8_maybe = t63; h_0opt_31fbd75_release(&t82);
     t64 = h8_maybe; t83 = h9_f2; h_0opt_31fbd75_retain(&t64); h9_f2 = t64; h_0opt_31fbd75_release(&t83); t65 = h9_f2; t66 = t65.tag; t67 = INT64_C(1); t68 = t66 == t67; hero_print_bool(t68); hero_print_end();
 #line 68
-    t69 = h0_a; t70 = ColorToInt(t69); hero_print_int(t70); hero_print_end();
+    t69 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 68, 11}; t70 = ColorToInt(t69); } hero_print_int(t70); hero_print_end();
 #line 258 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
@@ -273,10 +273,10 @@ bb4:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t58 = h7_f1; t59 = t58.as.err;
 #line 276 "fixedbugsagrouprecordineverycontainer.c"
-    hero_panic_must(t59);
+    hero_panic_must_at(t59, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color *a, const Color *b) {
+HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
     if (!(a->g == b->g)) return false;
     if (!(a->b == b->b)) return false;
@@ -284,7 +284,7 @@ HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color 
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_Color_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_0Color_hash(const void *elem) {
     const Color *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->r)) * UINT64_C(0x100000001b3);
@@ -313,7 +313,7 @@ HERO_TU_LOCAL void h_0opt_31fbd75_release(h_0opt_31fbd75 *v) {
 HERO_TU_LOCAL bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *a, const h_0opt_31fbd75 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_fixedbugsagrouprecordineverycontainer_Color_desc)->eq(&a->as.ok, &b->as.ok);
+    return (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_31fbd75_hash(const void *elem) {
@@ -323,7 +323,7 @@ HERO_TU_LOCAL uint64_t h_0opt_31fbd75_hash(const void *elem) {
     if (v->tag != INT64_C(0)) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_fixedbugsagrouprecordineverycontainer_Color_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (h ^ (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -423,9 +423,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5520285414f81107", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ab81d5263c5bd3b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsagrouprecordineverycontainer\tfixedbugs-a-group-record-in-every-container\n");
     h_fixedbugsagrouprecordineverycontainer_main();
     hero_runtime_check_leaks();
     return 0;

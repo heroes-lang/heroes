@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -72,6 +72,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -86,13 +94,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 98 "fixedbugs540areleaseinsidealinekeepstheline.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v);
-HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(h_fixedbugs540areleaseinsidealinekeepstheline_Box *v);
-HERO_TU_LOCAL bool h_fixedbugs540areleaseinsidealinekeepstheline_Box_eq(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *a, const h_fixedbugs540areleaseinsidealinekeepstheline_Box *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs540areleaseinsidealinekeepstheline_Box_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v);
+HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(h_fixedbugs540areleaseinsidealinekeepstheline_Box *v);
+HERO_TU_LOCAL bool h_fixedbugs540areleaseinsidealinekeepstheline_0Box_eq(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *a, const h_fixedbugs540areleaseinsidealinekeepstheline_Box *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs540areleaseinsidealinekeepstheline_0Box_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -101,6 +109,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n);
 h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsidealinekeepstheline_keep(HeroStr h0_s);
@@ -116,7 +128,7 @@ HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) { Hero
     t10 = h2_b; h3_ret0 = t10; goto bb4; bb2:
 #line 22
     t9 = h1_a; h3_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 120 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 132 "fixedbugs540areleaseinsidealinekeepstheline.c"
     t11 = h3_ret0;
     hero_str_incref(t11);
     hero_str_release_at(&h1_a);
@@ -128,39 +140,39 @@ HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) { Hero
 
 #line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsidealinekeepstheline_keep(HeroStr h0_s) { h_fixedbugs540areleaseinsidealinekeepstheline_Box h1_b = {0}; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t2, t3, t4, t5; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_s; hero_str_incref(t1); t2 = (h_fixedbugs540areleaseinsidealinekeepstheline_Box){.f_s = t1}; t4 = h2_own2; h2_own2 = t2; h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t4); t5 = h1_b; h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(&t2); h1_b = t2; h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t5);
+    t1 = h0_s; hero_str_incref(t1); t2 = (h_fixedbugs540areleaseinsidealinekeepstheline_Box){.f_s = t1}; t4 = h2_own2; h2_own2 = t2; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(&t4); t5 = h1_b; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(&t2); h1_b = t2; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(&t5);
     t3 = h1_b;
-#line 134 "fixedbugs540areleaseinsidealinekeepstheline.c"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(&t3);
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h1_b));
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h2_own2));
+#line 146 "fixedbugs540areleaseinsidealinekeepstheline.c"
+    h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(&t3);
+    h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(hero_slot_escape(&h1_b));
+    h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(hero_slot_escape(&h2_own2));
     return t3;
 }
 
 #line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 void h_fixedbugs540areleaseinsidealinekeepstheline_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3, t4, t6, t7, t8; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t5, t9; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = h_fixedbugs540areleaseinsidealinekeepstheline_greet(t1); t7 = h1_own1; h1_own1 = t2; hero_str_decref(t7); t8 = h0_s; hero_str_incref(t2); h0_s = t2; hero_str_decref(t8);
-    t3 = h0_s; t4 = h0_s; t5 = h_fixedbugs540areleaseinsidealinekeepstheline_keep(t4); t9 = h2_own2; h2_own2 = t5; h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t9); t6 = t5.f_s; hero_print_str(t3); hero_print_str(t6); hero_print_end();
-#line 145 "fixedbugs540areleaseinsidealinekeepstheline.c"
+    t3 = h0_s; t4 = h0_s; t5 = h_fixedbugs540areleaseinsidealinekeepstheline_keep(t4); t9 = h2_own2; h2_own2 = t5; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(&t9); t6 = t5.f_s; hero_print_str(t3); hero_print_str(t6); hero_print_end();
+#line 157 "fixedbugs540areleaseinsidealinekeepstheline.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h2_own2));
+    h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(hero_slot_escape(&h2_own2));
     return;
 }
-HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v) {
+HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v) {
     hero_str_incref(v->f_s);
 }
 
-HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(h_fixedbugs540areleaseinsidealinekeepstheline_Box *v) {
+HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(h_fixedbugs540areleaseinsidealinekeepstheline_Box *v) {
     hero_str_decref(v->f_s);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs540areleaseinsidealinekeepstheline_Box_eq(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *a, const h_fixedbugs540areleaseinsidealinekeepstheline_Box *b) {
+HERO_TU_LOCAL bool h_fixedbugs540areleaseinsidealinekeepstheline_0Box_eq(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *a, const h_fixedbugs540areleaseinsidealinekeepstheline_Box *b) {
     if (!(hero_str_eq(a->f_s, b->f_s))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs540areleaseinsidealinekeepstheline_Box_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs540areleaseinsidealinekeepstheline_0Box_hash(const void *elem) {
     const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_s)) * UINT64_C(0x100000001b3);
@@ -231,10 +243,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f1ee6060b139982", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("286e7c3e6b5918c4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs540areleaseinsidealinekeepstheline\tfixedbugs-540-a-release-inside-a-line-keeps-the-line\n");
     h_fixedbugs540areleaseinsidealinekeepstheline_main();
     hero_runtime_check_leaks();
     return 0;

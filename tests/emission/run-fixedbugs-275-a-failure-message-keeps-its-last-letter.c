@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -141,9 +141,9 @@ void h_fixedbugs275afailuremessagekeepsitslastletter_main(void) { HeroArrayHeade
     t14 = h1_s0; t15 = t14.as.err; t83 = h3_e; hero_failure_retain(&t15); h3_e = t15; hero_failure_release(&t83); t16 = h3_e.code; t17 = HERO_STR_LIT(hero_str_1dce); t18 = h3_e.msg; t19 = HERO_STR_LIT(hero_str_1088); t20 = h3_e.msg; t21 = hero_str_len(t20); t22 = HERO_STR_LIT(hero_str_29); hero_print_str(t16); hero_print_str(t17); hero_print_str(t18); hero_print_str(t19); hero_print_int(t21); hero_print_str(t22); hero_print_end(); goto bb1; bb4:
 #line 23
     t41 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t84 = h15_own15; h15_own15 = t41; hero_map_decref(t84); t85 = h8_m; hero_map_incref(t41); h8_m = t41; hero_map_decref(t85);
-    t42 = HERO_STR_LIT(hero_str_61); t43 = INT64_C(1); hero_map_set(&(h8_m), &t42, &t43);
+    t42 = HERO_STR_LIT(hero_str_61); t43 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-275-a-failure-message-keeps-its-last-letter.hero", "fixedbugs-275-a-failure-message-keeps-its-last-letter.main", 24, 5}; hero_map_set_at(&(h8_m), &t42, &t43, &hero_here); }
 #line 26
-    t44 = h8_m; t45 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG const void *found = hero_map_find(t44, &t45); if (found == NULL) { t46 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t46 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t46.as.ok, found); } } t86 = h16_own16; h16_own16 = t46; h_0opt_e201354_release(&t86); t87 = h9_s2; h_0opt_e201354_retain(&t46); h9_s2 = t46; h_0opt_e201354_release(&t87); t47 = h9_s2; t48 = t47.tag; switch (t48) { case 0: goto bb8; case 1: goto bb9; default: hero_unreachable(); } bb5:
+    t44 = h8_m; t45 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-275-a-failure-message-keeps-its-last-letter.hero", "fixedbugs-275-a-failure-message-keeps-its-last-letter.main", 26, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t44, &t45, &hero_here); if (found == NULL) { t46 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t46 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t46.as.ok, found); } } t86 = h16_own16; h16_own16 = t46; h_0opt_e201354_release(&t86); t87 = h9_s2; h_0opt_e201354_retain(&t46); h9_s2 = t46; h_0opt_e201354_release(&t87); t47 = h9_s2; t48 = t47.tag; switch (t48) { case 0: goto bb8; case 1: goto bb9; default: hero_unreachable(); } bb5:
 #line 20
     t28 = h5_s1; t29 = t28.as.ok; h6_n = t29; t30 = HERO_STR_LIT(hero_str_797f4356); t31 = h6_n; hero_print_str(t30); hero_print_int(t31); hero_print_end(); goto bb4; bb6:
     t32 = h5_s1; t33 = t32.as.err; t88 = h7_e; hero_failure_retain(&t33); h7_e = t33; hero_failure_release(&t88); t34 = h7_e.code; t35 = HERO_STR_LIT(hero_str_1dce); t36 = h7_e.msg; t37 = HERO_STR_LIT(hero_str_1088); t38 = h7_e.msg; t39 = hero_str_len(t38); t40 = HERO_STR_LIT(hero_str_29); hero_print_str(t34); hero_print_str(t35); hero_print_str(t36); hero_print_str(t37); hero_print_int(t39); hero_print_str(t40); hero_print_end(); goto bb4; bb7:
@@ -305,9 +305,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49760ab351b8dca9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("450256ed43b9bfdf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs275afailuremessagekeepsitslastletter\tfixedbugs-275-a-failure-message-keeps-its-last-letter\n");
     h_fixedbugs275afailuremessagekeepsitslastletter_main();
     hero_runtime_check_leaks();
     return 0;

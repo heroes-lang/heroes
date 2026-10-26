@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -181,8 +181,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 182 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_main_Broken_eq(const struct tm *a, const struct tm *b);
-HERO_TU_LOCAL uint64_t h_main_Broken_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_0Broken_eq(const struct tm *a, const struct tm *b);
+HERO_TU_LOCAL uint64_t h_main_0Broken_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -204,21 +204,21 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_main_Broken_desc_copy(void *dst, const void *src) {
+static void h_main_0Broken_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(struct tm));
 }
-static void h_main_Broken_desc_drop(void *elem) {
+static void h_main_0Broken_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_main_Broken_desc_eq(const void *a, const void *b) {
-    return h_main_Broken_eq((const struct tm *)a, (const struct tm *)b);
+static bool h_main_0Broken_desc_eq(const void *a, const void *b) {
+    return h_main_0Broken_eq((const struct tm *)a, (const struct tm *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_main_Broken_desc = {
+HERO_TU_QUIET static const HeroDesc h_main_0Broken_desc = {
     sizeof(struct tm),
-    h_main_Broken_desc_copy,
-    h_main_Broken_desc_drop,
-    h_main_Broken_desc_eq,
-    h_main_Broken_hash,
+    h_main_0Broken_desc_copy,
+    h_main_0Broken_desc_drop,
+    h_main_0Broken_desc_eq,
+    h_main_0Broken_hash,
 };
 
 int64_t h_main_C_EPOCH_YEAR(void);
@@ -280,7 +280,7 @@ int64_t h_main_C_EPOCH_YEAR(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; go
 
 #line 69 "examples/ctime/main.hero"
 int64_t h_main_year_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_b.tm_year; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = h_main_C_EPOCH_YEAR(); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
+    t1 = h0_b.tm_year; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = h_main_C_EPOCH_YEAR(); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.year_of", 70, 12);
 #line 285 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -289,13 +289,13 @@ bb2:
 #line 70 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
 #line 292 "main.c"
-    hero_panic_must(t8);
+    hero_panic_must_at(t8, "main.hero", "main.year_of", 70, 12);
     hero_unreachable();
 }
 
 #line 73 "examples/ctime/main.hero"
 int64_t h_main_month_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_b.tm_mon; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
+    t1 = h0_b.tm_mon; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.month_of", 74, 12);
 #line 300 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -304,7 +304,7 @@ bb2:
 #line 74 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
 #line 307 "main.c"
-    hero_panic_must(t8);
+    hero_panic_must_at(t8, "main.hero", "main.month_of", 74, 12);
     hero_unreachable();
 }
 
@@ -319,7 +319,7 @@ bb2:
 #line 77 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
 #line 322 "main.c"
-    hero_panic_must(t8);
+    hero_panic_must_at(t8, "main.hero", "main.day_of", 77, 12);
     hero_unreachable();
 }
 
@@ -334,14 +334,14 @@ bb2:
 #line 80 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
 #line 337 "main.c"
-    hero_panic_must(t8);
+    hero_panic_must_at(t8, "main.hero", "main.hour_of", 80, 12);
     hero_unreachable();
 }
 
 #line 82 "examples/ctime/main.hero"
 h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour) { HERO_NODEBUG h_0opt_e1f4933 h4_f0 = {0}, h6_f1 = {0}, h8_f2 = {0}, h10_f3 = {0}, h13_own13 = {0}, h14_own14 = {0}, h16_own16 = {0}, h18_own18 = {0}, t4, t5, t9, t12, t17, t18, t22, t25, t28, t29, t33, t36, t39, t40, t44, t47, t56, t57, t58, t59, t61, t62, t64, t65; int32_t h5_y; int32_t h7_m; int32_t h9_d; int32_t h11_h; HERO_NODEBUG h_0opt_13b8cf25 h12_ret0 = {0}, h15_own15 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t11, t24, t35, t46, t54, t55, t60, t63, t66, t67, t68; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t14, t15, t16, t19, t20, t27, t30, t31, t38, t41, t42; HERO_NODEBUG bool t8, t21, t32, t43; HERO_NODEBUG HeroFailure t10, t23, t34, t45; HERO_NODEBUG int32_t t13, t26, t37, t48, t49, t50, t51, t52; HERO_NODEBUG struct tm t53; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_year; t2 = h_main_C_EPOCH_YEAR(); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); if (t3 >= -2147483648LL && t3 <= 2147483647LL) { t4 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t3}; } else { t4 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t56 = h13_own13; h13_own13 = t4; h_0opt_e1f4933_release(&t56); t57 = h4_f0; h_0opt_e1f4933_retain(&t4); h4_f0 = t4; h_0opt_e1f4933_release(&t57); t5 = h4_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t12 = h4_f0; t13 = t12.as.ok; h5_y = t13;
-    t14 = h1_month; t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow(); if (t16 >= -2147483648LL && t16 <= 2147483647LL) { t17 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t16}; } else { t17 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t58 = h14_own14; h14_own14 = t17; h_0opt_e1f4933_release(&t58); t59 = h6_f1; h_0opt_e1f4933_retain(&t17); h6_f1 = t17; h_0opt_e1f4933_release(&t59); t18 = h6_f1; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb3; else goto bb4; bb2:
+    t1 = h0_year; t2 = h_main_C_EPOCH_YEAR(); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.made", 83, 10); if (t3 >= -2147483648LL && t3 <= 2147483647LL) { t4 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t3}; } else { t4 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t56 = h13_own13; h13_own13 = t4; h_0opt_e1f4933_release(&t56); t57 = h4_f0; h_0opt_e1f4933_retain(&t4); h4_f0 = t4; h_0opt_e1f4933_release(&t57); t5 = h4_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t12 = h4_f0; t13 = t12.as.ok; h5_y = t13;
+    t14 = h1_month; t15 = INT64_C(1); if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow_at("main.hero", "main.made", 84, 10); if (t16 >= -2147483648LL && t16 <= 2147483647LL) { t17 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t16}; } else { t17 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t58 = h14_own14; h14_own14 = t17; h_0opt_e1f4933_release(&t58); t59 = h6_f1; h_0opt_e1f4933_retain(&t17); h6_f1 = t17; h_0opt_e1f4933_release(&t59); t18 = h6_f1; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb3; else goto bb4; bb2:
 #line 83
     t9 = h4_f0; t10 = t9.as.err; hero_failure_retain(&t10); t11 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t10}; t60 = h15_own15; h15_own15 = t11; h_0opt_13b8cf25_release(&t60); h12_ret0 = t11; goto bb9; bb3:
     t25 = h6_f1; t26 = t25.as.ok; h7_m = t26;
@@ -433,16 +433,16 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_13b8cf25 h0_f0 = {0}, h2_f1 = {0}, 
 #line 100
     t10 = h0_f0; t11 = t10.as.err;
 #line 436 "main.c"
-    hero_panic_must(t11);
+    hero_panic_must_at(t11, "main.hero", "main.main", 100, 15);
     hero_unreachable();
 bb3:
 #line 112 "examples/ctime/main.hero"
     t36 = h2_f1; t37 = t36.as.ok; h3_millennium = t37; hero_pad_fill(&h3_millennium, sizeof(struct tm), 1, hero_pad_g_0, hero_pad_n_0);
     t38 = h3_millennium; t39 = h_main_shown(t38); t63 = h8_own8; h8_own8 = t39; hero_str_decref(t63); hero_print_str(t39); hero_print_end();
 #line 116
-    t40 = INT64_C(3600); t41 = INT64_C(0); t42 = difftime(t40, t41); hero_print_f64(t42); hero_print_end();
-    t43 = INT64_C(0); t44 = INT64_C(3600); t45 = difftime(t43, t44); hero_print_f64(t45); hero_print_end();
-    t46 = INT64_C(0); t47 = INT64_C(0); t48 = difftime(t46, t47); hero_print_f64(t48); hero_print_end();
+    t40 = INT64_C(3600); t41 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 116, 11}; t42 = difftime(t40, t41); } hero_print_f64(t42); hero_print_end();
+    t43 = INT64_C(0); t44 = INT64_C(3600); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 117, 11}; t45 = difftime(t43, t44); } hero_print_f64(t45); hero_print_end();
+    t46 = INT64_C(0); t47 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 118, 11}; t48 = difftime(t46, t47); } hero_print_f64(t48); hero_print_end();
 #line 121
     t49 = INT64_C(3000000000); t50 = INT64_C(1); t51 = INT64_C(1); t52 = INT64_C(0); t53 = h_main_made(t49, t50, t51, t52); t64 = h9_own9; h9_own9 = t53; h_0opt_13b8cf25_release(&t64); t65 = h4_f2; h_0opt_13b8cf25_retain(&t53); h4_f2 = t53; h_0opt_13b8cf25_release(&t65); t54 = h4_f2; t55 = t54.tag; t56 = INT64_C(1); t57 = t55 == t56; hero_print_bool(t57); hero_print_end();
 #line 449 "main.c"
@@ -459,15 +459,15 @@ bb4:
 #line 112 "examples/ctime/main.hero"
     t34 = h2_f1; t35 = t34.as.err;
 #line 462 "main.c"
-    hero_panic_must(t35);
+    hero_panic_must_at(t35, "main.hero", "main.main", 112, 18);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_main_Broken_eq(const struct tm *a, const struct tm *b) {
-    hero_panic("h_main_Broken_eq: a partial record has no structural equality");
+HERO_TU_LOCAL bool h_main_0Broken_eq(const struct tm *a, const struct tm *b) {
+    hero_panic("h_main_0Broken_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_main_Broken_hash(const void *elem) {
-    (void)elem; hero_panic("h_main_Broken_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_main_0Broken_hash(const void *elem) {
+    (void)elem; hero_panic("h_main_0Broken_hash: a partial record has no structural hash");
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -521,7 +521,7 @@ HERO_TU_LOCAL void h_0opt_13b8cf25_release(h_0opt_13b8cf25 *v) {
 HERO_TU_LOCAL bool h_0opt_13b8cf25_eq(const h_0opt_13b8cf25 *a, const h_0opt_13b8cf25 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_main_Broken_desc)->eq(&a->as.ok, &b->as.ok);
+    return (&h_main_0Broken_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_13b8cf25_hash(const void *elem) {
@@ -531,7 +531,7 @@ HERO_TU_LOCAL uint64_t h_0opt_13b8cf25_hash(const void *elem) {
     if (v->tag != INT64_C(0)) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_main_Broken_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (h ^ (&h_main_0Broken_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
@@ -631,7 +631,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d14f66a713a3c82", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("068f78b178688af5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

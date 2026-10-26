@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -113,6 +113,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -143,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 155 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -154,6 +162,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(void);
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(void);
@@ -166,9 +178,9 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(void) {
 #line 24
     int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend", "n"); HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h0_n = t1;
-    hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.lend", 26, 5}; hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n); }
     t2 = h0_n; hero_lend_local_give(hero_lend_h0_n); return t2;
-#line 172 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 184 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_n
 
@@ -179,19 +191,19 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(voi
 #line 29
     int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend_again", "m"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h0_m = t1;
-    t2 = INT64_C(5); hero_lend_local_name(hero_lend_h0_m, "put_one", "x"); (void)put_one((void *)&h0_m, t2);
+    t2 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.lend_again", 31, 5}; hero_lend_local_name(hero_lend_h0_m, "put_one", "x"); (void)put_one((void *)&h0_m, t2); }
     t3 = h0_m; hero_lend_local_give(hero_lend_h0_m); return t3;
-#line 185 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 197 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_m
 
 #line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 void h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main(void) { HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(); hero_print_int(t1); hero_print_end();
-    t2 = INT64_C(77); (void)cell_write_later(t2);
+    t2 = INT64_C(77); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.main", 36, 5}; (void)cell_write_later(t2); }
     t3 = HERO_STR_LIT(hero_str_42bddec1); hero_print_str(t3); hero_print_end();
     t4 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(); hero_print_int(t4); hero_print_end(); return;
-#line 195 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 207 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -257,10 +269,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("305e0b28444f92f5", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("692fdf2511fd3388", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed\tfixedbugs-451-a-local-c-writes-after-its-function-returns-is-named\n");
     h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -144,11 +152,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 156 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_eq(cell * const *a, cell * const *b);
-HERO_TU_LOCAL uint64_t h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_hash(const void *elem);
+HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_0Cell_eq(cell * const *a, cell * const *b);
+HERO_TU_LOCAL uint64_t h_limitacopygivenbackaftercreuseditsaddressisnotcaught_0Cell_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -157,25 +165,29 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void);
 
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void) { cell * h0_a; cell * h1_kept; cell * h2_b; HERO_NODEBUG cell *t1, *t2, *t3, *t4, *t6, *t8; HERO_NODEBUG HeroStr t5, t9; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = cell_open(); hero_handle_acquired(t1, "cell_close"); h0_a = t1;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.main", 22, 9}; t1 = cell_open(); hero_handle_acquired_at(t1, "cell_close", &hero_here); } h0_a = t1;
     t2 = h0_a; h1_kept = t2;
-    t3 = h0_a; { hero_handle_alive(t3, "the argument `c` of `cell_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "cell_close", NULL); (void)cell_close(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); }
-    t4 = cell_open(); hero_handle_acquired(t4, "cell_close"); h2_b = t4;
-    t5 = HERO_STR_LIT(hero_str_7a4a137a); t6 = h2_b; hero_handle_alive(t6, "the argument `c` of `cell_value`"); t7 = cell_value(t6); hero_print_str(t5); hero_print_int(t7); hero_print_end();
-    t8 = h1_kept; { hero_handle_alive(t8, "the argument `c` of `cell_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "cell_close", NULL); (void)cell_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_kept == t8) h1_kept = hero_handle_dead(); }
+    t3 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.main", 24, 5}; { hero_handle_alive_at(t3, "the argument `c` of `cell_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t3, "cell_close", NULL, &hero_here); (void)cell_close(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); } }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.main", 25, 9}; t4 = cell_open(); hero_handle_acquired_at(t4, "cell_close", &hero_here); } h2_b = t4;
+    t5 = HERO_STR_LIT(hero_str_7a4a137a); t6 = h2_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.main", 26, 34}; hero_handle_alive_at(t6, "the argument `c` of `cell_value`", &hero_here); t7 = cell_value(t6); } hero_print_str(t5); hero_print_int(t7); hero_print_end();
+    t8 = h1_kept; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.main", 27, 5}; { hero_handle_alive_at(t8, "the argument `c` of `cell_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "cell_close", NULL, &hero_here); (void)cell_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_kept == t8) h1_kept = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_1a39e328); hero_print_str(t9); hero_print_end(); return;
-#line 173 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 185 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 }
-HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_eq(cell * const *a, cell * const *b) {
+HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_0Cell_eq(cell * const *a, cell * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_limitacopygivenbackaftercreuseditsaddressisnotcaught_0Cell_hash(const void *elem) {
     cell * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -246,10 +258,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66f73c2009c5ba07", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b7628782ee4f169", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("limitacopygivenbackaftercreuseditsaddressisnotcaught\tlimit-a-copy-given-back-after-c-reused-its-address-is-not-caught\n");
     h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -104,8 +104,10 @@ HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
 HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
+HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
+HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 
-#line 109 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 111 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -120,6 +122,14 @@ typedef struct h_0opt_a8ea2 {
         HeroFailure err;
     } as;
 } h_0opt_a8ea2;
+
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -149,7 +159,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 163 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -160,6 +170,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 static void h_0opt_f87774a_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_0opt_f87774a));
@@ -181,28 +195,31 @@ HERO_TU_QUIET static const HeroDesc h_0opt_f87774a_desc = {
 
 void h_fixedbugs353anargumentholdingalonesurrogateisnottext_main(void);
 int64_t h_library_HERO_STR_OK(void);
-h_0opt_f87774a h_library_validated(const char * h0_c);
-HeroArrayHeader * h_library_args(void);
-HeroArrayHeader * h_library_args_checked(void);
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+HeroArrayHeader * h_library_args_checked(const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args_checked(void);
 
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
 void h_fixedbugs353anargumentholdingalonesurrogateisnottext_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, t16, t17, t19, t25, t39; HeroStr h2_word = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h5_own5 = {0}, *t1, *t2, *t14, *t29, *t34, *t37, *t38, *t42; HERO_NODEBUG int64_t t3, t4, t7, t8, t10, t11, t12, t15, t18, t23, t30, t31, t35; HERO_NODEBUG bool t5, t13, t32; HERO_NODEBUG HeroStr t6, t9, t20, t21, t22, t24, t27, t28, t33, t36, t40; HERO_NODEBUG HeroFailure t26, t41; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_library_args_checked(); t37 = h4_own4; h4_own4 = t1; hero_array_decref(t37); t38 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t38);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero", "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.main", 18, 13}; t1 = h_library_args_checked(&hero_here); } t37 = h4_own4; h4_own4 = t1; hero_array_decref(t37); t38 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t38);
 #line 20
     t2 = h0_given; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 25
-    t14 = h0_given; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t14 + 1))[t15]); t39 = h1_s0; h_0opt_f87774a_retain(&t16); h1_s0 = t16; h_0opt_f87774a_release(&t39); t17 = h1_s0; t18 = t17.tag; switch (t18) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb2:
+    t14 = h0_given; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero", "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.main", 25, 11) : (void)0), (void)(t14->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t14 + 1))[t15]); t39 = h1_s0; h_0opt_f87774a_retain(&t16); h1_s0 = t16; h_0opt_f87774a_release(&t39); t17 = h1_s0; t18 = t17.tag; switch (t18) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb2:
 #line 21
-    t6 = HERO_STR_LIT(hero_str_42e1b755); t7 = INT64_C(1); t8 = run_self(t7); hero_print_str(t6); hero_print_int(t8); hero_print_end();
-    t9 = HERO_STR_LIT(hero_str_39d4a844); t10 = INT64_C(2); t11 = run_self(t10); t12 = INT64_C(0); t13 = t11 != t12; hero_print_str(t9); hero_print_bool(t13); hero_print_end(); goto bb10; bb3: goto bb1; bb4:
+    t6 = HERO_STR_LIT(hero_str_42e1b755); t7 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero", "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.main", 21, 58}; t8 = run_self(t7); } hero_print_str(t6); hero_print_int(t8); hero_print_end();
+    t9 = HERO_STR_LIT(hero_str_39d4a844); t10 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero", "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.main", 22, 52}; t11 = run_self(t10); } t12 = INT64_C(0); t13 = t11 != t12; hero_print_str(t9); hero_print_bool(t13); hero_print_end(); goto bb10; bb3: goto bb1; bb4:
 #line 29
     t29 = h0_given; t30 = ((void)(t29 == NULL ? ((void)hero_array_len(t29), hero_unreachable()) : (void)0), t29->len); t31 = INT64_C(2); t32 = t30 == t31; if (t32) goto bb8; else goto bb9; bb5:
 #line 26
     t19 = h1_s0; t20 = t19.as.ok; t40 = h2_word; hero_str_incref(t20); h2_word = t20; hero_str_decref(t40); t21 = HERO_STR_LIT(hero_str_5bb5a3c9); t22 = h2_word; t23 = hero_str_len(t22); t24 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t21); hero_print_int(t23); hero_print_str(t24); hero_print_end(); goto bb4; bb6:
     t25 = h1_s0; t26 = t25.as.err; t41 = h3_e; hero_failure_retain(&t26); h3_e = t26; hero_failure_release(&t41); t27 = HERO_STR_LIT(hero_str_5c4cb2fb); t28 = h3_e.code; hero_print_str(t27); hero_print_str(t28); hero_print_end(); goto bb4; bb7: goto bb10; bb8:
 #line 30
-    t33 = HERO_STR_LIT(hero_str_23c6d886); t34 = h_library_args(); t42 = h5_own5; h5_own5 = t34; hero_array_decref(t42); t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len); t36 = HERO_STR_LIT(hero_str_2ac8f181); hero_print_str(t33); hero_print_int(t35); hero_print_str(t36); hero_print_end(); goto bb7; bb9: goto bb7; bb10:
-#line 206 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+    t33 = HERO_STR_LIT(hero_str_23c6d886); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero", "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.main", 30, 31}; t34 = h_library_args(&hero_here); } t42 = h5_own5; h5_own5 = t34; hero_array_decref(t42); t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len); t36 = HERO_STR_LIT(hero_str_2ac8f181); hero_print_str(t33); hero_print_int(t35); hero_print_str(t36); hero_print_end(); goto bb7; bb9: goto bb7; bb10:
+#line 223 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_word);
@@ -214,11 +231,11 @@ void h_fixedbugs353anargumentholdingalonesurrogateisnottext_main(void) { HeroArr
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 218 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 235 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 }
 
 #line 153 "<heroes library>"
-h_0opt_f87774a h_library_validated(const char * h0_c) {
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
 #line 153
 #define h1_status (*hero_lend_h1_status)
 #line 153
@@ -226,7 +243,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 156
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status); t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
 #line 155
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
@@ -234,7 +251,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 238 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 255 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -246,37 +263,78 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     return t18;
 }
 #undef h1_status
-
-#line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = hero_array_new(&hero_desc_str, 1); t14 = h2_own2; h2_own2 = t1; hero_array_decref(t14); t15 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t15);
-    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t7 = h1_i; t8 = hero_args_at(t7); t16 = h3_own3; h3_own3 = t8; hero_str_decref(t16); hero_array_push_owned(&h0_out, &t8);
-    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
-    t13 = h0_out;
-#line 259 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
-    hero_array_incref(t13);
-    hero_array_release_at(&h0_out);
-    hero_array_release_at(&h2_own2);
-    hero_str_release_at(&h3_own3);
-    return t13;
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    return h_library_validated(h0_c, &hero_here);
 }
 
-#line 216 "<heroes library>"
-HeroArrayHeader * h_library_args_checked(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t14, *t15, *t16; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}, t9, t17; HERO_NODEBUG int64_t t2, t3, t4, t7, t11, t12, t13; HERO_NODEBUG bool t5; HERO_NODEBUG const char *t8; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 197 "<heroes library>"
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
+    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+#line 208
+    t47 = h0_out;
+#line 281 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+    hero_array_incref(t47);
+    hero_array_release_at(&h0_out);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_text));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_unread));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f1));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_f2));
+    hero_array_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    return t47;
+bb4:
+#line 207 "<heroes library>"
+    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
+#line 203
+    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
+    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
+#line 206
+    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
+#line 204
+    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
+#line 306 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+    hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
+bb9:
+#line 206 "<heroes library>"
+    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
+#line 312 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+    hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 197, 1};
+    return h_library_args(&hero_here);
+}
+
+#line 222 "<heroes library>"
+HeroArrayHeader * h_library_args_checked(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t14, *t15, *t16; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}, t9, t17; HERO_NODEBUG int64_t t2, t3, t4, t7, t11, t12, t13; HERO_NODEBUG bool t5; HERO_NODEBUG const char *t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&h_0opt_f87774a_desc, 1); t15 = h2_own2; h2_own2 = t1; hero_array_decref(t15); t16 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t16);
     t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t7 = h1_i; t8 = (const char *)hero_args_raw(t7); t9 = h_library_validated(t8); t17 = h3_own3; h3_own3 = t9; h_0opt_f87774a_release(&t17); hero_array_push_owned(&h0_out, &t9);
-    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h1_i = t13; goto bb1; bb3:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t8 = (const char *)hero_args_raw(t7); } t9 = h_library_validated(t8, hero_caller); t17 = h3_own3; h3_own3 = t9; h_0opt_f87774a_release(&t17); hero_array_push_owned(&h0_out, &t9);
+    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t13; goto bb1; bb3:
     t14 = h0_out;
-#line 275 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 329 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t14);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
     return t14;
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args_checked(void) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args_checked", 222, 1};
+    return h_library_args_checked(&hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -342,10 +400,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6499731e37285e6d", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("334f0e4878a24ec1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs353anargumentholdingalonesurrogateisnottext\tfixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text\n");
     h_fixedbugs353anargumentholdingalonesurrogateisnottext_main();
     hero_runtime_check_leaks();
     return 0;

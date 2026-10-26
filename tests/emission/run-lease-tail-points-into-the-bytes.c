@@ -48,7 +48,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -113,6 +113,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -143,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "leasetailpointsintothebytes.c"
+#line 155 "leasetailpointsintothebytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -154,14 +162,18 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out);
 void h_leasetailpointsintothebytes_main(void);
 
 #line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) { HERO_NODEBUG const char *t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_s; hero_lend_local_name(ph1_out, "after_dash", "tail"); (void)after_dash(hero_cstr_nonnull(t1), &(*ph1_out)); return;
-#line 165 "leasetailpointsintothebytes.c"
+    t1 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.tail_of", 19, 5}; hero_lend_local_name(ph1_out, "after_dash", "tail"); (void)after_dash(hero_cstr_nonnull_at(t1, &hero_here), &(*ph1_out)); } return;
+#line 177 "leasetailpointsintothebytes.c"
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
@@ -170,12 +182,12 @@ void h_leasetailpointsintothebytes_main(void) {
 #define h1_tail (*hero_lend_h1_tail)
 #line 21
     const char * h0_label; const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3, *t4, *t5; HERO_NODEBUG uint64_t t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_c4fd56d); t2 = hero_str_held(t1); h0_label = t2;
+    t1 = HERO_STR_LIT(hero_str_c4fd56d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.main", 22, 20}; t2 = hero_str_held_at(t1, &hero_here); } h0_label = t2;
     t3 = ((void *)0); h1_tail = t3;
     t4 = h0_label; h_leasetailpointsintothebytes_tail_of(t4, &h1_tail);
-    t5 = h1_tail; t6 = strlen(hero_cstr_nonnull(t5)); hero_print_uint(t6); hero_print_end();
-    hero_held_release(&h0_label); hero_lend_local_give(hero_lend_h1_tail); return;
-#line 179 "leasetailpointsintothebytes.c"
+    t5 = h1_tail; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.main", 25, 11}; t6 = strlen(hero_cstr_nonnull_at(t5, &hero_here)); } hero_print_uint(t6); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lease-tail-points-into-the-bytes.hero", "lease-tail-points-into-the-bytes.main", 26, 5}; hero_held_release_at(&h0_label, &hero_here); } hero_lend_local_give(hero_lend_h1_tail); return;
+#line 191 "leasetailpointsintothebytes.c"
 }
 #undef h1_tail
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -242,10 +254,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c36835d2e5f8fbf", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("467627402987180a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("leasetailpointsintothebytes\tlease-tail-points-into-the-bytes\n");
     h_leasetailpointsintothebytes_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -172,7 +172,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs393alongliteralisformattedinonepass_main(void);
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 20 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
 void h_fixedbugs393alongliteralisformattedinonepass_main(void) { HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; int64_t h2_chained; int64_t h3_weighted; int64_t h4_at; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h9_xs1 = {0}, *h13_own13 = {0}, *h15_own15 = {0}, *t257, *t516, *t519, *t522, *t539, *t542, *t545, *t571, *t582, *t583, *t586, *t587, *t588; HERO_NODEBUG int64_t h6_i0, h10_i1, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t204, t205, t206, t207, t208, t209, t210, t211, t212, t213, t214, t215, t216, t217, t218, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235, t236, t237, t238, t239, t240, t241, t242, t243, t244, t245, t246, t247, t248, t249, t250, t251, t252, t253, t254, t255, t256, t259, t261, t263, t265, t267, t269, t271, t273, t275, t277, t279, t281, t283, t285, t287, t289, t291, t293, t295, t297, t299, t301, t303, t305, t307, t309, t311, t313, t315, t317, t319, t321, t323, t325, t327, t329, t331, t333, t335, t337, t339, t341, t343, t345, t347, t349, t351, t353, t355, t357, t359, t361, t363, t365, t367, t369, t371, t373, t375, t377, t379, t381, t383, t385, t387, t388, t389, t390, t391, t392, t393, t394, t395, t396, t397, t398, t399, t400, t401, t402, t403, t404, t405, t406, t407, t408, t409, t410, t411, t412, t413, t414, t415, t416, t417, t418, t419, t420, t421, t422, t423, t424, t425, t426, t427, t428, t429, t430, t431, t432, t433, t434, t435, t436, t437, t438, t439, t440, t441, t442, t443, t444, t445, t446, t447, t448, t449, t450, t451, t452, t453, t454, t455, t456, t457, t458, t459, t460, t461, t462, t463, t464, t465, t466, t467, t468, t469, t470, t471, t472, t473, t474, t475, t476, t477, t478, t479, t480, t481, t482, t483, t484, t485, t486, t487, t488, t489, t490, t491, t492, t493, t494, t495, t496, t497, t498, t499, t500, t501, t502, t503, t504, t505, t506, t507, t508, t509, t510, t511, t512, t513, t514, t515, t517, t518, t520, t523, t524, t525, t526, t527, t528, t529, t530, t531, t532, t533, t534, t535, t536, t537, t538, t540, t541, t543, t546, t547, t548, t550, t556, t557, t562, t563, t564, t565, t566, t567, t568, t569, t570, t572, t574, t577, t579, t581; int64_t h7_x; int64_t h8_keyed; int64_t h11_k; HERO_NODEBUG h_0opt_e201354 h12_f0 = {0}, h18_own18 = {0}, t554, t555, t559, t561, t591, t592; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t386, *t549, *t576, *t584, *t585; HERO_NODEBUG HeroStr h16_own16 = {0}, h17_own17 = {0}, t258, t260, t262, t264, t266, t268, t270, t272, t274, t276, t278, t280, t282, t284, t286, t288, t290, t292, t294, t296, t298, t300, t302, t304, t306, t308, t310, t312, t314, t316, t318, t320, t322, t324, t326, t328, t330, t332, t334, t336, t338, t340, t342, t344, t346, t348, t350, t352, t354, t356, t358, t360, t362, t364, t366, t368, t370, t372, t374, t376, t378, t380, t382, t384, t551, t552, t553, t573, t575, t578, t580, t589, t590; HERO_NODEBUG bool t521, t544, t558; HERO_NODEBUG HeroFailure t560; HERO_ENTRY_STOP; goto bb0; bb0:
@@ -501,281 +502,281 @@ void h_fixedbugs393alongliteralisformattedinonepass_main(void) { HeroArrayHeader
     t382 = HERO_STR_LIT(hero_str_1c2097); t383 = INT64_C(13);
     t384 = HERO_STR_LIT(hero_str_1c2098); t385 = INT64_C(26);
 #line 279
-    t386 = hero_map_new(&hero_desc_str, &hero_desc_int, 64); hero_map_put(t386, &t258, &t259); hero_map_put(t386, &t260, &t261); hero_map_put(t386, &t262, &t263); hero_map_put(t386, &t264, &t265); hero_map_put(t386, &t266, &t267); hero_map_put(t386, &t268, &t269); hero_map_put(t386, &t270, &t271); hero_map_put(t386, &t272, &t273); hero_map_put(t386, &t274, &t275); hero_map_put(t386, &t276, &t277); hero_map_put(t386, &t278, &t279); hero_map_put(t386, &t280, &t281); hero_map_put(t386, &t282, &t283); hero_map_put(t386, &t284, &t285); hero_map_put(t386, &t286, &t287); hero_map_put(t386, &t288, &t289); hero_map_put(t386, &t290, &t291); hero_map_put(t386, &t292, &t293); hero_map_put(t386, &t294, &t295); hero_map_put(t386, &t296, &t297); hero_map_put(t386, &t298, &t299); hero_map_put(t386, &t300, &t301); hero_map_put(t386, &t302, &t303); hero_map_put(t386, &t304, &t305); hero_map_put(t386, &t306, &t307); hero_map_put(t386, &t308, &t309); hero_map_put(t386, &t310, &t311); hero_map_put(t386, &t312, &t313); hero_map_put(t386, &t314, &t315); hero_map_put(t386, &t316, &t317); hero_map_put(t386, &t318, &t319); hero_map_put(t386, &t320, &t321); hero_map_put(t386, &t322, &t323); hero_map_put(t386, &t324, &t325); hero_map_put(t386, &t326, &t327); hero_map_put(t386, &t328, &t329); hero_map_put(t386, &t330, &t331); hero_map_put(t386, &t332, &t333); hero_map_put(t386, &t334, &t335); hero_map_put(t386, &t336, &t337); hero_map_put(t386, &t338, &t339); hero_map_put(t386, &t340, &t341); hero_map_put(t386, &t342, &t343); hero_map_put(t386, &t344, &t345); hero_map_put(t386, &t346, &t347); hero_map_put(t386, &t348, &t349); hero_map_put(t386, &t350, &t351); hero_map_put(t386, &t352, &t353); hero_map_put(t386, &t354, &t355); hero_map_put(t386, &t356, &t357); hero_map_put(t386, &t358, &t359); hero_map_put(t386, &t360, &t361); hero_map_put(t386, &t362, &t363); hero_map_put(t386, &t364, &t365); hero_map_put(t386, &t366, &t367); hero_map_put(t386, &t368, &t369); hero_map_put(t386, &t370, &t371); hero_map_put(t386, &t372, &t373); hero_map_put(t386, &t374, &t375); hero_map_put(t386, &t376, &t377); hero_map_put(t386, &t378, &t379); hero_map_put(t386, &t380, &t381); hero_map_put(t386, &t382, &t383); hero_map_put(t386, &t384, &t385); t584 = h14_own14; h14_own14 = t386; hero_map_decref(t584); t585 = h1_m; hero_map_incref(t386); h1_m = t386; hero_map_decref(t585);
+    t386 = hero_map_new(&hero_desc_str, &hero_desc_int, 64); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 279, 21}; hero_map_put_at(t386, &t258, &t259, &hero_here); hero_map_put_at(t386, &t260, &t261, &hero_here); hero_map_put_at(t386, &t262, &t263, &hero_here); hero_map_put_at(t386, &t264, &t265, &hero_here); hero_map_put_at(t386, &t266, &t267, &hero_here); hero_map_put_at(t386, &t268, &t269, &hero_here); hero_map_put_at(t386, &t270, &t271, &hero_here); hero_map_put_at(t386, &t272, &t273, &hero_here); hero_map_put_at(t386, &t274, &t275, &hero_here); hero_map_put_at(t386, &t276, &t277, &hero_here); hero_map_put_at(t386, &t278, &t279, &hero_here); hero_map_put_at(t386, &t280, &t281, &hero_here); hero_map_put_at(t386, &t282, &t283, &hero_here); hero_map_put_at(t386, &t284, &t285, &hero_here); hero_map_put_at(t386, &t286, &t287, &hero_here); hero_map_put_at(t386, &t288, &t289, &hero_here); hero_map_put_at(t386, &t290, &t291, &hero_here); hero_map_put_at(t386, &t292, &t293, &hero_here); hero_map_put_at(t386, &t294, &t295, &hero_here); hero_map_put_at(t386, &t296, &t297, &hero_here); hero_map_put_at(t386, &t298, &t299, &hero_here); hero_map_put_at(t386, &t300, &t301, &hero_here); hero_map_put_at(t386, &t302, &t303, &hero_here); hero_map_put_at(t386, &t304, &t305, &hero_here); hero_map_put_at(t386, &t306, &t307, &hero_here); hero_map_put_at(t386, &t308, &t309, &hero_here); hero_map_put_at(t386, &t310, &t311, &hero_here); hero_map_put_at(t386, &t312, &t313, &hero_here); hero_map_put_at(t386, &t314, &t315, &hero_here); hero_map_put_at(t386, &t316, &t317, &hero_here); hero_map_put_at(t386, &t318, &t319, &hero_here); hero_map_put_at(t386, &t320, &t321, &hero_here); hero_map_put_at(t386, &t322, &t323, &hero_here); hero_map_put_at(t386, &t324, &t325, &hero_here); hero_map_put_at(t386, &t326, &t327, &hero_here); hero_map_put_at(t386, &t328, &t329, &hero_here); hero_map_put_at(t386, &t330, &t331, &hero_here); hero_map_put_at(t386, &t332, &t333, &hero_here); hero_map_put_at(t386, &t334, &t335, &hero_here); hero_map_put_at(t386, &t336, &t337, &hero_here); hero_map_put_at(t386, &t338, &t339, &hero_here); hero_map_put_at(t386, &t340, &t341, &hero_here); hero_map_put_at(t386, &t342, &t343, &hero_here); hero_map_put_at(t386, &t344, &t345, &hero_here); hero_map_put_at(t386, &t346, &t347, &hero_here); hero_map_put_at(t386, &t348, &t349, &hero_here); hero_map_put_at(t386, &t350, &t351, &hero_here); hero_map_put_at(t386, &t352, &t353, &hero_here); hero_map_put_at(t386, &t354, &t355, &hero_here); hero_map_put_at(t386, &t356, &t357, &hero_here); hero_map_put_at(t386, &t358, &t359, &hero_here); hero_map_put_at(t386, &t360, &t361, &hero_here); hero_map_put_at(t386, &t362, &t363, &hero_here); hero_map_put_at(t386, &t364, &t365, &hero_here); hero_map_put_at(t386, &t366, &t367, &hero_here); hero_map_put_at(t386, &t368, &t369, &hero_here); hero_map_put_at(t386, &t370, &t371, &hero_here); hero_map_put_at(t386, &t372, &t373, &hero_here); hero_map_put_at(t386, &t374, &t375, &hero_here); hero_map_put_at(t386, &t376, &t377, &hero_here); hero_map_put_at(t386, &t378, &t379, &hero_here); hero_map_put_at(t386, &t380, &t381, &hero_here); hero_map_put_at(t386, &t382, &t383, &hero_here); hero_map_put_at(t386, &t384, &t385, &hero_here); } t584 = h14_own14; h14_own14 = t386; hero_map_decref(t584); t585 = h1_m; hero_map_incref(t386); h1_m = t386; hero_map_decref(t585);
 #line 346
     t387 = INT64_C(1);
     t388 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t387, t388, &t389)) hero_panic_overflow();
+    if (__builtin_add_overflow(t387, t388, &t389)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 348
     t390 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t389, t390, &t391)) hero_panic_overflow();
+    if (__builtin_add_overflow(t389, t390, &t391)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 349
     t392 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t391, t392, &t393)) hero_panic_overflow();
+    if (__builtin_add_overflow(t391, t392, &t393)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 350
     t394 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t393, t394, &t395)) hero_panic_overflow();
+    if (__builtin_add_overflow(t393, t394, &t395)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 351
     t396 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t395, t396, &t397)) hero_panic_overflow();
+    if (__builtin_add_overflow(t395, t396, &t397)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 352
     t398 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t397, t398, &t399)) hero_panic_overflow();
+    if (__builtin_add_overflow(t397, t398, &t399)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 353
     t400 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t399, t400, &t401)) hero_panic_overflow();
+    if (__builtin_add_overflow(t399, t400, &t401)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 354
     t402 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t401, t402, &t403)) hero_panic_overflow();
+    if (__builtin_add_overflow(t401, t402, &t403)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 355
     t404 = INT64_C(1);
 #line 346
-    if (__builtin_add_overflow(t403, t404, &t405)) hero_panic_overflow();
+    if (__builtin_add_overflow(t403, t404, &t405)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 356
     t406 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t405, t406, &t407)) hero_panic_overflow();
+    if (__builtin_add_overflow(t405, t406, &t407)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 357
     t408 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t407, t408, &t409)) hero_panic_overflow();
+    if (__builtin_add_overflow(t407, t408, &t409)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 358
     t410 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t409, t410, &t411)) hero_panic_overflow();
+    if (__builtin_add_overflow(t409, t410, &t411)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 359
     t412 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t411, t412, &t413)) hero_panic_overflow();
+    if (__builtin_add_overflow(t411, t412, &t413)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 360
     t414 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t413, t414, &t415)) hero_panic_overflow();
+    if (__builtin_add_overflow(t413, t414, &t415)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 361
     t416 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t415, t416, &t417)) hero_panic_overflow();
+    if (__builtin_add_overflow(t415, t416, &t417)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 362
     t418 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t417, t418, &t419)) hero_panic_overflow();
+    if (__builtin_add_overflow(t417, t418, &t419)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 363
     t420 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t419, t420, &t421)) hero_panic_overflow();
+    if (__builtin_add_overflow(t419, t420, &t421)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 364
     t422 = INT64_C(1);
 #line 346
-    if (__builtin_add_overflow(t421, t422, &t423)) hero_panic_overflow();
+    if (__builtin_add_overflow(t421, t422, &t423)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 365
     t424 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t423, t424, &t425)) hero_panic_overflow();
+    if (__builtin_add_overflow(t423, t424, &t425)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 366
     t426 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t425, t426, &t427)) hero_panic_overflow();
+    if (__builtin_add_overflow(t425, t426, &t427)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 367
     t428 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t427, t428, &t429)) hero_panic_overflow();
+    if (__builtin_add_overflow(t427, t428, &t429)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 368
     t430 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t429, t430, &t431)) hero_panic_overflow();
+    if (__builtin_add_overflow(t429, t430, &t431)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 369
     t432 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t431, t432, &t433)) hero_panic_overflow();
+    if (__builtin_add_overflow(t431, t432, &t433)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 370
     t434 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t433, t434, &t435)) hero_panic_overflow();
+    if (__builtin_add_overflow(t433, t434, &t435)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 371
     t436 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t435, t436, &t437)) hero_panic_overflow();
+    if (__builtin_add_overflow(t435, t436, &t437)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 372
     t438 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t437, t438, &t439)) hero_panic_overflow();
+    if (__builtin_add_overflow(t437, t438, &t439)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 373
     t440 = INT64_C(1);
 #line 346
-    if (__builtin_add_overflow(t439, t440, &t441)) hero_panic_overflow();
+    if (__builtin_add_overflow(t439, t440, &t441)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 374
     t442 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t441, t442, &t443)) hero_panic_overflow();
+    if (__builtin_add_overflow(t441, t442, &t443)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 375
     t444 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t443, t444, &t445)) hero_panic_overflow();
+    if (__builtin_add_overflow(t443, t444, &t445)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 376
     t446 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t445, t446, &t447)) hero_panic_overflow();
+    if (__builtin_add_overflow(t445, t446, &t447)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 377
     t448 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t447, t448, &t449)) hero_panic_overflow();
+    if (__builtin_add_overflow(t447, t448, &t449)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 378
     t450 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t449, t450, &t451)) hero_panic_overflow();
+    if (__builtin_add_overflow(t449, t450, &t451)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 379
     t452 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t451, t452, &t453)) hero_panic_overflow();
+    if (__builtin_add_overflow(t451, t452, &t453)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 380
     t454 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t453, t454, &t455)) hero_panic_overflow();
+    if (__builtin_add_overflow(t453, t454, &t455)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 381
     t456 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t455, t456, &t457)) hero_panic_overflow();
+    if (__builtin_add_overflow(t455, t456, &t457)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 382
     t458 = INT64_C(1);
 #line 346
-    if (__builtin_add_overflow(t457, t458, &t459)) hero_panic_overflow();
+    if (__builtin_add_overflow(t457, t458, &t459)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 383
     t460 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t459, t460, &t461)) hero_panic_overflow();
+    if (__builtin_add_overflow(t459, t460, &t461)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 384
     t462 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t461, t462, &t463)) hero_panic_overflow();
+    if (__builtin_add_overflow(t461, t462, &t463)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 385
     t464 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t463, t464, &t465)) hero_panic_overflow();
+    if (__builtin_add_overflow(t463, t464, &t465)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 386
     t466 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t465, t466, &t467)) hero_panic_overflow();
+    if (__builtin_add_overflow(t465, t466, &t467)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 387
     t468 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t467, t468, &t469)) hero_panic_overflow();
+    if (__builtin_add_overflow(t467, t468, &t469)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 388
     t470 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t469, t470, &t471)) hero_panic_overflow();
+    if (__builtin_add_overflow(t469, t470, &t471)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 389
     t472 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t471, t472, &t473)) hero_panic_overflow();
+    if (__builtin_add_overflow(t471, t472, &t473)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 390
     t474 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t473, t474, &t475)) hero_panic_overflow();
+    if (__builtin_add_overflow(t473, t474, &t475)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 391
     t476 = INT64_C(1);
 #line 346
-    if (__builtin_add_overflow(t475, t476, &t477)) hero_panic_overflow();
+    if (__builtin_add_overflow(t475, t476, &t477)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 392
     t478 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t477, t478, &t479)) hero_panic_overflow();
+    if (__builtin_add_overflow(t477, t478, &t479)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 393
     t480 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t479, t480, &t481)) hero_panic_overflow();
+    if (__builtin_add_overflow(t479, t480, &t481)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 394
     t482 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t481, t482, &t483)) hero_panic_overflow();
+    if (__builtin_add_overflow(t481, t482, &t483)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 395
     t484 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t483, t484, &t485)) hero_panic_overflow();
+    if (__builtin_add_overflow(t483, t484, &t485)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 396
     t486 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t485, t486, &t487)) hero_panic_overflow();
+    if (__builtin_add_overflow(t485, t486, &t487)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 397
     t488 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t487, t488, &t489)) hero_panic_overflow();
+    if (__builtin_add_overflow(t487, t488, &t489)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 398
     t490 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t489, t490, &t491)) hero_panic_overflow();
+    if (__builtin_add_overflow(t489, t490, &t491)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 399
     t492 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t491, t492, &t493)) hero_panic_overflow();
+    if (__builtin_add_overflow(t491, t492, &t493)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 400
     t494 = INT64_C(1);
 #line 346
-    if (__builtin_add_overflow(t493, t494, &t495)) hero_panic_overflow();
+    if (__builtin_add_overflow(t493, t494, &t495)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 401
     t496 = INT64_C(2);
 #line 346
-    if (__builtin_add_overflow(t495, t496, &t497)) hero_panic_overflow();
+    if (__builtin_add_overflow(t495, t496, &t497)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 402
     t498 = INT64_C(3);
 #line 346
-    if (__builtin_add_overflow(t497, t498, &t499)) hero_panic_overflow();
+    if (__builtin_add_overflow(t497, t498, &t499)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 403
     t500 = INT64_C(4);
 #line 346
-    if (__builtin_add_overflow(t499, t500, &t501)) hero_panic_overflow();
+    if (__builtin_add_overflow(t499, t500, &t501)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 404
     t502 = INT64_C(5);
 #line 346
-    if (__builtin_add_overflow(t501, t502, &t503)) hero_panic_overflow();
+    if (__builtin_add_overflow(t501, t502, &t503)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 405
     t504 = INT64_C(6);
 #line 346
-    if (__builtin_add_overflow(t503, t504, &t505)) hero_panic_overflow();
+    if (__builtin_add_overflow(t503, t504, &t505)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 406
     t506 = INT64_C(7);
 #line 346
-    if (__builtin_add_overflow(t505, t506, &t507)) hero_panic_overflow();
+    if (__builtin_add_overflow(t505, t506, &t507)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 407
     t508 = INT64_C(8);
 #line 346
-    if (__builtin_add_overflow(t507, t508, &t509)) hero_panic_overflow();
+    if (__builtin_add_overflow(t507, t508, &t509)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 408
     t510 = INT64_C(9);
 #line 346
-    if (__builtin_add_overflow(t509, t510, &t511)) hero_panic_overflow();
+    if (__builtin_add_overflow(t509, t510, &t511)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 409
     t512 = INT64_C(64);
 #line 346
-    if (__builtin_add_overflow(t511, t512, &t513)) hero_panic_overflow();
+    if (__builtin_add_overflow(t511, t512, &t513)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 346, 9);
 #line 345
     h2_chained = t513;
 #line 411
     t514 = INT64_C(0); h3_weighted = t514;
     t515 = INT64_C(1); h4_at = t515;
 #line 414
-    t516 = h0_xs; t586 = h5_xs0; hero_array_incref(t516); h5_xs0 = t516; hero_array_decref(t586); t517 = INT64_C(0); h6_i0 = t517; goto bb1; bb1: t518 = h6_i0; t519 = h5_xs0; t520 = ((void)(t519 == NULL ? ((void)hero_array_len(t519), hero_unreachable()) : (void)0), t519->len); t521 = t518 < t520; if (t521) goto bb2; else goto bb4; bb2: t522 = h5_xs0; t523 = h6_i0; t524 = ((void)((t522 == NULL || t523 < 0 || t523 >= t522->len) ? ((void)hero_array_at(t522, t523), hero_unreachable()) : (void)0), (void)(t522->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t522 + 1))[t523]); h7_x = t524;
-    t525 = h3_weighted; t526 = h7_x; t527 = h4_at; if (__builtin_mul_overflow(t526, t527, &t528)) hero_panic_overflow(); if (__builtin_add_overflow(t525, t528, &t529)) hero_panic_overflow(); h3_weighted = t529;
-    t530 = h4_at; t531 = INT64_C(1); if (__builtin_add_overflow(t530, t531, &t532)) hero_panic_overflow(); h4_at = t532; goto bb3; bb3:
+    t516 = h0_xs; t586 = h5_xs0; hero_array_incref(t516); h5_xs0 = t516; hero_array_decref(t586); t517 = INT64_C(0); h6_i0 = t517; goto bb1; bb1: t518 = h6_i0; t519 = h5_xs0; t520 = ((void)(t519 == NULL ? ((void)hero_array_len(t519), hero_unreachable()) : (void)0), t519->len); t521 = t518 < t520; if (t521) goto bb2; else goto bb4; bb2: t522 = h5_xs0; t523 = h6_i0; t524 = ((void)((t522 == NULL || t523 < 0 || t523 >= t522->len) ? hero_panic_index_at(t522, t523, "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 414, 9) : (void)0), (void)(t522->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t522 + 1))[t523]); h7_x = t524;
+    t525 = h3_weighted; t526 = h7_x; t527 = h4_at; if (__builtin_mul_overflow(t526, t527, &t528)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 415, 31); if (__builtin_add_overflow(t525, t528, &t529)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 415, 20); h3_weighted = t529;
+    t530 = h4_at; t531 = INT64_C(1); if (__builtin_add_overflow(t530, t531, &t532)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 416, 14); h4_at = t532; goto bb3; bb3:
 #line 414
-    t533 = h6_i0; t534 = INT64_C(1); if (__builtin_add_overflow(t533, t534, &t535)) hero_panic_overflow(); h6_i0 = t535; goto bb1; bb4:
+    t533 = h6_i0; t534 = INT64_C(1); if (__builtin_add_overflow(t533, t534, &t535)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 414, 9); h6_i0 = t535; goto bb1; bb4:
 #line 418
     t536 = INT64_C(0); h8_keyed = t536;
 #line 420
-    t537 = INT64_C(0); t538 = INT64_C(64); t539 = h_library_range(t537, t538); t587 = h15_own15; h15_own15 = t539; hero_array_decref(t587); t588 = h9_xs1; hero_array_incref(t539); h9_xs1 = t539; hero_array_decref(t588); t540 = INT64_C(0); h10_i1 = t540; goto bb5; bb5: t541 = h10_i1; t542 = h9_xs1; t543 = ((void)(t542 == NULL ? ((void)hero_array_len(t542), hero_unreachable()) : (void)0), t542->len); t544 = t541 < t543; if (t544) goto bb6; else goto bb8; bb6: t545 = h9_xs1; t546 = h10_i1; t547 = ((void)((t545 == NULL || t546 < 0 || t546 >= t545->len) ? ((void)hero_array_at(t545, t546), hero_unreachable()) : (void)0), (void)(t545->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t545 + 1))[t546]); h11_k = t547;
-    t548 = h8_keyed; t549 = h1_m; t550 = h11_k; t551 = HERO_STR_LIT(hero_str_6b); t552 = hero_int_to_str(t550); t589 = h16_own16; h16_own16 = t552; hero_str_decref(t589); t553 = hero_str_concat(t551, t552); t590 = h17_own17; h17_own17 = t553; hero_str_decref(t590); { HERO_NODEBUG const void *found = hero_map_find(t549, &t553); if (found == NULL) { t554 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t554 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t554.as.ok, found); } } t591 = h18_own18; h18_own18 = t554; h_0opt_e201354_release(&t591); t592 = h12_f0; h_0opt_e201354_retain(&t554); h12_f0 = t554; h_0opt_e201354_release(&t592); t555 = h12_f0; t556 = t555.tag; t557 = INT64_C(0); t558 = t556 == t557; if (t558) goto bb9; else goto bb10; bb7:
+    t537 = INT64_C(0); t538 = INT64_C(64); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 420, 14}; t539 = h_library_range(t537, t538, &hero_here); } t587 = h15_own15; h15_own15 = t539; hero_array_decref(t587); t588 = h9_xs1; hero_array_incref(t539); h9_xs1 = t539; hero_array_decref(t588); t540 = INT64_C(0); h10_i1 = t540; goto bb5; bb5: t541 = h10_i1; t542 = h9_xs1; t543 = ((void)(t542 == NULL ? ((void)hero_array_len(t542), hero_unreachable()) : (void)0), t542->len); t544 = t541 < t543; if (t544) goto bb6; else goto bb8; bb6: t545 = h9_xs1; t546 = h10_i1; t547 = ((void)((t545 == NULL || t546 < 0 || t546 >= t545->len) ? hero_panic_index_at(t545, t546, "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 420, 9) : (void)0), (void)(t545->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t545 + 1))[t546]); h11_k = t547;
+    t548 = h8_keyed; t549 = h1_m; t550 = h11_k; t551 = HERO_STR_LIT(hero_str_6b); t552 = hero_int_to_str(t550); t589 = h16_own16; h16_own16 = t552; hero_str_decref(t589); t553 = hero_str_concat(t551, t552); t590 = h17_own17; h17_own17 = t553; hero_str_decref(t590); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 25}; HERO_NODEBUG const void *found = hero_map_find_at(t549, &t553, &hero_here); if (found == NULL) { t554 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t554 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t554.as.ok, found); } } t591 = h18_own18; h18_own18 = t554; h_0opt_e201354_release(&t591); t592 = h12_f0; h_0opt_e201354_retain(&t554); h12_f0 = t554; h_0opt_e201354_release(&t592); t555 = h12_f0; t556 = t555.tag; t557 = INT64_C(0); t558 = t556 == t557; if (t558) goto bb9; else goto bb10; bb7:
 #line 420
-    t568 = h10_i1; t569 = INT64_C(1); if (__builtin_add_overflow(t568, t569, &t570)) hero_panic_overflow(); h10_i1 = t570; goto bb5; bb8:
+    t568 = h10_i1; t569 = INT64_C(1); if (__builtin_add_overflow(t568, t569, &t570)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 420, 9); h10_i1 = t570; goto bb5; bb8:
 #line 423
     t571 = h0_xs; t572 = ((void)(t571 == NULL ? ((void)hero_array_len(t571), hero_unreachable()) : (void)0), t571->len); t573 = HERO_STR_LIT(hero_str_20); t574 = h3_weighted; t575 = HERO_STR_LIT(hero_str_20); t576 = h1_m; t577 = hero_map_len(t576); t578 = HERO_STR_LIT(hero_str_20); t579 = h8_keyed; t580 = HERO_STR_LIT(hero_str_20); t581 = h2_chained; hero_print_int(t572); hero_print_str(t573); hero_print_int(t574); hero_print_str(t575); hero_print_int(t577); hero_print_str(t578); hero_print_int(t579); hero_print_str(t580); hero_print_int(t581); hero_print_end();
-#line 779 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 780 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h5_xs0);
@@ -790,25 +791,29 @@ void h_fixedbugs393alongliteralisformattedinonepass_main(void) { HeroArrayHeader
     return;
 bb9:
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-    t561 = h12_f0; t562 = t561.as.ok; t563 = h11_k; t564 = INT64_C(1); if (__builtin_add_overflow(t563, t564, &t565)) hero_panic_overflow(); if (__builtin_mul_overflow(t562, t565, &t566)) hero_panic_overflow(); if (__builtin_add_overflow(t548, t566, &t567)) hero_panic_overflow(); h8_keyed = t567; goto bb7; bb10: t559 = h12_f0; t560 = t559.as.err;
-#line 795 "fixedbugs393alongliteralisformattedinonepass.c"
-    hero_panic_must(t560);
+    t561 = h12_f0; t562 = t561.as.ok; t563 = h11_k; t564 = INT64_C(1); if (__builtin_add_overflow(t563, t564, &t565)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 46); if (__builtin_mul_overflow(t562, t565, &t566)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 25); if (__builtin_add_overflow(t548, t566, &t567)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 17); h8_keyed = t567; goto bb7; bb10: t559 = h12_f0; t560 = t559.as.err;
+#line 796 "fixedbugs393alongliteralisformattedinonepass.c"
+    hero_panic_must_at(t560, "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 25);
     hero_unreachable();
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto bb1; bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 808 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 809 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
@@ -907,9 +912,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c1ca40c733d8dd8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77a8f046653e710e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs393alongliteralisformattedinonepass\tfixedbugs-393-a-long-literal-is-formatted-in-one-pass\n");
     h_fixedbugs393alongliteralisformattedinonepass_main();
     hero_runtime_check_leaks();
     return 0;

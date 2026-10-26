@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -70,19 +70,19 @@ typedef struct h_functiontypedfieldnevercalledthrough_Held {
 } h_functiontypedfieldnevercalledthrough_Held;
 
 typedef HeroStr (*h_0fn_675b9d49)(HeroStr);
-typedef enum h_functiontypedfieldnevercalledthrough_Either_tag {
-    h_functiontypedfieldnevercalledthrough_Either_tag_one = 0,
-    h_functiontypedfieldnevercalledthrough_Either_tag_none = 1,
-} h_functiontypedfieldnevercalledthrough_Either_tag;
+typedef enum h_functiontypedfieldnevercalledthrough_0Either_tag {
+    h_functiontypedfieldnevercalledthrough_0Either_tag_one = 0,
+    h_functiontypedfieldnevercalledthrough_0Either_tag_none = 1,
+} h_functiontypedfieldnevercalledthrough_0Either_tag;
 
-typedef struct h_functiontypedfieldnevercalledthrough_Either_c_one {
+typedef struct h_functiontypedfieldnevercalledthrough_0Either_c_one {
     h_0fn_675b9d49 f_f;
-} h_functiontypedfieldnevercalledthrough_Either_c_one;
+} h_functiontypedfieldnevercalledthrough_0Either_c_one;
 
 typedef struct h_functiontypedfieldnevercalledthrough_Either {
-    h_functiontypedfieldnevercalledthrough_Either_tag tag;
+    h_functiontypedfieldnevercalledthrough_0Either_tag tag;
     union {
-        h_functiontypedfieldnevercalledthrough_Either_c_one c_one;
+        h_functiontypedfieldnevercalledthrough_0Either_c_one c_one;
     } as;
 } h_functiontypedfieldnevercalledthrough_Either;
 
@@ -103,6 +103,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -117,23 +125,23 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "functiontypedfieldnevercalledthrough.c"
+#line 129 "functiontypedfieldnevercalledthrough.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b);
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Direct_hash(const void *elem);
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Outer_retain(const h_functiontypedfieldnevercalledthrough_Outer *v);
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Outer_release(h_functiontypedfieldnevercalledthrough_Outer *v);
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Outer_eq(const h_functiontypedfieldnevercalledthrough_Outer *a, const h_functiontypedfieldnevercalledthrough_Outer *b);
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Outer_hash(const void *elem);
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Held_retain(const h_functiontypedfieldnevercalledthrough_Held *v);
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Held_release(h_functiontypedfieldnevercalledthrough_Held *v);
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Held_eq(const h_functiontypedfieldnevercalledthrough_Held *a, const h_functiontypedfieldnevercalledthrough_Held *b);
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Held_hash(const void *elem);
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Either_c_one_eq(const h_functiontypedfieldnevercalledthrough_Either_c_one *a, const h_functiontypedfieldnevercalledthrough_Either_c_one *b);
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Either_c_one_hash(const void *elem);
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Either_eq(const h_functiontypedfieldnevercalledthrough_Either *a, const h_functiontypedfieldnevercalledthrough_Either *b);
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Either_hash(const void *elem);
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b);
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Direct_hash(const void *elem);
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Outer_retain(const h_functiontypedfieldnevercalledthrough_Outer *v);
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Outer_release(h_functiontypedfieldnevercalledthrough_Outer *v);
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Outer_eq(const h_functiontypedfieldnevercalledthrough_Outer *a, const h_functiontypedfieldnevercalledthrough_Outer *b);
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Outer_hash(const void *elem);
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Held_retain(const h_functiontypedfieldnevercalledthrough_Held *v);
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Held_release(h_functiontypedfieldnevercalledthrough_Held *v);
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Held_eq(const h_functiontypedfieldnevercalledthrough_Held *a, const h_functiontypedfieldnevercalledthrough_Held *b);
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Held_hash(const void *elem);
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Either_c_one_eq(const h_functiontypedfieldnevercalledthrough_0Either_c_one *a, const h_functiontypedfieldnevercalledthrough_0Either_c_one *b);
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Either_c_one_hash(const void *elem);
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Either_eq(const h_functiontypedfieldnevercalledthrough_Either *a, const h_functiontypedfieldnevercalledthrough_Either *b);
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Either_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -142,22 +150,26 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_functiontypedfieldnevercalledthrough_Direct_desc_copy(void *dst, const void *src) {
+static void h_functiontypedfieldnevercalledthrough_0Direct_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_functiontypedfieldnevercalledthrough_Direct));
 }
-static void h_functiontypedfieldnevercalledthrough_Direct_desc_drop(void *elem) {
+static void h_functiontypedfieldnevercalledthrough_0Direct_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_functiontypedfieldnevercalledthrough_Direct_desc_eq(const void *a, const void *b) {
-    return h_functiontypedfieldnevercalledthrough_Direct_eq((const h_functiontypedfieldnevercalledthrough_Direct *)a, (const h_functiontypedfieldnevercalledthrough_Direct *)b);
+static bool h_functiontypedfieldnevercalledthrough_0Direct_desc_eq(const void *a, const void *b) {
+    return h_functiontypedfieldnevercalledthrough_0Direct_eq((const h_functiontypedfieldnevercalledthrough_Direct *)a, (const h_functiontypedfieldnevercalledthrough_Direct *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_functiontypedfieldnevercalledthrough_Direct_desc = {
+HERO_TU_QUIET static const HeroDesc h_functiontypedfieldnevercalledthrough_0Direct_desc = {
     sizeof(h_functiontypedfieldnevercalledthrough_Direct),
-    h_functiontypedfieldnevercalledthrough_Direct_desc_copy,
-    h_functiontypedfieldnevercalledthrough_Direct_desc_drop,
-    h_functiontypedfieldnevercalledthrough_Direct_desc_eq,
-    h_functiontypedfieldnevercalledthrough_Direct_hash,
+    h_functiontypedfieldnevercalledthrough_0Direct_desc_copy,
+    h_functiontypedfieldnevercalledthrough_0Direct_desc_drop,
+    h_functiontypedfieldnevercalledthrough_0Direct_desc_eq,
+    h_functiontypedfieldnevercalledthrough_0Direct_hash,
 };
 
 int64_t h_functiontypedfieldnevercalledthrough_twice(int64_t h0_v);
@@ -166,14 +178,14 @@ void h_functiontypedfieldnevercalledthrough_main(void);
 
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 int64_t h_functiontypedfieldnevercalledthrough_twice(int64_t h0_v) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
-#line 171 "functiontypedfieldnevercalledthrough.c"
+    t1 = h0_v; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("function-typed-field-never-called-through.hero", "function-typed-field-never-called-through.twice", 55, 12); return t3;
+#line 183 "functiontypedfieldnevercalledthrough.c"
 }
 
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 HeroStr h_functiontypedfieldnevercalledthrough_shout(HeroStr h0_a) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4);
-#line 177 "functiontypedfieldnevercalledthrough.c"
+#line 189 "functiontypedfieldnevercalledthrough.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -182,101 +194,101 @@ HeroStr h_functiontypedfieldnevercalledthrough_shout(HeroStr h0_a) { HERO_NODEBU
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 void h_functiontypedfieldnevercalledthrough_main(void) { __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Direct h0_direct; h_functiontypedfieldnevercalledthrough_Outer h1_outer = {0}; h_functiontypedfieldnevercalledthrough_Held h2_held = {0}; __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Either h3_either; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer h4_own4 = {0}, t6, t18, t19; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t9, *t20; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held h6_own6 = {0}, t10, t21, t22; HERO_NODEBUG h_0fn_48ac9712 t1, t3, t7; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t2, t4, t8; HERO_NODEBUG HeroStr t5, t17; HERO_NODEBUG h_0fn_6f1dc5d7 t11; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Either t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_functiontypedfieldnevercalledthrough_twice; t2 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t1}; h0_direct = t2;
-    t3 = h_functiontypedfieldnevercalledthrough_twice; t4 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t3}; t5 = HERO_STR_LIT(hero_str_e0a312d); hero_str_incref(t5); t6 = (h_functiontypedfieldnevercalledthrough_Outer){.f_inner = t4, .f_label = t5}; t18 = h4_own4; h4_own4 = t6; h_functiontypedfieldnevercalledthrough_Outer_release(&t18); t19 = h1_outer; h_functiontypedfieldnevercalledthrough_Outer_retain(&t6); h1_outer = t6; h_functiontypedfieldnevercalledthrough_Outer_release(&t19);
-    t7 = h_functiontypedfieldnevercalledthrough_twice; t8 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t7}; t9 = hero_array_new(&h_functiontypedfieldnevercalledthrough_Direct_desc, 1); hero_array_push_owned(&t9, &t8); t20 = h5_own5; h5_own5 = t9; hero_array_decref(t20); hero_array_incref(t9); t10 = (h_functiontypedfieldnevercalledthrough_Held){.f_all = t9}; t21 = h6_own6; h6_own6 = t10; h_functiontypedfieldnevercalledthrough_Held_release(&t21); t22 = h2_held; h_functiontypedfieldnevercalledthrough_Held_retain(&t10); h2_held = t10; h_functiontypedfieldnevercalledthrough_Held_release(&t22);
-    t11 = h_functiontypedfieldnevercalledthrough_shout; t12 = (h_functiontypedfieldnevercalledthrough_Either){.tag = h_functiontypedfieldnevercalledthrough_Either_tag_one, .as.c_one = {.f_f = t11}}; h3_either = t12;
+    t3 = h_functiontypedfieldnevercalledthrough_twice; t4 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t3}; t5 = HERO_STR_LIT(hero_str_e0a312d); hero_str_incref(t5); t6 = (h_functiontypedfieldnevercalledthrough_Outer){.f_inner = t4, .f_label = t5}; t18 = h4_own4; h4_own4 = t6; h_functiontypedfieldnevercalledthrough_0Outer_release(&t18); t19 = h1_outer; h_functiontypedfieldnevercalledthrough_0Outer_retain(&t6); h1_outer = t6; h_functiontypedfieldnevercalledthrough_0Outer_release(&t19);
+    t7 = h_functiontypedfieldnevercalledthrough_twice; t8 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t7}; t9 = hero_array_new(&h_functiontypedfieldnevercalledthrough_0Direct_desc, 1); hero_array_push_owned(&t9, &t8); t20 = h5_own5; h5_own5 = t9; hero_array_decref(t20); hero_array_incref(t9); t10 = (h_functiontypedfieldnevercalledthrough_Held){.f_all = t9}; t21 = h6_own6; h6_own6 = t10; h_functiontypedfieldnevercalledthrough_0Held_release(&t21); t22 = h2_held; h_functiontypedfieldnevercalledthrough_0Held_retain(&t10); h2_held = t10; h_functiontypedfieldnevercalledthrough_0Held_release(&t22);
+    t11 = h_functiontypedfieldnevercalledthrough_shout; t12 = (h_functiontypedfieldnevercalledthrough_Either){.tag = h_functiontypedfieldnevercalledthrough_0Either_tag_one, .as.c_one = {.f_f = t11}}; h3_either = t12;
 #line 73
     t17 = HERO_STR_LIT(hero_str_572f22bc); hero_print_str(t17); hero_print_end();
-#line 191 "functiontypedfieldnevercalledthrough.c"
-    h_functiontypedfieldnevercalledthrough_Outer_release(hero_slot_escape(&h1_outer));
-    h_functiontypedfieldnevercalledthrough_Held_release(hero_slot_escape(&h2_held));
-    h_functiontypedfieldnevercalledthrough_Outer_release(hero_slot_escape(&h4_own4));
+#line 203 "functiontypedfieldnevercalledthrough.c"
+    h_functiontypedfieldnevercalledthrough_0Outer_release(hero_slot_escape(&h1_outer));
+    h_functiontypedfieldnevercalledthrough_0Held_release(hero_slot_escape(&h2_held));
+    h_functiontypedfieldnevercalledthrough_0Outer_release(hero_slot_escape(&h4_own4));
     hero_array_release_at(&h5_own5);
-    h_functiontypedfieldnevercalledthrough_Held_release(hero_slot_escape(&h6_own6));
+    h_functiontypedfieldnevercalledthrough_0Held_release(hero_slot_escape(&h6_own6));
     return;
 }
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b) {
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b) {
     if (!(a->f_f == b->f_f)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Direct_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Direct_hash(const void *elem) {
     const h_functiontypedfieldnevercalledthrough_Direct *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_func)->hash(&v->f_f)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Outer_retain(const h_functiontypedfieldnevercalledthrough_Outer *v) {
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Outer_retain(const h_functiontypedfieldnevercalledthrough_Outer *v) {
     hero_str_incref(v->f_label);
 }
 
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Outer_release(h_functiontypedfieldnevercalledthrough_Outer *v) {
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Outer_release(h_functiontypedfieldnevercalledthrough_Outer *v) {
     hero_str_decref(v->f_label);
 }
 
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Outer_eq(const h_functiontypedfieldnevercalledthrough_Outer *a, const h_functiontypedfieldnevercalledthrough_Outer *b) {
-    if (!(h_functiontypedfieldnevercalledthrough_Direct_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Outer_eq(const h_functiontypedfieldnevercalledthrough_Outer *a, const h_functiontypedfieldnevercalledthrough_Outer *b) {
+    if (!(h_functiontypedfieldnevercalledthrough_0Direct_eq(&a->f_inner, &b->f_inner))) return false;
     if (!(hero_str_eq(a->f_label, b->f_label))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Outer_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Outer_hash(const void *elem) {
     const h_functiontypedfieldnevercalledthrough_Outer *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_functiontypedfieldnevercalledthrough_Direct_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_functiontypedfieldnevercalledthrough_0Direct_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_str)->hash(&v->f_label)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Held_retain(const h_functiontypedfieldnevercalledthrough_Held *v) {
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Held_retain(const h_functiontypedfieldnevercalledthrough_Held *v) {
     hero_array_incref(v->f_all);
 }
 
-HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_Held_release(h_functiontypedfieldnevercalledthrough_Held *v) {
+HERO_TU_LOCAL void h_functiontypedfieldnevercalledthrough_0Held_release(h_functiontypedfieldnevercalledthrough_Held *v) {
     hero_array_decref(v->f_all);
 }
 
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Held_eq(const h_functiontypedfieldnevercalledthrough_Held *a, const h_functiontypedfieldnevercalledthrough_Held *b) {
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Held_eq(const h_functiontypedfieldnevercalledthrough_Held *a, const h_functiontypedfieldnevercalledthrough_Held *b) {
     if (!(hero_array_eq(a->f_all, b->f_all))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Held_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Held_hash(const void *elem) {
     const h_functiontypedfieldnevercalledthrough_Held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_all)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Either_c_one_eq(const h_functiontypedfieldnevercalledthrough_Either_c_one *a, const h_functiontypedfieldnevercalledthrough_Either_c_one *b) {
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Either_c_one_eq(const h_functiontypedfieldnevercalledthrough_0Either_c_one *a, const h_functiontypedfieldnevercalledthrough_0Either_c_one *b) {
     if (!(a->f_f == b->f_f)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Either_c_one_hash(const void *elem) {
-    const h_functiontypedfieldnevercalledthrough_Either_c_one *v = elem;
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Either_c_one_hash(const void *elem) {
+    const h_functiontypedfieldnevercalledthrough_0Either_c_one *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_func)->hash(&v->f_f)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Either_eq(const h_functiontypedfieldnevercalledthrough_Either *a, const h_functiontypedfieldnevercalledthrough_Either *b) {
+HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Either_eq(const h_functiontypedfieldnevercalledthrough_Either *a, const h_functiontypedfieldnevercalledthrough_Either *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_functiontypedfieldnevercalledthrough_Either_tag_one: return h_functiontypedfieldnevercalledthrough_Either_c_one_eq(&a->as.c_one, &b->as.c_one);
-        case h_functiontypedfieldnevercalledthrough_Either_tag_none: return true;
+        case h_functiontypedfieldnevercalledthrough_0Either_tag_one: return h_functiontypedfieldnevercalledthrough_0Either_c_one_eq(&a->as.c_one, &b->as.c_one);
+        case h_functiontypedfieldnevercalledthrough_0Either_tag_none: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_Either_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_functiontypedfieldnevercalledthrough_0Either_hash(const void *elem) {
     const h_functiontypedfieldnevercalledthrough_Either *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_functiontypedfieldnevercalledthrough_Either_tag_one: return (h ^ h_functiontypedfieldnevercalledthrough_Either_c_one_hash(&v->as.c_one)) * UINT64_C(0x100000001b3);
-        case h_functiontypedfieldnevercalledthrough_Either_tag_none: return h;
+        case h_functiontypedfieldnevercalledthrough_0Either_tag_one: return (h ^ h_functiontypedfieldnevercalledthrough_0Either_c_one_hash(&v->as.c_one)) * UINT64_C(0x100000001b3);
+        case h_functiontypedfieldnevercalledthrough_0Either_tag_none: return h;
     }
     hero_unreachable();
 }
@@ -345,10 +357,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1df4f7963d91d8de", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4bdb6a2c3c91bc38", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("functiontypedfieldnevercalledthrough\tfunction-typed-field-never-called-through\n");
     h_functiontypedfieldnevercalledthrough_main();
     hero_runtime_check_leaks();
     return 0;

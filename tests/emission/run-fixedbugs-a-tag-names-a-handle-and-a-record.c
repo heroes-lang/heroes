@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -122,6 +122,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -151,13 +159,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugsatagnamesahandleandarecord.c"
+#line 163 "fixedbugsatagnamesahandleandarecord.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_AI_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_Hints_eq(const struct addrinfo *a, const struct addrinfo *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_Hints_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_0AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_0AI_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_0Hints_eq(const struct addrinfo *a, const struct addrinfo *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_0Hints_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -166,6 +174,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsatagnamesahandleandarecord_main(void);
 void *hero_pad_nowhere(void);
@@ -211,30 +223,30 @@ void h_fixedbugsatagnamesahandleandarecord_main(void) {
     struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1, t2, t8, t9; HERO_NODEBUG struct addrinfo t3, *t4, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char *t6; HERO_NODEBUG void *t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(1); t3 = (struct addrinfo){.ai_family = t1, .ai_socktype = t2}; h0_h = t3; hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
     t4 = ((void *)0); h1_r = t4;
-    t5 = HERO_STR_LIT(hero_str_69fd5e8e); t6 = hero_str_lend(t5); t7 = ((void *)0); hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints"); hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res"); hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1); t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r); hero_handle_acquired(h1_r, "freeaddrinfo"); h2_rc = t8;
+    t5 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 38, 28}; t6 = hero_str_lend_at(t5, &hero_here); } t7 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 38, 10}; hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints"); hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res"); hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1); t8 = getaddrinfo(hero_cstr_nonnull_at(t6, &hero_here), t7, &h0_h, &h1_r); hero_handle_acquired_at(h1_r, "freeaddrinfo", &hero_here); } h2_rc = t8;
     t9 = h2_rc; hero_print_int(t9); hero_print_end();
-    t10 = h1_r; { hero_handle_alive(t10, "the argument `ai` of `freeaddrinfo`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "freeaddrinfo", NULL); (void)freeaddrinfo(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead(); } hero_lend_local_give(hero_lend_h1_r); hero_lend_local_give(hero_lend_h0_h); return;
-#line 218 "fixedbugsatagnamesahandleandarecord.c"
+    t10 = h1_r; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 40, 5}; { hero_handle_alive_at(t10, "the argument `ai` of `freeaddrinfo`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "freeaddrinfo", NULL, &hero_here); (void)freeaddrinfo(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead(); } } hero_lend_local_give(hero_lend_h1_r); hero_lend_local_give(hero_lend_h0_h); return;
+#line 230 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r
-HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
+HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_0AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_AI_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_0AI_hash(const void *elem) {
     struct addrinfo * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_Hints_eq(const struct addrinfo *a, const struct addrinfo *b) {
-    hero_panic("h_fixedbugsatagnamesahandleandarecord_Hints_eq: a partial record has no structural equality");
+HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_0Hints_eq(const struct addrinfo *a, const struct addrinfo *b) {
+    hero_panic("h_fixedbugsatagnamesahandleandarecord_0Hints_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_Hints_hash(const void *elem) {
-    (void)elem; hero_panic("h_fixedbugsatagnamesahandleandarecord_Hints_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_fixedbugsatagnamesahandleandarecord_0Hints_hash(const void *elem) {
+    (void)elem; hero_panic("h_fixedbugsatagnamesahandleandarecord_0Hints_hash: a partial record has no structural hash");
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -301,10 +313,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1929494e0f6ed60c", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ec13e4c5e3c8240", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsatagnamesahandleandarecord\tfixedbugs-a-tag-names-a-handle-and-a-record\n");
     h_fixedbugsatagnamesahandleandarecord_main();
     hero_runtime_check_leaks();
     return 0;

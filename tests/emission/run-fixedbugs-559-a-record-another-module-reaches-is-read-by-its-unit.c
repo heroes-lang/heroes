@@ -52,7 +52,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("v")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -172,10 +172,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 173 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs559points_Pt_eq(const Pt *a, const Pt *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs559points_Pt_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs559holder_Holder_eq(const h_fixedbugs559holder_Holder *a, const h_fixedbugs559holder_Holder *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs559holder_Holder_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs559points_0Pt_eq(const Pt *a, const Pt *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs559points_0Pt_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs559holder_0Holder_eq(const h_fixedbugs559holder_Holder *a, const h_fixedbugs559holder_Holder *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs559holder_0Holder_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -189,21 +189,21 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_fixedbugs559points_Pt_desc_copy(void *dst, const void *src) {
+static void h_fixedbugs559points_0Pt_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(Pt));
 }
-static void h_fixedbugs559points_Pt_desc_drop(void *elem) {
+static void h_fixedbugs559points_0Pt_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_fixedbugs559points_Pt_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs559points_Pt_eq((const Pt *)a, (const Pt *)b);
+static bool h_fixedbugs559points_0Pt_desc_eq(const void *a, const void *b) {
+    return h_fixedbugs559points_0Pt_eq((const Pt *)a, (const Pt *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_fixedbugs559points_Pt_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugs559points_0Pt_desc = {
     sizeof(Pt),
-    h_fixedbugs559points_Pt_desc_copy,
-    h_fixedbugs559points_Pt_desc_drop,
-    h_fixedbugs559points_Pt_desc_eq,
-    h_fixedbugs559points_Pt_hash,
+    h_fixedbugs559points_0Pt_desc_copy,
+    h_fixedbugs559points_0Pt_desc_drop,
+    h_fixedbugs559points_0Pt_desc_eq,
+    h_fixedbugs559points_0Pt_hash,
 };
 
 void h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main(void);
@@ -224,10 +224,10 @@ void h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main(void) { Pt h0
     t1 = INT64_C(3); t2 = h_fixedbugs559points_make(t1); h0_p = t2; hero_pad_fill(&h0_p, sizeof(Pt), 1, hero_pad_g_5, hero_pad_n_5);
     t3 = h0_p; t4 = h_fixedbugs559holder_get(t3); hero_print_int(t4); hero_print_end();
     t5 = h0_p; t6 = h_fixedbugs559holder_hold(t5); h1_h = t6;
-    t7 = h0_p; t8 = INT64_C(1); t9 = h_fixedbugs559points_make(t8); t10 = hero_array_new(&h_fixedbugs559points_Pt_desc, 2); hero_array_push_owned(&t10, &t7); hero_array_push_owned(&t10, &t9); t19 = h3_own3; h3_own3 = t10; hero_array_decref(t19); t20 = h2_xs; hero_array_incref(t10); h2_xs = t10; hero_array_decref(t20);
+    t7 = h0_p; t8 = INT64_C(1); t9 = h_fixedbugs559points_make(t8); t10 = hero_array_new(&h_fixedbugs559points_0Pt_desc, 2); hero_array_push_owned(&t10, &t7); hero_array_push_owned(&t10, &t9); t19 = h3_own3; h3_own3 = t10; hero_array_decref(t19); t20 = h2_xs; hero_array_incref(t10); h2_xs = t10; hero_array_decref(t20);
     t11 = h2_xs; t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len); hero_print_int(t12); hero_print_end();
     t13 = h1_h.f_p.w; hero_print_int(t13); hero_print_end();
-    t14 = h0_p; t15 = h2_xs; t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(Pt) ? hero_unreachable() : (void)0), ((Pt const *)(const void *)(t15 + 1))[t16]); t18 = h_fixedbugs559points_Pt_eq(&t14, &t17); hero_print_bool(t18); hero_print_end();
+    t14 = h0_p; t15 = h2_xs; t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? hero_panic_index_at(t15, t16, "fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero", "fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.main", 21, 16) : (void)0), (void)(t15->elem->size != sizeof(Pt) ? hero_unreachable() : (void)0), ((Pt const *)(const void *)(t15 + 1))[t16]); t18 = h_fixedbugs559points_0Pt_eq(&t14, &t17); hero_print_bool(t18); hero_print_end();
 #line 232 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_own3);
@@ -236,7 +236,7 @@ void h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main(void) { Pt h0
 
 #line 13 "tests/golden/run/fixedbugs559/holder.hero"
 int64_t h_fixedbugs559holder_get(Pt h0_p) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t4, t5, t9, t11, t14, t15; HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG int64_t t6, t7, t12, t13; HERO_NODEBUG bool t8; HERO_NODEBUG HeroFailure t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_p.v; t2 = h0_p.w; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3}; t14 = h2_own2; h2_own2 = t4; h_0opt_e201354_release(&t14); t15 = h1_f0; h_0opt_e201354_retain(&t4); h1_f0 = t4; h_0opt_e201354_release(&t15); t5 = h1_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; t13 = twice(t12);
+    t1 = h0_p.v; t2 = h0_p.w; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs559/holder.hero", "holder.get", 14, 28); t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3}; t14 = h2_own2; h2_own2 = t4; h_0opt_e201354_release(&t14); t15 = h1_f0; h_0opt_e201354_retain(&t4); h1_f0 = t4; h_0opt_e201354_release(&t15); t5 = h1_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs559/holder.hero", "holder.get", 14, 12}; t13 = twice(t12); }
 #line 241 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -245,7 +245,7 @@ bb2:
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t9 = h1_f0; t10 = t9.as.err;
 #line 248 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
-    hero_panic_must(t10);
+    hero_panic_must_at(t10, "fixedbugs559/holder.hero", "holder.get", 14, 21);
     hero_unreachable();
 }
 
@@ -257,16 +257,16 @@ h_fixedbugs559holder_Holder h_fixedbugs559holder_hold(Pt h0_p) { HERO_NODEBUG Pt
 
 #line 10 "tests/golden/run/fixedbugs559/points.hero"
 Pt h_fixedbugs559points_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Pt t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t2 = pt_make(t1); return t2;
+    t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs559/points.hero", "points.make", 11, 12}; t2 = pt_make(t1); } return t2;
 #line 262 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs559points_Pt_eq(const Pt *a, const Pt *b) {
+HERO_TU_LOCAL bool h_fixedbugs559points_0Pt_eq(const Pt *a, const Pt *b) {
     if (!(a->v == b->v)) return false;
     if (!(a->w == b->w)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs559points_Pt_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs559points_0Pt_hash(const void *elem) {
     const Pt *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->v)) * UINT64_C(0x100000001b3);
@@ -274,16 +274,16 @@ HERO_TU_LOCAL uint64_t h_fixedbugs559points_Pt_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs559holder_Holder_eq(const h_fixedbugs559holder_Holder *a, const h_fixedbugs559holder_Holder *b) {
-    if (!(h_fixedbugs559points_Pt_eq(&a->f_p, &b->f_p))) return false;
+HERO_TU_LOCAL bool h_fixedbugs559holder_0Holder_eq(const h_fixedbugs559holder_Holder *a, const h_fixedbugs559holder_Holder *b) {
+    if (!(h_fixedbugs559points_0Pt_eq(&a->f_p, &b->f_p))) return false;
     if (!(a->f_n == b->f_n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs559holder_Holder_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs559holder_0Holder_hash(const void *elem) {
     const h_fixedbugs559holder_Holder *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs559points_Pt_hash(&v->f_p)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs559points_0Pt_hash(&v->f_p)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_int)->hash(&v->f_n)) * UINT64_C(0x100000001b3);
     return h;
 }
@@ -385,9 +385,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("39de585871845a83", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6da43dd203c197dd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs559arecordanothermodulereachesisreadbyitsunit\tfixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit\nfixedbugs559holder\tholder\nfixedbugs559points\tpoints\n");
     h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main();
     hero_runtime_check_leaks();
     return 0;

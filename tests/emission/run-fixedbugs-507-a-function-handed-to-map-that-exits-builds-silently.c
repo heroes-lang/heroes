@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -67,6 +67,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -81,7 +89,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 85 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+#line 93 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,36 +100,42 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three(int64_t h0_n);
 int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next(int64_t h0_n);
 int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(HeroArrayHeader * h0_xs);
 void h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_main(void);
-void h_library_exit(int64_t h0_code);
-HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f);
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
+HERO_TU_LOCAL HeroArrayHeader * h_library_0map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f, const HeroPlace *hero_caller);
+HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f);
 
 #line 8 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 11
     t5 = h0_n; hero_print_int(t5); hero_print_end();
     t6 = h0_n; return t6; bb2:
 #line 10
-    t4 = INT64_C(0); h_library_exit(t4); hero_unreachable(); goto bb1; bb3: goto bb1;
-#line 112 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+    t4 = UINT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero", "fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.stop_at_three", 10, 9}; h_library_exit(t4, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1;
+#line 126 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
 int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
-#line 118 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+    t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero", "fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.next", 15, 12); return t3;
+#line 132 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
 int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(HeroArrayHeader * h0_xs) { HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t1, *t3, *t4, *t6, *t8, *t9, *t10; HERO_NODEBUG h_0fn_48ac9712 t2, t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_xs; t2 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three; t3 = h_library_map_37f8817a(t1, t2); t8 = h2_own2; h2_own2 = t3; hero_array_decref(t8); t9 = h1_ys; hero_array_incref(t3); h1_ys = t3; hero_array_decref(t9);
-    t4 = h1_ys; t5 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next; t6 = h_library_map_37f8817a(t4, t5); t10 = h3_own3; h3_own3 = t6; hero_array_decref(t10); t7 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t6);
-#line 125 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+    t1 = h0_xs; t2 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero", "fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.turn", 18, 10}; t3 = h_library_0map_37f8817a(t1, t2, &hero_here); } t8 = h2_own2; h2_own2 = t3; hero_array_decref(t8); t9 = h1_ys; hero_array_incref(t3); h1_ys = t3; hero_array_decref(t9);
+    t4 = h1_ys; t5 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero", "fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.turn", 19, 17}; t6 = h_library_0map_37f8817a(t4, t5, &hero_here); } t10 = h3_own3; h3_own3 = t6; hero_array_decref(t10); t7 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t6);
+#line 139 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
@@ -131,32 +145,43 @@ int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(HeroArray
 #line 21 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
 void h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t2, *t4; HERO_NODEBUG int64_t t1, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t4 = h0_own0; h0_own0 = t2; hero_array_decref(t4); t3 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t2); hero_print_int(t3); hero_print_end();
-#line 135 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+#line 149 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_release_at(&h0_own0);
     return;
 }
 
-#line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; (void)hero_exit(t1); return;
-#line 143 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+#line 235 "<heroes library>"
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
+#line 157 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return;
+}
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+    h_library_exit(h0_code, &hero_here);
 }
 
 #line 36 "<heroes library>"
-/* map<i64, i64> */ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) { HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0; bb0:
+/* map<i64, i64> */ HERO_TU_LOCAL HeroArrayHeader * h_library_0map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t20 = h6_own6; h6_own6 = t1; hero_array_decref(t20); t21 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t21);
-    t2 = h0_xs; t22 = h3_xs0; hero_array_incref(t2); h3_xs0 = t2; hero_array_decref(t22); t3 = INT64_C(0); h4_i0 = t3; goto bb1; bb1: t4 = h4_i0; t5 = h3_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h3_xs0; t9 = h4_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h5_x = t10;
+    t2 = h0_xs; t22 = h3_xs0; hero_array_incref(t2); h3_xs0 = t2; hero_array_decref(t22); t3 = INT64_C(0); h4_i0 = t3; goto bb1; bb1: t4 = h4_i0; t5 = h3_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h3_xs0; t9 = h4_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h5_x = t10;
     t12 = h1_f; t13 = h5_x; t14 = t12(t13); hero_array_push_owned(&h2_out, &t14); goto bb3; bb3:
 #line 38
-    t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h4_i0 = t18; goto bb1; bb4:
+    t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 155 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+#line 176 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
     return t19;
+}
+HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.map", 36, 1};
+    return h_library_0map_37f8817a(h0_xs, h1_f, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -222,10 +247,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("05fb14937007ad99", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ac073283a8c19b0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs507afunctionhandedtomapthatexitsbuildssilently\tfixedbugs-507-a-function-handed-to-map-that-exits-builds-silently\n");
     h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_main();
     hero_runtime_check_leaks();
     return 0;

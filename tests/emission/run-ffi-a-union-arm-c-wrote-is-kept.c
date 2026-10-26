@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -126,6 +126,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -157,15 +165,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "ffiaunionarmcwroteiskept.c"
+#line 169 "ffiaunionarmcwroteiskept.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_UN_eq(const UN *a, const UN *b);
-HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_UN_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_V_eq(const V *a, const V *b);
-HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_V_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_Nu_eq(const struct nu *a, const struct nu *b);
-HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_Nu_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0UN_eq(const UN *a, const UN *b);
+HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_0UN_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0V_eq(const V *a, const V *b);
+HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_0V_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0Nu_eq(const struct nu *a, const struct nu *b);
+HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_0Nu_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -174,6 +182,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffiaunionarmcwroteiskept_main(void);
 void *hero_pad_nowhere(void);
@@ -198,50 +210,50 @@ void h_ffiaunionarmcwroteiskept_main(void) {
 #line 22
     UN *const hero_lend_h0_u = (UN *)hero_lend_local(sizeof(UN), "ffiaunionarmcwroteiskept.main", "u"); struct nu *const hero_lend_h1_n = (struct nu *)hero_lend_local(sizeof(struct nu), "ffiaunionarmcwroteiskept.main", "n"); HERO_NODEBUG int8_t t1; HERO_NODEBUG UN t2; HERO_NODEBUG double t3; HERO_NODEBUG int32_t t4, t5; HERO_NODEBUG V t6; HERO_NODEBUG struct nu t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = (UN){.c = t1}; h0_u = t2; hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h0_u, "un_set", "p"); hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0); (void)un_set(&h0_u);
-    hero_lend_local_name(hero_lend_h0_u, "un_get", "p"); hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0); t3 = un_get(&h0_u); hero_print_f64(t3); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-union-arm-c-wrote-is-kept.hero", "ffi-a-union-arm-c-wrote-is-kept.main", 24, 5}; hero_lend_local_name(hero_lend_h0_u, "un_set", "p"); hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0); (void)un_set(&h0_u); }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-union-arm-c-wrote-is-kept.hero", "ffi-a-union-arm-c-wrote-is-kept.main", 25, 11}; hero_lend_local_name(hero_lend_h0_u, "un_get", "p"); hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0); t3 = un_get(&h0_u); } hero_print_f64(t3); hero_print_end();
     t4 = INT64_C(1); t5 = INT64_C(0); t6 = (V){.fd = t5}; t7 = (struct nu){.kind = t4, .via = t6}; h1_n = t7; hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
-    hero_lend_local_name(hero_lend_h1_n, "nu_set", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); (void)nu_set(&h1_n);
-    hero_lend_local_name(hero_lend_h1_n, "nu_get", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); t8 = nu_get(&h1_n); hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_u); return;
-#line 207 "ffiaunionarmcwroteiskept.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-union-arm-c-wrote-is-kept.hero", "ffi-a-union-arm-c-wrote-is-kept.main", 27, 5}; hero_lend_local_name(hero_lend_h1_n, "nu_set", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); (void)nu_set(&h1_n); }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-union-arm-c-wrote-is-kept.hero", "ffi-a-union-arm-c-wrote-is-kept.main", 28, 11}; hero_lend_local_name(hero_lend_h1_n, "nu_get", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); t8 = nu_get(&h1_n); } hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_u); return;
+#line 219 "ffiaunionarmcwroteiskept.c"
 }
 #undef h0_u
 #undef h1_n
-HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_UN_eq(const UN *a, const UN *b) {
+HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0UN_eq(const UN *a, const UN *b) {
     if (!(a->c == b->c)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_UN_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_0UN_hash(const void *elem) {
     const UN *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i8)->hash(&v->c)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_V_eq(const V *a, const V *b) {
+HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0V_eq(const V *a, const V *b) {
     if (!(a->fd == b->fd)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_V_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_0V_hash(const void *elem) {
     const V *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->fd)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_Nu_eq(const struct nu *a, const struct nu *b) {
+HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0Nu_eq(const struct nu *a, const struct nu *b) {
     if (!(a->kind == b->kind)) return false;
-    if (!(h_ffiaunionarmcwroteiskept_V_eq(&a->via, &b->via))) return false;
+    if (!(h_ffiaunionarmcwroteiskept_0V_eq(&a->via, &b->via))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_Nu_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffiaunionarmcwroteiskept_0Nu_hash(const void *elem) {
     const struct nu *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->kind)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiaunionarmcwroteiskept_V_hash(&v->via)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffiaunionarmcwroteiskept_0V_hash(&v->via)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -309,10 +321,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("63ce994f6fb3ddb8", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("23d357483e49fee3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffiaunionarmcwroteiskept\tffi-a-union-arm-c-wrote-is-kept\n");
     h_ffiaunionarmcwroteiskept_main();
     hero_runtime_check_leaks();
     return 0;

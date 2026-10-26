@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -145,11 +153,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "handlealiveafteraloopthatendsonbreak.c"
+#line 157 "handlealiveafteraloopthatendsonbreak.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b);
-HERO_TU_LOCAL uint64_t h_handlealiveafteraloopthatendsonbreak_Node_hash(const void *elem);
+HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_0Node_eq(node * const *a, node * const *b);
+HERO_TU_LOCAL uint64_t h_handlealiveafteraloopthatendsonbreak_0Node_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -158,34 +166,38 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_handlealiveafteraloopthatendsonbreak_main(void);
 
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 void h_handlealiveafteraloopthatendsonbreak_main(void) { node * h0_n; bool h1_ended; int64_t h2_k; HERO_NODEBUG int64_t t1, t4, t5, t6, t9, t10, t14, t15, t16, t20, t23; HERO_NODEBUG node *t2, *t8, *t12, *t22, *t24; HERO_NODEBUG bool t3, t7, t11, t13, t17, t18; HERO_NODEBUG HeroStr t19, t21; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(3); t2 = node_new(t1); hero_handle_acquired(t2, "node_free"); h0_n = t2;
+    t1 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 14, 9}; t2 = node_new(t1); hero_handle_acquired_at(t2, "node_free", &hero_here); } h0_n = t2;
     t3 = false; h1_ended = t3;
     t4 = INT64_C(0); h2_k = t4; goto bb1; bb1:
 #line 18
     t5 = h2_k; t6 = INT64_C(3); t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
-    t8 = h0_n; hero_handle_alive(t8, "the argument `n` of `node_peek`"); t9 = node_peek(t8); t10 = h2_k; t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb3:
+    t8 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 19, 12}; hero_handle_alive_at(t8, "the argument `n` of `node_peek`", &hero_here); t9 = node_peek(t8); } t10 = h2_k; t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb3:
 #line 25
     t17 = h1_ended; t18 = !t17; if (t18) goto bb8; else goto bb9; bb4:
 #line 23
-    t14 = h2_k; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h2_k = t16; goto bb1; bb5:
+    t14 = h2_k; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 23, 13); h2_k = t16; goto bb1; bb5:
 #line 20
-    t12 = h0_n; { hero_handle_alive(t12, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL); (void)node_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead(); }
+    t12 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 20, 13}; { hero_handle_alive_at(t12, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t12, "node_free", NULL, &hero_here); (void)node_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead(); } }
     t13 = true; h1_ended = t13; goto bb3; bb6: goto bb4; bb7: return; bb8:
 #line 26
-    t19 = HERO_STR_LIT(hero_str_36f6e615); t20 = h2_k; t21 = HERO_STR_LIT(hero_str_21ae9a8f); t22 = h0_n; hero_handle_alive(t22, "the argument `n` of `node_peek`"); t23 = node_peek(t22); hero_print_str(t19); hero_print_int(t20); hero_print_str(t21); hero_print_int(t23); hero_print_end();
-    t24 = h0_n; { hero_handle_alive(t24, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "node_free", NULL); (void)node_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_n == t24) h0_n = hero_handle_dead(); } goto bb7; bb9: goto bb7;
-#line 183 "handlealiveafteraloopthatendsonbreak.c"
+    t19 = HERO_STR_LIT(hero_str_36f6e615); t20 = h2_k; t21 = HERO_STR_LIT(hero_str_21ae9a8f); t22 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 26, 47}; hero_handle_alive_at(t22, "the argument `n` of `node_peek`", &hero_here); t23 = node_peek(t22); } hero_print_str(t19); hero_print_int(t20); hero_print_str(t21); hero_print_int(t23); hero_print_end();
+    t24 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-a-loop-that-ends-on-break.hero", "handle-alive-after-a-loop-that-ends-on-break.main", 27, 9}; { hero_handle_alive_at(t24, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "node_free", NULL, &hero_here); (void)node_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_n == t24) h0_n = hero_handle_dead(); } } goto bb7; bb9: goto bb7;
+#line 195 "handlealiveafteraloopthatendsonbreak.c"
 }
-HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b) {
+HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_handlealiveafteraloopthatendsonbreak_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_handlealiveafteraloopthatendsonbreak_0Node_hash(const void *elem) {
     node * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -256,10 +268,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ac0e32b4f8d4de6", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f55aed4686e3e8b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("handlealiveafteraloopthatendsonbreak\thandle-alive-after-a-loop-that-ends-on-break\n");
     h_handlealiveafteraloopthatendsonbreak_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -145,11 +153,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 157 "handleahelperthatendsitsparameteristheruntimes.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_Node_eq(node * const *a, node * const *b);
-HERO_TU_LOCAL uint64_t h_handleahelperthatendsitsparameteristheruntimes_Node_hash(const void *elem);
+HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_0Node_eq(node * const *a, node * const *b);
+HERO_TU_LOCAL uint64_t h_handleahelperthatendsitsparameteristheruntimes_0Node_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -158,32 +166,36 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_handleahelperthatendsitsparameteristheruntimes_finish(node * *ph0_n);
 void h_handleahelperthatendsitsparameteristheruntimes_main(void);
 
 #line 15 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_finish(node * *ph0_n) { HERO_NODEBUG node *t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_n); { hero_handle_alive(t1, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t1, "node_free", NULL); (void)node_free(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_n) == t1) (*ph0_n) = hero_handle_dead(); } return;
-#line 169 "handleahelperthatendsitsparameteristheruntimes.c"
+    t1 = (*ph0_n); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.finish", 16, 5}; { hero_handle_alive_at(t1, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "node_free", NULL, &hero_here); (void)node_free(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_n) == t1) (*ph0_n) = hero_handle_dead(); } } return;
+#line 181 "handleahelperthatendsitsparameteristheruntimes.c"
 }
 
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_main(void) { node * h0_a; node * h1_b; HERO_NODEBUG int64_t t1, t3, t7; HERO_NODEBUG node *t2, *t4, *t6, *t8, *t10; HERO_NODEBUG HeroStr t5, t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); t2 = node_new(t1); hero_handle_acquired(t2, "node_free"); h0_a = t2;
-    t3 = INT64_C(2); t4 = node_new(t3); hero_handle_acquired(t4, "node_free"); h1_b = t4;
-    t5 = HERO_STR_LIT(hero_str_63c4e8c6); t6 = h1_b; hero_handle_alive(t6, "the argument `n` of `node_peek`"); t7 = node_peek(t6); hero_print_str(t5); hero_print_int(t7); hero_print_end();
+    t1 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 19, 9}; t2 = node_new(t1); hero_handle_acquired_at(t2, "node_free", &hero_here); } h0_a = t2;
+    t3 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 20, 16}; t4 = node_new(t3); hero_handle_acquired_at(t4, "node_free", &hero_here); } h1_b = t4;
+    t5 = HERO_STR_LIT(hero_str_63c4e8c6); t6 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 21, 23}; hero_handle_alive_at(t6, "the argument `n` of `node_peek`", &hero_here); t7 = node_peek(t6); } hero_print_str(t5); hero_print_int(t7); hero_print_end();
     h_handleahelperthatendsitsparameteristheruntimes_finish(&h1_b);
-    t8 = h1_b; { hero_handle_alive(t8, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "node_free", NULL); (void)node_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_b == t8) h1_b = hero_handle_dead(); }
+    t8 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 23, 5}; { hero_handle_alive_at(t8, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "node_free", NULL, &hero_here); (void)node_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_b == t8) h1_b = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t9); hero_print_end();
-    t10 = h0_a; { hero_handle_alive(t10, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "node_free", NULL); (void)node_free(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); } return;
-#line 181 "handleahelperthatendsitsparameteristheruntimes.c"
+    t10 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero", "handle-a-helper-that-ends-its-parameter-is-the-runtime-s.main", 25, 5}; { hero_handle_alive_at(t10, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "node_free", NULL, &hero_here); (void)node_free(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); } } return;
+#line 193 "handleahelperthatendsitsparameteristheruntimes.c"
 }
-HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_Node_eq(node * const *a, node * const *b) {
+HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_handleahelperthatendsitsparameteristheruntimes_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_handleahelperthatendsitsparameteristheruntimes_0Node_hash(const void *elem) {
     node * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
@@ -254,10 +266,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("45c0024c463eceaf", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("07f069c810f046fe", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("handleahelperthatendsitsparameteristheruntimes\thandle-a-helper-that-ends-its-parameter-is-the-runtime-s\n");
     h_handleahelperthatendsitsparameteristheruntimes_main();
     hero_runtime_check_leaks();
     return 0;

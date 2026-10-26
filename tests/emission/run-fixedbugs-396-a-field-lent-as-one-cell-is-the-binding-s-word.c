@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("m")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -126,6 +126,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -154,11 +162,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 166 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_0Cell_eq(const struct cell *a, const struct cell *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs396afieldlentasonecellisthebindingsword_0Cell_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -167,6 +175,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void);
 void *hero_pad_nowhere(void);
@@ -181,17 +193,17 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) { struct cell h0_b; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t14, t19; HERO_NODEBUG int64_t t10, t18, t21; HERO_NODEBUG struct cell t11, t16; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13, t15, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t10 = INT64_C(7); t11 = (struct cell){.m = t1, .rest = {t2, t3, t4, t5, t6, t7, t8}, .after = t10}; h0_b = t11; hero_pad_fill(&h0_b, sizeof(struct cell), 1, hero_pad_g_0, hero_pad_n_0);
-    t12 = digest_cell((void *)&h0_b.m); t13 = HERO_STR_LIT(hero_str_20); t14 = h0_b.m; t15 = HERO_STR_LIT(hero_str_20); t16 = h0_b; t18 = INT64_C(6); t19 = t16.rest[((uint64_t)(t18) >= UINT64_C(7) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t18))]; t20 = HERO_STR_LIT(hero_str_20); t21 = h0_b.after; hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_str(t15); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); return;
-#line 186 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.main", 21, 11}; t12 = digest_cell((void *)&h0_b.m); } t13 = HERO_STR_LIT(hero_str_20); t14 = h0_b.m; t15 = HERO_STR_LIT(hero_str_20); t16 = h0_b; t18 = INT64_C(6); t19 = t16.rest[((uint64_t)(t18) >= UINT64_C(7) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.main", 21, 45), (int64_t)0) : (t18))]; t20 = HERO_STR_LIT(hero_str_20); t21 = h0_b.after; hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_str(t15); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); return;
+#line 198 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b) {
+HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_0Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->m == b->m)) return false;
     if (!((a->rest[0] == b->rest[0] && a->rest[1] == b->rest[1] && a->rest[2] == b->rest[2] && a->rest[3] == b->rest[3] && a->rest[4] == b->rest[4] && a->rest[5] == b->rest[5] && a->rest[6] == b->rest[6]))) return false;
     if (!(a->after == b->after)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs396afieldlentasonecellisthebindingsword_0Cell_hash(const void *elem) {
     const struct cell *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->m)) * UINT64_C(0x100000001b3);
@@ -270,10 +282,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0352d15312ae095d", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cb409d56ca77b7b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs396afieldlentasonecellisthebindingsword\tfixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word\n");
     h_fixedbugs396afieldlentasonecellisthebindingsword_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "abortsortnan.c"
+#line 92 "abortsortnan.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_abortsortnan_main(void);
 
@@ -98,9 +110,9 @@ void h_abortsortnan_main(void);
 void h_abortsortnan_main(void) { double h0_zero; double h1_n; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *t7, *t8, *t14, *t15, *t18, *t19, *t20, *t21; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t10, t11, t12, t13, t17; HERO_NODEBUG int64_t t9, t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x0p+0; h0_zero = t1;
     t2 = h0_zero; t3 = h0_zero; t4 = t2 / t3; h1_n = t4;
-    t5 = 0x1p+1; t6 = 0x1p+0; t7 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t18 = h2_own2; h2_own2 = t7; hero_array_decref(t18); t8 = hero_array_sort(t7); t19 = h3_own3; h3_own3 = t8; hero_array_decref(t19); t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]); hero_print_f64(t10); hero_print_end();
-    t11 = 0x1p+1; t12 = h1_n; t13 = 0x1p+0; t14 = hero_array_new(&hero_desc_f64, 3); hero_array_push_owned(&t14, &t11); hero_array_push_owned(&t14, &t12); hero_array_push_owned(&t14, &t13); t20 = h4_own4; h4_own4 = t14; hero_array_decref(t20); t15 = hero_array_sort(t14); t21 = h5_own5; h5_own5 = t15; hero_array_decref(t21); t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]); hero_print_f64(t17); hero_print_end();
-#line 104 "abortsortnan.c"
+    t5 = 0x1p+1; t6 = 0x1p+0; t7 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t18 = h2_own2; h2_own2 = t7; hero_array_decref(t18); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-sort-nan.hero", "abort-sort-nan.main", 17, 11}; t8 = hero_array_sort_at(t7, &hero_here); } t19 = h3_own3; h3_own3 = t8; hero_array_decref(t19); t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "abort-sort-nan.hero", "abort-sort-nan.main", 17, 11) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]); hero_print_f64(t10); hero_print_end();
+    t11 = 0x1p+1; t12 = h1_n; t13 = 0x1p+0; t14 = hero_array_new(&hero_desc_f64, 3); hero_array_push_owned(&t14, &t11); hero_array_push_owned(&t14, &t12); hero_array_push_owned(&t14, &t13); t20 = h4_own4; h4_own4 = t14; hero_array_decref(t20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-sort-nan.hero", "abort-sort-nan.main", 18, 11}; t15 = hero_array_sort_at(t14, &hero_here); } t21 = h5_own5; h5_own5 = t15; hero_array_decref(t21); t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? hero_panic_index_at(t15, t16, "abort-sort-nan.hero", "abort-sort-nan.main", 18, 11) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]); hero_print_f64(t17); hero_print_end();
+#line 116 "abortsortnan.c"
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -171,10 +183,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c10957d4985017c", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("26f434a60972b11c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("abortsortnan\tabort-sort-nan\n");
     h_abortsortnan_main();
     hero_runtime_check_leaks();
     return 0;

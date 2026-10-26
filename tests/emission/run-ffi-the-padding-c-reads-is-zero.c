@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -140,6 +140,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -171,17 +179,17 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "ffithepaddingcreadsiszero.c"
+#line 183 "ffithepaddingcreadsiszero.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Cd_eq(const struct cd *a, const struct cd *b);
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Cd_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Tp_eq(const struct tp *a, const struct tp *b);
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Tp_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Ocd_eq(const struct ocd *a, const struct ocd *b);
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Ocd_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Holder_eq(const h_ffithepaddingcreadsiszero_Holder *a, const h_ffithepaddingcreadsiszero_Holder *b);
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Holder_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Cd_eq(const struct cd *a, const struct cd *b);
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Cd_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Tp_eq(const struct tp *a, const struct tp *b);
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Tp_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Ocd_eq(const struct ocd *a, const struct ocd *b);
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Ocd_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Holder_eq(const h_ffithepaddingcreadsiszero_Holder *a, const h_ffithepaddingcreadsiszero_Holder *b);
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Holder_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -190,22 +198,26 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_ffithepaddingcreadsiszero_Cd_desc_copy(void *dst, const void *src) {
+static void h_ffithepaddingcreadsiszero_0Cd_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(struct cd));
 }
-static void h_ffithepaddingcreadsiszero_Cd_desc_drop(void *elem) {
+static void h_ffithepaddingcreadsiszero_0Cd_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_ffithepaddingcreadsiszero_Cd_desc_eq(const void *a, const void *b) {
-    return h_ffithepaddingcreadsiszero_Cd_eq((const struct cd *)a, (const struct cd *)b);
+static bool h_ffithepaddingcreadsiszero_0Cd_desc_eq(const void *a, const void *b) {
+    return h_ffithepaddingcreadsiszero_0Cd_eq((const struct cd *)a, (const struct cd *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_ffithepaddingcreadsiszero_Cd_desc = {
+HERO_TU_QUIET static const HeroDesc h_ffithepaddingcreadsiszero_0Cd_desc = {
     sizeof(struct cd),
-    h_ffithepaddingcreadsiszero_Cd_desc_copy,
-    h_ffithepaddingcreadsiszero_Cd_desc_drop,
-    h_ffithepaddingcreadsiszero_Cd_desc_eq,
-    h_ffithepaddingcreadsiszero_Cd_hash,
+    h_ffithepaddingcreadsiszero_0Cd_desc_copy,
+    h_ffithepaddingcreadsiszero_0Cd_desc_drop,
+    h_ffithepaddingcreadsiszero_0Cd_desc_eq,
+    h_ffithepaddingcreadsiszero_0Cd_hash,
 };
 
 struct cd h_ffithepaddingcreadsiszero_cd_through(struct cd h0_x);
@@ -234,25 +246,25 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 36 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 struct cd h_ffithepaddingcreadsiszero_cd_through(struct cd h0_x) { HERO_NODEBUG struct cd t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 238 "ffithepaddingcreadsiszero.c"
+#line 250 "ffithepaddingcreadsiszero.c"
 }
 
 #line 39 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 struct tp h_ffithepaddingcreadsiszero_tp_through(struct tp h0_x) { HERO_NODEBUG struct tp t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 244 "ffithepaddingcreadsiszero.c"
+#line 256 "ffithepaddingcreadsiszero.c"
 }
 
 #line 42 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 struct ocd h_ffithepaddingcreadsiszero_ocd_through(struct ocd h0_x) { HERO_NODEBUG struct ocd t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 250 "ffithepaddingcreadsiszero.c"
+#line 262 "ffithepaddingcreadsiszero.c"
 }
 
 #line 45 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 int32_t h_ffithepaddingcreadsiszero_handed_on(struct cd *ph0_p) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    hero_lend_local_name(ph0_p, "cd_pad", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t1 = cd_pad(&(*ph0_p)); return t1;
-#line 256 "ffithepaddingcreadsiszero.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.handed_on", 46, 12}; hero_lend_local_name(ph0_p, "cd_pad", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t1 = cd_pad(&(*ph0_p)); } return t1;
+#line 268 "ffithepaddingcreadsiszero.c"
 }
 
 #line 48 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -271,26 +283,26 @@ void h_ffithepaddingcreadsiszero_work(void) {
 #line 50
     t15 = (h_ffithepaddingcreadsiszero_Holder){.f_h = t5, .f_t = t9, .f_o = t14}; h1_held = t15;
 #line 55
-    t16 = h0_a; t17 = h_ffithepaddingcreadsiszero_cd_through(t16); t18 = h0_a; t19 = h_ffithepaddingcreadsiszero_cd_through(t18); t20 = hero_array_new(&h_ffithepaddingcreadsiszero_Cd_desc, 2); hero_array_push_owned(&t20, &t17); hero_array_push_owned(&t20, &t19); t39 = h5_own5; h5_own5 = t20; hero_array_decref(t39); t40 = h2_pairs; hero_array_incref(t20); h2_pairs = t20; hero_array_decref(t40);
-    t21 = cd_made(); h3_made = t21; hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
+    t16 = h0_a; t17 = h_ffithepaddingcreadsiszero_cd_through(t16); t18 = h0_a; t19 = h_ffithepaddingcreadsiszero_cd_through(t18); t20 = hero_array_new(&h_ffithepaddingcreadsiszero_0Cd_desc, 2); hero_array_push_owned(&t20, &t17); hero_array_push_owned(&t20, &t19); t39 = h5_own5; h5_own5 = t20; hero_array_decref(t39); t40 = h2_pairs; hero_array_incref(t20); h2_pairs = t20; hero_array_decref(t40);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 56, 17}; t21 = cd_made(); } h3_made = t21; hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
     t22 = h0_a; t23 = h_ffithepaddingcreadsiszero_cd_through(t22); h4_handed = t23; hero_pad_fill(&h4_handed, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
 #line 59
-    t24 = h1_held.f_h; t25 = h0_a; t26 = h_ffithepaddingcreadsiszero_Cd_eq(&t24, &t25);
+    t24 = h1_held.f_h; t25 = h0_a; t26 = h_ffithepaddingcreadsiszero_0Cd_eq(&t24, &t25);
     t27 = HERO_STR_LIT(hero_str_20);
-    hero_pad_fill(&h1_held.f_h, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t28 = cd_pad(&h1_held.f_h);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 61, 9}; hero_pad_fill(&h1_held.f_h, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t28 = cd_pad(&h1_held.f_h); }
     t29 = HERO_STR_LIT(hero_str_20);
-    hero_pad_fill(&h1_held.f_t, sizeof(struct tp), 1, hero_pad_g_1, hero_pad_n_1); t30 = tp_pad(&h1_held.f_t);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 63, 9}; hero_pad_fill(&h1_held.f_t, sizeof(struct tp), 1, hero_pad_g_1, hero_pad_n_1); t30 = tp_pad(&h1_held.f_t); }
     t31 = HERO_STR_LIT(hero_str_20);
-    hero_pad_fill(&h1_held.f_o, sizeof(struct ocd), 1, hero_pad_g_2, hero_pad_n_2); t32 = ocd_pad(&h1_held.f_o);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 65, 9}; hero_pad_fill(&h1_held.f_o, sizeof(struct ocd), 1, hero_pad_g_2, hero_pad_n_2); t32 = ocd_pad(&h1_held.f_o); }
     t33 = HERO_STR_LIT(hero_str_20);
-    { _Static_assert((__builtin_types_compatible_p(__typeof__(*(const struct cd *)0), struct cd) && sizeof(struct cd) == sizeof(struct cd)), "heroes-ffi-buffer cds_pad p 1293 1294 Cd const struct cd *"); HERO_NODEBUG int64_t hero_lend_e21_0 = INT64_C(2); HERO_NODEBUG void *hero_lend_b21_0 = hero_lend_take(h2_pairs, hero_lend_e21_0, "cds_pad", "p"); hero_pad_fill(hero_lend_b21_0, sizeof(struct cd), (size_t)hero_lend_e21_0, hero_pad_g_0, hero_pad_n_0); t34 = cds_pad((void *)hero_lend_b21_0); h2_pairs = hero_lend_give(h2_pairs, hero_lend_b21_0, hero_lend_e21_0); }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 67, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(const struct cd *)0), struct cd) && sizeof(struct cd) == sizeof(struct cd)), "heroes-ffi-buffer cds_pad p 1293 1294 Cd const struct cd *"); HERO_NODEBUG int64_t hero_lend_e21_0 = INT64_C(2); HERO_NODEBUG void *hero_lend_b21_0 = hero_lend_take_at(h2_pairs, hero_lend_e21_0, "cds_pad", "p", &hero_here); hero_pad_fill(hero_lend_b21_0, sizeof(struct cd), (size_t)hero_lend_e21_0, hero_pad_g_0, hero_pad_n_0); t34 = cds_pad((void *)hero_lend_b21_0); h2_pairs = hero_lend_give_at(h2_pairs, hero_lend_b21_0, hero_lend_e21_0, &hero_here); } }
     t35 = HERO_STR_LIT(hero_str_20);
     t36 = h_ffithepaddingcreadsiszero_handed_on(&h4_handed);
     t37 = HERO_STR_LIT(hero_str_20);
-    hero_lend_local_name(hero_lend_h3_made, "cd_pad", "p"); hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t38 = cd_pad(&h3_made);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 71, 9}; hero_lend_local_name(hero_lend_h3_made, "cd_pad", "p"); hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t38 = cd_pad(&h3_made); }
 #line 58
     hero_print_bool(t26); hero_print_str(t27); hero_print_int(t28); hero_print_str(t29); hero_print_int(t30); hero_print_str(t31); hero_print_int(t32); hero_print_str(t33); hero_print_int(t34); hero_print_str(t35); hero_print_int(t36); hero_print_str(t37); hero_print_int(t38); hero_print_end();
-#line 294 "ffithepaddingcreadsiszero.c"
+#line 306 "ffithepaddingcreadsiszero.c"
     hero_array_release_at(&h2_pairs);
     hero_array_release_at(&h5_own5);
     hero_lend_local_give(hero_lend_h4_handed);
@@ -302,17 +314,17 @@ void h_ffithepaddingcreadsiszero_work(void) {
 
 #line 74 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 void h_ffithepaddingcreadsiszero_main(void) { HERO_ENTRY_STOP; goto bb0; bb0:
-    (void)dirty();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.main", 75, 5}; (void)dirty(); }
     h_ffithepaddingcreadsiszero_work(); return;
-#line 308 "ffithepaddingcreadsiszero.c"
+#line 320 "ffithepaddingcreadsiszero.c"
 }
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Cd_eq(const struct cd *a, const struct cd *b) {
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Cd_eq(const struct cd *a, const struct cd *b) {
     if (!(a->c == b->c)) return false;
     if (!(a->d == b->d)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Cd_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Cd_hash(const void *elem) {
     const struct cd *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i8)->hash(&v->c)) * UINT64_C(0x100000001b3);
@@ -320,13 +332,13 @@ HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Cd_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Tp_eq(const struct tp *a, const struct tp *b) {
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Tp_eq(const struct tp *a, const struct tp *b) {
     if (!(a->d == b->d)) return false;
     if (!(a->c == b->c)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Tp_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Tp_hash(const void *elem) {
     const struct tp *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_f64)->hash(&v->d)) * UINT64_C(0x100000001b3);
@@ -334,31 +346,31 @@ HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Tp_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Ocd_eq(const struct ocd *a, const struct ocd *b) {
-    if (!(h_ffithepaddingcreadsiszero_Cd_eq(&a->inner, &b->inner))) return false;
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Ocd_eq(const struct ocd *a, const struct ocd *b) {
+    if (!(h_ffithepaddingcreadsiszero_0Cd_eq(&a->inner, &b->inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Ocd_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Ocd_hash(const void *elem) {
     const struct ocd *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_ffithepaddingcreadsiszero_Cd_hash(&v->inner)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithepaddingcreadsiszero_0Cd_hash(&v->inner)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Holder_eq(const h_ffithepaddingcreadsiszero_Holder *a, const h_ffithepaddingcreadsiszero_Holder *b) {
-    if (!(h_ffithepaddingcreadsiszero_Cd_eq(&a->f_h, &b->f_h))) return false;
-    if (!(h_ffithepaddingcreadsiszero_Tp_eq(&a->f_t, &b->f_t))) return false;
-    if (!(h_ffithepaddingcreadsiszero_Ocd_eq(&a->f_o, &b->f_o))) return false;
+HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Holder_eq(const h_ffithepaddingcreadsiszero_Holder *a, const h_ffithepaddingcreadsiszero_Holder *b) {
+    if (!(h_ffithepaddingcreadsiszero_0Cd_eq(&a->f_h, &b->f_h))) return false;
+    if (!(h_ffithepaddingcreadsiszero_0Tp_eq(&a->f_t, &b->f_t))) return false;
+    if (!(h_ffithepaddingcreadsiszero_0Ocd_eq(&a->f_o, &b->f_o))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_Holder_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffithepaddingcreadsiszero_0Holder_hash(const void *elem) {
     const h_ffithepaddingcreadsiszero_Holder *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_ffithepaddingcreadsiszero_Cd_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithepaddingcreadsiszero_Tp_hash(&v->f_t)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffithepaddingcreadsiszero_Ocd_hash(&v->f_o)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithepaddingcreadsiszero_0Cd_hash(&v->f_h)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithepaddingcreadsiszero_0Tp_hash(&v->f_t)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffithepaddingcreadsiszero_0Ocd_hash(&v->f_o)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -426,10 +438,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b700da134033ccf", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b74cb9a02995dfa", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffithepaddingcreadsiszero\tffi-the-padding-c-reads-is-zero\n");
     h_ffithepaddingcreadsiszero_main();
     hero_runtime_check_leaks();
     return 0;

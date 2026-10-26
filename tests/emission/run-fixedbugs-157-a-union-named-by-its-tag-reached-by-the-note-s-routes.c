@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("i")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -119,6 +119,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -147,11 +155,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 159 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_UI_eq(const UI *a, const UI *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_UI_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_eq(const UI *a, const UI *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -160,21 +168,25 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) { HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG void *t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = make_u(); t2 = t1.i; hero_print_int(t2); hero_print_end();
-    t3 = (void *)one_u(); t4 = read_u(t3); hero_print_int(t4); hero_print_end(); return;
-#line 171 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 15, 11}; t1 = make_u(); } t2 = t1.i; hero_print_int(t2); hero_print_end();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 16, 21}; t3 = (void *)one_u(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 16, 11}; t4 = read_u(t3); } hero_print_int(t4); hero_print_end(); return;
+#line 183 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_UI_eq(const UI *a, const UI *b) {
+HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_eq(const UI *a, const UI *b) {
     if (!(a->i == b->i)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_UI_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_hash(const void *elem) {
     const UI *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->i)) * UINT64_C(0x100000001b3);
@@ -245,10 +257,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("017d433573589cd9", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5caf2b9f721353cb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs157aunionnamedbyitstagreachedbythenotesroutes\tfixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes\n");
     h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main();
     hero_runtime_check_leaks();
     return 0;

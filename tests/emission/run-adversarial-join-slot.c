@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,6 +66,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -80,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "adversarialjoinslot.c"
+#line 92 "adversarialjoinslot.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,6 +99,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_adversarialjoinslot_pick(bool h0_c);
 int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b);
@@ -109,7 +121,7 @@ int64_t h_adversarialjoinslot_pick(bool h0_c) { HERO_NODEBUG int64_t h1_r0, t2, 
     t3 = INT64_C(2);
 #line 18
     h1_r0 = t3; goto bb1;
-#line 113 "adversarialjoinslot.c"
+#line 125 "adversarialjoinslot.c"
 }
 
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
@@ -134,7 +146,7 @@ int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) { HERO_NODEBUG int64_
     t4 = INT64_C(20);
 #line 26
     h3_r1 = t4; goto bb4;
-#line 138 "adversarialjoinslot.c"
+#line 150 "adversarialjoinslot.c"
 }
 
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
@@ -145,11 +157,11 @@ void h_adversarialjoinslot_main(void) { int64_t h0_i; int64_t h1_total; HERO_NOD
     t15 = INT64_C(0); h1_total = t15; goto bb1; bb1:
 #line 40
     t16 = h0_i; t17 = INT64_C(4); t18 = t16 < t17; if (t18) goto bb2; else goto bb3; bb2:
-    t19 = h1_total; t20 = h0_i; t21 = INT64_C(2); if (t21 == 0) hero_panic("division by zero"); if (t20 == INT64_MIN && t21 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t22 = t20 % t21; t23 = INT64_C(0); t24 = t22 == t23; t25 = h_adversarialjoinslot_pick(t24); if (__builtin_add_overflow(t19, t25, &t26)) hero_panic_overflow(); h1_total = t26;
-    t27 = h0_i; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h0_i = t29; goto bb1; bb3:
+    t19 = h1_total; t20 = h0_i; t21 = INT64_C(2); if (t21 == 0) hero_panic_at("division by zero", "adversarial-join-slot.hero", "adversarial-join-slot.main", 41, 30); if (t20 == INT64_MIN && t21 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "adversarial-join-slot.hero", "adversarial-join-slot.main", 41, 30); t22 = t20 % t21; t23 = INT64_C(0); t24 = t22 == t23; t25 = h_adversarialjoinslot_pick(t24); if (__builtin_add_overflow(t19, t25, &t26)) hero_panic_overflow_at("adversarial-join-slot.hero", "adversarial-join-slot.main", 41, 17); h1_total = t26;
+    t27 = h0_i; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("adversarial-join-slot.hero", "adversarial-join-slot.main", 42, 13); h0_i = t29; goto bb1; bb3:
 #line 44
     t30 = h1_total; hero_print_int(t30); hero_print_end(); return;
-#line 153 "adversarialjoinslot.c"
+#line 165 "adversarialjoinslot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -215,10 +227,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d9d898577fccaa2", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6028e2e07f3bee93", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("adversarialjoinslot\tadversarial-join-slot\n");
     h_adversarialjoinslot_main();
     hero_runtime_check_leaks();
     return 0;

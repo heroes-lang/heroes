@@ -55,7 +55,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -130,6 +130,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -156,11 +164,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 168 "fixedbugs401abindingcalledzerobesidethewords.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_Pair_eq(const struct pair *a, const struct pair *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs401abindingcalledzerobesidethewords_Pair_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_0Pair_eq(const struct pair *a, const struct pair *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs401abindingcalledzerobesidethewords_0Pair_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -169,6 +177,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void);
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero);
@@ -196,31 +208,31 @@ struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) { int32_
     t1 = INT64_C(7); h0_zero = t1;
     t2 = h0_zero; hero_print_int(t2); hero_print_end();
     t3 = INT64_C(1); t4 = (struct pair){0}; __builtin_memset(&t4, 0, sizeof t4); t4.a = t3; return t4;
-#line 200 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 212 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG struct pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = h0_zero; t3 = (struct pair){0}; __builtin_memset(&t3, 0, sizeof t3); t3.a = t1; t3.zero = t2; return t3;
-#line 206 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 218 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 void h_fixedbugs401abindingcalledzerobesidethewords_main(void) { struct pair h0_p; struct pair h1_q; HERO_NODEBUG struct pair t1, t3; HERO_NODEBUG int32_t t2, t4, t6, t8, t10, t12, t14; HERO_NODEBUG HeroStr t5, t7, t9, t11, t13; HERO_ENTRY_STOP; goto bb0; bb0:
-    (void)dirty();
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-401-a-binding-called-zero-beside-the-words.hero", "fixedbugs-401-a-binding-called-zero-beside-the-words.main", 26, 5}; (void)dirty(); }
     t1 = h_fixedbugs401abindingcalledzerobesidethewords_beside(); h0_p = t1; hero_pad_fill(&h0_p, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = INT64_C(7); t3 = h_fixedbugs401abindingcalledzerobesidethewords_named(t2); h1_q = t3; hero_pad_fill(&h1_q, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h0_p.a; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p.b; t7 = HERO_STR_LIT(hero_str_20); t8 = h0_p.zero; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_q.a; t11 = HERO_STR_LIT(hero_str_20); t12 = h1_q.b; t13 = HERO_STR_LIT(hero_str_20); t14 = h1_q.zero; hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_end(); return;
-#line 215 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 227 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_Pair_eq(const struct pair *a, const struct pair *b) {
+HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_0Pair_eq(const struct pair *a, const struct pair *b) {
     if (!(a->a == b->a)) return false;
     if (!(a->b == b->b)) return false;
     if (!(a->zero == b->zero)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs401abindingcalledzerobesidethewords_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs401abindingcalledzerobesidethewords_0Pair_hash(const void *elem) {
     const struct pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->a)) * UINT64_C(0x100000001b3);
@@ -293,10 +305,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d712e0717f015ee", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36c0c43f78359530", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs401abindingcalledzerobesidethewords\tfixedbugs-401-a-binding-called-zero-beside-the-words\n");
     h_fixedbugs401abindingcalledzerobesidethewords_main();
     hero_runtime_check_leaks();
     return 0;

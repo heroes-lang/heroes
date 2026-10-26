@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -76,6 +76,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -90,7 +98,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "f32thenarrowfloat.c"
+#line 102 "f32thenarrowfloat.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *v);
@@ -105,6 +113,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_f32thenarrowfloat_main(void);
 
@@ -127,14 +139,14 @@ void h_f32thenarrowfloat_main(void) { float h0_a; float h1_edge; float h2_tenth;
     t16 = h4_huge; t17 = hero_f64_to_f32(t16); hero_print_f32(t17); hero_print_end();
 #line 39
     t18 = 0x1.4p+1; t19 = 0x1p-1; t20 = 0x1.8p+0; t21 = hero_array_new(&hero_desc_f32, 3); hero_array_push_owned(&t21, &t18); hero_array_push_owned(&t21, &t19); hero_array_push_owned(&t21, &t20); t49 = h9_own9; h9_own9 = t21; hero_array_decref(t49); t50 = h5_xs; hero_array_incref(t21); h5_xs = t21; hero_array_decref(t50);
-    t22 = h5_xs; t23 = hero_array_sort(t22); t51 = h10_own10; h10_own10 = t23; hero_array_decref(t51); t52 = h6_sorted; hero_array_incref(t23); h6_sorted = t23; hero_array_decref(t52);
-    t24 = h6_sorted; t25 = INT64_C(0); t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t24 + 1))[t25]); hero_print_f32(t26); hero_print_end();
-    t27 = h6_sorted; t28 = INT64_C(2); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t27 + 1))[t28]); hero_print_f32(t29); hero_print_end();
+    t22 = h5_xs; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"f32-the-narrow-float.hero", "f32-the-narrow-float.main", 40, 14}; t23 = hero_array_sort_at(t22, &hero_here); } t51 = h10_own10; h10_own10 = t23; hero_array_decref(t51); t52 = h6_sorted; hero_array_incref(t23); h6_sorted = t23; hero_array_decref(t52);
+    t24 = h6_sorted; t25 = INT64_C(0); t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? hero_panic_index_at(t24, t25, "f32-the-narrow-float.hero", "f32-the-narrow-float.main", 41, 11) : (void)0), (void)(t24->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t24 + 1))[t25]); hero_print_f32(t26); hero_print_end();
+    t27 = h6_sorted; t28 = INT64_C(2); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "f32-the-narrow-float.hero", "f32-the-narrow-float.main", 42, 11) : (void)0), (void)(t27->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t27 + 1))[t28]); hero_print_f32(t29); hero_print_end();
     t30 = hero_map_new(&hero_desc_str, &hero_desc_f32, 0); t53 = h11_own11; h11_own11 = t30; hero_map_decref(t53); t54 = h7_m; hero_map_incref(t30); h7_m = t30; hero_map_decref(t54);
-    t31 = HERO_STR_LIT(hero_str_e09250b); t32 = 0x1p-1; hero_map_set(&(h7_m), &t31, &t32);
-    t33 = h7_m; t34 = HERO_STR_LIT(hero_str_e09250b); { HERO_NODEBUG const void *found = hero_map_find(t33, &t34); if (found == NULL) { t35 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t35 = (h_0opt_db86062){.tag = INT64_C(0)}; (&hero_desc_f32)->copy(&t35.as.ok, found); } } t55 = h12_own12; h12_own12 = t35; h_0opt_db86062_release(&t55); t56 = h8_f0; h_0opt_db86062_retain(&t35); h8_f0 = t35; h_0opt_db86062_release(&t56); t36 = h8_f0; t37 = t36.tag; t38 = INT64_C(0); t39 = t37 == t38; if (t39) goto bb1; else goto bb2; bb1: t42 = h8_f0; t43 = t42.as.ok; hero_print_f32(t43); hero_print_end();
-    t44 = h5_xs; t45 = INT64_C(0); t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t44 + 1))[t45]); t47 = 0x1.4p+1; t48 = t46 == t47; hero_print_bool(t48); hero_print_end();
-#line 138 "f32thenarrowfloat.c"
+    t31 = HERO_STR_LIT(hero_str_e09250b); t32 = 0x1p-1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"f32-the-narrow-float.hero", "f32-the-narrow-float.main", 44, 5}; hero_map_set_at(&(h7_m), &t31, &t32, &hero_here); }
+    t33 = h7_m; t34 = HERO_STR_LIT(hero_str_e09250b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"f32-the-narrow-float.hero", "f32-the-narrow-float.main", 45, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t33, &t34, &hero_here); if (found == NULL) { t35 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t35 = (h_0opt_db86062){.tag = INT64_C(0)}; (&hero_desc_f32)->copy(&t35.as.ok, found); } } t55 = h12_own12; h12_own12 = t35; h_0opt_db86062_release(&t55); t56 = h8_f0; h_0opt_db86062_retain(&t35); h8_f0 = t35; h_0opt_db86062_release(&t56); t36 = h8_f0; t37 = t36.tag; t38 = INT64_C(0); t39 = t37 == t38; if (t39) goto bb1; else goto bb2; bb1: t42 = h8_f0; t43 = t42.as.ok; hero_print_f32(t43); hero_print_end();
+    t44 = h5_xs; t45 = INT64_C(0); t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? hero_panic_index_at(t44, t45, "f32-the-narrow-float.hero", "f32-the-narrow-float.main", 46, 11) : (void)0), (void)(t44->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t44 + 1))[t45]); t47 = 0x1.4p+1; t48 = t46 == t47; hero_print_bool(t48); hero_print_end();
+#line 150 "f32thenarrowfloat.c"
     hero_array_release_at(&h5_xs);
     hero_array_release_at(&h6_sorted);
     hero_map_release_at(&h7_m);
@@ -147,8 +159,8 @@ void h_f32thenarrowfloat_main(void) { float h0_a; float h1_edge; float h2_tenth;
 bb2:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t40 = h8_f0; t41 = t40.as.err;
-#line 151 "f32thenarrowfloat.c"
-    hero_panic_must(t41);
+#line 163 "f32thenarrowfloat.c"
+    hero_panic_must_at(t41, "f32-the-narrow-float.hero", "f32-the-narrow-float.main", 45, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *v) {
@@ -247,10 +259,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7abaf89d61b1278c", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b8b871e6d18bdb4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("f32thenarrowfloat\tf32-the-narrow-float\n");
     h_f32thenarrowfloat_main();
     hero_runtime_check_leaks();
     return 0;

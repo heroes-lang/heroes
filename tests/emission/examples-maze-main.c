@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -72,7 +72,10 @@ HERO_STR_STATIC(hero_str_45, "E");
 HERO_STR_STATIC(hero_str_23, "#");
 HERO_STR_STATIC(hero_str_45d1e739, "no_path");
 HERO_STR_STATIC(hero_str_403ef59e, "no way from the start to the goal");
+HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
+HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
+HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 HERO_STR_STATIC(hero_str_3e46668, "read_failed");
 HERO_STR_STATIC(hero_str_75aeb685, "could not read a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
@@ -80,8 +83,10 @@ HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
 HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
+HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
+HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 
-#line 85 "main.c"
+#line 90 "main.c"
 typedef struct h_grid_Grid {
     HeroArrayHeader * f_rows;
     int64_t f_width;
@@ -149,13 +154,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "main.c"
+#line 158 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_grid_Grid_retain(const h_grid_Grid *v);
-HERO_TU_LOCAL void h_grid_Grid_release(h_grid_Grid *v);
-HERO_TU_LOCAL bool h_grid_Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b);
-HERO_TU_LOCAL uint64_t h_grid_Grid_hash(const void *elem);
+HERO_TU_LOCAL void h_grid_0Grid_retain(const h_grid_Grid *v);
+HERO_TU_LOCAL void h_grid_0Grid_release(h_grid_Grid *v);
+HERO_TU_LOCAL bool h_grid_0Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b);
+HERO_TU_LOCAL uint64_t h_grid_0Grid_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -181,22 +186,22 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_grid_Grid_desc_copy(void *dst, const void *src) {
+static void h_grid_0Grid_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_grid_Grid));
-    h_grid_Grid_retain((const h_grid_Grid *)dst);
+    h_grid_0Grid_retain((const h_grid_Grid *)dst);
 }
-static void h_grid_Grid_desc_drop(void *elem) {
-    h_grid_Grid_release((h_grid_Grid *)elem);
+static void h_grid_0Grid_desc_drop(void *elem) {
+    h_grid_0Grid_release((h_grid_Grid *)elem);
 }
-static bool h_grid_Grid_desc_eq(const void *a, const void *b) {
-    return h_grid_Grid_eq((const h_grid_Grid *)a, (const h_grid_Grid *)b);
+static bool h_grid_0Grid_desc_eq(const void *a, const void *b) {
+    return h_grid_0Grid_eq((const h_grid_Grid *)a, (const h_grid_Grid *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_grid_Grid_desc = {
+HERO_TU_QUIET static const HeroDesc h_grid_0Grid_desc = {
     sizeof(h_grid_Grid),
-    h_grid_Grid_desc_copy,
-    h_grid_Grid_desc_drop,
-    h_grid_Grid_desc_eq,
-    h_grid_Grid_hash,
+    h_grid_0Grid_desc_copy,
+    h_grid_0Grid_desc_drop,
+    h_grid_0Grid_desc_eq,
+    h_grid_0Grid_hash,
 };
 
 void h_main_main(void);
@@ -231,26 +236,33 @@ HeroArrayHeader * h_solve_reversed(HeroArrayHeader * h0_xs);
 int64_t h_solve_steps(HeroArrayHeader * h0_path);
 bool h_solve_is_walkable(h_grid_Grid h0_g, HeroArrayHeader * h1_path);
 bool h_solve_contains(HeroArrayHeader * h0_known, int64_t h1_one);
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
-h_0opt_f87774a h_library_read_file(HeroStr h0_path);
-HeroArrayHeader * h_library_args(void);
-void h_library_exit(int64_t h0_code);
+int64_t h_library_HERO_STR_OK(void);
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
 
 #line 17 "examples/maze/main.hero"
-void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t11, t12, t14, t25, t30, t31; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t8, *t17, *t28, *t29; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t6, t10, t16, t19, t20, t21, t22, t23, t24, t26, t27, t33, t34, t35, t36; HERO_NODEBUG int64_t t3, t4, t7, t9, t13, t18; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t15, t32; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_library_args(); t28 = h4_own4; h4_own4 = t1; hero_array_decref(t28); t29 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t29);
+void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t11, t12, t14, t25, t30, t31; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t8, *t17, *t28, *t29; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t6, t10, t16, t19, t20, t21, t22, t23, t24, t26, t27, t33, t34, t35, t36; HERO_NODEBUG int64_t t3, t4, t9, t13, t18; HERO_NODEBUG bool t5; HERO_NODEBUG uint8_t t7; HERO_NODEBUG HeroFailure t15, t32; HERO_ENTRY_STOP; goto bb0; bb0:
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 18, 13}; t1 = h_library_args(&hero_here); } t28 = h4_own4; h4_own4 = t1; hero_array_decref(t28); t29 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t29);
 #line 20
     t2 = h0_given; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 24
-    t8 = h0_given; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); t11 = h_library_read_file(t10); t30 = h5_own5; h5_own5 = t11; h_0opt_f87774a_release(&t30); t31 = h1_s0; h_0opt_f87774a_retain(&t11); h1_s0 = t11; h_0opt_f87774a_release(&t31); t12 = h1_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
+    t8 = h0_given; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.main", 24, 21) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 24, 11}; t11 = h_library_read_file(t10, &hero_here); } t30 = h5_own5; h5_own5 = t11; h_0opt_f87774a_release(&t30); t31 = h1_s0; h_0opt_f87774a_retain(&t11); h1_s0 = t11; h_0opt_f87774a_release(&t31); t12 = h1_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
 #line 21
     t6 = HERO_STR_LIT(hero_str_55806e41); hero_print_str(t6); hero_print_end();
-    t7 = INT64_C(2); h_library_exit(t7); hero_unreachable(); goto bb1; bb3: goto bb1; bb4:
-#line 254 "main.c"
+    t7 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 22, 9}; h_library_exit(t7, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1; bb4:
+#line 266 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -263,25 +275,25 @@ void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f
     return;
 bb5:
 #line 25 "examples/maze/main.hero"
-    t14 = h1_s0; t15 = t14.as.err; t32 = h2_e; hero_failure_retain(&t15); h2_e = t15; hero_failure_release(&t32); t16 = HERO_STR_LIT(hero_str_2d78c599); t17 = h0_given; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t33 = h6_own6; h6_own6 = t20; hero_str_decref(t33); t21 = HERO_STR_LIT(hero_str_1dce); t22 = hero_str_concat(t20, t21); t34 = h7_own7; h7_own7 = t22; hero_str_decref(t34); t23 = h2_e.code; t24 = hero_str_concat(t22, t23); t35 = h8_own8; h8_own8 = t24; hero_str_decref(t35); h_main_stop(t24); goto bb4; bb6:
+    t14 = h1_s0; t15 = t14.as.err; t32 = h2_e; hero_failure_retain(&t15); h2_e = t15; hero_failure_release(&t32); t16 = HERO_STR_LIT(hero_str_2d78c599); t17 = h0_given; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "main.hero", "main.main", 25, 43) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t33 = h6_own6; h6_own6 = t20; hero_str_decref(t33); t21 = HERO_STR_LIT(hero_str_1dce); t22 = hero_str_concat(t20, t21); t34 = h7_own7; h7_own7 = t22; hero_str_decref(t34); t23 = h2_e.code; t24 = hero_str_concat(t22, t23); t35 = h8_own8; h8_own8 = t24; hero_str_decref(t35); h_main_stop(t24); goto bb4; bb6:
     t25 = h1_s0; t26 = t25.as.ok; t36 = h3_text; hero_str_incref(t26); h3_text = t26; hero_str_decref(t36); t27 = h3_text; h_main_lay_out(t27); goto bb4;
-#line 269 "main.c"
+#line 281 "main.c"
 }
 
 #line 28 "examples/maze/main.hero"
-void h_main_stop(HeroStr h0_message) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_main_stop(HeroStr h0_message) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_message; hero_print_str(t1); hero_print_end();
-    t2 = INT64_C(1); h_library_exit(t2); hero_unreachable(); return;
-#line 276 "main.c"
+    t2 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.stop", 30, 5}; h_library_exit(t2, &hero_here); } hero_unreachable(); return;
+#line 288 "main.c"
 }
 
 #line 32 "examples/maze/main.hero"
 void h_main_lay_out(HeroStr h0_text) { HERO_NODEBUG h_0opt_7f9f63e h1_s0 = {0}, h4_own4 = {0}, t2, t3, t5, t12, t15, t16; HeroFailure h2_e = {0}; h_grid_Grid h3_g = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t1, t7, t8, t9, t10, t11, t18, t19; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t6, t17; HERO_NODEBUG h_grid_Grid t13, t14, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_grid_read(t1); t15 = h4_own4; h4_own4 = t2; h_0opt_7f9f63e_release(&t15); t16 = h1_s0; h_0opt_7f9f63e_retain(&t2); h1_s0 = t2; h_0opt_7f9f63e_release(&t16); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 282 "main.c"
+#line 294 "main.c"
     h_0opt_7f9f63e_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
-    h_grid_Grid_release(hero_slot_escape(&h3_g));
+    h_grid_0Grid_release(hero_slot_escape(&h3_g));
     h_0opt_7f9f63e_release(hero_slot_escape(&h4_own4));
     hero_str_release_at(&h5_own5);
     hero_str_release_at(&h6_own6);
@@ -289,14 +301,14 @@ void h_main_lay_out(HeroStr h0_text) { HERO_NODEBUG h_0opt_7f9f63e h1_s0 = {0}, 
 bb2:
 #line 34 "examples/maze/main.hero"
     t5 = h1_s0; t6 = t5.as.err; t17 = h2_e; hero_failure_retain(&t6); h2_e = t6; hero_failure_release(&t17); t7 = h2_e.code; t8 = HERO_STR_LIT(hero_str_1dce); t9 = hero_str_concat(t7, t8); t18 = h5_own5; h5_own5 = t9; hero_str_decref(t18); t10 = h2_e.msg; t11 = hero_str_concat(t9, t10); t19 = h6_own6; h6_own6 = t11; hero_str_decref(t19); h_main_stop(t11); goto bb1; bb3:
-    t12 = h1_s0; t13 = t12.as.ok; t20 = h3_g; h_grid_Grid_retain(&t13); h3_g = t13; h_grid_Grid_release(&t20); t14 = h3_g; h_main_walk(t14); goto bb1;
-#line 294 "main.c"
+    t12 = h1_s0; t13 = t12.as.ok; t20 = h3_g; h_grid_0Grid_retain(&t13); h3_g = t13; h_grid_0Grid_release(&t20); t14 = h3_g; h_main_walk(t14); goto bb1;
+#line 306 "main.c"
 }
 
 #line 37 "examples/maze/main.hero"
 void h_main_walk(h_grid_Grid h0_g) { HERO_NODEBUG h_0opt_2270cbe7 h1_s0 = {0}, h4_own4 = {0}, t2, t3, t5, t12, t16, t17; HeroFailure h2_e = {0}; HeroArrayHeader * h3_path = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t7, t8, t9, t10, t11, t19, t20; HERO_NODEBUG h_grid_Grid t1, t14; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t6, t18; HERO_NODEBUG HeroArrayHeader *t13, *t15, *t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g; t2 = h_solve_solve(t1); t16 = h4_own4; h4_own4 = t2; h_0opt_2270cbe7_release(&t16); t17 = h1_s0; h_0opt_2270cbe7_retain(&t2); h1_s0 = t2; h_0opt_2270cbe7_release(&t17); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 300 "main.c"
+#line 312 "main.c"
     h_0opt_2270cbe7_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
     hero_array_release_at(&h3_path);
@@ -308,18 +320,18 @@ bb2:
 #line 39 "examples/maze/main.hero"
     t5 = h1_s0; t6 = t5.as.err; t18 = h2_e; hero_failure_retain(&t6); h2_e = t6; hero_failure_release(&t18); t7 = h2_e.code; t8 = HERO_STR_LIT(hero_str_1dce); t9 = hero_str_concat(t7, t8); t19 = h5_own5; h5_own5 = t9; hero_str_decref(t19); t10 = h2_e.msg; t11 = hero_str_concat(t9, t10); t20 = h6_own6; h6_own6 = t11; hero_str_decref(t20); h_main_stop(t11); goto bb1; bb3:
     t12 = h1_s0; t13 = t12.as.ok; t21 = h3_path; hero_array_incref(t13); h3_path = t13; hero_array_decref(t21); t14 = h0_g; t15 = h3_path; h_main_show(t14, t15); goto bb1;
-#line 312 "main.c"
+#line 324 "main.c"
 }
 
 #line 42 "examples/maze/main.hero"
 void h_main_show(h_grid_Grid h0_g, HeroArrayHeader * h1_path) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t2, *t3, *t6, *t9, *t17, *t19, *t20; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t13, t14, t15, t18; HeroStr h4_line = {0}; HERO_NODEBUG h_grid_Grid t1; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t11, t12, t16, t21; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_g; t2 = h1_path; t3 = h_main_drawn(t1, t2); t19 = h5_own5; h5_own5 = t3; hero_array_decref(t19); t20 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t20); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t21 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t21);
+    t1 = h0_g; t2 = h1_path; t3 = h_main_drawn(t1, t2); t19 = h5_own5; h5_own5 = t3; hero_array_decref(t19); t20 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t20); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.show", 43, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t21 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t21);
     t12 = h4_line; hero_print_str(t12); hero_print_end(); goto bb3; bb3:
 #line 43
-    t13 = h3_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h3_i0 = t15; goto bb1; bb4:
+    t13 = h3_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("main.hero", "main.show", 43, 9); h3_i0 = t15; goto bb1; bb4:
 #line 46
     t16 = HERO_STR_LIT(hero_str_203b7899); t17 = h1_path; t18 = h_solve_steps(t17); hero_print_str(t16); hero_print_int(t18); hero_print_end();
-#line 323 "main.c"
+#line 335 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_line);
     hero_array_release_at(&h5_own5);
@@ -330,22 +342,22 @@ void h_main_show(h_grid_Grid h0_g, HeroArrayHeader * h1_path) { HERO_NODEBUG Her
 HeroArrayHeader * h_main_drawn(h_grid_Grid h0_g, HeroArrayHeader * h1_path) { HeroMapHeader * h2_on = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h7_xs1 = {0}, *h11_xs2 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t2, *t5, *t8, *t16, *t19, *t22, *t25, *t28, *t31, *t34, *t37, *t80, *t87, *t90, *t91, *t92, *t93, *t94, *t95, *t96, *t97, *t98; HERO_NODEBUG int64_t h4_i0, h8_i1, h12_i2, t3, t4, t6, t9, t10, t11, t13, t14, t15, t17, t18, t20, t21, t23, t26, t27, t29, t30, t32, t33, t35, t38, t39, t41, t42, t43, t45, t63, t66, t67, t76, t77, t78, t84, t85, t86; int64_t h5_index; HeroArrayHeader * h6_out = {0}; int64_t h9_row; HeroArrayHeader * h10_pieces = {0}; int64_t h13_column; int64_t h14_index; uint8_t h15_here; HERO_NODEBUG bool h16_b0, h17_b1, t7, t12, t24, t36, t49, t52, t53, t56, t57, t68, t69; HERO_NODEBUG h_0opt_473cb9ae h18_f0 = {0}, h26_own26 = {0}, t64, t65, t101, t102; HERO_NODEBUG HeroMapHeader *h19_own19 = {0}, *t1, *t62, *t88, *t89; HERO_NODEBUG HeroStr h24_own24 = {0}, h25_own25 = {0}, t60, t71, t74, t81, t82, t99, t100; HERO_NODEBUG h_grid_Grid t40, t44; HERO_NODEBUG uint8_t t46, t47, t48, t50, t51, t54, t55, t59; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_map_new(&hero_desc_int, &hero_desc_bool, 0); t88 = h19_own19; h19_own19 = t1; hero_map_decref(t88); t89 = h2_on; hero_map_incref(t1); h2_on = t1; hero_map_decref(t89);
 #line 53
-    t2 = h1_path; t90 = h3_xs0; hero_array_incref(t2); h3_xs0 = t2; hero_array_decref(t90); t3 = INT64_C(0); h4_i0 = t3; goto bb1; bb1: t4 = h4_i0; t5 = h3_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h3_xs0; t9 = h4_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h5_index = t10;
-    t11 = h5_index; t12 = true; hero_map_set(&(h2_on), &t11, &t12); goto bb3; bb3:
+    t2 = h1_path; t90 = h3_xs0; hero_array_incref(t2); h3_xs0 = t2; hero_array_decref(t90); t3 = INT64_C(0); h4_i0 = t3; goto bb1; bb1: t4 = h4_i0; t5 = h3_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h3_xs0; t9 = h4_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.drawn", 53, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h5_index = t10;
+    t11 = h5_index; t12 = true; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.drawn", 54, 9}; hero_map_set_at(&(h2_on), &t11, &t12, &hero_here); } goto bb3; bb3:
 #line 53
-    t13 = h4_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h4_i0 = t15; goto bb1; bb4:
+    t13 = h4_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("main.hero", "main.drawn", 53, 9); h4_i0 = t15; goto bb1; bb4:
 #line 56
     t16 = hero_array_new(&hero_desc_str, 1); t91 = h20_own20; h20_own20 = t16; hero_array_decref(t91); t92 = h6_out; hero_array_incref(t16); h6_out = t16; hero_array_decref(t92);
 #line 58
-    t17 = INT64_C(0); t18 = h0_g.f_height; t19 = h_library_range(t17, t18); t93 = h21_own21; h21_own21 = t19; hero_array_decref(t93); t94 = h7_xs1; hero_array_incref(t19); h7_xs1 = t19; hero_array_decref(t94); t20 = INT64_C(0); h8_i1 = t20; goto bb5; bb5: t21 = h8_i1; t22 = h7_xs1; t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len); t24 = t21 < t23; if (t24) goto bb6; else goto bb8; bb6: t25 = h7_xs1; t26 = h8_i1; t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]); h9_row = t27;
+    t17 = INT64_C(0); t18 = h0_g.f_height; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.drawn", 58, 16}; t19 = h_library_range(t17, t18, &hero_here); } t93 = h21_own21; h21_own21 = t19; hero_array_decref(t93); t94 = h7_xs1; hero_array_incref(t19); h7_xs1 = t19; hero_array_decref(t94); t20 = INT64_C(0); h8_i1 = t20; goto bb5; bb5: t21 = h8_i1; t22 = h7_xs1; t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len); t24 = t21 < t23; if (t24) goto bb6; else goto bb8; bb6: t25 = h7_xs1; t26 = h8_i1; t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? hero_panic_index_at(t25, t26, "main.hero", "main.drawn", 58, 9) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]); h9_row = t27;
     t28 = hero_array_new(&hero_desc_str, 1); t95 = h22_own22; h22_own22 = t28; hero_array_decref(t95); t96 = h10_pieces; hero_array_incref(t28); h10_pieces = t28; hero_array_decref(t96);
 #line 61
-    t29 = INT64_C(0); t30 = h0_g.f_width; t31 = h_library_range(t29, t30); t97 = h23_own23; h23_own23 = t31; hero_array_decref(t97); t98 = h11_xs2; hero_array_incref(t31); h11_xs2 = t31; hero_array_decref(t98); t32 = INT64_C(0); h12_i2 = t32; goto bb9; bb7:
+    t29 = INT64_C(0); t30 = h0_g.f_width; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.drawn", 61, 23}; t31 = h_library_range(t29, t30, &hero_here); } t97 = h23_own23; h23_own23 = t31; hero_array_decref(t97); t98 = h11_xs2; hero_array_incref(t31); h11_xs2 = t31; hero_array_decref(t98); t32 = INT64_C(0); h12_i2 = t32; goto bb9; bb7:
 #line 58
-    t84 = h8_i1; t85 = INT64_C(1); if (__builtin_add_overflow(t84, t85, &t86)) hero_panic_overflow(); h8_i1 = t86; goto bb5; bb8:
+    t84 = h8_i1; t85 = INT64_C(1); if (__builtin_add_overflow(t84, t85, &t86)) hero_panic_overflow_at("main.hero", "main.drawn", 58, 9); h8_i1 = t86; goto bb5; bb8:
 #line 74
     t87 = h6_out;
-#line 349 "main.c"
+#line 361 "main.c"
     hero_array_incref(t87);
     hero_map_release_at(&h2_on);
     hero_array_release_at(&h3_xs0);
@@ -365,29 +377,29 @@ HeroArrayHeader * h_main_drawn(h_grid_Grid h0_g, HeroArrayHeader * h1_path) { He
     return t87;
 bb9:
 #line 61 "examples/maze/main.hero"
-    t33 = h12_i2; t34 = h11_xs2; t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len); t36 = t33 < t35; if (t36) goto bb10; else goto bb12; bb10: t37 = h11_xs2; t38 = h12_i2; t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? ((void)hero_array_at(t37, t38), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t37 + 1))[t38]); h13_column = t39;
+    t33 = h12_i2; t34 = h11_xs2; t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len); t36 = t33 < t35; if (t36) goto bb10; else goto bb12; bb10: t37 = h11_xs2; t38 = h12_i2; t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? hero_panic_index_at(t37, t38, "main.hero", "main.drawn", 61, 13) : (void)0), (void)(t37->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t37 + 1))[t38]); h13_column = t39;
     t40 = h0_g; t41 = h9_row; t42 = h13_column; t43 = h_grid_index_of(t40, t41, t42); h14_index = t43;
     t44 = h0_g; t45 = h14_index; t46 = h_grid_at(t44, t45); h15_here = t46;
 #line 65
     t47 = h15_here; t48 = h_grid_WALL(); t49 = t47 == t48; h17_b1 = t49; if (t49) goto bb15; else goto bb14; bb11:
 #line 61
-    t76 = h12_i2; t77 = INT64_C(1); if (__builtin_add_overflow(t76, t77, &t78)) hero_panic_overflow(); h12_i2 = t78; goto bb9; bb12:
+    t76 = h12_i2; t77 = INT64_C(1); if (__builtin_add_overflow(t76, t77, &t78)) hero_panic_overflow_at("main.hero", "main.drawn", 61, 13); h12_i2 = t78; goto bb9; bb12:
 #line 72
     t80 = h10_pieces; t81 = HERO_STR_LIT(hero_str_0); t82 = hero_str_join(t80, t81); t99 = h24_own24; h24_own24 = t82; hero_str_decref(t99); hero_array_push_owned(&h6_out, &t82); goto bb7; bb13: goto bb11; bb14:
 #line 65
     t50 = h15_here; t51 = h_grid_START(); t52 = t50 == t51; h17_b1 = t52; goto bb15; bb15: t53 = h17_b1; h16_b0 = t53; if (t53) goto bb17; else goto bb16; bb16: t54 = h15_here; t55 = h_grid_GOAL(); t56 = t54 == t55; h16_b0 = t56; goto bb17; bb17: t57 = h16_b0; if (t57) goto bb18; else goto bb19; bb18:
     t59 = h15_here; t60 = h_grid_one_char(t59); t100 = h25_own25; h25_own25 = t60; hero_str_decref(t100); hero_array_push_owned(&h10_pieces, &t60); goto bb13; bb19:
-    t62 = h2_on; t63 = h14_index; { HERO_NODEBUG const void *found = hero_map_find(t62, &t63); if (found == NULL) { t64 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t64 = (h_0opt_473cb9ae){.tag = INT64_C(0)}; (&hero_desc_bool)->copy(&t64.as.ok, found); } } t101 = h26_own26; h26_own26 = t64; h_0opt_473cb9ae_release(&t101); t102 = h18_f0; h_0opt_473cb9ae_retain(&t64); h18_f0 = t64; h_0opt_473cb9ae_release(&t102); t65 = h18_f0; t66 = t65.tag; t67 = INT64_C(1); t68 = t66 == t67; t69 = !t68; if (t69) goto bb20; else goto bb21; bb20:
+    t62 = h2_on; t63 = h14_index; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.drawn", 67, 22}; HERO_NODEBUG const void *found = hero_map_find_at(t62, &t63, &hero_here); if (found == NULL) { t64 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t64 = (h_0opt_473cb9ae){.tag = INT64_C(0)}; (&hero_desc_bool)->copy(&t64.as.ok, found); } } t101 = h26_own26; h26_own26 = t64; h_0opt_473cb9ae_release(&t101); t102 = h18_f0; h_0opt_473cb9ae_retain(&t64); h18_f0 = t64; h_0opt_473cb9ae_release(&t102); t65 = h18_f0; t66 = t65.tag; t67 = INT64_C(1); t68 = t66 == t67; t69 = !t68; if (t69) goto bb20; else goto bb21; bb20:
     t71 = HERO_STR_LIT(hero_str_2a); hero_array_push_owned(&h10_pieces, &t71); goto bb13; bb21:
 #line 70
     t74 = HERO_STR_LIT(hero_str_2e); hero_array_push_owned(&h10_pieces, &t74); goto bb13;
-#line 385 "main.c"
+#line 397 "main.c"
 }
 
 #line 21 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_EMPTY_MAZE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_440ce163);
-#line 391 "main.c"
+#line 403 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -395,7 +407,7 @@ HeroStr h_grid_ERR_EMPTY_MAZE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; 
 #line 24 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_MISSING_MARK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_38cfc0b5);
-#line 399 "main.c"
+#line 411 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -403,7 +415,7 @@ HeroStr h_grid_ERR_MISSING_MARK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP
 #line 27 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_RAGGED_MAZE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_74ceed9d);
-#line 407 "main.c"
+#line 419 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -411,7 +423,7 @@ HeroStr h_grid_ERR_RAGGED_MAZE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
 #line 30 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_REPEATED_MARK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_51bdfc8e);
-#line 415 "main.c"
+#line 427 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -419,19 +431,19 @@ HeroStr h_grid_ERR_REPEATED_MARK(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STO
 #line 38 "examples/maze/grid.hero"
 uint8_t h_grid_WALL(void) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(35); return t1;
-#line 423 "main.c"
+#line 435 "main.c"
 }
 
 #line 41 "examples/maze/grid.hero"
 uint8_t h_grid_START(void) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(83); return t1;
-#line 429 "main.c"
+#line 441 "main.c"
 }
 
 #line 44 "examples/maze/grid.hero"
 uint8_t h_grid_GOAL(void) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(69); return t1;
-#line 435 "main.c"
+#line 447 "main.c"
 }
 
 #line 47 "examples/maze/grid.hero"
@@ -441,17 +453,17 @@ HeroArrayHeader * h_grid_split_lines(HeroStr h0_text) { HeroArrayHeader * h1_out
     t3 = INT64_C(0); h3_i = t3; goto bb1; bb1:
 #line 52
     t4 = h3_i; t5 = h0_text; t6 = hero_str_len(t5); t7 = t4 < t6; if (t7) goto bb2; else goto bb3; bb2:
-    t8 = h0_text; t9 = h3_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(10); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb3:
+    t8 = h0_text; t9 = h3_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "grid.hero", "grid.split_lines", 53, 12) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(10); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb3:
 #line 58
     t25 = h2_start; t26 = h0_text; t27 = hero_str_len(t26); t28 = t25 < t27; if (t28) goto bb8; else goto bb9; bb4:
 #line 56
-    t22 = h3_i; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h3_i = t24; goto bb1; bb5:
+    t22 = h3_i; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("grid.hero", "grid.split_lines", 56, 13); h3_i = t24; goto bb1; bb5:
 #line 54
-    t14 = h0_text; t15 = h2_start; t16 = h3_i; t17 = hero_str_slice(t14, t15, t16); t39 = h5_own5; h5_own5 = t17; hero_str_decref(t39); hero_array_push_owned(&h1_out, &t17);
-    t19 = h3_i; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); h2_start = t21; goto bb4; bb6: goto bb4; bb7:
+    t14 = h0_text; t15 = h2_start; t16 = h3_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"grid.hero", "grid.split_lines", 54, 28}; t17 = hero_str_slice_at(t14, t15, t16, &hero_here); } t39 = h5_own5; h5_own5 = t17; hero_str_decref(t39); hero_array_push_owned(&h1_out, &t17);
+    t19 = h3_i; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("grid.hero", "grid.split_lines", 55, 21); h2_start = t21; goto bb4; bb6: goto bb4; bb7:
 #line 60
     t36 = h1_out;
-#line 455 "main.c"
+#line 467 "main.c"
     hero_array_incref(t36);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -460,35 +472,35 @@ HeroArrayHeader * h_grid_split_lines(HeroStr h0_text) { HeroArrayHeader * h1_out
     return t36;
 bb8:
 #line 59 "examples/maze/grid.hero"
-    t30 = h0_text; t31 = h2_start; t32 = h0_text; t33 = hero_str_len(t32); t34 = hero_str_slice(t30, t31, t33); t40 = h6_own6; h6_own6 = t34; hero_str_decref(t40); hero_array_push_owned(&h1_out, &t34); goto bb7; bb9: goto bb7;
-#line 465 "main.c"
+    t30 = h0_text; t31 = h2_start; t32 = h0_text; t33 = hero_str_len(t32); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"grid.hero", "grid.split_lines", 59, 24}; t34 = hero_str_slice_at(t30, t31, t33, &hero_here); } t40 = h6_own6; h6_own6 = t34; hero_str_decref(t40); hero_array_push_owned(&h1_out, &t34); goto bb7; bb9: goto bb7;
+#line 477 "main.c"
 }
 
 #line 62 "examples/maze/grid.hero"
 h_0opt_7f9f63e h_grid_read(HeroStr h0_text) { HeroArrayHeader * h1_rows = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_xs1 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *t1, *t3, *t6, *t9, *t21, *t28, *t32, *t35, *t38, *t56, *t58, *t88, *t89, *t90, *t91, *t93; HERO_NODEBUG int64_t h3_i0, h7_i1, t4, t5, t7, t10, t18, t19, t20, t22, t23, t29, t31, t33, t34, t36, t39, t42, t43, t47, t53, t54, t55, t57, t59, t65, t66, t77, t78; HeroStr h4_line = {0}; int64_t h5_width; HeroStr h8_line = {0}; h_grid_Grid h9_g = {0}; HERO_NODEBUG h_0opt_e201354 h10_f0 = {0}, h11_f1 = {0}, h18_own18 = {0}, h24_own24 = {0}, t63, t64, t68, t75, t76, t80, t99, t100, t106, t107; HERO_NODEBUG h_0opt_7f9f63e h12_ret0 = {0}, h16_own16 = {0}, h23_own23 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, t27, t52, t70, t82, t86, t87, t95, t105, t108, t109, t110; HERO_NODEBUG HeroStr h15_own15 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t2, t11, t12, t13, t16, t25, t26, t30, t40, t41, t45, t46, t48, t49, t50, t51, t92, t94, t96, t101, t102, t103, t104; HERO_NODEBUG h_grid_Grid h17_own17 = {0}, t60, t61, t73, t85, t97, t98; HERO_NODEBUG bool t8, t14, t24, t37, t44, t67, t79; HERO_NODEBUG uint8_t t62, t74; HERO_NODEBUG HeroFailure t69, t81; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t88 = h13_own13; h13_own13 = t1; hero_array_decref(t88); t89 = h1_rows; hero_array_incref(t1); h1_rows = t1; hero_array_decref(t89);
 #line 65
-    t2 = h0_text; t3 = h_grid_split_lines(t2); t90 = h14_own14; h14_own14 = t3; hero_array_decref(t90); t91 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t91); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t92 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t92);
+    t2 = h0_text; t3 = h_grid_split_lines(t2); t90 = h14_own14; h14_own14 = t3; hero_array_decref(t90); t91 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t91); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "grid.hero", "grid.read", 65, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t92 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t92);
     t12 = h4_line; t13 = HERO_STR_LIT(hero_str_0); t14 = !hero_str_eq(t12, t13); if (t14) goto bb6; else goto bb7; bb3:
 #line 65
-    t18 = h3_i0; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow(); h3_i0 = t20; goto bb1; bb4:
+    t18 = h3_i0; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("grid.hero", "grid.read", 65, 9); h3_i0 = t20; goto bb1; bb4:
 #line 69
     t21 = h1_rows; t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len); t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb9; else goto bb10; bb5: goto bb3; bb6:
 #line 67
     t16 = h4_line; hero_array_push_owned(&h1_rows, &t16); goto bb5; bb7: goto bb5; bb8:
 #line 71
-    t28 = h1_rows; t29 = INT64_C(0); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t29]); t31 = hero_str_len(t30); h5_width = t31;
+    t28 = h1_rows; t29 = INT64_C(0); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? hero_panic_index_at(t28, t29, "grid.hero", "grid.read", 71, 13) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t29]); t31 = hero_str_len(t30); h5_width = t31;
 #line 73
     t32 = h1_rows; t93 = h6_xs1; hero_array_incref(t32); h6_xs1 = t32; hero_array_decref(t93); t33 = INT64_C(0); h7_i1 = t33; goto bb11; bb9:
 #line 70
     t25 = h_grid_ERR_EMPTY_MAZE(); t94 = h15_own15; h15_own15 = t25; hero_str_decref(t94); t26 = HERO_STR_LIT(hero_str_6503602c); hero_str_incref(t25); hero_str_incref(t26); t27 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = {.code = t25, .msg = t26}}; t95 = h16_own16; h16_own16 = t27; h_0opt_7f9f63e_release(&t95); h12_ret0 = t27; goto bb22; bb10: goto bb8; bb11:
 #line 73
-    t34 = h7_i1; t35 = h6_xs1; t36 = ((void)(t35 == NULL ? ((void)hero_array_len(t35), hero_unreachable()) : (void)0), t35->len); t37 = t34 < t36; if (t37) goto bb12; else goto bb14; bb12: t38 = h6_xs1; t39 = h7_i1; t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t38 + 1))[t39]); t96 = h8_line; hero_str_incref(t40); h8_line = t40; hero_str_decref(t96);
+    t34 = h7_i1; t35 = h6_xs1; t36 = ((void)(t35 == NULL ? ((void)hero_array_len(t35), hero_unreachable()) : (void)0), t35->len); t37 = t34 < t36; if (t37) goto bb12; else goto bb14; bb12: t38 = h6_xs1; t39 = h7_i1; t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? hero_panic_index_at(t38, t39, "grid.hero", "grid.read", 73, 9) : (void)0), (void)(t38->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t38 + 1))[t39]); t96 = h8_line; hero_str_incref(t40); h8_line = t40; hero_str_decref(t96);
     t41 = h8_line; t42 = hero_str_len(t41); t43 = h5_width; t44 = t42 != t43; if (t44) goto bb16; else goto bb17; bb13:
 #line 73
-    t53 = h7_i1; t54 = INT64_C(1); if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow(); h7_i1 = t55; goto bb11; bb14:
+    t53 = h7_i1; t54 = INT64_C(1); if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow_at("grid.hero", "grid.read", 73, 9); h7_i1 = t55; goto bb11; bb14:
 #line 77
-    t56 = h1_rows; t57 = h5_width; t58 = h1_rows; t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len); hero_array_incref(t56); t60 = (h_grid_Grid){.f_rows = t56, .f_width = t57, .f_height = t59}; t97 = h17_own17; h17_own17 = t60; h_grid_Grid_release(&t97); t98 = h9_g; h_grid_Grid_retain(&t60); h9_g = t60; h_grid_Grid_release(&t98);
+    t56 = h1_rows; t57 = h5_width; t58 = h1_rows; t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len); hero_array_incref(t56); t60 = (h_grid_Grid){.f_rows = t56, .f_width = t57, .f_height = t59}; t97 = h17_own17; h17_own17 = t60; h_grid_0Grid_release(&t97); t98 = h9_g; h_grid_0Grid_retain(&t60); h9_g = t60; h_grid_0Grid_release(&t98);
     t61 = h9_g; t62 = h_grid_START(); t63 = h_grid_locate(t61, t62); t99 = h18_own18; h18_own18 = t63; h_0opt_e201354_release(&t99); t100 = h10_f0; h_0opt_e201354_retain(&t63); h10_f0 = t63; h_0opt_e201354_release(&t100); t64 = h10_f0; t65 = t64.tag; t66 = INT64_C(0); t67 = t65 == t66; if (t67) goto bb18; else goto bb19; bb15: goto bb13; bb16:
 #line 75
     t45 = h_grid_ERR_RAGGED_MAZE(); t101 = h19_own19; h19_own19 = t45; hero_str_decref(t101); t46 = HERO_STR_LIT(hero_str_79da4a2b); t47 = h5_width; t48 = hero_int_to_str(t47); t102 = h20_own20; h20_own20 = t48; hero_str_decref(t102); t49 = hero_str_concat(t46, t48); t103 = h21_own21; h21_own21 = t49; hero_str_decref(t103); t50 = HERO_STR_LIT(hero_str_41c48f73); t51 = hero_str_concat(t49, t50); t104 = h22_own22; h22_own22 = t51; hero_str_decref(t104); hero_str_incref(t45); hero_str_incref(t51); t52 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = {.code = t45, .msg = t51}}; t105 = h23_own23; h23_own23 = t52; h_0opt_7f9f63e_release(&t105); h12_ret0 = t52; goto bb22; bb17: goto bb15; bb18:
@@ -497,10 +509,10 @@ h_0opt_7f9f63e h_grid_read(HeroStr h0_text) { HeroArrayHeader * h1_rows = {0}; H
 #line 78
     t68 = h10_f0; t69 = t68.as.err; hero_failure_retain(&t69); t70 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = t69}; t108 = h25_own25; h25_own25 = t70; h_0opt_7f9f63e_release(&t108); h12_ret0 = t70; goto bb22; bb20:
 #line 80
-    t85 = h9_g; h_grid_Grid_retain(&t85); t86 = (h_0opt_7f9f63e){.tag = INT64_C(0), .as.ok = t85}; t109 = h26_own26; h26_own26 = t86; h_0opt_7f9f63e_release(&t109); h12_ret0 = t86; goto bb22; bb21:
+    t85 = h9_g; h_grid_0Grid_retain(&t85); t86 = (h_0opt_7f9f63e){.tag = INT64_C(0), .as.ok = t85}; t109 = h26_own26; h26_own26 = t86; h_0opt_7f9f63e_release(&t109); h12_ret0 = t86; goto bb22; bb21:
 #line 79
     t80 = h11_f1; t81 = t80.as.err; hero_failure_retain(&t81); t82 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = t81}; t110 = h27_own27; h27_own27 = t82; h_0opt_7f9f63e_release(&t110); h12_ret0 = t82; goto bb22; bb22:
-#line 504 "main.c"
+#line 516 "main.c"
     t87 = h12_ret0;
     h_0opt_7f9f63e_retain(&t87);
     hero_array_release_at(&h1_rows);
@@ -508,14 +520,14 @@ h_0opt_7f9f63e h_grid_read(HeroStr h0_text) { HeroArrayHeader * h1_rows = {0}; H
     hero_str_release_at(&h4_line);
     hero_array_release_at(&h6_xs1);
     hero_str_release_at(&h8_line);
-    h_grid_Grid_release(hero_slot_escape(&h9_g));
+    h_grid_0Grid_release(hero_slot_escape(&h9_g));
     h_0opt_e201354_release(hero_slot_escape(&h10_f0));
     h_0opt_e201354_release(hero_slot_escape(&h11_f1));
     hero_array_release_at(&h13_own13);
     hero_array_release_at(&h14_own14);
     hero_str_release_at(&h15_own15);
     h_0opt_7f9f63e_release(hero_slot_escape(&h16_own16));
-    h_grid_Grid_release(hero_slot_escape(&h17_own17));
+    h_grid_0Grid_release(hero_slot_escape(&h17_own17));
     h_0opt_e201354_release(hero_slot_escape(&h18_own18));
     hero_str_release_at(&h19_own19);
     hero_str_release_at(&h20_own20);
@@ -531,57 +543,57 @@ h_0opt_7f9f63e h_grid_read(HeroStr h0_text) { HeroArrayHeader * h1_rows = {0}; H
 
 #line 84 "examples/maze/grid.hero"
 int64_t h_grid_index_of(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_row; t2 = h0_g.f_width; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = h2_column; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); return t5;
-#line 536 "main.c"
+    t1 = h1_row; t2 = h0_g.f_width; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("grid.hero", "grid.index_of", 85, 12); t4 = h2_column; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("grid.hero", "grid.index_of", 85, 12); return t5;
+#line 548 "main.c"
 }
 
 #line 87 "examples/maze/grid.hero"
 int64_t h_grid_row_of(h_grid_Grid h0_g, int64_t h1_index) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_index; t2 = h0_g.f_width; if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow(); t3 = t1 / t2; return t3;
-#line 542 "main.c"
+    t1 = h1_index; t2 = h0_g.f_width; if (t2 == 0) hero_panic_at("division by zero", "grid.hero", "grid.row_of", 88, 12); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow_at("grid.hero", "grid.row_of", 88, 12); t3 = t1 / t2; return t3;
+#line 554 "main.c"
 }
 
 #line 90 "examples/maze/grid.hero"
 int64_t h_grid_column_of(h_grid_Grid h0_g, int64_t h1_index) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_index; t2 = h0_g.f_width; if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; return t3;
-#line 548 "main.c"
+    t1 = h1_index; t2 = h0_g.f_width; if (t2 == 0) hero_panic_at("division by zero", "grid.hero", "grid.column_of", 91, 12); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "grid.hero", "grid.column_of", 91, 12); t3 = t1 % t2; return t3;
+#line 560 "main.c"
 }
 
 #line 93 "examples/maze/grid.hero"
 uint8_t h_grid_at(h_grid_Grid h0_g, int64_t h1_index) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_grid_Grid t2, t6; HERO_NODEBUG int64_t t3, t4, t7, t8; HERO_NODEBUG HeroStr t5; HERO_NODEBUG uint8_t t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_g.f_rows; t2 = h0_g; t3 = h1_index; t4 = h_grid_row_of(t2, t3); t5 = ((void)((t1 == NULL || t4 < 0 || t4 >= t1->len) ? ((void)hero_array_at(t1, t4), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t4]); t6 = h0_g; t7 = h1_index; t8 = h_grid_column_of(t6, t7); t9 = ((void)((t5.ptr == NULL || t8 < 0 || t8 >= t5.len) ? ((void)hero_str_byte(t5, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t8]); return t9;
-#line 554 "main.c"
+    t1 = h0_g.f_rows; t2 = h0_g; t3 = h1_index; t4 = h_grid_row_of(t2, t3); t5 = ((void)((t1 == NULL || t4 < 0 || t4 >= t1->len) ? hero_panic_index_at(t1, t4, "grid.hero", "grid.at", 94, 12) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t4]); t6 = h0_g; t7 = h1_index; t8 = h_grid_column_of(t6, t7); t9 = ((void)((t5.ptr == NULL || t8 < 0 || t8 >= t5.len) ? hero_panic_byte_at(t5, t8, "grid.hero", "grid.at", 94, 12) : (void)0), (int64_t)(unsigned char)t5.ptr[t8]); return t9;
+#line 566 "main.c"
 }
 
 #line 96 "examples/maze/grid.hero"
 bool h_grid_inside(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) { HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, t3, t6, t7, t10, t11, t14, t15; HERO_NODEBUG int64_t t1, t2, t4, t5, t8, t9, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_row; t2 = INT64_C(0); t3 = t1 >= t2; h5_b2 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h1_row; t5 = h0_g.f_height; t6 = t4 < t5; h5_b2 = t6; goto bb2; bb2: t7 = h5_b2; h4_b1 = t7; if (t7) goto bb3; else goto bb4; bb3: t8 = h2_column; t9 = INT64_C(0); t10 = t8 >= t9; h4_b1 = t10; goto bb4; bb4: t11 = h4_b1; h3_b0 = t11; if (t11) goto bb5; else goto bb6; bb5: t12 = h2_column; t13 = h0_g.f_width; t14 = t12 < t13; h3_b0 = t14; goto bb6; bb6: t15 = h3_b0; return t15;
-#line 560 "main.c"
+#line 572 "main.c"
 }
 
 #line 99 "examples/maze/grid.hero"
 bool h_grid_is_open(h_grid_Grid h0_g, int64_t h1_index) { HERO_NODEBUG h_grid_Grid t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g; t2 = h1_index; t3 = h_grid_at(t1, t2); t4 = h_grid_WALL(); t5 = t3 != t4; return t5;
-#line 566 "main.c"
+#line 578 "main.c"
 }
 
 #line 104 "examples/maze/grid.hero"
 h_0opt_e201354 h_grid_locate(h_grid_Grid h0_g, uint8_t h1_mark) { int64_t h2_found; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_xs1 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *t6, *t9, *t12, *t17, *t20, *t23, *t67, *t68, *t69, *t70; HERO_NODEBUG int64_t h4_i0, h7_i1, t1, t2, t3, t4, t5, t7, t8, t10, t13, t14, t15, t16, t18, t19, t21, t24, t25, t27, t28, t29, t31, t35, t36, t46, t47, t48, t49, t50, t51, t52, t53, t54, t64; int64_t h5_row; int64_t h8_column; int64_t h9_index; HERO_NODEBUG h_0opt_e201354 h10_ret0 = {0}, h17_own17 = {0}, h18_own18 = {0}, h23_own23 = {0}, t45, t63, t65, t66, t75, t76, t81; HERO_NODEBUG HeroStr h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t38, t39, t41, t42, t43, t44, t56, t57, t59, t60, t61, t62, t71, t72, t73, t74, t77, t78, t79, t80; HERO_NODEBUG bool t11, t22, t34, t37, t55; HERO_NODEBUG h_grid_Grid t26, t30; HERO_NODEBUG uint8_t t32, t33, t40, t58; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); t2 = INT64_C(1); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); h2_found = t3;
+    t1 = INT64_C(0); t2 = INT64_C(1); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("grid.hero", "grid.locate", 105, 19); h2_found = t3;
 #line 107
-    t4 = INT64_C(0); t5 = h0_g.f_height; t6 = h_library_range(t4, t5); t67 = h11_own11; h11_own11 = t6; hero_array_decref(t67); t68 = h3_xs0; hero_array_incref(t6); h3_xs0 = t6; hero_array_decref(t68); t7 = INT64_C(0); h4_i0 = t7; goto bb1; bb1: t8 = h4_i0; t9 = h3_xs0; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = t8 < t10; if (t11) goto bb2; else goto bb4; bb2: t12 = h3_xs0; t13 = h4_i0; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); h5_row = t14;
-    t15 = INT64_C(0); t16 = h0_g.f_width; t17 = h_library_range(t15, t16); t69 = h12_own12; h12_own12 = t17; hero_array_decref(t69); t70 = h6_xs1; hero_array_incref(t17); h6_xs1 = t17; hero_array_decref(t70); t18 = INT64_C(0); h7_i1 = t18; goto bb5; bb3:
+    t4 = INT64_C(0); t5 = h0_g.f_height; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"grid.hero", "grid.locate", 107, 16}; t6 = h_library_range(t4, t5, &hero_here); } t67 = h11_own11; h11_own11 = t6; hero_array_decref(t67); t68 = h3_xs0; hero_array_incref(t6); h3_xs0 = t6; hero_array_decref(t68); t7 = INT64_C(0); h4_i0 = t7; goto bb1; bb1: t8 = h4_i0; t9 = h3_xs0; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = t8 < t10; if (t11) goto bb2; else goto bb4; bb2: t12 = h3_xs0; t13 = h4_i0; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "grid.hero", "grid.locate", 107, 9) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); h5_row = t14;
+    t15 = INT64_C(0); t16 = h0_g.f_width; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"grid.hero", "grid.locate", 108, 23}; t17 = h_library_range(t15, t16, &hero_here); } t69 = h12_own12; h12_own12 = t17; hero_array_decref(t69); t70 = h6_xs1; hero_array_incref(t17); h6_xs1 = t17; hero_array_decref(t70); t18 = INT64_C(0); h7_i1 = t18; goto bb5; bb3:
 #line 107
-    t50 = h4_i0; t51 = INT64_C(1); if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow(); h4_i0 = t52; goto bb1; bb4:
+    t50 = h4_i0; t51 = INT64_C(1); if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow_at("grid.hero", "grid.locate", 107, 9); h4_i0 = t52; goto bb1; bb4:
 #line 116
     t53 = h2_found; t54 = INT64_C(0); t55 = t53 < t54; if (t55) goto bb16; else goto bb17; bb5:
 #line 108
-    t19 = h7_i1; t20 = h6_xs1; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); t22 = t19 < t21; if (t22) goto bb6; else goto bb8; bb6: t23 = h6_xs1; t24 = h7_i1; t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]); h8_column = t25;
+    t19 = h7_i1; t20 = h6_xs1; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); t22 = t19 < t21; if (t22) goto bb6; else goto bb8; bb6: t23 = h6_xs1; t24 = h7_i1; t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "grid.hero", "grid.locate", 108, 13) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]); h8_column = t25;
     t26 = h0_g; t27 = h5_row; t28 = h8_column; t29 = h_grid_index_of(t26, t27, t28); h9_index = t29;
 #line 111
     t30 = h0_g; t31 = h9_index; t32 = h_grid_at(t30, t31); t33 = h1_mark; t34 = t32 == t33; if (t34) goto bb10; else goto bb11; bb7:
 #line 108
-    t47 = h7_i1; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow(); h7_i1 = t49; goto bb5; bb8: goto bb3; bb9: goto bb7; bb10:
+    t47 = h7_i1; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("grid.hero", "grid.locate", 108, 13); h7_i1 = t49; goto bb5; bb8: goto bb3; bb9: goto bb7; bb10:
 #line 112
     t35 = h2_found; t36 = INT64_C(0); t37 = t35 >= t36; if (t37) goto bb13; else goto bb14; bb11: goto bb9; bb12:
 #line 114
@@ -592,7 +604,7 @@ h_0opt_e201354 h_grid_locate(h_grid_Grid h0_g, uint8_t h1_mark) { int64_t h2_fou
     t64 = h2_found; t65 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t64}; t76 = h18_own18; h18_own18 = t65; h_0opt_e201354_release(&t76); h10_ret0 = t65; goto bb18; bb16:
 #line 117
     t56 = h_grid_ERR_MISSING_MARK(); t77 = h19_own19; h19_own19 = t56; hero_str_decref(t77); t57 = HERO_STR_LIT(hero_str_3bf2cd6c); t58 = h1_mark; t59 = h_grid_one_char(t58); t78 = h20_own20; h20_own20 = t59; hero_str_decref(t78); t60 = hero_str_concat(t57, t59); t79 = h21_own21; h21_own21 = t60; hero_str_decref(t79); t61 = HERO_STR_LIT(hero_str_60); t62 = hero_str_concat(t60, t61); t80 = h22_own22; h22_own22 = t62; hero_str_decref(t80); hero_str_incref(t56); hero_str_incref(t62); t63 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t56, .msg = t62}}; t81 = h23_own23; h23_own23 = t63; h_0opt_e201354_release(&t81); h10_ret0 = t63; goto bb18; bb17: goto bb15; bb18:
-#line 596 "main.c"
+#line 608 "main.c"
     t66 = h10_ret0;
     h_0opt_e201354_retain(&t66);
     hero_array_release_at(&h3_xs0);
@@ -624,7 +636,7 @@ HeroStr h_grid_one_char(uint8_t h0_mark) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t
     t9 = HERO_STR_LIT(hero_str_23); h1_ret0 = t9; goto bb7; bb5:
 #line 127
     t8 = HERO_STR_LIT(hero_str_45); h1_ret0 = t8; goto bb7; bb6: goto bb4; bb7:
-#line 628 "main.c"
+#line 640 "main.c"
     t10 = h1_ret0;
     hero_str_incref(t10);
     return t10;
@@ -635,12 +647,12 @@ HeroArrayHeader * h_grid_neighbours(h_grid_Grid h0_g, int64_t h1_index) { int64_
     t1 = h0_g; t2 = h1_index; t3 = h_grid_row_of(t1, t2); h2_row = t3;
     t4 = h0_g; t5 = h1_index; t6 = h_grid_column_of(t4, t5); h3_column = t6;
     t7 = hero_array_new(&hero_desc_int, 1); t37 = h5_own5; h5_own5 = t7; hero_array_decref(t37); t38 = h4_out; hero_array_incref(t7); h4_out = t7; hero_array_decref(t38);
-    t8 = h0_g; t9 = h4_out; t10 = h2_row; t11 = INT64_C(1); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow(); t13 = h3_column; t14 = h_grid_step(t8, t9, t12, t13); t39 = h6_own6; h6_own6 = t14; hero_array_decref(t39); t40 = h4_out; hero_array_incref(t14); h4_out = t14; hero_array_decref(t40);
-    t15 = h0_g; t16 = h4_out; t17 = h2_row; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); t20 = h3_column; t21 = h_grid_step(t15, t16, t19, t20); t41 = h7_own7; h7_own7 = t21; hero_array_decref(t41); t42 = h4_out; hero_array_incref(t21); h4_out = t21; hero_array_decref(t42);
-    t22 = h0_g; t23 = h4_out; t24 = h2_row; t25 = h3_column; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow(); t28 = h_grid_step(t22, t23, t24, t27); t43 = h8_own8; h8_own8 = t28; hero_array_decref(t43); t44 = h4_out; hero_array_incref(t28); h4_out = t28; hero_array_decref(t44);
-    t29 = h0_g; t30 = h4_out; t31 = h2_row; t32 = h3_column; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow(); t35 = h_grid_step(t29, t30, t31, t34); t45 = h9_own9; h9_own9 = t35; hero_array_decref(t45); t46 = h4_out; hero_array_incref(t35); h4_out = t35; hero_array_decref(t46);
+    t8 = h0_g; t9 = h4_out; t10 = h2_row; t11 = INT64_C(1); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow_at("grid.hero", "grid.neighbours", 135, 29); t13 = h3_column; t14 = h_grid_step(t8, t9, t12, t13); t39 = h6_own6; h6_own6 = t14; hero_array_decref(t39); t40 = h4_out; hero_array_incref(t14); h4_out = t14; hero_array_decref(t40);
+    t15 = h0_g; t16 = h4_out; t17 = h2_row; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("grid.hero", "grid.neighbours", 136, 29); t20 = h3_column; t21 = h_grid_step(t15, t16, t19, t20); t41 = h7_own7; h7_own7 = t21; hero_array_decref(t41); t42 = h4_out; hero_array_incref(t21); h4_out = t21; hero_array_decref(t42);
+    t22 = h0_g; t23 = h4_out; t24 = h2_row; t25 = h3_column; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("grid.hero", "grid.neighbours", 137, 42); t28 = h_grid_step(t22, t23, t24, t27); t43 = h8_own8; h8_own8 = t28; hero_array_decref(t43); t44 = h4_out; hero_array_incref(t28); h4_out = t28; hero_array_decref(t44);
+    t29 = h0_g; t30 = h4_out; t31 = h2_row; t32 = h3_column; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("grid.hero", "grid.neighbours", 138, 42); t35 = h_grid_step(t29, t30, t31, t34); t45 = h9_own9; h9_own9 = t35; hero_array_decref(t45); t46 = h4_out; hero_array_incref(t35); h4_out = t35; hero_array_decref(t46);
     t36 = h4_out;
-#line 644 "main.c"
+#line 656 "main.c"
     hero_array_incref(t36);
     hero_array_release_at(&h4_out);
     hero_array_release_at(&h5_own5);
@@ -664,7 +676,7 @@ HeroArrayHeader * h_grid_step(h_grid_Grid h0_g, HeroArrayHeader * h1_out, int64_
     t16 = h1_out; t17 = h4_index; t18 = hero_array_push(t16, &t17); t20 = h6_own6; h6_own6 = t18; hero_array_decref(t20); h5_ret0 = t18; goto bb7; bb5:
 #line 147
     t15 = h1_out; h5_ret0 = t15; goto bb7; bb6: goto bb4; bb7:
-#line 668 "main.c"
+#line 680 "main.c"
     t19 = h5_ret0;
     hero_array_incref(t19);
     hero_array_release_at(&h6_own6);
@@ -674,7 +686,7 @@ HeroArrayHeader * h_grid_step(h_grid_Grid h0_g, HeroArrayHeader * h1_out, int64_
 #line 21 "examples/maze/solve.hero"
 HeroStr h_solve_ERR_NO_PATH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_45d1e739);
-#line 678 "main.c"
+#line 690 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -687,15 +699,15 @@ h_0opt_2270cbe7 h_solve_solve(h_grid_Grid h0_g) { HERO_NODEBUG h_0opt_e201354 h1
     t8 = h1_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t9}; t83 = h16_own16; h16_own16 = t10; h_0opt_2270cbe7_release(&t83); h13_ret0 = t10; goto bb18; bb3:
     t23 = h3_f1; t24 = t23.as.ok; h4_goal = t24;
     t25 = hero_map_new(&hero_desc_int, &hero_desc_int, 0); t84 = h17_own17; h17_own17 = t25; hero_map_decref(t84); t85 = h5_came; hero_map_incref(t25); h5_came = t25; hero_map_decref(t85);
-    t26 = h2_start; t27 = h2_start; hero_map_set(&(h5_came), &t26, &t27);
+    t26 = h2_start; t27 = h2_start; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"solve.hero", "solve.solve", 28, 5}; hero_map_set_at(&(h5_came), &t26, &t27, &hero_here); }
     t28 = h2_start; t29 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t29, &t28); t86 = h18_own18; h18_own18 = t29; hero_array_decref(t86); t87 = h6_queue; hero_array_incref(t29); h6_queue = t29; hero_array_decref(t87);
     t30 = INT64_C(0); h7_head = t30; goto bb5; bb4:
 #line 26
     t20 = h3_f1; t21 = t20.as.err; hero_failure_retain(&t21); t22 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t21}; t88 = h19_own19; h19_own19 = t22; h_0opt_2270cbe7_release(&t88); h13_ret0 = t22; goto bb18; bb5:
 #line 32
     t31 = h7_head; t32 = h6_queue; t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len); t34 = t31 < t33; if (t34) goto bb6; else goto bb7; bb6:
-    t35 = h6_queue; t36 = h7_head; t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t35 + 1))[t36]); h8_here = t37;
-    t38 = h7_head; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow(); h7_head = t40;
+    t35 = h6_queue; t36 = h7_head; t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? hero_panic_index_at(t35, t36, "solve.hero", "solve.solve", 33, 16) : (void)0), (void)(t35->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t35 + 1))[t36]); h8_here = t37;
+    t38 = h7_head; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("solve.hero", "solve.solve", 34, 16); h7_head = t40;
 #line 36
     t41 = h8_here; t42 = h4_goal; t43 = t41 == t42; if (t43) goto bb9; else goto bb10; bb7:
 #line 44
@@ -705,14 +717,14 @@ h_0opt_2270cbe7 h_solve_solve(h_grid_Grid h0_g) { HERO_NODEBUG h_0opt_e201354 h1
 #line 37
     t44 = h5_came; t45 = h2_start; t46 = h4_goal; t47 = h_solve_walk_back(t44, t45, t46); t93 = h23_own23; h23_own23 = t47; hero_array_decref(t93); hero_array_incref(t47); t48 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t47}; t94 = h24_own24; h24_own24 = t48; h_0opt_2270cbe7_release(&t94); h13_ret0 = t48; goto bb18; bb10: goto bb8; bb11:
 #line 39
-    t53 = h10_i0; t54 = h9_xs0; t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len); t56 = t53 < t55; if (t56) goto bb12; else goto bb14; bb12: t57 = h9_xs0; t58 = h10_i0; t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t57 + 1))[t58]); h11_next = t59;
-    t60 = h5_came; t61 = h11_next; { HERO_NODEBUG const void *found = hero_map_find(t60, &t61); if (found == NULL) { t62 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t62 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t62.as.ok, found); } } t95 = h25_own25; h25_own25 = t62; h_0opt_e201354_release(&t95); t96 = h12_f2; h_0opt_e201354_retain(&t62); h12_f2 = t62; h_0opt_e201354_release(&t96); t63 = h12_f2; t64 = t63.tag; t65 = INT64_C(1); t66 = t64 == t65; if (t66) goto bb16; else goto bb17; bb13:
+    t53 = h10_i0; t54 = h9_xs0; t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len); t56 = t53 < t55; if (t56) goto bb12; else goto bb14; bb12: t57 = h9_xs0; t58 = h10_i0; t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? hero_panic_index_at(t57, t58, "solve.hero", "solve.solve", 39, 13) : (void)0), (void)(t57->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t57 + 1))[t58]); h11_next = t59;
+    t60 = h5_came; t61 = h11_next; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"solve.hero", "solve.solve", 40, 16}; HERO_NODEBUG const void *found = hero_map_find_at(t60, &t61, &hero_here); if (found == NULL) { t62 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t62 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t62.as.ok, found); } } t95 = h25_own25; h25_own25 = t62; h_0opt_e201354_release(&t95); t96 = h12_f2; h_0opt_e201354_retain(&t62); h12_f2 = t62; h_0opt_e201354_release(&t96); t63 = h12_f2; t64 = t63.tag; t65 = INT64_C(1); t66 = t64 == t65; if (t66) goto bb16; else goto bb17; bb13:
 #line 39
-    t72 = h10_i0; t73 = INT64_C(1); if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow(); h10_i0 = t74; goto bb11; bb14: goto bb5; bb15: goto bb13; bb16:
+    t72 = h10_i0; t73 = INT64_C(1); if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow_at("solve.hero", "solve.solve", 39, 13); h10_i0 = t74; goto bb11; bb14: goto bb5; bb15: goto bb13; bb16:
 #line 41
-    t67 = h11_next; t68 = h8_here; hero_map_set(&(h5_came), &t67, &t68);
+    t67 = h11_next; t68 = h8_here; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"solve.hero", "solve.solve", 41, 17}; hero_map_set_at(&(h5_came), &t67, &t68, &hero_here); }
     t70 = h11_next; hero_array_push_owned(&h6_queue, &t70); goto bb15; bb17: goto bb15; bb18:
-#line 716 "main.c"
+#line 728 "main.c"
     t78 = h13_ret0;
     h_0opt_2270cbe7_retain(&t78);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -742,10 +754,10 @@ HeroArrayHeader * h_solve_walk_back(HeroMapHeader * h0_came, int64_t h1_start, i
     t3 = h2_goal; h4_at = t3; goto bb1; bb1:
 #line 52
     t4 = h4_at; t5 = h1_start; t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb2:
-    t7 = h0_came; t8 = h4_at; { HERO_NODEBUG const void *found = hero_map_find(t7, &t8); if (found == NULL) { t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t9 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t9.as.ok, found); } } t25 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t25); t26 = h5_f0; h_0opt_e201354_retain(&t9); h5_f0 = t9; h_0opt_e201354_release(&t26); t10 = h5_f0; t11 = t10.tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto bb4; else goto bb5; bb3:
+    t7 = h0_came; t8 = h4_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"solve.hero", "solve.walk_back", 53, 14}; HERO_NODEBUG const void *found = hero_map_find_at(t7, &t8, &hero_here); if (found == NULL) { t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t9 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t9.as.ok, found); } } t25 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t25); t26 = h5_f0; h_0opt_e201354_retain(&t9); h5_f0 = t9; h_0opt_e201354_release(&t26); t10 = h5_f0; t11 = t10.tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto bb4; else goto bb5; bb3:
 #line 56
     t21 = h3_backwards; t22 = h_solve_reversed(t21); t27 = h8_own8; h8_own8 = t22; hero_array_decref(t27);
-#line 749 "main.c"
+#line 761 "main.c"
     hero_array_incref(t22);
     hero_array_release_at(&h3_backwards);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
@@ -759,8 +771,8 @@ bb4:
     t19 = h4_at; hero_array_push_owned(&h3_backwards, &t19); goto bb1; bb5:
 #line 53
     t14 = h5_f0; t15 = t14.as.err;
-#line 763 "main.c"
-    hero_panic_must(t15);
+#line 775 "main.c"
+    hero_panic_must_at(t15, "solve.hero", "solve.walk_back", 53, 14);
     hero_unreachable();
 }
 
@@ -768,13 +780,13 @@ bb4:
 HeroArrayHeader * h_solve_reversed(HeroArrayHeader * h0_xs) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t3, *t5, *t8, *t11, *t15, *t16, *t27, *t28, *t29, *t30, *t31; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t17, t18, t19, t20, t21, t22, t24, t25, t26; int64_t h4_i; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t28 = h5_own5; h5_own5 = t1; hero_array_decref(t28); t29 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t29);
 #line 61
-    t2 = INT64_C(0); t3 = h0_xs; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = h_library_range(t2, t4); t30 = h6_own6; h6_own6 = t5; hero_array_decref(t30); t31 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t31); t6 = INT64_C(0); h3_i0 = t6; goto bb1; bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto bb2; else goto bb4; bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_i = t13;
-    t15 = h0_xs; t16 = h0_xs; t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); t18 = INT64_C(1); if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow(); t20 = h4_i; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow(); t22 = ((void)((t15 == NULL || t21 < 0 || t21 >= t15->len) ? ((void)hero_array_at(t15, t21), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t21]); hero_array_push_owned(&h1_out, &t22); goto bb3; bb3:
+    t2 = INT64_C(0); t3 = h0_xs; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"solve.hero", "solve.reversed", 61, 14}; t5 = h_library_range(t2, t4, &hero_here); } t30 = h6_own6; h6_own6 = t5; hero_array_decref(t30); t31 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t31); t6 = INT64_C(0); h3_i0 = t6; goto bb1; bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto bb2; else goto bb4; bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "solve.hero", "solve.reversed", 61, 9) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_i = t13;
+    t15 = h0_xs; t16 = h0_xs; t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); t18 = INT64_C(1); if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow_at("solve.hero", "solve.reversed", 62, 27); t20 = h4_i; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("solve.hero", "solve.reversed", 62, 27); t22 = ((void)((t15 == NULL || t21 < 0 || t21 >= t15->len) ? hero_panic_index_at(t15, t21, "solve.hero", "solve.reversed", 62, 24) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t21]); hero_array_push_owned(&h1_out, &t22); goto bb3; bb3:
 #line 61
-    t24 = h3_i0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow(); h3_i0 = t26; goto bb1; bb4:
+    t24 = h3_i0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("solve.hero", "solve.reversed", 61, 9); h3_i0 = t26; goto bb1; bb4:
 #line 64
     t27 = h1_out;
-#line 778 "main.c"
+#line 790 "main.c"
     hero_array_incref(t27);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -785,27 +797,27 @@ HeroArrayHeader * h_solve_reversed(HeroArrayHeader * h0_xs) { HeroArrayHeader * 
 
 #line 67 "examples/maze/solve.hero"
 int64_t h_solve_steps(HeroArrayHeader * h0_path) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(1); if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow(); return t4;
-#line 790 "main.c"
+    t1 = h0_path; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(1); if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow_at("solve.hero", "solve.steps", 68, 12); return t4;
+#line 802 "main.c"
 }
 
 #line 72 "examples/maze/solve.hero"
 bool h_solve_is_walkable(h_grid_Grid h0_g, HeroArrayHeader * h1_path) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t7, *t9, *t12, *t15, *t19, *t24, *t25, *t36, *t37, *t38; HERO_NODEBUG int64_t h3_i0, t2, t3, t6, t8, t10, t11, t13, t16, t17, t20, t21, t22, t23, t26, t27, t31, t32, t33; int64_t h4_i; HERO_NODEBUG bool h5_ret0, t4, t5, t14, t28, t29, t30, t34, t35; HERO_NODEBUG h_grid_Grid t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_path; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 76
-    t6 = INT64_C(1); t7 = h1_path; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = h_library_range(t6, t8); t36 = h6_own6; h6_own6 = t9; hero_array_decref(t36); t37 = h2_xs0; hero_array_incref(t9); h2_xs0 = t9; hero_array_decref(t37); t10 = INT64_C(0); h3_i0 = t10; goto bb4; bb2:
+    t6 = INT64_C(1); t7 = h1_path; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"solve.hero", "solve.is_walkable", 76, 14}; t9 = h_library_range(t6, t8, &hero_here); } t36 = h6_own6; h6_own6 = t9; hero_array_decref(t36); t37 = h2_xs0; hero_array_incref(t9); h2_xs0 = t9; hero_array_decref(t37); t10 = INT64_C(0); h3_i0 = t10; goto bb4; bb2:
 #line 74
     t5 = false; h5_ret0 = t5; goto bb11; bb3: goto bb1; bb4:
 #line 76
-    t11 = h3_i0; t12 = h2_xs0; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); t14 = t11 < t13; if (t14) goto bb5; else goto bb7; bb5: t15 = h2_xs0; t16 = h3_i0; t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]); h4_i = t17;
-    t18 = h0_g; t19 = h1_path; t20 = h4_i; t21 = INT64_C(1); if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow(); t23 = ((void)((t19 == NULL || t22 < 0 || t22 >= t19->len) ? ((void)hero_array_at(t19, t22), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t22]); t24 = h_grid_neighbours(t18, t23); t38 = h7_own7; h7_own7 = t24; hero_array_decref(t38); t25 = h1_path; t26 = h4_i; t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]); t28 = h_solve_contains(t24, t27); t29 = !t28; if (t29) goto bb9; else goto bb10; bb6:
+    t11 = h3_i0; t12 = h2_xs0; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); t14 = t11 < t13; if (t14) goto bb5; else goto bb7; bb5: t15 = h2_xs0; t16 = h3_i0; t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? hero_panic_index_at(t15, t16, "solve.hero", "solve.is_walkable", 76, 9) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]); h4_i = t17;
+    t18 = h0_g; t19 = h1_path; t20 = h4_i; t21 = INT64_C(1); if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow_at("solve.hero", "solve.is_walkable", 77, 46); t23 = ((void)((t19 == NULL || t22 < 0 || t22 >= t19->len) ? hero_panic_index_at(t19, t22, "solve.hero", "solve.is_walkable", 77, 41) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t22]); t24 = h_grid_neighbours(t18, t23); t38 = h7_own7; h7_own7 = t24; hero_array_decref(t38); t25 = h1_path; t26 = h4_i; t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? hero_panic_index_at(t25, t26, "solve.hero", "solve.is_walkable", 77, 55) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]); t28 = h_solve_contains(t24, t27); t29 = !t28; if (t29) goto bb9; else goto bb10; bb6:
 #line 76
-    t31 = h3_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow(); h3_i0 = t33; goto bb4; bb7:
+    t31 = h3_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("solve.hero", "solve.is_walkable", 76, 9); h3_i0 = t33; goto bb4; bb7:
 #line 80
     t34 = true; h5_ret0 = t34; goto bb11; bb8: goto bb6; bb9:
 #line 78
     t30 = false; h5_ret0 = t30; goto bb11; bb10: goto bb8; bb11:
-#line 809 "main.c"
+#line 821 "main.c"
     t35 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h6_own6);
@@ -815,63 +827,106 @@ bool h_solve_is_walkable(h_grid_Grid h0_g, HeroArrayHeader * h1_path) { HERO_NOD
 
 #line 82 "examples/maze/solve.hero"
 bool h_solve_contains(HeroArrayHeader * h0_known, int64_t h1_one) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t1, *t4, *t7, *t19; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t8, t9, t10, t11, t14, t15, t16; int64_t h4_each; HERO_NODEBUG bool h5_ret0, t6, t12, t13, t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_known; t19 = h2_xs0; hero_array_incref(t1); h2_xs0 = t1; hero_array_decref(t19); t2 = INT64_C(0); h3_i0 = t2; goto bb1; bb1: t3 = h3_i0; t4 = h2_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h2_xs0; t8 = h3_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]); h4_each = t9;
+    t1 = h0_known; t19 = h2_xs0; hero_array_incref(t1); h2_xs0 = t1; hero_array_decref(t19); t2 = INT64_C(0); h3_i0 = t2; goto bb1; bb1: t3 = h3_i0; t4 = h2_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h2_xs0; t8 = h3_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "solve.hero", "solve.contains", 83, 9) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]); h4_each = t9;
     t10 = h4_each; t11 = h1_one; t12 = t10 == t11; if (t12) goto bb6; else goto bb7; bb3:
 #line 83
-    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h3_i0 = t16; goto bb1; bb4:
+    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("solve.hero", "solve.contains", 83, 9); h3_i0 = t16; goto bb1; bb4:
 #line 87
     t17 = false; h5_ret0 = t17; goto bb8; bb5: goto bb3; bb6:
 #line 85
     t13 = true; h5_ret0 = t13; goto bb8; bb7: goto bb5; bb8:
-#line 827 "main.c"
+#line 839 "main.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t18;
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto bb1; bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 841 "main.c"
+#line 853 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
+}
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 850 "main.c"
+#line 866 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 855 "main.c"
+#line 871 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 860 "main.c"
+#line 876 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 865 "main.c"
+#line 881 "main.c"
+}
+
+#line 123 "<heroes library>"
+int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
+#line 886 "main.c"
+}
+
+#line 153 "<heroes library>"
+h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
+#line 153
+#define h1_status (*hero_lend_h1_status)
+#line 153
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 156
+    t7 = INT64_C(0); h1_status = t7;
+    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+#line 155
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+#line 160
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 159
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+#line 906 "main.c"
+    t18 = h3_ret0;
+    h_0opt_f87774a_retain(&t18);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
+    hero_lend_local_give(hero_lend_h1_status);
+    return t18;
+}
+#undef h1_status
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    return h_library_validated(h0_c, &hero_here);
 }
 
 #line 167 "<heroes library>"
-h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
+h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller) {
 #line 167
 #define h1_status (*hero_lend_h1_status)
 #line 167
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
     t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
 #line 174
     t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
@@ -889,7 +944,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 182
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 893 "main.c"
+#line 948 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -907,44 +962,88 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     return t38;
 }
 #undef h1_status
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 167, 1};
+    return h_library_read_file(h0_path, &hero_here);
+}
 
-#line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = hero_array_new(&hero_desc_str, 1); t14 = h2_own2; h2_own2 = t1; hero_array_decref(t14); t15 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t15);
+#line 197 "<heroes library>"
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
     t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t7 = h1_i; t8 = hero_args_at(t7); t16 = h3_own3; h3_own3 = t8; hero_str_decref(t16); hero_array_push_owned(&h0_out, &t8);
-    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
-    t13 = h0_out;
-#line 920 "main.c"
-    hero_array_incref(t13);
+    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
+    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+#line 208
+    t47 = h0_out;
+#line 980 "main.c"
+    hero_array_incref(t47);
     hero_array_release_at(&h0_out);
-    hero_array_release_at(&h2_own2);
-    hero_str_release_at(&h3_own3);
-    return t13;
+    h_0opt_f87774a_release(hero_slot_escape(&h2_text));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_unread));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f1));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_f2));
+    hero_array_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    return t47;
+bb4:
+#line 207 "<heroes library>"
+    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
+#line 203
+    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
+    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
+#line 206
+    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
+#line 204
+    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
+#line 1005 "main.c"
+    hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
+bb9:
+#line 206 "<heroes library>"
+    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
+#line 1011 "main.c"
+    hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 197, 1};
+    return h_library_args(&hero_here);
 }
 
-#line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; (void)hero_exit(t1); return;
-#line 931 "main.c"
+#line 235 "<heroes library>"
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
+#line 1023 "main.c"
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return;
 }
-HERO_TU_LOCAL void h_grid_Grid_retain(const h_grid_Grid *v) {
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+    h_library_exit(h0_code, &hero_here);
+}
+HERO_TU_LOCAL void h_grid_0Grid_retain(const h_grid_Grid *v) {
     hero_array_incref(v->f_rows);
 }
 
-HERO_TU_LOCAL void h_grid_Grid_release(h_grid_Grid *v) {
+HERO_TU_LOCAL void h_grid_0Grid_release(h_grid_Grid *v) {
     hero_array_decref(v->f_rows);
 }
 
-HERO_TU_LOCAL bool h_grid_Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b) {
+HERO_TU_LOCAL bool h_grid_0Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b) {
     if (!(hero_array_eq(a->f_rows, b->f_rows))) return false;
     if (!(a->f_width == b->f_width)) return false;
     if (!(a->f_height == b->f_height)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_grid_Grid_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_grid_0Grid_hash(const void *elem) {
     const h_grid_Grid *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_rows)) * UINT64_C(0x100000001b3);
@@ -987,7 +1086,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 
 HERO_TU_LOCAL void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v) {
     if (v->tag == INT64_C(0)) {
-        h_grid_Grid_retain(&v->as.ok);
+        h_grid_0Grid_retain(&v->as.ok);
     } else {
         hero_failure_retain(&v->as.err);
     }
@@ -995,7 +1094,7 @@ HERO_TU_LOCAL void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v) {
 
 HERO_TU_LOCAL void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v) {
     if (v->tag == INT64_C(0)) {
-        h_grid_Grid_release(&v->as.ok);
+        h_grid_0Grid_release(&v->as.ok);
     } else {
         hero_failure_release(&v->as.err);
     }
@@ -1004,7 +1103,7 @@ HERO_TU_LOCAL void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v) {
 HERO_TU_LOCAL bool h_0opt_7f9f63e_eq(const h_0opt_7f9f63e *a, const h_0opt_7f9f63e *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_grid_Grid_desc)->eq(&a->as.ok, &b->as.ok);
+    return (&h_grid_0Grid_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_7f9f63e_hash(const void *elem) {
@@ -1014,7 +1113,7 @@ HERO_TU_LOCAL uint64_t h_0opt_7f9f63e_hash(const void *elem) {
     if (v->tag != INT64_C(0)) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_grid_Grid_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (h ^ (&h_grid_0Grid_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v) {
@@ -1146,7 +1245,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ccfc4ab7f26f387", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b9098b07638593e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

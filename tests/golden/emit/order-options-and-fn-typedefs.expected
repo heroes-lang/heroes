@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -116,8 +116,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 117 "orderoptionsandfntypedefs.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b);
-HERO_TU_LOCAL uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem);
+HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_0Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b);
+HERO_TU_LOCAL uint64_t h_orderoptionsandfntypedefs_0Point_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -135,21 +135,21 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_orderoptionsandfntypedefs_Point_desc_copy(void *dst, const void *src) {
+static void h_orderoptionsandfntypedefs_0Point_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_orderoptionsandfntypedefs_Point));
 }
-static void h_orderoptionsandfntypedefs_Point_desc_drop(void *elem) {
+static void h_orderoptionsandfntypedefs_0Point_desc_drop(void *elem) {
     (void)elem;
 }
-static bool h_orderoptionsandfntypedefs_Point_desc_eq(const void *a, const void *b) {
-    return h_orderoptionsandfntypedefs_Point_eq((const h_orderoptionsandfntypedefs_Point *)a, (const h_orderoptionsandfntypedefs_Point *)b);
+static bool h_orderoptionsandfntypedefs_0Point_desc_eq(const void *a, const void *b) {
+    return h_orderoptionsandfntypedefs_0Point_eq((const h_orderoptionsandfntypedefs_Point *)a, (const h_orderoptionsandfntypedefs_Point *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_orderoptionsandfntypedefs_Point_desc = {
+HERO_TU_QUIET static const HeroDesc h_orderoptionsandfntypedefs_0Point_desc = {
     sizeof(h_orderoptionsandfntypedefs_Point),
-    h_orderoptionsandfntypedefs_Point_desc_copy,
-    h_orderoptionsandfntypedefs_Point_desc_drop,
-    h_orderoptionsandfntypedefs_Point_desc_eq,
-    h_orderoptionsandfntypedefs_Point_hash,
+    h_orderoptionsandfntypedefs_0Point_desc_copy,
+    h_orderoptionsandfntypedefs_0Point_desc_drop,
+    h_orderoptionsandfntypedefs_0Point_desc_eq,
+    h_orderoptionsandfntypedefs_0Point_hash,
 };
 
 h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n);
@@ -163,11 +163,11 @@ void h_orderoptionsandfntypedefs_main(void);
 
 #line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "order-options-and-fn-typedefs.hero", "order-options-and-fn-typedefs.half", 15, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "order-options-and-fn-typedefs.hero", "order-options-and-fn-typedefs.half", 15, 8); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 17
     t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_7fc615fd); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 16
-    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
+    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "order-options-and-fn-typedefs.hero", "order-options-and-fn-typedefs.half", 16, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("order-options-and-fn-typedefs.hero", "order-options-and-fn-typedefs.half", 16, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
 #line 172 "orderoptionsandfntypedefs.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
@@ -214,7 +214,7 @@ int64_t h_orderoptionsandfntypedefs_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int
 
 #line 32 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("order-options-and-fn-typedefs.hero", "order-options-and-fn-typedefs.add", 33, 12); return t3;
 #line 219 "orderoptionsandfntypedefs.c"
 }
 
@@ -233,8 +233,8 @@ void h_orderoptionsandfntypedefs_tick(void) { HERO_NODEBUG HeroStr t1; HERO_ENTR
 
 #line 42 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_main(void) { HeroArrayHeader * h0_points = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h7_own7 = {0}, t13, t14, t18, t45, t46; HERO_NODEBUG int64_t h2_r0, t1, t2, t4, t5, t9, t11, t12, t15, t16, t19, t20, t21, t22, t25, t26, t35, t36, t39, t40, t41; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}, h8_own8 = {0}, t23, t24, t28, t47, t48; HERO_NODEBUG HeroStr h4_r1 = {0}, t29, t30, t31, t49, t50; HERO_NODEBUG h_0opt_de89a9a h5_f2 = {0}, h9_own9 = {0}, t33, t34, t51, t52; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t7, *t8, *t43, *t44; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t3, t6, t10; HERO_NODEBUG bool t17, t27, t32, t37; HERO_NODEBUG h_0fn_2e6a42a3 t38; HERO_NODEBUG h_0fn_294870dd t42; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); t2 = INT64_C(2); t3 = (h_orderoptionsandfntypedefs_Point){.f_x = t1, .f_y = t2}; t4 = INT64_C(3); t5 = INT64_C(4); t6 = (h_orderoptionsandfntypedefs_Point){.f_x = t4, .f_y = t5}; t7 = hero_array_new(&h_orderoptionsandfntypedefs_Point_desc, 2); hero_array_push_owned(&t7, &t3); hero_array_push_owned(&t7, &t6); t43 = h6_own6; h6_own6 = t7; hero_array_decref(t43); t44 = h0_points; hero_array_incref(t7); h0_points = t7; hero_array_decref(t44);
-    t8 = h0_points; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_orderoptionsandfntypedefs_Point) ? hero_unreachable() : (void)0), ((h_orderoptionsandfntypedefs_Point const *)(const void *)(t8 + 1))[t9]); t11 = t10.f_x; hero_print_int(t11); hero_print_end();
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = (h_orderoptionsandfntypedefs_Point){.f_x = t1, .f_y = t2}; t4 = INT64_C(3); t5 = INT64_C(4); t6 = (h_orderoptionsandfntypedefs_Point){.f_x = t4, .f_y = t5}; t7 = hero_array_new(&h_orderoptionsandfntypedefs_0Point_desc, 2); hero_array_push_owned(&t7, &t3); hero_array_push_owned(&t7, &t6); t43 = h6_own6; h6_own6 = t7; hero_array_decref(t43); t44 = h0_points; hero_array_incref(t7); h0_points = t7; hero_array_decref(t44);
+    t8 = h0_points; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "order-options-and-fn-typedefs.hero", "order-options-and-fn-typedefs.main", 44, 11) : (void)0), (void)(t8->elem->size != sizeof(h_orderoptionsandfntypedefs_Point) ? hero_unreachable() : (void)0), ((h_orderoptionsandfntypedefs_Point const *)(const void *)(t8 + 1))[t9]); t11 = t10.f_x; hero_print_int(t11); hero_print_end();
     t12 = INT64_C(4); t13 = h_orderoptionsandfntypedefs_half(t12); t45 = h7_own7; h7_own7 = t13; h_0opt_e201354_release(&t45); t46 = h1_f0; h_0opt_e201354_retain(&t13); h1_f0 = t13; h_0opt_e201354_release(&t46); t14 = h1_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb1; else goto bb2; bb1: t18 = h1_f0; t19 = t18.as.ok; h2_r0 = t19; goto bb3; bb2: t20 = INT64_C(0); h2_r0 = t20; goto bb3; bb3: t21 = h2_r0; hero_print_int(t21); hero_print_end();
     t22 = INT64_C(0); t23 = h_orderoptionsandfntypedefs_name_of(t22); t47 = h8_own8; h8_own8 = t23; h_0opt_f87774a_release(&t47); t48 = h3_f1; h_0opt_f87774a_retain(&t23); h3_f1 = t23; h_0opt_f87774a_release(&t48); t24 = h3_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb4; else goto bb5; bb4: t28 = h3_f1; t29 = t28.as.ok; t49 = h4_r1; hero_str_incref(t29); h4_r1 = t29; hero_str_decref(t49); goto bb6; bb5: t30 = HERO_STR_LIT(hero_str_3f); t50 = h4_r1; hero_str_incref(t30); h4_r1 = t30; hero_str_decref(t50); goto bb6; bb6: t31 = h4_r1; hero_print_str(t31); hero_print_end();
     t32 = true; t33 = h_orderoptionsandfntypedefs_origin(t32); t51 = h9_own9; h9_own9 = t33; h_0opt_de89a9a_release(&t51); t52 = h5_f2; h_0opt_de89a9a_retain(&t33); h5_f2 = t33; h_0opt_de89a9a_release(&t52); t34 = h5_f2; t35 = t34.tag; t36 = INT64_C(1); t37 = t35 == t36; hero_print_bool(t37); hero_print_end();
@@ -252,13 +252,13 @@ void h_orderoptionsandfntypedefs_main(void) { HeroArrayHeader * h0_points = {0};
     h_0opt_de89a9a_release(hero_slot_escape(&h9_own9));
     return;
 }
-HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b) {
+HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_0Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
     if (!(a->f_y == b->f_y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_orderoptionsandfntypedefs_0Point_hash(const void *elem) {
     const h_orderoptionsandfntypedefs_Point *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
@@ -349,7 +349,7 @@ HERO_TU_LOCAL void h_0opt_de89a9a_release(h_0opt_de89a9a *v) {
 HERO_TU_LOCAL bool h_0opt_de89a9a_eq(const h_0opt_de89a9a *a, const h_0opt_de89a9a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_orderoptionsandfntypedefs_Point_desc)->eq(&a->as.ok, &b->as.ok);
+    return (&h_orderoptionsandfntypedefs_0Point_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_de89a9a_hash(const void *elem) {
@@ -359,7 +359,7 @@ HERO_TU_LOCAL uint64_t h_0opt_de89a9a_hash(const void *elem) {
     if (v->tag != INT64_C(0)) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_orderoptionsandfntypedefs_Point_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (h ^ (&h_orderoptionsandfntypedefs_0Point_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
@@ -395,9 +395,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41eee85a254801b0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("60029f146ff3ed48", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("orderoptionsandfntypedefs\torder-options-and-fn-typedefs\n");
     h_orderoptionsandfntypedefs_main();
     hero_runtime_check_leaks();
     return 0;

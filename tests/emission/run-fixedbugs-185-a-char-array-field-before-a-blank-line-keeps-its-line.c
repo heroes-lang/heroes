@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -162,8 +162,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 163 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_Label_eq(const struct label *a, const struct label *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_Label_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *a, const struct label *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -191,11 +191,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void) { struct label h0_l; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t14, t15, t19, t21, t34, t35; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}, h4_own4 = {0}, t25, t26, t30, t32, t36, t37; HERO_NODEBUG int32_t t1, t24; HERO_NODEBUG int8_t t2, t3, t4, t5, t6, t7, t8, t9; HERO_NODEBUG struct label t11, t12, t23; HERO_NODEBUG int64_t t16, t17, t27, t28, t33; HERO_NODEBUG bool t18, t29; HERO_NODEBUG HeroFailure t20, t31; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = INT64_C(104); t3 = INT64_C(105); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t9 = INT64_C(0); t11 = (struct label){.id = t1, .name = {t2, t3, t4, t5, t6, t7, t8, t9}}; h0_l = t11; hero_pad_fill(&h0_l, sizeof(struct label), 1, hero_pad_g_1, hero_pad_n_1);
     t12 = h0_l; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t34 = h3_own3; h3_own3 = t14; h_0opt_f87774a_release(&t34); t35 = h1_f0; h_0opt_f87774a_retain(&t14); h1_f0 = t14; h_0opt_f87774a_release(&t35); t15 = h1_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb1; else goto bb2; bb1: t21 = h1_f0; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
-    t23 = h0_l; t24 = label_id(t23); t25 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t24}; t36 = h4_own4; h4_own4 = t25; h_0opt_e201354_release(&t36); t37 = h2_f1; h_0opt_e201354_retain(&t25); h2_f1 = t25; h_0opt_e201354_release(&t37); t26 = h2_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb3; else goto bb4; bb2:
+    t23 = h0_l; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11}; t24 = label_id(t23); } t25 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t24}; t36 = h4_own4; h4_own4 = t25; h_0opt_e201354_release(&t36); t37 = h2_f1; h_0opt_e201354_retain(&t25); h2_f1 = t25; h_0opt_e201354_release(&t37); t26 = h2_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb3; else goto bb4; bb2:
 #line 19
     t19 = h1_f0; t20 = t19.as.err;
 #line 198 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
-    hero_panic_must(t20);
+    hero_panic_must_at(t20, "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 19, 11);
     hero_unreachable();
 bb3:
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
@@ -210,16 +210,16 @@ bb4:
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t30 = h2_f1; t31 = t30.as.err;
 #line 213 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
-    hero_panic_must(t31);
+    hero_panic_must_at(t31, "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_Label_eq(const struct label *a, const struct label *b) {
+HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *a, const struct label *b) {
     if (!(a->id == b->id)) return false;
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_Label_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_hash(const void *elem) {
     const struct label *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->id)) * UINT64_C(0x100000001b3);
@@ -331,9 +331,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("099fc30a5c46a10e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("64d1ab745b015800", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs185achararrayfieldbeforeablanklinekeepsitsline\tfixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line\n");
     h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main();
     hero_runtime_check_leaks();
     return 0;

@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -138,6 +138,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -168,7 +176,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 172 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 180 "fixedbugsreadfileonbytesthatarenottext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -179,6 +187,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void);
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(void);
@@ -188,13 +200,15 @@ int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
-h_0opt_f87774a h_library_read_file(HeroStr h0_path);
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller);
+__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 36 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_22f1d61);
-#line 198 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 212 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -202,24 +216,24 @@ HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void) { HERO_NODEBUG H
 #line 39 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_788341e7);
-#line 206 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 220 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 44 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bool h_fixedbugsreadfileonbytesthatarenottext_put_two_bad_bytes(HeroStr h0_path) { void * h1_handle; HERO_NODEBUG bool h2_ret0, t8, t9, t18, t19; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t6, *t7, *t11, *t14, *t16; HERO_NODEBUG int32_t t10, t13; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = hero_str_lend(t1); t3 = HERO_STR_LIT(hero_str_3d47); t4 = hero_str_lend(t3); t5 = (void *)fopen(hero_cstr_nonnull(t2), hero_cstr_nonnull(t4)); h1_handle = t5;
+    t1 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.put_two_bad_bytes", 45, 26}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = HERO_STR_LIT(hero_str_3d47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.put_two_bad_bytes", 45, 45}; t4 = hero_str_lend_at(t3, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.put_two_bad_bytes", 45, 14}; t5 = (void *)fopen(hero_cstr_nonnull_at(t2, &hero_here), hero_cstr_nonnull_at(t4, &hero_here)); } h1_handle = t5;
 #line 47
     t6 = h1_handle; t7 = ((void *)0); t8 = t6 == t7; if (t8) goto bb2; else goto bb3; bb1:
 #line 49
-    t10 = INT64_C(255); t11 = h1_handle; (void)fputc(t10, t11);
-    t13 = INT64_C(254); t14 = h1_handle; (void)fputc(t13, t14);
-    t16 = h1_handle; (void)fclose(t16);
+    t10 = INT64_C(255); t11 = h1_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.put_two_bad_bytes", 49, 9}; (void)fputc(t10, t11); }
+    t13 = INT64_C(254); t14 = h1_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.put_two_bad_bytes", 50, 9}; (void)fputc(t13, t14); }
+    t16 = h1_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.put_two_bad_bytes", 51, 9}; (void)fclose(t16); }
     t18 = true; h2_ret0 = t18; goto bb4; bb2:
 #line 48
     t9 = false; h2_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 223 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 237 "fixedbugsreadfileonbytesthatarenottext.c"
     t19 = h2_ret0;
     return t19;
 }
@@ -228,28 +242,28 @@ bool h_fixedbugsreadfileonbytesthatarenottext_put_two_bad_bytes(HeroStr h0_path)
 void h_fixedbugsreadfileonbytesthatarenottext_main(void) { HERO_NODEBUG h_0opt_f87774a h0_s0 = {0}, h5_s2 = {0}, h8_s3 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, t6, t7, t9, t15, t30, t31, t33, t39, t44, t45, t48, t54, t55, t62, t63, t65, t66; HeroStr h1_text = {0}; HeroFailure h2_e = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_s1 = {0}, h14_own14 = {0}, t21, t22, t25, t57, t58; HeroFailure h4_e = {0}; HeroStr h6_text = {0}; HeroFailure h7_e = {0}; HeroFailure h9_e = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t1, t4, t5, t10, t11, t12, t14, t17, t18, t19, t20, t24, t27, t28, t29, t34, t35, t36, t38, t41, t42, t43, t47, t50, t51, t52, t53, t56, t59, t61, t67; HERO_NODEBUG bool t2, t3; HERO_NODEBUG int64_t t8, t13, t23, t32, t37, t46; HERO_NODEBUG HeroFailure t16, t26, t40, t49, t60, t64, t68, t69; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(); t52 = h10_own10; h10_own10 = t1; hero_str_decref(t52); t2 = h_fixedbugsreadfileonbytesthatarenottext_put_two_bad_bytes(t1); t3 = !t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 65
-    t5 = h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(); t53 = h11_own11; h11_own11 = t5; hero_str_decref(t53); t6 = h_library_read_file(t5); t54 = h12_own12; h12_own12 = t6; h_0opt_f87774a_release(&t54); t55 = h0_s0; h_0opt_f87774a_retain(&t6); h0_s0 = t6; h_0opt_f87774a_release(&t55); t7 = h0_s0; t8 = t7.tag; switch (t8) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb2:
+    t5 = h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(); t53 = h11_own11; h11_own11 = t5; hero_str_decref(t53); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.main", 65, 11}; t6 = h_library_read_file(t5, &hero_here); } t54 = h12_own12; h12_own12 = t6; h_0opt_f87774a_release(&t54); t55 = h0_s0; h_0opt_f87774a_retain(&t6); h0_s0 = t6; h_0opt_f87774a_release(&t55); t7 = h0_s0; t8 = t7.tag; switch (t8) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb2:
 #line 56
     t4 = HERO_STR_LIT(hero_str_2fccf3e5); hero_print_str(t4); hero_print_end(); goto bb16; bb3: goto bb1; bb4:
 #line 71
-    t19 = h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(); t56 = h13_own13; h13_own13 = t19; hero_str_decref(t56); t20 = HERO_STR_LIT(hero_str_3a8b665b); t21 = h_library_write_file(t19, t20); t57 = h14_own14; h14_own14 = t21; h_0opt_a8ea2_release(&t57); t58 = h3_s1; h_0opt_a8ea2_retain(&t21); h3_s1 = t21; h_0opt_a8ea2_release(&t58); t22 = h3_s1; t23 = t22.tag; switch (t23) { case 0: goto bb8; case 1: goto bb9; default: hero_unreachable(); } bb5:
+    t19 = h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(); t56 = h13_own13; h13_own13 = t19; hero_str_decref(t56); t20 = HERO_STR_LIT(hero_str_3a8b665b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.main", 71, 11}; t21 = h_library_write_file(t19, t20, &hero_here); } t57 = h14_own14; h14_own14 = t21; h_0opt_a8ea2_release(&t57); t58 = h3_s1; h_0opt_a8ea2_retain(&t21); h3_s1 = t21; h_0opt_a8ea2_release(&t58); t22 = h3_s1; t23 = t22.tag; switch (t23) { case 0: goto bb8; case 1: goto bb9; default: hero_unreachable(); } bb5:
 #line 66
     t9 = h0_s0; t10 = t9.as.ok; t59 = h1_text; hero_str_incref(t10); h1_text = t10; hero_str_decref(t59); t11 = HERO_STR_LIT(hero_str_186b4612); t12 = h1_text; t13 = hero_str_len(t12); t14 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t11); hero_print_int(t13); hero_print_str(t14); hero_print_end(); goto bb4; bb6:
     t15 = h0_s0; t16 = t15.as.err; t60 = h2_e; hero_failure_retain(&t16); h2_e = t16; hero_failure_release(&t60); t17 = HERO_STR_LIT(hero_str_17f715ea); t18 = h2_e.code; hero_print_str(t17); hero_print_str(t18); hero_print_end(); goto bb4; bb7:
 #line 75
-    t29 = h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(); t61 = h15_own15; h15_own15 = t29; hero_str_decref(t61); t30 = h_library_read_file(t29); t62 = h16_own16; h16_own16 = t30; h_0opt_f87774a_release(&t62); t63 = h5_s2; h_0opt_f87774a_retain(&t30); h5_s2 = t30; h_0opt_f87774a_release(&t63); t31 = h5_s2; t32 = t31.tag; switch (t32) { case 0: goto bb11; case 1: goto bb12; default: hero_unreachable(); } bb8:
+    t29 = h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(); t61 = h15_own15; h15_own15 = t29; hero_str_decref(t61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.main", 75, 11}; t30 = h_library_read_file(t29, &hero_here); } t62 = h16_own16; h16_own16 = t30; h_0opt_f87774a_release(&t62); t63 = h5_s2; h_0opt_f87774a_retain(&t30); h5_s2 = t30; h_0opt_f87774a_release(&t63); t31 = h5_s2; t32 = t31.tag; switch (t32) { case 0: goto bb11; case 1: goto bb12; default: hero_unreachable(); } bb8:
 #line 72
     t24 = HERO_STR_LIT(hero_str_5ee00df1); hero_print_str(t24); hero_print_end(); goto bb7; bb9:
     t25 = h3_s1; t26 = t25.as.err; t64 = h4_e; hero_failure_retain(&t26); h4_e = t26; hero_failure_release(&t64); t27 = HERO_STR_LIT(hero_str_6d2630b3); t28 = h4_e.code; hero_print_str(t27); hero_print_str(t28); hero_print_end(); goto bb7; bb10:
 #line 80
-    t43 = HERO_STR_LIT(hero_str_4e0bb37c); t44 = h_library_read_file(t43); t65 = h17_own17; h17_own17 = t44; h_0opt_f87774a_release(&t65); t66 = h8_s3; h_0opt_f87774a_retain(&t44); h8_s3 = t44; h_0opt_f87774a_release(&t66); t45 = h8_s3; t46 = t45.tag; switch (t46) { case 0: goto bb14; case 1: goto bb15; default: hero_unreachable(); } bb11:
+    t43 = HERO_STR_LIT(hero_str_4e0bb37c); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-read-file-on-bytes-that-are-not-text.hero", "fixedbugs-read-file-on-bytes-that-are-not-text.main", 80, 11}; t44 = h_library_read_file(t43, &hero_here); } t65 = h17_own17; h17_own17 = t44; h_0opt_f87774a_release(&t65); t66 = h8_s3; h_0opt_f87774a_retain(&t44); h8_s3 = t44; h_0opt_f87774a_release(&t66); t45 = h8_s3; t46 = t45.tag; switch (t46) { case 0: goto bb14; case 1: goto bb15; default: hero_unreachable(); } bb11:
 #line 76
     t33 = h5_s2; t34 = t33.as.ok; t67 = h6_text; hero_str_incref(t34); h6_text = t34; hero_str_decref(t67); t35 = HERO_STR_LIT(hero_str_750e04cc); t36 = h6_text; t37 = hero_str_len(t36); t38 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t35); hero_print_int(t37); hero_print_str(t38); hero_print_end(); goto bb10; bb12:
     t39 = h5_s2; t40 = t39.as.err; t68 = h7_e; hero_failure_retain(&t40); h7_e = t40; hero_failure_release(&t68); t41 = HERO_STR_LIT(hero_str_7e87d305); t42 = h7_e.code; hero_print_str(t41); hero_print_str(t42); hero_print_end(); goto bb10; bb13: goto bb16; bb14:
 #line 81
     t47 = HERO_STR_LIT(hero_str_1418694e); hero_print_str(t47); hero_print_end(); goto bb13; bb15:
     t48 = h8_s3; t49 = t48.as.err; t69 = h9_e; hero_failure_retain(&t49); h9_e = t49; hero_failure_release(&t69); t50 = HERO_STR_LIT(hero_str_180e72b2); t51 = h9_e.code; hero_print_str(t50); hero_print_str(t51); hero_print_end(); goto bb13; bb16:
-#line 253 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 267 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_s0));
     hero_str_release_at(&h1_text);
     hero_failure_release(&h2_e);
@@ -273,32 +287,32 @@ void h_fixedbugsreadfileonbytesthatarenottext_main(void) { HERO_NODEBUG h_0opt_f
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 277 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 291 "fixedbugsreadfileonbytesthatarenottext.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 282 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 296 "fixedbugsreadfileonbytesthatarenottext.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 287 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 301 "fixedbugsreadfileonbytesthatarenottext.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 292 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 306 "fixedbugsreadfileonbytesthatarenottext.c"
 }
 
 #line 167 "<heroes library>"
-h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
+h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller) {
 #line 167
 #define h1_status (*hero_lend_h1_status)
 #line 167
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
     t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
 #line 174
     t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
@@ -316,7 +330,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 182
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 320 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 334 "fixedbugsreadfileonbytesthatarenottext.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -334,10 +348,14 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     return t38;
 }
 #undef h1_status
+__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 167, 1};
+    return h_library_read_file(h0_path, &hero_here);
+}
 
 #line 186 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = h1_text; t3 = hero_file_write_str(t1, t2); h2_wrote = t3;
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
     t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
 #line 190
     t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
@@ -347,7 +365,7 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) { int64_t h2
     t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 191
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 351 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 369 "fixedbugsreadfileonbytesthatarenottext.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -355,6 +373,10 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) { int64_t h2
     h_0opt_a8ea2_release(hero_slot_escape(&h6_own6));
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
+}
+__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 186, 1};
+    return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -420,10 +442,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("251e1e250222a37b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("38270fc92deff63d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsreadfileonbytesthatarenottext\tfixedbugs-read-file-on-bytes-that-are-not-text\n");
     h_fixedbugsreadfileonbytesthatarenottext_main();
     hero_runtime_check_leaks();
     return 0;

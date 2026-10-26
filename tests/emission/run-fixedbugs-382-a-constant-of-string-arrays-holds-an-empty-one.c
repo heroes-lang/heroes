@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -75,6 +75,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 101 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,6 +108,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroArrayHeader * h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(void);
 void h_fixedbugs382aconstantofstringarraysholdsanemptyone_main(void);
@@ -107,14 +119,14 @@ void h_fixedbugs382aconstantofstringarraysholdsanemptyone_main(void);
 #if HERO_STATIC_CONSTANTS
 #line 7 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_3, HeroStr, &hero_desc_str, 2, HERO_STR_LIT(hero_str_61), HERO_STR_LIT(hero_str_62)); HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_4, &hero_desc_str); HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_6, HeroStr, &hero_desc_str, 1, HERO_STR_LIT(hero_str_63)); HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_8, HeroStr, &hero_desc_str, 1, HERO_STR_LIT(hero_str_0)); HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_9, HeroArrayHeader *, &hero_desc_array, 4, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_3), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_4), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_6), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_8)); HeroArrayHeader * h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS_9);
-#line 111 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 123 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
 }
 #else
 
 #line 7 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *t3, *t4, *t6, *t8, *t9, *t10, *t11, *t12, *t13, *t14; HERO_NODEBUG HeroStr t1, t2, t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_61); t2 = HERO_STR_LIT(hero_str_62); t3 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t10 = h0_own0; h0_own0 = t3; hero_array_decref(t10); t4 = hero_array_new(&hero_desc_str, 1); t11 = h1_own1; h1_own1 = t4; hero_array_decref(t11); t5 = HERO_STR_LIT(hero_str_63); t6 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t6, &t5); t12 = h2_own2; h2_own2 = t6; hero_array_decref(t12); t7 = HERO_STR_LIT(hero_str_0); t8 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t8, &t7); t13 = h3_own3; h3_own3 = t8; hero_array_decref(t13); t9 = hero_array_new(&hero_desc_array, 4); hero_array_push_owned(&t9, &t3); hero_array_push_owned(&t9, &t4); hero_array_push_owned(&t9, &t6); hero_array_push_owned(&t9, &t8); t14 = h4_own4; h4_own4 = t9; hero_array_decref(t14);
-#line 118 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 130 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -129,17 +141,17 @@ HeroArrayHeader * h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(voi
 void h_fixedbugs382aconstantofstringarraysholdsanemptyone_main(void) { int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t2, *t5, *t8, *t10, *t12, *t20, *t22, *t26, *t28, *t31, *t33, *t38, *t40, *t43, *t45, *t47, *t49, *t53, *t55, *t59, *t61, *t65, *t67, *t70, *t72, *t75, *t76, *t77, *t78, *t79, *t80, *t81, *t83, *t84, *t85, *t87, *t88; HERO_NODEBUG int64_t h2_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18, t21, t23, t27, t29, t32, t34, t36, t39, t44, t46, t50, t51, t54, t56, t60, t66, t68, t71; HeroArrayHeader * h3_inner = {0}; HeroArrayHeader * h4_copy = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}, h13_own13 = {0}, h16_own16 = {0}, t19, t24, t25, t30, t35, t37, t41, t42, t48, t52, t57, t58, t62, t63, t64, t69, t73, t74, t82, t86, t89; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h0_total = t1;
 #line 13
-    t2 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t75 = h5_own5; h5_own5 = t2; hero_array_decref(t75); t76 = h1_xs0; hero_array_incref(t2); h1_xs0 = t2; hero_array_decref(t76); t3 = INT64_C(0); h2_i0 = t3; goto bb1; bb1: t4 = h2_i0; t5 = h1_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h1_xs0; t9 = h2_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]); t77 = h3_inner; hero_array_incref(t10); h3_inner = t10; hero_array_decref(t77);
-    t11 = h0_total; t12 = h3_inner; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow(); h0_total = t14; goto bb3; bb3:
+    t2 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t75 = h5_own5; h5_own5 = t2; hero_array_decref(t75); t76 = h1_xs0; hero_array_incref(t2); h1_xs0 = t2; hero_array_decref(t76); t3 = INT64_C(0); h2_i0 = t3; goto bb1; bb1: t4 = h2_i0; t5 = h1_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h1_xs0; t9 = h2_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 13, 9) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]); t77 = h3_inner; hero_array_incref(t10); h3_inner = t10; hero_array_decref(t77);
+    t11 = h0_total; t12 = h3_inner; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 14, 17); h0_total = t14; goto bb3; bb3:
 #line 13
-    t15 = h2_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h2_i0 = t17; goto bb1; bb4:
+    t15 = h2_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 13, 9); h2_i0 = t17; goto bb1; bb4:
 #line 16
-    t18 = h0_total; t19 = HERO_STR_LIT(hero_str_20); t20 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t78 = h6_own6; h6_own6 = t20; hero_array_decref(t78); t21 = INT64_C(2); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t20 + 1))[t21]); t23 = INT64_C(0); t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]); t25 = HERO_STR_LIT(hero_str_20); t26 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t79 = h7_own7; h7_own7 = t26; hero_array_decref(t79); t27 = INT64_C(1); t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t26 + 1))[t27]); t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len); t30 = HERO_STR_LIT(hero_str_20); t31 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t80 = h8_own8; h8_own8 = t31; hero_array_decref(t80); t32 = INT64_C(3); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t31 + 1))[t32]); t34 = INT64_C(0); t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? ((void)hero_array_at(t33, t34), hero_unreachable()) : (void)0), (void)(t33->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t33 + 1))[t34]); t36 = hero_str_len(t35); t37 = HERO_STR_LIT(hero_str_20); t38 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t81 = h9_own9; h9_own9 = t38; hero_array_decref(t81); t39 = INT64_C(0); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t38 + 1))[t39]); t41 = HERO_STR_LIT(hero_str_2b); t42 = hero_str_join(t40, t41); t82 = h10_own10; h10_own10 = t42; hero_str_decref(t82); hero_print_int(t18); hero_print_str(t19); hero_print_str(t24); hero_print_str(t25); hero_print_int(t29); hero_print_str(t30); hero_print_int(t36); hero_print_str(t37); hero_print_str(t42); hero_print_end();
+    t18 = h0_total; t19 = HERO_STR_LIT(hero_str_20); t20 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t78 = h6_own6; h6_own6 = t20; hero_array_decref(t78); t21 = INT64_C(2); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 16, 23) : (void)0), (void)(t20->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t20 + 1))[t21]); t23 = INT64_C(0); t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? hero_panic_index_at(t22, t23, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 16, 23) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]); t25 = HERO_STR_LIT(hero_str_20); t26 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t79 = h7_own7; h7_own7 = t26; hero_array_decref(t79); t27 = INT64_C(1); t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? hero_panic_index_at(t26, t27, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 16, 41) : (void)0), (void)(t26->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t26 + 1))[t27]); t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len); t30 = HERO_STR_LIT(hero_str_20); t31 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t80 = h8_own8; h8_own8 = t31; hero_array_decref(t80); t32 = INT64_C(3); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 16, 62) : (void)0), (void)(t31->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t31 + 1))[t32]); t34 = INT64_C(0); t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? hero_panic_index_at(t33, t34, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 16, 62) : (void)0), (void)(t33->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t33 + 1))[t34]); t36 = hero_str_len(t35); t37 = HERO_STR_LIT(hero_str_20); t38 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t81 = h9_own9; h9_own9 = t38; hero_array_decref(t81); t39 = INT64_C(0); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? hero_panic_index_at(t38, t39, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 16, 86) : (void)0), (void)(t38->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t38 + 1))[t39]); t41 = HERO_STR_LIT(hero_str_2b); t42 = hero_str_join(t40, t41); t82 = h10_own10; h10_own10 = t42; hero_str_decref(t82); hero_print_int(t18); hero_print_str(t19); hero_print_str(t24); hero_print_str(t25); hero_print_int(t29); hero_print_str(t30); hero_print_int(t36); hero_print_str(t37); hero_print_str(t42); hero_print_end();
     t43 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t83 = h11_own11; h11_own11 = t43; hero_array_decref(t83); t84 = h4_copy; hero_array_incref(t43); h4_copy = t43; hero_array_decref(t84);
-    t44 = INT64_C(1); t45 = h4_copy; t46 = INT64_C(1); t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? ((void)hero_array_at(t45, t46), hero_unreachable()) : (void)0), (void)(t45->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t45 + 1))[t46]); t48 = HERO_STR_LIT(hero_str_64); t49 = hero_array_push(t47, &t48); t85 = h12_own12; h12_own12 = t49; hero_array_decref(t85); hero_array_incref(t49); hero_array_set(&(h4_copy), t44, &t49);
-    t50 = INT64_C(0); t51 = INT64_C(1); t52 = HERO_STR_LIT(hero_str_65); hero_str_incref(t52); hero_array_unshare(&(h4_copy)); hero_array_set(&((*((void)((h4_copy == NULL || t50 < 0 || t50 >= h4_copy->len) ? ((void)hero_array_at_mut(h4_copy, t50), hero_unreachable()) : (void)0), (void)(h4_copy->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h4_copy + 1) + t50))), t51, &t52);
-    t53 = h4_copy; t54 = INT64_C(1); t55 = ((void)((t53 == NULL || t54 < 0 || t54 >= t53->len) ? ((void)hero_array_at(t53, t54), hero_unreachable()) : (void)0), (void)(t53->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t53 + 1))[t54]); t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t55 + 1))[t56]); t58 = HERO_STR_LIT(hero_str_20); t59 = h4_copy; t60 = INT64_C(0); t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t59 + 1))[t60]); t62 = HERO_STR_LIT(hero_str_2b); t63 = hero_str_join(t61, t62); t86 = h13_own13; h13_own13 = t63; hero_str_decref(t86); t64 = HERO_STR_LIT(hero_str_20); t65 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t87 = h14_own14; h14_own14 = t65; hero_array_decref(t87); t66 = INT64_C(1); t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? ((void)hero_array_at(t65, t66), hero_unreachable()) : (void)0), (void)(t65->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t65 + 1))[t66]); t68 = ((void)(t67 == NULL ? ((void)hero_array_len(t67), hero_unreachable()) : (void)0), t67->len); t69 = HERO_STR_LIT(hero_str_20); t70 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t88 = h15_own15; h15_own15 = t70; hero_array_decref(t88); t71 = INT64_C(0); t72 = ((void)((t70 == NULL || t71 < 0 || t71 >= t70->len) ? ((void)hero_array_at(t70, t71), hero_unreachable()) : (void)0), (void)(t70->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t70 + 1))[t71]); t73 = HERO_STR_LIT(hero_str_2b); t74 = hero_str_join(t72, t73); t89 = h16_own16; h16_own16 = t74; hero_str_decref(t89); hero_print_str(t57); hero_print_str(t58); hero_print_str(t63); hero_print_str(t64); hero_print_int(t68); hero_print_str(t69); hero_print_str(t74); hero_print_end();
-#line 143 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+    t44 = INT64_C(1); t45 = h4_copy; t46 = INT64_C(1); t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? hero_panic_index_at(t45, t46, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 18, 15) : (void)0), (void)(t45->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t45 + 1))[t46]); t48 = HERO_STR_LIT(hero_str_64); t49 = hero_array_push(t47, &t48); t85 = h12_own12; h12_own12 = t49; hero_array_decref(t85); hero_array_incref(t49); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h4_copy); if (*hero_slot == NULL || t44 < 0 || t44 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t44, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 18, 5); hero_array_set(hero_slot, t44, &t49); }
+    t50 = INT64_C(0); t51 = INT64_C(1); t52 = HERO_STR_LIT(hero_str_65); hero_str_incref(t52); hero_array_unshare(&(h4_copy)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)((h4_copy == NULL || t50 < 0 || t50 >= h4_copy->len) ? hero_panic_index_at(h4_copy, t50, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 19, 5) : (void)0), (void)(h4_copy->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h4_copy + 1) + t50))); if (*hero_slot == NULL || t51 < 0 || t51 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t51, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 19, 5); hero_array_set(hero_slot, t51, &t52); }
+    t53 = h4_copy; t54 = INT64_C(1); t55 = ((void)((t53 == NULL || t54 < 0 || t54 >= t53->len) ? hero_panic_index_at(t53, t54, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 20, 11) : (void)0), (void)(t53->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t53 + 1))[t54]); t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 20, 11) : (void)0), (void)(t55->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t55 + 1))[t56]); t58 = HERO_STR_LIT(hero_str_20); t59 = h4_copy; t60 = INT64_C(0); t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? hero_panic_index_at(t59, t60, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 20, 28) : (void)0), (void)(t59->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t59 + 1))[t60]); t62 = HERO_STR_LIT(hero_str_2b); t63 = hero_str_join(t61, t62); t86 = h13_own13; h13_own13 = t63; hero_str_decref(t86); t64 = HERO_STR_LIT(hero_str_20); t65 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t87 = h14_own14; h14_own14 = t65; hero_array_decref(t87); t66 = INT64_C(1); t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? hero_panic_index_at(t65, t66, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 20, 52) : (void)0), (void)(t65->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t65 + 1))[t66]); t68 = ((void)(t67 == NULL ? ((void)hero_array_len(t67), hero_unreachable()) : (void)0), t67->len); t69 = HERO_STR_LIT(hero_str_20); t70 = h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(); t88 = h15_own15; h15_own15 = t70; hero_array_decref(t88); t71 = INT64_C(0); t72 = ((void)((t70 == NULL || t71 < 0 || t71 >= t70->len) ? hero_panic_index_at(t70, t71, "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero", "fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.main", 20, 73) : (void)0), (void)(t70->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t70 + 1))[t71]); t73 = HERO_STR_LIT(hero_str_2b); t74 = hero_str_join(t72, t73); t89 = h16_own16; h16_own16 = t74; hero_str_decref(t89); hero_print_str(t57); hero_print_str(t58); hero_print_str(t63); hero_print_str(t64); hero_print_int(t68); hero_print_str(t69); hero_print_str(t74); hero_print_end();
+#line 155 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h3_inner);
     hero_array_release_at(&h4_copy);
@@ -221,10 +233,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c04c85f2a3c0c00", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("556600e104357e1f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs382aconstantofstringarraysholdsanemptyone\tfixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one\n");
     h_fixedbugs382aconstantofstringarraysholdsanemptyone_main();
     hero_runtime_check_leaks();
     return 0;

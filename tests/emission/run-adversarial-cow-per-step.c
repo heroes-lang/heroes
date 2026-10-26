@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -79,6 +79,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -93,21 +101,21 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "adversarialcowperstep.c"
+#line 105 "adversarialcowperstep.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_adversarialcowperstep_Row_retain(const h_adversarialcowperstep_Row *v);
-HERO_TU_LOCAL void h_adversarialcowperstep_Row_release(h_adversarialcowperstep_Row *v);
-HERO_TU_LOCAL bool h_adversarialcowperstep_Row_eq(const h_adversarialcowperstep_Row *a, const h_adversarialcowperstep_Row *b);
-HERO_TU_LOCAL uint64_t h_adversarialcowperstep_Row_hash(const void *elem);
-HERO_TU_LOCAL void h_adversarialcowperstep_Grid_retain(const h_adversarialcowperstep_Grid *v);
-HERO_TU_LOCAL void h_adversarialcowperstep_Grid_release(h_adversarialcowperstep_Grid *v);
-HERO_TU_LOCAL bool h_adversarialcowperstep_Grid_eq(const h_adversarialcowperstep_Grid *a, const h_adversarialcowperstep_Grid *b);
-HERO_TU_LOCAL uint64_t h_adversarialcowperstep_Grid_hash(const void *elem);
-HERO_TU_LOCAL void h_adversarialcowperstep_Node_retain(const h_adversarialcowperstep_Node *v);
-HERO_TU_LOCAL void h_adversarialcowperstep_Node_release(h_adversarialcowperstep_Node *v);
-HERO_TU_LOCAL bool h_adversarialcowperstep_Node_eq(const h_adversarialcowperstep_Node *a, const h_adversarialcowperstep_Node *b);
-HERO_TU_LOCAL uint64_t h_adversarialcowperstep_Node_hash(const void *elem);
+HERO_TU_LOCAL void h_adversarialcowperstep_0Row_retain(const h_adversarialcowperstep_Row *v);
+HERO_TU_LOCAL void h_adversarialcowperstep_0Row_release(h_adversarialcowperstep_Row *v);
+HERO_TU_LOCAL bool h_adversarialcowperstep_0Row_eq(const h_adversarialcowperstep_Row *a, const h_adversarialcowperstep_Row *b);
+HERO_TU_LOCAL uint64_t h_adversarialcowperstep_0Row_hash(const void *elem);
+HERO_TU_LOCAL void h_adversarialcowperstep_0Grid_retain(const h_adversarialcowperstep_Grid *v);
+HERO_TU_LOCAL void h_adversarialcowperstep_0Grid_release(h_adversarialcowperstep_Grid *v);
+HERO_TU_LOCAL bool h_adversarialcowperstep_0Grid_eq(const h_adversarialcowperstep_Grid *a, const h_adversarialcowperstep_Grid *b);
+HERO_TU_LOCAL uint64_t h_adversarialcowperstep_0Grid_hash(const void *elem);
+HERO_TU_LOCAL void h_adversarialcowperstep_0Node_retain(const h_adversarialcowperstep_Node *v);
+HERO_TU_LOCAL void h_adversarialcowperstep_0Node_release(h_adversarialcowperstep_Node *v);
+HERO_TU_LOCAL bool h_adversarialcowperstep_0Node_eq(const h_adversarialcowperstep_Node *a, const h_adversarialcowperstep_Node *b);
+HERO_TU_LOCAL uint64_t h_adversarialcowperstep_0Node_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -116,41 +124,45 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-static void h_adversarialcowperstep_Row_desc_copy(void *dst, const void *src) {
+static void h_adversarialcowperstep_0Row_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_adversarialcowperstep_Row));
-    h_adversarialcowperstep_Row_retain((const h_adversarialcowperstep_Row *)dst);
+    h_adversarialcowperstep_0Row_retain((const h_adversarialcowperstep_Row *)dst);
 }
-static void h_adversarialcowperstep_Row_desc_drop(void *elem) {
-    h_adversarialcowperstep_Row_release((h_adversarialcowperstep_Row *)elem);
+static void h_adversarialcowperstep_0Row_desc_drop(void *elem) {
+    h_adversarialcowperstep_0Row_release((h_adversarialcowperstep_Row *)elem);
 }
-static bool h_adversarialcowperstep_Row_desc_eq(const void *a, const void *b) {
-    return h_adversarialcowperstep_Row_eq((const h_adversarialcowperstep_Row *)a, (const h_adversarialcowperstep_Row *)b);
+static bool h_adversarialcowperstep_0Row_desc_eq(const void *a, const void *b) {
+    return h_adversarialcowperstep_0Row_eq((const h_adversarialcowperstep_Row *)a, (const h_adversarialcowperstep_Row *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_adversarialcowperstep_Row_desc = {
+HERO_TU_QUIET static const HeroDesc h_adversarialcowperstep_0Row_desc = {
     sizeof(h_adversarialcowperstep_Row),
-    h_adversarialcowperstep_Row_desc_copy,
-    h_adversarialcowperstep_Row_desc_drop,
-    h_adversarialcowperstep_Row_desc_eq,
-    h_adversarialcowperstep_Row_hash,
+    h_adversarialcowperstep_0Row_desc_copy,
+    h_adversarialcowperstep_0Row_desc_drop,
+    h_adversarialcowperstep_0Row_desc_eq,
+    h_adversarialcowperstep_0Row_hash,
 };
 
-static void h_adversarialcowperstep_Node_desc_copy(void *dst, const void *src) {
+static void h_adversarialcowperstep_0Node_desc_copy(void *dst, const void *src) {
     __builtin_memmove(dst, src, sizeof(h_adversarialcowperstep_Node));
-    h_adversarialcowperstep_Node_retain((const h_adversarialcowperstep_Node *)dst);
+    h_adversarialcowperstep_0Node_retain((const h_adversarialcowperstep_Node *)dst);
 }
-static void h_adversarialcowperstep_Node_desc_drop(void *elem) {
-    h_adversarialcowperstep_Node_release((h_adversarialcowperstep_Node *)elem);
+static void h_adversarialcowperstep_0Node_desc_drop(void *elem) {
+    h_adversarialcowperstep_0Node_release((h_adversarialcowperstep_Node *)elem);
 }
-static bool h_adversarialcowperstep_Node_desc_eq(const void *a, const void *b) {
-    return h_adversarialcowperstep_Node_eq((const h_adversarialcowperstep_Node *)a, (const h_adversarialcowperstep_Node *)b);
+static bool h_adversarialcowperstep_0Node_desc_eq(const void *a, const void *b) {
+    return h_adversarialcowperstep_0Node_eq((const h_adversarialcowperstep_Node *)a, (const h_adversarialcowperstep_Node *)b);
 }
-HERO_TU_QUIET static const HeroDesc h_adversarialcowperstep_Node_desc = {
+HERO_TU_QUIET static const HeroDesc h_adversarialcowperstep_0Node_desc = {
     sizeof(h_adversarialcowperstep_Node),
-    h_adversarialcowperstep_Node_desc_copy,
-    h_adversarialcowperstep_Node_desc_drop,
-    h_adversarialcowperstep_Node_desc_eq,
-    h_adversarialcowperstep_Node_hash,
+    h_adversarialcowperstep_0Node_desc_copy,
+    h_adversarialcowperstep_0Node_desc_drop,
+    h_adversarialcowperstep_0Node_desc_eq,
+    h_adversarialcowperstep_0Node_hash,
 };
 
 void h_adversarialcowperstep_main(void);
@@ -158,109 +170,109 @@ void h_adversarialcowperstep_main(void);
 #line 47 "tests/golden/run/adversarial-cow-per-step.hero"
 void h_adversarialcowperstep_main(void) { h_adversarialcowperstep_Grid h0_g = {0}; h_adversarialcowperstep_Grid h1_h = {0}; h_adversarialcowperstep_Node h2_n = {0}; h_adversarialcowperstep_Grid h3_m = {0}; HeroArrayHeader * h4_xs = {0}; HeroArrayHeader * h5_ys = {0}; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h8_own8 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h14_own14 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h20_own20 = {0}, *t3, *t5, *t11, *t14, *t17, *t20, *t23, *t26, *t29, *t32, *t37, *t39, *t44, *t46, *t50, *t53, *t57, *t61, *t63, *t66, *t69, *t72, *t75, *t78, *t84, *t87, *t90, *t93, *t99, *t100, *t103, *t106, *t109, *t111, *t115, *t117, *t120, *t122, *t124, *t127, *t128, *t129; HERO_NODEBUG h_adversarialcowperstep_Row h7_own7 = {0}, h15_own15 = {0}, h17_own17 = {0}, t4, t13, t19, t25, t31, t58, t62, t68, t71, t77, t86, t92, t110, t121, t123; HERO_NODEBUG h_adversarialcowperstep_Grid h9_own9 = {0}, h19_own19 = {0}, t6, t7, t64, t112, t113, t114, t125, t126; HERO_NODEBUG h_adversarialcowperstep_Node h11_own11 = {0}, h13_own13 = {0}, t38, t40, t42, t48, t52, t116, t118, t119; HERO_NODEBUG int64_t t1, t2, t8, t9, t10, t12, t15, t16, t18, t21, t22, t24, t27, t28, t30, t33, t34, t35, t36, t41, t43, t45, t47, t49, t51, t54, t55, t56, t59, t60, t65, t67, t70, t73, t74, t76, t79, t80, t81, t82, t83, t85, t88, t89, t91, t94, t95, t96, t97, t98, t101, t102, t104, t105, t107, t108; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 50
-    t1 = INT64_C(0); t2 = INT64_C(0); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t109 = h6_own6; h6_own6 = t3; hero_array_decref(t109); hero_array_incref(t3); t4 = (h_adversarialcowperstep_Row){.f_cells = t3}; t110 = h7_own7; h7_own7 = t4; h_adversarialcowperstep_Row_release(&t110); t5 = hero_array_new(&h_adversarialcowperstep_Row_desc, 1); hero_array_push_owned(&t5, &t4); t111 = h8_own8; h8_own8 = t5; hero_array_decref(t111); hero_array_incref(t5); t6 = (h_adversarialcowperstep_Grid){.f_rows = t5}; t112 = h9_own9; h9_own9 = t6; h_adversarialcowperstep_Grid_release(&t112); t113 = h0_g; h_adversarialcowperstep_Grid_retain(&t6); h0_g = t6; h_adversarialcowperstep_Grid_release(&t113);
-    t7 = h0_g; t114 = h1_h; h_adversarialcowperstep_Grid_retain(&t7); h1_h = t7; h_adversarialcowperstep_Grid_release(&t114);
-    t8 = INT64_C(0); t9 = INT64_C(0); t10 = INT64_C(7); hero_array_unshare(&(h0_g.f_rows)); hero_array_set(&((*((void)((h0_g.f_rows == NULL || t8 < 0 || t8 >= h0_g.f_rows->len) ? ((void)hero_array_at_mut(h0_g.f_rows, t8), hero_unreachable()) : (void)0), (void)(h0_g.f_rows->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), (h_adversarialcowperstep_Row *)(void *)(h0_g.f_rows + 1) + t8)).f_cells), t9, &t10);
-    t11 = h0_g.f_rows; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t11 + 1))[t12]); t14 = t13.f_cells; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); hero_print_int(t16); hero_print_end();
-    t17 = h1_h.f_rows; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t17 + 1))[t18]); t20 = t19.f_cells; t21 = INT64_C(0); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t20 + 1))[t21]); hero_print_int(t22); hero_print_end();
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t109 = h6_own6; h6_own6 = t3; hero_array_decref(t109); hero_array_incref(t3); t4 = (h_adversarialcowperstep_Row){.f_cells = t3}; t110 = h7_own7; h7_own7 = t4; h_adversarialcowperstep_0Row_release(&t110); t5 = hero_array_new(&h_adversarialcowperstep_0Row_desc, 1); hero_array_push_owned(&t5, &t4); t111 = h8_own8; h8_own8 = t5; hero_array_decref(t111); hero_array_incref(t5); t6 = (h_adversarialcowperstep_Grid){.f_rows = t5}; t112 = h9_own9; h9_own9 = t6; h_adversarialcowperstep_0Grid_release(&t112); t113 = h0_g; h_adversarialcowperstep_0Grid_retain(&t6); h0_g = t6; h_adversarialcowperstep_0Grid_release(&t113);
+    t7 = h0_g; t114 = h1_h; h_adversarialcowperstep_0Grid_retain(&t7); h1_h = t7; h_adversarialcowperstep_0Grid_release(&t114);
+    t8 = INT64_C(0); t9 = INT64_C(0); t10 = INT64_C(7); hero_array_unshare(&(h0_g.f_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)((h0_g.f_rows == NULL || t8 < 0 || t8 >= h0_g.f_rows->len) ? hero_panic_index_at(h0_g.f_rows, t8, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 52, 5) : (void)0), (void)(h0_g.f_rows->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), (h_adversarialcowperstep_Row *)(void *)(h0_g.f_rows + 1) + t8)).f_cells); if (*hero_slot == NULL || t9 < 0 || t9 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t9, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 52, 5); hero_array_set(hero_slot, t9, &t10); }
+    t11 = h0_g.f_rows; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 53, 11) : (void)0), (void)(t11->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t11 + 1))[t12]); t14 = t13.f_cells; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 53, 11) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); hero_print_int(t16); hero_print_end();
+    t17 = h1_h.f_rows; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 54, 11) : (void)0), (void)(t17->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t17 + 1))[t18]); t20 = t19.f_cells; t21 = INT64_C(0); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 54, 11) : (void)0), (void)(t20->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t20 + 1))[t21]); hero_print_int(t22); hero_print_end();
 #line 57
-    t23 = h0_g.f_rows; t24 = INT64_C(0); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t23 + 1))[t24]); t26 = t25.f_cells; t27 = INT64_C(1); t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]); t29 = h1_h.f_rows; t30 = INT64_C(0); t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? ((void)hero_array_at(t29, t30), hero_unreachable()) : (void)0), (void)(t29->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t29 + 1))[t30]); t32 = t31.f_cells; t33 = INT64_C(1); t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t32 + 1))[t33]); hero_print_int(t28); hero_print_int(t34); hero_print_end();
+    t23 = h0_g.f_rows; t24 = INT64_C(0); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 57, 11) : (void)0), (void)(t23->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t23 + 1))[t24]); t26 = t25.f_cells; t27 = INT64_C(1); t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? hero_panic_index_at(t26, t27, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 57, 11) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]); t29 = h1_h.f_rows; t30 = INT64_C(0); t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? hero_panic_index_at(t29, t30, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 57, 31) : (void)0), (void)(t29->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t29 + 1))[t30]); t32 = t31.f_cells; t33 = INT64_C(1); t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? hero_panic_index_at(t32, t33, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 57, 31) : (void)0), (void)(t32->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t32 + 1))[t33]); hero_print_int(t28); hero_print_int(t34); hero_print_end();
 #line 63
-    t35 = INT64_C(1); t36 = INT64_C(2); t37 = hero_array_new(&h_adversarialcowperstep_Node_desc, 1); t115 = h10_own10; h10_own10 = t37; hero_array_decref(t115); hero_array_incref(t37); t38 = (h_adversarialcowperstep_Node){.f_label = t36, .f_children = t37}; t116 = h11_own11; h11_own11 = t38; h_adversarialcowperstep_Node_release(&t116); t39 = hero_array_new(&h_adversarialcowperstep_Node_desc, 1); hero_array_push_owned(&t39, &t38); t117 = h12_own12; h12_own12 = t39; hero_array_decref(t117); hero_array_incref(t39); t40 = (h_adversarialcowperstep_Node){.f_label = t35, .f_children = t39}; t118 = h13_own13; h13_own13 = t40; h_adversarialcowperstep_Node_release(&t118); t119 = h2_n; h_adversarialcowperstep_Node_retain(&t40); h2_n = t40; h_adversarialcowperstep_Node_release(&t119);
-    t41 = INT64_C(0); t42 = h2_n; h_adversarialcowperstep_Node_retain(&t42); hero_array_set(&(h2_n.f_children), t41, &t42);
+    t35 = INT64_C(1); t36 = INT64_C(2); t37 = hero_array_new(&h_adversarialcowperstep_0Node_desc, 1); t115 = h10_own10; h10_own10 = t37; hero_array_decref(t115); hero_array_incref(t37); t38 = (h_adversarialcowperstep_Node){.f_label = t36, .f_children = t37}; t116 = h11_own11; h11_own11 = t38; h_adversarialcowperstep_0Node_release(&t116); t39 = hero_array_new(&h_adversarialcowperstep_0Node_desc, 1); hero_array_push_owned(&t39, &t38); t117 = h12_own12; h12_own12 = t39; hero_array_decref(t117); hero_array_incref(t39); t40 = (h_adversarialcowperstep_Node){.f_label = t35, .f_children = t39}; t118 = h13_own13; h13_own13 = t40; h_adversarialcowperstep_0Node_release(&t118); t119 = h2_n; h_adversarialcowperstep_0Node_retain(&t40); h2_n = t40; h_adversarialcowperstep_0Node_release(&t119);
+    t41 = INT64_C(0); t42 = h2_n; h_adversarialcowperstep_0Node_retain(&t42); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h2_n.f_children); if (*hero_slot == NULL || t41 < 0 || t41 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t41, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 64, 5); hero_array_set(hero_slot, t41, &t42); }
     t43 = h2_n.f_label; t44 = h2_n.f_children; t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); hero_print_int(t43); hero_print_int(t45); hero_print_end();
-    t46 = h2_n.f_children; t47 = INT64_C(0); t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(h_adversarialcowperstep_Node) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Node const *)(const void *)(t46 + 1))[t47]); t49 = t48.f_label; hero_print_int(t49); hero_print_end();
-    t50 = h2_n.f_children; t51 = INT64_C(0); t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(h_adversarialcowperstep_Node) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Node const *)(const void *)(t50 + 1))[t51]); t53 = t52.f_children; t54 = ((void)(t53 == NULL ? ((void)hero_array_len(t53), hero_unreachable()) : (void)0), t53->len); hero_print_int(t54); hero_print_end();
+    t46 = h2_n.f_children; t47 = INT64_C(0); t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? hero_panic_index_at(t46, t47, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 66, 11) : (void)0), (void)(t46->elem->size != sizeof(h_adversarialcowperstep_Node) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Node const *)(const void *)(t46 + 1))[t47]); t49 = t48.f_label; hero_print_int(t49); hero_print_end();
+    t50 = h2_n.f_children; t51 = INT64_C(0); t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? hero_panic_index_at(t50, t51, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 67, 15) : (void)0), (void)(t50->elem->size != sizeof(h_adversarialcowperstep_Node) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Node const *)(const void *)(t50 + 1))[t51]); t53 = t52.f_children; t54 = ((void)(t53 == NULL ? ((void)hero_array_len(t53), hero_unreachable()) : (void)0), t53->len); hero_print_int(t54); hero_print_end();
 #line 70
-    t55 = INT64_C(4); t56 = INT64_C(5); t57 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t57, &t55); hero_array_push_owned(&t57, &t56); t120 = h14_own14; h14_own14 = t57; hero_array_decref(t120); hero_array_incref(t57); t58 = (h_adversarialcowperstep_Row){.f_cells = t57}; t121 = h15_own15; h15_own15 = t58; h_adversarialcowperstep_Row_release(&t121); t59 = INT64_C(6); t60 = INT64_C(7); t61 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t61, &t59); hero_array_push_owned(&t61, &t60); t122 = h16_own16; h16_own16 = t61; hero_array_decref(t122); hero_array_incref(t61); t62 = (h_adversarialcowperstep_Row){.f_cells = t61}; t123 = h17_own17; h17_own17 = t62; h_adversarialcowperstep_Row_release(&t123); t63 = hero_array_new(&h_adversarialcowperstep_Row_desc, 2); hero_array_push_owned(&t63, &t58); hero_array_push_owned(&t63, &t62); t124 = h18_own18; h18_own18 = t63; hero_array_decref(t124); hero_array_incref(t63); t64 = (h_adversarialcowperstep_Grid){.f_rows = t63}; t125 = h19_own19; h19_own19 = t64; h_adversarialcowperstep_Grid_release(&t125); t126 = h3_m; h_adversarialcowperstep_Grid_retain(&t64); h3_m = t64; h_adversarialcowperstep_Grid_release(&t126);
-    t65 = INT64_C(0); t66 = h3_m.f_rows; t67 = INT64_C(1); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? ((void)hero_array_at(t66, t67), hero_unreachable()) : (void)0), (void)(t66->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t66 + 1))[t67]); h_adversarialcowperstep_Row_retain(&t68); hero_array_set(&(h3_m.f_rows), t65, &t68);
-    t69 = h3_m.f_rows; t70 = INT64_C(0); t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t69 + 1))[t70]); t72 = t71.f_cells; t73 = INT64_C(0); t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? ((void)hero_array_at(t72, t73), hero_unreachable()) : (void)0), (void)(t72->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t72 + 1))[t73]); t75 = h3_m.f_rows; t76 = INT64_C(1); t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t75 + 1))[t76]); t78 = t77.f_cells; t79 = INT64_C(0); t80 = ((void)((t78 == NULL || t79 < 0 || t79 >= t78->len) ? ((void)hero_array_at(t78, t79), hero_unreachable()) : (void)0), (void)(t78->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t78 + 1))[t79]); hero_print_int(t74); hero_print_int(t80); hero_print_end();
-    t81 = INT64_C(0); t82 = INT64_C(0); t83 = INT64_C(9); hero_array_unshare(&(h3_m.f_rows)); hero_array_set(&((*((void)((h3_m.f_rows == NULL || t81 < 0 || t81 >= h3_m.f_rows->len) ? ((void)hero_array_at_mut(h3_m.f_rows, t81), hero_unreachable()) : (void)0), (void)(h3_m.f_rows->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), (h_adversarialcowperstep_Row *)(void *)(h3_m.f_rows + 1) + t81)).f_cells), t82, &t83);
-    t84 = h3_m.f_rows; t85 = INT64_C(0); t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? ((void)hero_array_at(t84, t85), hero_unreachable()) : (void)0), (void)(t84->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t84 + 1))[t85]); t87 = t86.f_cells; t88 = INT64_C(0); t89 = ((void)((t87 == NULL || t88 < 0 || t88 >= t87->len) ? ((void)hero_array_at(t87, t88), hero_unreachable()) : (void)0), (void)(t87->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t87 + 1))[t88]); t90 = h3_m.f_rows; t91 = INT64_C(1); t92 = ((void)((t90 == NULL || t91 < 0 || t91 >= t90->len) ? ((void)hero_array_at(t90, t91), hero_unreachable()) : (void)0), (void)(t90->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t90 + 1))[t91]); t93 = t92.f_cells; t94 = INT64_C(0); t95 = ((void)((t93 == NULL || t94 < 0 || t94 >= t93->len) ? ((void)hero_array_at(t93, t94), hero_unreachable()) : (void)0), (void)(t93->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t93 + 1))[t94]); hero_print_int(t89); hero_print_int(t95); hero_print_end();
+    t55 = INT64_C(4); t56 = INT64_C(5); t57 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t57, &t55); hero_array_push_owned(&t57, &t56); t120 = h14_own14; h14_own14 = t57; hero_array_decref(t120); hero_array_incref(t57); t58 = (h_adversarialcowperstep_Row){.f_cells = t57}; t121 = h15_own15; h15_own15 = t58; h_adversarialcowperstep_0Row_release(&t121); t59 = INT64_C(6); t60 = INT64_C(7); t61 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t61, &t59); hero_array_push_owned(&t61, &t60); t122 = h16_own16; h16_own16 = t61; hero_array_decref(t122); hero_array_incref(t61); t62 = (h_adversarialcowperstep_Row){.f_cells = t61}; t123 = h17_own17; h17_own17 = t62; h_adversarialcowperstep_0Row_release(&t123); t63 = hero_array_new(&h_adversarialcowperstep_0Row_desc, 2); hero_array_push_owned(&t63, &t58); hero_array_push_owned(&t63, &t62); t124 = h18_own18; h18_own18 = t63; hero_array_decref(t124); hero_array_incref(t63); t64 = (h_adversarialcowperstep_Grid){.f_rows = t63}; t125 = h19_own19; h19_own19 = t64; h_adversarialcowperstep_0Grid_release(&t125); t126 = h3_m; h_adversarialcowperstep_0Grid_retain(&t64); h3_m = t64; h_adversarialcowperstep_0Grid_release(&t126);
+    t65 = INT64_C(0); t66 = h3_m.f_rows; t67 = INT64_C(1); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? hero_panic_index_at(t66, t67, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 71, 17) : (void)0), (void)(t66->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t66 + 1))[t67]); h_adversarialcowperstep_0Row_retain(&t68); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h3_m.f_rows); if (*hero_slot == NULL || t65 < 0 || t65 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t65, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 71, 5); hero_array_set(hero_slot, t65, &t68); }
+    t69 = h3_m.f_rows; t70 = INT64_C(0); t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? hero_panic_index_at(t69, t70, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 72, 11) : (void)0), (void)(t69->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t69 + 1))[t70]); t72 = t71.f_cells; t73 = INT64_C(0); t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? hero_panic_index_at(t72, t73, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 72, 11) : (void)0), (void)(t72->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t72 + 1))[t73]); t75 = h3_m.f_rows; t76 = INT64_C(1); t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? hero_panic_index_at(t75, t76, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 72, 31) : (void)0), (void)(t75->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t75 + 1))[t76]); t78 = t77.f_cells; t79 = INT64_C(0); t80 = ((void)((t78 == NULL || t79 < 0 || t79 >= t78->len) ? hero_panic_index_at(t78, t79, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 72, 31) : (void)0), (void)(t78->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t78 + 1))[t79]); hero_print_int(t74); hero_print_int(t80); hero_print_end();
+    t81 = INT64_C(0); t82 = INT64_C(0); t83 = INT64_C(9); hero_array_unshare(&(h3_m.f_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)((h3_m.f_rows == NULL || t81 < 0 || t81 >= h3_m.f_rows->len) ? hero_panic_index_at(h3_m.f_rows, t81, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 73, 5) : (void)0), (void)(h3_m.f_rows->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), (h_adversarialcowperstep_Row *)(void *)(h3_m.f_rows + 1) + t81)).f_cells); if (*hero_slot == NULL || t82 < 0 || t82 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t82, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 73, 5); hero_array_set(hero_slot, t82, &t83); }
+    t84 = h3_m.f_rows; t85 = INT64_C(0); t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? hero_panic_index_at(t84, t85, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 74, 11) : (void)0), (void)(t84->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t84 + 1))[t85]); t87 = t86.f_cells; t88 = INT64_C(0); t89 = ((void)((t87 == NULL || t88 < 0 || t88 >= t87->len) ? hero_panic_index_at(t87, t88, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 74, 11) : (void)0), (void)(t87->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t87 + 1))[t88]); t90 = h3_m.f_rows; t91 = INT64_C(1); t92 = ((void)((t90 == NULL || t91 < 0 || t91 >= t90->len) ? hero_panic_index_at(t90, t91, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 74, 31) : (void)0), (void)(t90->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t90 + 1))[t91]); t93 = t92.f_cells; t94 = INT64_C(0); t95 = ((void)((t93 == NULL || t94 < 0 || t94 >= t93->len) ? hero_panic_index_at(t93, t94, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 74, 31) : (void)0), (void)(t93->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t93 + 1))[t94]); hero_print_int(t89); hero_print_int(t95); hero_print_end();
 #line 77
     t96 = INT64_C(1); t97 = INT64_C(2); t98 = INT64_C(3); t99 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t99, &t96); hero_array_push_owned(&t99, &t97); hero_array_push_owned(&t99, &t98); t127 = h20_own20; h20_own20 = t99; hero_array_decref(t127); t128 = h4_xs; hero_array_incref(t99); h4_xs = t99; hero_array_decref(t128);
     t100 = h4_xs; t129 = h5_ys; hero_array_incref(t100); h5_ys = t100; hero_array_decref(t129);
-    t101 = INT64_C(1); t102 = INT64_C(9); hero_array_set(&(h4_xs), t101, &t102);
-    t103 = h4_xs; t104 = INT64_C(1); t105 = ((void)((t103 == NULL || t104 < 0 || t104 >= t103->len) ? ((void)hero_array_at(t103, t104), hero_unreachable()) : (void)0), (void)(t103->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t103 + 1))[t104]); t106 = h5_ys; t107 = INT64_C(1); t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? ((void)hero_array_at(t106, t107), hero_unreachable()) : (void)0), (void)(t106->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t106 + 1))[t107]); hero_print_int(t105); hero_print_int(t108); hero_print_end();
-#line 186 "adversarialcowperstep.c"
-    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h0_g));
-    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h1_h));
-    h_adversarialcowperstep_Node_release(hero_slot_escape(&h2_n));
-    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h3_m));
+    t101 = INT64_C(1); t102 = INT64_C(9); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h4_xs); if (*hero_slot == NULL || t101 < 0 || t101 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t101, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 79, 5); hero_array_set(hero_slot, t101, &t102); }
+    t103 = h4_xs; t104 = INT64_C(1); t105 = ((void)((t103 == NULL || t104 < 0 || t104 >= t103->len) ? hero_panic_index_at(t103, t104, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 80, 11) : (void)0), (void)(t103->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t103 + 1))[t104]); t106 = h5_ys; t107 = INT64_C(1); t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? hero_panic_index_at(t106, t107, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 80, 18) : (void)0), (void)(t106->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t106 + 1))[t107]); hero_print_int(t105); hero_print_int(t108); hero_print_end();
+#line 198 "adversarialcowperstep.c"
+    h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h0_g));
+    h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h1_h));
+    h_adversarialcowperstep_0Node_release(hero_slot_escape(&h2_n));
+    h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h3_m));
     hero_array_release_at(&h4_xs);
     hero_array_release_at(&h5_ys);
     hero_array_release_at(&h6_own6);
-    h_adversarialcowperstep_Row_release(hero_slot_escape(&h7_own7));
+    h_adversarialcowperstep_0Row_release(hero_slot_escape(&h7_own7));
     hero_array_release_at(&h8_own8);
-    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h9_own9));
+    h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h9_own9));
     hero_array_release_at(&h10_own10);
-    h_adversarialcowperstep_Node_release(hero_slot_escape(&h11_own11));
+    h_adversarialcowperstep_0Node_release(hero_slot_escape(&h11_own11));
     hero_array_release_at(&h12_own12);
-    h_adversarialcowperstep_Node_release(hero_slot_escape(&h13_own13));
+    h_adversarialcowperstep_0Node_release(hero_slot_escape(&h13_own13));
     hero_array_release_at(&h14_own14);
-    h_adversarialcowperstep_Row_release(hero_slot_escape(&h15_own15));
+    h_adversarialcowperstep_0Row_release(hero_slot_escape(&h15_own15));
     hero_array_release_at(&h16_own16);
-    h_adversarialcowperstep_Row_release(hero_slot_escape(&h17_own17));
+    h_adversarialcowperstep_0Row_release(hero_slot_escape(&h17_own17));
     hero_array_release_at(&h18_own18);
-    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h19_own19));
+    h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h19_own19));
     hero_array_release_at(&h20_own20);
     return;
 }
-HERO_TU_LOCAL void h_adversarialcowperstep_Row_retain(const h_adversarialcowperstep_Row *v) {
+HERO_TU_LOCAL void h_adversarialcowperstep_0Row_retain(const h_adversarialcowperstep_Row *v) {
     hero_array_incref(v->f_cells);
 }
 
-HERO_TU_LOCAL void h_adversarialcowperstep_Row_release(h_adversarialcowperstep_Row *v) {
+HERO_TU_LOCAL void h_adversarialcowperstep_0Row_release(h_adversarialcowperstep_Row *v) {
     hero_array_decref(v->f_cells);
 }
 
-HERO_TU_LOCAL bool h_adversarialcowperstep_Row_eq(const h_adversarialcowperstep_Row *a, const h_adversarialcowperstep_Row *b) {
+HERO_TU_LOCAL bool h_adversarialcowperstep_0Row_eq(const h_adversarialcowperstep_Row *a, const h_adversarialcowperstep_Row *b) {
     if (!(hero_array_eq(a->f_cells, b->f_cells))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_adversarialcowperstep_Row_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_adversarialcowperstep_0Row_hash(const void *elem) {
     const h_adversarialcowperstep_Row *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_adversarialcowperstep_Grid_retain(const h_adversarialcowperstep_Grid *v) {
+HERO_TU_LOCAL void h_adversarialcowperstep_0Grid_retain(const h_adversarialcowperstep_Grid *v) {
     hero_array_incref(v->f_rows);
 }
 
-HERO_TU_LOCAL void h_adversarialcowperstep_Grid_release(h_adversarialcowperstep_Grid *v) {
+HERO_TU_LOCAL void h_adversarialcowperstep_0Grid_release(h_adversarialcowperstep_Grid *v) {
     hero_array_decref(v->f_rows);
 }
 
-HERO_TU_LOCAL bool h_adversarialcowperstep_Grid_eq(const h_adversarialcowperstep_Grid *a, const h_adversarialcowperstep_Grid *b) {
+HERO_TU_LOCAL bool h_adversarialcowperstep_0Grid_eq(const h_adversarialcowperstep_Grid *a, const h_adversarialcowperstep_Grid *b) {
     if (!(hero_array_eq(a->f_rows, b->f_rows))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_adversarialcowperstep_Grid_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_adversarialcowperstep_0Grid_hash(const void *elem) {
     const h_adversarialcowperstep_Grid *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_rows)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_adversarialcowperstep_Node_retain(const h_adversarialcowperstep_Node *v) {
+HERO_TU_LOCAL void h_adversarialcowperstep_0Node_retain(const h_adversarialcowperstep_Node *v) {
     hero_array_incref(v->f_children);
 }
 
-HERO_TU_LOCAL void h_adversarialcowperstep_Node_release(h_adversarialcowperstep_Node *v) {
+HERO_TU_LOCAL void h_adversarialcowperstep_0Node_release(h_adversarialcowperstep_Node *v) {
     hero_array_decref(v->f_children);
 }
 
-HERO_TU_LOCAL bool h_adversarialcowperstep_Node_eq(const h_adversarialcowperstep_Node *a, const h_adversarialcowperstep_Node *b) {
+HERO_TU_LOCAL bool h_adversarialcowperstep_0Node_eq(const h_adversarialcowperstep_Node *a, const h_adversarialcowperstep_Node *b) {
     if (!(a->f_label == b->f_label)) return false;
     if (!(hero_array_eq(a->f_children, b->f_children))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_adversarialcowperstep_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_adversarialcowperstep_0Node_hash(const void *elem) {
     const h_adversarialcowperstep_Node *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_label)) * UINT64_C(0x100000001b3);
@@ -332,10 +344,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b1d0b6e2ec39415", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f157c954fc8e462", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("adversarialcowperstep\tadversarial-cow-per-step\n");
     h_adversarialcowperstep_main();
     hero_runtime_check_leaks();
     return 0;

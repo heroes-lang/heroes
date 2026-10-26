@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,6 +71,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "functionvalues.c"
+#line 97 "functionvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,6 +104,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b);
 int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b);
@@ -106,33 +118,33 @@ void h_functionvalues_main(void);
 
 #line 35 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
-#line 111 "functionvalues.c"
+    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("function-values.hero", "function-values.add", 36, 12); return t3;
+#line 123 "functionvalues.c"
 }
 
 #line 38 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_a; t2 = h1_b; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
-#line 117 "functionvalues.c"
+    t1 = h0_a; t2 = h1_b; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("function-values.hero", "function-values.mul", 39, 12); return t3;
+#line 129 "functionvalues.c"
 }
 
 #line 41 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y) { HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h1_x; t3 = h2_y; t4 = t1(t2, t3); return t4;
-#line 123 "functionvalues.c"
+#line 135 "functionvalues.c"
 }
 
 #line 44 "tests/golden/run/function-values.hero"
 void h_functionvalues_tick(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fa6dc01); hero_print_str(t1); hero_print_end(); return;
-#line 129 "functionvalues.c"
+#line 141 "functionvalues.c"
 }
 
 #line 47 "tests/golden/run/function-values.hero"
 void h_functionvalues_twice(h_0fn_294870dd h0_f) { HERO_NODEBUG h_0fn_294870dd t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t1();
     t2 = h0_f; t2(); return;
-#line 136 "functionvalues.c"
+#line 148 "functionvalues.c"
 }
 
 #line 51 "tests/golden/run/function-values.hero"
@@ -143,11 +155,11 @@ void h_functionvalues_main(void) { h_0fn_2e6a42a3 h0_g; HeroArrayHeader * h1_ops
     t16 = h_functionvalues_tick; h_functionvalues_twice(t16);
 #line 59
     t17 = h_functionvalues_add; t18 = h_functionvalues_mul; t19 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t19, &t17); hero_array_push_owned(&t19, &t18); t44 = h3_own3; h3_own3 = t19; hero_array_decref(t44); t45 = h1_ops; hero_array_incref(t19); h1_ops = t19; hero_array_decref(t45);
-    t20 = h1_ops; t21 = INT64_C(0); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(h_0fn_2e6a42a3) ? hero_unreachable() : (void)0), ((h_0fn_2e6a42a3 const *)(const void *)(t20 + 1))[t21]); t23 = INT64_C(4); t24 = INT64_C(5); t25 = t22(t23, t24); t26 = HERO_STR_LIT(hero_str_20); t27 = h1_ops; t28 = INT64_C(1); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(h_0fn_2e6a42a3) ? hero_unreachable() : (void)0), ((h_0fn_2e6a42a3 const *)(const void *)(t27 + 1))[t28]); t30 = INT64_C(4); t31 = INT64_C(5); t32 = t29(t30, t31); t33 = HERO_STR_LIT(hero_str_20); t34 = h1_ops; t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len); hero_print_int(t25); hero_print_str(t26); hero_print_int(t32); hero_print_str(t33); hero_print_int(t35); hero_print_end();
+    t20 = h1_ops; t21 = INT64_C(0); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "function-values.hero", "function-values.main", 60, 11) : (void)0), (void)(t20->elem->size != sizeof(h_0fn_2e6a42a3) ? hero_unreachable() : (void)0), ((h_0fn_2e6a42a3 const *)(const void *)(t20 + 1))[t21]); t23 = INT64_C(4); t24 = INT64_C(5); t25 = t22(t23, t24); t26 = HERO_STR_LIT(hero_str_20); t27 = h1_ops; t28 = INT64_C(1); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "function-values.hero", "function-values.main", 60, 36) : (void)0), (void)(t27->elem->size != sizeof(h_0fn_2e6a42a3) ? hero_unreachable() : (void)0), ((h_0fn_2e6a42a3 const *)(const void *)(t27 + 1))[t28]); t30 = INT64_C(4); t31 = INT64_C(5); t32 = t29(t30, t31); t33 = HERO_STR_LIT(hero_str_20); t34 = h1_ops; t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len); hero_print_int(t25); hero_print_str(t26); hero_print_int(t32); hero_print_str(t33); hero_print_int(t35); hero_print_end();
 #line 63
     t36 = h_functionvalues_add; h2_h = t36;
     t37 = h0_g; t38 = h2_h; t39 = t37 == t38; t40 = HERO_STR_LIT(hero_str_20); t41 = h0_g; t42 = h_functionvalues_mul; t43 = t41 == t42; hero_print_bool(t39); hero_print_str(t40); hero_print_bool(t43); hero_print_end();
-#line 151 "functionvalues.c"
+#line 163 "functionvalues.c"
     hero_array_release_at(&h1_ops);
     hero_array_release_at(&h3_own3);
     return;
@@ -216,10 +228,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("667ab80a3bd0b24f", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("40c797ca5ed37727", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("functionvalues\tfunction-values\n");
     h_functionvalues_main();
     hero_runtime_check_leaks();
     return 0;

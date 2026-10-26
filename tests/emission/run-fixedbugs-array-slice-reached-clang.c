@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,6 +68,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -82,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugsarrayslicereachedclang.c"
+#line 94 "fixedbugsarrayslicereachedclang.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,18 +101,22 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsarrayslicereachedclang_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 void h_fixedbugsarrayslicereachedclang_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t9, *t11, *t14, *t21, *t22, *t23, *t24; HERO_NODEBUG HeroStr h4_own4 = {0}, t17, t20, t25; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t10, t12, t13, t15, t16, t18, t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t21 = h2_own2; h2_own2 = t4; hero_array_decref(t21); t22 = h0_xs; hero_array_incref(t4); h0_xs = t4; hero_array_decref(t22);
-    t5 = h0_xs; t6 = INT64_C(1); t7 = INT64_C(3); t8 = hero_array_slice(t5, t6, t7); t23 = h3_own3; h3_own3 = t8; hero_array_decref(t23); t24 = h1_ys; hero_array_incref(t8); h1_ys = t8; hero_array_decref(t24);
+    t5 = h0_xs; t6 = INT64_C(1); t7 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 35, 10}; t8 = hero_array_slice_at(t5, t6, t7, &hero_here); } t23 = h3_own3; h3_own3 = t8; hero_array_decref(t23); t24 = h1_ys; hero_array_incref(t8); h1_ys = t8; hero_array_decref(t24);
     t9 = h1_ys; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); hero_print_int(t10); hero_print_end();
-    t11 = h1_ys; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); t14 = h1_ys; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); hero_print_int(t13); hero_print_int(t16); hero_print_end();
+    t11 = h1_ys; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 37, 11) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); t14 = h1_ys; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 37, 18) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); hero_print_int(t13); hero_print_int(t16); hero_print_end();
 #line 40
-    t17 = HERO_STR_LIT(hero_str_33edea20); t18 = INT64_C(1); t19 = INT64_C(3); t20 = hero_str_slice(t17, t18, t19); t25 = h4_own4; h4_own4 = t20; hero_str_decref(t25); hero_print_str(t20); hero_print_end();
-#line 108 "fixedbugsarrayslicereachedclang.c"
+    t17 = HERO_STR_LIT(hero_str_33edea20); t18 = INT64_C(1); t19 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 40, 11}; t20 = hero_str_slice_at(t17, t18, t19, &hero_here); } t25 = h4_own4; h4_own4 = t20; hero_str_decref(t25); hero_print_str(t20); hero_print_end();
+#line 120 "fixedbugsarrayslicereachedclang.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);
@@ -176,10 +188,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("715f14732da262cd", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ff954cf5ba9f97f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsarrayslicereachedclang\tfixedbugs-array-slice-reached-clang\n");
     h_fixedbugsarrayslicereachedclang_main();
     hero_runtime_check_leaks();
     return 0;

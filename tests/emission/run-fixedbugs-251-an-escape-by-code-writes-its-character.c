@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -84,6 +84,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -98,7 +106,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 110 "fixedbugs251anescapebycodewritesitscharacter.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -109,16 +117,21 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_RESET(void);
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_bytes_of(HeroStr h0_s);
 void h_fixedbugs251anescapebycodewritesitscharacter_main(void);
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 10 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_RESET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3b61c89);
-#line 122 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 135 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -127,13 +140,13 @@ HeroStr h_fixedbugs251anescapebycodewritesitscharacter_RESET(void) { HERO_NODEBU
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_bytes_of(HeroStr h0_s) { HeroStr h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t5, *t8, *t11, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t18, t22, t23, t24; int64_t h4_i; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t3, t14, t15, t16, t17, t20, t21, t25, t26, t29, t30, t31, t32; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_0); t26 = h1_out; hero_str_incref(t1); h1_out = t1; hero_str_decref(t26);
 #line 16
-    t2 = INT64_C(0); t3 = h0_s; t4 = hero_str_len(t3); t5 = h_library_range(t2, t4); t27 = h5_own5; h5_own5 = t5; hero_array_decref(t27); t28 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t28); t6 = INT64_C(0); h3_i0 = t6; goto bb1; bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto bb2; else goto bb4; bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_i = t13;
-    t14 = h1_out; t15 = HERO_STR_LIT(hero_str_20); t16 = hero_str_concat(t14, t15); t29 = h6_own6; h6_own6 = t16; hero_str_decref(t29); t17 = h0_s; t18 = h4_i; t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = hero_int_to_str(t19); t30 = h7_own7; h7_own7 = t20; hero_str_decref(t30); t21 = hero_str_concat(t16, t20); t31 = h8_own8; h8_own8 = t21; hero_str_decref(t31); t32 = h1_out; hero_str_incref(t21); h1_out = t21; hero_str_decref(t32); goto bb3; bb3:
+    t2 = INT64_C(0); t3 = h0_s; t4 = hero_str_len(t3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-251-an-escape-by-code-writes-its-character.hero", "fixedbugs-251-an-escape-by-code-writes-its-character.bytes_of", 16, 14}; t5 = h_library_range(t2, t4, &hero_here); } t27 = h5_own5; h5_own5 = t5; hero_array_decref(t27); t28 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t28); t6 = INT64_C(0); h3_i0 = t6; goto bb1; bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto bb2; else goto bb4; bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "fixedbugs-251-an-escape-by-code-writes-its-character.hero", "fixedbugs-251-an-escape-by-code-writes-its-character.bytes_of", 16, 9) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_i = t13;
+    t14 = h1_out; t15 = HERO_STR_LIT(hero_str_20); t16 = hero_str_concat(t14, t15); t29 = h6_own6; h6_own6 = t16; hero_str_decref(t29); t17 = h0_s; t18 = h4_i; t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "fixedbugs-251-an-escape-by-code-writes-its-character.hero", "fixedbugs-251-an-escape-by-code-writes-its-character.bytes_of", 17, 27) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = hero_int_to_str(t19); t30 = h7_own7; h7_own7 = t20; hero_str_decref(t30); t21 = hero_str_concat(t16, t20); t31 = h8_own8; h8_own8 = t21; hero_str_decref(t31); t32 = h1_out; hero_str_incref(t21); h1_out = t21; hero_str_decref(t32); goto bb3; bb3:
 #line 16
-    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h3_i0 = t24; goto bb1; bb4:
+    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-251-an-escape-by-code-writes-its-character.hero", "fixedbugs-251-an-escape-by-code-writes-its-character.bytes_of", 16, 9); h3_i0 = t24; goto bb1; bb4:
 #line 19
     t25 = h1_out;
-#line 137 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 150 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -158,7 +171,7 @@ void h_fixedbugs251anescapebycodewritesitscharacter_main(void) { int64_t h0_x; H
     t27 = HERO_STR_LIT(hero_str_3b61c89);
 #line 30
     t28 = hero_str_eq(t26, t27); if (t28) goto bb2; else goto bb3; bb1:
-#line 162 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 175 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_release_at(&h1_s0);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -176,22 +189,26 @@ bb2:
 #line 31 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t29 = HERO_STR_LIT(hero_str_48dd3963); hero_print_str(t29); hero_print_end(); goto bb1; bb3: goto bb4; bb4:
     t30 = HERO_STR_LIT(hero_str_142ec5aa); hero_print_str(t30); hero_print_end(); goto bb1;
-#line 180 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 193 "fixedbugs251anescapebycodewritesitscharacter.c"
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto bb1; bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 191 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 204 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -257,10 +274,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49b288d223ecf8c0", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("23021f0a04327803", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs251anescapebycodewritesitscharacter\tfixedbugs-251-an-escape-by-code-writes-its-character\n");
     h_fixedbugs251anescapebycodewritesitscharacter_main();
     hero_runtime_check_leaks();
     return 0;

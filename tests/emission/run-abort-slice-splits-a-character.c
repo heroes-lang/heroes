@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,6 +68,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -82,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "abortslicesplitsacharacter.c"
+#line 94 "abortslicesplitsacharacter.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,6 +101,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_abortslicesplitsacharacter_main(void);
 
@@ -100,10 +112,10 @@ void h_abortslicesplitsacharacter_main(void);
 void h_abortslicesplitsacharacter_main(void) { HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t5, t6, t9, t10, t11, t12; HERO_NODEBUG int64_t t3, t4, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_78a14ef2); t10 = h0_word; hero_str_incref(t1); h0_word = t1; hero_str_decref(t10);
 #line 25
-    t2 = h0_word; t3 = INT64_C(0); t4 = INT64_C(4); t5 = hero_str_slice(t2, t3, t4); t11 = h1_own1; h1_own1 = t5; hero_str_decref(t11); hero_print_str(t5); hero_print_end();
+    t2 = h0_word; t3 = INT64_C(0); t4 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-slice-splits-a-character.hero", "abort-slice-splits-a-character.main", 25, 11}; t5 = hero_str_slice_at(t2, t3, t4, &hero_here); } t11 = h1_own1; h1_own1 = t5; hero_str_decref(t11); hero_print_str(t5); hero_print_end();
 #line 28
-    t6 = h0_word; t7 = INT64_C(0); t8 = INT64_C(5); t9 = hero_str_slice(t6, t7, t8); t12 = h2_own2; h2_own2 = t9; hero_str_decref(t12); hero_print_str(t9); hero_print_end();
-#line 107 "abortslicesplitsacharacter.c"
+    t6 = h0_word; t7 = INT64_C(0); t8 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-slice-splits-a-character.hero", "abort-slice-splits-a-character.main", 28, 11}; t9 = hero_str_slice_at(t6, t7, t8, &hero_here); } t12 = h2_own2; h2_own2 = t9; hero_str_decref(t12); hero_print_str(t9); hero_print_end();
+#line 119 "abortslicesplitsacharacter.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -173,10 +185,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4fe4652a0739d9d2", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7bcd54306a0ab6f6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("abortslicesplitsacharacter\tabort-slice-splits-a-character\n");
     h_abortslicesplitsacharacter_main();
     hero_runtime_check_leaks();
     return 0;

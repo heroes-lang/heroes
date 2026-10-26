@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -93,19 +93,19 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 96 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
-typedef enum h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag {
-    h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_empty = 0,
-    h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_held = 1,
-} h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag;
+typedef enum h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag {
+    h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag_empty = 0,
+    h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag_held = 1,
+} h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag;
 
-typedef struct h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held {
+typedef struct h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held {
     struct opaque * f_h;
-} h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held;
+} h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held;
 
 typedef struct h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot {
-    h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag tag;
+    h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag tag;
     union {
-        h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held c_held;
+        h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held c_held;
     } as;
 } h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot;
 
@@ -124,6 +124,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -138,15 +146,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 150 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Opaque_eq(struct opaque * const *a, struct opaque * const *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Opaque_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -155,53 +163,57 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
 void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); hero_print_int(t1); hero_print_end(); return;
-#line 165 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 177 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
+HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
     return hero_handle_eq(*a, *b);
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Opaque_hash(const void *elem) {
     struct opaque * const *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held *b) {
-    if (!(h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held *b) {
+    if (!(h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Opaque_eq(&a->f_h, &b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held_hash(const void *elem) {
-    const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held *v = elem;
+HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held_hash(const void *elem) {
+    const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_hash(&v->f_h)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Opaque_hash(&v->f_h)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *b) {
+HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_eq(const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *a, const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
-        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_empty: return true;
-        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_held: return h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held_eq(&a->as.c_held, &b->as.c_held);
+        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag_empty: return true;
+        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag_held: return h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held_eq(&a->as.c_held, &b->as.c_held);
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_hash(const void *elem) {
     const h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     switch (v->tag) {
-        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_empty: return h;
-        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_held: return (h ^ h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_c_held_hash(&v->as.c_held)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag_empty: return h;
+        case h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_tag_held: return (h ^ h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_0Slot_c_held_hash(&v->as.c_held)) * UINT64_C(0x100000001b3);
     }
     hero_unreachable();
 }
@@ -270,10 +282,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b6d73c5068e987e", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("643f47c2543c3910", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs400acaseholdingahandlecomparedonlyinatestruns\tfixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs\n");
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main();
     hero_runtime_check_leaks();
     return 0;

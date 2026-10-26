@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("fmaxf")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -170,7 +170,7 @@ void h_ffif32againstafloatheaderiscorrect_main(void);
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 void h_ffif32againstafloatheaderiscorrect_main(void) { float h0_bigger; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t5, t6, t10, t12, t15, t16; HERO_NODEBUG HeroStr h3_own3 = {0}, t14, t17; HERO_NODEBUG float t1, t2, t3, t4; HERO_NODEBUG int64_t t7, t8, t13; HERO_NODEBUG bool t9; HERO_NODEBUG HeroFailure t11; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 46
-    t1 = 0x1.cp+1; t2 = 0x1.cp+2; t3 = fmaxf(t1, t2); h0_bigger = t3;
+    t1 = 0x1.cp+1; t2 = 0x1.cp+2; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-f32-against-a-float-header-is-correct.hero", "ffi-f32-against-a-float-header-is-correct.main", 46, 14}; t3 = fmaxf(t1, t2); } h0_bigger = t3;
     t4 = h0_bigger; if (hero_f64_fits_int(hero_f32_to_f64(t4))) { t5 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t4))}; } else { t5 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t15 = h2_own2; h2_own2 = t5; h_0opt_e201354_release(&t15); t16 = h1_f0; h_0opt_e201354_retain(&t5); h1_f0 = t5; h_0opt_e201354_release(&t16); t6 = h1_f0; t7 = t6.tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto bb1; else goto bb2; bb1: t12 = h1_f0; t13 = t12.as.ok; t14 = hero_int_to_str(t13); t17 = h3_own3; h3_own3 = t14; hero_str_decref(t17); hero_print_str(t14); hero_print_end();
 #line 176 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -181,7 +181,7 @@ bb2:
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t10 = h1_f0; t11 = t10.as.err;
 #line 184 "ffif32againstafloatheaderiscorrect.c"
-    hero_panic_must(t11);
+    hero_panic_must_at(t11, "ffi-f32-against-a-float-header-is-correct.hero", "ffi-f32-against-a-float-header-is-correct.main", 47, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -281,9 +281,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e78c1b118ff3cb2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c5f344717ff200c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffif32againstafloatheaderiscorrect\tffi-f32-against-a-float-header-is-correct\n");
     h_ffif32againstafloatheaderiscorrect_main();
     hero_runtime_check_leaks();
     return 0;

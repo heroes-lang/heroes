@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,6 +71,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,11 +93,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 97 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_0Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_0Hooks_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -98,46 +106,58 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three(int64_t h0_n);
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(int64_t h0_n, h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks h1_h);
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_main(void);
-void h_library_exit(int64_t h0_code);
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
 
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
-void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t5; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 14
     t5 = h0_n; hero_print_int(t5); hero_print_end(); return; bb2:
 #line 13
-    t4 = INT64_C(0); h_library_exit(t4); hero_unreachable(); goto bb1; bb3: goto bb1;
-#line 115 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+    t4 = UINT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero", "fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.stop_at_three", 13, 9}; h_library_exit(t4, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1;
+#line 128 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(int64_t h0_n, h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks h1_h) { HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1, t7; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_h; t2 = t1.f_act; t3 = h0_n; t2(t3);
-    t4 = h0_n; t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); t7 = h1_h; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t6, t7); return;
-#line 122 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+    t4 = h0_n; t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero", "fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.turn", 18, 13); t7 = h1_h; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t6, t7); return;
+#line 135 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_main(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three; t3 = (h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks){.f_act = t2}; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t1, t3); return;
-#line 128 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 141 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
-#line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; (void)hero_exit(t1); return;
-#line 134 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 235 "<heroes library>"
+void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
+#line 147 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return;
 }
-HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b) {
+__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+    h_library_exit(h0_code, &hero_here);
+}
+HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_0Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b) {
     if (!(a->f_act == b->f_act)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_0Hooks_hash(const void *elem) {
     const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_func)->hash(&v->f_act)) * UINT64_C(0x100000001b3);
@@ -208,10 +228,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("691cd873316ffc68", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3632859e30b0f38d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently\tfixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently\n");
     h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_main();
     hero_runtime_check_leaks();
     return 0;

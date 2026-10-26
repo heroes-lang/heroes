@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,8 +98,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 99 "adversarialtrycopiesout.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_adversarialtrycopiesout_Reader_eq(const h_adversarialtrycopiesout_Reader *a, const h_adversarialtrycopiesout_Reader *b);
-HERO_TU_LOCAL uint64_t h_adversarialtrycopiesout_Reader_hash(const void *elem);
+HERO_TU_LOCAL bool h_adversarialtrycopiesout_0Reader_eq(const h_adversarialtrycopiesout_Reader *a, const h_adversarialtrycopiesout_Reader *b);
+HERO_TU_LOCAL uint64_t h_adversarialtrycopiesout_0Reader_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
@@ -139,7 +139,7 @@ h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_
 #line 16
     t7 = h2_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t25 = h6_own6; h6_own6 = t9; h_0opt_e201354_release(&t25); h4_ret0 = t9; goto bb6; bb3:
 #line 20
-    t17 = (*ph0_r).f_pos; t18 = h3_n; if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); (*ph0_r).f_pos = t19;
+    t17 = (*ph0_r).f_pos; t18 = h3_n; if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("adversarial-try-copies-out.hero", "adversarial-try-copies-out.advance_over", 20, 13); (*ph0_r).f_pos = t19;
     t20 = h3_n; t21 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t20}; t26 = h7_own7; h7_own7 = t21; h_0opt_e201354_release(&t26); h4_ret0 = t21; goto bb6; bb4:
 #line 19
     t15 = INT64_C(0); t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15}; t27 = h8_own8; h8_own8 = t16; h_0opt_e201354_release(&t27); h4_ret0 = t16; goto bb6; bb5: goto bb3; bb6:
@@ -153,12 +153,12 @@ h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_
     h_0opt_e201354_release(hero_slot_escape(&h8_own8));
     return t22;
 }
-HERO_TU_LOCAL bool h_adversarialtrycopiesout_Reader_eq(const h_adversarialtrycopiesout_Reader *a, const h_adversarialtrycopiesout_Reader *b) {
+HERO_TU_LOCAL bool h_adversarialtrycopiesout_0Reader_eq(const h_adversarialtrycopiesout_Reader *a, const h_adversarialtrycopiesout_Reader *b) {
     if (!(a->f_pos == b->f_pos)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_adversarialtrycopiesout_Reader_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_adversarialtrycopiesout_0Reader_hash(const void *elem) {
     const h_adversarialtrycopiesout_Reader *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_pos)) * UINT64_C(0x100000001b3);

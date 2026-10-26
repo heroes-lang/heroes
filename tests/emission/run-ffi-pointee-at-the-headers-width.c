@@ -52,7 +52,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("frexp")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -145,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "ffipointeeattheheaderswidth.c"
+#line 157 "ffipointeeattheheaderswidth.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -156,6 +164,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffipointeeattheheaderswidth_main(void);
 
@@ -168,13 +180,13 @@ void h_ffipointeeattheheaderswidth_main(void) {
 #line 16
     int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3, t4; HERO_NODEBUG int64_t t6, t8, t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h0_e = t1;
-    t2 = 0x1p+3; hero_lend_local_name(hero_lend_h0_e, "frexp", "e"); t3 = frexp(t2, (void *)&h0_e); h1_m = t3;
+    t2 = 0x1p+3; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-pointee-at-the-headers-width.hero", "ffi-pointee-at-the-headers-width.main", 18, 9}; hero_lend_local_name(hero_lend_h0_e, "frexp", "e"); t3 = frexp(t2, (void *)&h0_e); } h1_m = t3;
     t4 = h1_m; hero_print_f64(t4); hero_print_end();
     t5 = h0_e; hero_print_int(t5); hero_print_end();
     t6 = INT64_C(0); h2_t = t6;
-    hero_lend_local_name(hero_lend_h2_t, "time", "t"); (void)time((void *)&h2_t);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-pointee-at-the-headers-width.hero", "ffi-pointee-at-the-headers-width.main", 22, 9}; hero_lend_local_name(hero_lend_h2_t, "time", "t"); (void)time((void *)&h2_t); }
     t8 = h2_t; t9 = INT64_C(0); t10 = t8 > t9; hero_print_bool(t10); hero_print_end(); hero_lend_local_give(hero_lend_h2_t); hero_lend_local_give(hero_lend_h0_e); return;
-#line 178 "ffipointeeattheheaderswidth.c"
+#line 190 "ffipointeeattheheaderswidth.c"
 }
 #undef h0_e
 #undef h2_t
@@ -242,10 +254,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4db770dd7904ed94", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57f714c0742c75df", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("ffipointeeattheheaderswidth\tffi-pointee-at-the-headers-width\n");
     h_ffipointeeattheheaderswidth_main();
     hero_runtime_check_leaks();
     return 0;

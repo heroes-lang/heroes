@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -74,6 +74,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -88,17 +96,17 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "placepaths.c"
+#line 100 "placepaths.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_placepaths_Row_retain(const h_placepaths_Row *v);
-HERO_TU_LOCAL void h_placepaths_Row_release(h_placepaths_Row *v);
-HERO_TU_LOCAL bool h_placepaths_Row_eq(const h_placepaths_Row *a, const h_placepaths_Row *b);
-HERO_TU_LOCAL uint64_t h_placepaths_Row_hash(const void *elem);
-HERO_TU_LOCAL void h_placepaths_Grid_retain(const h_placepaths_Grid *v);
-HERO_TU_LOCAL void h_placepaths_Grid_release(h_placepaths_Grid *v);
-HERO_TU_LOCAL bool h_placepaths_Grid_eq(const h_placepaths_Grid *a, const h_placepaths_Grid *b);
-HERO_TU_LOCAL uint64_t h_placepaths_Grid_hash(const void *elem);
+HERO_TU_LOCAL void h_placepaths_0Row_retain(const h_placepaths_Row *v);
+HERO_TU_LOCAL void h_placepaths_0Row_release(h_placepaths_Row *v);
+HERO_TU_LOCAL bool h_placepaths_0Row_eq(const h_placepaths_Row *a, const h_placepaths_Row *b);
+HERO_TU_LOCAL uint64_t h_placepaths_0Row_hash(const void *elem);
+HERO_TU_LOCAL void h_placepaths_0Grid_retain(const h_placepaths_Grid *v);
+HERO_TU_LOCAL void h_placepaths_0Grid_release(h_placepaths_Grid *v);
+HERO_TU_LOCAL bool h_placepaths_0Grid_eq(const h_placepaths_Grid *a, const h_placepaths_Grid *b);
+HERO_TU_LOCAL uint64_t h_placepaths_0Grid_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -107,55 +115,59 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v);
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c);
 
 #line 12 "tests/golden/ir/place-paths.hero"
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_r; t2 = h2_c; t3 = h3_v; hero_array_unshare(&((*ph0_g).f_rows)); hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t1 < 0 || t1 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t1), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), (h_placepaths_Row *)(void *)((*ph0_g).f_rows + 1) + t1)).f_cells), t2, &t3); return;
-#line 118 "placepaths.c"
+    t1 = h1_r; t2 = h2_c; t3 = h3_v; hero_array_unshare(&((*ph0_g).f_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)(((*ph0_g).f_rows == NULL || t1 < 0 || t1 >= (*ph0_g).f_rows->len) ? hero_panic_index_at((*ph0_g).f_rows, t1, "place-paths.hero", "place-paths.set_cell", 13, 5) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), (h_placepaths_Row *)(void *)((*ph0_g).f_rows + 1) + t1)).f_cells); if (*hero_slot == NULL || t2 < 0 || t2 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t2, "place-paths.hero", "place-paths.set_cell", 13, 5); hero_array_set(hero_slot, t2, &t3); } return;
+#line 130 "placepaths.c"
 }
 
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) { HERO_NODEBUG HeroArrayHeader *t1, *t4; HERO_NODEBUG int64_t t2, t5, t6; HERO_NODEBUG h_placepaths_Row t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_g.f_rows; t2 = h1_r; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t1 + 1))[t2]); t4 = t3.f_cells; t5 = h2_c; t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); return t6;
-#line 124 "placepaths.c"
+    t1 = h0_g.f_rows; t2 = h1_r; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "place-paths.hero", "place-paths.cell_of", 16, 12) : (void)0), (void)(t1->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t1 + 1))[t2]); t4 = t3.f_cells; t5 = h2_c; t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "place-paths.hero", "place-paths.cell_of", 16, 12) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); return t6;
+#line 136 "placepaths.c"
 }
-HERO_TU_LOCAL void h_placepaths_Row_retain(const h_placepaths_Row *v) {
+HERO_TU_LOCAL void h_placepaths_0Row_retain(const h_placepaths_Row *v) {
     hero_array_incref(v->f_cells);
 }
 
-HERO_TU_LOCAL void h_placepaths_Row_release(h_placepaths_Row *v) {
+HERO_TU_LOCAL void h_placepaths_0Row_release(h_placepaths_Row *v) {
     hero_array_decref(v->f_cells);
 }
 
-HERO_TU_LOCAL bool h_placepaths_Row_eq(const h_placepaths_Row *a, const h_placepaths_Row *b) {
+HERO_TU_LOCAL bool h_placepaths_0Row_eq(const h_placepaths_Row *a, const h_placepaths_Row *b) {
     if (!(hero_array_eq(a->f_cells, b->f_cells))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_placepaths_Row_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_placepaths_0Row_hash(const void *elem) {
     const h_placepaths_Row *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-HERO_TU_LOCAL void h_placepaths_Grid_retain(const h_placepaths_Grid *v) {
+HERO_TU_LOCAL void h_placepaths_0Grid_retain(const h_placepaths_Grid *v) {
     hero_array_incref(v->f_rows);
 }
 
-HERO_TU_LOCAL void h_placepaths_Grid_release(h_placepaths_Grid *v) {
+HERO_TU_LOCAL void h_placepaths_0Grid_release(h_placepaths_Grid *v) {
     hero_array_decref(v->f_rows);
 }
 
-HERO_TU_LOCAL bool h_placepaths_Grid_eq(const h_placepaths_Grid *a, const h_placepaths_Grid *b) {
+HERO_TU_LOCAL bool h_placepaths_0Grid_eq(const h_placepaths_Grid *a, const h_placepaths_Grid *b) {
     if (!(hero_array_eq(a->f_rows, b->f_rows))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_placepaths_Grid_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_placepaths_0Grid_hash(const void *elem) {
     const h_placepaths_Grid *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_rows)) * UINT64_C(0x100000001b3);
@@ -224,5 +236,37 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return h;
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 

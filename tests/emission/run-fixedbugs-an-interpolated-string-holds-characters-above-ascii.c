@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -167,11 +167,11 @@ void h_fixedbugsaninterpolatedstringholdscharactersaboveascii_main(void) { int64
     t74 = h0_x; t75 = h_fixedbugsaninterpolatedstringholdscharactersaboveascii_label(t74); t178 = h42_own42; h42_own42 = t75; hero_str_decref(t178); t76 = HERO_STR_LIT(hero_str_647a); t77 = HERO_STR_LIT(hero_str_647a); t78 = hero_str_concat(t76, t75); t179 = h43_own43; h43_own43 = t78; hero_str_decref(t179); t79 = hero_str_concat(t78, t77); t180 = h44_own44; h44_own44 = t79; hero_str_decref(t180); hero_print_str(t79); hero_print_end();
     t80 = h0_x; t81 = HERO_STR_LIT(hero_str_6481); t82 = hero_int_to_str(t80); t181 = h45_own45; h45_own45 = t82; hero_str_decref(t181); t83 = HERO_STR_LIT(hero_str_6481); t84 = hero_str_concat(t81, t82); t182 = h46_own46; h46_own46 = t84; hero_str_decref(t182); t85 = hero_str_concat(t84, t83); t183 = h47_own47; h47_own47 = t85; hero_str_decref(t183); t86 = HERO_STR_LIT(hero_str_646e); t87 = HERO_STR_LIT(hero_str_3ed33309); t88 = hero_str_concat(t85, t87); t184 = h48_own48; h48_own48 = t88; hero_str_decref(t184); t89 = hero_str_concat(t88, t86); t185 = h49_own49; h49_own49 = t89; hero_str_decref(t185); hero_print_str(t89); hero_print_end();
     t90 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t186 = h50_own50; h50_own50 = t90; hero_map_decref(t186); t187 = h2_m; hero_map_incref(t90); h2_m = t90; hero_map_decref(t187);
-    t91 = h0_x; t92 = HERO_STR_LIT(hero_str_d60af2f); t93 = hero_int_to_str(t91); t188 = h51_own51; h51_own51 = t93; hero_str_decref(t188); t94 = hero_str_concat(t92, t93); t189 = h52_own52; h52_own52 = t94; hero_str_decref(t189); t95 = INT64_C(1); hero_map_set(&(h2_m), &t94, &t95);
-    t96 = h0_x; t97 = HERO_STR_LIT(hero_str_1a72ed13); t98 = hero_int_to_str(t96); t190 = h53_own53; h53_own53 = t98; hero_str_decref(t190); t99 = hero_str_concat(t97, t98); t191 = h54_own54; h54_own54 = t99; hero_str_decref(t191); t100 = INT64_C(2); hero_map_set(&(h2_m), &t99, &t100);
-    t101 = h2_m; t102 = h0_x; t103 = HERO_STR_LIT(hero_str_d60af2f); t104 = hero_int_to_str(t102); t192 = h55_own55; h55_own55 = t104; hero_str_decref(t192); t105 = hero_str_concat(t103, t104); t193 = h56_own56; h56_own56 = t105; hero_str_decref(t193); { HERO_NODEBUG const void *found = hero_map_find(t101, &t105); if (found == NULL) { t106 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t106 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t106.as.ok, found); } } t194 = h57_own57; h57_own57 = t106; h_0opt_e201354_release(&t194); t195 = h3_f0; h_0opt_e201354_retain(&t106); h3_f0 = t106; h_0opt_e201354_release(&t195); t107 = h3_f0; t108 = t107.tag; t109 = INT64_C(0); t110 = t108 == t109; if (t110) goto bb1; else goto bb2; bb1: t113 = h3_f0; t114 = t113.as.ok; t115 = h2_m; t116 = h0_x; t117 = HERO_STR_LIT(hero_str_1a72ed13); t118 = hero_int_to_str(t116); t196 = h58_own58; h58_own58 = t118; hero_str_decref(t196); t119 = hero_str_concat(t117, t118); t197 = h59_own59; h59_own59 = t119; hero_str_decref(t197); { HERO_NODEBUG const void *found = hero_map_find(t115, &t119); if (found == NULL) { t120 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t120 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t120.as.ok, found); } } t198 = h60_own60; h60_own60 = t120; h_0opt_e201354_release(&t198); t199 = h4_f1; h_0opt_e201354_retain(&t120); h4_f1 = t120; h_0opt_e201354_release(&t199); t121 = h4_f1; t122 = t121.tag; t123 = INT64_C(0); t124 = t122 == t123; if (t124) goto bb3; else goto bb4; bb2: t111 = h3_f0; t112 = t111.as.err;
+    t91 = h0_x; t92 = HERO_STR_LIT(hero_str_d60af2f); t93 = hero_int_to_str(t91); t188 = h51_own51; h51_own51 = t93; hero_str_decref(t188); t94 = hero_str_concat(t92, t93); t189 = h52_own52; h52_own52 = t94; hero_str_decref(t189); t95 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero", "fixedbugs-an-interpolated-string-holds-characters-above-ascii.main", 35, 5}; hero_map_set_at(&(h2_m), &t94, &t95, &hero_here); }
+    t96 = h0_x; t97 = HERO_STR_LIT(hero_str_1a72ed13); t98 = hero_int_to_str(t96); t190 = h53_own53; h53_own53 = t98; hero_str_decref(t190); t99 = hero_str_concat(t97, t98); t191 = h54_own54; h54_own54 = t99; hero_str_decref(t191); t100 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero", "fixedbugs-an-interpolated-string-holds-characters-above-ascii.main", 36, 5}; hero_map_set_at(&(h2_m), &t99, &t100, &hero_here); }
+    t101 = h2_m; t102 = h0_x; t103 = HERO_STR_LIT(hero_str_d60af2f); t104 = hero_int_to_str(t102); t192 = h55_own55; h55_own55 = t104; hero_str_decref(t192); t105 = hero_str_concat(t103, t104); t193 = h56_own56; h56_own56 = t105; hero_str_decref(t193); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero", "fixedbugs-an-interpolated-string-holds-characters-above-ascii.main", 37, 14}; HERO_NODEBUG const void *found = hero_map_find_at(t101, &t105, &hero_here); if (found == NULL) { t106 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t106 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t106.as.ok, found); } } t194 = h57_own57; h57_own57 = t106; h_0opt_e201354_release(&t194); t195 = h3_f0; h_0opt_e201354_retain(&t106); h3_f0 = t106; h_0opt_e201354_release(&t195); t107 = h3_f0; t108 = t107.tag; t109 = INT64_C(0); t110 = t108 == t109; if (t110) goto bb1; else goto bb2; bb1: t113 = h3_f0; t114 = t113.as.ok; t115 = h2_m; t116 = h0_x; t117 = HERO_STR_LIT(hero_str_1a72ed13); t118 = hero_int_to_str(t116); t196 = h58_own58; h58_own58 = t118; hero_str_decref(t196); t119 = hero_str_concat(t117, t118); t197 = h59_own59; h59_own59 = t119; hero_str_decref(t197); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero", "fixedbugs-an-interpolated-string-holds-characters-above-ascii.main", 37, 36}; HERO_NODEBUG const void *found = hero_map_find_at(t115, &t119, &hero_here); if (found == NULL) { t120 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t120 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t120.as.ok, found); } } t198 = h60_own60; h60_own60 = t120; h_0opt_e201354_release(&t198); t199 = h4_f1; h_0opt_e201354_retain(&t120); h4_f1 = t120; h_0opt_e201354_release(&t199); t121 = h4_f1; t122 = t121.tag; t123 = INT64_C(0); t124 = t122 == t123; if (t124) goto bb3; else goto bb4; bb2: t111 = h3_f0; t112 = t111.as.err;
 #line 174 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
-    hero_panic_must(t112);
+    hero_panic_must_at(t112, "fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero", "fixedbugs-an-interpolated-string-holds-characters-above-ascii.main", 37, 14);
     hero_unreachable();
 bb3:
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
@@ -250,7 +250,7 @@ bb4:
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t125 = h4_f1; t126 = t125.as.err;
 #line 253 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
-    hero_panic_must(t126);
+    hero_panic_must_at(t126, "fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero", "fixedbugs-an-interpolated-string-holds-characters-above-ascii.main", 37, 36);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -350,9 +350,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("70fa4d443f23acc8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("058ca58e527187b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsaninterpolatedstringholdscharactersaboveascii\tfixedbugs-an-interpolated-string-holds-characters-above-ascii\n");
     h_fixedbugsaninterpolatedstringholdscharactersaboveascii_main();
     hero_runtime_check_leaks();
     return 0;

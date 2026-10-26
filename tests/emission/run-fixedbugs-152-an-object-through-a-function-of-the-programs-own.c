@@ -49,7 +49,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -143,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 155 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -154,13 +162,17 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void);
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
-#line 164 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 176 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
     _Static_assert(HERO_RET_I32(ERANGE), "heroes-ffi-return ERANGE i32");
     _Static_assert(__builtin_constant_p(ERANGE), "heroes-ffi-const ERANGE");
 #pragma clang diagnostic push
@@ -172,7 +184,7 @@ int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return ERANGE;
-#line 176 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 188 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -190,12 +202,12 @@ int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) { int64_t h0_big; HERO_NODEBUG int32_t t1, t5, t8, t9; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4; HERO_NODEBUG int64_t t6, t7; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    (void)hero_errno_clear();
-    t1 = hero_errno(); hero_print_int(t1); hero_print_end();
-    t2 = HERO_STR_LIT(hero_str_19d86d81); t3 = hero_str_lend(t2); t4 = ((void *)0); t5 = INT64_C(10); t6 = strtoll(hero_cstr_nonnull(t3), t4, t5); h0_big = t6;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 22, 5}; (void)hero_errno_clear(); }
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 23, 11}; t1 = hero_errno(); } hero_print_int(t1); hero_print_end();
+    t2 = HERO_STR_LIT(hero_str_19d86d81); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 24, 25}; t3 = hero_str_lend_at(t2, &hero_here); } t4 = ((void *)0); t5 = INT64_C(10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 24, 11}; t6 = strtoll(hero_cstr_nonnull_at(t3, &hero_here), t4, t5); } h0_big = t6;
     t7 = h0_big; hero_print_int(t7); hero_print_end();
-    t8 = hero_errno(); t9 = h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(); t10 = t8 == t9; hero_print_bool(t10); hero_print_end(); return;
-#line 199 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero", "fixedbugs-152-an-object-through-a-function-of-the-programs-own.main", 26, 11}; t8 = hero_errno(); } t9 = h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(); t10 = t8 == t9; hero_print_bool(t10); hero_print_end(); return;
+#line 211 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -261,10 +273,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5366dc4621efd602", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("221c77706369c656", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs152anobjectthroughafunctionoftheprogramsown\tfixedbugs-152-an-object-through-a-function-of-the-programs-own\n");
     h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main();
     hero_runtime_check_leaks();
     return 0;

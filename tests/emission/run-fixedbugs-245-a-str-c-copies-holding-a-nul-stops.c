@@ -48,7 +48,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -115,6 +115,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -143,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 155 "fixedbugs245astrccopiesholdinganulstops.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -154,15 +162,19 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs245astrccopiesholdinganulstops_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
 void h_fixedbugs245astrccopiesholdinganulstops_main(void) { HeroStr h0_made = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t5, t6, t7, t10, t11; HERO_NODEBUG int64_t t4; HERO_NODEBUG const char *t8; HERO_NODEBUG uint64_t t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = made_by_c(); t10 = h1_own1; h1_own1 = t1; hero_str_decref(t10); t11 = h0_made; hero_str_incref(t1); h0_made = t1; hero_str_decref(t11);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero", "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.main", 14, 12}; t1 = made_by_c(); } t10 = h1_own1; h1_own1 = t1; hero_str_decref(t10); t11 = h0_made; hero_str_incref(t1); h0_made = t1; hero_str_decref(t11);
     t2 = HERO_STR_LIT(hero_str_41bb0df2); t3 = h0_made; t4 = hero_str_len(t3); t5 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t2); hero_print_int(t4); hero_print_str(t5); hero_print_end();
-    t6 = HERO_STR_LIT(hero_str_521d74b5); t7 = h0_made; t8 = hero_str_lend(t7); t9 = strlen(hero_cstr_nonnull(t8)); hero_print_str(t6); hero_print_uint(t9); hero_print_end();
-#line 166 "fixedbugs245astrccopiesholdinganulstops.c"
+    t6 = HERO_STR_LIT(hero_str_521d74b5); t7 = h0_made; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero", "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.main", 16, 33}; t8 = hero_str_lend_at(t7, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero", "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.main", 16, 23}; t9 = strlen(hero_cstr_nonnull_at(t8, &hero_here)); } hero_print_str(t6); hero_print_uint(t9); hero_print_end();
+#line 178 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_release_at(&h0_made);
     hero_str_release_at(&h1_own1);
     return;
@@ -231,10 +243,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("40d148a345797e7e", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4be0510d560c2c44", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs245astrccopiesholdinganulstops\tfixedbugs-245-a-str-c-copies-holding-a-nul-stops\n");
     h_fixedbugs245astrccopiesholdinganulstops_main();
     hero_runtime_check_leaks();
     return 0;

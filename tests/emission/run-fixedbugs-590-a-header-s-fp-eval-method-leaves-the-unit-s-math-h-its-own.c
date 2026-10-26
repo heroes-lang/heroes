@@ -47,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -111,6 +111,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -139,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
+#line 151 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -150,16 +158,20 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
 void h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main(void) { float h0_big; float h1_one; float h2_three; HERO_NODEBUG float t1, t5, t9, t13, t14, t15, t16, t17, t19, t20, t21; HERO_NODEBUG int64_t t2, t3, t6, t7, t10, t11; HERO_NODEBUG double t4, t8; HERO_NODEBUG HeroStr t12, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1p+24; h0_big = t1;
-    t2 = INT64_C(-1); t3 = llabs(t2); t4 = hero_int_to_f64(t3); t5 = hero_f64_to_f32(t4); h1_one = t5;
-    t6 = INT64_C(-3); t7 = llabs(t6); t8 = hero_int_to_f64(t7); t9 = hero_f64_to_f32(t8); h2_three = t9;
-    t10 = INT64_C(-42); t11 = llabs(t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h0_big; t14 = h1_one; t15 = t13 + t14; t16 = h0_big; t17 = t15 - t16; t18 = HERO_STR_LIT(hero_str_20); t19 = h1_one; t20 = h2_three; t21 = t19 / t20; hero_print_int(t11); hero_print_str(t12); hero_print_f32(t17); hero_print_str(t18); hero_print_f32(t21); hero_print_end(); return;
-#line 163 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
+    t2 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero", "fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.main", 18, 11}; t3 = llabs(t2); } t4 = hero_int_to_f64(t3); t5 = hero_f64_to_f32(t4); h1_one = t5;
+    t6 = INT64_C(-3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero", "fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.main", 19, 13}; t7 = llabs(t6); } t8 = hero_int_to_f64(t7); t9 = hero_f64_to_f32(t8); h2_three = t9;
+    t10 = INT64_C(-42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero", "fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.main", 20, 11}; t11 = llabs(t10); } t12 = HERO_STR_LIT(hero_str_20); t13 = h0_big; t14 = h1_one; t15 = t13 + t14; t16 = h0_big; t17 = t15 - t16; t18 = HERO_STR_LIT(hero_str_20); t19 = h1_one; t20 = h2_three; t21 = t19 / t20; hero_print_int(t11); hero_print_str(t12); hero_print_f32(t17); hero_print_str(t18); hero_print_f32(t21); hero_print_end(); return;
+#line 175 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -225,10 +237,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4521eb834e04a500", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("179e0e3c42161f2b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown\tfixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own\n");
     h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main();
     hero_runtime_check_leaks();
     return 0;

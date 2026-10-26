@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -112,7 +112,7 @@ int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs);
 
 #line 5 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_own4 = {0}, t3, t4, t8, t12, t13; HERO_NODEBUG int64_t h3_r0, t5, t6, t9, t10, t11; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_scores; t2 = h1_name; { HERO_NODEBUG const void *found = hero_map_find(t1, &t2); if (found == NULL) { t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t3 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t3.as.ok, found); } } t12 = h4_own4; h4_own4 = t3; h_0opt_e201354_release(&t12); t13 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t13); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h2_f0; t9 = t8.as.ok; h3_r0 = t9; goto bb3; bb2: t10 = INT64_C(0); h3_r0 = t10; goto bb3; bb3: t11 = h3_r0;
+    t1 = h0_scores; t2 = h1_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"map-access.hero", "map-access.score_of", 6, 12}; HERO_NODEBUG const void *found = hero_map_find_at(t1, &t2, &hero_here); if (found == NULL) { t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t3 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t3.as.ok, found); } } t12 = h4_own4; h4_own4 = t3; h_0opt_e201354_release(&t12); t13 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t13); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h2_f0; t9 = t8.as.ok; h3_r0 = t9; goto bb3; bb2: t10 = INT64_C(0); h3_r0 = t10; goto bb3; bb3: t11 = h3_r0;
 #line 117 "mapaccess.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -121,13 +121,13 @@ int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) { HERO_
 
 #line 8 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]); return t3;
+    t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "map-access.hero", "map-access.first_of", 9, 12) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]); return t3;
 #line 126 "mapaccess.c"
 }
 
 #line 11 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs) { HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3, t5, t6; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_scores; t2 = HERO_STR_LIT(hero_str_1999f6); t3 = h_mapaccess_score_of(t1, t2); t4 = h1_xs; t5 = h_mapaccess_first_of(t4); if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow(); return t6;
+    t1 = h0_scores; t2 = HERO_STR_LIT(hero_str_1999f6); t3 = h_mapaccess_score_of(t1, t2); t4 = h1_xs; t5 = h_mapaccess_first_of(t4); if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow_at("map-access.hero", "map-access.both", 12, 12); return t6;
 #line 132 "mapaccess.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

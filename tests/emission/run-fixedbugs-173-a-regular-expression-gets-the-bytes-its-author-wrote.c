@@ -48,7 +48,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -130,6 +130,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -162,11 +170,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 174 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq(const regex_t *a, const regex_t *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_0regex_t_eq(const regex_t *a, const regex_t *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_0regex_t_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -175,6 +183,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(void);
 bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr h0_pattern, HeroStr h1_text);
@@ -203,7 +215,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(void) {
-#line 207 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 219 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     _Static_assert(HERO_RET_I32(REG_EXTENDED), "heroes-ffi-return REG_EXTENDED i32");
     _Static_assert(__builtin_constant_p(REG_EXTENDED), "heroes-ffi-const REG_EXTENDED");
 #pragma clang diagnostic push
@@ -215,7 +227,7 @@ int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     return REG_EXTENDED;
-#line 219 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 231 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -239,15 +251,15 @@ bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr 
     regex_t *const hero_lend_h2_re = (regex_t *)hero_lend_local(sizeof(regex_t), "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.matches", "re"); int64_t h3_rc; HERO_NODEBUG bool h4_ret0, t8, t11, t20, t21; HERO_NODEBUG uint64_t t1, t14; HERO_NODEBUG regex_t t2; HERO_NODEBUG HeroStr t3, t9, t10, t12; HERO_NODEBUG const char *t4, *t13; HERO_NODEBUG int32_t t5, t16; HERO_NODEBUG int64_t t6, t7, t17, t18, t19; HERO_NODEBUG void *t15; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = (regex_t){.re_nsub = t1}; h2_re = t2; hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1);
 #line 29
-    t3 = h0_pattern; t4 = hero_str_lend(t3); t5 = h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(); hero_lend_local_name(hero_lend_h2_re, "regcomp", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); t6 = regcomp(&h2_re, hero_cstr_nonnull(t4), t5); t7 = INT64_C(0); t8 = t6 != t7; if (t8) goto bb2; else goto bb3; bb1:
+    t3 = h0_pattern; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 29, 21}; t4 = hero_str_lend_at(t3, &hero_here); } t5 = h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 29, 8}; hero_lend_local_name(hero_lend_h2_re, "regcomp", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); t6 = regcomp(&h2_re, hero_cstr_nonnull_at(t4, &hero_here), t5); } t7 = INT64_C(0); t8 = t6 != t7; if (t8) goto bb2; else goto bb3; bb1:
 #line 32
-    t12 = h1_text; t13 = hero_str_lend(t12); t14 = UINT64_C(0); t15 = ((void *)0); t16 = INT64_C(0); hero_lend_local_name(hero_lend_h2_re, "regexec", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); t17 = regexec(&h2_re, hero_cstr_nonnull(t13), t14, t15, t16); h3_rc = t17;
-    hero_lend_local_name(hero_lend_h2_re, "regfree", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); (void)regfree(&h2_re);
+    t12 = h1_text; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 32, 23}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = UINT64_C(0); t15 = ((void *)0); t16 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 32, 10}; hero_lend_local_name(hero_lend_h2_re, "regexec", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); t17 = regexec(&h2_re, hero_cstr_nonnull_at(t13, &hero_here), t14, t15, t16); } h3_rc = t17;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 33, 5}; hero_lend_local_name(hero_lend_h2_re, "regfree", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); (void)regfree(&h2_re); }
     t18 = h3_rc; t19 = INT64_C(0); t20 = t18 == t19; h4_ret0 = t20; goto bb4; bb2:
 #line 30
     t9 = HERO_STR_LIT(hero_str_674ef2c2); t10 = h0_pattern; hero_print_str(t9); hero_print_str(t10); hero_print_end();
     t11 = false; h4_ret0 = t11; goto bb4; bb3: goto bb1; bb4:
-#line 251 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 263 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     t21 = h4_ret0;
     hero_lend_local_give(hero_lend_h2_re);
     return t21;
@@ -256,10 +268,10 @@ bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr 
 
 #line 36 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(HeroStr h0_pattern, HeroStr h1_yes, HeroStr h2_no) { HERO_NODEBUG HeroStr t1, t2, t3, t4, t7, t8, t9, t10, t11, t12, t14, t15, t16, t17, t18; HERO_NODEBUG const char *t5; HERO_NODEBUG uint64_t t6; HERO_NODEBUG bool t13, t19; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_55115239); t2 = h0_pattern; t3 = HERO_STR_LIT(hero_str_16a4); t4 = h0_pattern; t5 = hero_str_lend(t4); t6 = strlen(hero_cstr_nonnull(t5)); t7 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t1); hero_print_str(t2); hero_print_str(t3); hero_print_uint(t6); hero_print_str(t7); hero_print_end();
+    t1 = HERO_STR_LIT(hero_str_55115239); t2 = h0_pattern; t3 = HERO_STR_LIT(hero_str_16a4); t4 = h0_pattern; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.report", 37, 48}; t5 = hero_str_lend_at(t4, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.report", 37, 41}; t6 = strlen(hero_cstr_nonnull_at(t5, &hero_here)); } t7 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t1); hero_print_str(t2); hero_print_str(t3); hero_print_uint(t6); hero_print_str(t7); hero_print_end();
     t8 = HERO_STR_LIT(hero_str_4522500); t9 = h1_yes; t10 = HERO_STR_LIT(hero_str_4559bcf); t11 = h0_pattern; t12 = h1_yes; t13 = h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(t11, t12); hero_print_str(t8); hero_print_str(t9); hero_print_str(t10); hero_print_bool(t13); hero_print_end();
     t14 = HERO_STR_LIT(hero_str_4522500); t15 = h2_no; t16 = HERO_STR_LIT(hero_str_4559bcf); t17 = h0_pattern; t18 = h2_no; t19 = h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(t17, t18); hero_print_str(t14); hero_print_str(t15); hero_print_str(t16); hero_print_bool(t19); hero_print_end(); return;
-#line 263 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 275 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 }
 
 #line 41 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
@@ -267,18 +279,18 @@ void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_main(void) { int
     t1 = HERO_STR_LIT(hero_str_1415a99b); t2 = HERO_STR_LIT(hero_str_50f0fc0c); t3 = HERO_STR_LIT(hero_str_62826420); h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(t1, t2, t3);
     t4 = INT64_C(3); h0_digits = t4;
     t5 = h0_digits; t6 = HERO_STR_LIT(hero_str_1248629f); t7 = hero_int_to_str(t5); t13 = h1_own1; h1_own1 = t7; hero_str_decref(t13); t8 = HERO_STR_LIT(hero_str_401b); t9 = hero_str_concat(t6, t7); t14 = h2_own2; h2_own2 = t9; hero_str_decref(t14); t10 = hero_str_concat(t9, t8); t15 = h3_own3; h3_own3 = t10; hero_str_decref(t15); t11 = HERO_STR_LIT(hero_str_dfc31); t12 = HERO_STR_LIT(hero_str_7280d90); h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(t10, t11, t12);
-#line 271 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 283 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq(const regex_t *a, const regex_t *b) {
-    hero_panic("h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq: a partial record has no structural equality");
+HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_0regex_t_eq(const regex_t *a, const regex_t *b) {
+    hero_panic("h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_0regex_t_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_hash(const void *elem) {
-    (void)elem; hero_panic("h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_0regex_t_hash(const void *elem) {
+    (void)elem; hero_panic("h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_0regex_t_hash: a partial record has no structural hash");
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -345,10 +357,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("263d3a2e7ca5060f", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f0f0e2b4a52a6a2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs173aregularexpressiongetsthebytesitsauthorwrote\tfixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote\n");
     h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_main();
     hero_runtime_check_leaks();
     return 0;

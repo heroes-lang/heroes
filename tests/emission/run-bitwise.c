@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -82,6 +82,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -96,7 +104,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "bitwise.c"
+#line 108 "bitwise.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -107,6 +115,10 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_bitwise_main(void);
 
@@ -119,24 +131,24 @@ void h_bitwise_main(void) { int64_t h0_read; int64_t h1_write; int64_t h2_exec; 
     t9 = HERO_STR_LIT(hero_str_6573c541); t10 = INT64_C(6); t11 = INT64_C(3); t12 = t10 & t11; hero_print_str(t9); hero_print_int(t12); hero_print_end();
     t13 = HERO_STR_LIT(hero_str_11c482ff); t14 = INT64_C(6); t15 = INT64_C(3); t16 = t14 ^ t15; hero_print_str(t13); hero_print_int(t16); hero_print_end();
     t17 = HERO_STR_LIT(hero_str_3ede2b03); t18 = INT64_C(0); t19 = ~t18; hero_print_str(t17); hero_print_int(t19); hero_print_end();
-    t20 = HERO_STR_LIT(hero_str_4f8cfd93); t21 = INT64_C(0); t22 = INT64_C(9223372036854775807); if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow(); t24 = INT64_C(1); if (__builtin_sub_overflow(t23, t24, &t25)) hero_panic_overflow(); t26 = ~t25; hero_print_str(t20); hero_print_int(t26); hero_print_end();
+    t20 = HERO_STR_LIT(hero_str_4f8cfd93); t21 = INT64_C(0); t22 = INT64_C(9223372036854775807); if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow_at("bitwise.hero", "bitwise.main", 30, 26); t24 = INT64_C(1); if (__builtin_sub_overflow(t23, t24, &t25)) hero_panic_overflow_at("bitwise.hero", "bitwise.main", 30, 26); t26 = ~t25; hero_print_str(t20); hero_print_int(t26); hero_print_end();
 #line 32
-    t27 = HERO_STR_LIT(hero_str_2c813b8c); t28 = INT64_C(1); t29 = INT64_C(10); if (t29 < 0 || t29 > 63) hero_panic("shift count outside 0..63"); t30 = (int64_t)((uint64_t)t28 << (uint64_t)t29); hero_print_str(t27); hero_print_int(t30); hero_print_end();
-    t31 = HERO_STR_LIT(hero_str_535eeb7d); t32 = INT64_C(1); t33 = INT64_C(63); if (t33 < 0 || t33 > 63) hero_panic("shift count outside 0..63"); t34 = (int64_t)((uint64_t)t32 << (uint64_t)t33); hero_print_str(t31); hero_print_int(t34); hero_print_end();
-    t35 = HERO_STR_LIT(hero_str_2d4f0d2e); t36 = INT64_C(1024); t37 = INT64_C(3); if (t37 < 0 || t37 > 63) hero_panic("shift count outside 0..63"); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); hero_print_str(t35); hero_print_int(t38); hero_print_end();
-    t39 = HERO_STR_LIT(hero_str_3f189351); t40 = INT64_C(0); t41 = INT64_C(8); if (__builtin_sub_overflow(t40, t41, &t42)) hero_panic_overflow(); t43 = INT64_C(1); if (t43 < 0 || t43 > 63) hero_panic("shift count outside 0..63"); t44 = (t42 < 0) ? ~(int64_t)((~(uint64_t)t42) >> (uint64_t)t43) : (int64_t)((uint64_t)t42 >> (uint64_t)t43); hero_print_str(t39); hero_print_int(t44); hero_print_end();
+    t27 = HERO_STR_LIT(hero_str_2c813b8c); t28 = INT64_C(1); t29 = INT64_C(10); if (t29 < 0 || t29 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 32, 21); t30 = (int64_t)((uint64_t)t28 << (uint64_t)t29); hero_print_str(t27); hero_print_int(t30); hero_print_end();
+    t31 = HERO_STR_LIT(hero_str_535eeb7d); t32 = INT64_C(1); t33 = INT64_C(63); if (t33 < 0 || t33 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 33, 25); t34 = (int64_t)((uint64_t)t32 << (uint64_t)t33); hero_print_str(t31); hero_print_int(t34); hero_print_end();
+    t35 = HERO_STR_LIT(hero_str_2d4f0d2e); t36 = INT64_C(1024); t37 = INT64_C(3); if (t37 < 0 || t37 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 34, 21); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); hero_print_str(t35); hero_print_int(t38); hero_print_end();
+    t39 = HERO_STR_LIT(hero_str_3f189351); t40 = INT64_C(0); t41 = INT64_C(8); if (__builtin_sub_overflow(t40, t41, &t42)) hero_panic_overflow_at("bitwise.hero", "bitwise.main", 35, 21); t43 = INT64_C(1); if (t43 < 0 || t43 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 35, 21); t44 = (t42 < 0) ? ~(int64_t)((~(uint64_t)t42) >> (uint64_t)t43) : (int64_t)((uint64_t)t42 >> (uint64_t)t43); hero_print_str(t39); hero_print_int(t44); hero_print_end();
 #line 38
     t45 = HERO_STR_LIT(hero_str_2e38b983); t46 = INT64_C(6); t47 = INT64_C(1); t48 = t46 & t47; t49 = INT64_C(0); t50 = t48 == t49; hero_print_str(t45); hero_print_bool(t50); hero_print_end();
-    t51 = HERO_STR_LIT(hero_str_25c4466a); t52 = INT64_C(1); t53 = INT64_C(2); t54 = INT64_C(3); t55 = INT64_C(4); t56 = INT64_C(1); if (t56 < 0 || t56 > 63) hero_panic("shift count outside 0..63"); t57 = (int64_t)((uint64_t)t55 << (uint64_t)t56); t58 = t54 & t57; t59 = t53 ^ t58; t60 = t52 | t59; hero_print_str(t51); hero_print_int(t60); hero_print_end();
+    t51 = HERO_STR_LIT(hero_str_25c4466a); t52 = INT64_C(1); t53 = INT64_C(2); t54 = INT64_C(3); t55 = INT64_C(4); t56 = INT64_C(1); if (t56 < 0 || t56 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 39, 35); t57 = (int64_t)((uint64_t)t55 << (uint64_t)t56); t58 = t54 & t57; t59 = t53 ^ t58; t60 = t52 | t59; hero_print_str(t51); hero_print_int(t60); hero_print_end();
 #line 42
-    t61 = INT64_C(1); t62 = INT64_C(0); if (t62 < 0 || t62 > 63) hero_panic("shift count outside 0..63"); t63 = (int64_t)((uint64_t)t61 << (uint64_t)t62); h0_read = t63;
-    t64 = INT64_C(1); t65 = INT64_C(1); if (t65 < 0 || t65 > 63) hero_panic("shift count outside 0..63"); t66 = (int64_t)((uint64_t)t64 << (uint64_t)t65); h1_write = t66;
-    t67 = INT64_C(1); t68 = INT64_C(2); if (t68 < 0 || t68 > 63) hero_panic("shift count outside 0..63"); t69 = (int64_t)((uint64_t)t67 << (uint64_t)t68); h2_exec = t69;
+    t61 = INT64_C(1); t62 = INT64_C(0); if (t62 < 0 || t62 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 42, 12); t63 = (int64_t)((uint64_t)t61 << (uint64_t)t62); h0_read = t63;
+    t64 = INT64_C(1); t65 = INT64_C(1); if (t65 < 0 || t65 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 43, 13); t66 = (int64_t)((uint64_t)t64 << (uint64_t)t65); h1_write = t66;
+    t67 = INT64_C(1); t68 = INT64_C(2); if (t68 < 0 || t68 > 63) hero_panic_at("shift count outside 0..63", "bitwise.hero", "bitwise.main", 44, 12); t69 = (int64_t)((uint64_t)t67 << (uint64_t)t68); h2_exec = t69;
     t70 = h0_read; t71 = h1_write; t72 = t70 | t71; t73 = h2_exec; t74 = t72 | t73; h3_every = t74;
     t75 = HERO_STR_LIT(hero_str_3e4223b); t76 = h3_every; hero_print_str(t75); hero_print_int(t76); hero_print_end();
     t77 = HERO_STR_LIT(hero_str_5671f1f7); t78 = h3_every; t79 = h1_write; t80 = t78 & t79; t81 = h1_write; t82 = t80 == t81; hero_print_str(t77); hero_print_bool(t82); hero_print_end();
     t83 = HERO_STR_LIT(hero_str_6cc5431); t84 = h3_every; t85 = h1_write; t86 = ~t85; t87 = t84 & t86; hero_print_str(t83); hero_print_int(t87); hero_print_end(); return;
-#line 140 "bitwise.c"
+#line 152 "bitwise.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -202,8 +214,40 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bc6d6cd58da67ed", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("611398f87bc9f243", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_bitwise_main();

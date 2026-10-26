@@ -51,7 +51,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -127,6 +127,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -155,11 +163,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "abortafixedarrayelementwrittenpastitslength.c"
+#line 167 "abortafixedarrayelementwrittenpastitslength.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_Nums_eq(const struct nums *a, const struct nums *b);
-HERO_TU_LOCAL uint64_t h_abortafixedarrayelementwrittenpastitslength_Nums_hash(const void *elem);
+HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_0Nums_eq(const struct nums *a, const struct nums *b);
+HERO_TU_LOCAL uint64_t h_abortafixedarrayelementwrittenpastitslength_0Nums_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -168,9 +176,14 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_abortafixedarrayelementwrittenpastitslength_main(void);
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 void *hero_pad_nowhere(void);
 __attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct nums *)hero_pad_nowhere()) == 13 ? sizeof(struct nums) : 0), __builtin_offsetof(struct nums, a), sizeof(((struct nums *)0)->a), __builtin_offsetof(struct nums, after), sizeof(((struct nums *)0)->after)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
@@ -184,40 +197,44 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_abortafixedarrayelementwrittenpastitslength_main(void) { struct nums h0_n; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h4_own4 = {0}, *t10, *t13, *t16, *t36, *t37; HERO_NODEBUG int64_t h2_i0, t1, t2, t3, t4, t6, t8, t9, t11, t12, t14, t17, t18, t21, t23, t24, t25, t26, t27, t28, t29, t30, t34, t35; int64_t h3_i; HERO_NODEBUG struct nums t7, t20, t32; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t19, t22, t31; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t6 = INT64_C(99); t7 = (struct nums){.a = {t1, t2, t3, t4}, .after = t6}; h0_n = t7; hero_pad_fill(&h0_n, sizeof(struct nums), 1, hero_pad_g_0, hero_pad_n_0);
 #line 26
-    t8 = INT64_C(0); t9 = INT64_C(5); t10 = h_library_range(t8, t9); t36 = h4_own4; h4_own4 = t10; hero_array_decref(t36); t37 = h1_xs0; hero_array_incref(t10); h1_xs0 = t10; hero_array_decref(t37); t11 = INT64_C(0); h2_i0 = t11; goto bb1; bb1: t12 = h2_i0; t13 = h1_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb2; else goto bb4; bb2: t16 = h1_xs0; t17 = h2_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h3_i = t18;
-    t19 = HERO_STR_LIT(hero_str_3043d2a7); t20 = h0_n; t21 = nums_after(t20); t22 = HERO_STR_LIT(hero_str_14e2dda1); t23 = h3_i; hero_print_str(t19); hero_print_int(t21); hero_print_str(t22); hero_print_int(t23); hero_print_end();
-    t24 = h3_i; t25 = h3_i; t26 = INT64_C(10); if (__builtin_mul_overflow(t25, t26, &t27)) hero_panic_overflow(); h0_n.a[((uint64_t)(t24) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t24))] = t27; goto bb3; bb3:
+    t8 = INT64_C(0); t9 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 26, 14}; t10 = h_library_range(t8, t9, &hero_here); } t36 = h4_own4; h4_own4 = t10; hero_array_decref(t36); t37 = h1_xs0; hero_array_incref(t10); h1_xs0 = t10; hero_array_decref(t37); t11 = INT64_C(0); h2_i0 = t11; goto bb1; bb1: t12 = h2_i0; t13 = h1_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb2; else goto bb4; bb2: t16 = h1_xs0; t17 = h2_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 26, 9) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h3_i = t18;
+    t19 = HERO_STR_LIT(hero_str_3043d2a7); t20 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 27, 26}; t21 = nums_after(t20); } t22 = HERO_STR_LIT(hero_str_14e2dda1); t23 = h3_i; hero_print_str(t19); hero_print_int(t21); hero_print_str(t22); hero_print_int(t23); hero_print_end();
+    t24 = h3_i; t25 = h3_i; t26 = INT64_C(10); if (__builtin_mul_overflow(t25, t26, &t27)) hero_panic_overflow_at("abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 28, 18); h0_n.a[((uint64_t)(t24) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 28, 9), (int64_t)0) : (t24))] = t27; goto bb3; bb3:
 #line 26
-    t28 = h2_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h2_i0 = t30; goto bb1; bb4:
+    t28 = h2_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 26, 9); h2_i0 = t30; goto bb1; bb4:
 #line 30
-    t31 = HERO_STR_LIT(hero_str_19048391); t32 = h0_n; t34 = INT64_C(3); t35 = t32.a[((uint64_t)(t34) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t34))]; hero_print_str(t31); hero_print_int(t35); hero_print_end();
-#line 195 "abortafixedarrayelementwrittenpastitslength.c"
+    t31 = HERO_STR_LIT(hero_str_19048391); t32 = h0_n; t34 = INT64_C(3); t35 = t32.a[((uint64_t)(t34) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 30, 26), (int64_t)0) : (t34))]; hero_print_str(t31); hero_print_int(t35); hero_print_end();
+#line 208 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return;
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto bb1; bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 209 "abortafixedarrayelementwrittenpastitslength.c"
+#line 222 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
-HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_Nums_eq(const struct nums *a, const struct nums *b) {
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
+}
+HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_0Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;
     if (!(a->after == b->after)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_abortafixedarrayelementwrittenpastitslength_Nums_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_abortafixedarrayelementwrittenpastitslength_0Nums_hash(const void *elem) {
     const struct nums *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->a[0])) * UINT64_C(0x100000001b3);
@@ -292,10 +309,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21727dbe4e337b5b", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("18c96e6b41077e8f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("abortafixedarrayelementwrittenpastitslength\tabort-a-fixed-array-element-written-past-its-length\n");
     h_abortafixedarrayelementwrittenpastitslength_main();
     hero_runtime_check_leaks();
     return 0;

@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -133,16 +133,17 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(HeroArrayHeader * h0_xs);
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(HeroArrayHeader * h0_xs);
 void h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_main(void);
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 13 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_e201354 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.half", 14, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.half", 14, 8); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 16
     t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 15
-    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 146 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.half", 15, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.half", 15, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
+#line 147 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -156,10 +157,10 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_m
     t2 = INT64_C(0); h2_at = t2; goto bb1; bb1:
 #line 22
     t3 = h2_at; t4 = h0_n; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t7 = h2_at; t8 = INT64_C(2); if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t9); t26 = h5_own5; h5_own5 = t10; h_0opt_e201354_release(&t26); t27 = h3_f0; h_0opt_e201354_retain(&t10); h3_f0 = t10; h_0opt_e201354_release(&t27); t11 = h3_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb3:
+    t7 = h2_at; t8 = INT64_C(2); if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_must", 23, 29); t10 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t9); t26 = h5_own5; h5_own5 = t10; h_0opt_e201354_release(&t26); t27 = h3_f0; h_0opt_e201354_retain(&t10); h3_f0 = t10; h_0opt_e201354_release(&t27); t11 = h3_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb3:
 #line 26
     t23 = h1_out;
-#line 163 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 164 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t23);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -169,11 +170,11 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_m
 bb4:
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t17 = h3_f0; t18 = t17.as.ok; hero_array_push_owned(&h1_out, &t18);
-    t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow(); h2_at = t22; goto bb1; bb5:
+    t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_must", 24, 14); h2_at = t22; goto bb1; bb5:
 #line 23
     t15 = h3_f0; t16 = t15.as.err;
-#line 176 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
-    hero_panic_must(t16);
+#line 177 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    hero_panic_must_at(t16, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_must", 23, 24);
     hero_unreachable();
 }
 
@@ -181,13 +182,13 @@ bb4:
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_default(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t4, *t7, *t10, *t30, *t31, *t32, *t33, *t34; HERO_NODEBUG int64_t h3_i0, h6_r0, t2, t3, t5, t6, t8, t11, t12, t14, t17, t18, t21, t22, t23, t24, t25, t27, t28, t29; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t15, t16, t20, t35, t36; HERO_NODEBUG bool t9, t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t31 = h7_own7; h7_own7 = t1; hero_array_decref(t31); t32 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t32);
 #line 31
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t33 = h8_own8; h8_own8 = t4; hero_array_decref(t33); t34 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t34); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_default", 31, 15}; t4 = h_library_range(t2, t3, &hero_here); } t33 = h8_own8; h8_own8 = t4; hero_array_decref(t33); t34 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t34); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_default", 31, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
     t14 = h4_at; t15 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t14); t35 = h9_own9; h9_own9 = t15; h_0opt_e201354_release(&t35); t36 = h5_f0; h_0opt_e201354_retain(&t15); h5_f0 = t15; h_0opt_e201354_release(&t36); t16 = h5_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb5; else goto bb6; bb3:
 #line 31
-    t27 = h3_i0; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h3_i0 = t29; goto bb1; bb4:
+    t27 = h3_i0; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_default", 31, 9); h3_i0 = t29; goto bb1; bb4:
 #line 34
     t30 = h1_out;
-#line 191 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 192 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t30);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -198,23 +199,23 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_d
     return t30;
 bb5:
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t20 = h5_f0; t21 = t20.as.ok; h6_r0 = t21; goto bb7; bb6: t22 = INT64_C(0); t23 = INT64_C(1); if (__builtin_sub_overflow(t22, t23, &t24)) hero_panic_overflow(); h6_r0 = t24; goto bb7; bb7: t25 = h6_r0; hero_array_push_owned(&h1_out, &t25); goto bb3;
-#line 203 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    t20 = h5_f0; t21 = t20.as.ok; h6_r0 = t21; goto bb7; bb6: t22 = INT64_C(0); t23 = INT64_C(1); if (__builtin_sub_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_default", 32, 41); h6_r0 = t24; goto bb7; bb7: t25 = h6_r0; hero_array_push_owned(&h1_out, &t25); goto bb3;
+#line 204 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_question(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t4, *t7, *t10, *t31, *t34, *t35, *t36, *t37; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t6, t8, t11, t12, t14, t15, t16, t19, t20, t26, t28, t29, t30; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t17, t18, t22, t25, t38, t39; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, t24, t32, t33, t40, t41; HERO_NODEBUG bool t9, t21; HERO_NODEBUG HeroFailure t23; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t34 = h7_own7; h7_own7 = t1; hero_array_decref(t34); t35 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t35);
 #line 39
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t36 = h8_own8; h8_own8 = t4; hero_array_decref(t36); t37 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t37); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
-    t14 = h4_at; t15 = INT64_C(2); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow(); t17 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t16); t38 = h9_own9; h9_own9 = t17; h_0opt_e201354_release(&t38); t39 = h5_f0; h_0opt_e201354_retain(&t17); h5_f0 = t17; h_0opt_e201354_release(&t39); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_question", 39, 15}; t4 = h_library_range(t2, t3, &hero_here); } t36 = h8_own8; h8_own8 = t4; hero_array_decref(t36); t37 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t37); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_question", 39, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t14 = h4_at; t15 = INT64_C(2); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_question", 40, 29); t17 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t16); t38 = h9_own9; h9_own9 = t17; h_0opt_e201354_release(&t38); t39 = h5_f0; h_0opt_e201354_retain(&t17); h5_f0 = t17; h_0opt_e201354_release(&t39); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb3:
 #line 39
-    t28 = h3_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h3_i0 = t30; goto bb1; bb4:
+    t28 = h3_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_question", 39, 9); h3_i0 = t30; goto bb1; bb4:
 #line 42
     t31 = h1_out; hero_array_incref(t31); t32 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t31}; t40 = h10_own10; h10_own10 = t32; h_0opt_2270cbe7_release(&t40); h6_ret0 = t32; goto bb7; bb5:
 #line 40
     t25 = h5_f0; t26 = t25.as.ok; hero_array_push_owned(&h1_out, &t26); goto bb3; bb6: t22 = h5_f0; t23 = t22.as.err; hero_failure_retain(&t23); t24 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t23}; t41 = h11_own11; h11_own11 = t24; h_0opt_2270cbe7_release(&t41); h6_ret0 = t24; goto bb7; bb7:
-#line 218 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 219 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t33 = h6_ret0;
     h_0opt_2270cbe7_retain(&t33);
     hero_array_release_at(&h1_out);
@@ -232,15 +233,15 @@ h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_que
 h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_stops_at_question(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t4, *t7, *t10, *t29, *t32, *t33, *t34, *t35; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t6, t8, t11, t12, t14, t17, t18, t24, t26, t27, t28; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t15, t16, t20, t23, t36, t37; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, t22, t30, t31, t38, t39; HERO_NODEBUG bool t9, t19; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t32 = h7_own7; h7_own7 = t1; hero_array_decref(t32); t33 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t33);
 #line 47
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t34 = h8_own8; h8_own8 = t4; hero_array_decref(t34); t35 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t35); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.stops_at_question", 47, 15}; t4 = h_library_range(t2, t3, &hero_here); } t34 = h8_own8; h8_own8 = t4; hero_array_decref(t34); t35 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t35); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.stops_at_question", 47, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
     t14 = h4_at; t15 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t14); t36 = h9_own9; h9_own9 = t15; h_0opt_e201354_release(&t36); t37 = h5_f0; h_0opt_e201354_retain(&t15); h5_f0 = t15; h_0opt_e201354_release(&t37); t16 = h5_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb5; else goto bb6; bb3:
 #line 47
-    t26 = h3_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow(); h3_i0 = t28; goto bb1; bb4:
+    t26 = h3_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.stops_at_question", 47, 9); h3_i0 = t28; goto bb1; bb4:
 #line 50
     t29 = h1_out; hero_array_incref(t29); t30 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t29}; t38 = h10_own10; h10_own10 = t30; h_0opt_2270cbe7_release(&t38); h6_ret0 = t30; goto bb7; bb5:
 #line 48
     t23 = h5_f0; t24 = t23.as.ok; hero_array_push_owned(&h1_out, &t24); goto bb3; bb6: t20 = h5_f0; t21 = t20.as.err; hero_failure_retain(&t21); t22 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t21}; t39 = h11_own11; h11_own11 = t22; h_0opt_2270cbe7_release(&t39); h6_ret0 = t22; goto bb7; bb7:
-#line 244 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 245 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t31 = h6_ret0;
     h_0opt_2270cbe7_retain(&t31);
     hero_array_release_at(&h1_out);
@@ -258,13 +259,13 @@ h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_stops_at_qu
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_and(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t4, *t7, *t10, *t25, *t26, *t27, *t28, *t29; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t6, t8, t11, t12, t14, t15, t17, t18, t22, t23, t24; int64_t h4_at; HERO_NODEBUG bool h5_b0, t9, t16, t19, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_bool, 1); t26 = h6_own6; h6_own6 = t1; hero_array_decref(t26); t27 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t27);
 #line 55
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t28 = h7_own7; h7_own7 = t4; hero_array_decref(t28); t29 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t29); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_and", 55, 15}; t4 = h_library_range(t2, t3, &hero_here); } t28 = h7_own7; h7_own7 = t4; hero_array_decref(t28); t29 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t29); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_and", 55, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
     t14 = h4_at; t15 = INT64_C(1); t16 = t14 > t15; h5_b0 = t16; if (t16) goto bb5; else goto bb6; bb3:
 #line 55
-    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h3_i0 = t24; goto bb1; bb4:
+    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_and", 55, 9); h3_i0 = t24; goto bb1; bb4:
 #line 58
     t25 = h1_out;
-#line 268 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 269 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -274,20 +275,20 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a
 bb5:
 #line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t17 = h4_at; t18 = INT64_C(4); t19 = t17 < t18; h5_b0 = t19; goto bb6; bb6: t20 = h5_b0; hero_array_push_owned(&h1_out, &t20); goto bb3;
-#line 278 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 279 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 60 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_or(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t4, *t7, *t10, *t25, *t26, *t27, *t28, *t29; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t6, t8, t11, t12, t14, t15, t17, t18, t22, t23, t24; int64_t h4_at; HERO_NODEBUG bool h5_b0, t9, t16, t19, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_bool, 1); t26 = h6_own6; h6_own6 = t1; hero_array_decref(t26); t27 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t27);
 #line 63
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t28 = h7_own7; h7_own7 = t4; hero_array_decref(t28); t29 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t29); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_or", 63, 15}; t4 = h_library_range(t2, t3, &hero_here); } t28 = h7_own7; h7_own7 = t4; hero_array_decref(t28); t29 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t29); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_or", 63, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
     t14 = h4_at; t15 = INT64_C(1); t16 = t14 < t15; h5_b0 = t16; if (t16) goto bb6; else goto bb5; bb3:
 #line 63
-    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h3_i0 = t24; goto bb1; bb4:
+    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_or", 63, 9); h3_i0 = t24; goto bb1; bb4:
 #line 66
     t25 = h1_out;
-#line 291 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 292 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -297,20 +298,20 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_o
 bb5:
 #line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t17 = h4_at; t18 = INT64_C(3); t19 = t17 > t18; h5_b0 = t19; goto bb6; bb6: t20 = h5_b0; hero_array_push_owned(&h1_out, &t20); goto bb3;
-#line 301 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 302 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 68 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_two(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *t1, *t4, *t7, *t10, *t41, *t42, *t43, *t44, *t45; HERO_NODEBUG int64_t h3_i0, h7_r0, t2, t3, t5, t6, t8, t11, t12, t14, t15, t16, t19, t20, t25, t26, t29, t30, t33, t34, t35, t36, t38, t39, t40; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h6_f1 = {0}, h10_own10 = {0}, h11_own11 = {0}, t17, t18, t22, t24, t27, t28, t32, t46, t47, t48, t49; HERO_NODEBUG bool t9, t21, t31; HERO_NODEBUG HeroFailure t23; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t42 = h8_own8; h8_own8 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
 #line 71
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t44 = h9_own9; h9_own9 = t4; hero_array_decref(t44); t45 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t45); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
-    t14 = h4_at; t15 = INT64_C(2); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow(); t17 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t16); t46 = h10_own10; h10_own10 = t17; h_0opt_e201354_release(&t46); t47 = h5_f0; h_0opt_e201354_retain(&t17); h5_f0 = t17; h_0opt_e201354_release(&t47); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_two", 71, 15}; t4 = h_library_range(t2, t3, &hero_here); } t44 = h9_own9; h9_own9 = t4; hero_array_decref(t44); t45 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t45); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_two", 71, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t14 = h4_at; t15 = INT64_C(2); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_two", 72, 29); t17 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t16); t46 = h10_own10; h10_own10 = t17; h_0opt_e201354_release(&t46); t47 = h5_f0; h_0opt_e201354_retain(&t17); h5_f0 = t17; h_0opt_e201354_release(&t47); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb3:
 #line 71
-    t38 = h3_i0; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow(); h3_i0 = t40; goto bb1; bb4:
+    t38 = h3_i0; t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_two", 71, 9); h3_i0 = t40; goto bb1; bb4:
 #line 74
     t41 = h1_out;
-#line 314 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 315 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -324,26 +325,26 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_t
 bb5:
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t24 = h5_f0; t25 = t24.as.ok; t26 = h4_at; t27 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t26); t48 = h11_own11; h11_own11 = t27; h_0opt_e201354_release(&t48); t49 = h6_f1; h_0opt_e201354_retain(&t27); h6_f1 = t27; h_0opt_e201354_release(&t49); t28 = h6_f1; t29 = t28.tag; t30 = INT64_C(0); t31 = t29 == t30; if (t31) goto bb7; else goto bb8; bb6: t22 = h5_f0; t23 = t22.as.err;
-#line 328 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
-    hero_panic_must(t23);
+#line 329 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    hero_panic_must_at(t23, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_two", 72, 24);
     hero_unreachable();
 bb7:
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t32 = h6_f1; t33 = t32.as.ok; h7_r0 = t33; goto bb9; bb8: t34 = INT64_C(7); h7_r0 = t34; goto bb9; bb9: t35 = h7_r0; if (__builtin_add_overflow(t25, t35, &t36)) hero_panic_overflow(); hero_array_push_owned(&h1_out, &t36); goto bb3;
-#line 334 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    t32 = h6_f1; t33 = t32.as.ok; h7_r0 = t33; goto bb9; bb8: t34 = INT64_C(7); h7_r0 = t34; goto bb9; bb9: t35 = h7_r0; if (__builtin_add_overflow(t25, t35, &t36)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_two", 72, 24); hero_array_push_owned(&h1_out, &t36); goto bb3;
+#line 335 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 76 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a_call(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t4, *t7, *t10, *t31, *t32, *t33, *t34, *t35; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t6, t8, t11, t12, t14, t15, t16, t19, t20, t25, t28, t29, t30; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h8_own8 = {0}, t17, t18, t22, t24, t36, t37; HERO_NODEBUG HeroStr h9_own9 = {0}, t26, t38; HERO_NODEBUG bool t9, t21; HERO_NODEBUG HeroFailure t23; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t32 = h6_own6; h6_own6 = t1; hero_array_decref(t32); t33 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t33);
 #line 79
-    t2 = INT64_C(0); t3 = h0_n; t4 = h_library_range(t2, t3); t34 = h7_own7; h7_own7 = t4; hero_array_decref(t34); t35 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t35); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
-    t14 = h4_at; t15 = INT64_C(2); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow(); t17 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t16); t36 = h8_own8; h8_own8 = t17; h_0opt_e201354_release(&t36); t37 = h5_f0; h_0opt_e201354_retain(&t17); h5_f0 = t17; h_0opt_e201354_release(&t37); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); t3 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_a_call", 79, 15}; t4 = h_library_range(t2, t3, &hero_here); } t34 = h7_own7; h7_own7 = t4; hero_array_decref(t34); t35 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t35); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_a_call", 79, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_at = t12;
+    t14 = h4_at; t15 = INT64_C(2); if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_a_call", 80, 36); t17 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t16); t36 = h8_own8; h8_own8 = t17; h_0opt_e201354_release(&t36); t37 = h5_f0; h_0opt_e201354_retain(&t17); h5_f0 = t17; h_0opt_e201354_release(&t37); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb3:
 #line 79
-    t28 = h3_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h3_i0 = t30; goto bb1; bb4:
+    t28 = h3_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_a_call", 79, 9); h3_i0 = t30; goto bb1; bb4:
 #line 82
     t31 = h1_out;
-#line 347 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 348 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -356,8 +357,8 @@ HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a
 bb5:
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t24 = h5_f0; t25 = t24.as.ok; t26 = hero_int_to_str(t25); t38 = h9_own9; h9_own9 = t26; hero_str_decref(t38); hero_array_push_owned(&h1_out, &t26); goto bb3; bb6: t22 = h5_f0; t23 = t22.as.err;
-#line 360 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
-    hero_panic_must(t23);
+#line 361 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    hero_panic_must_at(t23, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.through_a_call", 80, 31);
     hero_unreachable();
 }
 
@@ -365,13 +366,13 @@ bb5:
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(HeroArrayHeader * h0_xs) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t21, *t22, *t23; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t10, t12, t15, t16, t17; int64_t h4_x; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, t13, t19, t20, t24, t25; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t21 = h5_own5; h5_own5 = t1; hero_array_decref(t21); t22 = h1_parts; hero_array_incref(t1); h1_parts = t1; hero_array_decref(t22);
 #line 87
-    t2 = h0_xs; t23 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t23); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t2 = h0_xs; t23 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t23); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.shown", 87, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
     t12 = h4_x; t13 = hero_int_to_str(t12); t24 = h6_own6; h6_own6 = t13; hero_str_decref(t24); hero_array_push_owned(&h1_parts, &t13); goto bb3; bb3:
 #line 87
-    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h3_i0 = t17; goto bb1; bb4:
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.shown", 87, 9); h3_i0 = t17; goto bb1; bb4:
 #line 90
     t18 = h1_parts; t19 = HERO_STR_LIT(hero_str_2c); t20 = hero_str_join(t18, t19); t25 = h7_own7; h7_own7 = t20; hero_str_decref(t25);
-#line 375 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 376 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t20);
     hero_array_release_at(&h1_parts);
     hero_array_release_at(&h2_xs0);
@@ -385,13 +386,13 @@ HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(HeroArrayHead
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(HeroArrayHeader * h0_xs) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t21, *t22, *t23; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17; bool h4_x; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, t13, t19, t20, t24, t25; HERO_NODEBUG bool t7, t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t21 = h5_own5; h5_own5 = t1; hero_array_decref(t21); t22 = h1_parts; hero_array_incref(t1); h1_parts = t1; hero_array_decref(t22);
 #line 95
-    t2 = h0_xs; t23 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t23); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t2 = h0_xs; t23 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t23); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.said", 95, 9) : (void)0), (void)(t8->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
     t12 = h4_x; t13 = hero_bool_to_str(t12); t24 = h6_own6; h6_own6 = t13; hero_str_decref(t24); hero_array_push_owned(&h1_parts, &t13); goto bb3; bb3:
 #line 95
-    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h3_i0 = t17; goto bb1; bb4:
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.said", 95, 9); h3_i0 = t17; goto bb1; bb4:
 #line 98
     t18 = h1_parts; t19 = HERO_STR_LIT(hero_str_2c); t20 = hero_str_join(t18, t19); t25 = h7_own7; h7_own7 = t20; hero_str_decref(t25);
-#line 395 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 396 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t20);
     hero_array_release_at(&h1_parts);
     hero_array_release_at(&h2_xs0);
@@ -410,8 +411,8 @@ void h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_main(void) { HERO_NODE
     t18 = INT64_C(5); t19 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_stops_at_question(t18); t51 = h10_own10; h10_own10 = t19; h_0opt_2270cbe7_release(&t51); t52 = h1_s0; h_0opt_2270cbe7_retain(&t19); h1_s0 = t19; h_0opt_2270cbe7_release(&t52); t20 = h1_s0; t21 = t20.tag; switch (t21) { case 0: goto bb4; case 1: goto bb5; default: hero_unreachable(); } bb2:
 #line 103
     t13 = h0_f0; t14 = t13.as.err;
-#line 414 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
-    hero_panic_must(t14);
+#line 415 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+    hero_panic_must_at(t14, "fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero", "fixedbugs-381-each-branching-pushed-value-keeps-its-values.main", 103, 17);
     hero_unreachable();
 bb3:
 #line 109 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -419,7 +420,7 @@ bb3:
     t34 = INT64_C(5); t35 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_or(t34); t55 = h13_own13; h13_own13 = t35; hero_array_decref(t55); t36 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(t35); t56 = h14_own14; h14_own14 = t36; hero_str_decref(t56); hero_print_str(t36); hero_print_end();
     t37 = INT64_C(4); t38 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_two(t37); t57 = h15_own15; h15_own15 = t38; hero_array_decref(t57); t39 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(t38); t58 = h16_own16; h16_own16 = t39; hero_str_decref(t58); hero_print_str(t39); hero_print_end();
     t40 = INT64_C(4); t41 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a_call(t40); t59 = h17_own17; h17_own17 = t41; hero_array_decref(t59); t42 = HERO_STR_LIT(hero_str_2c); t43 = hero_str_join(t41, t42); t60 = h18_own18; h18_own18 = t43; hero_str_decref(t60); hero_print_str(t43); hero_print_end();
-#line 423 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 424 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(hero_slot_escape(&h0_f0));
     h_0opt_2270cbe7_release(hero_slot_escape(&h1_s0));
     hero_array_release_at(&h2_xs);
@@ -444,22 +445,26 @@ bb4:
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t22 = h1_s0; t23 = t22.as.ok; t61 = h2_xs; hero_array_incref(t23); h2_xs = t23; hero_array_decref(t61); t24 = HERO_STR_LIT(hero_str_354737bc); t25 = h2_xs; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); hero_print_str(t24); hero_print_int(t26); hero_print_end(); goto bb3; bb5:
     t27 = h1_s0; t28 = t27.as.err; t62 = h3_e; hero_failure_retain(&t28); h3_e = t28; hero_failure_release(&t62); t29 = HERO_STR_LIT(hero_str_12cd9df2); t30 = h3_e.code; hero_print_str(t29); hero_print_str(t30); hero_print_end(); goto bb3;
-#line 448 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 449 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto bb1; bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 459 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 460 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
+}
+__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
+    return h_library_range(h0_from, h1_to, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
@@ -590,9 +595,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("254dde8c5a1b5c1b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c9769373f92e8df", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugs381eachbranchingpushedvaluekeepsitsvalues\tfixedbugs-381-each-branching-pushed-value-keeps-its-values\n");
     h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_main();
     hero_runtime_check_leaks();
     return 0;

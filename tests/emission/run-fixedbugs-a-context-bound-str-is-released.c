@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -73,6 +73,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+typedef struct h_0opt_e201354 {
+    int64_t tag;
+    union {
+        int64_t ok;
+        HeroFailure err;
+    } as;
+} h_0opt_e201354;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -87,7 +95,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugsacontextboundstrisreleased.c"
+#line 99 "fixedbugsacontextboundstrisreleased.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,29 +106,33 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_fixedbugsacontextboundstrisreleased_main(void);
-HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_wanted_1e58d9(HeroStr h0_what);
+HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_0wanted_1e58d9(HeroStr h0_what);
 
 #line 12 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
 void h_fixedbugsacontextboundstrisreleased_main(void) { h_0opt_f87774a h0_s = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t2, t3, t4, t9, t10, t11, t15, t17, t20, t21, t22, t27, t28, t29, t33, t35, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; h_0opt_f87774a h2_cell = {0}; HERO_NODEBUG HeroStr t1, t8, t18, t19, t26, t36; HERO_NODEBUG int64_t t5, t6, t12, t13, t23, t24, t30, t31; HERO_NODEBUG bool t7, t14, t25, t32; HERO_NODEBUG HeroFailure t16, t34; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_fa5daa5); t2 = h_fixedbugsacontextboundstrisreleased_wanted_1e58d9(t1); t37 = h6_own6; h6_own6 = t2; h_0opt_f87774a_release(&t37); t38 = h0_s; h_0opt_f87774a_retain(&t2); h0_s = t2; h_0opt_f87774a_release(&t38);
+    t1 = HERO_STR_LIT(hero_str_fa5daa5); t2 = h_fixedbugsacontextboundstrisreleased_0wanted_1e58d9(t1); t37 = h6_own6; h6_own6 = t2; h_0opt_f87774a_release(&t37); t38 = h0_s; h_0opt_f87774a_retain(&t2); h0_s = t2; h_0opt_f87774a_release(&t38);
     t3 = h0_s; t39 = h1_f0; h_0opt_f87774a_retain(&t3); h1_f0 = t3; h_0opt_f87774a_release(&t39); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; hero_print_bool(t7); hero_print_end();
     t8 = HERO_STR_LIT(hero_str_724db1e1); hero_str_incref(t8); t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8}; t40 = h7_own7; h7_own7 = t9; h_0opt_f87774a_release(&t40); t41 = h2_cell; h_0opt_f87774a_retain(&t9); h2_cell = t9; h_0opt_f87774a_release(&t41);
     t10 = h2_cell; t42 = h3_f1; h_0opt_f87774a_retain(&t10); h3_f1 = t10; h_0opt_f87774a_release(&t42); t11 = h3_f1; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t17 = h3_f1; t18 = t17.as.ok; hero_print_str(t18); hero_print_end();
-    t19 = HERO_STR_LIT(hero_str_6e02d4d4); t20 = h_fixedbugsacontextboundstrisreleased_wanted_1e58d9(t19); t43 = h8_own8; h8_own8 = t20; h_0opt_f87774a_release(&t43); t44 = h2_cell; h_0opt_f87774a_retain(&t20); h2_cell = t20; h_0opt_f87774a_release(&t44);
+    t19 = HERO_STR_LIT(hero_str_6e02d4d4); t20 = h_fixedbugsacontextboundstrisreleased_0wanted_1e58d9(t19); t43 = h8_own8; h8_own8 = t20; h_0opt_f87774a_release(&t43); t44 = h2_cell; h_0opt_f87774a_retain(&t20); h2_cell = t20; h_0opt_f87774a_release(&t44);
     t21 = h2_cell; t45 = h4_f2; h_0opt_f87774a_retain(&t21); h4_f2 = t21; h_0opt_f87774a_release(&t45); t22 = h4_f2; t23 = t22.tag; t24 = INT64_C(1); t25 = t23 == t24; hero_print_bool(t25); hero_print_end();
     t26 = HERO_STR_LIT(hero_str_3498eaad); hero_str_incref(t26); t27 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t26}; t46 = h9_own9; h9_own9 = t27; h_0opt_f87774a_release(&t46); t47 = h2_cell; h_0opt_f87774a_retain(&t27); h2_cell = t27; h_0opt_f87774a_release(&t47);
     t28 = h2_cell; t48 = h5_f3; h_0opt_f87774a_retain(&t28); h5_f3 = t28; h_0opt_f87774a_release(&t48); t29 = h5_f3; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb3; else goto bb4; bb2:
 #line 16
     t15 = h3_f1; t16 = t15.as.err;
-#line 118 "fixedbugsacontextboundstrisreleased.c"
-    hero_panic_must(t16);
+#line 130 "fixedbugsacontextboundstrisreleased.c"
+    hero_panic_must_at(t16, "fixedbugs-a-context-bound-str-is-released.hero", "fixedbugs-a-context-bound-str-is-released.main", 16, 11);
     hero_unreachable();
 bb3:
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     t35 = h5_f3; t36 = t35.as.ok; hero_print_str(t36); hero_print_end();
-#line 124 "fixedbugsacontextboundstrisreleased.c"
+#line 136 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_s));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_cell));
@@ -135,15 +147,15 @@ bb3:
 bb4:
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     t33 = h5_f3; t34 = t33.as.err;
-#line 139 "fixedbugsacontextboundstrisreleased.c"
-    hero_panic_must(t34);
+#line 151 "fixedbugsacontextboundstrisreleased.c"
+    hero_panic_must_at(t34, "fixedbugs-a-context-bound-str-is-released.hero", "fixedbugs-a-context-bound-str-is-released.main", 20, 11);
     hero_unreachable();
 }
 
 #line 9 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
-/* wanted<str> */ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_wanted_1e58d9(HeroStr h0_what) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4, t6; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}, t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+/* wanted<str> */ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_0wanted_1e58d9(HeroStr h0_what) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4, t6; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}, t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332); t2 = HERO_STR_LIT(hero_str_73a616c5); t3 = h0_what; t4 = hero_str_concat(t2, t3); t6 = h1_own1; h1_own1 = t4; hero_str_decref(t6); hero_str_incref(t1); hero_str_incref(t4); t5 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t4}}; t7 = h2_own2; h2_own2 = t5; h_0opt_f87774a_release(&t7);
-#line 147 "fixedbugsacontextboundstrisreleased.c"
+#line 159 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_retain(&t5);
     hero_str_release_at(&h1_own1);
     h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
@@ -213,10 +225,43 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     return h;
 }
 
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7601c29322f65cb1", 16); }
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("23e8352a21f6400b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("fixedbugsacontextboundstrisreleased\tfixedbugs-a-context-bound-str-is-released\n");
     h_fixedbugsacontextboundstrisreleased_main();
     hero_runtime_check_leaks();
     return 0;

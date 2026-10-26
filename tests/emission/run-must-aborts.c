@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -112,9 +112,9 @@ void h_mustaborts_main(void);
 
 #line 18 "tests/golden/run/must-aborts.hero"
 h_0opt_e201354 h_mustaborts_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t8, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(1); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "must-aborts.hero", "must-aborts.half", 19, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "must-aborts.hero", "must-aborts.half", 19, 8); t3 = t1 % t2; t4 = INT64_C(1); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 21
-    t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow(); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
+    t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "must-aborts.hero", "must-aborts.half", 21, 15); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("must-aborts.hero", "must-aborts.half", 21, 15); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 20
     t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_7fc615fd); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
 #line 121 "mustaborts.c"
@@ -132,7 +132,7 @@ void h_mustaborts_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = 
 #line 24
     t7 = h0_f0; t8 = t7.as.err;
 #line 135 "mustaborts.c"
-    hero_panic_must(t8);
+    hero_panic_must_at(t8, "must-aborts.hero", "must-aborts.main", 24, 11);
     hero_unreachable();
 bb3:
 #line 25 "tests/golden/run/must-aborts.hero"
@@ -147,7 +147,7 @@ bb4:
 #line 25 "tests/golden/run/must-aborts.hero"
     t17 = h1_f1; t18 = t17.as.err;
 #line 150 "mustaborts.c"
-    hero_panic_must(t18);
+    hero_panic_must_at(t18, "must-aborts.hero", "must-aborts.main", 25, 11);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
@@ -247,9 +247,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12bb5802789c02d0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("51b9e11f10598af3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("mustaborts\tmust-aborts\n");
     h_mustaborts_main();
     hero_runtime_check_leaks();
     return 0;
