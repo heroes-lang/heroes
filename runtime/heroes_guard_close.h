@@ -379,6 +379,7 @@
 #pragma pop_macro("hero_runtime_check_leaks")
 #pragma pop_macro("hero_runtime_live")
 #pragma pop_macro("hero_slot_escape")
+#pragma pop_macro("hero_stack_spell")
 #pragma pop_macro("hero_str_byte")
 #pragma pop_macro("hero_str_chars")
 #pragma pop_macro("hero_str_cmp")

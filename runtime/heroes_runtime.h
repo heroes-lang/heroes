@@ -406,6 +406,10 @@ const char *hero_cstr_nonnull(const char *p);
  * line. */
 HeroStr hero_program_sources(void);
 
+/* The program's own spellings of the names a walk of its stack finds, handed by
+ * its `main` before any thread exists (panel 230's R1, kind 3; `parts/stack.c`). */
+void hero_stack_spell(const char *text);
+
 /* -- f64 (proposal point 4) ------------------------------------------------ */
 float hero_int_to_f32(int64_t v);
 float hero_f64_to_f32(double v);

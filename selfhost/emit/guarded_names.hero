@@ -98,7 +98,7 @@ constant NAMES: [str]
         "hero_run_arg hero_run_discard_path hero_run_exe_suffix hero_run_go"
         "hero_run_limit hero_run_limit_writes hero_run_reset hero_run_serial"
         "hero_run_signal hero_run_why hero_runtime_check_leaks hero_runtime_live"
-        "hero_slot_escape hero_str_byte hero_str_chars hero_str_cmp"
+        "hero_slot_escape hero_stack_spell hero_str_byte hero_str_chars hero_str_cmp"
         "hero_str_concat hero_str_cstr hero_str_decref hero_str_empty"
         "hero_str_eq hero_str_from_bytes hero_str_from_cstr hero_str_held hero_str_held_at"
         "hero_str_identity hero_str_incref hero_str_join hero_str_len"

@@ -298,21 +298,71 @@ static int hero_stack_is_heroes(const char *sym) {
     return sym[0] == 'h' && sym[1] == '_';
 }
 
+/* `n` bytes of `s`, by `write(2)` alone, as `hero_stack_say` writes. */
+static void hero_stack_say_n(const char *s, size_t n) {
+    while (n > 0) {
+        ssize_t put = write(2, s, n);
+        if (put <= 0) return;
+        s += (size_t)put;
+        n -= (size_t)put;
+    }
+}
+
+/* THE PROGRAM'S OWN SPELLINGS (panel 230's R1, kind 3; the critic's finding 12).
+ * The walk finds a C symbol, `h_<component>_<name>`, whose component is the
+ * module's name made a C identifier, so a stack exhausted in `thread_deep` read
+ * `threaddeep.down` beside an index abort that read `thread_deep.worker`. The
+ * program's `main` hands this runtime the spellings that differ, rows of
+ * `<key>\t<spelling>\n`, a symbol whole (a test's, `test "<title>"`) or a
+ * module's component, before any thread can exist and before any fault can be
+ * taken, and they are only read afterwards. Read in a handler, by bytes alone.
+ * NULL, a program a compiler before this one wrote, spells as before. */
+static const char *hero_stack_spellings = NULL;
+
+void hero_stack_spell(const char *text) { hero_stack_spellings = text; }
+
+/* The spelling of the `n` bytes at `key`, its length in `*len`, or NULL. */
+static const char *hero_stack_spelled(const char *key, size_t n, size_t *len) {
+    const char *row = hero_stack_spellings;
+    if (row == NULL) return NULL;
+    while (*row != '\0') {
+        const char *tab = row;
+        while (*tab != '\0' && *tab != '\t' && *tab != '\n') tab++;
+        const char *end = tab;
+        while (*end != '\0' && *end != '\n') end++;
+        if (*tab == '\t' && (size_t)(tab - row) == n && memcmp(row, key, n) == 0) {
+            *len = (size_t)(end - tab - 1);
+            return tab + 1;
+        }
+        row = *end == '\n' ? end + 1 : end;
+    }
+    return NULL;
+}
+
 /* `h_<module>_<name>[_<hash>]` → `<module>.<name>[_<hash>]`. The mangler
  * sanitises the module to [A-Za-z0-9], so the first `_` after `h_` ends it
- * (CLAUDE.md §7). A symbol that is not a Heroes function is written as it is. */
+ * (CLAUDE.md §7), and the program's spelling of either half is asked first. A
+ * symbol that is not a Heroes function is written as it is. */
 static void hero_stack_say_heroes_name(const char *sym) {
     if (sym[0] == '_') sym++;
+    size_t whole = 0;
+    const char *spelled = hero_stack_spelled(sym, strlen(sym), &whole);
+    if (spelled != NULL) {
+        hero_stack_say_n(spelled, whole);
+        return;
+    }
     if (sym[0] == 'h' && sym[1] == '_' && sym[2] != '\0') {
         const char *rest = sym + 2;
         const char *us = strchr(rest, '_');
         if (us != NULL && us[1] != '\0') {
-            char module[128];
             size_t n = (size_t)(us - rest);
-            if (n >= sizeof module) n = sizeof module - 1;
-            memcpy(module, rest, n);
-            module[n] = '\0';
-            hero_stack_say(module);
+            size_t len = 0;
+            const char *module = hero_stack_spelled(rest, n, &len);
+            if (module != NULL) {
+                hero_stack_say_n(module, len);
+            } else {
+                hero_stack_say_n(rest, n);
+            }
             hero_stack_say(".");
             hero_stack_say(us + 1);
             return;

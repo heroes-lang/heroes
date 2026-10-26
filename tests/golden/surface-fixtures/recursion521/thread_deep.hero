@@ -1,0 +1,12 @@
+# M-panic-location step 8 (panel 230's R1, kind 3; the critic's finding 12):
+# `direct`'s shape in a module whose C component is `threaddeep`, this file's
+# name made a C identifier. The guard said `threaddeep.down` where a place line
+# says `thread_deep`; the program's `main` now hands the runtime its own
+# spelling before anything runs, and the guard reads it.
+function down(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + down(n - 1)
+
+function main()
+    print(down(1000000000))

@@ -21,6 +21,10 @@ use ir/containers
 use emit/mangle
 use emit/writer
 use emit/provenance
+use emit/c_text
+use emit/stop_place
+use module/names as module_names
+use shown_char
 use parse
 use resolve
 use checker
@@ -45,6 +49,14 @@ function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source, s
     provenance.write(@w, sources: sources)
     writer.line(@w, text: opening("main"))
     writer.line(@w, text: "    hero_args_set(argc, argv);")
+    tests: [containers.Function] @= []
+
+    for f in p.functions
+        match f.kind
+            .test_kind                                     => tests @ tests.push(f)
+            .function_kind | .constant_kind | .extern_kind => continue
+
+    spell(@w, s, tests: tests)
     writer.line(@w, text: "    int64_t which = hero_test_index(argc, argv);")
     writer.line(@w, text: "    switch (which) {")
     position: i64 @= 0
@@ -81,6 +93,8 @@ function shim(@w: writer.Writer, f: containers.Function, s: source.Source, sourc
     provenance.write(@w, sources: sources)
     writer.line(@w, text: opening("main"))
     writer.line(@w, text: "    hero_args_set(argc, argv);")
+    none: [containers.Function] = []
+    spell(@w, s, tests: none)
     writer.line(
         @w,
         text: "    " + mangle.function_name(module: source.component_at(s, f.span.start), name: f.name) + "();"
@@ -88,6 +102,53 @@ function shim(@w: writer.Writer, f: containers.Function, s: source.Source, sourc
     writer.line(@w, text: "    hero_runtime_check_leaks();")
     writer.line(@w, text: "    return 0;")
     writer.line(@w, text: "}")
+
+# The spellings a walk of the program's stack is handed (panel 230's R1, kind
+# 3; the critic's finding 12; `runtime/parts/stack.c`'s `hero_stack_spell`),
+# before anything else of the program runs: a row per module whose C
+# component is not the name the program binds it by, `threaddeep` for
+# `thread_deep`, and a row per test of the program's, whose C name is its index
+# and whose name is its title. Nothing where every spelling is the C's.
+function spell(@w: writer.Writer, s: source.Source, tests: [containers.Function])
+    table = spellings(s, tests: tests)
+
+    if table != ""
+        writer.line(@w, text: "    hero_stack_spell(" + c_text.literal(table) + ");")
+
+function spellings(s: source.Source, tests: [containers.Function]) -> str
+    rows: [str] @= []
+    seen: {str: bool} @= {}
+
+    for entry in s.files
+        if !entry.is_library
+            binding = module_names.binding_of(entry.module)
+
+            if entry.component != binding && seen[entry.component].is_err()
+                seen[entry.component] @ true
+                rows @ rows.push(entry.component + "\t" + one_line(binding) + "\n")
+
+    for f in tests
+        if !source.is_library(s, f.span.start)
+            name = mangle.test_name(module: source.component_at(s, f.span.start), index: f.decl)
+            rows @ rows.push(name + "\t" + one_line(stop_place.function_of(s, f)) + "\n")
+
+    return rows.join("")
+
+# A spelling as the handler writes it, by bytes: every character a line cannot
+# show by its code, a line feed and a tab included, so a title holding one
+# cannot break the table's rows or reach the terminal raw.
+function one_line(text: str) -> str
+    parts: [str] @= []
+
+    for ch in shown_char.visible(text).chars()
+        if ch == "\n"
+            parts @ parts.push("<U+000A>")
+        else if ch == "\t"
+            parts @ parts.push("<U+0009>")
+        else
+            parts @ parts.push(ch)
+
+    return parts.join("")
 
 ## Tests
 
@@ -117,3 +178,37 @@ test "the shim calls the mangled main and gates leaks on the way out"
     assert has(text: runner, needle: "    case 0:")
     assert has(text: runner, needle: "        h_t_test1();")
     assert has(text: runner, needle: "        hero_panic(\"no test with that index — this is a compiler bug\");")
+
+    # A module named as its C component hands the walk nothing, and a test,
+    # whose C name is its index, always hands its title.
+    assert !has(text: got, needle: "hero_stack_spell")
+    assert has(text: runner, needle: "    hero_stack_spell(\"h_t_test1\\ttest \\\"one\\\"\\n\");")
+
+test "the walk is handed the spellings that differ from the C, and no other"
+    text = "function main()\n    print(1)\n\ntest \"one\"\n    assert 1 == 1\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "thread_deep.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    tests: [containers.Function] @= []
+
+    for f in low.program.functions
+        match f.kind
+            .test_kind                                     => tests @ tests.push(f)
+            .function_kind | .constant_kind | .extern_kind => continue
+
+    assert spellings(s, tests: tests) == "threaddeep\tthread_deep\nh_threaddeep_test1\ttest \"one\"\n"
+    tw: writer.Writer @= writer.new_writer("t")
+    test_shim(@tw, low.program, s, sources: "0123456789abcdef")
+    assert has(
+        text: writer.finish(tw),
+        needle: "    hero_stack_spell(\"threaddeep\\tthread_deep\\nh_threaddeep_test1\\ttest \\\"one\\\"\\n\");"
+    )
+    w: writer.Writer @= writer.new_writer("t")
+    shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")
+    assert has(text: writer.finish(w), needle: "    hero_stack_spell(\"threaddeep\\tthread_deep\\n\");")
+
+test "a spelling's line feed and tab are written by their codes"
+    assert one_line("a\tb\nc") == "a<U+0009>b<U+000A>c"
+    assert one_line("thread_deep.down") == "thread_deep.down"

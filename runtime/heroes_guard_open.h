@@ -379,6 +379,7 @@
 #pragma push_macro("hero_runtime_check_leaks")
 #pragma push_macro("hero_runtime_live")
 #pragma push_macro("hero_slot_escape")
+#pragma push_macro("hero_stack_spell")
 #pragma push_macro("hero_str_byte")
 #pragma push_macro("hero_str_chars")
 #pragma push_macro("hero_str_cmp")
