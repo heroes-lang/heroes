@@ -325,7 +325,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bf4bf6e4cf04122", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("17d9401906983620", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs491nestedplacesandstringbytesarereadinplace\tfixedbugs-491-nested-places-and-string-bytes-are-read-in-place\n");

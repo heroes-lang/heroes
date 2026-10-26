@@ -321,7 +321,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b0b32601e095f93", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("56efb30a57b15490", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151onearmofananonymousunionbuiltandread\tfixedbugs-151-one-arm-of-an-anonymous-union-built-and-read\n");

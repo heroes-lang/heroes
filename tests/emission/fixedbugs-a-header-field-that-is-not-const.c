@@ -312,7 +312,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6037a91d056c2539", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c1c29c83f141a36", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("aheaderfieldthatisnotconst\ta-header-field-that-is-not-const\n");

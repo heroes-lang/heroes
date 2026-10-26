@@ -28282,7 +28282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0869a607591642c8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("344e26b112be37c6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs539records875deepholdingastrbuild\tfixedbugs-539-records-875-deep-holding-a-str-build\n");

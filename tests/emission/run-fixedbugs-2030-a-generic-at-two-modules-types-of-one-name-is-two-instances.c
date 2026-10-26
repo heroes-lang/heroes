@@ -668,7 +668,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("00439e211da5ad2e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c281ecb574da22b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2030agenericattwomodulestypesofonenameistwoinstances\tfixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances\nfixedbugs2030one\tone\nfixedbugs2030aheld\theld\nfixedbugs2030bheld\theld\n");

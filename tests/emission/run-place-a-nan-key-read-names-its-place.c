@@ -223,7 +223,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3370847b0e8ecd5a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f5505254836c257", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanankeyreadnamesitsplace\tplace-a-nan-key-read-names-its-place\n");

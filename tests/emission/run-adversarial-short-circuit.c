@@ -222,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6178edfa1860e1e8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d5d6ea55208d6e5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialshortcircuit\tadversarial-short-circuit\n");

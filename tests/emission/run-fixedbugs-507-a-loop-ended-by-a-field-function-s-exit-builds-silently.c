@@ -261,7 +261,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3632859e30b0f38d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("621706486a58e88a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently\tfixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently\n");

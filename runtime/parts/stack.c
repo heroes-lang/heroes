@@ -455,6 +455,16 @@ static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
     return first;
 }
 
+#else
+
+/* WINDOWS WALKS NO FRAMES and names no function (panel 230's R1), so nothing
+ * here reads the spellings a program's `main` hands the walk. The entry point
+ * stands all the same, since every `main` whose spellings differ calls it, the
+ * seed's and every test runner's among them: defined on POSIX alone, it left
+ * the compiler unlinkable from its seed on the CI's Windows leg, `LNK2019:
+ * unresolved external symbol hero_stack_spell` (defect 2239). */
+void hero_stack_spell(const char *text) { (void)text; }
+
 #endif
 
 #if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)

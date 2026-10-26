@@ -235,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5708f27f6b155418", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("02ed732a24bd4916", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs547aselfcallthrougharecordfieldaborts\tfixedbugs-547-a-self-call-through-a-record-field-aborts\n");

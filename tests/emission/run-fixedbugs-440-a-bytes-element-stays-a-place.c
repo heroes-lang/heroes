@@ -342,7 +342,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("22d947c4542746d1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ebdc86e0dcf3bcf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs440abyteselementstaysaplace\tfixedbugs-440-a-bytes-element-stays-a-place\n");

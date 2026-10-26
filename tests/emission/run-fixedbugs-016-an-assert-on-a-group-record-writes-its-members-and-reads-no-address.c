@@ -335,7 +335,7 @@ HERO_TU_LOCAL void h_0show_35500b11(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("510deaf2070dbc8f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7cf26b9c40b5b18c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress\tfixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address\n");

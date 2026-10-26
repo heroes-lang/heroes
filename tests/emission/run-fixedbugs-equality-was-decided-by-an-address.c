@@ -257,7 +257,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("294cb6456b045c14", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("553136ef24ac5112", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsequalitywasdecidedbyanaddress\tfixedbugs-equality-was-decided-by-an-address\n");

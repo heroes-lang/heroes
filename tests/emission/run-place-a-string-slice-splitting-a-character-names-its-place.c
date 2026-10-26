@@ -216,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("10080efb3a65708d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3bec8fa5740d658a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeastringslicesplittingacharacternamesitsplace\tplace-a-string-slice-splitting-a-character-names-its-place\n");

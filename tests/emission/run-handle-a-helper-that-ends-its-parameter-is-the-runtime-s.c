@@ -299,7 +299,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("07f069c810f046fe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("33d4ea724a983bfb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handleahelperthatendsitsparameteristheruntimes\thandle-a-helper-that-ends-its-parameter-is-the-runtime-s\n");

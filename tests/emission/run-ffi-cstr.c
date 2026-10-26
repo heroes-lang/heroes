@@ -285,7 +285,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("60d4cfe7030d97ba", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cb950923cb58cb7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficstr\tffi-cstr\n");

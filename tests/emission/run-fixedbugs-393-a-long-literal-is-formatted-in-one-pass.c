@@ -912,7 +912,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("77a8f046653e710e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("238d70f11ee6660c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs393alongliteralisformattedinonepass\tfixedbugs-393-a-long-literal-is-formatted-in-one-pass\n");

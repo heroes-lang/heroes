@@ -832,7 +832,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6caf7dc16351e7b3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1893fe6c1cf9dcb1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs175avalueblockwhoselastiformatchleaves\tfixedbugs-175-a-value-block-whose-last-if-or-match-leaves\n");

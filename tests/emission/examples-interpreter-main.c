@@ -6855,7 +6855,7 @@ HERO_TU_LOCAL uint64_t h_0opt_5a58f2ca_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f02afd6304cfdd6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ae7308069f4f2d3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lexscan\tscan\nlextoken\ttoken\nsyncursor\tcursor\nsynexpr\texpr\nruneval\teval\nrunexpr\texpr\nrunvalue\tvalue\nsynparse\tparse\nsyntree\ttree\nutileach\teach\n");

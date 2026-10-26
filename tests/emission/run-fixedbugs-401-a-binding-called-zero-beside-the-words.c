@@ -338,7 +338,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("36c0c43f78359530", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("62a544e931dd8a2e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs401abindingcalledzerobesidethewords\tfixedbugs-401-a-binding-called-zero-beside-the-words\n");

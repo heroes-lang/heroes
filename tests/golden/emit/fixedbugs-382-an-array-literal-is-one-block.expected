@@ -253,7 +253,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ab44df17cb0d1d1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6698ce9b3658c6cf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382anarrayliteralisoneblock\tfixedbugs-382-an-array-literal-is-one-block\n");

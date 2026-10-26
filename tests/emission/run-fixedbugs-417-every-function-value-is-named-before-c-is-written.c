@@ -496,7 +496,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("581715f670d3de63", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("03fb96a12a7bd361", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs417everyfunctionvalueisnamedbeforeciswritten\tfixedbugs-417-every-function-value-is-named-before-c-is-written\n");

@@ -252,7 +252,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("024e022e4fc84ba1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e3282d80970409f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsunaryminusisnotaliteral\tfixedbugs-unary-minus-is-not-a-literal\n");

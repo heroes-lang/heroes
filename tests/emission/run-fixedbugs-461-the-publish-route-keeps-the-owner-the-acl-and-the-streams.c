@@ -510,7 +510,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("705d7610403d1ff4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c41f6bb79e514f1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs461thepublishroutekeepstheownertheaclandthestreams\tfixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams\n");

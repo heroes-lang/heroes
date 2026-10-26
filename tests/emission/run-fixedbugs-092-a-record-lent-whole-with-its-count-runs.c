@@ -430,7 +430,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e8ba94d3299e2ef", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a7029f76c41d7ec", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs092arecordlentwholewithitscountruns\tfixedbugs-092-a-record-lent-whole-with-its-count-runs\n");

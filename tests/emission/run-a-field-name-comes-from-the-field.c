@@ -372,7 +372,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a7ebcfd53e85ab2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("56633da70d904fb0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("afieldnamecomesfromthefield\ta-field-name-comes-from-the-field\n");

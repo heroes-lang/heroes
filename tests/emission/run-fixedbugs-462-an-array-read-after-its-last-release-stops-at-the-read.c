@@ -268,7 +268,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("14887f2f25c4c491", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("406cffd95f6cb98e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs462anarrayreadafteritslastreleasestopsattheread\tfixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read\n");

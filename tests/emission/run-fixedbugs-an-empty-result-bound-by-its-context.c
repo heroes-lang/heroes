@@ -263,7 +263,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("56f3d13a1e68e44b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("02d851e55810d948", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsanemptyresultboundbyitscontext\tfixedbugs-an-empty-result-bound-by-its-context\n");

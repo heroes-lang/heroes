@@ -211,7 +211,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66eb777e3ad40cdf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("12cff829747c01dc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs567ani16divisionatitssmallestbyminusoneaborts\tfixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts\n");

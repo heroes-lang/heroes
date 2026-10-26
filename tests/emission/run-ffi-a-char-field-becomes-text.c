@@ -400,7 +400,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("20af422a38260ed0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c93c2d471ce03cd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiacharfieldbecomestext\tffi-a-char-field-becomes-text\n");

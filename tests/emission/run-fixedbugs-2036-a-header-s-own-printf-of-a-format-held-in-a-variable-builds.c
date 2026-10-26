@@ -263,7 +263,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d479e5b00c92b5b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("092c1f063a712058", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2036aheadersownprintfofaformatheldinavariablebuilds\tfixedbugs-2036-a-header-s-own-printf-of-a-format-held-in-a-variable-builds\n");

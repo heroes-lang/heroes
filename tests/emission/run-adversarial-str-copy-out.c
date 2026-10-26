@@ -237,7 +237,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("691fb7562d2f6945", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1504380166d75e42", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialstrcopyout\tadversarial-str-copy-out\n");

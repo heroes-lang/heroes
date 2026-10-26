@@ -1607,7 +1607,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("39a0a9aa5cae8229", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("65852a5416567727", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs622achainpast32copiedcomparedhashedanddropped\tfixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped\n");

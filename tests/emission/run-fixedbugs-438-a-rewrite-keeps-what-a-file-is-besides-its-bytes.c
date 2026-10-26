@@ -621,7 +621,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("68b5fcef59a39619", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("149a7d9a134b8b17", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs438arewritekeepswhatafileisbesidesitsbytes\tfixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes\n");
