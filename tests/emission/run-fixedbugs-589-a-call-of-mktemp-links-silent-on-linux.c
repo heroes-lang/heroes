@@ -366,7 +366,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d0e05585c2a826c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28f2860315d2776a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs589acallofmktemplinkssilentonlinux\tfixedbugs-589-a-call-of-mktemp-links-silent-on-linux\n");
