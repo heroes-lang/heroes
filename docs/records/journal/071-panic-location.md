@@ -135,3 +135,11 @@ by `records/tagged` over decision 2228, R6's door, the one open decision that
 is not a sitting's ratification, and taken down. It goes on the commit that
 applies the author's answer, put to them with its recommendation, the
 language's door.
+
+**And the tag placed, 2026-10-27.** The author answered decision 2228 *a*,
+`hero_os.h` the language's door, applied at `2f012152a`: § 13 names it for
+threads, processes and files, +20 real paid by § 12's removal. The push of
+`e9857f5ea` read both Linux legs red on the two emissions this Mac skips,
+whose key the runtime's repair had moved and nothing had blessed on Linux;
+defect 2240, blessed in the Linux arm64 container at `24f33f34a`. Both
+closed, the tag went on the commit after them.
