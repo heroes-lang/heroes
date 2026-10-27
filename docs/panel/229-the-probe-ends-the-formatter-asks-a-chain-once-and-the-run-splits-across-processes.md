@@ -240,3 +240,13 @@ the load beside it being other work's. Its 6 **held** at the tag: (B)'s rule kee
 909,867 places over the 2,633 seeds the run accepted, 99.21% (the route of that seat's
 `tools/lexone.sh` with the run's compiler, `p6/` in the archive), and 909,867 is the run's
 2,729,601 `bracket` variants over 3, two instruments agreeing.
+
+**RATIFIED, 2026-10-27**, R1 to R6 as written above, the landing on them and the rule's amendment,
+which https://github.com/heroes-lang/heroes/issues/2210 records: the author answering *a* in
+conversation that morning, put the decision with its recommendation, after reading R1 to R5 in plain
+words and the two routes, ratify or the conservative (E) alone. Read the same morning in the tree
+before it was put: `needs_group` asked once in `selfhost/print/`, `--offset` beside `--stride` and a
+stride that is a multiple of 3 refused in `selfhost/probe/judge.hero`, the rule amended in
+`.claude/rules/verification.md`, defect 2139 closed on 2026-10-25. It does not settle (D), (H), (L)
+or (G), recorded for a later sitting. Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it.
