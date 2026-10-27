@@ -350,7 +350,7 @@ with holes type-checks everything else but produces no binary.
 
 ## 13. FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
-libraries. A group names its header, and `link` a library when the symbols need one; C
+libraries; threads, processes and files from the language's `hero_os.h`. A group names its header, and `link` a library when the symbols need one; C
 reads a module's headers in the order its groups are written: one that needs
 another's names comes after it, and one defining `_GNU_SOURCE` first. clang
 checks every result type, constant and record field against that header, and a result may be

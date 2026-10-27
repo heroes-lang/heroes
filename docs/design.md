@@ -3399,7 +3399,13 @@ are *on* the closure list.
    runtime cannot name. They are Tier 2 over `hero_os.h`: the spec carries the four names and
    signatures, and where the code lives is not something a reader can observe. **Noted 2026-09-17**,
    at the site refresh that put the deferral list in front of a reader and found this item and the
-   next reading as deferred for thirteen months of work that had shipped.
+   next reading as deferred for thirteen months of work that had shipped. **Amended 2026-10-27 by
+   the author's decision 2228** (panel 230's R6, https://github.com/heroes-lang/heroes/issues/2228):
+   a program may bind `hero_os.h` itself, as 10 programs of `examples/`, 31 of `tests/` outside the
+   recovery corpus and 12 files of `selfhost/` do, and that is the language's door, not an
+   accident: spec § 13 names it for threads, processes and files, and its functions' stability is
+   promised with the rest at M-compatibility-promise. A built-in writing a line on stderr, which
+   the sitting made wait on this answer, therefore stays waiting on Principle 0.
 3. **Command-line arguments** — `args() -> [str]`. One function. **Required for self-hosting.**
    **ENTERED 2026-08-12, same decision, same route** (panel 036). `args() -> [str]` and
    `args_checked() -> [str?]` are both in spec § 11, the second added 2026-08-24 (`1998b6f5`) when an
