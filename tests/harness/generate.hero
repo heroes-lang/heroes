@@ -22,7 +22,7 @@
 use gen_eval
 use gen_hunt
 use gen_judge
-use gen_make
+use gen_program
 use gen_reduce
 use gen_symptom
 use gen_text
@@ -66,11 +66,11 @@ function main()
 
     while k < count
         n = seed + k
-        g = gen_make.from_seed(seed: n, percent: declared)
-        base = dir + "/g" + n.to_str()
-        text = gen_text.program_text(g.p, seed: n, has_record: g.has_record, has_variant: g.has_variant)
-        written(path: base + ".hero", text: text)
-        written(path: base + ".expected", text: gen_make.expected_of(g, text: text, stem: "g" + n.to_str()))
+        g = gen_program.from_seed(seed: n, percent: declared)
+
+        if gen_program.written(gen_program.files_of(g, seed: n), dir: dir).is_err()
+            print("cannot write seed ", n, "'s files into ", dir)
+            exit(2)
         k @ k + 1
 
 # `reduce --seed N --declared PERCENT --compiler PATH -o DIR`: the program
@@ -81,7 +81,7 @@ function reduce(words: [str])
     compiler = text_after(words, flag: "--compiler", fallback: "heroes")
     dir = text_after(words, flag: "-o", fallback: "build/reduced")
     shell.mkdir_all(dir).must()
-    g = gen_make.from_seed(seed: n, percent: declared)
+    g = gen_program.from_seed(seed: n, percent: declared)
     t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
     level = levels(text_after(words, flag: "--level", fallback: "-O0"))
     seen = gen_symptom.symptom(g.p, compiler: compiler, dir: dir, level: level, @t)
@@ -160,11 +160,11 @@ function answers(count: i64, declared: i64)
 
     while seed <= count
         name = "g" + seed.to_str()
-        g = gen_make.from_seed(seed: seed, percent: declared)
+        g = gen_program.from_seed(seed: seed, percent: declared)
         text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
         print("== ", name)
 
-        for row in gen_text.lines_of(gen_make.expected_of(g, text: text, stem: name))
+        for row in gen_text.lines_of(gen_program.expected_of(g, text: text, stem: name))
             print(row)
 
         seed @ seed + 1
@@ -177,7 +177,7 @@ function symptom_word(words: [str]) -> u8
     n = number_after(words, flag: "--seed", fallback: 1)
     dir = text_after(words, flag: "-o", fallback: "build/symptom")
     shell.mkdir_all(dir).must()
-    g = gen_make.from_seed(seed: n, percent: number_after(words, flag: "--declared", fallback: 0))
+    g = gen_program.from_seed(seed: n, percent: number_after(words, flag: "--declared", fallback: 0))
     t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
     seen = gen_symptom.symptom(
         g.p,

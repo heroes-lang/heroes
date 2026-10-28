@@ -1,0 +1,209 @@
+# The C boundary arm of the generator (panel 231's R4; M-generated-programs,
+# tasks 972 and 1234): an `extern` group written with the header it binds,
+# the header's functions `static inline`, their answers known.
+#
+# **A C body is defined for every pair of `int64_t`**, so no value a program
+# passes can reach C's undefined behaviour and the generator's model of it
+# never aborts (the ffi-pragmatist's Q2, where a header's UB put
+# `6157951600` into an `i32` and voided the oracle): `^`, `&` and `|` on
+# any operands; `+` and `-` only on operands masked to 32 bits, so a sum is
+# under 2^33; `*` only on operands masked to 16 bits, so a product is under
+# 2^32; `>>` only by a count masked to 63, on a negative operand
+# implementation-defined in C11 (6.5.7p5) and modelled as clang defines it,
+# arithmetic, which is also Heroes' `>>` (design.md § 4.14). A C function is
+# an ordinary `gen_tree.Fn` to the rest of the generator, its name opening
+# `cf`, so the program calls it where it calls any function and the
+# evaluator computes its answer.
+#
+# **The header is proved before the compiler sees it** (panel 231's R4): a C
+# driver calls every function of the group at fixed operands, the edges of
+# `int64_t` among them, and the judge builds it with clang's
+# `-fsanitize=undefined -fno-sanitize-recover=all` and holds its output to
+# the model's, so a header the model gets wrong is the generator's fault and
+# never charged to the compiler.
+
+use gen_eval
+use gen_rng
+use gen_tree
+
+# The masks a C body narrows an operand with before an operation that could
+# overflow: 32 bits for `+` and `-`, 16 for `*`, and a shift's count.
+constant WORD: i64
+    4294967295
+
+constant HALF: i64
+    65535
+
+constant COUNT: i64
+    63
+
+# The operands every function of the group is proved at by the driver.
+constant SAMPLES: [i64]
+    [0, 1, -1, 9223372036854775807, -9223372036854775807 - 1, 123456789, -987654321]
+
+function is_c(f: gen_tree.Fn) -> bool
+    return f.name.len() > 2 && f.name.slice(from: 0, to: 2) == "cf"
+
+function has_c(p: gen_tree.Program lent) -> bool
+    for f in p.fns
+        if is_c(f)
+            return true
+
+    return false
+
+# The C group's functions, `count` of them, appended to the program's.
+function c_functions(@p: gen_tree.Program, @r: gen_rng.Rng, mix: gen_rng.Mix, count: i64, depth: i64)
+    k: i64 @= 0
+
+    while k < count
+        params: [str] @= ["p0"]
+
+        if gen_rng.chance(@r, percent: 70)
+            params @ params.push("p1")
+        body = c_expr(@p, @r, mix: mix, params: params, depth: depth)
+        p.fns @ p.fns.push(gen_tree.Fn(name: "cf" + k.to_str(), params: params, body: body))
+        k @ k + 1
+
+# A C body over `params`, defined for every value of them.
+function c_expr(@p: gen_tree.Program, @r: gen_rng.Rng, mix: gen_rng.Mix, params: [str], depth: i64) -> i64
+    if depth <= 0 || gen_rng.chance(@r, percent: 25)
+        if gen_rng.chance(@r, percent: 70)
+            return gen_tree.added(
+                @p,
+                gen_tree.leaf(op: "name", value: 0, name: params[gen_rng.below(@r, n: params.len())])
+            )
+        return gen_tree.added(@p, gen_tree.leaf(op: "lit", value: gen_rng.constant_of(@r, m: mix), name: ""))
+    left = c_expr(@p, @r, mix: mix, params: params, depth: depth - 1)
+    right = c_expr(@p, @r, mix: mix, params: params, depth: depth - 1)
+    k = gen_rng.below(@r, n: 7)
+
+    if k < 3
+        return gen_tree.binary(@p, op: ["^", "&", "|"][k], left: left, right: right)
+
+    if k < 5
+        return gen_tree.binary(
+            @p,
+            op: ["+", "-"][k - 3],
+            left: masked(@p, at: left, mask: WORD),
+            right: masked(@p, at: right, mask: WORD)
+        )
+
+    if k == 5
+        return gen_tree.binary(
+            @p,
+            op: "*",
+            left: masked(@p, at: left, mask: HALF),
+            right: masked(@p, at: right, mask: HALF)
+        )
+    return gen_tree.binary(@p, op: ">>", left: left, right: masked(@p, at: right, mask: COUNT))
+
+function masked(@p: gen_tree.Program, at: i64, mask: i64) -> i64
+    return gen_tree.binary(
+        @p,
+        op: "&",
+        left: at,
+        right: gen_tree.added(@p, gen_tree.leaf(op: "lit", value: mask, name: ""))
+    )
+
+# A C body as C writes it, every operation in parentheses: C's precedence of
+# `&` against `+` is not this language's to rely on.
+function c_text(p: gen_tree.Program lent, at: i64) -> str
+    n = p.nodes[at]
+
+    if n.op == "lit"
+        if n.value == gen_eval.MIN
+            return "INT64_MIN"
+        return "INT64_C(" + n.value.to_str() + ")"
+
+    if n.op == "name"
+        return n.name
+    return "(" + c_text(p, at: n.kids[0]) + " " + n.op + " " + c_text(p, at: n.kids[1]) + ")"
+
+function c_parameters(f: gen_tree.Fn) -> str
+    shown: [str] @= []
+
+    for name in f.params
+        shown @ shown.push("int64_t " + name)
+
+    return shown.join(", ")
+
+# The header the group binds, its guard named after it.
+function header_text(p: gen_tree.Program lent, guard: str) -> str
+    text: str @= "#ifndef " + guard + "\n#define " + guard + "\n/* Generated by tests/harness/generate.hero: every body is defined for every pair of int64_t (gen_cboundary.hero). */\n#include <stdint.h>\n"
+
+    for f in p.fns
+        if is_c(f)
+            text @ text + "\nstatic inline int64_t " + f.name + "(" + c_parameters(f) + ") {\n    return " + c_text(p, at: f.body) + ";\n}\n"
+
+    return text + "\n#endif\n"
+
+# The `extern` group, as the program declares it.
+function extern_text(p: gen_tree.Program lent, header: str) -> str
+    text: str @= "extern \"" + header + "\"\n"
+
+    for f in p.fns
+        if is_c(f)
+            shown: [str] @= []
+
+            for name in f.params
+                shown @ shown.push(name + ": i64")
+
+            text @ text + "    function " + f.name + "(" + shown.join(", ") + ") -> i64\n"
+
+    return text
+
+# The driver that proves the header: every function at every pair of
+# `SAMPLES` it takes, one line each.
+function driver_text(p: gen_tree.Program lent, header: str) -> str
+    text: str @= "#include <stdio.h>\n#include \"" + header + "\"\n\nint main(void) {\n"
+
+    for f in p.fns
+        if is_c(f)
+            for a in SAMPLES
+                if f.params.len() == 1
+                    text @ text + "    printf(\"%lld\\n\", (long long)" + f.name + "(" + sample_text(a) + "));\n"
+                else
+                    for b in SAMPLES
+                        text @ text + "    printf(\"%lld\\n\", (long long)" + f.name + "(" + sample_text(a) + ", " + sample_text(b) + "));\n"
+
+    return text + "    return 0;\n}\n"
+
+function sample_text(v: i64) -> str
+    if v == gen_eval.MIN
+        return "INT64_MIN"
+    return "INT64_C(" + v.to_str() + ")"
+
+# What the driver must print, by the model.
+function driver_expected(p: gen_tree.Program lent) -> str
+    text: str @= ""
+
+    for f in p.fns
+        if is_c(f)
+            for a in SAMPLES
+                if f.params.len() == 1
+                    text @ text + answer(p, f: f, a: a, b: 0) + "\n"
+                else
+                    for b in SAMPLES
+                        text @ text + answer(p, f: f, a: a, b: b) + "\n"
+
+    return text
+
+function answer(p: gen_tree.Program lent, f: gen_tree.Fn, a: i64, b: i64) -> str
+    env: gen_eval.Env @= gen_eval.empty()
+    env.ints["p0"] @ a
+    env.ints["p1"] @ b
+    return gen_eval.int_of(p, at: f.body, env: env).must().to_str()
+
+test "a C body is defined at every sample, and C writes it in parentheses"
+    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [])
+    r: gen_rng.Rng @= gen_rng.seeded(5)
+    mix = gen_rng.mix_for(@r)
+    c_functions(@p, @r, mix: mix, count: 3, depth: 4)
+    assert p.fns.len() == 3
+    expected = driver_expected(p)
+    assert expected.len() > 0
+    x = gen_tree.added(@p, gen_tree.leaf(op: "name", value: 0, name: "p0"))
+    y = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: -5, name: ""))
+    joined = gen_tree.binary(@p, op: "^", left: x, right: y)
+    assert c_text(p, at: joined) == "(p0 ^ INT64_C(-5))"
+    assert sample_text(gen_eval.MIN) == "INT64_MIN"

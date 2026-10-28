@@ -8,7 +8,7 @@
 # miscompiling an operator or the model wrong, and either way the sample
 # below would be judged against wrong answers, so it is told first. **Then
 # the sample**: the programs of seeds 1 to `SAMPLE`, regenerated into this
-# suite's scratch by `gen_make.from_seed`, the map `generate.hero make`
+# suite's scratch by `gen_program.from_seed`, the map `generate.hero make`
 # reads, each judged by the compiler under test through every oracle of
 # `gen_judge.hero`. **Its answers are committed and its programs are not**
 # (panel 231's R7, the critic's finding 18): `ANSWERS` holds every seed's
@@ -38,9 +38,8 @@
 # compiler on both sides, the grid above is the guard.
 
 use gen_contract
-use gen_eval
 use gen_judge
-use gen_make
+use gen_program
 use gen_text
 use report
 use shell
@@ -90,11 +89,11 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         name = "g" + seed.to_str()
 
         if only == "" || strings.contains(text: name, needle: only)
-            g = gen_make.from_seed(seed: seed, percent: DECLARED)
+            g = gen_program.from_seed(seed: seed, percent: DECLARED)
             source = dir + "/" + name + ".hero"
-            text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
-            write_file(path: source, text: text)?
-            computed = gen_make.expected_of(g, text: text, stem: name)
+            files = gen_program.files_of(g, seed: seed)
+            gen_program.written(files, dir: dir)?
+            computed = files[1].text
             owed = committed[name].default("")
 
             if computed != owed
@@ -109,7 +108,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
 
             match v
                 .passed _ => report.keep_pass(@r)
-                .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ =>
+                .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ =>
                     report.keep_failure(
                         @r,
                         label: "generated/" + name,
@@ -151,8 +150,6 @@ test "the committed answers are read back by name, each block its lines"
     assert got["g3"].is_err()
 
 test "the sample is the map `make` reads, so a seed reproduces"
-    a = gen_make.from_seed(seed: 7, percent: DECLARED)
-    b = gen_make.from_seed(seed: 7, percent: DECLARED)
-    first = gen_text.program_text(a.p, seed: 7, has_record: a.has_record, has_variant: a.has_variant)
-    assert first == gen_text.program_text(b.p, seed: 7, has_record: b.has_record, has_variant: b.has_variant)
-    assert gen_eval.expected(a.p) == gen_eval.expected(b.p)
+    a = gen_program.files_of(gen_program.from_seed(seed: 7, percent: DECLARED), seed: 7)
+    b = gen_program.files_of(gen_program.from_seed(seed: 7, percent: DECLARED), seed: 7)
+    assert a == b

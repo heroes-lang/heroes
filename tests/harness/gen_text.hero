@@ -9,6 +9,7 @@
 # block has a blank line before it, unless it opens its own block, and a
 # `for` and a `match` binding have one after them, where an `if` has none.
 
+use gen_cboundary
 use gen_tree
 
 # spec § 7's precedence, weakest first; a negative literal is a unary minus.
@@ -234,11 +235,15 @@ function program_text(p: gen_tree.Program lent, seed: i64, has_record: bool, has
     if has_record
         parts @ parts.push(RECORD)
 
+    if gen_cboundary.has_c(p)
+        parts @ parts.push(gen_cboundary.extern_text(p, header: "g" + seed.to_str() + ".h"))
+
     if has_variant
         parts @ parts.push(VARIANT)
 
     for f in p.fns
-        parts @ parts.push(function_text(p, f: f))
+        if !gen_cboundary.is_c(f)
+            parts @ parts.push(function_text(p, f: f))
 
     parts @ parts.push(main_text(p))
     return parts.join("\n")

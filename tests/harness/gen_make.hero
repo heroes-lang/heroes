@@ -3,14 +3,13 @@
 # appended so the next one is built against what the program holds, and the
 # declared arm, which plants one abort on purpose, a `print` of it, so the
 # evaluator's run of `main` writes the `!panic:` it owes. Expressions are
-# `gen_expr`'s; `from_seed` is the one map from a seed to a program, which
-# `generate.hero`'s words and the `generated` suite share, so a failure is
-# reproduced by its number.
+# `gen_expr`'s, the C group `gen_cboundary`'s; a seed's program and its files
+# are `gen_program`'s.
 
+use gen_cboundary
 use gen_eval
 use gen_expr
 use gen_rng
-use gen_text
 use gen_tree
 
 function functions(@g: gen_expr.Gen, count: i64)
@@ -269,7 +268,7 @@ function abort_site(@g: gen_expr.Gen, s: gen_expr.Scope lent, env: gen_eval.Env 
     g.site @ site
 
 # One program from one seed; `declared` plants one abort in it.
-function made(seed: i64, declared: bool) -> gen_expr.Gen
+function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
     r: gen_rng.Rng @= gen_rng.seeded(seed)
     mix = gen_rng.mix_for(@r)
     depth = 1 + gen_rng.below(@r, n: 4)
@@ -285,7 +284,10 @@ function made(seed: i64, declared: bool) -> gen_expr.Gen
         has_variant: false,
         site: -1
     )
-    functions(@g, count: gen_rng.below(@g.r, n: 4))
+
+    if with_c
+        gen_cboundary.c_functions(@g.p, @g.r, mix: g.mix, count: 1 + gen_rng.below(@g.r, n: 3), depth: g.depth + 1)
+    functions(@g, count: g.p.fns.len() + gen_rng.below(@g.r, n: 4))
     s: gen_expr.Scope @= gen_expr.Scope(
         ints: [],
         fields: [],
@@ -311,33 +313,3 @@ function made(seed: i64, declared: bool) -> gen_expr.Gen
         id @ id + 1
 
     return g
-
-# The program a seed names, the declared arm planted in `percent` of seeds:
-# the one map `make`, `reduce` and the `generated` suite all read.
-function from_seed(seed: i64, percent: i64) -> gen_expr.Gen
-    r: gen_rng.Rng @= gen_rng.seeded(seed * 31 + 7)
-    return made(seed, declared: gen_rng.chance(@r, percent: percent))
-
-# The `.expected` a program owes, its declared abort held to its place: the
-# evaluator's answer, and before its `!panic:` the line `!at:` naming the
-# file, the line of the planted `print` and column 11, where its argument
-# begins, which is where every abort report of a generated program points
-# (measured on 40 declared programs, 2026-10-28: 40 of 40 at the argument's
-# start). The planted statement is one line of `text`, `    print(` and the
-# site's expression, which the printer writes whole and never breaks, so a
-# program the line is not found in is the printer's defect, and loud.
-function expected_of(g: gen_expr.Gen, text: str, stem: str) -> str
-    answer = gen_eval.expected(g.p)
-
-    if g.site < 0 || !gen_text.has_panic(answer)
-        return answer
-    wanted = "    print(" + gen_text.expr(g.p, at: g.site) + ")"
-    rows = gen_text.lines_of(text)
-    i: i64 @= 0
-
-    while i < rows.len()
-        if rows[i] == wanted
-            return gen_text.placed(answer: answer, place: stem + ".hero:" + (i + 1).to_str() + ":11")
-        i @ i + 1
-
-    assert false

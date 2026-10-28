@@ -8,6 +8,7 @@
 # bytes (`.claude/rules/verification.md` § A run that may not end; the
 # critic's finding 15).
 
+use gen_cboundary
 use gen_eval
 use gen_judge
 use gen_text
@@ -38,6 +39,11 @@ function symptom(p: gen_tree.Program lent, compiler: str, dir: str, level: [str]
     source = dir + "/candidate.hero"
     binary = dir + "/candidate.bin"
     _ = write_file(path: source, text: text_of(p)).is_err()
+
+    # A candidate that binds C has its header written beside it, made from
+    # the candidate's own group, since a reduction may drop a C function.
+    if gen_cboundary.has_c(p)
+        _ = write_file(path: dir + "/g0.h", text: gen_cboundary.header_text(p, guard: "G0_H")).is_err()
     words: [str] @= [compiler, "build", source, "-o", binary]
 
     for flag in level

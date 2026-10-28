@@ -1,0 +1,77 @@
+# What a seed writes (panel 231; M-generated-programs, tasks 931 and 972):
+# the program, its `.expected`, and where it binds C the header its `extern`
+# group names, the driver that proves that header and the driver's own
+# answers. Every word of `generate.hero` and the `generated` suite write a
+# seed's files through `files_of`, so the five can never disagree about
+# which program they are.
+
+use gen_cboundary
+use gen_eval
+use gen_expr
+use gen_make
+use gen_rng
+use gen_text
+
+# The share of seeds whose program binds a C group of its own.
+constant C_PERCENT: i64
+    35
+
+record File
+    name: str
+    text: str
+
+# The program a seed names, the declared arm planted in `percent` of seeds
+# and the C group in `C_PERCENT` of them: the one map `make`, `reduce`,
+# `hunt` and the `generated` suite all read, so a failure is reproduced by
+# its number.
+function from_seed(seed: i64, percent: i64) -> gen_expr.Gen
+    r: gen_rng.Rng @= gen_rng.seeded(seed * 31 + 7)
+    declared = gen_rng.chance(@r, percent: percent)
+    return gen_make.made(seed, declared: declared, with_c: gen_rng.chance(@r, percent: C_PERCENT))
+
+# The `.expected` a program owes, its declared abort held to its place: the
+# evaluator's answer, and before its `!panic:` the line `!at:` naming the
+# file, the line of the planted `print` and column 11, where its argument
+# begins, which is where every abort report of a generated program points
+# (measured on 40 declared programs, 2026-10-28: 40 of 40 at the argument's
+# start). The planted statement is one line of `text`, `    print(` and the
+# site's expression, which the printer writes whole and never breaks, so a
+# program the line is not found in is the printer's defect, and loud.
+function expected_of(g: gen_expr.Gen, text: str, stem: str) -> str
+    answer = gen_eval.expected(g.p)
+
+    if g.site < 0 || !gen_text.has_panic(answer)
+        return answer
+    wanted = "    print(" + gen_text.expr(g.p, at: g.site) + ")"
+    rows = gen_text.lines_of(text)
+    i: i64 @= 0
+
+    while i < rows.len()
+        if rows[i] == wanted
+            return gen_text.placed(answer: answer, place: stem + ".hero:" + (i + 1).to_str() + ":11")
+        i @ i + 1
+
+    assert false
+
+# Every file seed `seed`'s program writes, named under its stem `g<seed>`.
+function files_of(g: gen_expr.Gen, seed: i64) -> [File]
+    stem = "g" + seed.to_str()
+    text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
+    files: [File] @= [
+        File(name: stem + ".hero", text: text)
+        File(name: stem + ".expected", text: expected_of(g, text: text, stem: stem))
+    ]
+
+    if gen_cboundary.has_c(g.p)
+        header = stem + ".h"
+        files @ files.push(File(name: header, text: gen_cboundary.header_text(g.p, guard: "G" + seed.to_str() + "_H")))
+        files @ files.push(File(name: stem + ".driver.c", text: gen_cboundary.driver_text(g.p, header: header)))
+        files @ files.push(File(name: stem + ".driver.expected", text: gen_cboundary.driver_expected(g.p)))
+    return files
+
+# The files written into `dir`.
+function written(files: [File], dir: str) -> ()?
+    for f in files
+        write_file(path: dir + "/" + f.name, text: f.text)?
+
+    return ok()

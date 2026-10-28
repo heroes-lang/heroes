@@ -1,0 +1,112 @@
+# The C boundary's two checks of a generated program (panel 231's R4 and R5;
+# M-generated-programs, tasks 972 and 1234), split from `gen_judge.hero`: the
+# header proved by its driver before the compiler is asked anything, and
+# oracle 4 at the boundary, where `check`'s acceptance is no promise because
+# `check` never reads a group's header (M-check-completeness's carve-out), so
+# the promise is the artifact's: what `build` builds, the C `--emit-c` wrote
+# compiles, links and runs to the same end.
+
+use shell
+use strings
+
+# The seconds and bytes the judge's children run under, handed down by it.
+record Bounds
+    compile: i64
+    run: i64
+    bytes: i64
+
+function first_line(text: str) -> str
+    rows = strings.lines(text)
+
+    if rows.len() == 0
+        return "(nothing said)"
+    return rows[0]
+
+function base_name(path: str) -> str
+    i: i64 @= path.len()
+
+    while i > 0
+        if path[i - 1] == '/' || path[i - 1] == '\\'
+            return path.slice(from: i, to: path.len())
+        i @ i - 1
+
+    return path
+
+# The header proved: "" where the driver, built with UBSan stopping at its
+# first report, prints what `<stem>.driver.expected` says.
+function proved(stem: str, work: str, bounds: Bounds) -> str?
+    binary = work + "/" + base_name(stem) + ".driver" + shell.exe_suffix()
+    words = [
+        "clang"
+        "-std=gnu11"
+        "-fsigned-char"
+        "-fsanitize=undefined"
+        "-fno-sanitize-recover=all"
+        "-I"
+        directory_of(stem)
+        stem + ".driver.c"
+        "-o"
+        binary
+    ]
+    built = shell.run_bounded(scratch: work, program: "clang", words: words, seconds: bounds.compile, bytes: 0, stdin_path: "")?
+
+    if built.code != 0
+        return ok("the driver did not build: " + first_line(built.err))
+    ran = shell.run_bounded(scratch: work, program: binary, words: [binary], seconds: bounds.run, bytes: bounds.bytes, stdin_path: "")?
+    want = read_file(stem + ".driver.expected")?
+
+    if ran.code != 0 || ran.out != want
+        return ok(
+            "the driver printed otherwise than the model computes, exit " + ran.code.to_str() + ": " + first_line(ran.err)
+        )
+    return ok("")
+
+# **Oracle 4 at the C boundary** (panel 231's R5, M-check-completeness's
+# carve-out: `check` never reads a group's header, so its acceptance is no
+# promise there): the C `--emit-c` writes, compiled with the runtime and
+# linked, ends as the build's binary ended and prints what it printed.
+function artifact_agrees(compiler: str, source: str, work: str, plain: shell.Run, bounds: Bounds) -> str?
+    name = base_name(strings.without_suffix(text: source, suffix: ".hero"))
+    c = work + "/" + name + ".emitted.c"
+    binary = work + "/" + name + ".emitted" + shell.exe_suffix()
+    emitted = shell.run_bounded(scratch: work, program: compiler, words: [compiler, "build", source, "--emit-c", "-o", c], seconds: bounds.compile, bytes: 0, stdin_path: "")?
+
+    if emitted.code != 0
+        return ok(
+            "`--emit-c` exited " + emitted.code.to_str() + " on a program `build` builds: " + first_line(emitted.err)
+        )
+    words = [
+        "clang"
+        "-std=gnu11"
+        "-fsigned-char"
+        "-w"
+        "-I"
+        "runtime"
+        "-I"
+        directory_of(source)
+        c
+        "runtime/runtime.c"
+        "-o"
+        binary
+    ]
+    linked = shell.run_bounded(scratch: work, program: "clang", words: words, seconds: bounds.compile, bytes: 0, stdin_path: "")?
+
+    if linked.code != 0
+        return ok("the artifact `--emit-c` wrote does not compile and link: " + first_line(linked.err))
+    ran = shell.run_bounded(scratch: work, program: binary, words: [binary], seconds: bounds.run, bytes: bounds.bytes, stdin_path: "")?
+
+    if ran.code != plain.code || ran.out != plain.out
+        return ok(
+            "the artifact ends with exit " + ran.code.to_str() + " where the build's binary exited " + plain.code.to_str() + ", or prints otherwise"
+        )
+    return ok("")
+
+function directory_of(path: str) -> str
+    i: i64 @= path.len()
+
+    while i > 0
+        if path[i - 1] == '/' || path[i - 1] == '\\'
+            return path.slice(from: 0, to: i - 1)
+        i @ i - 1
+
+    return "."

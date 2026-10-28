@@ -29,6 +29,7 @@
 # already reads (`expectation.hero`); a leak through C is the C arm's.
 
 use expectation
+use gen_cjudge
 use shell
 use strings
 
@@ -51,6 +52,8 @@ variant Verdict
         said: str
     misformatted
         said: str
+    header
+        said: str
 
 # Seconds the compiler is given for one small program, and the program
 # itself; and the bytes a program may write where the platform can hold it
@@ -65,12 +68,17 @@ constant RUN_SECONDS: i64
 constant RUN_BYTES: i64
     1048576
 
+# The bounds every child of a judgement runs under, as the C arm's checks
+# are handed them.
+function bounds() -> gen_cjudge.Bounds
+    return gen_cjudge.Bounds(compile: COMPILE_SECONDS, run: RUN_SECONDS, bytes: program_bytes())
+
 # Whether the verdict is a defect to report: every reading but a pass and
 # the two limits panel 184 designed.
 function is_defect(v: Verdict) -> bool
     match v
-        .passed _ | .clang_limit _ | .depth_limit _                      => return false
-        .refused _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ => return true
+        .passed _ | .clang_limit _ | .depth_limit _                                  => return false
+        .refused _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ => return true
 
 # One word for a verdict, the first field of the judge's line.
 function word(v: Verdict) -> str
@@ -86,6 +94,7 @@ function word(v: Verdict) -> str
         .wrong w        => return "WRONG" + w.where
         .sanitized _    => return "SANITIZED"
         .misformatted _ => return "MISFORMATTED"
+        .header _       => return "HEADER"
 
 # What the verdict says beyond its word: the first line that decided it.
 function detail(v: Verdict) -> str
@@ -101,6 +110,7 @@ function detail(v: Verdict) -> str
         .wrong w        => return w.said
         .sanitized s    => return s.said
         .misformatted m => return m.said
+        .header h       => return h.said
 
 # Oracle 1 over what the compiler said and how it ended: a verdict where it
 # did not stand, or `stood` where it did (`run` passes a program's own exit
@@ -157,6 +167,18 @@ function judged(compiler: str, source: str, work: str) -> Verdict?
     want = expectation.split(read_file(stem + ".expected")?)?
     declared = want.ending != .silent
     binary = work + "/" + base_name(stem) + shell.exe_suffix()
+    driver = read_file(stem + ".driver.c")
+
+    # **A program that binds C has its header proved first** (panel 231's
+    # R4): the driver beside it calls every function of its group at fixed
+    # operands, built with clang's UBSan stopping at the first report, and
+    # what it prints must be what the generator's model computes, so a header
+    # the model gets wrong is the generator's and never the compiler's.
+    if !driver.is_err()
+        proof = gen_cjudge.proved(stem: stem, work: work, bounds: bounds())?
+
+        if proof != ""
+            return ok(.header(said: proof))
     built = shell.run_bounded(scratch: work, program: compiler, words: [compiler, "build", source, "-o", binary], seconds: COMPILE_SECONDS, bytes: 0, stdin_path: "")?
     fell = fallen(built, stage: "build")
 
@@ -195,6 +217,11 @@ function judged(compiler: str, source: str, work: str) -> Verdict?
         if !at_level.is_err()
             return at_level
 
+    if !driver.is_err()
+        artifact = gen_cjudge.artifact_agrees(compiler: compiler, source: source, work: work, plain: plain, bounds: bounds())?
+
+        if artifact != ""
+            return ok(.wrong(where: " --emit-c", said: artifact))
     return formatted(compiler: compiler, source: source, work: work, plain: plain, declared: declared)
 
 # Oracle 4's question, asked only where `build` refused: whether `check`
@@ -214,9 +241,11 @@ function stage_named(v: Verdict, compiler: str, source: str, work: str) -> Verdi
             if !checked.is_err() && checked.must().code == 0
                 return .refused(said: r.said + " (and `check` accepts it: oracle 4)")
             return v
-        .passed _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ => return v
+        .passed _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ => return v
 
 # Oracle 3: `fmt`'s output is a fixed point and means what the program meant.
+# The formatted copy is written beside the program, where a header its
+# `extern` group names stands, never in the work folder.
 function formatted(compiler: str, source: str, work: str, plain: shell.Run, declared: bool) -> Verdict?
     original = read_file(source)?
     once = shell.run_bounded(scratch: work, program: compiler, words: [compiler, "fmt", source], seconds: COMPILE_SECONDS, bytes: 0, stdin_path: "")?
@@ -226,7 +255,7 @@ function formatted(compiler: str, source: str, work: str, plain: shell.Run, decl
 
     if once.out == original
         return ok(.passed(declared: declared, reformatted: false))
-    copy = work + "/" + base_name(strings.without_suffix(text: source, suffix: ".hero")) + "_f.hero"
+    copy = strings.without_suffix(text: source, suffix: ".hero") + "_f.hero"
     write_file(path: copy, text: once.out)?
     twice = shell.run_bounded(scratch: work, program: compiler, words: [compiler, "fmt", copy], seconds: COMPILE_SECONDS, bytes: 0, stdin_path: "")?
 

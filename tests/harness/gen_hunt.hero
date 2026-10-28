@@ -22,10 +22,9 @@
 use gen_eval
 use gen_expr
 use gen_judge
-use gen_make
+use gen_program
 use gen_reduce
 use gen_symptom
-use gen_text
 use shell
 
 record Hunted
@@ -42,12 +41,10 @@ function hunted(from: i64, count: i64, declared: i64, compiler: str, out: str) -
     while k < count
         seed = from + k
         name = "g" + seed.to_str()
-        g = gen_make.from_seed(seed: seed, percent: declared)
-        text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
-        answer = gen_make.expected_of(g, text: text, stem: name)
+        g = gen_program.from_seed(seed: seed, percent: declared)
+        files = gen_program.files_of(g, seed: seed)
         source = work + "/" + name + ".hero"
-        write_file(path: source, text: text)?
-        write_file(path: work + "/" + name + ".expected", text: answer)?
+        gen_program.written(files, dir: work)?
         v = gen_judge.judged(compiler: compiler, source: source, work: work)?
         h.judged @ h.judged + 1
 
@@ -55,8 +52,7 @@ function hunted(from: i64, count: i64, declared: i64, compiler: str, out: str) -
             h.failed @ h.failed + 1
             said = name + " " + gen_judge.word(v) + " " + gen_judge.detail(v)
             print(said)
-            write_file(path: out + "/" + name + ".hero", text: text)?
-            write_file(path: out + "/" + name + ".expected", text: answer)?
+            gen_program.written(files, dir: out)?
             write_file(path: out + "/" + name + ".verdict", text: said + "\n")?
             level = wrong_level(v)
 
@@ -79,7 +75,7 @@ function wrong_level(v: gen_judge.Verdict) -> [str]?
                 return ok(["--sanitize", "-O0"])
             nothing: [str] = []
             return ok(nothing)
-        .passed _ | .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .sanitized _ | .misformatted _ =>
+        .passed _ | .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .sanitized _ | .misformatted _ | .header _ =>
             return fail(code: "not_wrong", msg: "only a wrong answer is reduced by its value")
 
 # The seed's program reduced while the compiler fails it with the symptom it
