@@ -19,6 +19,7 @@
 # and with the two the same it is not (panel 231, the compiler-engineer's Q1:
 # 36 of 300 against 0 of 300 on a planted `>>`).
 
+use gen_depth
 use gen_eval
 use gen_hunt
 use gen_judge
@@ -49,12 +50,15 @@ function main()
     if words.len() > 0 && words[0] == "hunt"
         exit(hunt(words))
 
+    if words.len() > 0 && words[0] == "deep"
+        exit(deep(words))
+
     if words.len() > 1 && words[0] == "judge"
         exit(judge(dir: words[1], compiler: text_after(words, flag: "--compiler", fallback: "heroes")))
 
     if words.len() < 1 || words[0] != "make"
         print(
-            "usage: generate make --seed N --count K -o DIR [--declared PERCENT] | judge DIR --compiler PATH | reduce --seed N --compiler PATH -o DIR [--level L] | hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT]"
+            "usage: generate make --seed N --count K -o DIR [--declared PERCENT] | judge DIR --compiler PATH | reduce --seed N --compiler PATH -o DIR [--level L] | hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT] | deep --depth N --compiler PATH -o DIR [--shapes if,while,records,variants,calls]"
         )
         exit(2)
     seed = number_after(words, flag: "--seed", fallback: 1)
@@ -129,7 +133,9 @@ function judge(dir: str, compiler: str) -> u8
     for path in sort(names.must())
         name = gen_judge.base_name(path)
 
-        if strings.ends_with(text: name, suffix: ".hero") && !strings.ends_with(text: name, suffix: "_f.hero")
+        # A program is the `.hero` with its answer beside it: neither a
+        # formatted copy nor a module of the program's own has one.
+        if strings.ends_with(text: name, suffix: ".hero") && shell.exists(strings.without_suffix(text: path, suffix: ".hero") + ".expected")
             got = gen_judge.judged(compiler: compiler, source: path, work: work)
 
             match got
@@ -150,6 +156,83 @@ function judge(dir: str, compiler: str) -> u8
     if defects > 0
         return 1
     return 0
+
+# `deep --depth N --compiler PATH -o DIR [--shapes NAMES]`: the nesting
+# shapes written N deep, the floor's four and a chain of calls, or those of
+# them NAMES lists, comma-separated (a block's source grows with the square of
+# its depth, 16 MB at 2,000), each built and run by PATH and
+# read by oracle 1 (panel 231's R4: *in the hunt, up to and past 2,000 on
+# purpose*). A limit panel 184 designed, at build or at run, is a defect at
+# or under the floor and recorded past it; anything else wrong is a defect.
+# 0 where none is, 1 where one is.
+function deep(words: [str]) -> u8
+    n = number_after(words, flag: "--depth", fallback: gen_depth.FLOOR)
+    compiler = text_after(words, flag: "--compiler", fallback: "heroes")
+    dir = text_after(words, flag: "-o", fallback: "build/deep")
+    shell.mkdir_all(dir).must()
+    defects: i64 @= 0
+    every: [gen_depth.Shape] @= gen_depth.shapes_at(n)
+    every @ every.push(gen_depth.calls(n))
+    asked = text_after(words, flag: "--shapes", fallback: "if,while,records,variants,calls")
+    shapes: [gen_depth.Shape] @= []
+
+    for shape in every
+        if asked_for(name: shape.name, asked: asked)
+            shapes @ shapes.push(shape)
+
+    for shape in shapes
+        source = dir + "/" + shape.name + ".hero"
+        binary = dir + "/" + shape.name + shell.exe_suffix()
+        written(path: source, text: shape.text)
+        built = shell.run_bounded(
+            scratch: dir,
+            program: compiler,
+            words: [compiler, "build", source, "-o", binary],
+            seconds: 600,
+            bytes: 0,
+            stdin_path: ""
+        ).must()
+        fell = gen_judge.fallen(built, stage: "build")
+        said: str @= "PASS"
+
+        if !fell.is_err()
+            said @ gen_judge.word(fell.must()) + " " + gen_judge.detail(fell.must())
+
+            if gen_judge.is_defect(fell.must()) || n <= gen_depth.FLOOR
+                defects @ defects + 1
+        else
+            ran = shell.run_bounded(
+                scratch: dir,
+                program: binary,
+                words: [binary],
+                seconds: gen_judge.RUN_SECONDS,
+                bytes: gen_judge.program_bytes(),
+                stdin_path: ""
+            ).must()
+
+            if ran.code == 134 && strings.contains(text: ran.err, needle: "stack exhausted in")
+                said @ "DEPTH-LIMIT at run: " + gen_judge.first_line(ran.err)
+
+                if n <= gen_depth.FLOOR
+                    defects @ defects + 1
+            else if ran.code != 0 || ran.out != shape.expected
+                said @ "WRONG exit " + ran.code.to_str() + ": " + gen_judge.first_line(ran.err)
+                defects @ defects + 1
+        print(shape.name, " ", said)
+
+    print(n, " deep: ", shapes.len(), " shapes, ", defects, " defects")
+
+    if defects > 0
+        return 1
+    return 0
+
+# Whether the shape named `name`, `<kind>-<n>-deep`, is one `asked` lists.
+function asked_for(name: str, asked: str) -> bool
+    for kind in strings.split_text(text: asked, separator: ",")
+        if strings.starts_with(text: name, prefix: kind + "-")
+            return true
+
+    return false
 
 # `answers`: the sample's answers as `tests/golden/generated/answers.txt`
 # holds them, `== g<seed>` and the seed's `.expected` beneath, seeds 1 to

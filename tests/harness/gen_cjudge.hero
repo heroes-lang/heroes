@@ -152,8 +152,25 @@ constant LEAKS: str
 function leak_free(binary: str, work: str, bounds: Bounds) -> str?
     if !shell.exists(LEAKS)
         return ok("")
-    ran = shell.run_bounded(scratch: work, program: LEAKS, words: [LEAKS, "--atExit", "--", binary], seconds: bounds.run, bytes: bounds.bytes, stdin_path: "")?
+    ran = shell.run_bounded(scratch: work, program: LEAKS, words: [LEAKS, "--atExit", "--", binary], seconds: LEAKS_SECONDS, bytes: bounds.bytes, stdin_path: "")?
+
+    # `leaks` attaches to the program it starts, and where this user has
+    # not the developer tools' permission every attach waits on an
+    # authorization dialog nobody answers in a suite (measured 2026-10-28:
+    # `DevToolsSecurity -status` read *disabled*, a dialog stood open, and
+    # `leaks`, `lldb`'s `debugserver` and ASan's `atos -p` each waited
+    # minutes on one program), so a reading cut by the bound says that.
+    if ran.code == 124
+        return fail(
+            code: "unread",
+            msg: "`leaks --atExit` gave no answer in " + LEAKS_SECONDS.to_str() + " s: it attaches to the program, and without the developer tools' permission it waits on an authorization dialog (`DevToolsSecurity -status`; `sudo DevToolsSecurity -enable` grants it once)"
+        )
     return leaks_said(ran.out + ran.err)
+
+# The seconds `leaks` is given: the program's own run is bounded already,
+# and the tool's attach and its analysis take more than the run under load.
+constant LEAKS_SECONDS: i64
+    60
 
 # What `leaks` said, read from its report's verdict line, `Process <pid>: <n>
 # leaks for <bytes> total leaked bytes.` (`leak` where n is 1): "" at none,

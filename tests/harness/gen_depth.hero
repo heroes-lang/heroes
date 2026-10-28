@@ -29,7 +29,21 @@ record Shape
     expected: str
 
 function shapes() -> [Shape]
-    return [blocks(keyword: "if", n: FLOOR), blocks(keyword: "while", n: FLOOR), records(n: FLOOR), variants(n: FLOOR)]
+    return shapes_at(FLOOR)
+
+# The four shapes `n` deep: the floor's, and the hunt's past it (panel 231's
+# R4: *in the hunt, up to and past 2,000 on purpose*).
+function shapes_at(n: i64) -> [Shape]
+    return [blocks(keyword: "if", n: n), blocks(keyword: "while", n: n), records(n: n), variants(n: n)]
+
+# A chain of `n` calls nested in one argument, `g(g(...g(0)...))`, which
+# brackets the committed floor cases hold at 2,000 (`run/fixedbugs-169-*`),
+# written for the hunt past them; the compiler-engineer's seat measured
+# 5,000 of them `stack exhausted in lower.shape` at build (panel 231).
+function calls(n: i64) -> Shape
+    count = to_u64(n).must()
+    text = "function g(x: i64) -> i64\n    return x + 1\n\nfunction main()\n    print(" + repeat("g(", count) + "0" + repeat(")", count) + ")\n"
+    return Shape(name: "calls-" + n.to_str() + "-deep", text: text, expected: n.to_str() + "\n")
 
 # `n` blocks, each opened by `keyword` on a condition that holds once, the
 # cell counting how many it entered.
@@ -81,3 +95,5 @@ test "the shapes are written at their depth, each with the answer it owes"
     assert small.expected == "3\n"
     assert records(n: 2).text == "record R0\n    s: str\n\nrecord R1\n    r: R0\n    s: str\n\nfunction main()\n    x: [R1] = []\n    print(x.len())\n"
     assert shapes().len() == 4
+    assert calls(3).text == "function g(x: i64) -> i64\n    return x + 1\n\nfunction main()\n    print(g(g(g(0))))\n"
+    assert calls(3).expected == "3\n"
