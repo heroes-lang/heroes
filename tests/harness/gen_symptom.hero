@@ -109,21 +109,33 @@ function difference(p: gen_tree.Program lent, got: str, want: str, level: [str])
         kind @ "abort-missing"
     else if got_abort
         kind @ "abort-unexpected"
-    return level.join(" ") + "|" + kind + "|" + printed_root(p, line: k)
+    got_row: str @= ""
+
+    if k < got_rows.len()
+        got_row @ got_rows[k]
+    return level.join(" ") + "|" + kind + "|" + printed_root(p, line: k, got: got_row)
 
 function aborts(row: str) -> bool
     return row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
 
-# The operator at the root of the first part of the `line`-th `print` of
-# `main`, every one top-level and one line each; `site` past the last.
-function printed_root(p: gen_tree.Program lent, line: i64) -> str
+# The operator at the root of what computed the `line`-th printed line's
+# first WRONG part (defect 2244): the line's parts are the evaluator's texts,
+# held byte by byte against `got`, so the part named is the first that
+# differs rather than the first; and a part that reads a binding is followed
+# to the expression that bound it, so `a0[1]` names the operator that
+# computed that element rather than `index`. Until defect 2244 this named the
+# first part's own root, and a reduction under two planted defects slid from
+# one to the other in 1 of 49 (measured 2026-10-28, seed 1244). `site` past
+# the last line or where `main` aborts before it.
+function printed_root(p: gen_tree.Program lent, line: i64, got: str) -> str
+    env: gen_eval.Env @= gen_eval.empty()
     k: i64 @= 0
 
     for s in p.body
         match s
             .show w =>
                 if k == line && w.parts.len() > 0
-                    return p.nodes[w.parts[0]].op
+                    return bound_root(p, at: differing_part(p, parts: w.parts, env: env, got: got))
                 k @ k + 1
             .shaped sh =>
                 count = p.shapes[sh.at].printed.len()
@@ -133,7 +145,106 @@ function printed_root(p: gen_tree.Program lent, line: i64) -> str
                 k @ k + count
             .bind_int | .bind_bool | .bind_str | .rec | .arr | .picked | .cond | .loop => _ = 0
 
+        out: [str] @= []
+
+        if gen_eval.stepped(p, s: s, @env, @out).is_err()
+            return "site"
+
     return "site"
+
+# The first of `parts` whose text, as the evaluator writes it, is not where
+# `got` has it; the first part where every one is.
+function differing_part(p: gen_tree.Program lent, parts: [i64], env: gen_eval.Env lent, got: str) -> i64
+    at: i64 @= 0
+    j: i64 @= 0
+
+    while j < parts.len()
+        text = gen_eval.shown(p, at: parts[j], env: env)
+
+        if text.is_err() || !written_at(got: got, text: text.must(), at: at)
+            return parts[j]
+        at @ at + text.must().len()
+
+        if j + 1 < parts.len()
+            if at >= got.len() || got[at] != ' '
+                return parts[j + 1]
+            at @ at + 1
+        j @ j + 1
+
+    return parts[0]
+
+# Whether `got` holds `text`'s bytes from byte `at`, compared byte by byte,
+# since a slice there could split a character of a wrong output.
+function written_at(got: str, text: str, at: i64) -> bool
+    if at + text.len() > got.len()
+        return false
+    i: i64 @= 0
+
+    while i < text.len()
+        if got[at + i] != text[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# The operator at the root of the expression that gave the node at `at` its
+# value: a read followed to what bound it, a few reads deep at most.
+function bound_root(p: gen_tree.Program lent, at: i64) -> str
+    current: i64 @= at
+    hops: i64 @= 0
+
+    while hops < 8
+        match bound_at(p, n: p.nodes[current])
+            .ok bound => current @ bound
+            .err e    => return e.code
+
+        hops @ hops + 1
+
+    return p.nodes[current].op
+
+# The node that bound what `n` reads, or a failure whose code is the root to
+# report: the node's own operator where it reads nothing, `if`, `loop`
+# with its operator, or `match` where a statement computed the value
+# without one expression of its own.
+function bound_at(p: gen_tree.Program lent, n: gen_tree.Node) -> i64?
+    for s in p.body
+        match s
+            .bind_int b =>
+                if n.op == "name" && n.name == b.name
+                    return ok(b.expr)
+            .bind_bool b =>
+                if n.op == "bname" && n.name == b.name
+                    return ok(b.expr)
+            .bind_str b =>
+                if n.op == "sname" && n.name == b.name
+                    return ok(b.expr)
+            .rec r =>
+                if n.op == "field" && n.name == r.name + ".a"
+                    return ok(r.a)
+
+                if n.op == "field" && n.name == r.name + ".b"
+                    return ok(r.b)
+
+                if n.op == "bfield" && n.name == r.name + ".f"
+                    return ok(r.f)
+            .arr r =>
+                if n.op == "index" && n.name == r.name && p.nodes[n.kids[0]].op == "lit"
+                    i = p.nodes[n.kids[0]].value
+
+                    if i >= 0 && i < r.elems.len()
+                        return ok(r.elems[i])
+            .cond c =>
+                if n.op == "name" && n.name == c.name
+                    return fail(code: "if", msg: "a conditional bound it")
+            .loop l =>
+                if n.op == "name" && n.name == l.name
+                    return fail(code: "loop" + l.op, msg: "a loop bound it")
+            .picked m =>
+                if n.op == "name" && n.name == m.mname
+                    return fail(code: "match", msg: "a match bound it")
+            .show | .shaped => _ = 0
+
+    return fail(code: n.op, msg: "it reads nothing a statement bound")
 
 # Whether the candidate fails with the target's symptom.
 function still_fails(p: gen_tree.Program lent, target: Target lent, @t: Tally) -> bool
@@ -177,3 +288,17 @@ test "a symptom names the kind of difference and the operator that printed the f
     assert difference(p, got: "9\n5\n", want: "9\n4\n", level: []) == "|value|>>"
     assert difference(p, got: "9\n4\n", want: "9\n4\n!panic: x\n", level: ["-O2"]) == "-O2|abort-missing|site"
     assert difference(p, got: "!panic: y\n", want: "9\n4\n", level: []) == "|abort-unexpected|+"
+
+test "a symptom names the operator that computed the first WRONG part, a read followed to its binding (defect 2244)"
+    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [], shapes: [])
+    a = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 8, name: ""))
+    b = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+    ored = gen_tree.binary(@p, op: "|", left: a, right: b)
+    shifted = gen_tree.binary(@p, op: ">>", left: a, right: b)
+    zero = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 0, name: ""))
+    one = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+    first = gen_tree.added(@p, gen_tree.Node(op: "index", value: 0, name: "a0", kids: [zero]))
+    second = gen_tree.added(@p, gen_tree.Node(op: "index", value: 0, name: "a0", kids: [one]))
+    p.body @ p.body.push(.arr(name: "a0", elems: [ored, shifted])).push(.show(parts: [first, second]))
+    assert difference(p, got: "9 5\n", want: "9 4\n", level: []) == "|value|>>"
+    assert difference(p, got: "8 4\n", want: "9 4\n", level: []) == "|value||"

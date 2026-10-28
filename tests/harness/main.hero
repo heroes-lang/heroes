@@ -679,6 +679,16 @@ constant ISSUE_PROGRAM: str
 constant THESIS_PROGRAM: str
     "tests/harness/thesis.hero"
 
+# **AND THE FOURTH, the generator** (M-generated-programs, 2026-10-28): the
+# `generated` suite reaches the modules that make and judge a program, and
+# not the reducer, the symptom it holds or the hunt, which `generate.hero`
+# alone reaches, so their tests ran under no runner until defect 2244's
+# repair added one to `gen_symptom.hero` and found its root unchecked
+# (`heroes check tests/harness/generate.hero` refusing a label the net's root
+# never saw). Tested the same way, one test for the root.
+constant GENERATOR_PROGRAM: str
+    "tests/harness/generate.hero"
+
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each a file of `dir`, in the order they are found. A `use` of any
 # other shape, or one naming no file there, is a failure rather than a module
@@ -863,6 +873,32 @@ test "the thesis instrument's own tests run with the net's own, every block its 
     said: [str] @= []
 
     # The runner's verdict is the one line `<n> tests, ...`.
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the generator's own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", GENERATOR_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.starts_with(text: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    for line in skips_in(ran.out)
+        print(GENERATOR_PROGRAM + ": " + line)
+
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "generate").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "generate").must()
+    said: [str] @= []
+
     for line in strings.lines(ran.out)
         if counts(strings.words(line))
             said @ said.push(line)
