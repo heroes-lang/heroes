@@ -1,1 +1,0 @@
-tests/golden/check/inout-on-a-by-value-parameter.hero:13:10: error[not_mutable]: `b` is a parameter without `@`, so it cannot be written — mark it `@b` in the signature and at every call site, and the function works on the caller's place itself
