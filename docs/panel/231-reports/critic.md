@@ -4,9 +4,39 @@ Seat: completeness critic, one pass after the seats (00-shared.md, first paragra
 what is MISSING, every finding with the command that settles it or written as a question.
 Worktree `.claude/worktrees/231-critic`, detached at `bd0c4477b`, its `heroes-next` printing
 `sources 5e0ca4c634086a7c`. Scratch `.claude/worktrees/231-critic-scratch/`. Written as it goes,
-2026-10-28; a section marked *in progress* is unfinished.
+2026-10-28, and finished the same day.
 
-## Findings (in progress)
+## In brief: what should change the resolution
+
+1. The net's generator can be built by stage 1 (`heroes-from-seed` in CI) at zero cost, which breaks
+   Q1's blindness in P7's sample; nobody listed it (finding 1).
+2. Both plants measured (the engineer's B and my narrower B2) are already caught by the compiler's
+   own tests (`check/const_values.hero:369`) and by `run` goldens; the sitting has no measurement of
+   the generator seeing what the gates miss, and should ask for a plant set (finding 12).
+3. The prototype's constant policy never draws a shift count in 32..63 (0 of 188 literal counts);
+   B2 is invisible to its 300 programs and seen in 61 of 300 once counts are drawn over 0..63, so P3
+   needs per-operator operand domains (finding 12).
+4. `==` on a pre-end copy at exit 0 is pinned by a committed golden re-blessed in the very commit
+   that wrote spec § 13's sentence: a spec wording question, and the C arm's declared arm must not
+   write it as an abort until ruled (finding 2).
+5. Oracle 4's carve-out at the C boundary is already in M-check-completeness.md:18 and :50; the
+   engineer's *holds as written* is true off the boundary only (finding 3).
+6. `leaks --atExit` sees a C leak on this Mac (200 at `-O0`, 0 at `-O2`) and named none of 61
+   committed `run` cases: the engineer's *972 cannot be measured here* is false (findings 4, 9).
+7. 1234's one live witness passes `-fsyntax-only` and fails only the link; the engineer's re-home to
+   `emission` drops the half the task was filed for (finding 7).
+8. 972's corpus half was kept on this milestone on purpose (its 2026-10-25 comment); its Linux
+   measurement is unrun by everyone (finding 8).
+9. 2214 asks a regression criterion, not unique coverage; 334 of the 336 cases with no unique
+   counter pin only diagnostic codes another case pins, so *coverage cannot read text* should not
+   close it (finding 10).
+10. R6's floor is pinned at 2,000 by six goldens and was left out of the spec on purpose for want
+    of the Windows box; no issue owns it (finding 6).
+11. Questions the sitting did not ask: the reducer's symptom (13), the declared abort's place (14),
+    the judge's bounds and Windows' missing byte cap (15), N's price on the CI's Windows leg (16), a
+    committed digest of the sample's answers (18).
+
+## Findings
 
 ### 1. Q1 reproduced, and a route nobody listed: the net's generator built by stage 1, the seed's compiler
 
@@ -34,7 +64,8 @@ Stage 1 builds the seat's generator (above) and its output is byte-identical to 
 `./heroes-from-seed run tests/harness/main.hero -- ./heroes` (or a `--generator-compiler` word of the
 `generated` suite) breaks Q1's correlation in the net at zero cost, for every miscompilation
 introduced since `seed/heroes.c` was last refreshed (`80a888f39`, 2026-10-26, by `git log -1 --
-seed/heroes.c`). Its price, unmeasured: the harness may then use only the forms the seed knows,
+seed/heroes.c`). The layer-1 hook asks its sources question of the compiler named after `--` alone
+(`.claude/hooks/guard_bash.py:492-497`), so the route passes it as written. Its price, unmeasured: the harness may then use only the forms the seed knows,
 which is the rule `selfhost/` already lives under (`.claude/rules/verification.md` § The batch:
 *a new form enters `selfhost/` only after the refresh whose seed knows it*).
 
@@ -261,13 +292,26 @@ criterion 2214 names, with its deliverable (a `docs/measurements/` file) as the 
   past 300, `suite_records.hero` 4,415; `selfhost/` 689 modules and 179,309 lines, `mutate/` 42 and
   10,522; the harness 59,390 tracked lines. All hold.
 
-### 12. The sitting measured no plant the net misses; one narrower plant, measured: the prototype is blind to it and a five-line policy change sees it in 61 of 300
+### 12. Both plants measured are already seen by gate A and the `run` form; on the narrower one the prototype is blind and a five-line policy change sees it in 61 of 300
 
-**Fact, the seat's plant.** The `run` goldens already see the compiler-engineer's plant B (its Q8
-says so): built by B, `tests/golden/run/bitwise.hero` and `fixedbugs-577-a-constant-whose-every-step-fits-runs.hero`
-print other than their `.expected`, and match under my `heroes-next`. So Q1's experiment measures
-the correlation, not what the generator adds to the net; no seat measured a miscompilation the
-hand-written net misses and the generator finds, which is the milestone's yield.
+**Fact, the seat's plant.** Three instruments that already run at every batch see the
+compiler-engineer's plant B, and one does not:
+
+- the `run` goldens (its Q8 says so, reproduced): built by B, `tests/golden/run/bitwise.hero` and
+  `fixedbugs-577-a-constant-whose-every-step-fits-runs.hero` print other than their `.expected`,
+  and match under my `heroes-next`;
+- **the compiler's own tests** (gate A): the planted source built by B into `Bpl`, then `Bpl test
+  selfhost/main.hero` reads `1763 tests, 1 failed`, *assert failed: shown(bitwise(.shr, x: lowest, y:
+  lit(negative: false, magnitude: 63)).value) == "-1"* at `check/const_values.hero:369:12`, `left:
+  "1"`. The compiler's constant evaluator is a second Heroes model of the operators, and its
+  contract test is the engineer's route 2, already in the tree;
+- **the fixpoint does not**: B's and `Bpl`'s emissions of the planted source, the
+  `hero_program_sources` line taken out of each, are the same bytes (`cmp` silent), which is the
+  engineer's inference (*would have to survive the fixpoint*) measured.
+
+So Q1's experiment measures the correlation, not what the generator adds to the gates; no seat
+measured a miscompilation the existing gates miss and the generator finds, which is the milestone's
+yield.
 
 **Fact, a narrower plant, B2.** In my worktree, `selfhost/emit/operator.hero:184`'s `>>` made
 arithmetic only for a count below 32 (`(l < 0 && r < 32) ? ... : logical`), compiler B2 built by
@@ -277,7 +321,8 @@ under the trunk. Then:
 
 | judged under B2 | moved | how measured |
 |---|---|---|
-| the 599 `run` goldens, built at `-O0` and run (the seat's `lite.sh`, copied) | **1** (`fixedbugs-577-...`) | each case's stdout under B2 against under the trunk, `cmp`, 599 pairs |
+| the compiler's own tests, `B2 test selfhost/main.hero` | **1 of 1,763** (`check/const_values.hero:369`, the same test as B's) | its last line |
+| the 599 `run` goldens, built at `-O0` and run (the seat's `lite.sh`, copied) | **1** (`fixedbugs-577-...`) | each case's stdout under B2 against under the trunk, `cmp`, the 597 that build here |
 | the seat's generator, seeds 1000 to 1299, its own output | **0 of 300** | `judge1.sh`, the same as finding 1 |
 | the same generator with shift counts drawn in 0..63 (5 lines in `int_expr`, `.claude/worktrees/231-critic-scratch/gen_make.shift-counts.hero`) | **61 of 300** `ORACLE2-O0`; under the trunk 300 of 300 pass | the same |
 
@@ -291,10 +336,12 @@ arm), **0 in 32..63**, and 311 `>>` whose count is an expression.
 per operator** (a shift's count drawn over 0..63, a divisor near -1 and 0), which YARPGen's
 policies have and the prototype's constants mix does not; this one is measured. Second, the
 milestone's yield should be measured the way this finding did it, as a **plant set**: one plant per
-emitter rule and operand class, each scored against the `run` form and against the generator built
-by stage 1, so P2's prediction (*9 of 10 plants*) and P3's are judged against the net rather than
-against nothing. A question, not a premise: how many plants does the net already see, and is the
-generator's margin over it the number that should size N?
+emitter rule and operand class, each scored against gate A (the compiler's own tests), the `run`
+form and the generator built by stage 1, so P2's prediction (*9 of 10 plants*) and P3's are judged
+against what already runs rather than against nothing; on the two plants measured here, gate A sees
+both, so neither shows the generator seeing what gate A misses. A question, not a premise: how many plants do the
+existing gates already see, and is the generator's margin over them the number that should size
+N?
 
 ### 13. The reducer's symptom: *any disagreement*, where P6 says *the symptom*; slippage is unmeasured
 
@@ -394,3 +441,40 @@ every leg at once, at the price of re-blessing the digest when the generator cha
 weighed it against regeneration; the engineer's *never committed* rests on 7 MB of blessed C, which
 a digest does not carry.
 
+### 19. One more number, re-run
+
+- The compiler-engineer's Q7, *`tests/emission/` holds 592 `run-` emissions, median 17,149 bytes,
+  30,429,375 in all*: `ls -l tests/emission/run-*.c` gives 592 and 30,429,375; the median of the
+  592 sizes is 17,142.5 (the mean of the two middle ones). Immaterial to the sizing.
+- The compiler-engineer's Q3 prints the prototype's size before the reducer and the contract test
+  (`gen_eval` 238, `generate` 52, *1,042 in all*, *1,339 by `wc -l`*), and Q4 the size after them
+  (1,333 and 1,722, reproduced in finding 11). The Q4 table is the current one.
+
+## The seats against each other, and which side is checkable
+
+| question | compiler-engineer | ffi-pragmatist | checkable side, and how |
+|---|---|---|---|
+| oracle 4 at the C boundary | *holds as written* (P5) | false by design | ffi: finding 3's six reruns, and M-check-completeness.md:18, :50 |
+| oracle 2 at the C boundary | *holds as written* (P5) | voided by a header's UB, so the header is proved first | ffi: its Q2 table; the uninitialised row reproduced (finding 17), which the engineer's four sample checks would charge to the compiler as an `-O0`/`-O2` disagreement |
+| 972 on this Mac | *cannot be measured* (P8) | measured, `otool` and `leaks` | ffi: finding 4 |
+| oracle 5 on Darwin | runtime count only | runtime count plus `leaks --atExit` at `-O0` | ffi: findings 4 and 9 |
+| 1234's home | `emission`, syntax only | syntax in `emission`, link and both routes in oracle 4 and P7 | ffi and the task's own body: finding 7 |
+| 972's corpus half | outside this milestone | owed, milestone unnamed | neither: the 2026-10-25 comment keeps it here with a reason neither answers (finding 8) |
+
+## Which versions were read
+
+`ffi-pragmatist.md`: 437 lines (`wc -l`), `md5` `1b86aa152fcd8d93f1b2a1fb0e3bf0c7`, modified 12:49,
+finished as the brief says. `compiler-engineer.md`: read whole in its final version, **603 lines**
+(`wc -l`), `md5` `91e244de28dbb93d2513dba58ebf4aef`, modified 14:23, its line 6 *finished the same
+day*; re-checked unchanged by `md5` before this section was written. An earlier read of its first
+258 lines (Q1 to Q6 only) is superseded by this one.
+
+## What I wrote outside this report
+
+Only in my worktree and my scratch: the seat's prototype copied into
+`.claude/worktrees/231-critic/tests/harness/` (untracked; `gen_make.hero` restored to the seat's
+after finding 12), two plants in `selfhost/emit/operator.hero` each reverted by `git checkout --`
+at once (`git status --short | grep -v '^??'` empty after each), and every program, binary and
+listing under `.claude/worktrees/231-critic-scratch/`. Nothing in the seats' worktrees, nothing
+outside the repository, no paid run, `gh` read-only (`gh auth status`, `issue view`, `search issues`,
+`run view`).
