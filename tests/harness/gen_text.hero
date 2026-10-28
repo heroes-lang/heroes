@@ -10,6 +10,7 @@
 # `for` and a `match` binding have one after them, where an `if` has none.
 
 use gen_cboundary
+use gen_eval
 use gen_tree
 
 # spec § 7's precedence, weakest first; a negative literal is a unary minus.
@@ -84,6 +85,12 @@ function expr(p: gen_tree.Program lent, at: i64) -> str
 
     if n.op == "strlen"
         return operand(p, at: n.kids[0], outer: 11, right: false) + ".len()"
+
+    if n.op == "default"
+        return expr(p, at: n.kids[0]) + ".default(" + expr(p, at: n.kids[1]) + ")"
+
+    if n.op == "must"
+        return expr(p, at: n.kids[0]) + ".must()"
 
     if n.op == "neg"
         return "-" + operand(p, at: n.kids[0], outer: 10, right: false)
@@ -239,6 +246,10 @@ function function_text(p: gen_tree.Program lent, f: gen_tree.Fn) -> str
     for name in f.params
         params @ params.push(name + ": i64")
 
+    if p.nodes[f.body].op == "fallible"
+        body = p.nodes[f.body]
+        failing = "        return fail(code: \"" + gen_eval.REFUSED_CODE + "\", msg: \"" + gen_eval.REFUSED_MSG + "\")\n"
+        return "function " + f.name + "(" + params.join(", ") + ") -> i64?\n    if " + expr(p, at: body.kids[0]) + "\n" + failing + "    return ok(" + expr(p, at: body.kids[1]) + ")\n"
     return "function " + f.name + "(" + params.join(", ") + ") -> i64\n    return " + expr(p, at: f.body) + "\n"
 
 constant RECORD: str

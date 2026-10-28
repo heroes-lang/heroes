@@ -7,6 +7,7 @@
 # are `gen_program`'s.
 
 use gen_cboundary
+use gen_declared
 use gen_eval
 use gen_expr
 use gen_rng
@@ -44,7 +45,14 @@ function functions(@g: gen_expr.Gen, count: i64)
         for name in params
             body @ gen_expr.reading(@g, at: body, name: name)
 
-        g.p.fns @ g.p.fns.push(gen_tree.Fn(name: "f" + g.p.fns.len().to_str(), params: params, body: body))
+        name: str @= "f" + g.p.fns.len().to_str()
+
+        # A third of them fallible, `-> i64?` failing where a guard of their
+        # own holds (panel 231's R3, the forms: `T?`).
+        if gen_rng.chance(@g.r, percent: 35)
+            body @ gen_expr.fallible_body(@g, s: s, envs: envs, value: body)
+            name @ "h" + g.p.fns.len().to_str()
+        g.p.fns @ g.p.fns.push(gen_tree.Fn(name: name, params: params, body: body))
 
 # A statement appended to `main`, run at once so `env` holds what it bound.
 function appended(@g: gen_expr.Gen, s: gen_tree.Stmt, @env: gen_eval.Env)
@@ -211,73 +219,6 @@ function looped(@g: gen_expr.Gen, s: gen_expr.Scope lent, @env: gen_eval.Env, n:
     appended(@g, s: .loop(name: "s" + n, init: init, counter: counter, low: low, high: high, op: op, body: body), @env)
     shown(@g, parts: [gen_expr.named(@g, op: "name", name: "s" + n)], @env)
 
-# The declared arm's one abort: a `print` of an operation the evaluator
-# says must abort, never run here, so `env` stays as it was.
-function abort_site(@g: gen_expr.Gen, s: gen_expr.Scope lent, env: gen_eval.Env lent)
-    a = gen_expr.int_expr(@g, s: s, envs: [env], depth: g.depth - 1, context: gen_rng.below(@g.r, n: 6))
-    v = gen_eval.int_of(g.p, at: a, env: env).must()
-    kind = gen_rng.below(@g.r, n: 7)
-    max = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX, name: ""))
-    smallest = gen_tree.binary(
-        @g.p,
-        op: "-",
-        left: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX * -1, name: "")),
-        right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 1, name: ""))
-    )
-    site: i64 @= gen_tree.binary(
-        @g.p,
-        op: "/",
-        left: a,
-        right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 0, name: ""))
-    )
-
-    if kind == 1
-        if v > 0
-            site @ gen_tree.binary(@g.p, op: "+", left: a, right: max)
-        else if v < -1
-            site @ gen_tree.binary(@g.p, op: "-", left: a, right: max)
-        else
-            site @ gen_tree.binary(
-                @g.p,
-                op: "*",
-                left: smallest,
-                right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: -1, name: ""))
-            )
-    else if kind == 2
-        count = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 64 + gen_rng.below(@g.r, n: 8), name: ""))
-        site @ gen_tree.binary(@g.p, op: ["<<", ">>"][gen_rng.below(@g.r, n: 2)], left: a, right: count)
-    else if kind == 3 && s.arrays.len() > 0
-        j = gen_rng.below(@g.r, n: s.arrays.len())
-        index = gen_tree.added(
-            @g.p,
-            gen_tree.leaf(op: "lit", value: s.lengths[j] + gen_rng.below(@g.r, n: 3), name: "")
-        )
-        site @ gen_tree.added(@g.p, gen_tree.Node(op: "index", value: 0, name: s.arrays[j], kids: [index]))
-    else if kind == 4
-        site @ gen_tree.binary(
-            @g.p,
-            op: ["/", "%"][gen_rng.below(@g.r, n: 2)],
-            left: smallest,
-            right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: -1, name: ""))
-        )
-    else if kind == 5
-        site @ gen_tree.unary(@g.p, op: "neg", kid: smallest)
-    else if gen_rng.chance(@g.r, percent: 50)
-        site @ gen_tree.binary(
-            @g.p,
-            op: "%",
-            left: a,
-            right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 0, name: ""))
-        )
-
-    if kind == 6
-        cut = gen_expr.str_site(@g, s: s, env: env)
-
-        if cut >= 0
-            site @ cut
-    g.p.body @ g.p.body.push(.show(parts: [site]))
-    g.site @ site
-
 # One program from one seed; `declared` plants one abort in it.
 function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
     r: gen_rng.Rng @= gen_rng.seeded(seed)
@@ -320,7 +261,7 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
 
     while id < count
         if id == site
-            abort_site(@g, s: s, env: env)
+            gen_declared.abort_site(@g, s: s, env: env)
         statement(@g, @s, @env, id: id)
         id @ id + 1
 

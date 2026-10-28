@@ -14,6 +14,17 @@
 # context per region of a tree, a constants mix drawn per program, a buffer
 # of earlier subexpressions reused at `main`'s top level, and the depth and
 # the share of leaves drawn per program.
+#
+# **A knot, and why it is one file past 300 lines**
+# (`.claude/rules/module-shape.md`: the threshold yields where the language
+# forbids the seam): `int_expr` builds integers out of strings (`s.len()`)
+# and fallible calls, `str_expr` builds strings out of integers
+# (`to_str`), `bool_expr` builds booleans out of integers, and each of the
+# leaves calls back into them, so the four are mutually recursive and
+# Heroes refuses a cycle between modules. The entry points are `int_expr`,
+# `bool_expr` and `str_expr`; `int_leaf` calls `call`, `fallible_leaf`,
+# `str_expr` and `literal`; `str_expr` calls `int_expr`; `bool_expr` calls
+# `int_expr`. The declared arm's sites are `gen_declared`'s.
 
 use gen_eval
 use gen_rng
@@ -167,6 +178,9 @@ function int_leaf(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64)
 
     if k < 78 && depth > 0
         return gen_tree.unary(@g.p, op: "strlen", kid: str_expr(@g, s: s, envs: envs, depth: depth - 1))
+
+    if k < 86 && depth > 0 && s.fns > 0
+        return fallible_leaf(@g, s: s, envs: envs, depth: depth)
     return literal(@g)
 
 # The texts a string literal is drawn from: none holds a brace, a quote or a
@@ -246,7 +260,11 @@ function str_site(@g: Gen, s: Scope lent, env: gen_eval.Env lent) -> i64
     return sliced(@g, base: base, from: 0, to: value.len() + 1 + gen_rng.below(@g.r, n: 3))
 
 function call(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
-    f = g.p.fns[gen_rng.below(@g.r, n: s.fns)]
+    plain = callable(g.p, count: s.fns, fallible: false)
+
+    if plain.len() == 0
+        return literal(@g)
+    f = g.p.fns[plain[gen_rng.below(@g.r, n: plain.len())]]
     kids: [i64] @= []
 
     while kids.len() < f.params.len()
@@ -257,6 +275,54 @@ function call(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> 
     if safe(g.p, at: at, envs: envs)
         return at
     return literal(@g)
+
+# The indices of the first `count` functions that are fallible, or that are
+# not: a fallible one is called only through `.default` or `.must`.
+function callable(p: gen_tree.Program lent, count: i64, fallible: bool) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < count
+        if p.nodes[p.fns[i].body].op == "fallible" == fallible
+            out @ out.push(i)
+        i @ i + 1
+
+    return out
+
+# A call of a fallible function as an integer: `.must()` where it fails on
+# no sample, else `.default(d)`, `d` an integer of its own.
+function fallible_leaf(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
+    some = callable(g.p, count: s.fns, fallible: true)
+
+    if some.len() == 0
+        return literal(@g)
+    f = g.p.fns[some[gen_rng.below(@g.r, n: some.len())]]
+    kids: [i64] @= []
+
+    while kids.len() < f.params.len()
+        kids @ kids.push(int_expr(@g, s: s, envs: envs, depth: depth - 1, context: gen_rng.below(@g.r, n: 6)))
+
+    at = gen_tree.added(@g.p, gen_tree.Node(op: "call", value: 0, name: f.name, kids: kids))
+    fails: bool @= false
+
+    for env in envs
+        o = gen_eval.outcome(g.p, call: at, env: env)
+
+        if o.is_err()
+            return literal(@g)
+
+        if o.must().failed
+            fails @ true
+
+    if !fails && gen_rng.chance(@g.r, percent: 50)
+        return gen_tree.unary(@g.p, op: "must", kid: at)
+    d = int_expr(@g, s: s, envs: envs, depth: depth - 1, context: gen_rng.below(@g.r, n: 6))
+    return gen_tree.binary(@g.p, op: "default", left: at, right: d)
+
+# A fallible function's body, `if guard` failing, else `ok(value)`.
+function fallible_body(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, value: i64) -> i64
+    guard = bool_expr(@g, s: s, envs: envs, depth: g.depth)
+    return gen_tree.binary(@g.p, op: "fallible", left: guard, right: value)
 
 function bool_expr(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
     if depth <= 0 || gen_rng.chance(@g.r, percent: g.leaf)

@@ -1,0 +1,111 @@
+# The declared arm of the generator (panel 231's R2; M-generated-programs,
+# task 931): one operation planted to abort, a `print` of it, never run
+# while the program is built, so `env` stays as it was; the evaluator's run
+# of `main` writes the `!panic:` it owes and `gen_program.expected_of` the
+# place, `!at:`. Split from `gen_make.hero` when it reached 300 lines.
+
+use gen_eval
+use gen_expr
+use gen_rng
+use gen_tree
+
+# The declared arm's one abort: a `print` of an operation the evaluator
+# says must abort, never run here, so `env` stays as it was.
+function abort_site(@g: gen_expr.Gen, s: gen_expr.Scope lent, env: gen_eval.Env lent)
+    a = gen_expr.int_expr(@g, s: s, envs: [env], depth: g.depth - 1, context: gen_rng.below(@g.r, n: 6))
+    v = gen_eval.int_of(g.p, at: a, env: env).must()
+    kind = gen_rng.below(@g.r, n: 8)
+    max = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX, name: ""))
+    smallest = gen_tree.binary(
+        @g.p,
+        op: "-",
+        left: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX * -1, name: "")),
+        right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+    )
+    site: i64 @= gen_tree.binary(
+        @g.p,
+        op: "/",
+        left: a,
+        right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 0, name: ""))
+    )
+
+    if kind == 1
+        if v > 0
+            site @ gen_tree.binary(@g.p, op: "+", left: a, right: max)
+        else if v < -1
+            site @ gen_tree.binary(@g.p, op: "-", left: a, right: max)
+        else
+            site @ gen_tree.binary(
+                @g.p,
+                op: "*",
+                left: smallest,
+                right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: -1, name: ""))
+            )
+    else if kind == 2
+        count = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 64 + gen_rng.below(@g.r, n: 8), name: ""))
+        site @ gen_tree.binary(@g.p, op: ["<<", ">>"][gen_rng.below(@g.r, n: 2)], left: a, right: count)
+    else if kind == 3 && s.arrays.len() > 0
+        j = gen_rng.below(@g.r, n: s.arrays.len())
+        index = gen_tree.added(
+            @g.p,
+            gen_tree.leaf(op: "lit", value: s.lengths[j] + gen_rng.below(@g.r, n: 3), name: "")
+        )
+        site @ gen_tree.added(@g.p, gen_tree.Node(op: "index", value: 0, name: s.arrays[j], kids: [index]))
+    else if kind == 4
+        site @ gen_tree.binary(
+            @g.p,
+            op: ["/", "%"][gen_rng.below(@g.r, n: 2)],
+            left: smallest,
+            right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: -1, name: ""))
+        )
+    else if kind == 5
+        site @ gen_tree.unary(@g.p, op: "neg", kid: smallest)
+    else if gen_rng.chance(@g.r, percent: 50)
+        site @ gen_tree.binary(
+            @g.p,
+            op: "%",
+            left: a,
+            right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 0, name: ""))
+        )
+
+    if kind == 6
+        cut = gen_expr.str_site(@g, s: s, env: env)
+
+        if cut >= 0
+            site @ cut
+
+    if kind == 7
+        failing = must_site(@g, s: s, env: env)
+
+        if failing >= 0
+            site @ failing
+    g.p.body @ g.p.body.push(.show(parts: [site]))
+    g.site @ site
+
+# `.must()` on a call of a fallible function whose guard holds here, or -1
+# where no fallible function is in scope or no try of its arguments made
+# the guard hold.
+function must_site(@g: gen_expr.Gen, s: gen_expr.Scope lent, env: gen_eval.Env lent) -> i64
+    some = gen_expr.callable(g.p, count: s.fns, fallible: true)
+
+    if some.len() == 0
+        return -1
+    f = g.p.fns[some[gen_rng.below(@g.r, n: some.len())]]
+    tries: i64 @= 0
+
+    while tries < 8
+        kids: [i64] @= []
+
+        while kids.len() < f.params.len()
+            kids @ kids.push(
+                gen_expr.int_expr(@g, s: s, envs: [env], depth: g.depth - 1, context: gen_rng.below(@g.r, n: 6))
+            )
+
+        at = gen_tree.added(@g.p, gen_tree.Node(op: "call", value: 0, name: f.name, kids: kids))
+        o = gen_eval.outcome(g.p, call: at, env: env)
+
+        if !o.is_err() && o.must().failed
+            return gen_tree.unary(@g.p, op: "must", kid: at)
+        tries @ tries + 1
+
+    return -1

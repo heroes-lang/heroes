@@ -39,6 +39,20 @@ constant SHIFT: str
 constant INDEX: str
     "array index out of range"
 
+# What a fallible function of the generator fails with, and the abort
+# `.must()` owes on it (the runtime's form, `.must() on an error: <code>:
+# <msg>`, measured by the sitting's compiler-engineer, Q2).
+constant REFUSED_CODE: str
+    "refused"
+
+constant REFUSED_MSG: str
+    "a guard of the generator held"
+
+# A fallible call's outcome: failed, or its value.
+record Outcome
+    failed: bool
+    value: i64
+
 constant SLICE_RANGE: str
     "string slice out of range"
 
@@ -153,9 +167,48 @@ function int_of(p: gen_tree.Program lent, at: i64, env: Env lent) -> i64?
 
     if n.op == "strlen"
         return ok(str_of(p, at: n.kids[0], env: env)?.len())
+
+    # `.default(d)` evaluates its argument whatever the call gave, an
+    # argument being evaluated before the call it is passed to; `.must()`
+    # aborts on a failure.
+    if n.op == "default" || n.op == "must"
+        o = outcome(p, call: n.kids[0], env: env)?
+
+        if n.op == "must"
+            if o.failed
+                return aborted(".must() on an error: " + REFUSED_CODE + ": " + REFUSED_MSG)
+            return ok(o.value)
+        d = int_of(p, at: n.kids[1], env: env)?
+
+        if o.failed
+            return ok(d)
+        return ok(o.value)
     a = int_of(p, at: n.kids[0], env: env)?
     b = int_of(p, at: n.kids[1], env: env)?
     return arith(n.op, a: a, b: b)
+
+# A call of a fallible function: its arguments evaluated, then its guard;
+# where the guard holds the call fails, else its value is computed.
+function outcome(p: gen_tree.Program lent, call: i64, env: Env lent) -> Outcome?
+    n = p.nodes[call]
+    inner: Env @= empty()
+
+    for f in p.fns
+        if f.name == n.name
+            i: i64 @= 0
+
+            while i < f.params.len()
+                v = int_of(p, at: n.kids[i], env: env)?
+                inner.ints[f.params[i]] @ v
+                i @ i + 1
+
+            body = p.nodes[f.body]
+
+            if bool_of(p, at: body.kids[0], env: inner)?
+                return ok(Outcome(failed: true, value: 0))
+            return ok(Outcome(failed: false, value: int_of(p, at: body.kids[1], env: inner)?))
+
+    assert false
 
 function called(p: gen_tree.Program lent, n: gen_tree.Node, env: Env lent) -> i64?
     inner: Env @= empty()
