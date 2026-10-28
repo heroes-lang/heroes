@@ -1,0 +1,106 @@
+# The hunt: programs made, judged and the failures reduced, in a loop, OUTSIDE
+# the net (panel 231's R1 and R7; M-generated-programs, task 934).
+#
+#   heroes run tests/harness/generate.hero -- hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT]
+#
+# A hunt writes only what failed: for each seed whose program the compiler
+# gets wrong, the program and its `.expected` as made, a `.verdict` with the
+# judge's line, and, where the failure is a wrong answer, the reduced witness
+# `r<seed>.hero` with its `.expected`, reduced in the configuration it failed
+# in and holding its symptom (`gen_reduce.hero`). A program the compiler
+# falls over on, or refuses, is written as made: its reduction holds another
+# kind of symptom, the reading of oracle 1, and is a step of its own.
+#
+# **Which compiler builds the hunt decides what it can see** (the
+# compiler-engineer's Q1): `--compiler` names the compiler judged, and the
+# generator is the compiler that runs this program, so a round's base runs
+# the hunt and the round's compiler is judged. A hunt is never part of the
+# net: it generates without end at random seeds, and a suite that does goes
+# red at random. What it finds enters the net as a reduced witness under
+# `tests/golden/run/`, by hand, with its defect's number.
+
+use gen_eval
+use gen_expr
+use gen_judge
+use gen_make
+use gen_reduce
+use gen_symptom
+use gen_text
+use shell
+
+record Hunted
+    judged: i64
+    failed: i64
+    reduced: i64
+
+function hunted(from: i64, count: i64, declared: i64, compiler: str, out: str) -> Hunted?
+    work = out + "/work"
+    shell.mkdir_all(work)?
+    h: Hunted @= Hunted(judged: 0, failed: 0, reduced: 0)
+    k: i64 @= 0
+
+    while k < count
+        seed = from + k
+        name = "g" + seed.to_str()
+        g = gen_make.from_seed(seed: seed, percent: declared)
+        text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
+        answer = gen_make.expected_of(g, text: text, stem: name)
+        source = work + "/" + name + ".hero"
+        write_file(path: source, text: text)?
+        write_file(path: work + "/" + name + ".expected", text: answer)?
+        v = gen_judge.judged(compiler: compiler, source: source, work: work)?
+        h.judged @ h.judged + 1
+
+        if gen_judge.is_defect(v)
+            h.failed @ h.failed + 1
+            said = name + " " + gen_judge.word(v) + " " + gen_judge.detail(v)
+            print(said)
+            write_file(path: out + "/" + name + ".hero", text: text)?
+            write_file(path: out + "/" + name + ".expected", text: answer)?
+            write_file(path: out + "/" + name + ".verdict", text: said + "\n")?
+            level = wrong_level(v)
+
+            if !level.is_err()
+                if reduced_into(g, level: level.must(), compiler: compiler, out: out, name: name, seed: seed)?
+                    h.reduced @ h.reduced + 1
+        k @ k + 1
+
+    return ok(h)
+
+# The configuration a wrong answer was seen in, as the reducer builds it;
+# a failure that is not a wrong answer has none.
+function wrong_level(v: gen_judge.Verdict) -> [str]?
+    match v
+        .wrong w =>
+            if w.where == " -O2"
+                return ok(["-O2"])
+
+            if w.where == " --sanitize -O0"
+                return ok(["--sanitize", "-O0"])
+            nothing: [str] = []
+            return ok(nothing)
+        .passed _ | .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .sanitized _ | .misformatted _ =>
+            return fail(code: "not_wrong", msg: "only a wrong answer is reduced by its value")
+
+# The seed's program reduced while the compiler fails it with the symptom it
+# first showed; false where the symptom cannot be read again (a failure that
+# moves between runs is no witness).
+function reduced_into(g: gen_expr.Gen, level: [str], compiler: str, out: str, name: str, seed: i64) -> bool?
+    dir = out + "/reduce-" + seed.to_str()
+    shell.mkdir_all(dir)?
+    t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
+    seen = gen_symptom.symptom(g.p, compiler: compiler, dir: dir, level: level, @t)
+
+    if seen == ""
+        print(name, ": its failure did not show again when it was asked for its symptom")
+        return ok(false)
+    small = gen_reduce.reduced(
+        g.p,
+        target: gen_symptom.Target(compiler: compiler, dir: dir, level: level, symptom: seen),
+        @t
+    )
+    text = gen_symptom.text_of(small)
+    write_file(path: out + "/r" + seed.to_str() + ".hero", text: text)?
+    write_file(path: out + "/r" + seed.to_str() + ".expected", text: gen_eval.expected(small))?
+    print(name, ": reduced to ", text.len(), " bytes, symptom ", seen, ", ", t.judged, " candidates judged")
+    return ok(true)

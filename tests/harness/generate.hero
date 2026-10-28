@@ -3,7 +3,9 @@
 #
 #   heroes run tests/harness/generate.hero -- make --seed N --count K -o DIR [--declared PERCENT]
 #   heroes run tests/harness/generate.hero -- judge DIR --compiler PATH
-#   heroes run tests/harness/generate.hero -- reduce --seed N --declared PERCENT --compiler PATH -o DIR
+#   heroes run tests/harness/generate.hero -- reduce --seed N --declared PERCENT --compiler PATH -o DIR [--level -O0|-O2|sanitize]
+#   heroes run tests/harness/generate.hero -- hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT]
+#   heroes run tests/harness/generate.hero -- answers --count 128 --declared 30
 #
 # `make` writes `gN.hero` and `gN.expected` for the K seeds from N, the
 # declared arm planting one abort in PERCENT of them; `judge` holds every
@@ -18,9 +20,11 @@
 # 36 of 300 against 0 of 300 on a planted `>>`).
 
 use gen_eval
+use gen_hunt
 use gen_judge
 use gen_make
 use gen_reduce
+use gen_symptom
 use gen_text
 use shell
 use strings
@@ -32,12 +36,25 @@ function main()
         reduce(words)
         return
 
+    if words.len() > 0 && words[0] == "answers"
+        answers(
+            count: number_after(words, flag: "--count", fallback: 128),
+            declared: number_after(words, flag: "--declared", fallback: 30)
+        )
+        return
+
+    if words.len() > 0 && words[0] == "symptom"
+        exit(symptom_word(words))
+
+    if words.len() > 0 && words[0] == "hunt"
+        exit(hunt(words))
+
     if words.len() > 1 && words[0] == "judge"
         exit(judge(dir: words[1], compiler: text_after(words, flag: "--compiler", fallback: "heroes")))
 
     if words.len() < 1 || words[0] != "make"
         print(
-            "usage: generate make --seed N --count K -o DIR [--declared PERCENT] | judge DIR --compiler PATH | reduce --seed N --compiler PATH -o DIR"
+            "usage: generate make --seed N --count K -o DIR [--declared PERCENT] | judge DIR --compiler PATH | reduce --seed N --compiler PATH -o DIR [--level L] | hunt --from S --count K --compiler PATH -o DIR [--declared PERCENT]"
         )
         exit(2)
     seed = number_after(words, flag: "--seed", fallback: 1)
@@ -51,11 +68,9 @@ function main()
         n = seed + k
         g = gen_make.from_seed(seed: n, percent: declared)
         base = dir + "/g" + n.to_str()
-        written(
-            path: base + ".hero",
-            text: gen_text.program_text(g.p, seed: n, has_record: g.has_record, has_variant: g.has_variant)
-        )
-        written(path: base + ".expected", text: gen_eval.expected(g.p))
+        text = gen_text.program_text(g.p, seed: n, has_record: g.has_record, has_variant: g.has_variant)
+        written(path: base + ".hero", text: text)
+        written(path: base + ".expected", text: gen_make.expected_of(g, text: text, stem: "g" + n.to_str()))
         k @ k + 1
 
 # `reduce --seed N --declared PERCENT --compiler PATH -o DIR`: the program
@@ -67,20 +82,24 @@ function reduce(words: [str])
     dir = text_after(words, flag: "-o", fallback: "build/reduced")
     shell.mkdir_all(dir).must()
     g = gen_make.from_seed(seed: n, percent: declared)
-    t: gen_reduce.Tally @= gen_reduce.Tally(judged: 0, kept: 0, refused: 0)
+    t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
+    level = levels(text_after(words, flag: "--level", fallback: "-O0"))
+    seen = gen_symptom.symptom(g.p, compiler: compiler, dir: dir, level: level, @t)
 
-    if !gen_reduce.still_fails(g.p, compiler: compiler, dir: dir, @t)
-        print("seed ", n, ": the compiler does not fail this program")
+    if seen == ""
+        print("seed ", n, ": the compiler does not fail this program at ", level.join(" "))
         exit(1)
-    small = gen_reduce.reduced(g.p, compiler: compiler, dir: dir, @t)
-    text = gen_reduce.text_of(small)
+    print("seed ", n, ": the symptom held is ", seen)
+    target = gen_symptom.Target(compiler: compiler, dir: dir, level: level, symptom: seen)
+    small = gen_reduce.reduced(g.p, target: target, @t)
+    text = gen_symptom.text_of(small)
     written(path: dir + "/r" + n.to_str() + ".hero", text: text)
     written(path: dir + "/r" + n.to_str() + ".expected", text: gen_eval.expected(small))
     print(
         "seed ",
         n,
         ": ",
-        gen_reduce.text_of(g.p).len(),
+        gen_symptom.text_of(g.p).len(),
         " bytes to ",
         text.len(),
         "; judged ",
@@ -131,6 +150,81 @@ function judge(dir: str, compiler: str) -> u8
     if defects > 0
         return 1
     return 0
+
+# `answers`: the sample's answers as `tests/golden/generated/answers.txt`
+# holds them, `== g<seed>` and the seed's `.expected` beneath, seeds 1 to
+# `count`, printed for a person to read and redirect into that file when the
+# generator changes on purpose (panel 231's R7): never written by a suite.
+function answers(count: i64, declared: i64)
+    seed: i64 @= 1
+
+    while seed <= count
+        name = "g" + seed.to_str()
+        g = gen_make.from_seed(seed: seed, percent: declared)
+        text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
+        print("== ", name)
+
+        for row in gen_text.lines_of(gen_make.expected_of(g, text: text, stem: name))
+            print(row)
+
+        seed @ seed + 1
+
+# `symptom --seed N --compiler PATH [--declared PERCENT] [--level L] -o DIR`:
+# what the compiler does wrong with seed N's program, the symptom a
+# reduction would hold, printed alone; 1 where it does something wrong, 0
+# where it does not.
+function symptom_word(words: [str]) -> u8
+    n = number_after(words, flag: "--seed", fallback: 1)
+    dir = text_after(words, flag: "-o", fallback: "build/symptom")
+    shell.mkdir_all(dir).must()
+    g = gen_make.from_seed(seed: n, percent: number_after(words, flag: "--declared", fallback: 0))
+    t: gen_symptom.Tally @= gen_symptom.Tally(judged: 0, kept: 0, refused: 0)
+    seen = gen_symptom.symptom(
+        g.p,
+        compiler: text_after(words, flag: "--compiler", fallback: "heroes"),
+        dir: dir,
+        level: levels(text_after(words, flag: "--level", fallback: "-O0")),
+        @t
+    )
+    print("seed ", n, ": ", seen)
+
+    if seen == ""
+        return 0
+    return 1
+
+# `hunt`: the failures of seeds S to S + K - 1 written into DIR, each wrong
+# answer reduced; 0 where none failed, 1 where one did, 2 where it could not
+# run (`gen_hunt.hero`).
+function hunt(words: [str]) -> u8
+    out = text_after(words, flag: "-o", fallback: "build/hunt")
+    got = gen_hunt.hunted(
+        from: number_after(words, flag: "--from", fallback: 1),
+        count: number_after(words, flag: "--count", fallback: 100),
+        declared: number_after(words, flag: "--declared", fallback: 30),
+        compiler: text_after(words, flag: "--compiler", fallback: "heroes"),
+        out: out
+    )
+
+    match got
+        .err e =>
+            print("the hunt could not run: ", e.msg)
+            return 2
+        .ok h =>
+            print("hunted ", h.judged, ": ", h.failed, " failed, ", h.reduced, " reduced, written into ", out)
+
+            if h.failed > 0
+                return 1
+            return 0
+
+# The flags a reduction builds with, from `--level`: `-O0` (the default),
+# `-O2`, or `sanitize`, the `--sanitize -O0` configuration.
+function levels(said: str) -> [str]
+    if said == "-O2"
+        return ["-O2"]
+
+    if said == "sanitize"
+        return ["--sanitize", "-O0"]
+    return []
 
 function written(path: str, text: str)
     if write_file(path: path, text: text).is_err()

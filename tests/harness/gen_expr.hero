@@ -38,6 +38,10 @@ record Gen
     reuse: [i64]
     has_record: bool
     has_variant: bool
+    # The node the declared arm planted, the expression whose evaluation
+    # stops the program, or -1 where none was planted (panel 231's R5: a
+    # declared abort is held to its place as well as its message).
+    site: i64
 
 function context_ops(c: i64) -> [str]
     if c == 0

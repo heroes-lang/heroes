@@ -6,17 +6,12 @@
 # **a statement dropped**, every later read of what it bound replaced by
 # that value first. Then a tidy pass drops what nothing reads any more (an
 # unused binding is a compile error, spec § 5) and the functions nothing
-# calls. A candidate is kept while the compiler judged still fails it.
+# calls. **A candidate is kept while the compiler judged fails it with the
+# SAME symptom** (panel 231's R6), which `gen_symptom.hero` reads.
 
 use gen_eval
-use gen_text
+use gen_symptom
 use gen_tree
-use shell
-
-record Tally
-    judged: i64
-    kept: i64
-    refused: i64
 
 function roots(s: gen_tree.Stmt) -> [i64]
     return match s
@@ -207,60 +202,9 @@ function unbound(p: gen_tree.Program) -> gen_tree.Program
 
     return q
 
-# Whether `compiler` still fails the program: it builds, and what its binary
-# prints, or the abort it ends with, is not what the tree computes. A
-# refusal is another symptom, so it is not this failure.
-function still_fails(p: gen_tree.Program lent, compiler: str, dir: str, @t: Tally) -> bool
-    t.judged @ t.judged + 1
-    source = dir + "/candidate.hero"
-    binary = dir + "/candidate.bin"
-    _ = write_file(path: source, text: text_of(p)).is_err()
-    built = shell.run(scratch: dir, program: compiler, words: [compiler, "build", source, "-o", binary])
-
-    if built.is_err() || built.must().code != 0
-        t.refused @ t.refused + 1
-        kept_as = dir + "/refused-" + t.refused.to_str()
-        _ = write_file(path: kept_as + ".hero", text: text_of(p)).is_err()
-
-        if !built.is_err()
-            _ = write_file(path: kept_as + ".err", text: built.must().err).is_err()
-        return false
-    ran = shell.run(scratch: dir, program: binary, words: [binary])
-
-    if ran.is_err()
-        return false
-    return said(ran.must()) != gen_eval.expected(p)
-
-function text_of(p: gen_tree.Program lent) -> str
-    has_record: bool @= false
-    has_variant: bool @= false
-
-    for s in p.body
-        match s
-            .rec                                                  => has_record @ true
-            .picked                                               => has_variant @ true
-            .bind_int | .bind_bool | .show | .arr | .cond | .loop => _ = 0
-
-    return gen_text.program_text(p, seed: 0, has_record: has_record, has_variant: has_variant)
-
-# A run read back into the `.expected` form: stdout, then the abort.
-function said(r: shell.Run) -> str
-    if r.code == 134 && r.err.len() > 7
-        first = r.err.slice(from: 0, to: line_end(r.err))
-        return r.out + "!" + first + "\n"
-    return r.out
-
-function line_end(text: str) -> i64
-    i: i64 @= 0
-
-    while i < text.len() && text[i] != 10
-        i @ i + 1
-
-    return i
-
 # The reduction: statements last to first, then every top-level expression
 # made its literal, outermost first, until a whole pass keeps nothing.
-function reduced(start: gen_tree.Program, compiler: str, dir: str, @t: Tally) -> gen_tree.Program
+function reduced(start: gen_tree.Program, target: gen_symptom.Target lent, @t: gen_symptom.Tally) -> gen_tree.Program
     best: gen_tree.Program @= start
     changed: bool @= true
 
@@ -274,7 +218,7 @@ function reduced(start: gen_tree.Program, compiler: str, dir: str, @t: Tally) ->
 
                 # A block is never empty (spec § 5's `Block`), so the last
                 # statement `main` holds is never a candidate to drop.
-                if candidate.body.len() > 0 && still_fails(candidate, compiler: compiler, dir: dir, @t)
+                if candidate.body.len() > 0 && gen_symptom.still_fails(candidate, target: target, @t)
                     best @ candidate
                     t.kept @ t.kept + 1
                     changed @ true
@@ -285,7 +229,7 @@ function reduced(start: gen_tree.Program, compiler: str, dir: str, @t: Tally) ->
 
         while k < best.body.len()
             for root in roots(best.body[k])
-                changed @ literals(@best, at: root, env: env, compiler: compiler, dir: dir, @t) || changed
+                changed @ literals(@best, at: root, env: env, target: target, @t) || changed
 
             k @ k + 1
 
@@ -293,7 +237,7 @@ function reduced(start: gen_tree.Program, compiler: str, dir: str, @t: Tally) ->
 
 # The subtree at `at` made its literal where the failure survives it, else
 # each child tried in turn.
-function literals(@best: gen_tree.Program, at: i64, env: gen_eval.Env lent, compiler: str, dir: str, @t: Tally) -> bool
+function literals(@best: gen_tree.Program, at: i64, env: gen_eval.Env lent, target: gen_symptom.Target lent, @t: gen_symptom.Tally) -> bool
     if best.nodes[at].op == "lit" || best.nodes[at].op == "true" || best.nodes[at].op == "false"
         return false
     candidate: gen_tree.Program @= best
@@ -304,13 +248,13 @@ function literals(@best: gen_tree.Program, at: i64, env: gen_eval.Env lent, comp
     if literal_at(@candidate, at: at, env: env)
         candidate @ tidy(candidate)
 
-        if text_of(candidate) != text_of(best) && still_fails(candidate, compiler: compiler, dir: dir, @t)
+        if gen_symptom.text_of(candidate) != gen_symptom.text_of(best) && gen_symptom.still_fails(candidate, target: target, @t)
             best @ candidate
             t.kept @ t.kept + 1
             return true
     changed: bool @= false
 
     for kid in best.nodes[at].kids
-        changed @ literals(@best, at: kid, env: env, compiler: compiler, dir: dir, @t) || changed
+        changed @ literals(@best, at: kid, env: env, target: target, @t) || changed
 
     return changed

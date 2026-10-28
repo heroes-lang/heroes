@@ -10,9 +10,16 @@
 # the sample**: the programs of seeds 1 to `SAMPLE`, regenerated into this
 # suite's scratch by `gen_make.from_seed`, the map `generate.hero make`
 # reads, each judged by the compiler under test through every oracle of
-# `gen_judge.hero`. Nothing of the sample is committed: it is deterministic
-# under its seeds, so it goes red when the compiler or the generator
-# changes and never at random, and a failure is reproduced by its number,
+# `gen_judge.hero`. **Its answers are committed and its programs are not**
+# (panel 231's R7, the critic's finding 18): `ANSWERS` holds every seed's
+# `.expected`, and each seed is held to it twice, the generator's own answer
+# equal to the committed one and the program's run judged against the
+# committed one, so every leg of the CI meets the same answers whatever the
+# compiler that built this harness computes, and a miscompilation shared by
+# the generator and the program on one platform is seen there. The sample is
+# deterministic under its seeds, so it goes red when the compiler or the
+# generator changes and never at random, and a failure is reproduced by its
+# number,
 # `heroes run tests/harness/generate.hero -- make --seed <n> --count 1
 # --declared 30`.
 #
@@ -51,6 +58,11 @@ constant SAMPLE: i64
 constant DECLARED: i64
     30
 
+# The sample's committed answers, made by `generate.hero answers` and read by
+# a person before they are committed.
+constant ANSWERS: str
+    "tests/golden/generated/answers.txt"
+
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @= report.empty()
 
@@ -58,6 +70,15 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         report.keep_failure(@r, label: "generated/contract", detail: "  " + line)
 
     if !report.green(r)
+        return ok(r)
+    committed = answers_in(read_file(ANSWERS)?)
+
+    if committed.len() < SAMPLE
+        report.keep_failure(
+            @r,
+            label: "generated/answers",
+            detail: "  " + ANSWERS + " holds " + committed.len().to_str() + " answers and the sample is " + SAMPLE.to_str() + ": `heroes run tests/harness/generate.hero -- answers --count " + SAMPLE.to_str() + " --declared " + DECLARED.to_str() + "` prints them"
+        )
         return ok(r)
     dir = scratch + "/generated"
     work = dir + "/work"
@@ -71,8 +92,18 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         if only == "" || strings.contains(text: name, needle: only)
             g = gen_make.from_seed(seed: seed, percent: DECLARED)
             source = dir + "/" + name + ".hero"
-            write_file(path: source, text: gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant))?
-            write_file(path: dir + "/" + name + ".expected", text: gen_eval.expected(g.p))?
+            text = gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant)
+            write_file(path: source, text: text)?
+            computed = gen_make.expected_of(g, text: text, stem: name)
+            owed = committed[name].default("")
+
+            if computed != owed
+                report.keep_failure(
+                    @r,
+                    label: "generated/" + name + "/answer",
+                    detail: "  the generator computes this seed's answer otherwise than " + ANSWERS + " holds it: the generator changed (print the answers again and read them), or the compiler that built this harness computes an operator otherwise\n--- committed ---\n" + owed + "--- computed ---\n" + computed + "--- end ---"
+                )
+            write_file(path: dir + "/" + name + ".expected", text: owed)?
             v = gen_judge.judged(compiler: compiler, source: source, work: work)?
             judged @ judged + 1
 
@@ -93,6 +124,31 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
             detail: "  `" + only + "` names no seed of 1 to " + SAMPLE.to_str() + ": a run that judged nothing is a green run that tested nothing"
         )
     return ok(r)
+
+# The committed answers, `== <name>` and the lines beneath, by name.
+function answers_in(text: str) -> {str: str}
+    found: {str: str} @= {}
+    name: str @= ""
+    block: str @= ""
+
+    for row in gen_text.lines_of(text)
+        if strings.starts_with(text: row, prefix: "== ")
+            if name != ""
+                found[name] @ block
+            name @ strings.without_prefix(text: row, prefix: "== ")
+            block @ ""
+        else
+            block @ block + row + "\n"
+
+    if name != ""
+        found[name] @ block
+    return found
+
+test "the committed answers are read back by name, each block its lines"
+    got = answers_in("== g1\n3\n== g2\n1\n!at: g2.hero:7:11\n!panic: integer overflow\n")
+    assert got["g1"].must() == "3\n"
+    assert got["g2"].must() == "1\n!at: g2.hero:7:11\n!panic: integer overflow\n"
+    assert got["g3"].is_err()
 
 test "the sample is the map `make` reads, so a seed reproduces"
     a = gen_make.from_seed(seed: 7, percent: DECLARED)

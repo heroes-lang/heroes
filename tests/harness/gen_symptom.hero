@@ -1,0 +1,158 @@
+# What a compiler does wrong with a generated program, as a reduction holds
+# it (panel 231's R6, the critic's finding 13; M-generated-programs, task
+# 934): the configuration it was seen in, the kind of difference, and the
+# operator at the root of the expression that printed the first wrong line.
+# A candidate is kept only while it fails with the SAME symptom, so a
+# compiler holding two defects cannot walk a reduction from the one it found
+# to the other. Every binary runs under the judge's bounds in seconds and
+# bytes (`.claude/rules/verification.md` § A run that may not end; the
+# critic's finding 15).
+
+use gen_eval
+use gen_judge
+use gen_text
+use gen_tree
+use shell
+
+# What a reduction holds fixed: the compiler, where it writes, the
+# configuration the failure was seen in, and the symptom it must keep.
+record Target
+    compiler: str
+    dir: str
+    level: [str]
+    symptom: str
+
+record Tally
+    judged: i64
+    kept: i64
+    refused: i64
+
+# What `compiler` does wrong with the program in the configuration
+# `level`: "" where it builds it and the binary says what the tree computes,
+# or where it refuses it (a refusal is another symptom, kept for reading and
+# never this failure); else `<level>|<kind>|<root>`, the kind one of `value`,
+# `abort-missing`, `abort-unexpected` and `abort-other`, the root the
+# operator of the first part of the `print` whose line is the first wrong one.
+function symptom(p: gen_tree.Program lent, compiler: str, dir: str, level: [str], @t: Tally) -> str
+    t.judged @ t.judged + 1
+    source = dir + "/candidate.hero"
+    binary = dir + "/candidate.bin"
+    _ = write_file(path: source, text: text_of(p)).is_err()
+    words: [str] @= [compiler, "build", source, "-o", binary]
+
+    for flag in level
+        words @ words.push(flag)
+
+    built = shell.run_bounded(
+        scratch: dir,
+        program: compiler,
+        words: words,
+        seconds: gen_judge.COMPILE_SECONDS,
+        bytes: 0,
+        stdin_path: ""
+    )
+
+    if built.is_err() || built.must().code != 0
+        t.refused @ t.refused + 1
+        kept_as = dir + "/refused-" + t.refused.to_str()
+        _ = write_file(path: kept_as + ".hero", text: text_of(p)).is_err()
+
+        if !built.is_err()
+            _ = write_file(path: kept_as + ".err", text: built.must().err).is_err()
+        return ""
+    ran = shell.run_bounded(
+        scratch: dir,
+        program: binary,
+        words: [binary],
+        seconds: gen_judge.RUN_SECONDS,
+        bytes: gen_judge.program_bytes(),
+        stdin_path: ""
+    )
+
+    if ran.is_err()
+        return ""
+    return difference(p, got: said(ran.must()), want: gen_eval.expected(p), level: level)
+
+# The symptom of `got` against `want`, "" where they are the same text.
+function difference(p: gen_tree.Program lent, got: str, want: str, level: [str]) -> str
+    if got == want
+        return ""
+    got_rows = gen_text.lines_of(got)
+    want_rows = gen_text.lines_of(want)
+    k: i64 @= 0
+
+    while k < got_rows.len() && k < want_rows.len() && got_rows[k] == want_rows[k]
+        k @ k + 1
+
+    wanted_abort = k < want_rows.len() && aborts(want_rows[k])
+    got_abort = k < got_rows.len() && aborts(got_rows[k])
+    kind: str @= "value"
+
+    if wanted_abort && got_abort
+        kind @ "abort-other"
+    else if wanted_abort
+        kind @ "abort-missing"
+    else if got_abort
+        kind @ "abort-unexpected"
+    return level.join(" ") + "|" + kind + "|" + printed_root(p, line: k)
+
+function aborts(row: str) -> bool
+    return row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
+
+# The operator at the root of the first part of the `line`-th `print` of
+# `main`, every one top-level and one line each; `site` past the last.
+function printed_root(p: gen_tree.Program lent, line: i64) -> str
+    k: i64 @= 0
+
+    for s in p.body
+        match s
+            .show w =>
+                if k == line && w.parts.len() > 0
+                    return p.nodes[w.parts[0]].op
+                k @ k + 1
+            .bind_int | .bind_bool | .rec | .arr | .picked | .cond | .loop => _ = 0
+
+    return "site"
+
+# Whether the candidate fails with the target's symptom.
+function still_fails(p: gen_tree.Program lent, target: Target lent, @t: Tally) -> bool
+    return symptom(p, compiler: target.compiler, dir: target.dir, level: target.level, @t) == target.symptom
+
+function text_of(p: gen_tree.Program lent) -> str
+    has_record: bool @= false
+    has_variant: bool @= false
+
+    for s in p.body
+        match s
+            .rec                                                  => has_record @ true
+            .picked                                               => has_variant @ true
+            .bind_int | .bind_bool | .show | .arr | .cond | .loop => _ = 0
+
+    return gen_text.program_text(p, seed: 0, has_record: has_record, has_variant: has_variant)
+
+# A run read back into the `.expected` form: stdout, then the abort.
+function said(r: shell.Run) -> str
+    if r.code == 134 && r.err.len() > 7
+        first = r.err.slice(from: 0, to: line_end(r.err))
+        return r.out + "!" + first + "\n"
+    return r.out
+
+function line_end(text: str) -> i64
+    i: i64 @= 0
+
+    while i < text.len() && text[i] != 10
+        i @ i + 1
+
+    return i
+
+test "a symptom names the kind of difference and the operator that printed the first wrong line"
+    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [])
+    a = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 8, name: ""))
+    b = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+    shifted = gen_tree.binary(@p, op: ">>", left: a, right: b)
+    summed = gen_tree.binary(@p, op: "+", left: a, right: b)
+    p.body @ p.body.push(.show(parts: [summed])).push(.show(parts: [shifted]))
+    assert difference(p, got: "9\n4\n", want: "9\n4\n", level: []) == ""
+    assert difference(p, got: "9\n5\n", want: "9\n4\n", level: []) == "|value|>>"
+    assert difference(p, got: "9\n4\n", want: "9\n4\n!panic: x\n", level: ["-O2"]) == "-O2|abort-missing|site"
+    assert difference(p, got: "!panic: y\n", want: "9\n4\n", level: []) == "|abort-unexpected|+"

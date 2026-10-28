@@ -243,6 +243,46 @@ function program_text(p: gen_tree.Program lent, seed: i64, has_record: bool, has
     parts @ parts.push(main_text(p))
     return parts.join("\n")
 
+# The lines of a program's text, its last line feed ending the last line.
+function lines_of(text: str) -> [str]
+    rows: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < text.len()
+        if text[i] == 10
+            rows @ rows.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    if start < text.len()
+        rows @ rows.push(text.slice(from: start, to: text.len()))
+    return rows
+
+function has_panic(answer: str) -> bool
+    for row in lines_of(answer)
+        if row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
+            return true
+
+    return false
+
+# `answer` with `!at: <place>` written before its `!panic:` line.
+function placed(answer: str, place: str) -> str
+    out: str @= ""
+
+    for row in lines_of(answer)
+        if row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
+            out @ out + "!at: " + place + "\n"
+        out @ out + row + "\n"
+
+    return out
+
+test "an answer is placed before its `!panic:` line, and lines are read as written"
+    assert placed(answer: "1\n2\n!panic: division by zero\n", place: "g3.hero:9:11") == "1\n2\n!at: g3.hero:9:11\n!panic: division by zero\n"
+    assert lines_of("a\n\nb\n") == ["a", "", "b"]
+    assert has_panic("1\n!panic: x\n")
+    assert !has_panic("1\n")
+
 test "a parenthesis stands only where precedence or association needs it"
     p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [])
     a = gen_tree.added(@p, gen_tree.leaf(op: "name", value: 0, name: "a"))
