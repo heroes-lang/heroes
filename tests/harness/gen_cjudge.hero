@@ -75,17 +75,18 @@ function artifact_agrees(compiler: str, source: str, work: str, plain: shell.Run
         return ok(
             "`--emit-c` exited " + emitted.code.to_str() + " on a program `build` builds: " + first_line(emitted.err)
         )
+    runtime = runtime_of(compiler)
     words = [
         "clang"
         "-std=gnu11"
         "-fsigned-char"
         "-w"
         "-I"
-        "runtime"
+        runtime
         "-I"
         directory_of(source)
         c
-        "runtime/runtime.c"
+        runtime + "/runtime.c"
         "-o"
         binary
     ]
@@ -100,6 +101,22 @@ function artifact_agrees(compiler: str, source: str, work: str, plain: shell.Run
             "the artifact ends with exit " + ran.code.to_str() + " where the build's binary exited " + plain.code.to_str() + ", or prints otherwise"
         )
     return ok("")
+
+# The runtime the compiler builds with, found as the compiler finds it
+# (`heroes --help`'s `HEROES_RUNTIME`): the variable, else the folder beside
+# the compiler, else the working directory's. Until 2026-10-28 this check
+# named `runtime` beneath the working directory alone, and a judge started
+# from another folder read every artifact as one that does not link.
+function runtime_of(compiler: str) -> str
+    named = shell.env(name: "HEROES_RUNTIME")
+
+    if !named.is_err() && named.must() != ""
+        return named.must()
+    beside = directory_of(compiler) + "/runtime"
+
+    if shell.exists(beside + "/runtime.c")
+        return beside
+    return "runtime"
 
 function directory_of(path: str) -> str
     i: i64 @= path.len()

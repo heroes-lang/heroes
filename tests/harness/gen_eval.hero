@@ -14,7 +14,18 @@
 # which is the correlation the seat's question 1 measures: an overflow is
 # decided BEFORE the operation by comparisons against the bounds, so the
 # model never executes an operation that would abort, but the value of a
-# safe `a + b` is the generator's own `+`.
+# safe `a + b` is the generator's own `+`. Its two guards are the contract
+# grid (`gen_contract.hero`) and the harness built by the seed's compiler
+# (panel 231's R2).
+#
+# **A knot, and why it is one file past 300 lines**
+# (`.claude/rules/module-shape.md`: the threshold yields where the language
+# forbids the seam): `int_of` reads strings (`s.len()`) and fallible calls,
+# `str_of` reads integers (`to_str`, a slice's bounds), `bool_of` reads
+# integers, `outcome` reads booleans and integers, and `int_of` reads
+# `outcome`, so the four are mutually recursive and Heroes refuses a cycle
+# between modules. The entry points are `int_of`, `bool_of`, `str_of`,
+# `shown`, `stepped` and `expected`.
 
 use gen_tree
 
