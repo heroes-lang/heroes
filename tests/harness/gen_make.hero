@@ -1,0 +1,316 @@
+# The statement half of the generator (panel 231, M-generated-programs, task
+# 931): the functions above `main`, its statements, each run as it is
+# appended so the next one is built against what the program holds, and the
+# declared arm, which plants one abort on purpose, a `print` of it, so the
+# evaluator's run of `main` writes the `!panic:` it owes. Expressions are
+# `gen_expr`'s; `from_seed` is the one map from a seed to a program, which
+# `generate.hero`'s words and the `generated` suite share, so a failure is
+# reproduced by its number.
+
+use gen_eval
+use gen_expr
+use gen_rng
+use gen_tree
+
+function functions(@g: gen_expr.Gen, count: i64)
+    while g.p.fns.len() < count
+        params: [str] @= ["p0"]
+
+        if gen_rng.chance(@g.r, percent: 50)
+            params @ params.push("p1")
+        envs: [gen_eval.Env] @= []
+
+        while envs.len() < 3
+            e: gen_eval.Env @= gen_eval.empty()
+
+            for name in params
+                e.ints[name] @ gen_rng.constant_of(@g.r, m: g.mix)
+
+            envs @ envs.push(e)
+
+        s = gen_expr.Scope(
+            ints: params,
+            fields: [],
+            bools: [],
+            bfields: [],
+            arrays: [],
+            lengths: [],
+            fns: g.p.fns.len(),
+            top: false
+        )
+        body: i64 @= gen_expr.int_expr(@g, s: s, envs: envs, depth: g.depth, context: gen_rng.below(@g.r, n: 6))
+
+        for name in params
+            body @ gen_expr.reading(@g, at: body, name: name)
+
+        g.p.fns @ g.p.fns.push(gen_tree.Fn(name: "f" + g.p.fns.len().to_str(), params: params, body: body))
+
+# A statement appended to `main`, run at once so `env` holds what it bound.
+function appended(@g: gen_expr.Gen, s: gen_tree.Stmt, @env: gen_eval.Env)
+    g.p.body @ g.p.body.push(s)
+    out: [str] @= []
+    gen_eval.stepped(g.p, s: s, @env, @out).must()
+
+function shown(@g: gen_expr.Gen, parts: [i64], @env: gen_eval.Env)
+    appended(@g, s: .show(parts: parts), @env)
+
+function statement(@g: gen_expr.Gen, @s: gen_expr.Scope, @env: gen_eval.Env, id: i64)
+    envs = [env]
+    n = id.to_str()
+    k = gen_rng.below(@g.r, n: 100)
+    depth = g.depth
+    context = gen_rng.below(@g.r, n: 6)
+
+    if k < 30
+        e = gen_expr.int_expr(@g, s: s, envs: envs, depth: depth, context: context)
+        appended(@g, s: .bind_int(name: "x" + n, expr: e), @env)
+        s.ints @ s.ints.push("x" + n)
+        shown(@g, parts: [gen_expr.named(@g, op: "name", name: "x" + n)], @env)
+
+        if s.top
+            g.reuse @ g.reuse.push(e)
+    else if k < 40
+        appended(@g, s: .bind_bool(name: "b" + n, expr: gen_expr.bool_expr(@g, s: s, envs: envs, depth: depth)), @env)
+        s.bools @ s.bools.push("b" + n)
+        shown(@g, parts: [gen_expr.named(@g, op: "bname", name: "b" + n)], @env)
+    else if k < 50
+        a = gen_expr.int_expr(@g, s: s, envs: envs, depth: depth, context: context)
+        b = gen_expr.int_expr(@g, s: s, envs: envs, depth: depth, context: context)
+        f = gen_expr.bool_expr(@g, s: s, envs: envs, depth: depth)
+        appended(@g, s: .rec(name: "r" + n, a: a, b: b, f: f), @env)
+        g.has_record @ true
+        s.fields @ s.fields.push("r" + n + ".a").push("r" + n + ".b")
+        s.bfields @ s.bfields.push("r" + n + ".f")
+        shown(
+            @g,
+            parts: [gen_expr.named(@g, op: "field", name: "r" + n + ".a"), gen_expr.named(@g, op: "field", name: "r" + n + ".b"), gen_expr.named(@g, op: "bfield", name: "r" + n + ".f")],
+            @env
+        )
+    else if k < 60
+        elems: [i64] @= []
+        size = 1 + gen_rng.below(@g.r, n: 5)
+
+        while elems.len() < size
+            elems @ elems.push(gen_expr.int_expr(@g, s: s, envs: envs, depth: depth, context: context))
+
+        appended(@g, s: .arr(name: "a" + n, elems: elems), @env)
+        s.arrays @ s.arrays.push("a" + n)
+        s.lengths @ s.lengths.push(size)
+        parts: [i64] @= []
+
+        while parts.len() < size
+            index = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: parts.len(), name: ""))
+            parts @ parts.push(gen_tree.added(@g.p, gen_tree.Node(op: "index", value: 0, name: "a" + n, kids: [index])))
+
+        shown(@g, parts: parts, @env)
+    else if k < 72
+        picked(@g, s: s, @env, n: n)
+        s.ints @ s.ints.push("m" + n)
+    else if k < 84
+        guard = gen_expr.bool_expr(@g, s: s, envs: envs, depth: depth)
+        yes = gen_expr.int_expr(@g, s: s, envs: envs, depth: depth, context: context)
+        no = gen_expr.int_expr(@g, s: s, envs: envs, depth: depth, context: context)
+        appended(@g, s: .cond(name: "y" + n, guard: guard, yes: yes, no: no), @env)
+        s.ints @ s.ints.push("y" + n)
+        shown(@g, parts: [gen_expr.named(@g, op: "name", name: "y" + n)], @env)
+    else
+        looped(@g, s: s, @env, n: n)
+        s.ints @ s.ints.push("s" + n)
+
+function picked(@g: gen_expr.Gen, s: gen_expr.Scope lent, @env: gen_eval.Env, n: str)
+    envs = [env]
+    taken = gen_rng.below(@g.r, n: 3)
+    payload: [i64] @= []
+
+    if taken == 0 || taken == 2
+        payload @ payload.push(
+            gen_expr.int_expr(@g, s: s, envs: envs, depth: g.depth, context: gen_rng.below(@g.r, n: 6))
+        )
+
+    if taken == 2
+        payload @ payload.push(gen_expr.bool_expr(@g, s: s, envs: envs, depth: g.depth))
+    arms: [i64] @= []
+    binders: [str] @= []
+
+    while arms.len() < 3
+        j = arms.len()
+        binder = "u" + n + ["a", "b", "c"][j]
+        inner: gen_expr.Scope @= s
+        inner.top @ false
+        arm_env: gen_eval.Env @= env
+
+        if j == 0
+            inner.fields @ inner.fields.push(binder + ".v")
+            arm_env.ints[binder + ".v"] @ 0
+
+            if taken == 0
+                arm_env.ints[binder + ".v"] @ gen_eval.int_of(g.p, at: payload[0], env: env).must()
+
+        if j == 2
+            inner.fields @ inner.fields.push(binder + ".w")
+            arm_env.ints[binder + ".w"] @ 0
+
+            if taken == 2
+                arm_env.ints[binder + ".w"] @ gen_eval.int_of(g.p, at: payload[0], env: env).must()
+        arm = gen_expr.int_expr(@g, s: inner, envs: [arm_env], depth: g.depth, context: gen_rng.below(@g.r, n: 6))
+        arms @ arms.push(arm)
+
+        if j != 1 && (gen_tree.reads(g.p, at: arm, name: binder + ".v") || gen_tree.reads(g.p, at: arm, name: binder + ".w"))
+            binders @ binders.push(binder)
+        else
+            binders @ binders.push("_")
+
+    g.has_variant @ true
+    appended(
+        @g,
+        s: .picked(vname: "v" + n, case_at: taken, payload: payload, mname: "m" + n, arms: arms, binders: binders),
+        @env
+    )
+    shown(@g, parts: [gen_expr.named(@g, op: "name", name: "m" + n)], @env)
+
+function looped(@g: gen_expr.Gen, s: gen_expr.Scope lent, @env: gen_eval.Env, n: str)
+    init = gen_expr.int_expr(@g, s: s, envs: [env], depth: g.depth, context: gen_rng.below(@g.r, n: 6))
+    counter = "i" + n
+    low = gen_rng.below(@g.r, n: 4)
+    high = low + gen_rng.below(@g.r, n: 7)
+    inner: gen_expr.Scope @= s
+    inner.top @ false
+    inner.ints @ inner.ints.push(counter)
+    envs: [gen_eval.Env] @= []
+    turn: i64 @= low
+
+    while turn < high || envs.len() == 0
+        e: gen_eval.Env @= env
+        e.ints[counter] @ turn
+        envs @ envs.push(e)
+        turn @ turn + 1
+
+    body = gen_expr.reading(
+        @g,
+        at: gen_expr.int_expr(@g, s: inner, envs: envs, depth: g.depth, context: gen_rng.below(@g.r, n: 6)),
+        name: counter
+    )
+    ops = ["+", "-", "*", "^", "|", "&"]
+    op: str @= ops[gen_rng.below(@g.r, n: 6)]
+    acc: i64 @= gen_eval.int_of(g.p, at: init, env: env).must()
+
+    for i in range(from: low, to: high)
+        step = gen_eval.arith(op, a: acc, b: gen_eval.int_of(g.p, at: body, env: envs[i - low]).must())
+
+        if step.is_err()
+            op @ "^"
+            acc @ acc ^ gen_eval.int_of(g.p, at: body, env: envs[i - low]).must()
+        else
+            acc @ step.must()
+
+    appended(@g, s: .loop(name: "s" + n, init: init, counter: counter, low: low, high: high, op: op, body: body), @env)
+    shown(@g, parts: [gen_expr.named(@g, op: "name", name: "s" + n)], @env)
+
+# The declared arm's one abort: a `print` of an operation the evaluator
+# says must abort, never run here, so `env` stays as it was.
+function abort_site(@g: gen_expr.Gen, s: gen_expr.Scope lent, env: gen_eval.Env lent)
+    a = gen_expr.int_expr(@g, s: s, envs: [env], depth: g.depth - 1, context: gen_rng.below(@g.r, n: 6))
+    v = gen_eval.int_of(g.p, at: a, env: env).must()
+    kind = gen_rng.below(@g.r, n: 6)
+    max = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX, name: ""))
+    smallest = gen_tree.binary(
+        @g.p,
+        op: "-",
+        left: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX * -1, name: "")),
+        right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+    )
+    site: i64 @= gen_tree.binary(
+        @g.p,
+        op: "/",
+        left: a,
+        right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 0, name: ""))
+    )
+
+    if kind == 1
+        if v > 0
+            site @ gen_tree.binary(@g.p, op: "+", left: a, right: max)
+        else if v < -1
+            site @ gen_tree.binary(@g.p, op: "-", left: a, right: max)
+        else
+            site @ gen_tree.binary(
+                @g.p,
+                op: "*",
+                left: smallest,
+                right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: -1, name: ""))
+            )
+    else if kind == 2
+        count = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 64 + gen_rng.below(@g.r, n: 8), name: ""))
+        site @ gen_tree.binary(@g.p, op: ["<<", ">>"][gen_rng.below(@g.r, n: 2)], left: a, right: count)
+    else if kind == 3 && s.arrays.len() > 0
+        j = gen_rng.below(@g.r, n: s.arrays.len())
+        index = gen_tree.added(
+            @g.p,
+            gen_tree.leaf(op: "lit", value: s.lengths[j] + gen_rng.below(@g.r, n: 3), name: "")
+        )
+        site @ gen_tree.added(@g.p, gen_tree.Node(op: "index", value: 0, name: s.arrays[j], kids: [index]))
+    else if kind == 4
+        site @ gen_tree.binary(
+            @g.p,
+            op: ["/", "%"][gen_rng.below(@g.r, n: 2)],
+            left: smallest,
+            right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: -1, name: ""))
+        )
+    else if kind == 5
+        site @ gen_tree.unary(@g.p, op: "neg", kid: smallest)
+    else if gen_rng.chance(@g.r, percent: 50)
+        site @ gen_tree.binary(
+            @g.p,
+            op: "%",
+            left: a,
+            right: gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 0, name: ""))
+        )
+    g.p.body @ g.p.body.push(.show(parts: [site]))
+
+# One program from one seed; `declared` plants one abort in it.
+function made(seed: i64, declared: bool) -> gen_expr.Gen
+    r: gen_rng.Rng @= gen_rng.seeded(seed)
+    mix = gen_rng.mix_for(@r)
+    depth = 1 + gen_rng.below(@r, n: 4)
+    leaf = 20 + gen_rng.below(@r, n: 50)
+    g: gen_expr.Gen @= gen_expr.Gen(
+        r: r,
+        mix: mix,
+        p: gen_tree.Program(nodes: [], fns: [], body: []),
+        depth: depth,
+        leaf: leaf,
+        reuse: [],
+        has_record: false,
+        has_variant: false
+    )
+    functions(@g, count: gen_rng.below(@g.r, n: 4))
+    s: gen_expr.Scope @= gen_expr.Scope(
+        ints: [],
+        fields: [],
+        bools: [],
+        bfields: [],
+        arrays: [],
+        lengths: [],
+        fns: g.p.fns.len(),
+        top: true
+    )
+    env: gen_eval.Env @= gen_eval.empty()
+    count = 4 + gen_rng.below(@g.r, n: 11)
+    site: i64 @= -1
+
+    if declared
+        site @ gen_rng.below(@g.r, n: count)
+    id: i64 @= 0
+
+    while id < count
+        if id == site
+            abort_site(@g, s: s, env: env)
+        statement(@g, @s, @env, id: id)
+        id @ id + 1
+
+    return g
+
+# The program a seed names, the declared arm planted in `percent` of seeds:
+# the one map `make`, `reduce` and the `generated` suite all read.
+function from_seed(seed: i64, percent: i64) -> gen_expr.Gen
+    r: gen_rng.Rng @= gen_rng.seeded(seed * 31 + 7)
+    return made(seed, declared: gen_rng.chance(@r, percent: percent))

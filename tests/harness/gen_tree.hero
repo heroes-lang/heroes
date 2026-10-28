@@ -1,0 +1,109 @@
+# What a generated program is before it is text: an arena of expression
+# nodes, the statements of `main`, and the functions above it (panel 231's
+# prototype). The printer (`gen_text`) and the evaluator (`gen_eval`) both
+# read this one shape, so the program and its answer are two readings of
+# one tree, never two trees.
+#
+# A node's children are indices into the arena, as
+# `examples/interpreter/` keeps its syntax tree, so a subtree is shared by
+# index and never copied.
+
+record Node
+    op: str
+    value: i64
+    name: str
+    kids: [i64]
+
+# One function: its parameters, all `i64`, and the expression it returns.
+record Fn
+    name: str
+    params: [str]
+    body: i64
+
+variant Stmt
+    bind_int
+        name: str
+        expr: i64
+    bind_bool
+        name: str
+        expr: i64
+    show
+        parts: [i64]
+    rec
+        name: str
+        a: i64
+        b: i64
+        f: i64
+    arr
+        name: str
+        elems: [i64]
+    picked
+        vname: str
+        case_at: i64
+        payload: [i64]
+        mname: str
+        arms: [i64]
+        binders: [str]
+    cond
+        name: str
+        guard: i64
+        yes: i64
+        no: i64
+    loop
+        name: str
+        init: i64
+        counter: str
+        low: i64
+        high: i64
+        op: str
+        body: i64
+
+record Program
+    nodes: [Node]
+    fns: [Fn]
+    body: [Stmt]
+
+function leaf(op: str, value: i64, name: str) -> Node
+    none: [i64] = []
+    return Node(op: op, value: value, name: name, kids: none)
+
+function added(@p: Program, n: Node) -> i64
+    p.nodes @ p.nodes.push(n)
+    return p.nodes.len() - 1
+
+function binary(@p: Program, op: str, left: i64, right: i64) -> i64
+    return added(@p, Node(op: op, value: 0, name: "", kids: [left, right]))
+
+function unary(@p: Program, op: str, kid: i64) -> i64
+    return added(@p, Node(op: op, value: 0, name: "", kids: [kid]))
+
+# The operators whose operands and result are `i64`.
+function is_int_binary(op: str) -> bool
+    return op == "+" || op == "-" || op == "*" || op == "/" || op == "%" || op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>"
+
+function is_comparison(op: str) -> bool
+    return op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==" || op == "!="
+
+# Whether the subtree at `at` reads `name`: a parameter nothing reads is a
+# compile error (spec § 5), so the generator asks before it closes a body.
+function reads(p: Program lent, at: i64, name: str) -> bool
+    n = p.nodes[at]
+
+    if (n.op == "name" || n.op == "bname" || n.op == "field" || n.op == "bfield") && n.name == name
+        return true
+
+    for kid in n.kids
+        if reads(p, at: kid, name: name)
+            return true
+
+    return false
+
+test "a subtree is shared by index, and reading it finds the names below it"
+    p: Program @= Program(nodes: [], fns: [], body: [])
+    x = added(@p, leaf(op: "name", value: 0, name: "x0"))
+    one = added(@p, leaf(op: "lit", value: 1, name: ""))
+    sum = binary(@p, op: "+", left: x, right: one)
+    twice = binary(@p, op: "*", left: sum, right: sum)
+    assert reads(p, at: twice, name: "x0")
+    assert !reads(p, at: one, name: "x0")
+    assert p.nodes.len() == 4

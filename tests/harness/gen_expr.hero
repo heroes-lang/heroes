@@ -1,0 +1,209 @@
+# The expression half of the generator (panel 231, M-generated-programs, task
+# 931): from *an expression of type T is needed* down to the leaves, every
+# node's value known on every sample while it is built, so a program
+# type-checks by construction and its answer is computed beside it.
+# `gen_make` writes the statements and the program around these.
+#
+# **Values are tracked over samples.** At `main`'s top level a node has one
+# value; inside a function body it has one per sample of its arguments,
+# inside a loop body one per turn, inside a `match` arm the taken arm's.
+# An operator whose operands would abort on any sample is REPAIRED to
+# another, YARPGen's local fix, `^` last since it never aborts.
+#
+# **The policies** are YARPGen's (measurement 056 § 1.2): an operator
+# context per region of a tree, a constants mix drawn per program, a buffer
+# of earlier subexpressions reused at `main`'s top level, and the depth and
+# the share of leaves drawn per program.
+
+use gen_eval
+use gen_rng
+use gen_tree
+
+record Scope
+    ints: [str]
+    fields: [str]
+    bools: [str]
+    bfields: [str]
+    arrays: [str]
+    lengths: [i64]
+    fns: i64
+    top: bool
+
+record Gen
+    r: gen_rng.Rng
+    mix: gen_rng.Mix
+    p: gen_tree.Program
+    depth: i64
+    leaf: i64
+    reuse: [i64]
+    has_record: bool
+    has_variant: bool
+
+function context_ops(c: i64) -> [str]
+    if c == 0
+        return ["+", "-"]
+
+    if c == 1
+        return ["*", "/", "%"]
+
+    if c == 2
+        return ["&", "|", "^"]
+
+    if c == 3
+        return ["<<", ">>"]
+
+    if c == 4
+        return ["+", "-", "*"]
+    return ["+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>"]
+
+function safe(p: gen_tree.Program lent, at: i64, envs: [gen_eval.Env] lent) -> bool
+    for env in envs
+        if gen_eval.int_of(p, at: at, env: env).is_err()
+            return false
+
+    return true
+
+# The node at `at`, safe on every sample: its operator changed until it is,
+# and a literal where no operator saves it (a reused subtree or a call that
+# aborts on a sample it was not built for).
+function repaired(@g: Gen, at: i64, envs: [gen_eval.Env] lent) -> i64
+    if safe(g.p, at: at, envs: envs)
+        return at
+
+    if g.p.nodes[at].op == "neg"
+        g.p.nodes[at].op @ "~"
+        return at
+    order = context_ops(5)
+    start = gen_rng.below(@g.r, n: order.len())
+    k: i64 @= 0
+
+    while k < order.len()
+        g.p.nodes[at].op @ order[(start + k) % order.len()]
+
+        if safe(g.p, at: at, envs: envs)
+            return at
+        k @ k + 1
+
+    g.p.nodes[at] @ gen_tree.leaf(op: "lit", value: 0, name: "")
+    return at
+
+function literal(@g: Gen) -> i64
+    v = gen_rng.constant_of(@g.r, m: g.mix)
+
+    if v == gen_eval.MIN
+        left = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_eval.MAX * -1, name: ""))
+        right = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+        return gen_tree.binary(@g.p, op: "-", left: left, right: right)
+    return gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: v, name: ""))
+
+function named(@g: Gen, op: str, name: str) -> i64
+    return gen_tree.added(@g.p, gen_tree.leaf(op: op, value: 0, name: name))
+
+function int_expr(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64, context: i64) -> i64
+    if depth <= 0 || gen_rng.chance(@g.r, percent: g.leaf)
+        return int_leaf(@g, s: s, envs: envs, depth: depth)
+    c: i64 @= context
+
+    if gen_rng.chance(@g.r, percent: 30)
+        c @ gen_rng.below(@g.r, n: 6)
+
+    if gen_rng.chance(@g.r, percent: 12)
+        kid = int_expr(@g, s: s, envs: envs, depth: depth - 1, context: c)
+        op: str @= "~"
+
+        if gen_rng.chance(@g.r, percent: 60)
+            op @ "neg"
+        return repaired(@g, at: gen_tree.unary(@g.p, op: op, kid: kid), envs: envs)
+    left = int_expr(@g, s: s, envs: envs, depth: depth - 1, context: c)
+    ops = context_ops(c)
+    op = ops[gen_rng.below(@g.r, n: ops.len())]
+    right = operand(@g, op: op, s: s, envs: envs, depth: depth - 1, context: c)
+    at = gen_tree.binary(@g.p, op: op, left: left, right: right)
+    return repaired(@g, at: at, envs: envs)
+
+# The right operand of `op`, drawn from that operator's own domain where it
+# has one (panel 231's R3, the critic's finding 12): a shift's count over
+# the whole of 0 to 63, never only where the constants mix happens to land,
+# which left a `>>` miscompiled for counts of 32 and up unseen in 300 of 300
+# programs and seen in 61 of 300 once counts were drawn so; a divisor near 0
+# and -1, where `/` and `%` have their edges. Elsewhere, an expression like
+# any other.
+function operand(@g: Gen, op: str, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64, context: i64) -> i64
+    if (op == "<<" || op == ">>") && gen_rng.chance(@g.r, percent: 70)
+        return gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_rng.below(@g.r, n: 64), name: ""))
+
+    if (op == "/" || op == "%") && gen_rng.chance(@g.r, percent: 30)
+        divisors = [-2, -1, 1, 2, 3, -3]
+        return gen_tree.added(
+            @g.p,
+            gen_tree.leaf(op: "lit", value: divisors[gen_rng.below(@g.r, n: divisors.len())], name: "")
+        )
+    return int_expr(@g, s: s, envs: envs, depth: depth, context: context)
+
+function int_leaf(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
+    k = gen_rng.below(@g.r, n: 100)
+
+    if k < 30 && s.ints.len() > 0
+        return named(@g, op: "name", name: s.ints[gen_rng.below(@g.r, n: s.ints.len())])
+
+    if k < 40 && s.fields.len() > 0
+        return named(@g, op: "field", name: s.fields[gen_rng.below(@g.r, n: s.fields.len())])
+
+    if k < 50 && s.arrays.len() > 0
+        j = gen_rng.below(@g.r, n: s.arrays.len())
+        index = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: gen_rng.below(@g.r, n: s.lengths[j]), name: ""))
+        return gen_tree.added(@g.p, gen_tree.Node(op: "index", value: 0, name: s.arrays[j], kids: [index]))
+
+    if k < 60 && s.fns > 0 && depth > 0
+        return call(@g, s: s, envs: envs, depth: depth)
+
+    if k < 70 && s.top && g.reuse.len() > 0
+        return g.reuse[gen_rng.below(@g.r, n: g.reuse.len())]
+    return literal(@g)
+
+function call(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
+    f = g.p.fns[gen_rng.below(@g.r, n: s.fns)]
+    kids: [i64] @= []
+
+    while kids.len() < f.params.len()
+        kids @ kids.push(int_expr(@g, s: s, envs: envs, depth: depth - 1, context: gen_rng.below(@g.r, n: 6)))
+
+    at = gen_tree.added(@g.p, gen_tree.Node(op: "call", value: 0, name: f.name, kids: kids))
+
+    if safe(g.p, at: at, envs: envs)
+        return at
+    return literal(@g)
+
+function bool_expr(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
+    if depth <= 0 || gen_rng.chance(@g.r, percent: g.leaf)
+        k = gen_rng.below(@g.r, n: 100)
+
+        if k < 10
+            if gen_rng.chance(@g.r, percent: 50)
+                return named(@g, op: "true", name: "")
+            return named(@g, op: "false", name: "")
+
+        if k < 30 && s.bools.len() > 0
+            return named(@g, op: "bname", name: s.bools[gen_rng.below(@g.r, n: s.bools.len())])
+
+        if k < 40 && s.bfields.len() > 0
+            return named(@g, op: "bfield", name: s.bfields[gen_rng.below(@g.r, n: s.bfields.len())])
+        left = int_expr(@g, s: s, envs: envs, depth: depth - 1, context: gen_rng.below(@g.r, n: 6))
+        right = int_expr(@g, s: s, envs: envs, depth: depth - 1, context: gen_rng.below(@g.r, n: 6))
+        ops = ["<", "<=", ">", ">=", "==", "!="]
+        return gen_tree.binary(@g.p, op: ops[gen_rng.below(@g.r, n: 6)], left: left, right: right)
+
+    if gen_rng.chance(@g.r, percent: 20)
+        return gen_tree.unary(@g.p, op: "not", kid: bool_expr(@g, s: s, envs: envs, depth: depth - 1))
+    left = bool_expr(@g, s: s, envs: envs, depth: depth - 1)
+    right = bool_expr(@g, s: s, envs: envs, depth: depth - 1)
+
+    if gen_rng.chance(@g.r, percent: 50)
+        return gen_tree.binary(@g.p, op: "&&", left: left, right: right)
+    return gen_tree.binary(@g.p, op: "||", left: left, right: right)
+
+# `at`, made to read `name` where it does not: `name ^ at` never aborts.
+function reading(@g: Gen, at: i64, name: str) -> i64
+    if gen_tree.reads(g.p, at: at, name: name)
+        return at
+    return gen_tree.binary(@g.p, op: "^", left: named(@g, op: "name", name: name), right: at)

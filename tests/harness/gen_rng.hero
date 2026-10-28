@@ -1,0 +1,104 @@
+# The generator's seeded stream, and its constants policy (panel 231's
+# prototype, the compiler-engineer's seat).
+#
+# Marsaglia's xorshift64 (2003): three shifts and three `^`, none of which
+# can abort in Heroes (design.md §4.14: `<<` works on the unsigned pattern,
+# and a count of 0..63 is all it is ever given here), so one draw is 64 bits
+# where `examples/montecarlo/main.hero`'s MINSTD gives 31. One seed gives one
+# stream on every machine, which is what lets a failure be reported by its
+# number.
+
+record Rng
+    s: i64
+
+constant MAX: i64
+    9223372036854775807
+
+function seeded(seed: i64) -> Rng
+    s: i64 @= seed ^ 0x2545f4914f6cdd1d
+
+    if s == 0
+        s @ 1
+    r: Rng @= Rng(s: s)
+    _ = next(@r)
+    return r
+
+# `>>` is arithmetic in Heroes (design.md §4.14), so a logical shift masks
+# the sign's copies off: `~(-1 << (64 - k))` is the low `64 - k` bits.
+function shr(x: i64, k: i64) -> i64
+    if k == 0
+        return x
+    return x >> k & ~(-1 << 64 - k)
+
+function next(@r: Rng) -> i64
+    x: i64 @= r.s
+    x @ x ^ x << 13
+    x @ x ^ shr(x: x, k: 7)
+    x @ x ^ x << 17
+    r.s @ x
+    return x
+
+# A number in `0 .. n - 1`, `n` positive.
+function below(@r: Rng, n: i64) -> i64
+    return (next(@r) & MAX) % n
+
+function chance(@r: Rng, percent: i64) -> bool
+    return below(@r, n: 100) < percent
+
+# The constants policy, YARPGen's (measurement 056 § 1.2): small numbers,
+# numbers at a width's edges, runs of ones, and the whole 64 bits, in
+# proportions drawn once per program.
+record Mix
+    small: i64
+    edge: i64
+    run: i64
+
+function mix_for(@r: Rng) -> Mix
+    small = 20 + below(@r, n: 60)
+    at_edge = below(@r, n: 100 - small)
+    runs = below(@r, n: 100 - small - at_edge + 1)
+    return Mix(small: small, edge: at_edge, run: runs)
+
+function constant_of(@r: Rng, m: Mix) -> i64
+    k = below(@r, n: 100)
+
+    if k < m.small
+        return below(@r, n: 33) - 16
+
+    if k < m.small + m.edge
+        return edge(@r)
+
+    if k < m.small + m.edge + m.run
+        size = 1 + below(@r, n: 62)
+        return (1 << size) - 1 << below(@r, n: 64 - size)
+    return next(@r)
+
+# A number next to an edge: the extremes of `i64`, and a power of two and
+# its negation, each give or take two.
+function edge(@r: Rng) -> i64
+    j = below(@r, n: 3)
+    which = below(@r, n: 4)
+
+    if which == 0
+        return MAX - j
+
+    if which == 1
+        return -MAX - 1 + j
+    power = 1 << 1 + below(@r, n: 62)
+
+    if which == 2
+        return power - 1 + j
+    return -power + 1 - j
+
+test "one seed gives one stream, and two seeds two"
+    a: Rng @= seeded(7)
+    b: Rng @= seeded(7)
+    c: Rng @= seeded(8)
+    first = next(@a)
+    assert first == next(@b)
+    assert first != next(@c)
+
+test "a logical shift fills with zeros where `>>` copies the sign"
+    assert shr(x: -1, k: 60) == 15
+    assert shr(x: -8, k: 0) == -8
+    assert -8 >> 1 == -4

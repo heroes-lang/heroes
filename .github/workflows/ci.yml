@@ -785,10 +785,21 @@ jobs:
         shell: bash
         run: ./heroes${{ matrix.exe }} test selfhost/main.hero
 
-      # The net: every suite the Rust harness carries, run by the compiler that
-      # survives, against the compiler that survives. This is the configuration
-      # the archive leaves behind — the one panel 085 R4 called "life after the
-      # archive" — so it is the one that has to be green before the move.
+      # The net: every suite the Rust harness carries, against the compiler that
+      # survives. This is the configuration the archive leaves behind — the one
+      # panel 085 R4 called "life after the archive" — so it is the one that has
+      # to be green before the move.
+      #
+      # **The harness is built by stage 1, the seed's compiler, and judges stage
+      # 2** (panel 231's R2, the completeness critic's finding 1). The `generated`
+      # suite computes every program's answer inside the harness, so a harness
+      # built by the compiler it judges shares that compiler's miscompilations
+      # and cannot see one: measured on a planted `>>`, 0 of 300 programs failed
+      # with one compiler on both sides and 36 of 300 with the generator built by
+      # another (`docs/panel/231-reports/compiler-engineer.md`, Q1). Stage 1 is
+      # the other compiler every job already has, and it differs from stage 2
+      # wherever the emitter moved since the seed was refreshed. Until
+      # 2026-10-28 this step ran `./heroes${{ matrix.exe }} run` on both sides.
       - name: The net, in Heroes
         shell: bash
         # The token `records` reads the issues with: the job's own, read-only
@@ -796,7 +807,7 @@ jobs:
         # by the harness (`tests/harness/issue_wire.hero`).
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./heroes${{ matrix.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.exe }}
+        run: ./heroes-from-seed${{ matrix.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.exe }}
 
       # BUBBLEWRAP, THE SANDBOX A MODEL'S PROGRAM RUNS IN ON LINUX (issue 2162).
       # Installed here so the thesis instrument's tests that run a program,

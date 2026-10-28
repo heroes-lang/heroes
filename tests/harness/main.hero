@@ -106,6 +106,7 @@ use suite_seed
 use suite_determinism
 use suite_emission
 use suite_fixes
+use suite_generated
 use suite_golden
 use suite_layout
 use suite_lines
@@ -363,6 +364,18 @@ function main()
     # What ONE translation unit holds, asked of the files a build wrote:
     # the cache suite above asks what the second invocation does, this
     # one asks what the first one produced.
+    # Programs nobody wrote (panel 231's R7): the contract grid, then the
+    # sample of seeds 1 to 128, each judged through the generator's oracles.
+    if only == "" || only == "generated"
+        got = suite_generated.run_all(scratch: scratch, compiler: compiler, only: pick)
+
+        if got.is_err()
+            print("harness: the generated suite could not run" + why(got))
+            exit(2)
+        print("  generated: " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
     if only == "" || only == "units"
         got = suite_units.run_all(scratch: scratch, compiler: compiler)
 

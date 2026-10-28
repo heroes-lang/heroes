@@ -1,0 +1,348 @@
+# The answer a generated program owes, computed from its tree (panel 231's
+# prototype): an evaluator over `gen_tree`'s arena, and the run of `main`
+# that writes the `.expected` (`tests/harness/expectation.hero`'s form).
+#
+# **What it knows is the language's semantics, written a second time**, so
+# every rule it holds is a premise about the compiler: overflow aborts at
+# every width (spec § 7), `/` and `%` truncate toward zero, a shift count
+# outside 0..63 aborts, and `<<` past the sign bit WRAPS (design.md §4.14,
+# `docs/design.md:2071`), which the spec does not say. The texts of the
+# aborts are copied from a run of each (the seat's report, Q2), never from
+# `runtime/`: the `%` and the shift texts are the emitter's string literals.
+#
+# **And it computes with the `i64` operators of the compiler it judges**,
+# which is the correlation the seat's question 1 measures: an overflow is
+# decided BEFORE the operation by comparisons against the bounds, so the
+# model never executes an operation that would abort, but the value of a
+# safe `a + b` is the generator's own `+`.
+
+use gen_tree
+
+constant MAX: i64
+    9223372036854775807
+
+constant MIN: i64
+    -9223372036854775807 - 1
+
+constant OVERFLOW: str
+    "integer overflow"
+
+constant BY_ZERO: str
+    "division by zero"
+
+constant REMAINDER: str
+    "`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"
+
+constant SHIFT: str
+    "shift count outside 0..63"
+
+constant INDEX: str
+    "array index out of range"
+
+record Env
+    ints: {str: i64}
+    bools: {str: bool}
+    arrays: {str: [i64]}
+
+function empty() -> Env
+    ints: {str: i64} = {}
+    bools: {str: bool} = {}
+    arrays: {str: [i64]} = {}
+    return Env(ints: ints, bools: bools, arrays: arrays)
+
+function aborted(message: str) -> i64?
+    return fail(code: "abort", msg: message)
+
+# One operator on two known operands: the value, or the abort the program
+# must end with.
+function arith(op: str, a: i64, b: i64) -> i64?
+    if op == "+"
+        if b > 0 && a > MAX - b || b < 0 && a < MIN - b
+            return aborted(OVERFLOW)
+        return ok(a + b)
+
+    if op == "-"
+        if b < 0 && a > MAX + b || b > 0 && a < MIN + b
+            return aborted(OVERFLOW)
+        return ok(a - b)
+
+    if op == "*"
+        if product_overflows(a: a, b: b)
+            return aborted(OVERFLOW)
+        return ok(a * b)
+
+    if op == "/" || op == "%"
+        if b == 0
+            return aborted(BY_ZERO)
+
+        if a == MIN && b == -1
+            if op == "/"
+                return aborted(OVERFLOW)
+            return aborted(REMAINDER)
+
+        if op == "/"
+            return ok(a / b)
+        return ok(a % b)
+
+    if op == "<<" || op == ">>"
+        if b < 0 || b > 63
+            return aborted(SHIFT)
+
+        if op == "<<"
+            return ok(a << b)
+        return ok(a >> b)
+
+    if op == "&"
+        return ok(a & b)
+
+    if op == "|"
+        return ok(a | b)
+
+    if op == "^"
+        return ok(a ^ b)
+    assert false
+
+# CERT INT32-C's test, which divides where the product would overflow.
+function product_overflows(a: i64, b: i64) -> bool
+    if a > 0
+        if b > 0
+            return a > MAX / b
+        return b < MIN / a
+
+    if b > 0
+        return a < MIN / b
+    return a != 0 && b < MAX / a
+
+function int_of(p: gen_tree.Program lent, at: i64, env: Env lent) -> i64?
+    n = p.nodes[at]
+
+    if n.op == "lit"
+        return ok(n.value)
+
+    if n.op == "name" || n.op == "field"
+        return ok(env.ints[n.name].must())
+
+    if n.op == "neg"
+        v = int_of(p, at: n.kids[0], env: env)?
+
+        if v == MIN
+            return aborted(OVERFLOW)
+        return ok(-v)
+
+    if n.op == "~"
+        return ok(~int_of(p, at: n.kids[0], env: env)?)
+
+    if n.op == "index"
+        xs = env.arrays[n.name].must()
+        i = int_of(p, at: n.kids[0], env: env)?
+
+        if i < 0 || i >= xs.len()
+            return aborted(INDEX)
+        return ok(xs[i])
+
+    if n.op == "call"
+        return called(p, n: n, env: env)
+    a = int_of(p, at: n.kids[0], env: env)?
+    b = int_of(p, at: n.kids[1], env: env)?
+    return arith(n.op, a: a, b: b)
+
+function called(p: gen_tree.Program lent, n: gen_tree.Node, env: Env lent) -> i64?
+    inner: Env @= empty()
+
+    for f in p.fns
+        if f.name == n.name
+            i: i64 @= 0
+
+            while i < f.params.len()
+                v = int_of(p, at: n.kids[i], env: env)?
+                inner.ints[f.params[i]] @ v
+                i @ i + 1
+
+            return int_of(p, at: f.body, env: inner)
+
+    assert false
+
+function bool_of(p: gen_tree.Program lent, at: i64, env: Env lent) -> bool?
+    n = p.nodes[at]
+
+    if n.op == "true" || n.op == "false"
+        return ok(n.op == "true")
+
+    if n.op == "bname" || n.op == "bfield"
+        return ok(env.bools[n.name].must())
+
+    if n.op == "not"
+        return ok(!bool_of(p, at: n.kids[0], env: env)?)
+
+    if n.op == "&&"
+        if !bool_of(p, at: n.kids[0], env: env)?
+            return ok(false)
+        return bool_of(p, at: n.kids[1], env: env)
+
+    if n.op == "||"
+        if bool_of(p, at: n.kids[0], env: env)?
+            return ok(true)
+        return bool_of(p, at: n.kids[1], env: env)
+    a = int_of(p, at: n.kids[0], env: env)?
+    b = int_of(p, at: n.kids[1], env: env)?
+
+    if n.op == "<"
+        return ok(a < b)
+
+    if n.op == "<="
+        return ok(a <= b)
+
+    if n.op == ">"
+        return ok(a > b)
+
+    if n.op == ">="
+        return ok(a >= b)
+
+    if n.op == "=="
+        return ok(a == b)
+
+    if n.op == "!="
+        return ok(a != b)
+    assert false
+
+function is_bool(op: str) -> bool
+    return op == "true" || op == "false" || op == "bname" || op == "bfield" || op == "not" || op == "&&" || op == "||" || gen_tree.is_comparison(op)
+
+# A node's value as `print` writes it.
+function shown(p: gen_tree.Program lent, at: i64, env: Env lent) -> str?
+    if is_bool(p.nodes[at].op)
+        return ok(bool_of(p, at: at, env: env)?.to_str())
+    return ok(int_of(p, at: at, env: env)?.to_str())
+
+# One statement of `main`, run: its bindings written into `env`, its
+# printed line into `out`; an abort is the error, its text the message.
+function stepped(p: gen_tree.Program lent, s: gen_tree.Stmt, @env: Env, @out: [str]) -> ()?
+    match s
+        .bind_int b =>
+            v = int_of(p, at: b.expr, env: env)?
+            env.ints[b.name] @ v
+        .bind_bool b =>
+            v = bool_of(p, at: b.expr, env: env)?
+            env.bools[b.name] @ v
+        .show w =>
+            line: str @= ""
+
+            for part in w.parts
+                if line.len() > 0
+                    line @ line + " "
+                line @ line + shown(p, at: part, env: env)?
+
+            out @ out.push(line)
+        .rec r =>
+            a = int_of(p, at: r.a, env: env)?
+            b = int_of(p, at: r.b, env: env)?
+            f = bool_of(p, at: r.f, env: env)?
+            env.ints[r.name + ".a"] @ a
+            env.ints[r.name + ".b"] @ b
+            env.bools[r.name + ".f"] @ f
+        .arr r =>
+            xs: [i64] @= []
+
+            for e in r.elems
+                xs @ xs.push(int_of(p, at: e, env: env)?)
+
+            env.arrays[r.name] @ xs
+        .picked _ => matched(p, m: s, env: @env)?
+        .cond c =>
+            v: i64 @= 0
+
+            if bool_of(p, at: c.guard, env: env)?
+                v @ int_of(p, at: c.yes, env: env)?
+            else
+                v @ int_of(p, at: c.no, env: env)?
+            env.ints[c.name] @ v
+        .loop l =>
+            acc: i64 @= int_of(p, at: l.init, env: env)?
+
+            for i in range(from: l.low, to: l.high)
+                env.ints[l.counter] @ i
+                acc @ arith(l.op, a: acc, b: int_of(p, at: l.body, env: env)?)?
+
+            env.ints[l.name] @ acc
+
+    return ok()
+
+# A variant built and matched at once: the payload's fields are written under
+# the taken arm's binder, and the taken arm's value under the match's name.
+function matched(p: gen_tree.Program lent, m: gen_tree.Stmt, @env: Env) -> ()?
+    match m
+        .picked k =>
+            binder = k.binders[k.case_at]
+
+            if k.case_at == 0
+                env.ints[binder + ".v"] @ int_of(p, at: k.payload[0], env: env)?
+
+            if k.case_at == 2
+                env.ints[binder + ".w"] @ int_of(p, at: k.payload[0], env: env)?
+                env.bools[binder + ".z"] @ bool_of(p, at: k.payload[1], env: env)?
+            v = int_of(p, at: k.arms[k.case_at], env: env)?
+            env.ints[k.mname] @ v
+        .bind_int | .bind_bool | .show | .rec | .arr | .cond | .loop => assert false
+
+    return ok()
+
+# What `main` has bound when it ends or aborts: the reducer's values.
+function final_env(p: gen_tree.Program lent) -> Env
+    env: Env @= empty()
+    out: [str] @= []
+
+    for s in p.body
+        if stepped(p, s: s, @env, @out).is_err()
+            return env
+
+    return env
+
+# The whole `main`, run: the `.expected` text, stdout then `!panic:` where
+# the program aborts.
+function expected(p: gen_tree.Program lent) -> str
+    env: Env @= empty()
+    out: [str] @= []
+    ending: str @= ""
+
+    for s in p.body
+        if ending == ""
+            got = stepped(p, s: s, @env, @out)
+
+            match got
+                .ok _  => _ = 0
+                .err e => ending @ "!panic: " + e.msg + "\n"
+
+    text: str @= ""
+
+    for line in out
+        text @ text + line + "\n"
+
+    return text + ending
+
+test "the model decides an abort before it computes"
+    assert arith("+", a: MAX, b: 1).is_err()
+    assert arith("+", a: MAX, b: -1).must() == MAX - 1
+    assert arith("*", a: MIN, b: -1).is_err()
+    assert arith("*", a: -3037000500, b: 3037000500).is_err()
+    assert arith("*", a: -3037000499, b: 3037000499).must() == -9223372030926249001
+    assert arith("/", a: MIN, b: -1).is_err()
+    assert arith("%", a: -7, b: 3).must() == -1
+    assert arith("<<", a: 3, b: 62).must() == -4611686018427387904
+    assert arith(">>", a: 1, b: 64).is_err()
+
+# Each operator against constants derived from the contract (spec § 7,
+# design.md §4.14), never from a run: run by the compiler being judged, this
+# is the one place the model's own arithmetic meets an answer it did not
+# compute (the seat's report, Q1).
+test "the model agrees with the contract at the signs and the edges of every operator"
+    assert arith(">>", a: -8, b: 1).must() == -4
+    assert arith(">>", a: MIN, b: 63).must() == -1
+    assert arith(">>", a: 8, b: 1).must() == 4
+    assert arith("<<", a: 1, b: 63).must() == MIN
+    assert arith("/", a: -7, b: 2).must() == -3
+    assert arith("%", a: -7, b: 2).must() == -1
+    assert arith("%", a: 7, b: -2).must() == 1
+    assert arith("-", a: MIN, b: -1).must() == -9223372036854775807
+    assert arith("&", a: -1, b: 255).must() == 255
+    assert arith("|", a: MIN, b: 1).must() == -9223372036854775807
+    assert arith("^", a: -1, b: MAX).must() == MIN

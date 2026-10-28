@@ -1,0 +1,316 @@
+# A failing generated program taken down over its own tree (panel 231's
+# prototype, task 934): every candidate is a smaller tree, so it is valid by
+# construction and its answer is recomputed by `gen_eval`, never guessed.
+#
+# Two edits, P6's: **an expression replaced by a literal of its value**, and
+# **a statement dropped**, every later read of what it bound replaced by
+# that value first. Then a tidy pass drops what nothing reads any more (an
+# unused binding is a compile error, spec § 5) and the functions nothing
+# calls. A candidate is kept while the compiler judged still fails it.
+
+use gen_eval
+use gen_text
+use gen_tree
+use shell
+
+record Tally
+    judged: i64
+    kept: i64
+    refused: i64
+
+function roots(s: gen_tree.Stmt) -> [i64]
+    return match s
+        .bind_int b  => [b.expr]
+        .bind_bool b => [b.expr]
+        .show w      => w.parts
+        .rec r       => [r.a, r.b, r.f]
+        .arr r       => r.elems
+        .picked m    => m.payload
+        .cond c      => [c.guard, c.yes, c.no]
+        .loop l      => [l.init]
+
+# Every node a statement holds, the arms and a loop's body among them.
+function held(s: gen_tree.Stmt) -> [i64]
+    return match s
+        .picked m                                            => joined(xs: m.payload, more: m.arms)
+        .loop l                                              => [l.init, l.body]
+        .bind_int | .bind_bool | .show | .rec | .arr | .cond => roots(s)
+
+function bound(s: gen_tree.Stmt) -> [str]
+    none: [str] = []
+
+    return match s
+        .bind_int b  => [b.name]
+        .bind_bool b => [b.name]
+        .rec r       => [r.name + ".a", r.name + ".b", r.name + ".f"]
+        .arr r       => [r.name]
+        .picked m    => [m.mname]
+        .cond c      => [c.name]
+        .loop l      => [l.name]
+        .show        => none
+
+function joined(xs: [i64], more: [i64]) -> [i64]
+    out: [i64] @= xs
+
+    for x in more
+        out @ out.push(x)
+
+    return out
+
+function without(xs: [gen_tree.Stmt], at: i64) -> [gen_tree.Stmt]
+    out: [gen_tree.Stmt] @= []
+    i: i64 @= 0
+
+    while i < xs.len()
+        if i != at
+            out @ out.push(xs[i])
+        i @ i + 1
+
+    return out
+
+function is_reader(op: str) -> bool
+    return op == "name" || op == "bname" || op == "field" || op == "bfield" || op == "index"
+
+function among(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+# The node at `at` made a literal of `env`'s value for it; false where its
+# value cannot be had (it aborts, or reads a name `env` lacks).
+function literal_at(@p: gen_tree.Program, at: i64, env: gen_eval.Env lent) -> bool
+    if gen_eval.is_bool(p.nodes[at].op)
+        got = gen_eval.bool_of(p, at: at, env: env)
+
+        if got.is_err()
+            return false
+        p.nodes[at] @ gen_tree.leaf(op: got.must().to_str(), value: 0, name: "")
+        return true
+    got = gen_eval.int_of(p, at: at, env: env)
+
+    if got.is_err()
+        return false
+
+    if got.must() == gen_eval.MIN
+        left = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: gen_eval.MAX * -1, name: ""))
+        right = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 1, name: ""))
+        p.nodes[at] @ gen_tree.Node(op: "-", value: 0, name: "", kids: [left, right])
+    else
+        p.nodes[at] @ gen_tree.leaf(op: "lit", value: got.must(), name: "")
+    return true
+
+# Statement `i` dropped, every read of what it bound made a literal first.
+function dropped(p: gen_tree.Program, i: i64) -> gen_tree.Program
+    q: gen_tree.Program @= p
+    env = gen_eval.final_env(p)
+    names = bound(p.body[i])
+    at: i64 @= 0
+
+    while at < q.nodes.len()
+        if is_reader(q.nodes[at].op) && among(names, name: q.nodes[at].name)
+            _ = literal_at(@q, at: at, env: env)
+        at @ at + 1
+
+    q.body @ without(q.body, at: i)
+    return tidy(q)
+
+# The names every node reachable from `at` reads, and the functions it calls.
+function gather(p: gen_tree.Program lent, at: i64, @names: [str])
+    n = p.nodes[at]
+
+    if is_reader(n.op) || n.op == "call"
+        names @ names.push(n.name)
+
+    for kid in n.kids
+        gather(p, at: kid, @names)
+
+# What nothing reads, dropped until nothing more is; the functions nothing
+# reachable calls, dropped; a binder no arm reads, made `_`.
+function tidy(p: gen_tree.Program) -> gen_tree.Program
+    q: gen_tree.Program @= p
+    changed: bool @= true
+
+    while changed
+        changed @ false
+        names: [str] @= []
+
+        for s in q.body
+            for at in held(s)
+                gather(q, at: at, @names)
+
+        for f in q.fns
+            if among(names, name: f.name)
+                gather(q, at: f.body, @names)
+
+        i: i64 @= q.body.len() - 1
+
+        while i >= 0 && !changed
+            b = bound(q.body[i])
+
+            if b.len() > 0 && !any_of(wanted: b, names: names)
+                q.body @ without(q.body, at: i)
+                changed @ true
+            i @ i - 1
+
+        if !changed
+            kept: [gen_tree.Fn] @= []
+
+            for f in q.fns
+                if among(names, name: f.name)
+                    kept @ kept.push(f)
+
+            q.fns @ kept
+
+    return unbound(q)
+
+function any_of(wanted: [str], names: [str]) -> bool
+    for w in wanted
+        if among(names, name: w)
+            return true
+
+    return false
+
+# A `match` arm that no longer reads its binder's fields names `_` instead.
+function unbound(p: gen_tree.Program) -> gen_tree.Program
+    q: gen_tree.Program @= p
+    i: i64 @= 0
+
+    while i < q.body.len()
+        match q.body[i]
+            .picked m =>
+                binders: [str] @= []
+                j: i64 @= 0
+
+                while j < 3
+                    names: [str] @= []
+                    gather(q, at: m.arms[j], @names)
+
+                    if m.binders[j] != "_" && !among(names, name: m.binders[j] + ".v") && !among(names, name: m.binders[j] + ".w")
+                        binders @ binders.push("_")
+                    else
+                        binders @ binders.push(m.binders[j])
+                    j @ j + 1
+
+                q.body[i] @ .picked(
+                    vname: m.vname,
+                    case_at: m.case_at,
+                    payload: m.payload,
+                    mname: m.mname,
+                    arms: m.arms,
+                    binders: binders
+                )
+            .bind_int | .bind_bool | .show | .rec | .arr | .cond | .loop => _ = 0
+
+        i @ i + 1
+
+    return q
+
+# Whether `compiler` still fails the program: it builds, and what its binary
+# prints, or the abort it ends with, is not what the tree computes. A
+# refusal is another symptom, so it is not this failure.
+function still_fails(p: gen_tree.Program lent, compiler: str, dir: str, @t: Tally) -> bool
+    t.judged @ t.judged + 1
+    source = dir + "/candidate.hero"
+    binary = dir + "/candidate.bin"
+    _ = write_file(path: source, text: text_of(p)).is_err()
+    built = shell.run(scratch: dir, program: compiler, words: [compiler, "build", source, "-o", binary])
+
+    if built.is_err() || built.must().code != 0
+        t.refused @ t.refused + 1
+        kept_as = dir + "/refused-" + t.refused.to_str()
+        _ = write_file(path: kept_as + ".hero", text: text_of(p)).is_err()
+
+        if !built.is_err()
+            _ = write_file(path: kept_as + ".err", text: built.must().err).is_err()
+        return false
+    ran = shell.run(scratch: dir, program: binary, words: [binary])
+
+    if ran.is_err()
+        return false
+    return said(ran.must()) != gen_eval.expected(p)
+
+function text_of(p: gen_tree.Program lent) -> str
+    has_record: bool @= false
+    has_variant: bool @= false
+
+    for s in p.body
+        match s
+            .rec                                                  => has_record @ true
+            .picked                                               => has_variant @ true
+            .bind_int | .bind_bool | .show | .arr | .cond | .loop => _ = 0
+
+    return gen_text.program_text(p, seed: 0, has_record: has_record, has_variant: has_variant)
+
+# A run read back into the `.expected` form: stdout, then the abort.
+function said(r: shell.Run) -> str
+    if r.code == 134 && r.err.len() > 7
+        first = r.err.slice(from: 0, to: line_end(r.err))
+        return r.out + "!" + first + "\n"
+    return r.out
+
+function line_end(text: str) -> i64
+    i: i64 @= 0
+
+    while i < text.len() && text[i] != 10
+        i @ i + 1
+
+    return i
+
+# The reduction: statements last to first, then every top-level expression
+# made its literal, outermost first, until a whole pass keeps nothing.
+function reduced(start: gen_tree.Program, compiler: str, dir: str, @t: Tally) -> gen_tree.Program
+    best: gen_tree.Program @= start
+    changed: bool @= true
+
+    while changed
+        changed @ false
+        i: i64 @= best.body.len() - 1
+
+        while i >= 0
+            if i < best.body.len()
+                candidate = dropped(best, i: i)
+
+                # A block is never empty (spec § 5's `Block`), so the last
+                # statement `main` holds is never a candidate to drop.
+                if candidate.body.len() > 0 && still_fails(candidate, compiler: compiler, dir: dir, @t)
+                    best @ candidate
+                    t.kept @ t.kept + 1
+                    changed @ true
+            i @ i - 1
+
+        env = gen_eval.final_env(best)
+        k: i64 @= 0
+
+        while k < best.body.len()
+            for root in roots(best.body[k])
+                changed @ literals(@best, at: root, env: env, compiler: compiler, dir: dir, @t) || changed
+
+            k @ k + 1
+
+    return best
+
+# The subtree at `at` made its literal where the failure survives it, else
+# each child tried in turn.
+function literals(@best: gen_tree.Program, at: i64, env: gen_eval.Env lent, compiler: str, dir: str, @t: Tally) -> bool
+    if best.nodes[at].op == "lit" || best.nodes[at].op == "true" || best.nodes[at].op == "false"
+        return false
+    candidate: gen_tree.Program @= best
+
+    # A candidate printed as the best already is no progress: the smallest
+    # `i64` is written `-9223372036854775807 - 1`, a `-` node, and making it
+    # its literal again prints the same bytes for ever.
+    if literal_at(@candidate, at: at, env: env)
+        candidate @ tidy(candidate)
+
+        if text_of(candidate) != text_of(best) && still_fails(candidate, compiler: compiler, dir: dir, @t)
+            best @ candidate
+            t.kept @ t.kept + 1
+            return true
+    changed: bool @= false
+
+    for kid in best.nodes[at].kids
+        changed @ literals(@best, at: kid, env: env, compiler: compiler, dir: dir, @t) || changed
+
+    return changed

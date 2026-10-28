@@ -1,0 +1,102 @@
+# generated — programs nobody wrote, in the net (panel 231's R7;
+# M-generated-programs, task 931).
+#
+# Two checks, in order. **The contract grid** first: the generator's own
+# arithmetic against references that reach each value through other
+# operators, every operator over every pair in -8 to 7 (`gen_contract.hero`);
+# a disagreement there is either the compiler that built this harness
+# miscompiling an operator or the model wrong, and either way the sample
+# below would be judged against wrong answers, so it is told first. **Then
+# the sample**: the programs of seeds 1 to `SAMPLE`, regenerated into this
+# suite's scratch by `gen_make.from_seed`, the map `generate.hero make`
+# reads, each judged by the compiler under test through every oracle of
+# `gen_judge.hero`. Nothing of the sample is committed: it is deterministic
+# under its seeds, so it goes red when the compiler or the generator
+# changes and never at random, and a failure is reproduced by its number,
+# `heroes run tests/harness/generate.hero -- make --seed <n> --count 1
+# --declared 30`.
+#
+# **In the net every reading but a pass is a failure**, the two limits panel
+# 184 designed included: the sample's depth is at most 4 and its lines are
+# short, far under the floor of 2,000 the `run` form pins on four legs
+# (`run/fixedbugs-169-*-2000-*`), so a clang that dies or a stack that runs
+# out on one of these programs is the compiler's defect, not a limit.
+#
+# **Which compiler builds the generator decides what the sample can see**
+# (the compiler-engineer's Q1, the critic's finding 1): the harness is built
+# by the compiler that runs it and judges the one named after `--`, so the
+# net run as `<seed's compiler> run tests/harness/main.hero -- <stage 2>`
+# computes every answer with a generator that does not share a
+# miscompilation introduced since the seed was last refreshed. Run with one
+# compiler on both sides, the grid above is the guard.
+
+use gen_contract
+use gen_eval
+use gen_judge
+use gen_make
+use gen_text
+use report
+use shell
+use strings
+
+# The seeds the net judges: 128, panel 231's R7, about 3.6 minutes at the
+# 1.67 s a program the compiler-engineer measured four checks to cost (an
+# inference from that rate; the judge here builds three configurations and
+# runs `fmt`, so the first batch gate reads its real cost).
+constant SAMPLE: i64
+    128
+
+# The share of the sample whose program plants one abort, as `make`'s
+# `--declared`.
+constant DECLARED: i64
+    30
+
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    r: report.Report @= report.empty()
+
+    for line in gen_contract.disagreements()
+        report.keep_failure(@r, label: "generated/contract", detail: "  " + line)
+
+    if !report.green(r)
+        return ok(r)
+    dir = scratch + "/generated"
+    work = dir + "/work"
+    shell.mkdir_all(work)?
+    judged: i64 @= 0
+    seed: i64 @= 1
+
+    while seed <= SAMPLE
+        name = "g" + seed.to_str()
+
+        if only == "" || strings.contains(text: name, needle: only)
+            g = gen_make.from_seed(seed: seed, percent: DECLARED)
+            source = dir + "/" + name + ".hero"
+            write_file(path: source, text: gen_text.program_text(g.p, seed: seed, has_record: g.has_record, has_variant: g.has_variant))?
+            write_file(path: dir + "/" + name + ".expected", text: gen_eval.expected(g.p))?
+            v = gen_judge.judged(compiler: compiler, source: source, work: work)?
+            judged @ judged + 1
+
+            match v
+                .passed _ => report.keep_pass(@r)
+                .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ =>
+                    report.keep_failure(
+                        @r,
+                        label: "generated/" + name,
+                        detail: "  " + gen_judge.word(v) + ": " + gen_judge.detail(v) + "\n  reproduce: heroes run tests/harness/generate.hero -- make --seed " + seed.to_str() + " --count 1 --declared " + DECLARED.to_str() + " -o <dir>"
+                    )
+        seed @ seed + 1
+
+    if judged == 0
+        report.keep_failure(
+            @r,
+            label: "generated",
+            detail: "  `" + only + "` names no seed of 1 to " + SAMPLE.to_str() + ": a run that judged nothing is a green run that tested nothing"
+        )
+    return ok(r)
+
+test "the sample is the map `make` reads, so a seed reproduces"
+    a = gen_make.from_seed(seed: 7, percent: DECLARED)
+    b = gen_make.from_seed(seed: 7, percent: DECLARED)
+    first = gen_text.program_text(a.p, seed: 7, has_record: a.has_record, has_variant: a.has_variant)
+    assert first == gen_text.program_text(b.p, seed: 7, has_record: b.has_record, has_variant: b.has_variant)
+    assert gen_eval.expected(a.p) == gen_eval.expected(b.p)

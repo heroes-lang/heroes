@@ -181,3 +181,12 @@ steps start from it:
   program under `tests/harness/`, which proposes no verb, so § 4's gate is
   asked once, at step 1's end with the catalogue in hand, the soundness lane
   recommended, and the lane opens with the first code.
+
+**Corrected 2026-10-28, by panel 231** (the completeness critic's finding 17). The oracles paragraph
+above says *(1) the compiler does not fall over — no 139, no 134*; panel 184's R6 and R7, ratified
+on 2026-10-01, made two exits designed answers on a correct program: exit 2 where clang dies on
+its C, told in the compiler's words, and exit 134 with `stack exhausted in` past the depth floor,
+which this milestone finishes stating. Oracle 1 is read in five since the sitting
+(`docs/panel/231-programs-nobody-wrote-the-generator-its-oracles-its-reducer-and-what-it-leaves-in-the-net.md`,
+R5), and the reducer works over the generator's own tree rather than from
+`selfhost/mutate/sites.hero`, which no program of the harness can `use` (R6).
