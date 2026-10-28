@@ -284,7 +284,8 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
   literal among them (section 2); `ok(...)`, `[]` and a case name give none, and
   a call that says none of these is an error. `xs.map(double)` takes both from
   `double`'s signature.
-- Recursion too deep aborts.
+- A source nested up to 2,000 deep compiles on every platform, and none is refused for
+  its depth; recursion too deep aborts.
 
     Args     = "(" [ Arg { "," Arg } ] ")" .
     Arg      = [ ident ":" ] [ "@" ] Expression .
