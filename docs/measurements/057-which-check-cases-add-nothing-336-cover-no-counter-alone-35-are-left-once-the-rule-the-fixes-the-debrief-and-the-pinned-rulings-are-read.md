@@ -62,3 +62,11 @@ The reading of the 35 is unwritten. Message templates were compared with code sp
 made placeholders, so two messages differing only in a noun outside a code span count as two; the
 carets, notes and excerpts were not compared. Coverage was read on the compiler of one commit, and
 a counter one case alone reached there may be shared on the next.
+
+**Read 2026-10-28**, the reading § 1 asks, in measurement 059 (`docs/measurements/059-the-reading-of-measurement-057s-35-candidates-11-keep-their-place-24-pin-nothing-another-case-does-not-and-3-of-those-call-themselves-a-fixed-defects-case.md`):
+of the 35, **11** keep their place (eight pin something no other case pins, `unterminated-hole` weakly,
+and `indentation` and `shadowing` are read by `suite_surface.hero`), and **24** pin nothing another case
+does not. Three of those 24, `leading-zero`, `stray-carriage-return` and `int-out-of-range`, name
+themselves a fixed defect's case in their own header, and § 1's second witness is the rule's words,
+*a fixed defect gets a case named after it*, which this file counted by the `fixedbugs-` prefix alone:
+read by the words, they keep their place too, and **21** are left for the author's word.

@@ -143,6 +143,14 @@ judged `LEAKED`, and a control that passes fails the suite as *the leak oracle i
 leg*, which this Mac showed with `leaks` taken away. Windows has neither instrument and the control
 says so as a skip. Unrun until the push: the control on the CI's Linux and `macos-26` legs.
 
+**And the leak oracle on this Mac needs the developer tools' permission**, measured 2026-10-28 at
+M-generated-programs' gate: `leaks` attaches to the program it starts, and with `DevToolsSecurity
+-status` reading *disabled* an authorization dialog stood open and every attach waited on it, `leaks`,
+`lldb`'s `debugserver` and ASan's `atos -p` alike, so `generated`, `lldb` and `run` could not end.
+`sudo DevToolsSecurity -enable` grants it once; a reading cut by its 60 seconds says so
+(`tests/harness/gen_cjudge.hero`, `leak_free`). GitHub's macOS images run that command in their
+`configure-machine.sh` (read that day); the CI's Darwin leg is unrun until the push.
+
 ## Measuring in a copy
 
 A copy of the tree without `.git` cannot run the net's `records` suite, because
