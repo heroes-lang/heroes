@@ -27,6 +27,9 @@ variant Stmt
     bind_bool
         name: str
         expr: i64
+    bind_str
+        name: str
+        expr: i64
     show
         parts: [i64]
     rec

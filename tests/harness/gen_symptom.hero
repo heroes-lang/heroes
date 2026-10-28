@@ -116,7 +116,7 @@ function printed_root(p: gen_tree.Program lent, line: i64) -> str
                 if k == line && w.parts.len() > 0
                     return p.nodes[w.parts[0]].op
                 k @ k + 1
-            .bind_int | .bind_bool | .rec | .arr | .picked | .cond | .loop => _ = 0
+            .bind_int | .bind_bool | .bind_str | .rec | .arr | .picked | .cond | .loop => _ = 0
 
     return "site"
 
@@ -130,9 +130,9 @@ function text_of(p: gen_tree.Program lent) -> str
 
     for s in p.body
         match s
-            .rec                                                  => has_record @ true
-            .picked                                               => has_variant @ true
-            .bind_int | .bind_bool | .show | .arr | .cond | .loop => _ = 0
+            .rec                                                              => has_record @ true
+            .picked                                                           => has_variant @ true
+            .bind_int | .bind_bool | .bind_str | .show | .arr | .cond | .loop => _ = 0
 
     return gen_text.program_text(p, seed: 0, has_record: has_record, has_variant: has_variant)
 

@@ -39,7 +39,7 @@ function precedence(n: gen_tree.Node) -> i64
     if op == "<<" || op == ">>"
         return 7
 
-    if op == "+" || op == "-"
+    if op == "+" || op == "-" || op == "concat"
         return 8
 
     if op == "*" || op == "/" || op == "%"
@@ -66,6 +66,24 @@ function expr(p: gen_tree.Program lent, at: i64) -> str
 
     if n.op == "call"
         return n.name + "(" + arguments(p, n: n) + ")"
+
+    if n.op == "slit"
+        return "\"" + n.name + "\""
+
+    if n.op == "sname"
+        return n.name
+
+    if n.op == "concat"
+        return operand(p, at: n.kids[0], outer: 8, right: false) + " + " + operand(p, at: n.kids[1], outer: 8, right: true)
+
+    if n.op == "tostr"
+        return "to_str(" + expr(p, at: n.kids[0]) + ")"
+
+    if n.op == "slice"
+        return operand(p, at: n.kids[0], outer: 11, right: false) + ".slice(from: " + expr(p, at: n.kids[1]) + ", to: " + expr(p, at: n.kids[2]) + ")"
+
+    if n.op == "strlen"
+        return operand(p, at: n.kids[0], outer: 11, right: false) + ".len()"
 
     if n.op == "neg"
         return "-" + operand(p, at: n.kids[0], outer: 10, right: false)
@@ -114,6 +132,7 @@ function units(p: gen_tree.Program lent, s: gen_tree.Stmt) -> [Unit]
     return match s
         .bind_int b  => [plain(i + b.name + " = " + expr(p, at: b.expr))]
         .bind_bool b => [plain(i + b.name + " = " + expr(p, at: b.expr))]
+        .bind_str b  => [plain(i + b.name + " = " + expr(p, at: b.expr))]
         .show w      => [plain(i + "print(" + printed(p, parts: w.parts) + ")")]
         .rec r => [
             plain(i + r.name + " = R0(a: " + expr(p, at: r.a) + ", b: " + expr(p, at: r.b) + ", f: " + expr(p, at: r.f) + ")")
@@ -164,7 +183,7 @@ function built_case(p: gen_tree.Program lent, m: gen_tree.Stmt) -> str
                 ".c1"
             else
                 ".c2(w: " + expr(p, at: k.payload[0]) + ", z: " + expr(p, at: k.payload[1]) + ")"
-        .bind_int | .bind_bool | .show | .rec | .arr | .cond | .loop => ""
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => ""
 
 function arms(p: gen_tree.Program lent, m: gen_tree.Stmt) -> [str]
     lines: [str] @= []
@@ -185,7 +204,7 @@ function arms(p: gen_tree.Program lent, m: gen_tree.Stmt) -> [str]
                 pad = repeat(" ", to_u64(widest - patterns[j].len()).must())
                 lines @ lines.push("        " + patterns[j] + pad + " => " + expr(p, at: k.arms[j]))
                 j @ j + 1
-        .bind_int | .bind_bool | .show | .rec | .arr | .cond | .loop => _ = 0
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => _ = 0
 
     return lines
 

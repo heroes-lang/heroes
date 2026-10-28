@@ -17,6 +17,7 @@ function roots(s: gen_tree.Stmt) -> [i64]
     return match s
         .bind_int b  => [b.expr]
         .bind_bool b => [b.expr]
+        .bind_str b  => [b.expr]
         .show w      => w.parts
         .rec r       => [r.a, r.b, r.f]
         .arr r       => r.elems
@@ -27,9 +28,9 @@ function roots(s: gen_tree.Stmt) -> [i64]
 # Every node a statement holds, the arms and a loop's body among them.
 function held(s: gen_tree.Stmt) -> [i64]
     return match s
-        .picked m                                            => joined(xs: m.payload, more: m.arms)
-        .loop l                                              => [l.init, l.body]
-        .bind_int | .bind_bool | .show | .rec | .arr | .cond => roots(s)
+        .picked m                                                        => joined(xs: m.payload, more: m.arms)
+        .loop l                                                          => [l.init, l.body]
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond => roots(s)
 
 function bound(s: gen_tree.Stmt) -> [str]
     none: [str] = []
@@ -37,6 +38,7 @@ function bound(s: gen_tree.Stmt) -> [str]
     return match s
         .bind_int b  => [b.name]
         .bind_bool b => [b.name]
+        .bind_str b  => [b.name]
         .rec r       => [r.name + ".a", r.name + ".b", r.name + ".f"]
         .arr r       => [r.name]
         .picked m    => [m.mname]
@@ -64,7 +66,7 @@ function without(xs: [gen_tree.Stmt], at: i64) -> [gen_tree.Stmt]
     return out
 
 function is_reader(op: str) -> bool
-    return op == "name" || op == "bname" || op == "field" || op == "bfield" || op == "index"
+    return op == "name" || op == "bname" || op == "field" || op == "bfield" || op == "index" || op == "sname"
 
 function among(names: [str], name: str) -> bool
     for n in names
@@ -76,6 +78,14 @@ function among(names: [str], name: str) -> bool
 # The node at `at` made a literal of `env`'s value for it; false where its
 # value cannot be had (it aborts, or reads a name `env` lacks).
 function literal_at(@p: gen_tree.Program, at: i64, env: gen_eval.Env lent) -> bool
+    if gen_eval.is_str(p.nodes[at].op)
+        text = gen_eval.str_of(p, at: at, env: env)
+
+        if text.is_err()
+            return false
+        p.nodes[at] @ gen_tree.leaf(op: "slit", value: 0, name: text.must())
+        return true
+
     if gen_eval.is_bool(p.nodes[at].op)
         got = gen_eval.bool_of(p, at: at, env: env)
 
@@ -196,7 +206,7 @@ function unbound(p: gen_tree.Program) -> gen_tree.Program
                     arms: m.arms,
                     binders: binders
                 )
-            .bind_int | .bind_bool | .show | .rec | .arr | .cond | .loop => _ = 0
+            .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => _ = 0
 
         i @ i + 1
 
@@ -238,7 +248,7 @@ function reduced(start: gen_tree.Program, target: gen_symptom.Target lent, @t: g
 # The subtree at `at` made its literal where the failure survives it, else
 # each child tried in turn.
 function literals(@best: gen_tree.Program, at: i64, env: gen_eval.Env lent, target: gen_symptom.Target lent, @t: gen_symptom.Tally) -> bool
-    if best.nodes[at].op == "lit" || best.nodes[at].op == "true" || best.nodes[at].op == "false"
+    if best.nodes[at].op == "lit" || best.nodes[at].op == "slit" || best.nodes[at].op == "true" || best.nodes[at].op == "false"
         return false
     candidate: gen_tree.Program @= best
 

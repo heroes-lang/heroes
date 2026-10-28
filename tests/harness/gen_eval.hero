@@ -39,16 +39,24 @@ constant SHIFT: str
 constant INDEX: str
     "array index out of range"
 
+constant SLICE_RANGE: str
+    "string slice out of range"
+
+constant SLICE_SPLIT: str
+    "string slice splits a character"
+
 record Env
     ints: {str: i64}
     bools: {str: bool}
     arrays: {str: [i64]}
+    strs: {str: str}
 
 function empty() -> Env
     ints: {str: i64} = {}
     bools: {str: bool} = {}
     arrays: {str: [i64]} = {}
-    return Env(ints: ints, bools: bools, arrays: arrays)
+    strs: {str: str} = {}
+    return Env(ints: ints, bools: bools, arrays: arrays, strs: strs)
 
 function aborted(message: str) -> i64?
     return fail(code: "abort", msg: message)
@@ -142,6 +150,9 @@ function int_of(p: gen_tree.Program lent, at: i64, env: Env lent) -> i64?
 
     if n.op == "call"
         return called(p, n: n, env: env)
+
+    if n.op == "strlen"
+        return ok(str_of(p, at: n.kids[0], env: env)?.len())
     a = int_of(p, at: n.kids[0], env: env)?
     b = int_of(p, at: n.kids[1], env: env)?
     return arith(n.op, a: a, b: b)
@@ -205,11 +216,50 @@ function bool_of(p: gen_tree.Program lent, at: i64, env: Env lent) -> bool?
         return ok(a != b)
     assert false
 
+# The operators whose value is a `str` (panel 231's R3: the forms the
+# generator learns, strings first, the catalogue's 54 defects in the
+# compiler's areas). A `str` is its bytes: its length is counted in bytes,
+# and a slice aborts past the end or inside a character, as spec § 10 says.
+function is_str(op: str) -> bool
+    return op == "slit" || op == "sname" || op == "concat" || op == "tostr" || op == "slice"
+
+function str_of(p: gen_tree.Program lent, at: i64, env: Env lent) -> str?
+    n = p.nodes[at]
+
+    if n.op == "slit"
+        return ok(n.name)
+
+    if n.op == "sname"
+        return ok(env.strs[n.name].must())
+
+    if n.op == "concat"
+        return ok(str_of(p, at: n.kids[0], env: env)? + str_of(p, at: n.kids[1], env: env)?)
+
+    if n.op == "tostr"
+        return ok(int_of(p, at: n.kids[0], env: env)?.to_str())
+    s = str_of(p, at: n.kids[0], env: env)?
+    from = int_of(p, at: n.kids[1], env: env)?
+    to = int_of(p, at: n.kids[2], env: env)?
+
+    if from < 0 || to > s.len() || from > to
+        return fail(code: "abort", msg: SLICE_RANGE)
+
+    if splits(s, at: from) || splits(s, at: to)
+        return fail(code: "abort", msg: SLICE_SPLIT)
+    return ok(s.slice(from: from, to: to))
+
+# Whether byte `at` of `s` continues a character: a slice there splits it.
+function splits(s: str, at: i64) -> bool
+    return at > 0 && at < s.len() && s[at] >= 128 && s[at] < 192
+
 function is_bool(op: str) -> bool
     return op == "true" || op == "false" || op == "bname" || op == "bfield" || op == "not" || op == "&&" || op == "||" || gen_tree.is_comparison(op)
 
 # A node's value as `print` writes it.
 function shown(p: gen_tree.Program lent, at: i64, env: Env lent) -> str?
+    if is_str(p.nodes[at].op)
+        return str_of(p, at: at, env: env)
+
     if is_bool(p.nodes[at].op)
         return ok(bool_of(p, at: at, env: env)?.to_str())
     return ok(int_of(p, at: at, env: env)?.to_str())
@@ -224,6 +274,9 @@ function stepped(p: gen_tree.Program lent, s: gen_tree.Stmt, @env: Env, @out: [s
         .bind_bool b =>
             v = bool_of(p, at: b.expr, env: env)?
             env.bools[b.name] @ v
+        .bind_str b =>
+            v = str_of(p, at: b.expr, env: env)?
+            env.strs[b.name] @ v
         .show w =>
             line: str @= ""
 
@@ -282,7 +335,7 @@ function matched(p: gen_tree.Program lent, m: gen_tree.Stmt, @env: Env) -> ()?
                 env.bools[binder + ".z"] @ bool_of(p, at: k.payload[1], env: env)?
             v = int_of(p, at: k.arms[k.case_at], env: env)?
             env.ints[k.mname] @ v
-        .bind_int | .bind_bool | .show | .rec | .arr | .cond | .loop => assert false
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => assert false
 
     return ok()
 

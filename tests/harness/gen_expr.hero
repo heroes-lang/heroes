@@ -26,6 +26,7 @@ record Scope
     bfields: [str]
     arrays: [str]
     lengths: [i64]
+    strs: [str]
     fns: i64
     top: bool
 
@@ -163,7 +164,86 @@ function int_leaf(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64)
 
     if k < 70 && s.top && g.reuse.len() > 0
         return g.reuse[gen_rng.below(@g.r, n: g.reuse.len())]
+
+    if k < 78 && depth > 0
+        return gen_tree.unary(@g.p, op: "strlen", kid: str_expr(@g, s: s, envs: envs, depth: depth - 1))
     return literal(@g)
+
+# The texts a string literal is drawn from: none holds a brace, a quote or a
+# backslash, so each is a literal without an `f` and needs no escape, and
+# three hold a character of more than one byte, where a slice can split one.
+constant POOL: [str]
+    ["", "a", "hero", "é", "naïve", "x y", "0", "-", "über", "zz"]
+
+# An expression of type `str`, its value known on every sample. A slice is
+# made only where there is one sample, so its bounds are chosen from the
+# value itself, at the boundaries of its characters.
+function str_expr(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
+    if depth <= 0 || gen_rng.chance(@g.r, percent: g.leaf)
+        if s.strs.len() > 0 && gen_rng.chance(@g.r, percent: 50)
+            return named(@g, op: "sname", name: s.strs[gen_rng.below(@g.r, n: s.strs.len())])
+        return gen_tree.added(@g.p, gen_tree.leaf(op: "slit", value: 0, name: POOL[gen_rng.below(@g.r, n: POOL.len())]))
+    k = gen_rng.below(@g.r, n: 3)
+
+    if k == 0
+        left = str_expr(@g, s: s, envs: envs, depth: depth - 1)
+        right = str_expr(@g, s: s, envs: envs, depth: depth - 1)
+        return gen_tree.binary(@g.p, op: "concat", left: left, right: right)
+
+    if k == 1 || envs.len() != 1
+        return gen_tree.unary(
+            @g.p,
+            op: "tostr",
+            kid: int_expr(@g, s: s, envs: envs, depth: depth - 1, context: gen_rng.below(@g.r, n: 6))
+        )
+    base = str_expr(@g, s: s, envs: envs, depth: depth - 1)
+    value = gen_eval.str_of(g.p, at: base, env: envs[0]).must()
+    cuts = boundaries(value)
+    a = cuts[gen_rng.below(@g.r, n: cuts.len())]
+    b = cuts[gen_rng.below(@g.r, n: cuts.len())]
+    from: i64 @= a
+    to: i64 @= b
+
+    if a > b
+        from @ b
+        to @ a
+    return sliced(@g, base: base, from: from, to: to)
+
+function sliced(@g: Gen, base: i64, from: i64, to: i64) -> i64
+    low = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: from, name: ""))
+    high = gen_tree.added(@g.p, gen_tree.leaf(op: "lit", value: to, name: ""))
+    return gen_tree.added(@g.p, gen_tree.Node(op: "slice", value: 0, name: "", kids: [base, low, high]))
+
+# The byte offsets of `text` a slice may stand at: every one that begins a
+# character, and its length.
+function boundaries(text: str) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i <= text.len()
+        if !gen_eval.splits(text, at: i)
+            out @ out.push(i)
+        i @ i + 1
+
+    return out
+
+# The declared arm's string abort, a slice of a string in scope past its
+# end, or, where one holds a character of more than one byte, through it;
+# -1 where no string is in scope.
+function str_site(@g: Gen, s: Scope lent, env: gen_eval.Env lent) -> i64
+    if s.strs.len() == 0
+        return -1
+    name = s.strs[gen_rng.below(@g.r, n: s.strs.len())]
+    value = env.strs[name].must()
+    base = named(@g, op: "sname", name: name)
+    i: i64 @= 0
+
+    while i < value.len()
+        if gen_eval.splits(value, at: i) && gen_rng.chance(@g.r, percent: 60)
+            return sliced(@g, base: base, from: 0, to: i)
+        i @ i + 1
+
+    return sliced(@g, base: base, from: 0, to: value.len() + 1 + gen_rng.below(@g.r, n: 3))
 
 function call(@g: Gen, s: Scope lent, envs: [gen_eval.Env] lent, depth: i64) -> i64
     f = g.p.fns[gen_rng.below(@g.r, n: s.fns)]
