@@ -38,6 +38,7 @@
 # compiler on both sides, the grid above is the guard.
 
 use gen_contract
+use gen_depth
 use gen_judge
 use gen_program
 use gen_text
@@ -56,6 +57,12 @@ constant SAMPLE: i64
 # `--declared`.
 constant DECLARED: i64
     30
+
+# The seconds a floor's source is given to build: a block 2,000 deep is 16
+# megabytes of text, 2.2 s of wall on this Mac on 2026-10-28; the bound is
+# the harness's watchdog, so a slower leg is measured rather than cut.
+constant DEPTH_SECONDS: i64
+    600
 
 # The sample's committed answers, made by `generate.hero answers` and read by
 # a person before they are committed.
@@ -116,13 +123,52 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                     )
         seed @ seed + 1
 
-    if judged == 0
+    depth_asked = only == "" || strings.contains(text: "depth", needle: only)
+
+    if judged == 0 && !depth_asked
         report.keep_failure(
             @r,
             label: "generated",
             detail: "  `" + only + "` names no seed of 1 to " + SAMPLE.to_str() + ": a run that judged nothing is a green run that tested nothing"
         )
+
+    if depth_asked
+        floored(@r, compiler: compiler, dir: dir + "/depth")?
     return ok(r)
+
+# **The floor, on this leg** (panel 184's R6, panel 231's R4): every shape
+# `gen_depth` writes, `FLOOR` deep, must build and its binary print its
+# answer at exit 0. A reading of oracle 1 that is a designed limit past the
+# floor is a defect AT it, since the floor is what R6 promises.
+function floored(@r: report.Report, compiler: str, dir: str) -> ()?
+    shell.mkdir_all(dir)?
+
+    for shape in gen_depth.shapes()
+        source = dir + "/" + shape.name + ".hero"
+        binary = dir + "/" + shape.name + shell.exe_suffix()
+        write_file(path: source, text: shape.text)?
+        built = shell.run_bounded(scratch: dir, program: compiler, words: [compiler, "build", source, "-o", binary], seconds: DEPTH_SECONDS, bytes: 0, stdin_path: "")?
+        fell = gen_judge.fallen(built, stage: "build")
+
+        if !fell.is_err()
+            report.keep_failure(
+                @r,
+                label: "generated/depth/" + shape.name,
+                detail: "  " + gen_judge.word(fell.must()) + ": " + gen_judge.detail(fell.must()) + "\n  a source " + gen_depth.FLOOR.to_str() + " deep must compile on every platform (panel 184's R6)"
+            )
+            continue
+        ran = shell.run_bounded(scratch: dir, program: binary, words: [binary], seconds: gen_judge.RUN_SECONDS, bytes: gen_judge.program_bytes(), stdin_path: "")?
+
+        if ran.code != 0 || ran.out != shape.expected
+            report.keep_failure(
+                @r,
+                label: "generated/depth/" + shape.name,
+                detail: "  built, and its binary ended with exit " + ran.code.to_str() + " printing " + ran.out + " where it owes " + shape.expected + ran.err
+            )
+            continue
+        report.keep_pass(@r)
+
+    return ok()
 
 # The committed answers, `== <name>` and the lines beneath, by name.
 function answers_in(text: str) -> {str: str}

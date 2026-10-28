@@ -610,7 +610,7 @@ function main()
 # asked by the same hook about one issue file or one file the code cites a
 # defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated"]
         if name == suite
             return true
 
@@ -879,6 +879,7 @@ test "the third word binds the suites that walk cases, records narrowed to a pat
     assert takes_cases("fixes")
     assert takes_cases("layout")
     assert takes_cases("lldb")
+    assert takes_cases("generated")
 
     # `records` takes a path since 2026-10-11, the write hook's question of
     # one issue file or one file citing a defect (`credit.hero`); it walks no

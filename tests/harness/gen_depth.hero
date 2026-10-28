@@ -1,0 +1,83 @@
+# The depth dial at the floor (panel 231's R4, panel 184's R6;
+# M-generated-programs): the shapes of nesting the committed floor cases do
+# not hold,
+# written at `FLOOR` deep when the suite runs, so every leg of the CI judges
+# them and none is committed.
+#
+# **Why they are written and not committed.** Panel 184's R6 promises *every
+# source nested up to N compiles on every platform*, N measured on every leg
+# before its sentence is written, and three shapes already stand at 2,000 in
+# `tests/golden/run/`: brackets (`g(g(...))`, `[[...]]`, `f"{f"{...}"}"`,
+# `((...))`), chains and one-operand runs (`fixedbugs-169-*-2000-*`), green
+# on the four legs of run 40474270628. What they leave is nesting a reader
+# writes with BLOCKS and with TYPES, and a block 2,000 deep is a file of 16
+# megabytes, four spaces a level (measured 2026-10-28: `if` and `while`
+# 2,000 deep, 16,062,935 and 16,066,935 bytes), which no golden carries.
+# Measured on this Mac the same day with the trunk's compiler, each shape
+# below builds at 2,000 and its binary prints the answer here: `if` in 2.2 s
+# of wall, a chain of records each holding a `str` in 1.7 s (defect 539's
+# shape, which once killed clang at 875).
+
+# The floor R6 states, measured: a nesting this deep must compile and run on
+# every leg.
+constant FLOOR: i64
+    2000
+
+record Shape
+    name: str
+    text: str
+    expected: str
+
+function shapes() -> [Shape]
+    return [blocks(keyword: "if", n: FLOOR), blocks(keyword: "while", n: FLOOR), records(n: FLOOR), variants(n: FLOOR)]
+
+# `n` blocks, each opened by `keyword` on a condition that holds once, the
+# cell counting how many it entered.
+function blocks(keyword: str, n: i64) -> Shape
+    parts: [str] @= ["function main()\n    x: i64 @= 0\n"]
+    i: i64 @= 0
+
+    while i < n
+        parts @ parts.push(repeat("    ", to_u64(i + 1).must()) + keyword + " x == " + i.to_str() + "\n")
+        parts @ parts.push(repeat("    ", to_u64(i + 2).must()) + "x @ x + 1\n")
+        i @ i + 1
+
+    parts @ parts.push("    print(x)\n")
+    return Shape(name: keyword + "-" + n.to_str() + "-deep", text: parts.join(""), expected: n.to_str() + "\n")
+
+# `n` records, each holding the one before it by value and a `str`, an
+# empty array of the deepest built and its length printed.
+function records(n: i64) -> Shape
+    parts: [str] @= ["record R0\n    s: str\n"]
+    k: i64 @= 1
+
+    while k < n
+        parts @ parts.push("\nrecord R" + k.to_str() + "\n    r: R" + (k - 1).to_str() + "\n    s: str\n")
+        k @ k + 1
+
+    parts @ parts.push("\nfunction main()\n    x: [R" + (n - 1).to_str() + "] = []\n    print(x.len())\n")
+    return Shape(name: "records-" + n.to_str() + "-deep", text: parts.join(""), expected: "0\n")
+
+# `n` variants, each case of one holding an array of the one before it.
+function variants(n: i64) -> Shape
+    parts: [str] @= ["variant V0\n    leaf\n        v: i64\n"]
+    k: i64 @= 1
+
+    while k < n
+        parts @ parts.push(
+            "\nvariant V" + k.to_str() + "\n    wrap\n        inner: [V" + (k - 1).to_str() + "]\n    stop\n"
+        )
+        k @ k + 1
+
+    last = "V" + (n - 1).to_str()
+    parts @ parts.push(
+        "\nfunction main()\n    x: " + last + " = .stop\n\n    match x\n        .wrap _ => print(1)\n        .stop   => print(0)\n"
+    )
+    return Shape(name: "variants-" + n.to_str() + "-deep", text: parts.join(""), expected: "0\n")
+
+test "the shapes are written at their depth, each with the answer it owes"
+    small = blocks(keyword: "if", n: 3)
+    assert small.text == "function main()\n    x: i64 @= 0\n    if x == 0\n        x @ x + 1\n        if x == 1\n            x @ x + 1\n            if x == 2\n                x @ x + 1\n    print(x)\n"
+    assert small.expected == "3\n"
+    assert records(n: 2).text == "record R0\n    s: str\n\nrecord R1\n    r: R0\n    s: str\n\nfunction main()\n    x: [R1] = []\n    print(x.len())\n"
+    assert shapes().len() == 4
