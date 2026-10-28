@@ -12,6 +12,7 @@
 use gen_cboundary
 use gen_eval
 use gen_tree
+use strings
 
 # spec § 7's precedence, weakest first; a negative literal is a unary minus.
 # A unary operand is never parenthesised for being unary: `fmt` prints
@@ -317,9 +318,17 @@ function lines_of(text: str) -> [str]
         rows @ rows.push(text.slice(from: start, to: text.len()))
     return rows
 
+# Whether a line opens `!panic: `, asked byte by byte: a line of a program's
+# answer may hold a character above ASCII across its eighth byte, and a slice
+# there aborts (found 2026-10-28 by two of the eight processes of
+# M-generated-programs' closing hunt, `string slice splits a character` in
+# this function, the families' strings above ASCII printed whole).
+function opens_panic(row: str) -> bool
+    return strings.starts_with(text: row, prefix: "!panic: ")
+
 function has_panic(answer: str) -> bool
     for row in lines_of(answer)
-        if row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
+        if opens_panic(row)
             return true
 
     return false
@@ -329,7 +338,7 @@ function placed(answer: str, place: str) -> str
     out: str @= ""
 
     for row in lines_of(answer)
-        if row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
+        if opens_panic(row)
             out @ out + "!at: " + place + "\n"
         out @ out + row + "\n"
 
@@ -340,6 +349,8 @@ test "an answer is placed before its `!panic:` line, and lines are read as writt
     assert lines_of("a\n\nb\n") == ["a", "", "b"]
     assert has_panic("1\n!panic: x\n")
     assert !has_panic("1\n")
+    assert !has_panic("abcdefgé\n")
+    assert placed(answer: "abcdefgé\n", place: "g1.hero:2:11") == "abcdefgé\n"
 
 test "a parenthesis stands only where precedence or association needs it"
     p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [], shapes: [])

@@ -116,7 +116,7 @@ function difference(p: gen_tree.Program lent, got: str, want: str, level: [str])
     return level.join(" ") + "|" + kind + "|" + printed_root(p, line: k, got: got_row)
 
 function aborts(row: str) -> bool
-    return row.len() >= 8 && row.slice(from: 0, to: 8) == "!panic: "
+    return gen_text.opens_panic(row)
 
 # The operator at the root of what computed the `line`-th printed line's
 # first WRONG part (defect 2244): the line's parts are the evaluator's texts,

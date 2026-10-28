@@ -49,7 +49,7 @@ function proved(stem: str, work: str, bounds: Bounds) -> str?
         "-o"
         binary
     ]
-    built = shell.run_bounded(scratch: work, program: "clang", words: words, seconds: bounds.compile, bytes: 0, stdin_path: "")?
+    built = shell.run_bounded(scratch: work, program: "clang", words: driver_words(words), seconds: bounds.compile, bytes: 0, stdin_path: "")?
 
     if built.code != 0
         return ok("the driver did not build: " + first_line(built.err))
@@ -61,6 +61,28 @@ function proved(stem: str, work: str, bounds: Bounds) -> str?
             "the driver printed otherwise than the model computes, exit " + ran.code.to_str() + ": " + first_line(ran.err)
         )
     return ok("")
+
+# The driver's words on this platform. **On Windows UBSan's checks trap**:
+# the standalone UBSan runtime the MSVC toolchain ships does not link a
+# program alone (measured 2026-10-28 on the Windows box: `lld-link` wants
+# `CommandLineToArgvW`, and with `-lshell32` beside it
+# `__coe_win::ContinueOnError`), and `-fsanitize-trap=undefined` needs no
+# runtime: a signed overflow in a driver built so stops it with an illegal
+# instruction, exit 132 under the box's bash, which `proved` reads as a
+# driver that did not print the model's answer. Elsewhere the runtime says
+# which check fired, which a person reads.
+function driver_words(words: [str]) -> [str]
+    if shell.exe_suffix() != ".exe"
+        return words
+    out: [str] @= []
+
+    for word in words
+        out @ out.push(word)
+
+        if word == "-fno-sanitize-recover=all"
+            out @ out.push("-fsanitize-trap=undefined")
+
+    return out
 
 # **Oracle 4 at the C boundary** (panel 231's R5, M-check-completeness's
 # carve-out: `check` never reads a group's header, so its acceptance is no
@@ -205,6 +227,15 @@ constant CONTROL: str
 
 constant CONTROL_HEADER: str
     "#ifndef LEAK_CONTROL_H\n#define LEAK_CONTROL_H\n/* The leak oracle's control (tests/harness/gen_cjudge.hero): every allocation dropped. */\n#include <stdint.h>\n#include <stdlib.h>\n\nstatic inline int64_t cf0(int64_t p0) {\n    for (int64_t i = 0; i < (p0 & 255); i++) {\n        char *p = malloc(32);\n        if (p == NULL) {\n            return -1;\n        }\n    }\n    return p0;\n}\n\n#endif\n"
+
+test "a driver's words trap on Windows alone, beside the recovery they refuse"
+    words = ["clang", "-fsanitize=undefined", "-fno-sanitize-recover=all", "d.c"]
+    trapped = driver_words(words)
+
+    if shell.exe_suffix() == ".exe"
+        assert trapped == ["clang", "-fsanitize=undefined", "-fno-sanitize-recover=all", "-fsanitize-trap=undefined", "d.c"]
+    else
+        assert trapped == words
 
 test "`leaks` is read by its verdict line, and no line is no verdict"
     clean = "200\nProcess 55068: 188 nodes malloced for 64 KB\nProcess 55068: 0 leaks for 0 total leaked bytes.\n"
