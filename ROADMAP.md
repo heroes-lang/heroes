@@ -14,8 +14,8 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | none open since **M-panic-location**'s close on 2026-10-26; the next row, M-generated-programs, is `scheduled` until somebody opens it |
-| **Next** | M-generated-programs, row 73: programs nobody wrote, a generator that composes valid Heroes and knows the answer before the compiler is asked |
+| **Current milestone** | **M-generated-programs**, row 73, **OPEN** since 2026-10-28 ([its page](docs/roadmap/milestones/M-generated-programs.md)): programs nobody wrote, a generator that composes valid Heroes and knows the answer before the compiler is asked, five oracles over every program it writes, a reducer, and the reduced witnesses committed in the net, its first step the catalogue of shapes enumerated from the world; none was open from M-panic-location's close on 2026-10-26 until then |
+| **Next** | M-compatibility-promise, row 74: the paragraph `1.0.0` rests on, and the suite that makes a broken promise red |
 | **Last closed** | **M-panic-location**, 2026-10-26 ([071](docs/records/journal/071-panic-location.md)): every abort a program's own operation raises names its file, line, column and function, the library's naming the program's call into it; a fault the runtime catches names its function as the program spells it, Windows not; a lease or a handle never given back names where it was taken; a failed `assert` shows both sides of every comparison in the lldb formatter's notation; no program's text forges a report; `exit` takes a byte; panel 230 ratified by the author's reading · before it **M-rechecked-issues**, 2026-10-25 ([070](docs/records/journal/070-rechecked-issues.md)) · before it **M-thesis-harness** ([069](docs/records/journal/069-thesis-harness.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **72** of 92 · **72** tags matching `m*`, the legacy `m0`-`m8` included; `m-panic-location` placed 2026-10-27 over a clean list, no `blocking` or `systemic` defect once defects 2206, 2239 and 2240 closed at its gate, decision 2228 answered (`hero_os.h` the language's door) and panel 229's ratification the one decision open ([071](docs/records/journal/071-panic-location.md)) |
 | The compiler | **179,309** lines of Heroes in **689** modules (`find selfhost -name '*.hero'`) · the seed **273,423** lines of C, 28,472,034 bytes, refreshed at M-panic-location for `HERO_RUNTIME_ABI` 31 by `abi-put-back` (`80a888f39`, rebuilt by the seed before it, its fixpoint over two generations), and before it by the release `v0.5.0` on 2026-10-25 at 271,387 lines and 27,000,911 bytes, in panel 219's s4 shape, refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
@@ -44,8 +44,8 @@ issue when it ends.
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–71
-are done, in the order they closed, row 72 is open, and rows 73–92 are
+One table, one row per milestone, **closed first and scheduled after**: rows 1–72
+are done, in the order they closed, row 73 is open, and rows 74–92 are
 what is next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -119,7 +119,10 @@ of row 82 the same day found it** on the trunk, still reading *row 71 is open*: 
 entered at 82 by the author's instruction, the ten scheduled rows after it each moved one down, and
 the table is 92 long by a count over it, 71 rows `done` and 21 `scheduled`. The two met when the
 lane merged the trunk, the same day: 1–71 done, 72 open and 73–92 next, the table 92 long, 71 rows
-`done`, one `**OPEN**` and 20 `scheduled`. `warrant` is why a milestone exists: **v1** (the self-hosting
+`done`, one `**OPEN**` and 20 `scheduled`. Then 1–71 done, 72 open and 73–92 until M-panic-location
+closed on 2026-10-26, opening no row and restating § Where we are but not this sentence; **the
+OPENING of M-generated-programs on 2026-10-28 found it** on the trunk, the table 92 long by a count
+over it, 72 rows `done` and 20 `scheduled` before it opened at 73. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -200,7 +203,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 70 | **M-thesis-harness** | done 2026-10-24 | `m-thesis-harness` | [069](docs/records/journal/069-thesis-harness.md) | Part 11's metrics 2 and 4 run for the first time, as a Heroes program: forty held-out tasks sealed and a prediction pushed before the run, the primary inconclusive at +0.0 points with no discordant pair, the strict arm paying at turn 1 and level by turn 3 · **§1.1** |
 | 71 | **M-rechecked-issues** | done 2026-10-25 | `m-rechecked-issues` | [070](docs/records/journal/070-rechecked-issues.md) | every open issue re-checked against the tree: closed with the commit that settled it, closed with the reason it no longer applies, repaired, or re-homed on a row still to come · scheduled, no warrant |
 | 72 | **M-panic-location** | done 2026-10-26 | `m-panic-location` | [071](docs/records/journal/071-panic-location.md) | an abort a program raises names its file, line, column and function, an `assert` on any value shows both sides, and no program's text forges a report · **§1.12** |
-| 73 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 73 | **M-generated-programs** | **OPEN** | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
 | 74 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
 | 75 | **M-latency-ceiling** | scheduled | — | — | a latency the compiler may not lose without a decision: `heroes check` and clang on the seed timed at every close, the incremental frontend its return condition · CLAUDE.md § Verification |
 | 76 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |

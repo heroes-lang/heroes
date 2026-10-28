@@ -103,3 +103,81 @@ the known answer this row plans: one generated program built at `-O0`, at
 `-O2` and under `--sanitize` must print the same thing, which needs no answer
 at all and names a class the sanitizers do not, an optimiser taking an
 assumption the emitted C makes.
+
+**Opened 2026-10-28, at row 73, on the trunk**, by `/step` with no step named,
+the ROADMAP's next row; in no lane yet, since the opening writes records alone
+and the four other sessions on this Mac were offline. What the opening
+measured, with the trunk's stage 2 (`sources 5e0ca4c634086a7c`), so that the
+steps start from it:
+
+- **Seven tasks open** on the GitHub milestone (`open --milestone
+  M-generated-programs`) and no feature: 929, the catalogue, the first step;
+  931, the generator computing the answer as it builds; 934, the reducer and
+  the committed witnesses; 972, `--sanitize` at `-O2`, where clang deletes the
+  leaks LeakSanitizer exists to find; 1234, nothing in the tree compiles or
+  links what `--emit-c` wrote; 2214, which `check` cases add nothing, a
+  coverage measurement; 2236, what M-panic-location's push left to read, read
+  first and closed by this opening.
+- **What M-panic-location's push left, read** (task 2236). The CI's run
+  40401936020 on `e4ad8e14c`: Linux x86-64, Linux arm64 and Darwin arm64
+  green, Windows x86-64 red at *Build the compiler from the seed*, defect 2239,
+  repaired at `c3996424f` and closed at the tag; the run after it, 40456967468
+  on `e9857f5ea`, red on both Linux legs at `emission: 1399 passed, 2 failed`,
+  defect 2240, the two emissions this Mac skips blessed at `24f33f34a` and
+  closed; the run on `88af6ca60` cancelled by the push seven minutes behind
+  it; and run 40474270628 on `f867b7552`, the trunk's head, green on all four
+  legs, CodeQL and the site's deploy beside it. Panel 187's R2, not run since
+  M-readonly-lend's push on 2026-10-18 (journal 068 declaring it not owed,
+  069 and 070 silent), run over everything since:
+  moved 0 and findings 0 in both arms, 14,209 singles the same in the normal
+  and the control arm, 15,737 pairs with the same told status, each arm 27 to
+  28 minutes of wall six workers wide beside the other (`real` 1,637 and
+  1,658 s, `user` 4,822 and 4,852 s). Three programs of the frozen corpus,
+  unmutated, are told one message by today's compiler and none by the base,
+  the language having moved under the freeze, and are subtracted as the
+  instrument subtracts a program's own: `examples/interpreter/main.hero:63`,
+  `type_mismatch` in both arms, `exit(code:)` taking a `u8` since panel 230's
+  R4, the live example converting and the frozen copy not;
+  `selfhost/cli/io.hero:123`, `wrong_label` in the normal arm alone,
+  `repeat(count: 512)` where a built-in's unnamed position takes no label
+  since defect 2184 (`be9009cac`, M-thesis-harness step 12, the round journal
+  069 did not read); and the two ledger programs told `never_rebound` at
+  `examples/ledger/db/sqlite.hero:322` by both compilers, panel 210's rule, as
+  on 2026-10-18. Today's records (2026-10-28) stay in
+  `.claude/worktrees/r2-runs/today` on this Mac, the base the next reading can
+  reuse. The author's counts W4 and W5 of panel 230 are a decision issue, https://github.com/heroes-lang/heroes/issues/2241, with the
+  two commands that print each number alone.
+- **The nearest corpus, re-measured**, and task 929's figures of 2026-09-06
+  and 2026-09-10 are low by an order of magnitude: 1,341 `fixedbugs-*.hero`
+  cases under `tests/golden/` (`find tests/golden -name 'fixedbugs-*.hero'`),
+  541 in `check/`, 396 in `run/`, 329 in `unsupported/`, 39 in `full/`, 19 in
+  `permissive/`, 5 in `ir/`, 5 in `emit/`, 3 in `lldb/`, 3 in `fixedbugs/`
+  and 1 in `control/`, with `tests/golden/fixedbugs/` holding 40 `.hero` files
+  in all; 649 distinct `defect NNN` citations in `selfhost/`, `runtime/` and
+  `tests/`; and on GitHub, where the defects live since 2026-10-12, 789
+  defects, 785 closed and 4 open (2 `adjacent`, 2 `improvement`, no
+  `blocking`, no `systemic`), of 2,240 issues (`gh api search/issues`, read
+  this morning).
+- **The places the compiler declares impossible, counted by `grep -rn` over
+  `selfhost/**/*.hero`, lines rather than sites**: `hero_unreachable` 94,
+  `unreachable` 207 (the 94 among them), `internal error` 94, `impossible` 11,
+  `cannot happen` 5; task 929's re-verification of 2026-09-10 read 119, 27, 9
+  and 4, and its warning stands: the catalogue's first act is to define what
+  it counts before it counts it.
+- **The premises the row rests on, re-read in the tree**: the net's three
+  configurations are still `["-O0", "-O2", "--sanitize"]`
+  (`tests/harness/suite_corpus.hero`, `configurations()`), and no fourth
+  `-O0 --sanitize` arm exists (task 972); the seeded stream is still
+  `examples/montecarlo/main.hero`'s `inside_for(seed:)`;
+  `selfhost/mutate/sites.hero` is 149 lines, as on 2026-09-10, with
+  41 modules beside it, the recovery arm's workers and its child
+  bounded in time and bytes among them, parts a generator's runner and a
+  reducer can reuse; the net selects 26 suites by name and six golden forms,
+  none generative, and `tests/harness/` holds 103 modules and no
+  generator.
+- **What this opening did not do, and why**: no lane and no panel. The
+  catalogue is a measurement under `docs/measurements/`, whose next number is
+  056, and touches no panel path; the generator and the reducer are a Heroes
+  program under `tests/harness/`, which proposes no verb, so § 4's gate is
+  asked once, at step 1's end with the catalogue in hand, the soundness lane
+  recommended, and the lane opens with the first code.
