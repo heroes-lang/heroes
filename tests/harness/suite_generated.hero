@@ -29,6 +29,12 @@
 # (`run/fixedbugs-169-*-2000-*`), so a clang that dies or a stack that runs
 # out on one of these programs is the compiler's defect, not a limit.
 #
+# **And the leak oracle is proved live on every leg** (task 972): after the
+# sample, a program whose header drops 200 allocations is judged by the same
+# route and must read `LEAKED`, by LeakSanitizer on Linux and by `leaks` on
+# Darwin; one that passes says the leg's leak oracle is blind. Windows has
+# neither instrument, and the control says so as a skip.
+#
 # **Which compiler builds the generator decides what the sample can see**
 # (the compiler-engineer's Q1, the critic's finding 1): the harness is built
 # by the compiler that runs it and judges the one named after `--`, so the
@@ -37,6 +43,7 @@
 # miscompilation introduced since the seed was last refreshed. Run with one
 # compiler on both sides, the grid above is the guard.
 
+use gen_cjudge
 use gen_contract
 use gen_depth
 use gen_judge
@@ -115,7 +122,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
 
             match v
                 .passed _ => report.keep_pass(@r)
-                .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ =>
+                .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .leaked _ | .misformatted _ | .header _ =>
                     report.keep_failure(
                         @r,
                         label: "generated/" + name,
@@ -124,8 +131,12 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         seed @ seed + 1
 
     depth_asked = only == "" || strings.contains(text: "depth", needle: only)
+    control_asked = only == "" || strings.contains(text: "leak-control", needle: only)
 
-    if judged == 0 && !depth_asked
+    if control_asked
+        leak_control(@r, compiler: compiler, dir: dir + "/leak", work: work)?
+
+    if judged == 0 && !depth_asked && !control_asked
         report.keep_failure(
             @r,
             label: "generated",
@@ -167,6 +178,33 @@ function floored(@r: report.Report, compiler: str, dir: str) -> ()?
             )
             continue
         report.keep_pass(@r)
+
+    return ok()
+
+# The leak oracle's live control (`gen_cjudge.written_control`): `LEAKED`
+# owed on every leg that has a leak instrument, and Windows told as a skip.
+function leak_control(@r: report.Report, compiler: str, dir: str, work: str) -> ()?
+    label = "generated/leak-control"
+
+    if shell.exe_suffix() == ".exe"
+        report.keep_skip(
+            @r,
+            label: label,
+            detail: "  no leak instrument on Windows: its AddressSanitizer has no LeakSanitizer and the system no `leaks`"
+        )
+        return ok()
+    shell.mkdir_all(dir)?
+    source = gen_cjudge.written_control(dir)?
+    v = gen_judge.judged(compiler: compiler, source: source, work: work)?
+
+    match v
+        .leaked _ => report.keep_pass(@r)
+        .passed _ | .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ =>
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  the leak oracle is blind on this leg: a header that drops 200 allocations reads " + gen_judge.word(v) + " where it owes LEAKED: " + gen_judge.detail(v)
+            )
 
     return ok()
 

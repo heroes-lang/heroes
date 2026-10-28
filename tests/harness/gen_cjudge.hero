@@ -4,7 +4,8 @@
 # oracle 4 at the boundary, where `check`'s acceptance is no promise because
 # `check` never reads a group's header (M-check-completeness's carve-out), so
 # the promise is the artifact's: what `build` builds, the C `--emit-c` wrote
-# compiles, links and runs to the same end.
+# compiles, links and runs to the same end. And oracle 5 at the boundary, a
+# leak through C, read by the leg's own leak tool, with its live control.
 
 use shell
 use strings
@@ -64,7 +65,8 @@ function proved(stem: str, work: str, bounds: Bounds) -> str?
 # **Oracle 4 at the C boundary** (panel 231's R5, M-check-completeness's
 # carve-out: `check` never reads a group's header, so its acceptance is no
 # promise there): the C `--emit-c` writes, compiled with the runtime and
-# linked, ends as the build's binary ended and prints what it printed.
+# linked, ends as the build's binary ended and prints what it printed, on
+# stdout and on stderr, where a declared abort says its message and place.
 function artifact_agrees(compiler: str, source: str, work: str, plain: shell.Run, bounds: Bounds) -> str?
     name = base_name(strings.without_suffix(text: source, suffix: ".hero"))
     c = work + "/" + name + ".emitted.c"
@@ -96,10 +98,16 @@ function artifact_agrees(compiler: str, source: str, work: str, plain: shell.Run
         return ok("the artifact `--emit-c` wrote does not compile and link: " + first_line(linked.err))
     ran = shell.run_bounded(scratch: work, program: binary, words: [binary], seconds: bounds.run, bytes: bounds.bytes, stdin_path: "")?
 
-    if ran.code != plain.code || ran.out != plain.out
+    if ran.code != plain.code
         return ok(
-            "the artifact ends with exit " + ran.code.to_str() + " where the build's binary exited " + plain.code.to_str() + ", or prints otherwise"
+            "the artifact ends with exit " + ran.code.to_str() + " where the build's binary exited " + plain.code.to_str()
         )
+
+    if ran.out != plain.out
+        return ok("the artifact prints otherwise than the build's binary on stdout")
+
+    if ran.err != plain.err
+        return ok("the artifact says otherwise than the build's binary on stderr: " + first_line(ran.err))
     return ok("")
 
 # The runtime the compiler builds with, found as the compiler finds it
@@ -127,3 +135,65 @@ function directory_of(path: str) -> str
         i @ i - 1
 
     return "."
+
+# **Oracle 5 at the C boundary** (task 972; `.claude/rules/c-boundary.md`'s
+# correction of 2026-10-28): a leak through C the optimiser can see is
+# judged at `-O0`, where clang keeps the allocation (measured that day: a
+# header's 200 dropped `malloc`s, 200 leaks at `-O0` and none at `-O2`). On
+# Linux LeakSanitizer reads it under `--sanitize -O0`, oracle 2's third
+# configuration (`gen_judge.missed`); Darwin's AddressSanitizer has no leak
+# detector, so there `leaks --atExit` reads the plain `-O0` binary. "" where
+# the tool reads no leak or this leg has no `leaks`, which the suite's live
+# control tells apart (`suite_generated.leak_control`); the tool's verdict
+# line where it reads one.
+constant LEAKS: str
+    "/usr/bin/leaks"
+
+function leak_free(binary: str, work: str, bounds: Bounds) -> str?
+    if !shell.exists(LEAKS)
+        return ok("")
+    ran = shell.run_bounded(scratch: work, program: LEAKS, words: [LEAKS, "--atExit", "--", binary], seconds: bounds.run, bytes: bounds.bytes, stdin_path: "")?
+    return leaks_said(ran.out + ran.err)
+
+# What `leaks` said, read from its report's verdict line, `Process <pid>: <n>
+# leaks for <bytes> total leaked bytes.` (`leak` where n is 1): "" at none,
+# the line at some, and a failure where no such line stands, since a tool
+# that could not read the process judged nothing and must not read as clean.
+function leaks_said(text: str) -> str?
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "Process ")
+            if strings.contains(text: row, needle: " leaks for ") || strings.contains(text: row, needle: " leak for ")
+                if strings.contains(text: row, needle: ": 0 leaks for ")
+                    return ok("")
+                return ok(row)
+
+    return fail(code: "unread", msg: "`leaks --atExit` wrote no verdict line: " + first_line(text))
+
+# **The leak oracle's live control** (task 972's own lesson: its instrument
+# was proved live in the session that trusted it): a program whose header
+# allocates 200 times and drops every pointer, its files written into `dir`
+# in the shape of a generated program, header, driver and answers, so it is
+# judged by the same route. Its source's path.
+function written_control(dir: str) -> str?
+    stem = dir + "/" + CONTROL
+    write_file(path: stem + ".h", text: CONTROL_HEADER)?
+    write_file(path: stem + ".driver.c", text: "#include <stdio.h>\n#include \"" + CONTROL + ".h\"\n\nint main(void) {\n    printf(\"%lld\\n\", (long long)cf0(INT64_C(3)));\n    return 0;\n}\n")?
+    write_file(path: stem + ".driver.expected", text: "3\n")?
+    write_file(path: stem + ".expected", text: "200\n")?
+    write_file(path: stem + ".hero", text: "extern \"" + CONTROL + ".h\"\n    function cf0(p0: i64) -> i64\n\nfunction main()\n    print(cf0(200))\n")?
+    return ok(stem + ".hero")
+
+constant CONTROL: str
+    "leak_control"
+
+constant CONTROL_HEADER: str
+    "#ifndef LEAK_CONTROL_H\n#define LEAK_CONTROL_H\n/* The leak oracle's control (tests/harness/gen_cjudge.hero): every allocation dropped. */\n#include <stdint.h>\n#include <stdlib.h>\n\nstatic inline int64_t cf0(int64_t p0) {\n    for (int64_t i = 0; i < (p0 & 255); i++) {\n        char *p = malloc(32);\n        if (p == NULL) {\n            return -1;\n        }\n    }\n    return p0;\n}\n\n#endif\n"
+
+test "`leaks` is read by its verdict line, and no line is no verdict"
+    clean = "200\nProcess 55068: 188 nodes malloced for 64 KB\nProcess 55068: 0 leaks for 0 total leaked bytes.\n"
+    dirty = "200\nProcess 56305: 200 leaks for 9600 total leaked bytes.\n"
+    one = "Process 7: 1 leak for 48 total leaked bytes.\n"
+    assert leaks_said(clean).must() == ""
+    assert leaks_said(dirty).must() == "Process 56305: 200 leaks for 9600 total leaked bytes."
+    assert leaks_said(one).must() == "Process 7: 1 leak for 48 total leaked bytes."
+    assert leaks_said("leaks: cannot examine process 9\n").is_err()

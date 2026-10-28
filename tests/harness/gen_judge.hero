@@ -19,14 +19,23 @@
 # **Oracle 2**, the answer the generator computed, in three configurations:
 # the `-O0` binary run by the judge, `run -O2`, and `run --sanitize -O0`,
 # where a sanitiser saying a word is a defect of its own (a generated program
-# corrupts nothing by construction). **Oracle 3**, the formatter: its output
+# corrupts nothing by construction). The sanitised binary runs twice, every
+# byte ASan hands out filled first with 0 and then with 190 (panel 231's R5,
+# the ffi-pragmatist's measurement: an uninitialised read printed `5` and
+# `-4702111234474983741` under the two), each run held to the answer, so a
+# read of a byte nobody wrote moves the output under one fill at least.
+# R5 asks it of a program with an `extern`; it is asked of every program,
+# since a byte the compiler's own C leaves unwritten is read the same way
+# and the second run costs no build. **Oracle 3**, the formatter: its output
 # is a fixed point and builds to the same answer, bytes equal where the
 # generator already wrote the canonical form (the compiler-engineer's P5:
 # 159 of 300 differ only by `fmt`'s 120-column wrap). **Oracle 4** is the
 # judge's own `build` of a program `check` accepts, so a refusal at build is
 # asked of `check` too, to say which stage refused. **Oracle 5**, a leak of
 # the program's own, is the runtime's count at exit, which a silent stderr
-# already reads (`expectation.hero`); a leak through C is the C arm's.
+# already reads (`expectation.hero`); a leak through C is the C arm's, read
+# by LeakSanitizer under `--sanitize -O0` on Linux and by `leaks --atExit`
+# on the `-O0` binary on Darwin (`gen_cjudge.leak_free`, task 972).
 
 use expectation
 use gen_cjudge
@@ -50,6 +59,8 @@ variant Verdict
         said: str
     sanitized
         said: str
+    leaked
+        said: str
     misformatted
         said: str
     header
@@ -68,6 +79,15 @@ constant RUN_SECONDS: i64
 constant RUN_BYTES: i64
     1048576
 
+# The two fills the sanitised binary runs under, ASan's options handed
+# through `env` as `freed_bytes.FILL` is: every block filled at its whole
+# length, the largest the option takes in a 32-bit word.
+constant FILLS: [str]
+    [
+        "ASAN_OPTIONS=max_malloc_fill_size=2147483647:malloc_fill_byte=0"
+        "ASAN_OPTIONS=max_malloc_fill_size=2147483647:malloc_fill_byte=190"
+    ]
+
 # The bounds every child of a judgement runs under, as the C arm's checks
 # are handed them.
 function bounds() -> gen_cjudge.Bounds
@@ -77,8 +97,8 @@ function bounds() -> gen_cjudge.Bounds
 # the two limits panel 184 designed.
 function is_defect(v: Verdict) -> bool
     match v
-        .passed _ | .clang_limit _ | .depth_limit _                                  => return false
-        .refused _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ => return true
+        .passed _ | .clang_limit _ | .depth_limit _                                              => return false
+        .refused _ | .fell _ | .wrong _ | .sanitized _ | .leaked _ | .misformatted _ | .header _ => return true
 
 # One word for a verdict, the first field of the judge's line.
 function word(v: Verdict) -> str
@@ -93,6 +113,7 @@ function word(v: Verdict) -> str
         .fell _         => return "FELL"
         .wrong w        => return "WRONG" + w.where
         .sanitized _    => return "SANITIZED"
+        .leaked _       => return "LEAKED"
         .misformatted _ => return "MISFORMATTED"
         .header _       => return "HEADER"
 
@@ -109,6 +130,7 @@ function detail(v: Verdict) -> str
         .fell f         => return f.said
         .wrong w        => return w.said
         .sanitized s    => return s.said
+        .leaked l       => return l.said
         .misformatted m => return m.said
         .header h       => return h.said
 
@@ -141,6 +163,14 @@ function first_line(text: str) -> str
         return "(nothing said)"
     return rows[0]
 
+# The first line of `text` holding `needle`, else its first line.
+function line_naming(text: str, needle: str) -> str
+    for row in strings.lines(text)
+        if strings.contains(text: row, needle: needle)
+            return row
+
+    return first_line(text)
+
 # The bytes a program may write, where this platform can hold it to them.
 function program_bytes() -> i64
     if shell.can_limit_writes()
@@ -152,8 +182,17 @@ function missed(want: expectation.Expectation, ran: shell.Run, where: str) -> Ve
     if ran.code == 124
         return ok(.wrong(where: where, said: "ran past " + RUN_SECONDS.to_str() + " s, and a generated program ends"))
 
-    if strings.contains(text: ran.err, needle: "AddressSanitizer") || strings.contains(text: ran.err, needle: "runtime error:")
-        return ok(.sanitized(said: where + ": " + first_line(ran.err)))
+    # LeakSanitizer first: its report ends `SUMMARY: AddressSanitizer:`, so
+    # the general test below would call a leak a corruption. Each says the
+    # line that names its sanitiser, since a report opens with a rule of `=`.
+    if strings.contains(text: ran.err, needle: "LeakSanitizer")
+        return ok(.leaked(said: where + ": " + line_naming(text: ran.err, needle: "LeakSanitizer")))
+
+    if strings.contains(text: ran.err, needle: "AddressSanitizer")
+        return ok(.sanitized(said: where + ": " + line_naming(text: ran.err, needle: "AddressSanitizer")))
+
+    if strings.contains(text: ran.err, needle: "runtime error:")
+        return ok(.sanitized(said: where + ": " + line_naming(text: ran.err, needle: "runtime error:")))
     unmet = expectation.unmet(want, out: ran.out, err: ran.err, code: ran.code)
 
     if !unmet.is_err()
@@ -211,11 +250,21 @@ function judged(compiler: str, source: str, work: str) -> Verdict?
 
         if !fell_here.is_err()
             return fell_here
-        ran = shell.run_bounded(scratch: work, program: leveled, words: [leveled], seconds: RUN_SECONDS, bytes: program_bytes(), stdin_path: "")?
-        at_level = missed(want, ran: ran, where: where)
 
-        if !at_level.is_err()
-            return at_level
+        for words_run in runs_of(level, binary: leveled)
+            ran = shell.run_bounded(scratch: work, program: words_run[0], words: words_run, seconds: RUN_SECONDS, bytes: program_bytes(), stdin_path: "")?
+            at_level = missed(want, ran: ran, where: where + fill_named(words_run))
+
+            if !at_level.is_err()
+                return at_level
+
+    # Oracle 5 at the boundary: a program that ends at exit 0, since one that
+    # aborts by design ends before `atexit`, where `leaks` reads.
+    if !driver.is_err() && !declared
+        leak = gen_cjudge.leak_free(binary: binary, work: work, bounds: bounds())?
+
+        if leak != ""
+            return ok(.leaked(said: "leaks --atExit -O0: " + leak))
 
     if !driver.is_err()
         artifact = gen_cjudge.artifact_agrees(compiler: compiler, source: source, work: work, plain: plain, bounds: bounds())?
@@ -223,6 +272,30 @@ function judged(compiler: str, source: str, work: str) -> Verdict?
         if artifact != ""
             return ok(.wrong(where: " --emit-c", said: artifact))
     return formatted(compiler: compiler, source: source, work: work, plain: plain, declared: declared)
+
+# How a configuration's binary is run: once, or under each of `FILLS`
+# where it is the sanitised one.
+function runs_of(level: [str], binary: str) -> [[str]]
+    sanitised: bool @= false
+
+    for flag in level
+        if flag == "--sanitize"
+            sanitised @ true
+
+    if !sanitised
+        return [[binary]]
+    runs: [[str]] @= []
+
+    for fill in FILLS
+        runs @ runs.push(["env", fill, binary])
+
+    return runs
+
+# The fill a run was given, for its verdict's place: ` fill 0`, or "".
+function fill_named(words: [str]) -> str
+    if words.len() < 3 || words[0] != "env"
+        return ""
+    return " fill " + strings.without_prefix(text: words[1], prefix: "ASAN_OPTIONS=max_malloc_fill_size=2147483647:malloc_fill_byte=")
 
 # Oracle 4's question, asked only where `build` refused: whether `check`
 # accepted what `build` refused, which names the stage the defect is in.
@@ -241,7 +314,7 @@ function stage_named(v: Verdict, compiler: str, source: str, work: str) -> Verdi
             if !checked.is_err() && checked.must().code == 0
                 return .refused(said: r.said + " (and `check` accepts it: oracle 4)")
             return v
-        .passed _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .misformatted _ | .header _ => return v
+        .passed _ | .clang_limit _ | .depth_limit _ | .fell _ | .wrong _ | .sanitized _ | .leaked _ | .misformatted _ | .header _ => return v
 
 # Oracle 3: `fmt`'s output is a fixed point and means what the program meant.
 # The formatted copy is written beside the program, where a header its
@@ -335,10 +408,29 @@ test "a run is wrong where it prints otherwise, ends otherwise, or a sanitiser s
         why: 0
     )
     hung = shell.Run(code: 124, out: "", err: "", started: true, why: 0)
+    lost = shell.Run(
+        code: 23,
+        out: "3\n",
+        err: "\n=================================================================\n==9==ERROR: LeakSanitizer: detected memory leaks\n\nSUMMARY: AddressSanitizer: 6400 byte(s) leaked in 200 allocation(s).\n",
+        started: true,
+        why: 0
+    )
     assert missed(want, ran: right, where: "-O0").is_err()
+    assert word(missed(want, ran: lost, where: " --sanitize -O0").must()) == "LEAKED"
+    assert detail(missed(want, ran: lost, where: " --sanitize -O0").must()) == " --sanitize -O0: ==9==ERROR: LeakSanitizer: detected memory leaks"
     assert word(missed(want, ran: printed, where: "-O0").must()) == "WRONG-O0"
     assert word(missed(want, ran: spoke, where: " --sanitize -O0").must()) == "SANITIZED"
     assert word(missed(want, ran: hung, where: " -O2").must()) == "WRONG -O2"
+
+test "the sanitised binary runs under both fills, every other once"
+    once = runs_of(["-O2"], binary: "b")
+    assert once.len() == 1
+    assert once[0] == ["b"]
+    filled = runs_of(["--sanitize", "-O0"], binary: "b")
+    assert filled.len() == 2
+    assert filled[0] == ["env", FILLS[0], "b"]
+    assert fill_named(filled[1]) == " fill 190"
+    assert fill_named(["b"]) == ""
 
 test "the last part of a path"
     assert base_name("build/g/g12") == "g12"

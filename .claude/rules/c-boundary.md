@@ -192,3 +192,12 @@ that allocation, so a leak through C the optimiser can see is judged at `-O0` on
 can judge it: on Linux by LeakSanitizer under `--sanitize -O0`, which the corpus runs since the
 same day for a program that declares an `extern` (task 972), and on this Mac by `leaks`, by hand
 until the generator's oracle 5 runs it. Unrun: `leaks` on the CI's `macos-26` runner.
+
+**And since 2026-10-28, M-generated-programs step 11, the generator's oracle 5 runs it**: every
+generated program with an `extern` that ends at exit 0 has its `-O0` binary read by `leaks
+--atExit` on Darwin (`tests/harness/gen_cjudge.hero`, `leak_free`), 0.51 s a program on this Mac,
+and LeakSanitizer reads the same program under `--sanitize -O0` on Linux. Each leg proves its
+instrument live on every run of the `generated` suite: a header that drops 200 allocations must be
+judged `LEAKED`, and a control that passes fails the suite as *the leak oracle is blind on this
+leg*, which this Mac showed with `leaks` taken away. Windows has neither instrument and the control
+says so as a skip. Unrun until the push: the control on the CI's Linux and `macos-26` legs.

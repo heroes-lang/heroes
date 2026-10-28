@@ -75,7 +75,7 @@ function wrong_level(v: gen_judge.Verdict) -> [str]?
                 return ok(["--sanitize", "-O0"])
             nothing: [str] = []
             return ok(nothing)
-        .passed _ | .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .sanitized _ | .misformatted _ | .header _ =>
+        .passed _ | .refused _ | .clang_limit _ | .depth_limit _ | .fell _ | .sanitized _ | .leaked _ | .misformatted _ | .header _ =>
             return fail(code: "not_wrong", msg: "only a wrong answer is reduced by its value")
 
 # The seed's program reduced while the compiler fails it with the symptom it
