@@ -44,9 +44,22 @@ constant SAMPLES: [i64]
 function is_c(f: gen_tree.Fn) -> bool
     return f.name.len() > 2 && f.name.slice(from: 0, to: 2) == "cf"
 
+# Whether the program has C to prove, so a header and a driver are
+# written: a C function, or a shape whose driver proves C of its own.
 function has_c(p: gen_tree.Program lent) -> bool
-    if p.shapes.len() > 0
-        return true
+    for s in p.shapes
+        if s.driver.len() > 0
+            return true
+
+    return has_group(p)
+
+# Whether the program's own `extern` group has a line: a C function, or a
+# shape that binds C in it. A shape of Heroes alone binds none, and a module
+# binds its C in a group of its own.
+function has_group(p: gen_tree.Program lent) -> bool
+    for s in p.shapes
+        if s.group.len() > 0
+            return true
 
     for f in p.fns
         if is_c(f)
@@ -139,7 +152,12 @@ function header_text(p: gen_tree.Program lent, guard: str) -> str
         for name in s.includes
             if !among(included, name: name)
                 included @ included.push(name)
-                text @ text + "#include <" + name + ">\n"
+
+                # A header of the program's own is named in quotes.
+                if name.len() > 0 && name[0] == '"'
+                    text @ text + "#include " + name + "\n"
+                else
+                    text @ text + "#include <" + name + ">\n"
 
     for f in p.fns
         if is_c(f)

@@ -362,7 +362,9 @@ function structured(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
         driver: driver,
         proved: proved,
         hero: [],
-        uses: []
+        uses: [],
+        extra_names: [],
+        extra_texts: []
     )
 
 # The operators Heroes applies to two values of width `w`: the arithmetic

@@ -44,6 +44,15 @@ function symptom(p: gen_tree.Program lent, compiler: str, dir: str, level: [str]
     # the candidate's own group, since a reduction may drop a C function.
     if gen_cboundary.has_c(p)
         _ = write_file(path: dir + "/g0.h", text: gen_cboundary.header_text(p, guard: "G0_H")).is_err()
+
+    # And a shape's own files, a module and its header, under their names.
+    for s in p.shapes
+        i: i64 @= 0
+
+        while i < s.extra_names.len()
+            _ = write_file(path: dir + "/" + s.extra_names[i], text: s.extra_texts[i]).is_err()
+            i @ i + 1
+
     words: [str] @= [compiler, "build", source, "-o", binary]
 
     for flag in level

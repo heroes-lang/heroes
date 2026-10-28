@@ -24,10 +24,11 @@ record Fn
 # a family whose answer is not one expression's: its lines in the `extern`
 # group, its C and the headers that C includes beyond `<stdint.h>`, `main`'s
 # statements and the lines they print, and the driver's statements and the
-# lines it prints, both the model's answers; and the functions of Heroes
-# it writes above `main`, and the program's own functions it names, which no
-# node of the tree holds. Its `main` half is the statement `shaped`, so the
-# reducer drops it whole.
+# lines it prints, both the model's answers; the functions of Heroes it
+# writes above `main`, and the program's own functions it names, which no
+# node of the tree holds; and files of its own written beside the program, a
+# module and its header, by name and text. Its `main` half is the statement
+# `shaped`, so the reducer drops it whole.
 record Shape
     family: str
     group: [str]
@@ -39,6 +40,8 @@ record Shape
     proved: [str]
     hero: [str]
     uses: [str]
+    extra_names: [str]
+    extra_texts: [str]
 
 variant Stmt
     bind_int

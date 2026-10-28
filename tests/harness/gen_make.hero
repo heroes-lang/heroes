@@ -8,13 +8,16 @@
 
 use gen_ccall
 use gen_cboundary
+use gen_cfloat
 use gen_chandle
+use gen_cmodule
 use gen_cout
 use gen_cstr
 use gen_cstruct
 use gen_declared
 use gen_eval
 use gen_expr
+use gen_maps
 use gen_rng
 use gen_tree
 
@@ -244,7 +247,7 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
 
     if with_c
         gen_cboundary.c_functions(@g.p, @g.r, mix: g.mix, count: 1 + gen_rng.below(@g.r, n: 3), depth: g.depth + 1)
-        shaped(@g)
+        shaped(@g, seed: seed)
     functions(@g, count: g.p.fns.len() + gen_rng.below(@g.r, n: 4))
 
     # The callback shape reads the program's functions, so it is drawn once
@@ -269,6 +272,10 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
 
     if declared
         site @ gen_rng.below(@g.r, n: count)
+
+    # The map shape is Heroes alone, so any program may carry it.
+    if gen_rng.chance(@g.r, percent: 30)
+        g.p.shapes @ g.p.shapes.push(gen_maps.mapped(@g.r, n: g.p.shapes.len()))
     places: [i64] @= []
 
     while places.len() < g.p.shapes.len()
@@ -294,7 +301,7 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
 # The shapes of the C boundary a program that binds C carries beside its
 # `cf` functions, each family drawn on its own (M-generated-programs step 12
 # on); each is placed before one of `main`'s statements.
-function shaped(@g: gen_expr.Gen)
+function shaped(@g: gen_expr.Gen, seed: i64)
     if gen_rng.chance(@g.r, percent: 60)
         g.p.shapes @ g.p.shapes.push(gen_cstruct.structured(@g.r, n: g.p.shapes.len()))
 
@@ -307,3 +314,9 @@ function shaped(@g: gen_expr.Gen)
 
     if gen_rng.chance(@g.r, percent: 50)
         g.p.shapes @ g.p.shapes.push(gen_chandle.handled(@g.r, n: g.p.shapes.len()))
+
+    if gen_rng.chance(@g.r, percent: 50)
+        g.p.shapes @ g.p.shapes.push(gen_cfloat.floated(@g.r, n: g.p.shapes.len()))
+
+    if gen_rng.chance(@g.r, percent: 40)
+        g.p.shapes @ g.p.shapes.push(gen_cmodule.moduled(@g.r, n: g.p.shapes.len(), seed: seed))

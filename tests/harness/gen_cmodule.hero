@@ -1,0 +1,100 @@
+# The module shape (M-generated-programs step 13; panel 231's R4, *an
+# `extern` never called across a module, a Heroes wrapper beside it*, and
+# the milestone page's depth, *generics instantiated across `use` lines*):
+# a second module beside the program, holding an `extern` group of its own
+# called only through the Heroes functions beside it, a record, and two
+# generic functions that `main` instantiates with `str`, `i64` and the
+# module's own record.
+#
+# **Its files are the shape's own, named once**: the module `g<seed>m<n>.hero`
+# and the header `g<seed>m<n>.h` it binds, written beside the program by
+# every writer of a seed's files (`gen_program.files_of`,
+# `gen_symptom.symptom`), and the program's own header includes that header
+# so the driver proves the module's C with the rest. The C is one function
+# defined for every pair of `int64_t`: a product of two operands masked to
+# 16 bits, under 2^32, then `^`.
+#
+# Names: the module `g<seed>m<n>`, its record `Pair`, its functions
+# `mixed`, `swapped`, `first` and `twice`, the C function `cs<n>_mix`, and
+# `main`'s `k<n>p`.
+
+use gen_eval
+use gen_rng
+use gen_tree
+
+function mix(a: i64, b: i64) -> i64
+    return (a & 65535) * (b & 65535) ^ a
+
+function module_text(header: str, cname: str) -> str
+    group = "extern \"" + header + "\"\n    function " + cname + "_mix(a: i64, b: i64) -> i64\n"
+    pair = "record Pair\n    x: i64\n    y: i64\n"
+    mixed = "function mixed(a: i64, b: i64) -> i64\n    return " + cname + "_mix(a: a, b: b)\n"
+    swapped = "function swapped(p: Pair) -> Pair\n    return Pair(x: p.y, y: p.x)\n"
+    first = "function first<T>(xs: [T], fallback: T) -> T\n    if xs.len() == 0\n        return fallback\n    return xs[0]\n"
+    twice = "function twice<T>(x: T) -> [T]\n    return [x, x]\n"
+    return "# The module of a generated program (tests/harness/gen_cmodule.hero).\n\n" + [group, pair, mixed, swapped, first, twice].join("\n")
+
+# The module shape numbered `n` of seed `seed`'s program.
+function moduled(@r: gen_rng.Rng, n: i64, seed: i64) -> gen_tree.Shape
+    id = n.to_str()
+    cname = "cs" + id
+    module = "g" + seed.to_str() + "m" + id
+    header = module + ".h"
+    bind = "k" + id
+    x = gen_rng.below(@r, n: 2001) - 1000
+    y = gen_rng.below(@r, n: 2001) - 1000
+    a = gen_rng.constant_of(@r, m: gen_rng.mix_for(@r))
+    b = gen_rng.constant_of(@r, m: gen_rng.mix_for(@r))
+    words = ["a", "hero", "x y", "über"]
+    s1 = words[gen_rng.below(@r, n: words.len())]
+    s2 = words[gen_rng.below(@r, n: words.len())]
+    fallback = gen_rng.below(@r, n: 100)
+    empty = gen_rng.chance(@r, percent: 50)
+    ints: str @= "[]"
+    first_int: i64 @= fallback
+
+    if !empty
+        ints @ "[" + y.to_str() + ", " + x.to_str() + "]"
+        first_int @ y
+    lines = [
+        bind + "p = " + module + ".swapped(" + module + ".Pair(x: " + x.to_str() + ", y: " + y.to_str() + "))"
+        "print(" + bind + "p.x, \" \", " + bind + "p.y, \" \", " + module + ".mixed(a: " + a.to_str() + ", b: " + b.to_str() + "))"
+        "print(" + module + ".first(xs: [\"" + s1 + "\", \"" + s2 + "\"], fallback: \"z\"), \" \", " + module + ".first(xs: " + ints + ", fallback: " + fallback.to_str() + "))"
+        "print(" + module + ".twice(\"" + s2 + "\").len(), \" \", " + module + ".twice(" + x.to_str() + ")[1], \" \", " + module + ".first(xs: [" + bind + "p], fallback: " + bind + "p).y)"
+    ]
+    c = "\nstatic inline int64_t " + cname + "_mix(int64_t a, int64_t b) {\n    return ((a & INT64_C(65535)) * (b & INT64_C(65535))) ^ a;\n}\n"
+    guard = "G" + seed.to_str() + "M" + id + "_H"
+    module_header = "#ifndef " + guard + "\n#define " + guard + "\n#include <stdint.h>\n" + c + "\n#endif\n"
+    literal_a: str @= "INT64_C(" + a.to_str() + ")"
+    literal_b: str @= "INT64_C(" + b.to_str() + ")"
+
+    if a == gen_eval.MIN
+        literal_a @ "INT64_MIN"
+
+    if b == gen_eval.MIN
+        literal_b @ "INT64_MIN"
+    answer = mix(a: a, b: b)
+    return gen_tree.Shape(
+        family: "module",
+        group: [],
+        c: "",
+        includes: ["\"" + header + "\""],
+        lines: lines,
+        printed: [y.to_str() + " " + x.to_str() + " " + answer.to_str(), s1 + " " + first_int.to_str(), "2 " + x.to_str() + " " + x.to_str()],
+        driver: ["printf(\"%lld\\n\", (long long)" + cname + "_mix(" + literal_a + ", " + literal_b + "));"],
+        proved: [answer.to_str()],
+        hero: [],
+        uses: [],
+        extra_names: [module + ".hero", header],
+        extra_texts: [module_text(header: header, cname: cname), module_header]
+    )
+
+test "the module's C answer is the model's, and its text names its header"
+    assert mix(a: 3, b: 5) == 15 ^ 3
+    assert mix(a: -1, b: 1) == 65535 ^ -1
+    text = module_text(header: "g1m0.h", cname: "cs0")
+    assert text.len() > 0
+    r: gen_rng.Rng @= gen_rng.seeded(23)
+    s = moduled(@r, n: 7, seed: 12)
+    assert s.extra_names == ["g12m7.hero", "g12m7.h"]
+    assert s.includes == ["\"g12m7.h\""]

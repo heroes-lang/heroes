@@ -1,0 +1,173 @@
+# The map shape (M-generated-programs step 13; the milestone page's depth,
+# *records inside variants inside maps*): a map whose values are a variant
+# whose case holds a record holding an array, read back through a function
+# that matches it; and two maps of the same entries inserted in two orders,
+# compared (spec § 10: `m[k]` is a `V?` failing `missing_key`, `m[k] @ v`
+# inserts or replaces; spec § 7: `==` on a map ignores its insertion order).
+#
+# **The model owes nothing to the compiler's `sort`**: the keys are drawn
+# from `KEYS`, already in byte order, so the sorted keys a program prints are
+# known by construction. A Heroes shape writes no C, so a program that holds
+# only this shape binds no header.
+#
+# Names: the record `Mr<n>`, the variant `Mv<n>` with its cases `held` and
+# `gone`, the function `mread<n>`, and `main`'s `k<n>m`, `k<n>n` and
+# `k<n>o`.
+
+use gen_expr
+use gen_rng
+use gen_tree
+
+# In byte order, so a subset of them is sorted when taken in order.
+constant KEYS: [str]
+    ["a", "b", "hero", "x", "zz"]
+
+constant NUMBERS: [i64]
+    [-3, 0, 7, 42, 1000]
+
+# A value of the variant: `held` with its record's number and tags, or
+# `gone` where `tags` is absent.
+record Entry
+    held: bool
+    a: i64
+    tags: [str]
+
+function entry_of(@r: gen_rng.Rng) -> Entry
+    tags: [str] @= []
+
+    if gen_rng.chance(@r, percent: 25)
+        return Entry(held: false, a: 0, tags: tags)
+    count = gen_rng.below(@r, n: 3)
+
+    while tags.len() < count
+        tags @ tags.push(gen_expr.POOL[gen_rng.below(@r, n: gen_expr.POOL.len())])
+
+    return Entry(held: true, a: gen_rng.below(@r, n: 2001) - 1000, tags: tags)
+
+function built(e: Entry, rec: str) -> str
+    if !e.held
+        return ".gone"
+    quoted: [str] @= []
+
+    for t in e.tags
+        quoted @ quoted.push("\"" + t + "\"")
+
+    return ".held(r: " + rec + "(a: " + e.a.to_str() + ", tags: [" + quoted.join(", ") + "]))"
+
+# What `mread<n>` answers for the value.
+function read_of(e: Entry) -> i64
+    if !e.held
+        return -1
+    return e.a + e.tags.len()
+
+# `count` distinct positions of `0 .. size - 1`, in a drawn order.
+function drawn(@r: gen_rng.Rng, size: i64, count: i64) -> [i64]
+    out: [i64] @= []
+
+    while out.len() < count
+        k = gen_rng.below(@r, n: size)
+        seen: bool @= false
+
+        for x in out
+            if x == k
+                seen @ true
+
+        if !seen
+            out @ out.push(k)
+
+    return out
+
+function quote(s: str) -> str
+    return "\"" + s + "\""
+
+# The map shape numbered `n`.
+function mapped(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    rec = "Mr" + id
+    vname = "Mv" + id
+    read = "mread" + id
+    bind = "k" + id
+    order = drawn(@r, size: KEYS.len(), count: 2 + gen_rng.below(@r, n: 3))
+    lines: [str] @= [bind + "m: {str: " + vname + "} @= {}"]
+    values: {str: Entry} @= {}
+
+    for k in order
+        e = entry_of(@r)
+        lines @ lines.push(bind + "m[" + quote(KEYS[k]) + "] @ " + built(e, rec: rec))
+        values[KEYS[k]] @ e
+
+    first = KEYS[order[0]]
+
+    if gen_rng.chance(@r, percent: 50)
+        e = entry_of(@r)
+        lines @ lines.push(bind + "m[" + quote(first) + "] @ " + built(e, rec: rec))
+        values[first] @ e
+    absent: str @= ""
+
+    for k in KEYS
+        if values[k].is_err() && absent == ""
+            absent @ k
+
+    sorted: [str] @= []
+
+    for k in KEYS
+        if !values[k].is_err()
+            sorted @ sorted.push(k)
+
+    lines @ lines.push(
+        "print(" + bind + "m.len(), \" \", " + read + "(" + bind + "m[" + quote(first) + "].must()), \" \", " + read + "(" + bind + "m[" + quote(absent) + "].default(.gone)))"
+    )
+    lines @ lines.push("print(join(sort(keys(" + bind + "m)), \",\"))")
+    two = drawn(@r, size: NUMBERS.len(), count: 3)
+    i1 = NUMBERS[two[0]]
+    i2 = NUMBERS[two[1]]
+    i3 = NUMBERS[two[2]]
+    s1 = gen_expr.POOL[gen_rng.below(@r, n: gen_expr.POOL.len())]
+    s2 = gen_expr.POOL[gen_rng.below(@r, n: gen_expr.POOL.len())]
+    s3: str @= s2
+
+    if gen_rng.chance(@r, percent: 50)
+        s3 @ gen_expr.POOL[gen_rng.below(@r, n: gen_expr.POOL.len())]
+    lines @ lines.push(bind + "n: {i64: str} @= {}")
+    lines @ lines.push(bind + "n[" + i1.to_str() + "] @ " + quote(s1))
+    lines @ lines.push(bind + "n[" + i2.to_str() + "] @ " + quote(s2))
+    lines @ lines.push(bind + "o: {i64: str} @= {}")
+    lines @ lines.push(bind + "o[" + i2.to_str() + "] @ " + quote(s3))
+    lines @ lines.push(bind + "o[" + i1.to_str() + "] @ " + quote(s1))
+    lines @ lines.push(
+        "print(" + bind + "n == " + bind + "o, \" \", " + bind + "n[" + i1.to_str() + "].default(\"?\"), \" \", " + bind + "o[" + i3.to_str() + "].default(\"?\"))"
+    )
+    printed = [
+        values.len().to_str() + " " + read_of(values[first].must()).to_str() + " -1"
+        sorted.join(",")
+        (s2 == s3).to_str() + " " + s1 + " ?"
+    ]
+    hero = [
+        "record " + rec + "\n    a: i64\n    tags: [str]\n"
+        "variant " + vname + "\n    held\n        r: " + rec + "\n    gone\n"
+        "function " + read + "(v: " + vname + ") -> i64\n    return match v\n        .held h => h.r.a + h.r.tags.len()\n        .gone   => -1\n"
+    ]
+    return gen_tree.Shape(
+        family: "map",
+        group: [],
+        c: "",
+        includes: [],
+        lines: lines,
+        printed: printed,
+        driver: [],
+        proved: [],
+        hero: hero,
+        uses: [],
+        extra_names: [],
+        extra_texts: []
+    )
+
+test "a map shape knows its sorted keys and its reads without the compiler's sort"
+    r: gen_rng.Rng @= gen_rng.seeded(21)
+    s = mapped(@r, n: 6)
+    assert s.family == "map"
+    assert s.printed.len() == 3
+    assert s.group.len() == 0 && s.driver.len() == 0
+    assert read_of(Entry(held: true, a: 5, tags: ["x", "y"])) == 7
+    assert read_of(Entry(held: false, a: 0, tags: [])) == -1
+    assert drawn(@r, size: 5, count: 5).len() == 5

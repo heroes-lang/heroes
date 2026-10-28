@@ -1,0 +1,196 @@
+# The float shape (M-generated-programs step 13; panel 231's R4: `double`
+# at the boundary, **one float operation per statement**): a `double` C
+# computes in one statement per operation, then Heroes arithmetic on the
+# `f64` it hands back, one operation per statement, a truncation to `i64` and
+# an ordering.
+#
+# **The model is exact, and owes nothing to the compiler's floats.** Every
+# value is a dyadic rational, `num / 2^e` with `e` at most 8 and `num` under
+# 2^24 in size, built from multiples of 1/16 by halving, doubling, adding and
+# subtracting, each of which a `double` holds exactly, so no operation
+# rounds, a fused multiply-add gives the same bits as two operations, and the
+# model computes in integers. A value prints as its exact decimal with `.0`
+# where it is whole (spec § 11: *a point or exponent* and *reads back as the
+# same value*; measured on 2026-10-28, `0.00390625`, `1048575.9375`, `-0.5`,
+# `3.0`, `0.0`, all exact), which for these values is also the shortest that
+# reads back, since a shorter decimal is further from the value than a
+# `double`'s spacing there. Zero is reached only by `x - x` or `x + -x`,
+# which IEEE 754 makes `+0.0`, so `-0.0` is never printed. The driver prints
+# a value times 256, a whole number for every value here.
+#
+# Names: `cs<n>_blend` and `main`'s `k<n>x`, `k<n>r` and `k<n>s`.
+
+use gen_cstruct
+use gen_rng
+use gen_tree
+
+# `num / 2^e`, normalised: `e` is 0 or `num` is odd.
+record Dyadic
+    num: i64
+    e: i64
+
+function normal(num: i64, e: i64) -> Dyadic
+    n: i64 @= num
+    k: i64 @= e
+
+    while k > 0 && n % 2 == 0
+        n @ n / 2
+        k @ k - 1
+
+    return Dyadic(num: n, e: k)
+
+function halved(x: Dyadic) -> Dyadic
+    return normal(num: x.num, e: x.e + 1)
+
+function doubled(x: Dyadic) -> Dyadic
+    return normal(num: x.num * 2, e: x.e)
+
+function plus(x: Dyadic, y: Dyadic, sign: i64) -> Dyadic
+    e = max_of(a: x.e, b: y.e)
+    return normal(num: x.num * (1 << e - x.e) + sign * y.num * (1 << e - y.e), e: e)
+
+function max_of(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# `x op y` for an operation of the shape: `*0.5`, `*2.0` (each ignoring `y`),
+# `+` or `-`.
+function applied(op: str, x: Dyadic, y: Dyadic) -> Dyadic
+    if op == "*0.5"
+        return halved(x)
+
+    if op == "*2.0"
+        return doubled(x)
+
+    if op == "+"
+        return plus(x: x, y: y, sign: 1)
+    return plus(x: x, y: y, sign: -1)
+
+# The value as `print` writes it, and as a literal is written.
+function rendered(x: Dyadic) -> str
+    sign: str @= ""
+    num: i64 @= x.num
+
+    if num < 0
+        sign @ "-"
+        num @ -num
+    whole = num / (1 << x.e)
+    rest = num % (1 << x.e)
+
+    if x.e == 0
+        return sign + whole.to_str() + ".0"
+    digits: str @= (rest * power5(x.e)).to_str()
+
+    while digits.len() < x.e
+        digits @ "0" + digits
+
+    return sign + whole.to_str() + "." + digits
+
+function power5(e: i64) -> i64
+    p: i64 @= 1
+
+    for _ in range(from: 0, to: e)
+        p @ p * 5
+
+    return p
+
+# The value times 256, as the driver prints it.
+function scaled(x: Dyadic) -> i64
+    return x.num * (1 << 8 - x.e)
+
+# Toward zero, as `to_i64` truncates.
+function truncated(x: Dyadic) -> i64
+    return x.num / (1 << x.e)
+
+function less(x: Dyadic, y: Dyadic) -> bool
+    return plus(x: x, y: y, sign: -1).num < 0
+
+function sixteenths(@r: gen_rng.Rng) -> Dyadic
+    return normal(num: gen_rng.below(@r, n: 131073) - 65536, e: 4)
+
+# The C statement of one operation on `t`, and the Heroes one.
+function c_step(op: str, y: str) -> str
+    if op == "*0.5"
+        return "    t = t * 0.5;\n"
+
+    if op == "*2.0"
+        return "    t = t * 2.0;\n"
+    return "    t = t " + op + " " + y + ";\n"
+
+function hero_op(op: str, y: Dyadic) -> str
+    if op == "*0.5"
+        return " * 0.5"
+
+    if op == "*2.0"
+        return " * 2.0"
+    return " " + op + " " + rendered(y)
+
+constant OPS: [str]
+    ["*0.5", "*2.0", "+", "-"]
+
+# The float shape numbered `n`.
+function floated(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    name = "cs" + id
+    bind = "k" + id
+    x = sixteenths(@r)
+    y = sixteenths(@r)
+    c_ops: [str] @= []
+    count = 1 + gen_rng.below(@r, n: 2)
+
+    while c_ops.len() < count
+        c_ops @ c_ops.push(OPS[gen_rng.below(@r, n: 4)])
+
+    got: Dyadic @= x
+    body: str @= ""
+
+    for op in c_ops
+        got @ applied(op, x: got, y: y)
+        body @ body + c_step(op: op, y: "y")
+
+    hero_step = OPS[gen_rng.below(@r, n: 4)]
+    z = sixteenths(@r)
+    after = applied(hero_step, x: got, y: z)
+    lines = [
+        bind + "x = " + rendered(x)
+        bind + "r = " + name + "_blend(x: " + bind + "x, y: " + rendered(y) + ")"
+        "print(" + bind + "r)"
+        bind + "s = " + bind + "r" + hero_op(hero_step, y: z)
+        gen_cstruct.printed([bind + "s", "to_i64(" + bind + "s).must()", bind + "s < " + bind + "x"])
+    ]
+    driver = [gen_cstruct.c_printed(["(" + name + "_blend(" + rendered(x) + ", " + rendered(y) + ") * 256.0)"])]
+    c = "\nstatic inline double " + name + "_blend(double x, double y) {\n    double t = x;\n" + body + "    (void)y;\n    return t;\n}\n"
+    return gen_tree.Shape(
+        family: "float",
+        group: ["    function " + name + "_blend(x: f64, y: f64) -> f64"],
+        c: c,
+        includes: [],
+        lines: lines,
+        printed: [rendered(got), rendered(after) + " " + truncated(after).to_str() + " " + less(x: after, y: x).to_str()],
+        driver: driver,
+        proved: [scaled(got).to_str()],
+        hero: [],
+        uses: [],
+        extra_names: [],
+        extra_texts: []
+    )
+
+test "a dyadic value prints as its exact decimal, and its operations are exact"
+    assert rendered(normal(num: 3, e: 1)) == "1.5"
+    assert rendered(normal(num: 1, e: 4)) == "0.0625"
+    assert rendered(normal(num: -31, e: 2)) == "-7.75"
+    assert rendered(normal(num: 48, e: 4)) == "3.0"
+    assert rendered(normal(num: 0, e: 4)) == "0.0"
+    assert truncated(normal(num: -31, e: 2)) == -7
+    assert rendered(halved(normal(num: -31, e: 2))) == "-3.875"
+    assert scaled(normal(num: 3, e: 1)) == 384
+    a = normal(num: 5, e: 2)
+    assert rendered(plus(x: a, y: a, sign: -1)) == "0.0"
+    assert less(x: normal(num: -1, e: 0), y: a)
+
+test "a float shape prints its C answer and Heroes' step on it"
+    r: gen_rng.Rng @= gen_rng.seeded(17)
+    s = floated(@r, n: 5)
+    assert s.family == "float"
+    assert s.printed.len() == 2 && s.proved.len() == 1

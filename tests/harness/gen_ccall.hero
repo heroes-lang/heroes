@@ -148,7 +148,9 @@ function called_back(p: gen_tree.Program lent, @r: gen_rng.Rng, n: i64) -> gen_t
         driver: driver,
         proved: [folded(values: probe, start: start, op: op).must().to_str(), folded(values: probe, start: ustart, op: uop).must().to_str()],
         hero: hero,
-        uses: uses
+        uses: uses,
+        extra_names: [],
+        extra_texts: []
     )
 
 function c_text(name: str, op: str, uop: str) -> str

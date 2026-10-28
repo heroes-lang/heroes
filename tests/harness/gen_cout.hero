@@ -167,7 +167,9 @@ function outward(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
         driver: driver,
         proved: proved,
         hero: [],
-        uses: []
+        uses: [],
+        extra_names: [],
+        extra_texts: []
     )
 
 function c_text(name: str) -> str

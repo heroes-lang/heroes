@@ -67,6 +67,14 @@ function files_of(g: gen_expr.Gen, seed: i64) -> [File]
         files @ files.push(File(name: header, text: gen_cboundary.header_text(g.p, guard: "G" + seed.to_str() + "_H")))
         files @ files.push(File(name: stem + ".driver.c", text: gen_cboundary.driver_text(g.p, header: header)))
         files @ files.push(File(name: stem + ".driver.expected", text: gen_cboundary.driver_expected(g.p)))
+
+    for s in g.p.shapes
+        i: i64 @= 0
+
+        while i < s.extra_names.len()
+            files @ files.push(File(name: s.extra_names[i], text: s.extra_texts[i]))
+            i @ i + 1
+
     return files
 
 # The files written into `dir`.
