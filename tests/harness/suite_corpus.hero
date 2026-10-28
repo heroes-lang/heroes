@@ -321,7 +321,8 @@ function one_program(scratch: str, compiler: str, binaries: str, p: Program, @r:
     prints(scratch: scratch, compiler: compiler, binaries: binaries, p: p, r: @r)
     return false
 
-# `main.expected`, in the same three configurations as `run/`. A program
+# `main.expected`, in the same three configurations as `run/`, and a
+# fourth, `--sanitize -O0`, for a program that binds C. A program
 # without one is not a failure: `examples/curl/` prints this machine's
 # libcurl, and pinning that would pin the machine. A gallery program's is
 # owed, and its caller asked for it first (`one_lesson`).
@@ -384,6 +385,42 @@ function prints(scratch: str, compiler: str, binaries: str, p: Program, @r: repo
 
     if judged(@r, name: name, level: "--sanitize", want: want.must(), said: sanitised)
         return
+
+    # **A program that binds C runs its sanitised leg at `-O0` as well**
+    # (task 972, panel 231's R8). `run` builds at `-O2`, where clang may
+    # delete an allocation whose only use it can see, a `static inline`
+    # header's `malloc` tested for null, so LeakSanitizer on the Linux legs
+    # never meets the leak it exists to find (measured from the binary on
+    # 2026-10-28: the allocation gone at `-O2`, 200 leaks of it at `-O0` by
+    # `leaks --atExit`). `heroes test` builds at `-O0` already, which is
+    # why the loop above needs no second leg. A program with no `extern`
+    # reaches C only through `hero_os.h`, whose memory the runtime counts on
+    # every leg, so it is left out (CL-055's narrowing).
+    if declares_any(modules: p.modules, opening: "extern \"")
+        low = ran(
+            scratch: scratch,
+            p: p,
+            words: shell.both(first: [compiler, "run", main, "--sanitize", "-O0"], second: after_dashes(passed))
+        )
+
+        if low.is_err()
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at --sanitize -O0",
+                detail: "  `run " + main + " --sanitize -O0`: " + shell.refusal(low)
+            )
+            return
+
+        if strings.contains(text: low.must().err, needle: "AddressSanitizer") || strings.contains(text: low.must().err, needle: "LeakSanitizer") || strings.contains(text: low.must().err, needle: "runtime error:")
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at --sanitize -O0",
+                detail: "  tripped a sanitiser:\n" + low.must().err
+            )
+            return
+
+        if judged(@r, name: name, level: "--sanitize -O0", want: want.must(), said: low)
+            return
     report.keep_pass(@r)
 
 # `main.stdin` beside `main.args`, and the same shape: a file the directory

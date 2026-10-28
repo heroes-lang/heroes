@@ -122,6 +122,18 @@ binding is invisible on this Mac in all three configurations. The rule is narrow
 on purpose: a program with no `extern` cannot leak from the C side, since its own
 allocations are counted on every platform by the runtime's own check.
 
+**Corrected 2026-10-28, by panel 231** (the ffi-pragmatist's Q4, reproduced by the sitting's
+critic, finding 4): the paragraph above is true of the net's legs and false of this Mac. Darwin's
+ASan has no leak detector (`ASAN_OPTIONS=detect_leaks=1` is refused, *not supported on this
+platform*), but **`leaks --atExit -- <binary>` on the plain `-O0` binary sees a leak in a C
+binding here**: 200 leaks and 6,400 bytes of a `static inline` header's `malloc` at `-O0`, one
+21-byte leak, a `-> cstr` bound without `owned`; and 0 leaks over 61 committed `run` cases and
+seven generated programs, so it has not yet named a leak that is not one. At `-O2` clang deletes
+that allocation, so a leak through C the optimiser can see is judged at `-O0` on every leg that
+can judge it: on Linux by LeakSanitizer under `--sanitize -O0`, which the corpus runs since the
+same day for a program that declares an `extern` (task 972), and on this Mac by `leaks`, by hand
+until the generator's oracle 5 runs it. Unrun: `leaks` on the CI's `macos-26` runner.
+
 ## Measuring in a copy
 
 A copy of the tree without `.git` cannot run the net's `records` suite, because

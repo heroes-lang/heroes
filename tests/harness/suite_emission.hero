@@ -202,6 +202,13 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         what: "programs with nothing blessed, each one `--emit-c` must refuse"
     )
     swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: blessing(), least: LEAST)?
+
+    # Every blessed emission compiled, after the sweep and apart from it, so
+    # the sweep's own tests, which run it over stub trees, judge bytes alone.
+    for one in programs
+        if shell.exists(one.stored) && !blessing()
+            compiles(@r, one: one)
+
     return ok(report.tally(one: r, two: swept))
 
 # How many of `programs` have a blessed emission: the ones this suite compares,
@@ -419,6 +426,121 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
         )
         return
     report.keep_pass(@r)
+
+# **The blessed bytes must also COMPILE** (task 1234's first half, panel 231's
+# R8). A byte comparison cannot see that the bytes do not compile: of 240
+# blessed emissions measured on 2026-09-16, 28 failed `-fsyntax-only` while
+# green here (`.claude/rules/diagnostics-and-goldens.md` § An instrument
+# watches the world: the predicate beside the bytes). Re-measured on
+# 2026-10-28, 692 of 705 pass and every one of the 13 others stops at a
+# header this machine lacks, which is the machine's, told as a skip. The
+# words are the fewest that decide whether C11 with the compiler's dialect
+# parses and type-checks, `-std=gnu11 -fsigned-char`, its warnings off,
+# since the compiler's own warning words are its build's to hold and a
+# second copy of them here would drift; a group's `package` is asked of
+# `pkg-config`, as the compiler asks it. The link and the two routes are
+# the generator's oracle 4, the task's other half.
+function compiles(@r: report.Report, one: Program)
+    words: [str] @= [
+        "clang"
+        "-std=gnu11"
+        "-fsigned-char"
+        "-w"
+        "-fsyntax-only"
+        "-I"
+        "runtime"
+        "-I"
+        directory_of(one.source)
+    ]
+
+    for flag in package_flags(one.source)
+        words @ words.push(flag)
+
+    words @ words.push(one.stored)
+    scratch = shell.own_scratch()
+    ran = shell.attempted(scratch: scratch, program: "clang", words: words)
+
+    if ran.is_err()
+        report.keep_failure(
+            @r,
+            label: "emission/" + one.label + "/compiles",
+            detail: "  clang could not be asked: " + shell.refusal(ran)
+        )
+        return
+
+    if ran.must().code == 0
+        report.keep_pass(@r)
+        return
+    lacking = lacked_header(ran.must().err)
+
+    if lacking != ""
+        report.keep_skip(
+            @r,
+            label: "emission/" + one.label + "/compiles",
+            detail: "  this machine lacks `" + lacking + "`, which the program binds"
+        )
+        return
+    report.keep_failure(
+        @r,
+        label: "emission/" + one.label + "/compiles",
+        detail: "  " + one.stored + " is blessed and clang refuses it under `-fsyntax-only`:\n" + ran.must().err
+    )
+
+# The header a refusal says the machine lacks, or "" where it says none:
+# clang's own words, `fatal error: '<name>' file not found`.
+function lacked_header(err: str) -> str
+    for row in strings.lines(err)
+        if strings.contains(text: row, needle: "fatal error: '") && strings.contains(text: row, needle: "' file not found")
+            after = strings.split_text(text: row, separator: "fatal error: '")[1]
+            return strings.split_text(text: after, separator: "'")[0]
+
+    return ""
+
+function directory_of(path: str) -> str
+    i: i64 @= path.len()
+
+    while i > 0
+        if path[i - 1] == '/'
+            return path.slice(from: 0, to: i - 1)
+        i @ i - 1
+
+    return "."
+
+# The `pkg-config --cflags` of every `package` a module beside the program
+# names, its own directory being where its modules are; a package
+# `pkg-config` does not know adds nothing, and the header it would have found
+# is then the machine's lack.
+function package_flags(source: str) -> [str]
+    flags: [str] @= []
+    dir = directory_of(source)
+    listed = shell.list_entries(scratch: shell.own_scratch(), dir: dir)
+
+    if listed.is_err()
+        return flags
+
+    for path in listed.must()
+        if !strings.ends_with(text: path, suffix: ".hero")
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            continue
+
+        for row in strings.lines(text.must())
+            if strings.starts_with(text: row, prefix: "extern ") && strings.contains(text: row, needle: " package \"")
+                name = strings.split_text(text: strings.split_text(text: row, separator: " package \"")[1], separator: "\"")[0]
+                asked = shell.attempted(
+                    scratch: shell.own_scratch(),
+                    program: "pkg-config",
+                    words: ["pkg-config", "--cflags", "--", name]
+                )
+
+                if !asked.is_err() && asked.must().code == 0
+                    for word in strings.split_text(text: strings.trimmed(asked.must().out), separator: " ")
+                        if word != ""
+                            flags @ flags.push(word)
+
+    return flags
 
 # A blessed file no program claims.
 #
