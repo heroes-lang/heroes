@@ -195,10 +195,22 @@ function extern_text(p: gen_tree.Program lent, header: str) -> str
 
     return text
 
+# The driver's first lines and its `main`'s first: on Windows its `stdout` is
+# put in binary mode, as the harness's own helper's is (`shell.hero`), since
+# the C library there writes `\r\n` for each `\n` in text mode and the model
+# writes `\n`, as Heroes' runtime does (measured 2026-10-28 on the Windows
+# box: seed 42's driver printed `0\r\n2\r\n...` where its answer is
+# `0\n2\n...`, every C program reading HEADER).
+constant DRIVER_HEAD: str
+    "#include <stdio.h>\n#ifdef _WIN32\n#include <fcntl.h>\n#include <io.h>\n#endif\n"
+
+constant DRIVER_BINARY: str
+    "#ifdef _WIN32\n    _setmode(_fileno(stdout), _O_BINARY);\n#endif\n"
+
 # The driver that proves the header: every function at every pair of
 # `SAMPLES` it takes, one line each.
 function driver_text(p: gen_tree.Program lent, header: str) -> str
-    text: str @= "#include <stdio.h>\n#include \"" + header + "\"\n\nint main(void) {\n"
+    text: str @= DRIVER_HEAD + "#include \"" + header + "\"\n\nint main(void) {\n" + DRIVER_BINARY
 
     for f in p.fns
         if is_c(f)
