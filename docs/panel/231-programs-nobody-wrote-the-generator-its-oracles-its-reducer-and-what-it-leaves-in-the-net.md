@@ -343,6 +343,25 @@ was lost. **The ffi-pragmatist wrote one file outside the repository**, `/tmp/x`
 its next command (its report says so). The seats' prototype was carried into the milestone's lane
 while the critic worked, on a tree the sitting does not read.
 
+## Added after the critic's last pass, 2026-10-28
+
+**The critic's report was committed at `5cd38dbb9` while it was still being written**, its header
+saying *a section marked in progress is unfinished*: that commit holds eighteen findings, two of
+them drafts. Its final version, committed beneath this section, holds **nineteen**, and two of its
+facts move the sitting's reading without moving a resolution:
+
+- **Gate A already sees both plants** (finding 12, final): the compiler's own tests, built by the
+  planted compiler, read `1763 tests, 1 failed` under B and under B2 alike, at
+  `check/const_values.hero:369` (*`shown(bitwise(.shr, x: lowest, y: lit(negative: false,
+  magnitude: 63)).value) == "-1"`*), the checker's constant evaluator being a second Heroes model of
+  the operators with its own contract test; **the fixpoint does not** (B's and its rebuilt
+  compiler's emissions of the planted source are the same bytes). So the plant set of R3 is scored
+  against gate A, the `run` form and the generator built by stage 1 together, and the generator's
+  yield is its margin over the first two, which neither sitting nor seat has yet measured on a plant
+  both of them miss.
+- **The verdict table's critic row said *18 findings***: it is 19; the nineteenth corrects two
+  numbers of the compiler-engineer's, neither of which sizes anything.
+
 ## Author's verdict
 
 *Pending*: https://github.com/heroes-lang/heroes/issues/2243.
