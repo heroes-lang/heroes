@@ -1,0 +1,139 @@
+# The string shape of the C boundary (M-generated-programs step 14; panel
+# 231's R4, the milestone page's *`cstr`* and *`owned`*): a `str` lent to C
+# as a `cstr`, a string C allocates and the program owns, freed by the
+# compiler with the function the group names, a null result, and a `char`
+# parameter (spec § 13).
+#
+# **What the model knows is three byte rules.** `cs<n>_shout` copies its
+# argument with every byte `a` to `z` made upper case and `n` `!` after it,
+# its bytes read as `unsigned char`, so a character above ASCII passes
+# through untouched and UTF-8 in stays UTF-8 out; the model cuts the string
+# only at an ASCII byte, which is always a character's boundary.
+# `cs<n>_maybe` hands back `given`, or NULL at zero, which the program reads
+# as a failure and prints through `.default`. `cs<n>_count` counts the bytes
+# equal to a `char`. **The two strings C allocates are the program's to
+# free**, `owned free`, so a compiler that frees neither leaks them, which
+# oracle 5 reads at `-O0` (`gen_cjudge.leak_free`).
+#
+# Names: `cs<n>_shout`, `cs<n>_maybe`, `cs<n>_count`, `main`'s `k<n>s`, and
+# the driver's `k<n>a` and `k<n>b`. The group binds `free` from
+# `<stdlib.h>`, so a program carries one string shape at most
+# (`gen_make.shaped`).
+
+use gen_expr
+use gen_rng
+use gen_tree
+
+constant UPPER: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+# The bytes `count` is asked about: letters, a space, a digit, a byte of a
+# character above ASCII.
+constant ASKED: [i64]
+    [97, 101, 122, 32, 48, 195]
+
+# `s` as `cs<n>_shout` writes it: `a` to `z` upper case, then `n` `!`.
+function shouted(s: str, n: i64) -> str
+    out: str @= ""
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        if s[i] >= 97 && s[i] <= 122
+            k = to_i64(s[i]).must() - 97
+            out @ out + s.slice(from: start, to: i) + UPPER.slice(from: k, to: k + 1)
+            start @ i + 1
+        i @ i + 1
+
+    return out + s.slice(from: start, to: s.len()) + repeat("!", to_u64(n).must())
+
+# How many bytes of `s` are `byte`.
+function counted(s: str, byte: i64) -> i64
+    n: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        if to_i64(s[i]).must() == byte
+            n @ n + 1
+        i @ i + 1
+
+    return n
+
+# A byte as the program writes it for an `i8` parameter, C's signed `char`.
+function as_char(byte: i64) -> i64
+    if byte >= 128
+        return byte - 256
+    return byte
+
+# The string shape numbered `n`.
+function stringed(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    name = "cs" + id
+    bind = "k" + id
+    pool = gen_expr.POOL
+    left = pool[gen_rng.below(@r, n: pool.len())]
+    right = pool[gen_rng.below(@r, n: pool.len())]
+    text = left + right
+    bangs = gen_rng.below(@r, n: 4)
+    give = gen_rng.below(@r, n: 2)
+    byte = ASKED[gen_rng.below(@r, n: ASKED.len())]
+    given: str @= "<null>"
+
+    if give == 1
+        given @ "given"
+    group = [
+        "    function free(p: ptr)"
+        "    function " + name + "_shout(s: cstr lent, n: i32) -> cstr owned free"
+        "    function " + name + "_maybe(give: i32) -> cstr owned free"
+        "    function " + name + "_count(s: cstr lent, c: i8) -> u64"
+    ]
+    lines = [
+        bind + "s = \"" + left + "\" + \"" + right + "\""
+        "print(" + name + "_shout(s: " + bind + "s.cstr(), n: " + bangs.to_str() + ").default(\"<null>\"))"
+        "print(" + name + "_maybe(" + give.to_str() + ").default(\"<null>\"))"
+        "print(" + name + "_count(s: " + bind + "s.cstr(), c: " + as_char(byte).to_str() + "))"
+    ]
+    literal = "\"" + text + "\""
+    driver = [
+        "char *" + bind + "a = " + name + "_shout(" + literal + ", " + bangs.to_str() + ");"
+        "printf(\"%s\\n\", " + bind + "a == NULL ? \"<null>\" : " + bind + "a);"
+        "free(" + bind + "a);"
+        "char *" + bind + "b = " + name + "_maybe(" + give.to_str() + ");"
+        "printf(\"%s\\n\", " + bind + "b == NULL ? \"<null>\" : " + bind + "b);"
+        "free(" + bind + "b);"
+        "printf(\"%lld\\n\", (long long)" + name + "_count(" + literal + ", (char)" + as_char(byte).to_str() + "));"
+    ]
+    answers = [shouted(s: text, n: bangs), given, counted(s: text, byte: byte).to_str()]
+    return gen_tree.Shape(
+        family: "str",
+        group: group,
+        c: c_text(name),
+        includes: ["stdlib.h", "string.h"],
+        lines: lines,
+        printed: answers,
+        driver: driver,
+        proved: answers,
+        hero: [],
+        uses: []
+    )
+
+function c_text(name: str) -> str
+    shout = "\nstatic inline char *" + name + "_shout(const char *s, int32_t n) {\n    size_t len = strlen(s);\n    char *out = (char *)malloc(len + (size_t)n + 1);\n    if (out == NULL) {\n        return NULL;\n    }\n    for (size_t i = 0; i < len; i++) {\n        unsigned char c = (unsigned char)s[i];\n        out[i] = (c >= 'a' && c <= 'z') ? (char)(c - 32) : (char)c;\n    }\n    for (int32_t k = 0; k < n; k++) {\n        out[len + (size_t)k] = '!';\n    }\n    out[len + (size_t)n] = '\\0';\n    return out;\n}\n"
+    maybe = "\nstatic inline char *" + name + "_maybe(int32_t give) {\n    if (!give) {\n        return NULL;\n    }\n    char *out = (char *)malloc(6);\n    if (out == NULL) {\n        return NULL;\n    }\n    memcpy(out, \"given\", 6);\n    return out;\n}\n"
+    count = "\nstatic inline uint64_t " + name + "_count(const char *s, char c) {\n    uint64_t n = 0;\n    for (const char *p = s; *p; p++) {\n        if (*p == c) {\n            n++;\n        }\n    }\n    return n;\n}\n"
+    return shout + maybe + count
+
+test "C's bytes as the model reads them: upper case at a to z alone, and a count"
+    assert shouted(s: "naïve", n: 2) == "NAïVE!!"
+    assert shouted(s: "", n: 0) == ""
+    assert shouted(s: "x y", n: 1) == "X Y!"
+    assert counted(s: "banana", byte: 97) == 3
+    assert counted(s: "é", byte: 195) == 1
+    assert as_char(195) == -61 && as_char(97) == 97
+
+test "a string shape prints what its driver proves"
+    r: gen_rng.Rng @= gen_rng.seeded(9)
+    s = stringed(@r, n: 3)
+    assert s.family == "str"
+    assert s.printed == s.proved
+    assert s.lines.len() == 4 && s.driver.len() == 7

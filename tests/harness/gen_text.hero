@@ -161,6 +161,16 @@ function units(p: gen_tree.Program lent, s: gen_tree.Stmt) -> [Unit]
             head = i + "for " + l.counter + " in range(from: " + l.low.to_str() + ", to: " + l.high.to_str() + ")"
             step = i + i + l.name + " @ " + l.name + " " + l.op + " " + operand(p, at: l.body, outer: precedence(gen_tree.Node(op: l.op, value: 0, name: "", kids: [])), right: true)
             [plain(i + l.name + " @= " + expr(p, at: l.init)), Unit(lines: [head, step], block: true, after: true)]
+        .shaped sh => shaped_units(p, at: sh.at)
+
+# A shape's statements, one line each and none a block.
+function shaped_units(p: gen_tree.Program lent, at: i64) -> [Unit]
+    out: [Unit] @= []
+
+    for line in p.shapes[at].lines
+        out @ out.push(plain("    " + line))
+
+    return out
 
 function plain(line: str) -> Unit
     return Unit(lines: [line], block: false, after: false)
@@ -190,7 +200,7 @@ function built_case(p: gen_tree.Program lent, m: gen_tree.Stmt) -> str
                 ".c1"
             else
                 ".c2(w: " + expr(p, at: k.payload[0]) + ", z: " + expr(p, at: k.payload[1]) + ")"
-        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => ""
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop | .shaped => ""
 
 function arms(p: gen_tree.Program lent, m: gen_tree.Stmt) -> [str]
     lines: [str] @= []
@@ -211,7 +221,7 @@ function arms(p: gen_tree.Program lent, m: gen_tree.Stmt) -> [str]
                 pad = repeat(" ", to_u64(widest - patterns[j].len()).must())
                 lines @ lines.push("        " + patterns[j] + pad + " => " + expr(p, at: k.arms[j]))
                 j @ j + 1
-        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => _ = 0
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop | .shaped => _ = 0
 
     return lines
 
@@ -275,6 +285,10 @@ function program_text(p: gen_tree.Program lent, seed: i64, has_record: bool, has
         if !gen_cboundary.is_c(f)
             parts @ parts.push(function_text(p, f: f))
 
+    for s in p.shapes
+        for text in s.hero
+            parts @ parts.push(text)
+
     parts @ parts.push(main_text(p))
     return parts.join("\n")
 
@@ -319,7 +333,7 @@ test "an answer is placed before its `!panic:` line, and lines are read as writt
     assert !has_panic("1\n")
 
 test "a parenthesis stands only where precedence or association needs it"
-    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [])
+    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [], shapes: [])
     a = gen_tree.added(@p, gen_tree.leaf(op: "name", value: 0, name: "a"))
     b = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: -5, name: ""))
     sum = gen_tree.binary(@p, op: "+", left: a, right: b)

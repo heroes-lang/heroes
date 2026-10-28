@@ -116,6 +116,12 @@ function printed_root(p: gen_tree.Program lent, line: i64) -> str
                 if k == line && w.parts.len() > 0
                     return p.nodes[w.parts[0]].op
                 k @ k + 1
+            .shaped sh =>
+                count = p.shapes[sh.at].printed.len()
+
+                if line >= k && line < k + count
+                    return "shape-" + p.shapes[sh.at].family
+                k @ k + count
             .bind_int | .bind_bool | .bind_str | .rec | .arr | .picked | .cond | .loop => _ = 0
 
     return "site"
@@ -130,9 +136,9 @@ function text_of(p: gen_tree.Program lent) -> str
 
     for s in p.body
         match s
-            .rec                                                              => has_record @ true
-            .picked                                                           => has_variant @ true
-            .bind_int | .bind_bool | .bind_str | .show | .arr | .cond | .loop => _ = 0
+            .rec                                                                        => has_record @ true
+            .picked                                                                     => has_variant @ true
+            .bind_int | .bind_bool | .bind_str | .show | .arr | .cond | .loop | .shaped => _ = 0
 
     return gen_text.program_text(p, seed: 0, has_record: has_record, has_variant: has_variant)
 
@@ -152,7 +158,7 @@ function line_end(text: str) -> i64
     return i
 
 test "a symptom names the kind of difference and the operator that printed the first wrong line"
-    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [])
+    p: gen_tree.Program @= gen_tree.Program(nodes: [], fns: [], body: [], shapes: [])
     a = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 8, name: ""))
     b = gen_tree.added(@p, gen_tree.leaf(op: "lit", value: 1, name: ""))
     shifted = gen_tree.binary(@p, op: ">>", left: a, right: b)

@@ -6,7 +6,12 @@
 # `gen_expr`'s, the C group `gen_cboundary`'s; a seed's program and its files
 # are `gen_program`'s.
 
+use gen_ccall
 use gen_cboundary
+use gen_chandle
+use gen_cout
+use gen_cstr
+use gen_cstruct
 use gen_declared
 use gen_eval
 use gen_expr
@@ -228,7 +233,7 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
     g: gen_expr.Gen @= gen_expr.Gen(
         r: r,
         mix: mix,
-        p: gen_tree.Program(nodes: [], fns: [], body: []),
+        p: gen_tree.Program(nodes: [], fns: [], body: [], shapes: []),
         depth: depth,
         leaf: leaf,
         reuse: [],
@@ -239,7 +244,14 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
 
     if with_c
         gen_cboundary.c_functions(@g.p, @g.r, mix: g.mix, count: 1 + gen_rng.below(@g.r, n: 3), depth: g.depth + 1)
+        shaped(@g)
     functions(@g, count: g.p.fns.len() + gen_rng.below(@g.r, n: 4))
+
+    # The callback shape reads the program's functions, so it is drawn once
+    # they stand.
+    if with_c && gen_rng.chance(@g.r, percent: 50)
+        p = g.p
+        g.p.shapes @ g.p.shapes.push(gen_ccall.called_back(p, @g.r, n: p.shapes.len()))
     s: gen_expr.Scope @= gen_expr.Scope(
         ints: [],
         fields: [],
@@ -257,12 +269,41 @@ function made(seed: i64, declared: bool, with_c: bool) -> gen_expr.Gen
 
     if declared
         site @ gen_rng.below(@g.r, n: count)
+    places: [i64] @= []
+
+    while places.len() < g.p.shapes.len()
+        places @ places.push(gen_rng.below(@g.r, n: count))
+
     id: i64 @= 0
 
     while id < count
         if id == site
             gen_declared.abort_site(@g, s: s, env: env)
+        j: i64 @= 0
+
+        while j < places.len()
+            if places[j] == id
+                appended(@g, s: .shaped(at: j), @env)
+            j @ j + 1
+
         statement(@g, @s, @env, id: id)
         id @ id + 1
 
     return g
+
+# The shapes of the C boundary a program that binds C carries beside its
+# `cf` functions, each family drawn on its own (M-generated-programs step 12
+# on); each is placed before one of `main`'s statements.
+function shaped(@g: gen_expr.Gen)
+    if gen_rng.chance(@g.r, percent: 60)
+        g.p.shapes @ g.p.shapes.push(gen_cstruct.structured(@g.r, n: g.p.shapes.len()))
+
+    if gen_rng.chance(@g.r, percent: 50)
+        g.p.shapes @ g.p.shapes.push(gen_cout.outward(@g.r, n: g.p.shapes.len()))
+
+    # One string shape at most: its group binds `free`.
+    if gen_rng.chance(@g.r, percent: 50)
+        g.p.shapes @ g.p.shapes.push(gen_cstr.stringed(@g.r, n: g.p.shapes.len()))
+
+    if gen_rng.chance(@g.r, percent: 50)
+        g.p.shapes @ g.p.shapes.push(gen_chandle.handled(@g.r, n: g.p.shapes.len()))

@@ -381,6 +381,9 @@ function stepped(p: gen_tree.Program lent, s: gen_tree.Stmt, @env: Env, @out: [s
                 acc @ arith(l.op, a: acc, b: int_of(p, at: l.body, env: env)?)?
 
             env.ints[l.name] @ acc
+        .shaped sh =>
+            for line in p.shapes[sh.at].printed
+                out @ out.push(line)
 
     return ok()
 
@@ -399,7 +402,7 @@ function matched(p: gen_tree.Program lent, m: gen_tree.Stmt, @env: Env) -> ()?
                 env.bools[binder + ".z"] @ bool_of(p, at: k.payload[1], env: env)?
             v = int_of(p, at: k.arms[k.case_at], env: env)?
             env.ints[k.mname] @ v
-        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => assert false
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop | .shaped => assert false
 
     return ok()
 

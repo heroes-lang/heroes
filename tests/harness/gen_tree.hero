@@ -20,6 +20,26 @@ record Fn
     params: [str]
     body: i64
 
+# A shape of the C boundary written whole (M-generated-programs step 12 on),
+# a family whose answer is not one expression's: its lines in the `extern`
+# group, its C and the headers that C includes beyond `<stdint.h>`, `main`'s
+# statements and the lines they print, and the driver's statements and the
+# lines it prints, both the model's answers; and the functions of Heroes
+# it writes above `main`, and the program's own functions it names, which no
+# node of the tree holds. Its `main` half is the statement `shaped`, so the
+# reducer drops it whole.
+record Shape
+    family: str
+    group: [str]
+    c: str
+    includes: [str]
+    lines: [str]
+    printed: [str]
+    driver: [str]
+    proved: [str]
+    hero: [str]
+    uses: [str]
+
 variant Stmt
     bind_int
         name: str
@@ -60,11 +80,14 @@ variant Stmt
         high: i64
         op: str
         body: i64
+    shaped
+        at: i64
 
 record Program
     nodes: [Node]
     fns: [Fn]
     body: [Stmt]
+    shapes: [Shape]
 
 function leaf(op: str, value: i64, name: str) -> Node
     none: [i64] = []
@@ -102,7 +125,7 @@ function reads(p: Program lent, at: i64, name: str) -> bool
     return false
 
 test "a subtree is shared by index, and reading it finds the names below it"
-    p: Program @= Program(nodes: [], fns: [], body: [])
+    p: Program @= Program(nodes: [], fns: [], body: [], shapes: [])
     x = added(@p, leaf(op: "name", value: 0, name: "x0"))
     one = added(@p, leaf(op: "lit", value: 1, name: ""))
     sum = binary(@p, op: "+", left: x, right: one)

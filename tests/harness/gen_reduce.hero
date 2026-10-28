@@ -14,6 +14,8 @@ use gen_symptom
 use gen_tree
 
 function roots(s: gen_tree.Stmt) -> [i64]
+    none: [i64] = []
+
     return match s
         .bind_int b  => [b.expr]
         .bind_bool b => [b.expr]
@@ -24,13 +26,14 @@ function roots(s: gen_tree.Stmt) -> [i64]
         .picked m    => m.payload
         .cond c      => [c.guard, c.yes, c.no]
         .loop l      => [l.init]
+        .shaped      => none
 
 # Every node a statement holds, the arms and a loop's body among them.
 function held(s: gen_tree.Stmt) -> [i64]
     return match s
-        .picked m                                                        => joined(xs: m.payload, more: m.arms)
-        .loop l                                                          => [l.init, l.body]
-        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond => roots(s)
+        .picked m => joined(xs: m.payload, more: m.arms)
+        .loop l => [l.init, l.body]
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .shaped => roots(s)
 
 function bound(s: gen_tree.Stmt) -> [str]
     none: [str] = []
@@ -45,6 +48,15 @@ function bound(s: gen_tree.Stmt) -> [str]
         .cond c      => [c.name]
         .loop l      => [l.name]
         .show        => none
+        .shaped      => none
+
+# The program's functions a shape's statement names, which no node holds.
+function used(p: gen_tree.Program lent, s: gen_tree.Stmt) -> [str]
+    none: [str] = []
+
+    return match s
+        .shaped sh                                                                         => p.shapes[sh.at].uses
+        .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .picked | .cond | .loop => none
 
 function joined(xs: [i64], more: [i64]) -> [i64]
     out: [i64] @= xs
@@ -145,6 +157,9 @@ function tidy(p: gen_tree.Program) -> gen_tree.Program
             for at in held(s)
                 gather(q, at: at, @names)
 
+            for name in used(q, s: s)
+                names @ names.push(name)
+
         for f in q.fns
             if among(names, name: f.name)
                 gather(q, at: f.body, @names)
@@ -206,7 +221,7 @@ function unbound(p: gen_tree.Program) -> gen_tree.Program
                     arms: m.arms,
                     binders: binders
                 )
-            .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop => _ = 0
+            .bind_int | .bind_bool | .bind_str | .show | .rec | .arr | .cond | .loop | .shaped => _ = 0
 
         i @ i + 1
 

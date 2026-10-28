@@ -1,0 +1,190 @@
+# The out-parameter shape of the C boundary (M-generated-programs step 13;
+# panel 231's R4, the milestone page's *`@` out-parameters*): C writing
+# through `@` places the program hands it, one element each, and through an
+# array declared `counted_by` its sibling (spec § 13).
+#
+# **Two functions, each defined by C11 for every operand the generator
+# picks.** `cs<n>_divmod(a, b, @q, @r)` refuses, returning -1 and writing
+# nothing, at a zero divisor and at `INT64_MIN / -1`, the two places C's `/`
+# and `%` are undefined, and otherwise writes the quotient and the remainder,
+# both truncating as Heroes' do (spec § 7). `cs<n>_mix(@p, n, seed,
+# @written)` walks xorshift32 in `uint32_t`, whose shifts and `^` C defines
+# for every value, and `^`s each of the `n` elements it is handed with the
+# stream's low 31 bits, which keeps an `int32_t` in its range; then writes
+# `n` through `written`. **What the model holds is spec § 13's sentence on
+# `counted_by`**: C is handed the array's own elements then zeros, and the
+# array is left exactly those `n`, so a longer array is cut and a shorter
+# one grows, each a value the program prints. Each `@` place is declared
+# `lent` or not at random, since a place C may keep is one the compiler must
+# not move, a second path through it.
+#
+# Names: the functions `cs<n>_divmod` and `cs<n>_mix`, and `main`'s cells
+# `k<n>q`, `k<n>r`, `k<n>c`, `k<n>p`, `k<n>w` and `k<n>n`.
+
+use gen_cstruct
+use gen_eval
+use gen_rng
+use gen_tree
+
+# One xorshift32 step, in the model's `i64` over a value under 2^32.
+function xorshift32(x: i64) -> i64
+    y: i64 @= (x ^ x << 13) & 4294967295
+    y @ y ^ y >> 17
+    return (y ^ y << 5) & 4294967295
+
+# The array `cs<n>_mix` leaves: the first `n` of `elems`, zeros past them,
+# each `^`ed with the low 31 bits of the stream from `seed`.
+function mixed(elems: [i64], n: i64, seed: i64) -> [i64]
+    out: [i64] @= []
+    x: i64 @= seed
+
+    while out.len() < n
+        e: i64 @= 0
+
+        if out.len() < elems.len()
+            e @ elems[out.len()]
+        x @ xorshift32(x)
+        out @ out.push(e ^ x & 2147483647)
+
+    return out
+
+# A divisor that reaches the two refusals as often as a plain quotient.
+function divisor(@r: gen_rng.Rng) -> i64
+    k = gen_rng.below(@r, n: 5)
+
+    if k == 0
+        return 0
+
+    if k == 1
+        return -1
+
+    if k == 2
+        return gen_rng.below(@r, n: 17) - 8
+    return gen_cstruct.value_of(@r, w: gen_cstruct.widths()[3])
+
+function lent_word(@r: gen_rng.Rng) -> str
+    if gen_rng.chance(@r, percent: 50)
+        return " lent"
+    return ""
+
+# The out-parameter shape numbered `n`.
+function outward(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    name = "cs" + id
+    bind = "k" + id
+    w = gen_cstruct.widths()
+    i64w = w[3]
+    a: i64 @= gen_cstruct.value_of(@r, w: i64w)
+
+    if gen_rng.chance(@r, percent: 15)
+        a @ gen_eval.MIN
+    b = divisor(@r)
+    q0 = gen_rng.below(@r, n: 100)
+    r0 = gen_rng.below(@r, n: 100)
+    code: i64 @= -1
+    q: i64 @= q0
+    rest: i64 @= r0
+
+    if b != 0 && !(a == gen_eval.MIN && b == -1)
+        code @ 0
+        q @ gen_eval.arith("/", a: a, b: b).must()
+        rest @ gen_eval.arith("%", a: a, b: b).must()
+    count = gen_rng.below(@r, n: 6)
+    size = gen_rng.below(@r, n: 6)
+    elems: [i64] @= []
+
+    while elems.len() < size
+        elems @ elems.push(gen_cstruct.value_of(@r, w: w[2]))
+
+    seed = gen_cstruct.value_of(@r, w: w[6])
+    w0 = gen_cstruct.value_of(@r, w: w[7])
+    after = mixed(elems: elems, n: count, seed: seed)
+    group = [
+        "    function " + name + "_divmod(a: i64, b: i64, @q: i64" + lent_word(@r) + ", @r: i64" + lent_word(@r) + ") -> i32"
+        "    function " + name + "_mix(@p: [i32] counted_by n lent, n: u64, seed: u32, @written: u64" + lent_word(@r) + ") -> u64"
+    ]
+    hero_elems: [str] @= []
+
+    for e in elems
+        hero_elems @ hero_elems.push(e.to_str())
+
+    # C is handed the array's own elements then zeros, `n` of them, and an
+    # empty initialiser is no C, so the driver's array is never shorter
+    # than one.
+    c_elems: [str] @= []
+
+    while c_elems.len() < count || c_elems.len() == 0
+        if c_elems.len() < elems.len()
+            c_elems @ c_elems.push(gen_cstruct.c_literal(elems[c_elems.len()], w: w[2]))
+        else
+            c_elems @ c_elems.push("0")
+
+    lines: [str] @= [
+        bind + "q: i64 @= " + q0.to_str()
+        bind + "r: i64 @= " + r0.to_str()
+        bind + "c = " + name + "_divmod(a: " + a.to_str() + ", b: " + b.to_str() + ", q: @" + bind + "q, r: @" + bind + "r)"
+        gen_cstruct.printed([bind + "c", bind + "q", bind + "r"])
+        bind + "p: [i32] @= [" + hero_elems.join(", ") + "]"
+        bind + "w: u64 @= " + w0.to_str()
+        bind + "n = " + name + "_mix(@" + bind + "p, n: " + count.to_str() + ", seed: " + seed.to_str() + ", written: @" + bind + "w)"
+        gen_cstruct.printed([bind + "n", bind + "w", bind + "p.len()"])
+    ]
+    driver: [str] @= [
+        "int64_t " + bind + "q = INT64_C(" + q0.to_str() + ");"
+        "int64_t " + bind + "r = INT64_C(" + r0.to_str() + ");"
+        "int32_t " + bind + "c = " + name + "_divmod(" + gen_cstruct.c_literal(a, w: i64w) + ", " + gen_cstruct.c_literal(b, w: i64w) + ", &" + bind + "q, &" + bind + "r);"
+        gen_cstruct.c_printed([bind + "c", bind + "q", bind + "r"])
+        "int32_t " + bind + "p[] = {" + c_elems.join(", ") + "};"
+        "size_t " + bind + "w = (size_t)UINT64_C(" + w0.to_str() + ");"
+        "size_t " + bind + "n = " + name + "_mix(" + bind + "p, (size_t)" + count.to_str() + ", UINT32_C(" + seed.to_str() + "), &" + bind + "w);"
+        gen_cstruct.c_printed([bind + "n", bind + "w", "(size_t)" + count.to_str()])
+    ]
+    proved: [str] @= [
+        gen_cstruct.said([code, q, rest])
+        gen_cstruct.said([count, count, count])
+    ]
+
+    if count > 0
+        reads: [str] @= []
+        c_reads: [str] @= []
+        j: i64 @= 0
+
+        while j < count
+            reads @ reads.push(bind + "p[" + j.to_str() + "]")
+            c_reads @ c_reads.push(bind + "p[" + j.to_str() + "]")
+            j @ j + 1
+
+        lines @ lines.push(gen_cstruct.printed(reads))
+        driver @ driver.push(gen_cstruct.c_printed(c_reads))
+        proved @ proved.push(gen_cstruct.said(after))
+    return gen_tree.Shape(
+        family: "out",
+        group: group,
+        c: c_text(name),
+        includes: ["stddef.h"],
+        lines: lines,
+        printed: proved,
+        driver: driver,
+        proved: proved,
+        hero: [],
+        uses: []
+    )
+
+function c_text(name: str) -> str
+    divmod = "\nstatic inline int32_t " + name + "_divmod(int64_t a, int64_t b, int64_t *q, int64_t *r) {\n    if (b == 0 || (a == INT64_MIN && b == -1)) {\n        return -1;\n    }\n    *q = a / b;\n    *r = a % b;\n    return 0;\n}\n"
+    mix = "\nstatic inline size_t " + name + "_mix(int32_t *p, size_t n, uint32_t seed, size_t *written) {\n    uint32_t x = seed;\n    for (size_t i = 0; i < n; i++) {\n        x ^= x << 13;\n        x ^= x >> 17;\n        x ^= x << 5;\n        p[i] = (int32_t)(p[i] ^ (int32_t)(x & 0x7fffffffu));\n    }\n    *written = n;\n    return n;\n}\n"
+    return divmod + mix
+
+test "xorshift32 in the model's `i64`, and the array `counted_by` leaves"
+    assert xorshift32(1) == 270369
+    assert xorshift32(2463534242) & 2147483647 == 723471715
+    assert mixed(elems: [5, 5, 5, 5, 5, 5, 5], n: 2, seed: 1).len() == 2
+    assert mixed(elems: [], n: 0, seed: 1).len() == 0
+    assert mixed(elems: [0], n: 1, seed: 1) == [270369]
+
+test "an out-parameter shape prints what its driver proves"
+    r: gen_rng.Rng @= gen_rng.seeded(11)
+    s = outward(@r, n: 1)
+    assert s.family == "out"
+    assert s.printed == s.proved
+    assert s.group.len() == 2

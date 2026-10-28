@@ -1,0 +1,175 @@
+# The callback shape of the C boundary (M-generated-programs step 13; panel
+# 231's R4, the milestone page's *callbacks*): C calling the program back,
+# with a number, and with a `void *` it was handed, sqlite3_exec's and
+# qsort_r's shape (spec § 13: a callback is a parameter, never a result).
+#
+# **The callback is one of the program's own functions where one fits**: a
+# generated `f<k>` of one parameter, its answer at every argument the fold
+# passes computed by the evaluator over its body, as the C group's are
+# (`gen_cboundary.answer`); where none fits, or one of those answers would
+# abort, a callback of the shape's own, `x * c + d` over operands that
+# cannot overflow. The user-data callback is always the shape's own, and
+# reads whether its datum is null, the program handing `nullptr`.
+#
+# **The answer is the shape's text, fixed when the program is made, and it
+# stays true while the program is reduced**: the reducer's edits descend
+# from `main`'s statements, and a call's children are its arguments, never
+# the body of the function it names, so no edit reaches the callback's
+# body; and the shape names the function in `uses`, so the reducer's tidy
+# pass does not drop it as uncalled.
+#
+# **C's fold is defined for every value the model lets reach it**: it
+# accumulates by `^`, or by `+` where the model finds no step overflowing
+# `int64_t`, from a start it is handed, over `from .. to - 1`. The driver
+# cannot call the program, so it proves the folds with callbacks of the
+# header's own, the identity `cs<n>_probe` and its user-data twin, against
+# the same model; `+` is written only where both the program's values and
+# the probe's leave every step in range.
+#
+# Names: the C types `cs<n>_fn` and `cs<n>_ufn`, the functions `cs<n>_fold`,
+# `cs<n>_fold_ud`, `cs<n>_probe` and `cs<n>_probe_ud`, and the program's
+# callbacks `cb<n>f` and `cb<n>u`.
+
+use gen_cstruct
+use gen_eval
+use gen_rng
+use gen_tree
+
+# A fold of `values` from `start` by `op`, failing where a step leaves
+# `i64`.
+function folded(values: [i64], start: i64, op: str) -> i64?
+    acc: i64 @= start
+
+    for v in values
+        acc @ gen_eval.arith(op, a: acc, b: v)?
+
+    return ok(acc)
+
+# The answers of the program's function `f` at `from .. to - 1`, failing
+# where one aborts.
+function answers(p: gen_tree.Program lent, f: gen_tree.Fn, from: i64, to: i64) -> [i64]?
+    out: [i64] @= []
+
+    for i in range(from: from, to: to)
+        env: gen_eval.Env @= gen_eval.empty()
+        env.ints[f.params[0]] @ i
+        out @ out.push(gen_eval.int_of(p, at: f.body, env: env)?)
+
+    return ok(out)
+
+# `x * c + d` at `from .. to - 1`, the shape's own callback.
+function own(c: i64, d: i64, from: i64, to: i64) -> [i64]
+    out: [i64] @= []
+
+    for i in range(from: from, to: to)
+        out @ out.push(i * c + d)
+
+    return out
+
+function own_text(name: str, c: i64, d: i64) -> str
+    return "function " + name + "(x: i64) -> i64\n    return x * " + c.to_str() + " + " + d.to_str() + "\n"
+
+function ud_text(name: str, c: i64, d: i64) -> str
+    return "function " + name + "(ud: ptr, x: i64) -> i64\n    if ud == nullptr\n        return x * " + c.to_str() + " + " + d.to_str() + "\n    return x\n"
+
+# The operator both folds are written with: `+` where neither `values` nor
+# the probe's leaves `i64` at a step, else `^`.
+function fold_op(@r: gen_rng.Rng, values: [i64], probe: [i64], start: i64) -> str
+    if gen_rng.chance(@r, percent: 50) && !folded(values: values, start: start, op: "+").is_err() && !folded(values: probe, start: start, op: "+").is_err()
+        return "+"
+    return "^"
+
+function range_of(from: i64, to: i64) -> [i64]
+    out: [i64] @= []
+
+    for i in range(from: from, to: to)
+        out @ out.push(i)
+
+    return out
+
+# The callback shape numbered `n`, over the program `p` as it stands.
+function called_back(p: gen_tree.Program lent, @r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    name = "cs" + id
+    i64w = gen_cstruct.widths()[3]
+    from = gen_rng.below(@r, n: 5) - 2
+    to = from + gen_rng.below(@r, n: 6)
+    probe = range_of(from: from, to: to)
+    c = gen_rng.below(@r, n: 17) - 8
+    d = gen_rng.below(@r, n: 201) - 100
+    callback: str @= "cb" + id + "f"
+    values: [i64] @= own(c: c, d: d, from: from, to: to)
+    hero: [str] @= [own_text(name: callback, c: c, d: d)]
+    uses: [str] @= []
+    fits: [gen_tree.Fn] @= []
+
+    for f in p.fns
+        if f.name.len() > 1 && f.name[0] == 'f' && f.params.len() == 1
+            fits @ fits.push(f)
+
+    if fits.len() > 0 && gen_rng.chance(@r, percent: 70)
+        f = fits[gen_rng.below(@r, n: fits.len())]
+        got = answers(p, f: f, from: from, to: to)
+
+        if !got.is_err()
+            callback @ f.name
+            values @ got.must()
+            hero @ []
+            uses @ [f.name]
+    start = gen_cstruct.value_of(@r, w: i64w)
+    op = fold_op(@r, values: values, probe: probe, start: start)
+    e = gen_rng.below(@r, n: 17) - 8
+    g = gen_rng.below(@r, n: 201) - 100
+    ud_values = own(c: e, d: g, from: from, to: to)
+    ustart = gen_cstruct.value_of(@r, w: i64w)
+    uop = fold_op(@r, values: ud_values, probe: probe, start: ustart)
+    hero @ hero.push(ud_text(name: "cb" + id + "u", c: e, d: g))
+    group = [
+        "    function " + name + "_fold(f: (function(i64) -> i64), start: i64, from: i64, to: i64) -> i64"
+        "    function " + name + "_fold_ud(f: (function(ptr, i64) -> i64), ud: ptr, start: i64, from: i64, to: i64) -> i64"
+    ]
+    span = ", from: " + from.to_str() + ", to: " + to.to_str() + "))"
+    lines = [
+        "print(" + name + "_fold(f: " + callback + ", start: " + start.to_str() + span
+        "print(" + name + "_fold_ud(f: cb" + id + "u, ud: nullptr, start: " + ustart.to_str() + span
+    ]
+    c_span = ", " + gen_cstruct.c_literal(from, w: i64w) + ", " + gen_cstruct.c_literal(to, w: i64w) + ")"
+    driver = [
+        gen_cstruct.c_printed([name + "_fold(" + name + "_probe, " + gen_cstruct.c_literal(start, w: i64w) + c_span])
+        gen_cstruct.c_printed([name + "_fold_ud(" + name + "_probe_ud, NULL, " + gen_cstruct.c_literal(ustart, w: i64w) + c_span])
+    ]
+    return gen_tree.Shape(
+        family: "call",
+        group: group,
+        c: c_text(name: name, op: op, uop: uop),
+        includes: ["stddef.h"],
+        lines: lines,
+        printed: [folded(values: values, start: start, op: op).must().to_str(), folded(values: ud_values, start: ustart, op: uop).must().to_str()],
+        driver: driver,
+        proved: [folded(values: probe, start: start, op: op).must().to_str(), folded(values: probe, start: ustart, op: uop).must().to_str()],
+        hero: hero,
+        uses: uses
+    )
+
+function c_text(name: str, op: str, uop: str) -> str
+    types = "\ntypedef int64_t (*" + name + "_fn)(int64_t);\ntypedef int64_t (*" + name + "_ufn)(void *, int64_t);\n"
+    probes = "\nstatic inline int64_t " + name + "_probe(int64_t x) {\n    return x;\n}\n\nstatic inline int64_t " + name + "_probe_ud(void *ud, int64_t x) {\n    return ud == NULL ? x : -x;\n}\n"
+    folding = "\nstatic inline int64_t " + name + "_fold(" + name + "_fn f, int64_t start, int64_t from, int64_t to) {\n    int64_t acc = start;\n    for (int64_t i = from; i < to; i++) {\n        acc = acc " + op + " f(i);\n    }\n    return acc;\n}\n"
+    fold_ud = "\nstatic inline int64_t " + name + "_fold_ud(" + name + "_ufn f, void *ud, int64_t start, int64_t from, int64_t to) {\n    int64_t acc = start;\n    for (int64_t i = from; i < to; i++) {\n        acc = acc " + uop + " f(ud, i);\n    }\n    return acc;\n}\n"
+    return types + probes + folding + fold_ud
+
+test "a fold is the model's, and `+` is refused where a step leaves `i64`"
+    assert folded(values: [1, 2, 3], start: 10, op: "+").must() == 16
+    assert folded(values: [1, 2], start: 3, op: "^").must() == 0
+    assert folded(values: [1], start: gen_eval.MAX, op: "+").is_err()
+    assert own(c: 2, d: -1, from: -1, to: 2) == [-3, -1, 1]
+    assert range_of(from: 3, to: 3).len() == 0
+
+test "a callback shape prints two folds, and its driver proves two"
+    p = gen_tree.Program(nodes: [], fns: [], body: [], shapes: [])
+    r: gen_rng.Rng @= gen_rng.seeded(5)
+    s = called_back(p, @r, n: 2)
+    assert s.family == "call"
+    assert s.printed.len() == 2 && s.proved.len() == 2
+    assert s.hero.len() == 2
+    assert s.uses.len() == 0

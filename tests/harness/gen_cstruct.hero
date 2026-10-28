@@ -1,0 +1,469 @@
+# The struct shape of the C boundary (M-generated-programs step 12; panel
+# 231's R4, and the first of the milestone page's two hard shapes, *structs
+# by value*): a C struct holding another and a fixed array, each field of a
+# width of its own, passed to C and handed back by value; then a sum C takes
+# in `int64_t`, and one statement of Heroes arithmetic on two fields of one
+# width.
+#
+# **Every value is the model's, in `i64`** (panel 231's R2: a narrow width is
+# computed in `i64` and range-checked, never in its own type). A field C
+# writes is one of five operations, each defined by C11 for the operands the
+# generator chose: kept; `^` with a constant of the field's own width, which
+# stays in its range; `+` of such a constant for a signed field of at most 32
+# bits, taken in `int64_t` and kept only where the model finds the sum in
+# range, `^` otherwise; `^` of the call's `i32` argument for an `i32` or
+# `i64` field; and for an unsigned field of at most 32 bits `+` of that
+# argument through `uint64_t`, which C defines modulo 2^N (6.3.1.3p2). A
+# `u64` holds a value under 2^63, so the model's `i64` holds it whole, and C
+# writes it only with `^`. The array is permuted. The sum adds the fields of
+# at most 32 bits, at most six terms each under 2^32 in size, so it cannot
+# leave `int64_t`. The Heroes statement combines a field of the result with
+# the same field of the argument, so both have one width, by an operator
+# spec § 7 gives that width (`heroes_ops`), kept only where the model finds
+# the answer in the width's range and a fallback that is otherwise
+# (`combined`), as the clean arm keeps every operation.
+#
+# Names: the C tags `cs<n>` and `cs<n>_in`, the records `Cs<n>` and
+# `Cs<n>In`, the functions `cs<n>_step` and `cs<n>_sum`, and `main`'s
+# bindings `k<n>`, `k<n>i`, `k<n>r` and `k<n>w`, none of which the rest of
+# the generator writes. Every line stays under `fmt`'s 120 columns: with an
+# array the outer struct holds one scalar beside it, without one two.
+
+use gen_eval
+use gen_rng
+use gen_tree
+
+record Width
+    hero: str
+    c: str
+    signed: bool
+    bits: i64
+
+# One field of a struct the shape passes: its path below a binding, its
+# width, the value the program gives it, the operation C applies and that
+# operation's constant, and the value C hands back.
+record Field
+    path: str
+    w: Width
+    value: i64
+    op: str
+    operand: i64
+    out: i64
+
+function widths() -> [Width]
+    return [
+        Width(hero: "i8", c: "int8_t", signed: true, bits: 8)
+        Width(hero: "i16", c: "int16_t", signed: true, bits: 16)
+        Width(hero: "i32", c: "int32_t", signed: true, bits: 32)
+        Width(hero: "i64", c: "int64_t", signed: true, bits: 64)
+        Width(hero: "u8", c: "uint8_t", signed: false, bits: 8)
+        Width(hero: "u16", c: "uint16_t", signed: false, bits: 16)
+        Width(hero: "u32", c: "uint32_t", signed: false, bits: 32)
+        Width(hero: "u64", c: "uint64_t", signed: false, bits: 64)
+    ]
+
+# The widths of at most 32 bits, which an array holds and the sum adds.
+function narrow() -> [Width]
+    out: [Width] @= []
+
+    for w in widths()
+        if w.bits <= 32
+            out @ out.push(w)
+
+    return out
+
+function low(w: Width) -> i64
+    if !w.signed
+        return 0
+
+    if w.bits == 64
+        return gen_eval.MIN
+    return -(1 << w.bits - 1)
+
+# A `u64`'s highest is `i64`'s, the model's whole range.
+function high(w: Width) -> i64
+    if w.bits == 64
+        return gen_eval.MAX
+
+    if w.signed
+        return (1 << w.bits - 1) - 1
+    return (1 << w.bits) - 1
+
+function in_range(v: i64, w: Width) -> bool
+    return v >= low(w) && v <= high(w)
+
+# A value of the width, at its edges as often as inside it.
+function value_of(@r: gen_rng.Rng, w: Width) -> i64
+    k = gen_rng.below(@r, n: 6)
+
+    if k == 0
+        return low(w)
+
+    if k == 1
+        return high(w)
+
+    if k == 2
+        if w.signed
+            return gen_rng.below(@r, n: 17) - 8
+        return gen_rng.below(@r, n: 17)
+
+    if w.bits == 64
+        v = gen_rng.next(@r)
+
+        if w.signed
+            return v
+        return v & gen_rng.MAX
+    return low(w) + gen_rng.below(@r, n: high(w) - low(w) + 1)
+
+# The operations C may apply to a field of width `w`, each defined there.
+function ops_for(w: Width) -> [str]
+    ops: [str] @= ["keep", "xc"]
+
+    if w.signed && w.bits <= 32
+        ops @ ops.push("ac")
+
+    if w.signed && w.bits >= 32
+        ops @ ops.push("xk")
+
+    if !w.signed && w.bits <= 32
+        ops @ ops.push("ak")
+    return ops
+
+# `value + k` as C's conversion to an unsigned width of `w.bits` leaves it.
+function wrapped(value: i64, k: i64, w: Width) -> i64
+    m = 1 << w.bits
+    return ((value + k) % m + m) % m
+
+# A field of width `w` at `path`, its operation chosen and C's answer the
+# model's.
+function operated(@r: gen_rng.Rng, path: str, w: Width, k: i64) -> Field
+    value = value_of(@r, w: w)
+    ops = ops_for(w)
+    op: str @= ops[gen_rng.below(@r, n: ops.len())]
+    operand: i64 @= 0
+    out: i64 @= value
+
+    if op == "xc" || op == "ac"
+        operand @ value_of(@r, w: w)
+
+    # Both of at most 32 bits, so the sum is an `i64` and only the width
+    # can refuse it.
+    if op == "ac"
+        if in_range(value + operand, w: w)
+            out @ value + operand
+        else
+            op @ "xc"
+
+    if op == "xc"
+        out @ value ^ operand
+
+    if op == "xk"
+        out @ value ^ k
+
+    if op == "ak"
+        out @ wrapped(value: value, k: k, w: w)
+    return Field(path: path, w: w, value: value, op: op, operand: operand, out: out)
+
+function member(f: Field) -> str
+    i: i64 @= f.path.len()
+
+    while i > 0 && f.path[i - 1] != '.'
+        i @ i - 1
+
+    return f.path.slice(from: i, to: f.path.len())
+
+function c_literal(v: i64, w: Width) -> str
+    if !w.signed
+        return "UINT64_C(" + v.to_str() + ")"
+
+    if v == gen_eval.MIN
+        return "INT64_MIN"
+    return "INT64_C(" + v.to_str() + ")"
+
+# The line of `_step` that writes the field, "" where it is kept.
+function c_assigned(f: Field) -> str
+    target = "    r." + f.path + " = "
+    source = "o." + f.path
+
+    if f.op == "keep"
+        return ""
+
+    if f.op == "xc"
+        if f.w.bits == 64
+            return target + source + " ^ " + c_literal(f.operand, w: f.w) + ";\n"
+
+        if f.w.signed
+            return target + "(" + f.w.c + ")(" + source + " ^ " + c_literal(f.operand, w: f.w) + ");\n"
+        return target + "(" + f.w.c + ")((uint64_t)" + source + " ^ " + c_literal(f.operand, w: f.w) + ");\n"
+
+    if f.op == "ac"
+        return target + "(" + f.w.c + ")((int64_t)" + source + " + " + c_literal(f.operand, w: f.w) + ");\n"
+
+    if f.op == "xk"
+        if f.w.bits == 64
+            return target + source + " ^ (int64_t)k;\n"
+        return target + source + " ^ k;\n"
+    return target + "(" + f.w.c + ")((uint64_t)" + source + " + (uint64_t)k);\n"
+
+function permutation(k: i64) -> [i64]
+    return [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]][k]
+
+function said(values: [i64]) -> str
+    shown: [str] @= []
+
+    for v in values
+        shown @ shown.push(v.to_str())
+
+    return shown.join(" ")
+
+# A `print` of `values`, Heroes' and the driver's, each `" "` between.
+function printed(values: [str]) -> str
+    return "print(" + values.join(", \" \", ") + ")"
+
+function c_printed(values: [str]) -> str
+    formats: [str] @= []
+    casts: [str] @= []
+
+    for v in values
+        formats @ formats.push("%lld")
+        casts @ casts.push("(long long)" + v)
+
+    return "printf(\"" + formats.join(" ") + "\\n\", " + casts.join(", ") + ");"
+
+# The struct shape numbered `n`.
+function structured(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    ctag = "cs" + id
+    rec = "Cs" + id
+    bind = "k" + id
+    every = widths()
+    small = narrow()
+    k = value_of(@r, w: every[2])
+    inner: [Field] @= [operated(@r, path: "inner.f0", w: small[gen_rng.below(@r, n: small.len())], k: k)]
+
+    if gen_rng.chance(@r, percent: 50)
+        inner @ inner.push(operated(@r, path: "inner.f1", w: every[gen_rng.below(@r, n: every.len())], k: k))
+    has_arr = gen_rng.chance(@r, percent: 60)
+    aw = small[gen_rng.below(@r, n: small.len())]
+    elems: [i64] @= []
+
+    while elems.len() < 3
+        elems @ elems.push(value_of(@r, w: aw))
+
+    perm = permutation(gen_rng.below(@r, n: 6))
+    count: i64 @= 1
+
+    if !has_arr
+        count @ 1 + gen_rng.below(@r, n: 2)
+    outer: [Field] @= []
+
+    while outer.len() < count
+        outer @ outer.push(
+            operated(@r, path: "f" + (2 + outer.len()).to_str(), w: every[gen_rng.below(@r, n: every.len())], k: k)
+        )
+
+    fields: [Field] @= inner
+
+    for f in outer
+        fields @ fields.push(f)
+
+    # Heroes' half: the two structs built, the call, a `print` of each
+    # part, the sum, and the statement on two fields of one width.
+    inits: [str] @= []
+
+    for f in inner
+        inits @ inits.push(member(f) + ": " + f.value.to_str())
+
+    outer_inits: [str] @= ["inner: " + bind + "i"]
+    c_outer: [str] @= [".inner = " + bind + "i"]
+
+    if has_arr
+        c_elems: [str] @= []
+
+        for v in elems
+            c_elems @ c_elems.push(c_literal(v, w: aw))
+
+        hero_elems: [str] @= []
+
+        for v in elems
+            hero_elems @ hero_elems.push(v.to_str())
+
+        outer_inits @ outer_inits.push("arr: [" + hero_elems.join(", ") + "]")
+        c_outer @ c_outer.push(".arr = {" + c_elems.join(", ") + "}")
+
+    for f in outer
+        outer_inits @ outer_inits.push(member(f) + ": " + f.value.to_str())
+        c_outer @ c_outer.push("." + member(f) + " = " + c_literal(f.value, w: f.w))
+
+    c_inner: [str] @= []
+
+    for f in inner
+        c_inner @ c_inner.push("." + member(f) + " = " + c_literal(f.value, w: f.w))
+
+    lines: [str] @= [
+        bind + "i = " + rec + "In(" + inits.join(", ") + ")"
+        bind + " = " + rec + "(" + outer_inits.join(", ") + ")"
+        bind + "r = " + ctag + "_step(o: " + bind + ", k: " + k.to_str() + ")"
+    ]
+    driver: [str] @= [
+        "struct " + ctag + "_in " + bind + "i = {" + c_inner.join(", ") + "};"
+        "struct " + ctag + " " + bind + " = {" + c_outer.join(", ") + "};"
+        "struct " + ctag + " " + bind + "r = " + ctag + "_step(" + bind + ", " + c_literal(k, w: every[2]) + ");"
+    ]
+    proved: [str] @= []
+    sum: i64 @= 0
+    groups: [[Field]] = [inner, outer]
+
+    for group in groups
+        reads: [str] @= []
+        values: [i64] @= []
+
+        for f in group
+            reads @ reads.push(bind + "r." + f.path)
+            values @ values.push(f.out)
+
+            if f.w.bits <= 32
+                sum @ sum + f.out
+
+        lines @ lines.push(printed(reads))
+        driver @ driver.push(c_printed(reads))
+        proved @ proved.push(said(values))
+
+    if has_arr
+        reads: [str] @= []
+        values: [i64] @= []
+
+        for i in [0, 1, 2]
+            reads @ reads.push(bind + "r.arr[" + i.to_str() + "]")
+            values @ values.push(elems[perm[i]])
+            sum @ sum + elems[i]
+
+        lines @ lines.push(printed(reads))
+        driver @ driver.push(c_printed(reads))
+        proved @ proved.push(said(values))
+    lines @ lines.push("print(" + ctag + "_sum(" + bind + "r))")
+    driver @ driver.push(c_printed([ctag + "_sum(" + bind + "r)"]))
+    proved @ proved.push(sum.to_str())
+    printed_lines: [str] @= proved
+    f = fields[gen_rng.below(@r, n: fields.len())]
+    ops = heroes_ops(f.w)
+    op = combined(op: ops[gen_rng.below(@r, n: ops.len())], a: f.out, b: f.value, w: f.w)
+    answer = gen_eval.arith(op, a: f.out, b: f.value).must()
+    lines @ lines.push(bind + "w = " + bind + "r." + f.path + " " + op + " " + bind + "." + f.path)
+    lines @ lines.push("print(" + bind + "w)")
+    printed_lines @ printed_lines.push(answer.to_str())
+    return gen_tree.Shape(
+        family: "struct",
+        group: group_lines(ctag: ctag, rec: rec, inner: inner, outer: outer, arr: has_arr, aw: aw),
+        c: c_text(ctag: ctag, inner: inner, outer: outer, arr: has_arr, aw: aw, perm: perm),
+        includes: [],
+        lines: lines,
+        printed: printed_lines,
+        driver: driver,
+        proved: proved,
+        hero: [],
+        uses: []
+    )
+
+# The operators Heroes applies to two values of width `w`: the arithmetic
+# at every width, the bitwise ones at `i64` alone (spec § 7, measured on
+# 2026-10-28 when this module first wrote `&` on two `u8`s and the compiler
+# refused it, `bad_operand`).
+function heroes_ops(w: Width) -> [str]
+    if w.hero == "i64"
+        return ["+", "-", "*", "/", "%", "^", "&", "|"]
+    return ["+", "-", "*", "/", "%"]
+
+# `op` where the model finds `a op b` in the width's range, else the first
+# of `/`, `+` and `-` that is, of which one always is: `+` at a zero
+# divisor, where it is `a`; `/` otherwise, but at the width's lowest
+# divided by -1, where `-` gives the lowest plus one.
+function combined(op: str, a: i64, b: i64, w: Width) -> str
+    for each in [op, "/", "+", "-"]
+        tried = gen_eval.arith(each, a: a, b: b)
+
+        if !tried.is_err() && in_range(tried.must(), w: w)
+            return each
+
+    assert false
+
+# The shape's records and functions in the program's `extern` group.
+function group_lines(ctag: str, rec: str, inner: [Field], outer: [Field], arr: bool, aw: Width) -> [str]
+    lines: [str] @= ["    record " + rec + "In tag " + ctag + "_in"]
+
+    for f in inner
+        lines @ lines.push("        " + member(f) + ": " + f.w.hero)
+
+    lines @ lines.push("    record " + rec + " tag " + ctag).push("        inner: " + rec + "In")
+
+    if arr
+        lines @ lines.push("        arr: " + aw.hero + "[3]")
+
+    for f in outer
+        lines @ lines.push("        " + member(f) + ": " + f.w.hero)
+
+    lines @ lines.push("    function " + ctag + "_step(o: " + rec + ", k: i32) -> " + rec)
+    return lines.push("    function " + ctag + "_sum(o: " + rec + ") -> i64")
+
+# The shape's C: the two structs, `_step` and `_sum`.
+function c_text(ctag: str, inner: [Field], outer: [Field], arr: bool, aw: Width, perm: [i64]) -> str
+    text: str @= "\nstruct " + ctag + "_in {\n"
+
+    for f in inner
+        text @ text + "    " + f.w.c + " " + member(f) + ";\n"
+
+    text @ text + "};\n\nstruct " + ctag + " {\n    struct " + ctag + "_in inner;\n"
+
+    if arr
+        text @ text + "    " + aw.c + " arr[3];\n"
+
+    for f in outer
+        text @ text + "    " + f.w.c + " " + member(f) + ";\n"
+
+    text @ text + "};\n\nstatic inline struct " + ctag + " " + ctag + "_step(struct " + ctag + " o, int32_t k) {\n    struct " + ctag + " r = o;\n    (void)k;\n"
+    terms: [str] @= []
+
+    for f in inner
+        text @ text + c_assigned(f)
+
+        if f.w.bits <= 32
+            terms @ terms.push("(int64_t)o." + f.path)
+
+    for f in outer
+        text @ text + c_assigned(f)
+
+        if f.w.bits <= 32
+            terms @ terms.push("(int64_t)o." + f.path)
+
+    if arr
+        for i in [0, 1, 2]
+            text @ text + "    r.arr[" + i.to_str() + "] = o.arr[" + perm[i].to_str() + "];\n"
+            terms @ terms.push("(int64_t)o.arr[" + i.to_str() + "]")
+
+    text @ text + "    return r;\n}\n\nstatic inline int64_t " + ctag + "_sum(struct " + ctag + " o) {\n"
+    return text + "    return " + terms.join(" + ") + ";\n}\n"
+
+test "a width's range, and an unsigned sum wrapping as C's conversion leaves it"
+    w = widths()
+    assert low(w[0]) == -128 && high(w[0]) == 127
+    assert low(w[3]) == gen_eval.MIN && high(w[3]) == gen_eval.MAX
+    assert high(w[6]) == 4294967295 && high(w[7]) == gen_eval.MAX
+    assert wrapped(value: 250, k: 10, w: w[4]) == 4
+    assert wrapped(value: 3, k: -5, w: w[4]) == 254
+    assert wrapped(value: 0, k: -1, w: w[6]) == 4294967295
+
+test "a struct shape prints what its driver proves, and one line more"
+    r: gen_rng.Rng @= gen_rng.seeded(3)
+    s = structured(@r, n: 0)
+    assert s.family == "struct"
+    assert s.printed.len() == s.proved.len() + 1
+    assert s.lines.len() == s.printed.len() + 4
+    assert s.driver.len() == s.proved.len() + 3
+    assert s.group[0] == "    record Cs0In tag cs0_in"
+
+test "a field's C line, and the member it names"
+    f = Field(path: "inner.f1", w: widths()[4], value: 250, op: "ak", operand: 0, out: 4)
+    assert member(f) == "f1"
+    assert c_assigned(f) == "    r.inner.f1 = (uint8_t)((uint64_t)o.inner.f1 + (uint64_t)k);\n"
+    kept = Field(path: "f2", w: widths()[3], value: 1, op: "keep", operand: 0, out: 1)
+    assert c_assigned(kept) == ""

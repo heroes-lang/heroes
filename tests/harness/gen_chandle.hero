@@ -1,0 +1,164 @@
+# The handle shape of the C boundary (M-generated-programs step 14; panel
+# 231's R4, the milestone page's C boundary with its handles): a C object
+# the program holds by a `record` with a `tag` and no fields, begun by a
+# result and by a `T **` out-parameter marked `acquires`, used, compared, and
+# given back by a call marked `consumes` (spec § 13).
+#
+# **The object is an accumulator C allocates with two `malloc`s**, its total
+# and a history of four, so a handle the program never gives back is a real
+# leak, which the runtime's count and oracle 5 both read. `cs<n>_add` adds
+# by `+` where the model finds no step overflowing `int64_t`, else by `^`,
+# chosen once per shape, so C's arithmetic is defined for every value the
+# model lets reach it; `cs<n>_last` reads the history only below its
+# capacity. `cs<n>_close` frees both and answers how many values it was
+# given. The two handles the program opens are compared once, `==` comparing
+# addresses, before either is given back (the `==` after it is the question
+# spec § 13 and the runtime still disagree on, issue 2245).
+#
+# Names: the C struct `cs<n>_acc`, the record `Cs<n>H`, the functions
+# `cs<n>_open`, `cs<n>_open_into`, `cs<n>_add`, `cs<n>_total`, `cs<n>_last`
+# and `cs<n>_close`, `main`'s `k<n>a`, `k<n>b` and `k<n>c`, and the driver's
+# `k<n>x` and `k<n>y`.
+
+use gen_cstruct
+use gen_eval
+use gen_rng
+use gen_tree
+
+# One handle's life as the model runs it: its total, the last value its
+# history holds, and how many it was given.
+record Life
+    total: i64
+    last: i64
+    count: i64
+
+function lived(start: i64, adds: [i64], op: str) -> Life
+    total: i64 @= start
+    last: i64 @= 0
+
+    for v in adds
+        total @ gen_eval.arith(op, a: total, b: v).must()
+
+    if adds.len() > 0 && adds.len() <= 4
+        last @ adds[adds.len() - 1]
+    return Life(total: total, last: last, count: adds.len())
+
+function adds_of(@r: gen_rng.Rng) -> [i64]
+    out: [i64] @= []
+    count = gen_rng.below(@r, n: 7)
+
+    while out.len() < count
+        out @ out.push(gen_cstruct.value_of(@r, w: gen_cstruct.widths()[3]))
+
+    return out
+
+# Whether every step of `+` from `start` over `adds` stays in `i64`.
+function adds_fit(start: i64, adds: [i64]) -> bool
+    total: i64 @= start
+
+    for v in adds
+        step = gen_eval.arith("+", a: total, b: v)
+
+        if step.is_err()
+            return false
+        total @ step.must()
+
+    return true
+
+# The handle shape numbered `n`.
+function handled(@r: gen_rng.Rng, n: i64) -> gen_tree.Shape
+    id = n.to_str()
+    name = "cs" + id
+    rec = "Cs" + id + "H"
+    bind = "k" + id
+    i64w = gen_cstruct.widths()[3]
+    start = gen_cstruct.value_of(@r, w: i64w)
+    other = gen_cstruct.value_of(@r, w: i64w)
+    first = adds_of(@r)
+    second = adds_of(@r)
+    op: str @= "^"
+
+    if gen_rng.chance(@r, percent: 60) && adds_fit(start: start, adds: first) && adds_fit(start: other, adds: second)
+        op @ "+"
+    a = lived(start: start, adds: first, op: op)
+    b = lived(start: other, adds: second, op: op)
+    group = [
+        "    record " + rec + " tag " + name + "_acc"
+        "    function " + name + "_open(start: i64) -> " + rec + " acquires " + name + "_close"
+        "    function " + name + "_open_into(start: i64, @out: " + rec + " acquires " + name + "_close) -> i32"
+        "    function " + name + "_add(a: " + rec + ", v: i64)"
+        "    function " + name + "_total(a: " + rec + ") -> i64"
+        "    function " + name + "_last(a: " + rec + ") -> i64"
+        "    function " + name + "_close(a: " + rec + " consumes) -> i32"
+    ]
+    lines: [str] @= [bind + "a = " + name + "_open(start: " + start.to_str() + ")"]
+    driver: [str] @= [name + "_acc *" + bind + "a = " + name + "_open(" + gen_cstruct.c_literal(start, w: i64w) + ");"]
+
+    for v in first
+        lines @ lines.push(name + "_add(a: " + bind + "a, v: " + v.to_str() + ")")
+        driver @ driver.push(name + "_add(" + bind + "a, " + gen_cstruct.c_literal(v, w: i64w) + ");")
+
+    lines @ lines.push(gen_cstruct.printed([name + "_total(" + bind + "a)", name + "_last(" + bind + "a)"]))
+    driver @ driver.push(gen_cstruct.c_printed([name + "_total(" + bind + "a)", name + "_last(" + bind + "a)"]))
+    lines @ lines.push(bind + "b: " + rec + " @= nullptr")
+    lines @ lines.push(bind + "c = " + name + "_open_into(start: " + other.to_str() + ", out: @" + bind + "b)")
+    driver @ driver.push(name + "_acc *" + bind + "b = NULL;")
+    driver @ driver.push(
+        "int32_t " + bind + "c = " + name + "_open_into(" + gen_cstruct.c_literal(other, w: i64w) + ", &" + bind + "b);"
+    )
+
+    for v in second
+        lines @ lines.push(name + "_add(a: " + bind + "b, v: " + v.to_str() + ")")
+        driver @ driver.push(name + "_add(" + bind + "b, " + gen_cstruct.c_literal(v, w: i64w) + ");")
+
+    lines @ lines.push(
+        "print(" + bind + "c, \" \", " + name + "_total(" + bind + "b), \" \", " + bind + "b == " + bind + "a)"
+    )
+    driver @ driver.push(
+        "printf(\"%lld %lld %s\\n\", (long long)" + bind + "c, (long long)" + name + "_total(" + bind + "b), " + bind + "b == " + bind + "a ? \"true\" : \"false\");"
+    )
+    lines @ lines.push("print(" + name + "_close(" + bind + "a), \" \", " + name + "_close(" + bind + "b))")
+    driver @ driver.push("int32_t " + bind + "x = " + name + "_close(" + bind + "a);")
+    driver @ driver.push("int32_t " + bind + "y = " + name + "_close(" + bind + "b);")
+    driver @ driver.push(gen_cstruct.c_printed([bind + "x", bind + "y"]))
+    answers = [
+        gen_cstruct.said([a.total, a.last])
+        gen_cstruct.said([0, b.total]) + " false"
+        gen_cstruct.said([a.count, b.count])
+    ]
+    return gen_tree.Shape(
+        family: "handle",
+        group: group,
+        c: c_text(name: name, op: op),
+        includes: ["stdlib.h"],
+        lines: lines,
+        printed: answers,
+        driver: driver,
+        proved: answers,
+        hero: [],
+        uses: []
+    )
+
+function c_text(name: str, op: str) -> str
+    acc = name + "_acc"
+    head = "\ntypedef struct " + acc + " " + acc + ";\n\nstruct " + acc + " {\n    int64_t total;\n    int64_t count;\n    int64_t *hist;\n    int64_t cap;\n};\n"
+    open = "\nstatic inline " + acc + " *" + name + "_open(int64_t start) {\n    " + acc + " *a = (" + acc + " *)malloc(sizeof *a);\n    if (a == NULL) {\n        return NULL;\n    }\n    a->total = start;\n    a->count = 0;\n    a->cap = 4;\n    a->hist = (int64_t *)malloc((size_t)a->cap * sizeof(int64_t));\n    return a;\n}\n"
+    into = "\nstatic inline int32_t " + name + "_open_into(int64_t start, " + acc + " **out) {\n    *out = " + name + "_open(start);\n    return *out == NULL ? -1 : 0;\n}\n"
+    add = "\nstatic inline void " + name + "_add(" + acc + " *a, int64_t v) {\n    a->total = a->total " + op + " v;\n    if (a->hist != NULL && a->count < a->cap) {\n        a->hist[a->count] = v;\n    }\n    a->count++;\n}\n"
+    reads = "\nstatic inline int64_t " + name + "_total(const " + acc + " *a) {\n    return a->total;\n}\n\nstatic inline int64_t " + name + "_last(const " + acc + " *a) {\n    return a->count > 0 && a->count <= a->cap ? a->hist[a->count - 1] : 0;\n}\n"
+    close = "\nstatic inline int32_t " + name + "_close(" + acc + " *a) {\n    int32_t n = (int32_t)a->count;\n    free(a->hist);\n    free(a);\n    return n;\n}\n"
+    return head + open + into + add + reads + close
+
+test "a handle's life as the model runs it"
+    life = lived(start: 10, adds: [5, -3], op: "+")
+    assert life.total == 12 && life.last == -3 && life.count == 2
+    long = lived(start: 0, adds: [1, 2, 3, 4, 5], op: "^")
+    assert long.last == 0 && long.count == 5
+    assert !adds_fit(start: gen_eval.MAX, adds: [1])
+
+test "a handle shape prints what its driver proves"
+    r: gen_rng.Rng @= gen_rng.seeded(13)
+    s = handled(@r, n: 4)
+    assert s.family == "handle"
+    assert s.printed == s.proved
+    assert s.group.len() == 7
