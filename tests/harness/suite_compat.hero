@@ -3,14 +3,25 @@
 # meant as: *we will guarantee this from 1.0.0 on*).
 #
 # WHAT IS PROMISED, AND WHAT IS READ. A program of the corpus at a release
-# tag `vX.Y.Z`, `X` at least 1, still checks under every compiler of the
-# same `X` after it. The corpus is `CORPUS` as the tag holds it: every file
-# under it with a line opening `function main(`, the gallery's lessons
-# included, read by `git archive` and never from the working tree, which has
-# moved on. `git grep` counts the same files at the tag, and the two counts
-# must agree, so an unpacking that lost a program is red rather than a
-# shorter green. Each is asked `check` by the compiler under test: exit 1 is
-# a refusal, exit 2 the compiler's own failure, red in every mode.
+# tag `vX.Y.Z`, `X` at least 1, still compiles under every compiler of the
+# same `X` after it. The corpus is two things as the tag holds them (panel
+# 232's R10): every file under `CORPUS` with a line opening `function
+# main(`, the gallery's lessons included, and the reference program of each
+# task of `THESIS`, `tests/thesis/NN/reference.hero` alone, never a task's
+# cases, its mutants or the held-out archive. Both are read by `git archive`
+# and never from the working tree, which has moved on; `git grep` and `git
+# ls-tree` count them at the tag, and the counts must agree with what was
+# unpacked, so an unpacking that lost a program is red rather than a shorter
+# green. Each is asked `build --emit-c` by the compiler under test, clang's
+# rounds with no link (panel 232's R10, its critic's R6: `check` reads no C
+# header, and 371 of 371 `unsupported` cases passed it while `build` refused
+# them): exit 1 is a refusal, exit 2 the compiler's own failure, red in every
+# mode. A program whose header this machine lacks is skipped and named, by
+# `absence.hero`'s three witnesses as the `unsupported` form skips; from
+# `v1.0.0` a release whose skips reach a third of its programs is red, this
+# machine not testing the promise. A program holding holes, which `build`
+# never compiles, is told unfinished where `check` reports its holes alone
+# (`gallery.unfinished`): it never had a binary to keep.
 #
 # BEFORE `v1.0.0` IT JUDGES NOTHING, and tells what it would have judged.
 # `0.x` promises one sentence, *before `1.0.0` the language may change
@@ -49,12 +60,21 @@
 # (`.github/workflows/ci.yml`), which reads as `0.x` today and must fetch the
 # tags with their history before the version is `1.0.0`.
 
+use absence
+use gallery
 use report
 use shell
 use strings
 
 constant CORPUS: str
     "examples"
+
+# The thesis tasks, each a directory `NN` whose `REFERENCE` is a program.
+constant THESIS: str
+    "tests/thesis"
+
+constant REFERENCE: str
+    "reference.hero"
 
 constant MAIN: str
     "function main("
@@ -80,11 +100,27 @@ record Refusal
     codes: [str]
     healed: bool
 
+# One program skipped, this machine lacking what it binds, and the reason
+# `absence.hero` gave.
+record Skipped
+    path: str
+    why: str
+
+# What the compiler said of one program: the codes it was told, none where it
+# compiled; why it was skipped, "" where it was not; and whether it holds
+# holes `check` reports alone.
+record Answer
+    codes: [str]
+    lacking: str
+    unfinished: bool
+
 # What one release's corpus said.
 record Corpus
     tag: str
     programs: i64
     refused: [Refusal]
+    skipped: [Skipped]
+    unfinished: i64
 
 function known() -> [Known]
     return [
@@ -137,10 +173,17 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 
         if said.is_err()
             report.keep_failure(@r, label: "compat/" + tag, detail: "  " + failure_of(said))
-        else if said.must().refused.len() == 0
-            report.keep_pass(@r)
-        else
+        else if said.must().refused.len() > 0
             report.keep_failure(@r, label: "compat/" + tag, detail: broken(said.must(), own: own.must()))
+        else if too_skipped(said.must())
+            report.keep_failure(@r, label: "compat/" + tag, detail: unjudged(said.must()))
+        else
+            report.keep_pass(@r)
+
+        # Each skip is said by name, as the `unsupported` form says its own.
+        if !said.is_err()
+            for one in said.must().skipped
+                report.keep_skip(@r, label: "compat/" + tag + "/" + one.path, detail: "  " + one.why)
 
     return ok(r)
 
@@ -294,12 +337,23 @@ function newest_held(tags: [Version], own: Version) -> Version?
 function corpus_at(scratch: str, compiler: str, tag: str, heal: bool) -> Corpus?
     root = scratch + "/compat-" + tag
     archive = root + ".tar"
-    packed = shell.run(scratch: scratch, program: "git", words: ["git", "archive", "--format=tar", "--prefix=compat-" + tag + "/", "-o", archive, tag, CORPUS])?
+    references = references_at(scratch: scratch, tag: tag)?
+    paths: [str] @= [CORPUS]
+
+    for one in references
+        paths @ paths.push(one)
+
+    words: [str] @= ["git", "archive", "--format=tar", "--prefix=compat-" + tag + "/", "-o", archive, tag]
+
+    for one in paths
+        words @ words.push(one)
+
+    packed = shell.run(scratch: scratch, program: "git", words: words)?
 
     if packed.code != 0
         return fail(
             code: "no_corpus",
-            msg: "`git archive " + tag + " " + CORPUS + "` wrote no corpus" + shell.said_on_stderr(packed.err)
+            msg: "`git archive " + tag + " " + paths.join(" ") + "` wrote no corpus" + shell.said_on_stderr(packed.err)
         )
     unpacked = shell.run(scratch: scratch, program: "tar", words: ["tar", "-xf", archive, "-C", scratch])?
 
@@ -316,41 +370,98 @@ function corpus_at(scratch: str, compiler: str, tag: str, heal: bool) -> Corpus?
         if strings.ends_with(text: path, suffix: ".hero") && opens_main(read_file(path)?)
             programs @ programs.push(path)
 
-    if programs.len() != counted
+    for one in references
+        held = read_file(root + "/" + one)
+
+        if !held.is_err() && opens_main(held.must())
+            programs @ programs.push(root + "/" + one)
+
+    if programs.len() != counted + references.len()
         return fail(
             code: "lost",
-            msg: "git counts " + to_str(counted) + " programs of " + CORPUS + "/ at " + tag + ", and " + to_str(programs.len()) + " were unpacked"
+            msg: "git counts " + to_str(counted) + " programs of " + CORPUS + "/ and " + to_str(references.len()) + " references of " + THESIS + "/ at " + tag + ", and " + to_str(programs.len()) + " programs were unpacked"
         )
+    emitted = root + ".c"
     refused: [Refusal] @= []
+    skipped: [Skipped] @= []
+    unfinished: i64 @= 0
 
     for path in programs
-        codes = told(scratch: scratch, compiler: compiler, path: path)?
+        answer = told(scratch: scratch, compiler: compiler, path: path, emitted: emitted)?
+        shown = strings.without_prefix(text: path, prefix: root + "/")
 
-        if codes.len() > 0
-            refused @ refused.push(
-                Refusal(path: strings.without_prefix(text: path, prefix: root + "/"), codes: codes, healed: false)
-            )
+        if answer.lacking != ""
+            skipped @ skipped.push(Skipped(path: shown, why: answer.lacking))
+        else if answer.unfinished
+            unfinished @ unfinished + 1
+        else if answer.codes.len() > 0
+            refused @ refused.push(Refusal(path: shown, codes: answer.codes, healed: false))
 
     if heal && refused.len() > 0
-        applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", "--apply", "--in-place", root + "/" + CORPUS])?
+        written_in(scratch: scratch, compiler: compiler, root: root, tag: tag, refused: refused)?
+        index: i64 @= 0
+
+        while index < refused.len()
+            after = told(scratch: scratch, compiler: compiler, path: root + "/" + refused[index].path, emitted: emitted)?
+
+            if after.codes.len() == 0
+                refused[index].healed @ true
+            else
+                refused[index].codes @ joined(first: refused[index].codes, then: after.codes)
+            index @ index + 1
+
+    return ok(Corpus(tag: tag, programs: programs.len(), refused: refused, skipped: skipped, unfinished: unfinished))
+
+# Before `1.0.0`, the certain fixes written into the unpacked copy, never the
+# tree: over `CORPUS`, and over `THESIS` where a reference was refused.
+function written_in(scratch: str, compiler: str, root: str, tag: str, refused: [Refusal]) -> ()?
+    trees: [str] @= [CORPUS]
+
+    for one in refused
+        if strings.starts_with(text: one.path, prefix: THESIS + "/") && !among(codes: trees, code: THESIS)
+            trees @ trees.push(THESIS)
+
+    for tree in trees
+        applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", "--apply", "--in-place", root + "/" + tree])?
 
         if applied.code == 2
             return fail(
                 code: "compiler",
-                msg: compiler + " check --apply exited 2 over " + tag + "'s corpus, the compiler's own failure" + shell.said_on_stderr(applied.err)
+                msg: compiler + " check --apply exited 2 over " + tag + "'s " + tree + "/, the compiler's own failure" + shell.said_on_stderr(applied.err)
             )
-        index: i64 @= 0
 
-        while index < refused.len()
-            after = told(scratch: scratch, compiler: compiler, path: root + "/" + refused[index].path)?
+    return ok()
 
-            if after.len() == 0
-                refused[index].healed @ true
-            else
-                refused[index].codes @ joined(first: refused[index].codes, then: after)
-            index @ index + 1
+# The reference programs a tag holds, as `git ls-tree` lists them.
+function references_at(scratch: str, tag: str) -> [str]?
+    ran = shell.run(scratch: scratch, program: "git", words: ["git", "ls-tree", "-r", "--name-only", tag, "--", THESIS])?
 
-    return ok(Corpus(tag: tag, programs: programs.len(), refused: refused))
+    if ran.code != 0
+        return fail(
+            code: "no_references",
+            msg: "`git ls-tree " + tag + " -- " + THESIS + "` could not say which references that release held" + shell.said_on_stderr(ran.err)
+        )
+    return ok(references_of(ran.out))
+
+# The paths of a listing that are a task's reference, `THESIS/NN/REFERENCE`
+# with `NN` digits: never a case, a mutant, or a file of the held-out
+# archive, which only the thesis instrument opens.
+function references_of(listing: str) -> [str]
+    out: [str] @= []
+
+    for line in strings.lines(listing)
+        path = strings.trimmed(line)
+
+        # The task's name stands between the two, and a reference with no task
+        # above it, `THESIS/REFERENCE`, has none to slice.
+        start = THESIS.len() + 1
+        end = path.len() - REFERENCE.len() - 1
+        inside = strings.starts_with(text: path, prefix: THESIS + "/") && strings.ends_with(text: path, suffix: "/" + REFERENCE)
+
+        if inside && end > start && digits(path.slice(from: start, to: end))
+            out @ out.push(path)
+
+    return out
 
 # How many files of the corpus git holds at `tag` with a line opening
 # `function main(`, asked of git and not of the unpacking it judges.
@@ -373,25 +484,65 @@ function held_at(scratch: str, tag: str) -> i64?
 function opens_main(text: str) -> bool
     return strings.starts_with(text: text, prefix: MAIN) || strings.contains(text: text, needle: "\n" + MAIN)
 
-# What `check` said of one program: no code where it checks, else every code
-# it was told; any exit but 0 and 1 is the compiler's own failure.
-function told(scratch: str, compiler: str, path: str) -> [str]?
-    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", path])?
+# What `build --emit-c` said of one program, its C written to `emitted` and
+# never read: no code where it compiled, else every code it was told. A
+# refusal that names a library this machine lacks, which the program binds
+# and the machine, asked, does not have, is a skip (`absence.hero`); one that
+# names no code is asked of `check`, and a program whose holes alone it
+# reports is unfinished. Any exit but 0 and 1 is the compiler's own failure.
+function told(scratch: str, compiler: str, path: str, emitted: str) -> Answer?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", path, "--emit-c", "-o", emitted])?
     none: [str] = []
 
     if ran.code == 0
-        return ok(none)
+        return ok(Answer(codes: none, lacking: "", unfinished: false))
 
     if ran.code != 1
         return fail(
             code: "compiler",
-            msg: compiler + " check " + path + " exited " + to_str(ran.code) + ", the compiler's own failure" + shell.said_on_stderr(ran.err)
+            msg: compiler + " build " + path + " --emit-c exited " + to_str(ran.code) + ", the compiler's own failure" + shell.said_on_stderr(ran.err)
         )
+    lacks = absence.machine_lacks_among(
+        scratch: scratch,
+        path: path,
+        modules: modules_of(scratch: scratch, path: path),
+        expected: "",
+        said: ran.err
+    )
+
+    if !lacks.is_err()
+        return ok(Answer(codes: none, lacking: lacks.must(), unfinished: false))
     codes = codes_told(ran.err)
 
-    if codes.len() == 0
-        return ok(["refused"])
-    return ok(codes)
+    if codes.len() > 0
+        return ok(Answer(codes: codes, lacking: "", unfinished: false))
+    checked = gallery.checked(scratch: scratch, compiler: compiler, path: path)?
+
+    if gallery.unfinished(checked)
+        return ok(Answer(codes: none, lacking: "", unfinished: true))
+    return ok(Answer(codes: ["refused"], lacking: "", unfinished: false))
+
+# The modules a program reads, for the question of what it binds: every
+# `.hero` under its directory for a `main.hero`, whose modules sit beside and
+# below it (`examples/ledger` binds sqlite in `db/sqlite.hero`), and the one
+# file for a lesson or a reference, as the `corpus` suite asks the same.
+function modules_of(scratch: str, path: str) -> [str]
+    alone: [str] = [path]
+
+    if !strings.ends_with(text: path, suffix: "/main.hero")
+        return alone
+    nothing: [str] = []
+    walked = shell.list_tree(scratch: scratch, dir: absence.directory_of(path), skip: nothing)
+
+    if walked.is_err()
+        return alone
+    out: [str] @= [path]
+
+    for one in walked.must()
+        if strings.ends_with(text: one, suffix: ".hero") && one != path
+            out @ out.push(one)
+
+    return out
 
 # Every code an `error[<code>]` line names, each once, in the order told.
 function codes_told(err: str) -> [str]
@@ -442,11 +593,12 @@ function explained(codes: [str], changes: [Known]) -> bool
 ## What is said
 
 function reported(c: Corpus, own: Version) -> str
-    head = "  " + c.tag + ": " + to_str(c.programs) + " programs of " + CORPUS + "/, " + to_str(c.programs - c.refused.len()) + " checked by " + number_of(own) + "'s compiler"
+    compiled = c.programs - c.refused.len() - c.skipped.len() - c.unfinished
+    head = "  " + c.tag + ": " + to_str(c.programs) + " programs of " + CORPUS + "/ and " + THESIS + "/, " + to_str(compiled) + " compiled by " + number_of(own) + "'s compiler" + aside(c)
     after = "; the promise starts at v1.0.0, so this is told and not judged"
 
     if c.refused.len() == 0
-        return head + ": all ok" + after
+        return head + ": all ok" + after + skips(c)
     changes = known()
     healed: i64 @= 0
     unexplained: [str] @= []
@@ -461,8 +613,37 @@ function reported(c: Corpus, own: Version) -> str
     fixes = to_str(healed) + " of them healed by their certain fixes alone"
 
     if unexplained.len() == 0
-        return head + ", " + to_str(c.refused.len()) + " refused, each by a change 0.x made on purpose: all ok (" + by_change(c.refused, changes: changes) + "); " + fixes + after
-    return head + ", " + to_str(c.refused.len()) + " refused, " + to_str(unexplained.len()) + " of them by no change this suite knows, worth a look; " + fixes + after + ":\n    " + unexplained.join("\n    ")
+        return head + ", " + to_str(c.refused.len()) + " refused, each by a change 0.x made on purpose: all ok (" + by_change(c.refused, changes: changes) + "); " + fixes + after + skips(c)
+    return head + ", " + to_str(c.refused.len()) + " refused, " + to_str(unexplained.len()) + " of them by no change this suite knows, worth a look; " + fixes + after + ":\n    " + unexplained.join("\n    ") + skips(c)
+
+# What was neither compiled nor refused: the programs holding holes, and those
+# skipped for a library this machine lacks.
+function aside(c: Corpus) -> str
+    out: str @= ""
+
+    if c.unfinished > 0
+        out @ out + ", " + to_str(c.unfinished) + " unfinished, their holes alone reported by `check`"
+
+    if c.skipped.len() > 0
+        out @ out + ", " + to_str(c.skipped.len()) + " skipped, this machine lacking what they bind"
+    return out
+
+# Each program skipped, by name and why.
+function skips(c: Corpus) -> str
+    out: str @= ""
+
+    for one in c.skipped
+        out @ out + "\n    skipped " + one.path + ": " + one.why
+
+    return out
+
+# From `1.0.0`, a release whose skips reach a third of its programs is not
+# judged by this machine: the `unsupported` form's ratio, for the same reason.
+function too_skipped(c: Corpus) -> bool
+    return c.skipped.len() > 0 && c.skipped.len() * 3 >= c.programs
+
+function unjudged(c: Corpus) -> str
+    return "  " + c.tag + ": " + to_str(c.skipped.len()) + " of its " + to_str(c.programs) + " programs were skipped for a library this machine lacks, so this machine is not testing the promise: judge it where they build" + skips(c)
 
 # How many refusals each known change accounts for, in the list's order.
 function by_change(refused: [Refusal], changes: [Known]) -> str
@@ -556,12 +737,15 @@ test "a refusal is a known change only where every code it is told is one"
 
 test "a release whose refusals are all known reads all ok, and one that is not is named"
     v = numbered("0.5.0")
-    clean = Corpus(tag: "v0.4.0", programs: 2, refused: [])
-    assert strings.contains(text: reported(clean, own: v), needle: "2 checked by 0.5.0's compiler: all ok")
+    none: [Skipped] = []
+    clean = Corpus(tag: "v0.4.0", programs: 2, refused: [], skipped: none, unfinished: 0)
+    assert strings.contains(text: reported(clean, own: v), needle: "2 compiled by 0.5.0's compiler: all ok")
     cells = Corpus(
         tag: "v0.2.0",
         programs: 3,
-        refused: [Refusal(path: "examples/a/main.hero", codes: ["old_cell_symbol"], healed: true), Refusal(path: "examples/b/main.hero", codes: ["old_cell_symbol", "needs_label"], healed: false)]
+        refused: [Refusal(path: "examples/a/main.hero", codes: ["old_cell_symbol"], healed: true), Refusal(path: "examples/b/main.hero", codes: ["old_cell_symbol", "needs_label"], healed: false)],
+        skipped: none,
+        unfinished: 0
     )
     said = reported(cells, own: v)
     assert strings.contains(
@@ -573,7 +757,9 @@ test "a release whose refusals are all known reads all ok, and one that is not i
     stray = Corpus(
         tag: "v0.2.0",
         programs: 3,
-        refused: [Refusal(path: "examples/c/main.hero", codes: ["type_mismatch"], healed: false)]
+        refused: [Refusal(path: "examples/c/main.hero", codes: ["type_mismatch"], healed: false)],
+        skipped: none,
+        unfinished: 0
     )
     assert strings.contains(
         text: reported(stray, own: v),
@@ -594,5 +780,42 @@ test "the corpus, VERSION and every known change's code are the tree's"
     assert !version_of(rest.slice(from: 0, to: close)).is_err()
     assert opens_main(read_file(CORPUS + "/interpreter/main.hero").must())
 
+    # The thesis's ten tasks, each a reference program where the corpus
+    # reads it (panel 232's R10).
+    for task in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+        assert opens_main(read_file(THESIS + "/" + task + "/" + REFERENCE).must())
+
     for change in known()
         assert strings.contains(text: read_file(change.written).must(), needle: "code: \"" + change.code + "\"")
+
+test "a task's reference is the program read, never its cases, mutants or the held-out archive"
+    listing = "tests/thesis/01/reference.hero\ntests/thesis/01/task.md\ntests/thesis/01/cases/a.hero\ntests/thesis/01/mutants/reference.hero\ntests/thesis/held-out/reference.hero\ntests/thesis/10/reference.hero\ntests/thesis/reference.hero\n"
+    assert references_of(listing) == ["tests/thesis/01/reference.hero", "tests/thesis/10/reference.hero"]
+    assert references_of("").len() == 0
+
+test "a program skipped for a library this machine lacks is named, and one holding holes is told apart"
+    v = numbered("0.5.0")
+    none: [Refusal] = []
+    lacking = Skipped(path: "examples/curl/main.hero", why: "this machine lacks what the case binds: curl/curl.h")
+    line = reported(Corpus(tag: "v0.5.0", programs: 4, refused: none, skipped: [lacking], unfinished: 1), own: v)
+    assert strings.contains(
+        text: line,
+        needle: "4 programs of examples/ and tests/thesis/, 2 compiled by 0.5.0's compiler"
+    )
+    assert strings.contains(text: line, needle: ", 1 unfinished, their holes alone reported by `check`")
+    assert strings.contains(text: line, needle: ", 1 skipped, this machine lacking what they bind: all ok")
+    assert strings.contains(
+        text: line,
+        needle: "\n    skipped examples/curl/main.hero: this machine lacks what the case binds: curl/curl.h"
+    )
+
+test "from 1.0.0 a release whose skips reach a third of its programs is not judged here"
+    none: [Refusal] = []
+    one = Skipped(path: "examples/a/main.hero", why: "lacks a.h")
+    assert !too_skipped(Corpus(tag: "v1.0.0", programs: 4, refused: none, skipped: [one], unfinished: 0))
+    assert too_skipped(Corpus(tag: "v1.0.0", programs: 3, refused: none, skipped: [one], unfinished: 0))
+    nothing: [Skipped] = []
+    assert !too_skipped(Corpus(tag: "v1.0.0", programs: 0, refused: none, skipped: nothing, unfinished: 0))
+    said = unjudged(Corpus(tag: "v1.0.0", programs: 3, refused: none, skipped: [one], unfinished: 0))
+    assert strings.contains(text: said, needle: "1 of its 3 programs were skipped")
+    assert strings.contains(text: said, needle: "\n    skipped examples/a/main.hero: lacks a.h")
