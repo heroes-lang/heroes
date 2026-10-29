@@ -55,6 +55,8 @@
 #   lines         every `#line` lands on a line the author wrote
 #   lldb          lldb/: a program built at -O0, stopped on a `.hero` line,
 #                 stepped and asked its locals; SKIP where lldb cannot run
+#   compat        the promise `1.0.0` rests on: a release's examples/ checked
+#                 by today's compiler, red from v1.0.0 on, told before it
 #   corpus        examples/ — real programs, tests and output, three ways
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
@@ -99,6 +101,7 @@ use shell
 use suite_annotations
 use suite_cache
 use suite_canonical
+use suite_compat
 use suite_corpus
 use suite_descriptors
 use suite_wholes
@@ -421,6 +424,16 @@ function main()
         print(
             "  " + shown(name: "lldb", pick: pick) + ": " + report.counted(got.must())
         )
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "compat"
+        got = suite_compat.run_all(scratch: scratch, compiler: compiler)
+
+        if got.is_err()
+            print("harness: the compatibility suite could not run" + why(got))
+            exit(2)
+        print("  compat: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

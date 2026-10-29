@@ -1,0 +1,598 @@
+# The promise `1.0.0` rests on, and what turns a broken one red
+# (M-compatibility-promise, task 1066; the author's ruling of 2026-10-29,
+# meant as: *we will guarantee this from 1.0.0 on*).
+#
+# WHAT IS PROMISED, AND WHAT IS READ. A program of the corpus at a release
+# tag `vX.Y.Z`, `X` at least 1, still checks under every compiler of the
+# same `X` after it. The corpus is `CORPUS` as the tag holds it: every file
+# under it with a line opening `function main(`, the gallery's lessons
+# included, read by `git archive` and never from the working tree, which has
+# moved on. `git grep` counts the same files at the tag, and the two counts
+# must agree, so an unpacking that lost a program is red rather than a
+# shorter green. Each is asked `check` by the compiler under test: exit 1 is
+# a refusal, exit 2 the compiler's own failure, red in every mode.
+#
+# BEFORE `v1.0.0` IT JUDGES NOTHING, and tells what it would have judged.
+# `0.x` promises one sentence, *before `1.0.0` the language may change
+# between minor versions* (`README.md`), so the newest release no newer than
+# the compiler is checked and told on a `SKIP` line: how many of its
+# programs the compiler refuses, how many of those their `certain` fixes
+# heal (`check --apply --in-place` over the unpacked copy, never the tree),
+# and whether every refusal is a change `0.x` made on purpose, `KNOWN`
+# CHANGES below. Measured the day this was written (M-compatibility-promise's
+# page): `v0.5.0`'s 69 all check under task 2250's compiler, and `v0.2.0`'s
+# 60 of 67 are refused, 32 of those healed by their certain fixes alone.
+#
+# KNOWN CHANGES (the author's answer of 2026-10-29, meant as: *report it,
+# saying that the error is a known case, like the one of `@=`, and so all is
+# well*). `known` lists each change `0.x` made on purpose that refuses an
+# older release's program, by the code it is told and the commit that made
+# it. A refusal every code of which is there, those its certain fixes
+# uncover included, is a known change; a release whose refusals are all
+# known reads "all ok", and any other is named, worth a look, and still not
+# red. A code that names a whole class (`type_mismatch`) is never listed: it
+# would hide what it should show. From `v1.0.0` the list excuses nothing.
+# It is a table of this suite and no part of the language, which takes no
+# form to keep an older program compiling (the author's rule of the same
+# day, CLAUDE.md § 2).
+#
+# WHICH TAGS JUDGE: those of the compiler's own `X`, `X` at least 1, no newer
+# than the compiler. A `2.0.0` may refuse a `1.x` program, which is what a
+# major version says; and a compiler older than a tag is not asked to read a
+# newer program.
+#
+# THE LOUD DIRECTION. A compiler that says `X.Y.Z`, `X` at least 1, in a
+# checkout without the tag `vX.Y.Z` is red: `VERSION` moves only in the
+# commit that carries its tag (`.claude/rules/records.md` § Release tags), so
+# a checkout without it was made without its tags, and this suite would
+# judge no release and pass. The CI's matrix checks out one commit and no tag
+# (`.github/workflows/ci.yml`), which reads as `0.x` today and must fetch the
+# tags with their history before the version is `1.0.0`.
+
+use report
+use shell
+use strings
+
+constant CORPUS: str
+    "examples"
+
+constant MAIN: str
+    "function main("
+
+# A release's number, `X.Y.Z` (`.claude/rules/records.md` § Release tags).
+record Version
+    major: i64
+    minor: i64
+    patch: i64
+
+# A change `0.x` made on purpose, by the code a program it refuses is told,
+# the module of `selfhost/` that writes that code, and what made it.
+record Known
+    code: str
+    written: str
+    change: str
+
+# One program a release held that the compiler refused: every code it was
+# told, those its certain fixes uncovered included, and whether those fixes
+# alone made it check.
+record Refusal
+    path: str
+    codes: [str]
+    healed: bool
+
+# What one release's corpus said.
+record Corpus
+    tag: str
+    programs: i64
+    refused: [Refusal]
+
+function known() -> [Known]
+    return [
+        Known(code: "old_cell_symbol", written: "selfhost/cell_errors.hero", change: "a cell declared by its own symbol, `@=` (panel 209, M-inferred-cell, fcec76d8d)")
+        Known(code: "needs_label", written: "selfhost/label_errors.hero", change: "the same-typed-argument rule reaching `fail` and the other built-in it had missed (9ec1392bb)")
+        Known(code: "lend_kept", written: "selfhost/lend_errors.hero", change: "a C parameter without `lent` keeps what it is handed (M-declared-extents step 24, e71d57ff9)")
+        Known(code: "callback_name", written: "selfhost/value_errors.hero", change: "a function standing for a type names a pair of one type as the type does (debd83a12)")
+        Known(code: "discarded_failure", written: "selfhost/discard_errors.hero", change: "`_ =` no longer drops a failure (M-discard-refusal step 3, 560f4b633)")
+    ]
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @= report.empty()
+    own = compiler_version(scratch: scratch, compiler: compiler)
+
+    if own.is_err()
+        report.keep_failure(@r, label: "compat/version", detail: "  " + failure_of(own))
+        return ok(r)
+    tags = release_tags(scratch)?
+    missing = unheld(tags: tags, own: own.must())
+
+    if missing != ""
+        report.keep_failure(@r, label: "compat/tags", detail: missing)
+        return ok(r)
+    judging = judged(tags: tags, own: own.must())
+
+    if judging.len() == 0
+        newest = newest_held(tags: tags, own: own.must())
+
+        if newest.is_err()
+            report.keep_skip(
+                @r,
+                label: "compat",
+                detail: "  no release tag in this checkout, and the promise starts at v1.0.0: nothing to tell"
+            )
+            return ok(r)
+        tag = tag_of(newest.must())
+        said = corpus_at(scratch: scratch, compiler: compiler, tag: tag, heal: true)
+
+        if said.is_err()
+            report.keep_failure(@r, label: "compat/" + tag, detail: "  " + failure_of(said))
+        else
+            # The corpus unpacked whole, as git counts it: asked and held.
+            report.keep_pass(@r)
+            report.keep_skip(@r, label: "compat/" + tag, detail: reported(said.must(), own: own.must()))
+        return ok(r)
+
+    for release in judging
+        tag = tag_of(release)
+        said = corpus_at(scratch: scratch, compiler: compiler, tag: tag, heal: false)
+
+        if said.is_err()
+            report.keep_failure(@r, label: "compat/" + tag, detail: "  " + failure_of(said))
+        else if said.must().refused.len() == 0
+            report.keep_pass(@r)
+        else
+            report.keep_failure(@r, label: "compat/" + tag, detail: broken(said.must(), own: own.must()))
+
+    return ok(r)
+
+## The numbers
+
+# The compiler's own number, the first line of its `--version`: `heroes X.Y.Z`.
+function compiler_version(scratch: str, compiler: str) -> Version?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "--version"])?
+
+    if ran.code != 0
+        return fail(
+            code: "no_version",
+            msg: compiler + " --version exited " + to_str(ran.code) + shell.said_on_stderr(ran.err)
+        )
+    first = strings.lines(ran.out)
+
+    if first.len() == 0 || !strings.starts_with(text: first[0], prefix: "heroes ")
+        return fail(code: "no_version", msg: compiler + " --version did not open with `heroes X.Y.Z`")
+    return version_of(strings.without_prefix(text: first[0], prefix: "heroes "))
+
+# Every tag `vX.Y.Z` this checkout holds, oldest first; a `v` tag of another
+# shape is no release's and is left.
+function release_tags(scratch: str) -> [Version]?
+    ran = shell.run(scratch: scratch, program: "git", words: ["git", "tag", "--list", "v*"])?
+
+    if ran.code != 0
+        return fail(
+            code: "no_tags",
+            msg: "`git tag --list` could not say which releases this checkout holds" + shell.said_on_stderr(ran.err)
+        )
+    held: [Version] @= []
+
+    for line in strings.lines(ran.out)
+        name = strings.trimmed(line)
+
+        if strings.starts_with(text: name, prefix: "v")
+            release = version_of(strings.without_prefix(text: name, prefix: "v"))
+
+            if !release.is_err()
+                held @ held.push(release.must())
+
+    return ok(sorted_versions(held))
+
+# `X.Y.Z`, each part digits alone, or the error naming what was read.
+function version_of(text: str) -> Version?
+    parts = strings.split_text(text: text, separator: ".")
+    numbers: [i64] @= []
+
+    for part in parts
+        if !digits(part)
+            return fail(code: "not_a_version", msg: "`" + text + "` is not X.Y.Z")
+        numbers @ numbers.push(strings.to_number(part)?)
+
+    if numbers.len() != 3
+        return fail(code: "not_a_version", msg: "`" + text + "` is not X.Y.Z")
+    return ok(Version(major: numbers[0], minor: numbers[1], patch: numbers[2]))
+
+function digits(text: str) -> bool
+    if text.len() == 0
+        return false
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] < 48 || text[at] > 57
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether `a` is an earlier release than `b`.
+function before(a: Version, b: Version) -> bool
+    if a.major != b.major
+        return a.major < b.major
+
+    if a.minor != b.minor
+        return a.minor < b.minor
+    return a.patch < b.patch
+
+function sorted_versions(given: [Version]) -> [Version]
+    out: [Version] @= []
+
+    for release in given
+        at: i64 @= 0
+
+        while at < out.len() && !before(a: release, b: out[at])
+            at @ at + 1
+
+        out @ inserted(out, at: at, release: release)
+
+    return out
+
+function inserted(xs: [Version], at: i64, release: Version) -> [Version]
+    out: [Version] @= []
+    index: i64 @= 0
+
+    for x in xs
+        if index == at
+            out @ out.push(release)
+        out @ out.push(x)
+        index @ index + 1
+
+    if at >= xs.len()
+        out @ out.push(release)
+    return out
+
+function number_of(v: Version) -> str
+    return to_str(v.major) + "." + to_str(v.minor) + "." + to_str(v.patch)
+
+function tag_of(v: Version) -> str
+    return "v" + number_of(v)
+
+## Which releases judge
+
+# The releases of the compiler's own major, from 1, no newer than it.
+function judged(tags: [Version], own: Version) -> [Version]
+    out: [Version] @= []
+
+    if own.major < 1
+        return out
+
+    for release in tags
+        if release.major == own.major && !before(a: own, b: release)
+            out @ out.push(release)
+
+    return out
+
+# A compiler from `1.0.0` whose own tag the checkout lacks: what to do, else
+# "" (THE LOUD DIRECTION, above).
+function unheld(tags: [Version], own: Version) -> str
+    if own.major < 1
+        return ""
+
+    for release in tags
+        if release == own
+            return ""
+
+    return "  the compiler says " + number_of(own) + " and this checkout holds no tag " + tag_of(own) + ": `VERSION` moves only in the commit that carries its tag, so this checkout was made without its tags, and this suite would judge no release and pass. Fetch them with the history they need, `git fetch --tags --unshallow`, or check out with `fetch-depth: 0` and `fetch-tags: true`"
+
+# Before `1.0.0`: the newest release no newer than the compiler, the one told.
+function newest_held(tags: [Version], own: Version) -> Version?
+    found: Version? @= fail(code: "none", msg: "no release tag in this checkout")
+
+    for release in tags
+        if !before(a: own, b: release)
+            found @ ok(release)
+
+    return found
+
+## One release's corpus
+
+function corpus_at(scratch: str, compiler: str, tag: str, heal: bool) -> Corpus?
+    root = scratch + "/compat-" + tag
+    archive = root + ".tar"
+    packed = shell.run(scratch: scratch, program: "git", words: ["git", "archive", "--format=tar", "--prefix=compat-" + tag + "/", "-o", archive, tag, CORPUS])?
+
+    if packed.code != 0
+        return fail(
+            code: "no_corpus",
+            msg: "`git archive " + tag + " " + CORPUS + "` wrote no corpus" + shell.said_on_stderr(packed.err)
+        )
+    unpacked = shell.run(scratch: scratch, program: "tar", words: ["tar", "-xf", archive, "-C", scratch])?
+
+    if unpacked.code != 0
+        return fail(
+            code: "no_corpus",
+            msg: "`tar -xf " + archive + "` unpacked nothing" + shell.said_on_stderr(unpacked.err)
+        )
+    counted = held_at(scratch: scratch, tag: tag)?
+    nothing: [str] = []
+    programs: [str] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: root + "/" + CORPUS, skip: nothing)?
+        if strings.ends_with(text: path, suffix: ".hero") && opens_main(read_file(path)?)
+            programs @ programs.push(path)
+
+    if programs.len() != counted
+        return fail(
+            code: "lost",
+            msg: "git counts " + to_str(counted) + " programs of " + CORPUS + "/ at " + tag + ", and " + to_str(programs.len()) + " were unpacked"
+        )
+    refused: [Refusal] @= []
+
+    for path in programs
+        codes = told(scratch: scratch, compiler: compiler, path: path)?
+
+        if codes.len() > 0
+            refused @ refused.push(
+                Refusal(path: strings.without_prefix(text: path, prefix: root + "/"), codes: codes, healed: false)
+            )
+
+    if heal && refused.len() > 0
+        applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", "--apply", "--in-place", root + "/" + CORPUS])?
+
+        if applied.code == 2
+            return fail(
+                code: "compiler",
+                msg: compiler + " check --apply exited 2 over " + tag + "'s corpus, the compiler's own failure" + shell.said_on_stderr(applied.err)
+            )
+        index: i64 @= 0
+
+        while index < refused.len()
+            after = told(scratch: scratch, compiler: compiler, path: root + "/" + refused[index].path)?
+
+            if after.len() == 0
+                refused[index].healed @ true
+            else
+                refused[index].codes @ joined(first: refused[index].codes, then: after)
+            index @ index + 1
+
+    return ok(Corpus(tag: tag, programs: programs.len(), refused: refused))
+
+# How many files of the corpus git holds at `tag` with a line opening
+# `function main(`, asked of git and not of the unpacking it judges.
+function held_at(scratch: str, tag: str) -> i64?
+    ran = shell.run(scratch: scratch, program: "git", words: ["git", "grep", "-l", "-e", "^" + MAIN, tag, "--", CORPUS])?
+
+    if ran.code > 1
+        return fail(
+            code: "no_count",
+            msg: "`git grep` could not count " + tag + "'s programs" + shell.said_on_stderr(ran.err)
+        )
+    count: i64 @= 0
+
+    for line in strings.lines(ran.out)
+        if strings.trimmed(line) != ""
+            count @ count + 1
+
+    return ok(count)
+
+function opens_main(text: str) -> bool
+    return strings.starts_with(text: text, prefix: MAIN) || strings.contains(text: text, needle: "\n" + MAIN)
+
+# What `check` said of one program: no code where it checks, else every code
+# it was told; any exit but 0 and 1 is the compiler's own failure.
+function told(scratch: str, compiler: str, path: str) -> [str]?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", path])?
+    none: [str] = []
+
+    if ran.code == 0
+        return ok(none)
+
+    if ran.code != 1
+        return fail(
+            code: "compiler",
+            msg: compiler + " check " + path + " exited " + to_str(ran.code) + ", the compiler's own failure" + shell.said_on_stderr(ran.err)
+        )
+    codes = codes_told(ran.err)
+
+    if codes.len() == 0
+        return ok(["refused"])
+    return ok(codes)
+
+# Every code an `error[<code>]` line names, each once, in the order told.
+function codes_told(err: str) -> [str]
+    out: [str] @= []
+
+    for line in strings.lines(err)
+        if strings.starts_with(text: line, prefix: "error[")
+            close = strings.index_of(text: line, needle: "]")
+
+            if !close.is_err()
+                out @ joined(first: out, then: [line.slice(from: 6, to: close.must())])
+
+    return out
+
+# `first` and then each of `then` it does not already hold.
+function joined(first: [str], then: [str]) -> [str]
+    out: [str] @= first
+
+    for code in then
+        if !among(codes: out, code: code)
+            out @ out.push(code)
+
+    return out
+
+function among(codes: [str], code: str) -> bool
+    for one in codes
+        if one == code
+            return true
+
+    return false
+
+## What a known change explains
+
+# Whether every code of a refusal names a change `0.x` made on purpose.
+function explained(codes: [str], changes: [Known]) -> bool
+    for code in codes
+        found: bool @= false
+
+        for change in changes
+            if change.code == code
+                found @ true
+
+        if !found
+            return false
+
+    return true
+
+## What is said
+
+function reported(c: Corpus, own: Version) -> str
+    head = "  " + c.tag + ": " + to_str(c.programs) + " programs of " + CORPUS + "/, " + to_str(c.programs - c.refused.len()) + " checked by " + number_of(own) + "'s compiler"
+    after = "; the promise starts at v1.0.0, so this is told and not judged"
+
+    if c.refused.len() == 0
+        return head + ": all ok" + after
+    changes = known()
+    healed: i64 @= 0
+    unexplained: [str] @= []
+
+    for one in c.refused
+        if one.healed
+            healed @ healed + 1
+
+        if !explained(codes: one.codes, changes: changes)
+            unexplained @ unexplained.push(one.path + " " + one.codes.join(" "))
+
+    fixes = to_str(healed) + " of them healed by their certain fixes alone"
+
+    if unexplained.len() == 0
+        return head + ", " + to_str(c.refused.len()) + " refused, each by a change 0.x made on purpose: all ok (" + by_change(c.refused, changes: changes) + "); " + fixes + after
+    return head + ", " + to_str(c.refused.len()) + " refused, " + to_str(unexplained.len()) + " of them by no change this suite knows, worth a look; " + fixes + after + ":\n    " + unexplained.join("\n    ")
+
+# How many refusals each known change accounts for, in the list's order.
+function by_change(refused: [Refusal], changes: [Known]) -> str
+    parts: [str] @= []
+
+    for change in changes
+        count: i64 @= 0
+
+        for one in refused
+            if among(codes: one.codes, code: change.code)
+                count @ count + 1
+
+        if count > 0
+            parts @ parts.push(to_str(count) + " " + change.code + ", " + change.change)
+
+    return parts.join("; ")
+
+function broken(c: Corpus, own: Version) -> str
+    shown: [str] @= []
+
+    for one in c.refused
+        shown @ shown.push(one.path + " " + one.codes.join(" "))
+
+    return "  " + c.tag + ": " + number_of(own) + "'s compiler refuses " + to_str(c.refused.len()) + " of the " + to_str(c.programs) + " programs of " + CORPUS + "/ that release held, each one it promised would compile (M-compatibility-promise): the change that refused it waits for " + to_str(own.major + 1) + ".0.0, or is undone\n    " + shown.join("\n    ")
+
+function failure_of<T>(result: T?) -> str
+    return match result
+        .ok _  => ""
+        .err e => e.msg
+
+## Tests
+
+function numbered(text: str) -> Version
+    return version_of(text).must()
+
+test "a release's number is X.Y.Z, each part digits alone"
+    v = numbered("1.12.0")
+    assert v.major == 1 && v.minor == 12 && v.patch == 0
+    assert version_of("1.2").is_err()
+    assert version_of("1.2.3.4").is_err()
+    assert version_of("1.x.3").is_err()
+    assert version_of("").is_err()
+    assert version_of("-1.2.3").is_err()
+
+test "the releases sort by number, not by text"
+    tags = sorted_versions([numbered("1.10.0"), numbered("1.2.0"), numbered("0.5.0"), numbered("1.9.1")])
+    assert tags == [numbered("0.5.0"), numbered("1.2.0"), numbered("1.9.1"), numbered("1.10.0")]
+
+test "the tags that judge are the compiler's own major, from 1, no newer than the compiler"
+    tags = sorted_versions(
+        [numbered("2.0.0"), numbered("1.1.0"), numbered("0.5.0"), numbered("1.0.0"), numbered("1.2.0")]
+    )
+    assert judged(tags: tags, own: numbered("1.1.0")) == [numbered("1.0.0"), numbered("1.1.0")]
+    assert judged(tags: tags, own: numbered("2.0.0")) == [numbered("2.0.0")]
+
+    # Before 1.0.0 nothing is judged, whatever the releases (the author's
+    # ruling of 2026-10-29): 0.x promises no program of an older 0.x.
+    assert judged(tags: tags, own: numbered("0.5.0")).len() == 0
+    assert judged(tags: tags, own: numbered("0.99.0")).len() == 0
+
+test "before 1.0.0 the newest release no newer than the compiler is the one told"
+    tags = sorted_versions([numbered("0.1.0"), numbered("0.6.0"), numbered("0.5.0")])
+    assert newest_held(tags: tags, own: numbered("0.5.0")).must() == numbered("0.5.0")
+    nothing: [Version] = []
+    assert newest_held(tags: nothing, own: numbered("0.5.0")).is_err()
+
+test "a compiler from 1.0.0 whose own tag the checkout lacks is told, and 0.x is not"
+    nothing: [Version] = []
+    assert unheld(tags: nothing, own: numbered("0.5.0")) == ""
+    assert strings.starts_with(
+        text: unheld(tags: nothing, own: numbered("1.0.0")),
+        prefix: "  the compiler says 1.0.0 and this checkout holds no tag v1.0.0"
+    )
+    assert unheld(tags: [numbered("1.0.0")], own: numbered("1.0.0")) == ""
+
+test "a program is a file with a line opening `function main(`, and every code told is read once"
+    assert opens_main("function main()\n    print(1)\n")
+    assert opens_main("use x\n\nfunction main()\n")
+    assert !opens_main("function helper()\n    # function main( in a comment\n")
+    assert !opens_main("function mainly()\n")
+    told_twice = "error[old_cell_symbol]: `@` after a type\n  at x.hero:1:2\nerror[lend_kept]: kept\nerror[old_cell_symbol]: again\n"
+    assert codes_told(told_twice) == ["old_cell_symbol", "lend_kept"]
+    assert codes_told("nothing here\n").len() == 0
+
+test "a refusal is a known change only where every code it is told is one"
+    changes = known()
+    assert explained(codes: ["old_cell_symbol"], changes: changes)
+    assert explained(codes: ["old_cell_symbol", "needs_label", "lend_kept", "callback_name"], changes: changes)
+    assert !explained(codes: ["old_cell_symbol", "type_mismatch"], changes: changes)
+    assert !explained(codes: ["refused"], changes: changes)
+
+test "a release whose refusals are all known reads all ok, and one that is not is named"
+    v = numbered("0.5.0")
+    clean = Corpus(tag: "v0.4.0", programs: 2, refused: [])
+    assert strings.contains(text: reported(clean, own: v), needle: "2 checked by 0.5.0's compiler: all ok")
+    cells = Corpus(
+        tag: "v0.2.0",
+        programs: 3,
+        refused: [Refusal(path: "examples/a/main.hero", codes: ["old_cell_symbol"], healed: true), Refusal(path: "examples/b/main.hero", codes: ["old_cell_symbol", "needs_label"], healed: false)]
+    )
+    said = reported(cells, own: v)
+    assert strings.contains(
+        text: said,
+        needle: "2 refused, each by a change 0.x made on purpose: all ok (2 old_cell_symbol, "
+    )
+    assert strings.contains(text: said, needle: "; 1 needs_label, ")
+    assert strings.contains(text: said, needle: "1 of them healed by their certain fixes alone")
+    stray = Corpus(
+        tag: "v0.2.0",
+        programs: 3,
+        refused: [Refusal(path: "examples/c/main.hero", codes: ["type_mismatch"], healed: false)]
+    )
+    assert strings.contains(
+        text: reported(stray, own: v),
+        needle: "1 of them by no change this suite knows, worth a look"
+    )
+    assert strings.contains(text: reported(stray, own: v), needle: "\n    examples/c/main.hero type_mismatch")
+
+# The premises the suite rests on, where they can die: the corpus is a
+# directory of the tree's own, the compiler's number is X.Y.Z as the release
+# rule writes it in `selfhost/main.hero`, and each known change's code is
+# still written by the module it names, so a code renamed or retired turns
+# this red rather than leaving the list to explain nothing.
+test "the corpus, VERSION and every known change's code are the tree's"
+    main = read_file("selfhost/main.hero").must()
+    at = strings.index_of(text: main, needle: "constant VERSION: str\n    \"").must()
+    rest = main.slice(from: at + 27, to: main.len())
+    close = strings.index_of(text: rest, needle: "\"").must()
+    assert !version_of(rest.slice(from: 0, to: close)).is_err()
+    assert opens_main(read_file(CORPUS + "/interpreter/main.hero").must())
+
+    for change in known()
+        assert strings.contains(text: read_file(change.written).must(), needle: "code: \"" + change.code + "\"")

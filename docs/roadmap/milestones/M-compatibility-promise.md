@@ -123,3 +123,47 @@ of evaluation, 2245's three sentences, the paragraph's words and its home, the
 sentence § 10 forces and the deployment model; then its landing. **2237 waits on a
 release**, the author's act, and stays on this row until one is cut, or is
 re-homed at the close.
+
+**What the steps found for the sitting on the specification**, 2026-10-29,
+each a question rather than a premise, beside the order of evaluation and
+2245's three sentences above:
+
+- **§ 11 says a code outside 0 to 255 aborts, and a literal one is refused**
+  (step 1, task 2250, panel 230's fallback as ratified): the compiler is
+  stricter than the sentence, in the safe direction, and the sentence the
+  sitting priced at +15 does not say so. Whether it should, and at what
+  price, is the sitting's.
+- **Whether `1.0.0` promises a diagnostic's code** (step 2, measurement 060):
+  its words are no program's meaning, and most of what moves is words; a
+  code is what `heroes check --json` hands to an editor or a harness, a
+  program of its own whose input a renamed code breaks. If it does, the 170
+  codes that moved in none of eight weeks are where the list starts.
+- **The suite's corpus** (step 3): `examples/` at each release tag, every
+  file with a line opening `function main(`, 69 at `v0.5.0`. The golden
+  `run/` programs are valid programs too, and are not read, since before
+  `1.0.0` a case is changed with the language it tests; whether they join
+  the corpus from `v1.0.0` on is the sitting's.
+- **The CI must fetch the tags with their history before the version is
+  `1.0.0`** (step 3): the matrix checks out one commit and no tag, which the
+  suite reads as `0.x` and tells; from `1.0.0` it is red there until the
+  workflow fetches them, on purpose, since a suite that found no release
+  would judge none and pass. A change to `.github/workflows/ci.yml`, a push,
+  and so the author's.
+
+**What the suite tells before `v1.0.0`, by the author's answer of the same
+day**, meant as: *report it, saying that the error is a known case, like the
+one of `@=`, and so all is well*. A refusal every code of which names a change
+`0.x` made on purpose, a row of the suite's `known` table with the commit that
+made it, reads "all ok"; one that does not is named, worth a look, and is
+never red before `v1.0.0`. Measured with it on `v0.2.0`'s 67 programs: 60
+refused, every one by five such changes (`@=`, the label rule reaching
+`fail`, `lent`'s default, a callback's names, `_ =` keeping a failure), so
+"all ok"; the newest release, `v0.5.0`, refuses none.
+
+**And the author's rule of the same day** (CLAUDE.md § 2), meant as: *I do
+not want to complicate the language for backward compatibility I do not need
+now; an absolute rule*. No form enters the language before `1.0.0` to keep an
+older program compiling: no declared version, no mode, no old spelling kept
+beside the new, no deprecated alias. The sitting's shared brief carries it as
+a frame no seat may argue past, and the suite's `known` table is a list of a
+test and no part of the language.

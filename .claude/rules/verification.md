@@ -104,7 +104,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `tests/golden/surface-fixtures/**` | `annotations` `fixes` **`probe`** `surface` |
 | `tests/golden/lldb/**` | **`lldb`** `canonical` (the group and the suite since 2026-10-12, issue 944) |
 | `tests/**`, every `.hero` under it | `probe` (its `multi` family walks the tree) `spec` (every `spec §` citation names a section), plus the row of its directory |
-| `examples/**` | `canonical` `corpus` `emission` `probe` `special` `warnings` |
+| `examples/**` | `canonical` `compat` `corpus` `emission` `probe` `special` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** `fixes` `unseen` |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, `spec` for `selfhost/keywords.hero`, plus everything `selfhost/**` already gets |
 | `selfhost/foreign_words.hero` (the foreign words, `declared_word`, out of `keywords.hero` since 2026-10-14) | **`spec`** (its `rejected`, `colouring` and `registry` checks read the arms), plus everything `selfhost/**` already gets |
@@ -278,6 +278,14 @@ The rule, and it is about the KIND of change rather than the directory:
 > the `selfhost/**` row.** Widening a refusal can invalidate any program
 > already in the repository, and the programs live in `tests/golden/**` and
 > `examples/**`. Run `check` `run` `emission` `determinism` `corpus` as well.
+
+**And `compat` since 2026-10-29** (M-compatibility-promise): a widened
+refusal is what breaks a release's program, and that suite checks the
+corpus of the newest release no newer than the compiler, told before
+`v1.0.0` and judged from it. Its row in the map is `examples/**`, the
+literal it names, though what it reads is `examples/` as each release
+tag holds it, never the tree's: a change to `examples/` moves it only
+once a release carries the change.
 
 Two things this is not. It is not *run the full net for every compiler change*,
 which CL-063 refuses on cost; the trigger is narrow and nameable — a new
