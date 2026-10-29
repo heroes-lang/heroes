@@ -34,7 +34,7 @@ use diag
 use ast
 use source
 use resolved
-use inventory
+use check/waiting
 use check/state
 use check/render
 use check/generics as check_generics
@@ -233,15 +233,9 @@ function replace(@said: [diag.Diagnostic], at: i64, d: diag.Diagnostic)
 # that takes its type from the context alone.
 function form_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, id: i64) -> str
     match a.exprs[id].kind
-        .call cl =>
-            match r.uses[cl.callee]
-                .builtin b =>
-                    name = inventory.name_of(b.at)
-
-                    if name == "ok" || name == "fail"
-                        return name + "(…)"
-                    return ""
-                .top | .local | .module | .unresolved => return ""
+        .call cl => return made_form(waiting.constructor(r.uses[cl.callee]))
+        # `x.ok()` is `ok(x)` (spec § 9; defect 2272), and is told as it is.
+        .method          => return made_form(waiting.constructor(r.uses[id]))
         .variant_case vc => return "." + source.span_text(s, vc.name)
         .array items =>
             if items.elements.len() == 0
@@ -252,10 +246,17 @@ function form_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, id: i64) ->
                 return "{}"
             return ""
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return ""
-        .name | .hole | .unary | .binary | .field | .field_name | .index | .method     => return ""
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => return ""
         .try_expr | .if_expr | .match_expr | .error                                    => return ""
 
     return ""
+
+# `ok(…)` or `fail(…)`, as a message names the construction a call is; "" for
+# any other call.
+function made_form(name: str?) -> str
+    if name.is_err()
+        return ""
+    return name.must() + "(…)"
 
 # What the parameter an argument stands for asks: the callee and the
 # parameter as written, its type with the callee's letters, and what of it

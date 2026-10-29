@@ -57,6 +57,8 @@ use check/consuming
 use check/join
 use check/builtins
 use check/labels
+use check/label_order
+use check/field_labels
 use check/builtin_args
 use check/group_fields
 use check/handle_built
@@ -1232,6 +1234,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
     counted = builtin_args.refused(@c, name: name, given: given, receiver: !receiver.is_err(), span: span)
     collected: [i64] @= []
     taken = labels.written_labels(s, given)
+    before = c.out.diagnostics.len()
 
     if !receiver.is_err()
         collected @ collected.push(receiver.must())
@@ -1265,6 +1268,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 
     if counted
         return state.error_ty_of(c)
+    label_order.told_builtin(@c, a, s, decls, name, collected, given, !receiver.is_err(), said: before)
 
     # ok and fail are not in the built-in table: they are ⇐-only and live
     # with the constructions, so reaching them here means they were
@@ -1302,6 +1306,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             shared = type_fit.shared(params)
             asked: labels.Asked @= labels.unasked()
             index: i64 @= 0
+            before = c.out.diagnostics.len()
 
             for arg in given
                 position = index + offset
@@ -1369,6 +1374,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                     )
                 index @ index + 1
 
+            label_order.told_value(@c, a, s, decls, callee, names, params, given, from: offset, said: before)
             return f.result
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
             got = state.show(c, s, decls, callee_ty)
@@ -1441,7 +1447,7 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
     receiver_ty: i64 @= state.error_ty_of(c)
     name = source.span_text(s, called)
 
-    if !settle_order.by_the_call(@c, a, r, s, decls, at: at, receiver: receiver)
+    if !settle_order.by_the_call(@c, a, r, s, decls, at: at, receiver: receiver, asked: !expected.is_err())
         said = c.out.diagnostics.len()
         receiver_ty @ synth(@c, a, r, s, decls, receiver)
         held.ty @ ok(receiver_ty)
@@ -1485,17 +1491,13 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                 span: span,
                 expected: expected
             )
-        .builtin b => return builtin_dispatch(
-            @c,
-            a,
-            r,
-            s,
-            decls,
-            index: b.at,
-            given: given,
-            receiver: ok(receiver_ty),
-            span: span
-        )
+        # `x.ok()` is `ok(x)` (spec § 9; defect 2272) where a `T?` is asked
+        # for, and is told as `ok(x)` is where none is.
+        .builtin b =>
+            if inventory.name_of(b.at) == "ok" && !expected.is_err()
+                values = ast.receiver_first(receiver, given)
+                return construction(@c, a, r, s, decls, "ok", values, expected.must(), span, held.ty)
+            return builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: ok(receiver_ty), span)
         # The resolver stayed silent because the name MIGHT have been a
         # field. Now the receiver's type is known, so both halves fit one
         # message — the compiler-engineer's panel-015 veto.
@@ -1701,6 +1703,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
             given_width.after_call(@c, a, s, decls, call: call, given: given, from: said)
             exit_code.after_call(@c, a, s, decls, call: call, given: given)
+            label_order.told_declared(@c, a, s, decls, name, fd.value.params, params, given, from: offset, said: said)
 
             if generics > 0 && !expected.is_err()
                 check_generics.bind_missing(c, @bindings, param: result, got: expected.must())
@@ -1959,22 +1962,16 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
 # ever, and the expected type is what decides which T? is being built.
 # fail here = this call is not one of the two constructors.
 function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], expected: i64, span: token.Span) -> i64?
-    callee_is_name = match a.exprs[callee].kind
-        .name                                                                          => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
-        .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => false
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
+    name = waits.constructor(r.uses[callee])
 
-    if !callee_is_name
-        return fail(code: "not_mine", msg: "the callee is not a bare name")
-    name: str @= ""
-
-    match r.uses[callee]
-        .builtin b                            => name @ inventory.name_of(b.at)
-        .unresolved | .local | .top | .module => return fail(code: "not_mine", msg: "the callee is not a built-in")
-
-    if name != "ok" && name != "fail"
+    if a.exprs[callee].kind != .name || name.is_err()
         return fail(code: "not_mine", msg: "not one of the two constructors")
+    return ok(construction(@c, a, r, s, decls, name.must(), given, expected, span, fail(code: "none", msg: "unread")))
+
+# What the construction `name` builds where `expected` is asked for, from
+# `given`, into which a dotted `x.ok()` hands its receiver first (spec § 9;
+# defect 2272); `typed` is that receiver's type where it was read first.
+function construction(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], name: str, given: [ast.Arg], expected: i64, span: token.Span, typed: i64?) -> i64
     inner: i64 @= -1
 
     match table.get(c.out.types, expected)
@@ -1990,7 +1987,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 @c,
                 contextless_errors.constructor_not_expected(name: name, expected: want, span: span)
             )
-        return ok(state.error_ty_of(c))
+        return state.error_ty_of(c)
 
     if name == "ok"
         # ok() is how a ()? succeeds — the arity is DERIVED from the
@@ -2006,21 +2003,24 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 @c,
                 value_errors.arity(name: "ok", expected: wanted, got: given.len(), declared: fail(code: "absent", msg: "a constructor has no line to cite"), span: span)
             )
-            return ok(state.error_ty_of(c))
+            return state.error_ty_of(c)
 
-        if wanted == 1
+        if wanted == 1 && typed.is_err()
             check(@c, a, r, s, decls, id: given[0].value, expected: inner)
-        return ok(expected)
+        else if wanted == 1
+            mismatch.compare(@c, s, decls, expected: inner, got: typed.must(), span: a.exprs[given[0].value].span)
+        return expected
 
     if given.len() != 2
         state.push_diagnostic(
             @c,
             value_errors.arity(name: "fail", expected: 2, got: given.len(), declared: fail(code: "absent", msg: "a constructor has no line to cite"), span: span)
         )
-        return ok(state.error_ty_of(c))
+        return state.error_ty_of(c)
     str_id = table.str_ty(c.out.types)
     at: i64 @= 0
     taken = labels.written_labels(s, given)
+    before = c.out.diagnostics.len()
 
     for arg in given
         labels.check_label(
@@ -2035,7 +2035,8 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         check(@c, a, r, s, decls, id: arg.value, expected: str_id)
         at @ at + 1
 
-    return ok(expected)
+    label_order.told_builtin(@c, a, s, decls, "fail", [str_id, str_id], given, false, said: before)
+    return expected
 
 # Named fields, for a record or a case: every one mandatory, none
 # repeated, none unknown, and the label must match the field at that
@@ -2059,6 +2060,7 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
     index: i64 @= 0
     spec_names: [str] @= []
     spec_types: [i64] @= []
+    before = c.out.diagnostics.len()
 
     for arg in given
         spec = expected[index]
@@ -2068,43 +2070,9 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
         spec_types @ spec_types.push(lowered)
         index @ index + 1
 
-    # A missing or a wrong label is told once every argument is checked:
-    # which other fields an argument could fill asks the type it has (defect
-    # 135), and the label must be the field at its position.
-    taken = labels.written_labels(s, given)
-    asked: labels.Asked @= labels.unasked()
-    index @ 0
-
-    for arg in given
-        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec_names[index]
-            if !asked.made
-                asked @ labels.asked_of(every: spec_names, open: spec_names, taken: taken)
-            state.push_diagnostic(
-                @c,
-                labels.misnamed(c, a, s, decls, asked: asked, holder: label, label: arg.name.must(), types: spec_types, at: index, from: 0, value: arg.value)
-            )
-
-        if arg.name.is_err()
-            others = labels.other_fields(
-                c,
-                a,
-                decls,
-                names: spec_names,
-                types: spec_types,
-                at: index,
-                value: arg.value,
-                taken: taken
-            )
-            front = label_errors.argument_front(
-                s.text,
-                value_start: a.exprs[arg.value].span.start,
-                mutable: arg.mutable
-            )
-            state.push_diagnostic(
-                @c,
-                label_errors.missing_label(holder: label, expected: spec_names[index], others: others, doubled: labels.listed(taken, spec_names[index]), span: a.exprs[arg.value].span, at: front)
-            )
-        index @ index + 1
+    # The labels are told once every argument is checked, since what else an
+    # argument could fill asks its type (`check/field_labels.hero`).
+    field_labels.told_fields(@c, a, s, decls, label, spec_names, spec_types, given, said: before)
 
 ## Tests
 

@@ -899,8 +899,22 @@ void hero_handle_lent(const void *h) {
 /* `==` on two handles (spec § 13 compares the address). A dead value no
  * longer holds the address it had: two dead handles would read equal, and a
  * dead one would differ from its own earlier copy (panel 177's
- * compiler-engineer, E6), so a read of one is refused here as it is at C. */
-bool hero_handle_eq(const void *a, const void *b) {
+ * compiler-engineer, E6), so a read of one is refused here as it is at C.
+ *
+ * AT ITS PLACE (defect 2258, panel 230's R1): the refusal named none, the one
+ * stop of a program's own operation that did not. An `==` of two handles hands
+ * its place to `hero_handle_eq_at`; one of values holding a handle, a record,
+ * a case, an array, a map or a `T?`, is compared by its type's generated
+ * comparison, shared and reached through a descriptor, which calls
+ * `hero_handle_eq` knowing no call site, so the `==` hands its place for the
+ * comparison's length (`hero_handle_eq_from`) and takes it back after. Per
+ * thread, and a comparison calls no code of the program's, so no comparison
+ * reads another's place (`selfhost/emit/handle_eq.hero`). */
+static _Thread_local const HeroPlace *hero_handle_eq_where = NULL;
+
+void hero_handle_eq_from(const HeroPlace *site) { hero_handle_eq_where = site; }
+
+bool hero_handle_eq_at(const void *a, const void *b, const HeroPlace *site) {
     void *dead = atomic_load_explicit(&hero_handle_dead_page, memory_order_acquire);
     if (dead != NULL && (a == dead || b == dead)) {
         fflush(stdout);
@@ -908,10 +922,13 @@ bool hero_handle_eq(const void *a, const void *b) {
                         "ended its life and emptied the binding, field or element it was read "
                         "from, and a dead value holds no address to compare. Compare a handle "
                         "before giving it back, or keep a reference with `retains`\n");
+        hero_place_line(site);
         hero_abort();
     }
     return a == b;
 }
+
+bool hero_handle_eq(const void *a, const void *b) { return hero_handle_eq_at(a, b, hero_handle_eq_where); }
 /* THE CROSSING: the address IS live, and the call giving it back is not one
  * its mark named (defect 075: `popen`, then `fclose`, was check 0 and run 0 on
  * four platforms, and the child was never waited for). Raised before C runs,

@@ -1,0 +1,18 @@
+# Defect 2261, 2026-10-29 (panel 232's spec-warden, its table of shapes, and
+# its completeness critic, R15 (b)). Symptom: `add2(b: "xy", a: 1)` over
+# `add2(a: i64, b: str)` was refused four times, a `wrong_label` at each label
+# and a `type_mismatch` at each value held to the type of its position, for
+# one mistake. Cause: each label was read alone, and each value checked
+# against its position. Now the two labels, which name each other's
+# positions, are one order: told once at the first of them, naming the order
+# declared and the order written, the values' messages one note inside it;
+# Part 11's control arm, which drops `wrong_label`, says those two as it
+# always did. The fix writes the values in the order declared, each with its
+# label, `certain` here since both are literals. The call written so is left
+# alone, and the program written so prints `xy1` (this Mac, 2026-10-29).
+function add2(a: i64, b: str) -> str
+    return b + a.to_str()
+
+function main()
+    print(add2(b: "xy", a: 1))  #~ wrong_label
+    print(add2(a: 1, b: "xy"))

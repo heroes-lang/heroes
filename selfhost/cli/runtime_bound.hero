@@ -1,0 +1,98 @@
+# A binding of a name the Heroes runtime's own header declares, refused at
+# `build` whatever header its group names (design.md §4.19, §4.20, §1.12;
+# panel 232's R6, provisional, author ratification pending; defect 2256,
+# 2026-10-29).
+#
+# Every unit reads `heroes_unit.h`, and so `heroes_runtime.h`, before its
+# groups' headers, so a group binding a function of the runtime's finds it
+# declared whatever header it names. `function hero_str_release_at(@s: str)`
+# bound under `extern "stdio.h"`, `"math.h"`, `"hero_os.h"` (which includes
+# the runtime's header), `"heroes_unit.h"`, `"./heroes_runtime.h"` or a
+# header of the program's own that includes it, each built, freed a string
+# the program still held, and ended at 134 on the runtime's mark check
+# (measured 2026-10-29, the shapes beside the defect's own). The group that
+# names `heroes_runtime.h` itself is refused at `check`
+# (`check/runtime_header.hero`); this is the rest of that door, told at
+# `build`, which knows the runtime it compiles against and reads its header.
+#
+# **The runtime's names are the words its header's C writes in the compiler's
+# own forms** (`own_names.reserved`: `h_`, `hero_`, `Hero`, `HERO_`,
+# `HEROES_`, `main`), its comments and literals passed over
+# (`macro_guard.used`), forms panel 214's R4 holds every name and macro of
+# the runtime's headers to (`cli/own_names.hero`'s test). A word of another
+# form the header writes, a parameter's `text` or C's own `int64_t`, is no
+# binding's business, and a third party's `hero_jump` the runtime does not
+# write binds as before. `hero_os.h`'s own names are not the header's, so a
+# program binds them as the library does.
+
+use ast
+use source
+use token
+use diag
+use module/reading
+use emit/macro_guard
+use cli/own_names
+use check/runtime_header
+use cli/compile
+
+# The build stopped where a binding names the runtime's own: its refusals
+# printed as `check`'s are, and the failure `compile.leave` gives a stage.
+function stopped(s: source.Source, decls: [ast.Decl], runtime: str, permissive: bool) -> ()?
+    stop = compile.stage(told(s, decls, runtime: runtime), s, permissive: permissive)
+
+    if stop.is_err()
+        return ok()
+    _ = compile.leave(stop.must(), stage_name: "the runtime's own names")?
+    return ok()
+
+# Each binding of the runtime's own names, told at the name, in the order the
+# declarations stand; none where the runtime's header cannot be read now,
+# which the toolchain read before any unit was written (`runtime_places`).
+function told(s: source.Source, decls: [ast.Decl], runtime: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    read = reading.source_text(runtime + "/heroes_runtime.h")
+
+    if read.is_err()
+        return out
+    own = macro_guard.used(read.must().text)
+
+    for decl in decls
+        named = bound(decl)
+
+        if named.is_err()
+            continue
+        name = source.span_text(s, named.must())
+
+        if own_names.reserved(name) && !own[name].is_err()
+            out @ out.push(diagnostic(name: name, span: named.must()))
+
+    return out
+
+function diagnostic(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: runtime_header.CODE,
+        message: "`" + name + "` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds",
+        span: span
+    )
+    d.notes @ d.notes.push(runtime_header.INSTEAD)
+    return d
+
+# The C name a group's declaration binds, where it stands in the program: a
+# function's or a constant's name, a record's tag where it gives one and its
+# name where not; none for a declaration of no group.
+function bound(decl: ast.Decl) -> token.Span?
+    match decl.kind
+        .function_decl fd =>
+            if !fd.value.header.is_err()
+                return ok(decl.name)
+        .constant_decl k =>
+            if !k.header.is_err()
+                return ok(decl.name)
+        .record_decl rec =>
+            if !rec.header.is_err()
+                if !rec.tag.is_err()
+                    return rec.tag
+                return ok(decl.name)
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no group")
+
+    return fail(code: "none", msg: "no group")

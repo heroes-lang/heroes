@@ -72,32 +72,20 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
     r = mangle.value(right)
     left_ty = containers.value_type(f, left)
 
-    # The aggregate equalities first: a map compares order-
-    # independently (a pairwise walk would make {"a":1,"b":2} and
-    # {"b":2,"a":1} unequal — the shape panel 022 ranked first among
-    # what a cheap map gets silently wrong); an array element by
-    # element through the descriptor; a T?, a failure, a record and a
-    # case through their generated eq, which walks fields, never bytes.
-    match table.get(c.types, left_ty)
-        .map =>
-            eq_or_bust(@w, name: name, call: "hero_map_eq(" + l + ", " + r + ")", op: op)
-            return
-        .array =>
-            eq_or_bust(@w, name: name, call: "hero_array_eq(" + l + ", " + r + ")", op: op)
-            return
-        .fallible | .failure | .named | .case_ty =>
-            found = ctype.satellite_name(names, c, ty: left_ty)
+    # The aggregate equalities first (`aggregate_eq`).
+    aggregate = aggregate_eq(c, names, ty: left_ty, l: l, r: r)
 
-            if found.is_err()
-                writer.line(@w, text: "    " + name + " = (hero_unreachable(), false);")
-            else
-                eq_or_bust(@w, name: name, call: found.must() + "_eq(&" + l + ", &" + r + ")", op: op)
-            return
+    if !aggregate.is_err()
+        eq_or_bust(@w, name: name, call: aggregate.must(), op: op)
+        return
+
+    match table.get(c.types, left_ty)
         .str =>
             str_binary(@w, name: name, l: l, r: r, op: op)
             return
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => fall @ fall
-        .fixed | .function_ty | .generic | .error          => fall @ fall
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit       => fall @ fall
+        .fixed | .function_ty | .generic | .error                => fall @ fall
+        .array | .map | .fallible | .failure | .named | .case_ty => fall @ fall
 
     # This test is why the width lives inside the variant (panel 042):
     # as `operands == int` it decided whether to emit the overflow
@@ -244,6 +232,28 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
 
 # ==/!= through a call; anything else on this operand is unreachable by
 # the checker's own refusal.
+# The C that compares two values of an aggregate type `ty`, `l` and `r`, or
+# none for any other type: a map order-independently (a pairwise walk would
+# make {"a":1,"b":2} and {"b":2,"a":1} unequal — the shape panel 022 ranked
+# first among what a cheap map gets silently wrong); an array element by
+# element through the descriptor; a T?, a failure, a record and a case through
+# their generated eq, which walks fields, never bytes. `emit/handle_eq.hero`
+# asks it too, for an `==` of values holding a handle.
+function aggregate_eq(c: state.Checked, names: ctype.Names, ty: i64, l: str, r: str) -> str?
+    match table.get(c.types, ty)
+        .map   => return ok("hero_map_eq(" + l + ", " + r + ")")
+        .array => return ok("hero_array_eq(" + l + ", " + r + ")")
+        .fallible | .failure | .named | .case_ty =>
+            found = ctype.satellite_name(names, c, ty: ty)
+
+            if found.is_err()
+                return ok("(hero_unreachable(), false)")
+            return ok(found.must() + "_eq(&" + l + ", &" + r + ")")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "no aggregate")
+        .fixed | .function_ty | .generic | .error                 => return fail(code: "none", msg: "no aggregate")
+
+    return fail(code: "none", msg: "no aggregate")
+
 function eq_or_bust(@w: writer.Writer, name: str, call: str, op: ir.BinaryOp)
     match op
         .eq => writer.line(@w, text: "    " + name + " = " + call + ";")

@@ -10,6 +10,7 @@
 use token
 use source
 use shown_char
+use stable
 
 ## The kind
 
@@ -63,6 +64,11 @@ record Diagnostic
     # withdrawn where this one is said and stands where it is not (defect
     # 459, `parse/unclosed.withdrawn`). Empty for every other report.
     carries: [token.Span]
+    # The reports this one stands for, the same mistake told once (defect
+    # 2261, `check/label_order.hero`): not said where this one is, and said
+    # in its place where it is not, as Part 11's control arm drops a thesis
+    # rule (`kept`). Empty for every other report.
+    stands_for: [Diagnostic]
 
 # A diagnostic the parser held back because the lexer joined the line it
 # is about into a block's head (`parse/opening`, defect 131): `cause` spans
@@ -82,6 +88,7 @@ function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
     notes: [str] = []
     carries: [token.Span] = []
+    stands_for: [Diagnostic] = []
     return Diagnostic(
         kind: .error_kind,
         code: code,
@@ -89,7 +96,8 @@ function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
         span: span,
         fixes: fixes,
         notes: notes,
-        carries: carries
+        carries: carries,
+        stands_for: stands_for
     )
 
 # Where the openers the reports of `said` carry begin (defect 459): the
@@ -116,6 +124,7 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
     fixes: [Fix] = []
     notes: [str] = []
     carries: [token.Span] = []
+    stands_for: [Diagnostic] = []
     return Diagnostic(
         kind: .unsupported_kind,
         code: code,
@@ -123,7 +132,8 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
         span: span,
         fixes: fixes,
         notes: notes,
-        carries: carries
+        carries: carries,
+        stands_for: stands_for
     )
 
 # Whether this code is one of the rules the THESIS adds, as opposed to
@@ -229,14 +239,50 @@ function is_thesis_rule(d: Diagnostic) -> bool
 # What a stage says as Part 11's control arm keeps it: every diagnostic where
 # the build is not permissive, and without the rules that exist for the thesis
 # where it is (panel 226's R1, 2026-10-20: the control arm builds and runs).
+# A rule dropped there says what it stood for in its place (defect 2261): the
+# labels of `add2(b: "xy", a: 1)` out of their order are one `wrong_label`,
+# standing for the two values' `type_mismatch`, and without that rule the
+# arm refuses the call by those two, as it always did. The one filter: `check`
+# and `heroes mutate`'s scoring ask it too.
 function kept(diagnostics: [Diagnostic], permissive: bool) -> [Diagnostic]
     if !permissive
         return diagnostics
     out: [Diagnostic] @= []
 
+    released: bool @= false
+
     for d in diagnostics
         if !is_thesis_rule(d)
             out @ out.push(d)
+        else if d.stands_for.len() > 0
+            released @ true
+
+            for one in kept(d.stands_for, permissive: true)
+                out @ out.push(one)
+
+    # What a rule stood for goes back where it was found, among the reports
+    # beside it, in the order the pass gave them all.
+    if released
+        return by_position(out)
+    return out
+
+# The diagnostics in order of the span's start, equal starts in the order
+# they were found (`stable.order`, defect 105: the insertion this was
+# copied the list at every diagnostic, quadratic in them). The one order of
+# a pass's reports: the resolver's, the checker's and the lowering's, and
+# the control arm's where a rule says what it stood for (moved here from
+# `resolve.hero` on 2026-10-29, defect 2261, so that `kept` asks the same).
+function by_position(diagnostics: [Diagnostic]) -> [Diagnostic]
+    starts: [i64] @= []
+
+    for d in diagnostics
+        starts @ starts.push(d.span.start)
+
+    out: [Diagnostic] @= []
+
+    for at in stable.order(by: starts)
+        taken = diagnostics[at]
+        out @ out.push(taken)
 
     return out
 

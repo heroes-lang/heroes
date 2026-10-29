@@ -1,0 +1,24 @@
+# Fixed 2026-10-29, defect 2256, lane c-boundary (panel 232's R6): a group
+# naming the Heroes runtime's own header.
+# Symptom: `extern "heroes_runtime.h"` binding `hero_str_release_at(@s: str)`,
+# called once on a string built at run time, built at exit 0, released the
+# block the program still held, and the scope's own release read it freed:
+# exit 134 on the runtime's mark check, a heap-use-after-free under
+# `--sanitize`, from a program with no C of its own.
+# Cause: nothing asked whether a program may bind the header the C this
+# compiler writes calls. The group is refused at its string, `./` before it
+# too, since clang finds that one in the runtime's directory as well. A name
+# the runtime's header declares, bound through any other header, is
+# `build`'s to refuse: `tests/golden/unsupported/fixedbugs-2256-a-name-of-the-
+# runtimes-own-bound-through-another-header-is-refused`.
+
+extern "heroes_runtime.h"  #~ ffi_runtime_header
+    function hero_str_release_at(@s: str)
+
+extern "./heroes_runtime.h"  #~ ffi_runtime_header
+    function hero_str_len(s: str) -> i64
+
+function main()
+    s: str @= f"built at run time from {len(args()) + 7} and more than a few bytes"
+    hero_str_release_at(s: @s)
+    print("after the extra release: ", hero_str_len(s: s))

@@ -463,11 +463,11 @@ test "clang's words naming a header under a directory that is not UTF-8 are read
 # passed to a `nonnull` parameter, noted at its definition in a file the
 # runtime entered first; `size_t` typedef'd again, noted at C's own; and a
 # macro of another group's header the refused one includes. The program names
-# `heroes_runtime.h` as the Heroes library does, which the first two read as
-# a second header refused, and the third named `a2.h` beside it.
+# `hero_os.h` as the Heroes library does, which the first two read as a second
+# header refused, and the third named `a2.h` beside it.
 test "a macro's expansion, or a file the runtime entered first, is no second header (defect 2040)"
     again: caret_bytes.Again @= caret_bytes.none()
-    text = "extern \"heroes_runtime.h\"\n    function hero_exit(code: i64)\n\nextern \"a2.h\"\n    constant A2_ONE: i32\n\nextern \"nn.h\"\n    function call_need() -> i32\n\nfunction main()\n    print(call_need() + A2_ONE)\n"
+    text = "extern \"hero_os.h\"\n    function hero_exit(code: i64)\n\nextern \"a2.h\"\n    constant A2_ONE: i32\n\nextern \"nn.h\"\n    function call_need() -> i32\n\nfunction main()\n    print(call_need() + A2_ONE)\n"
     s = source.new_source(name: "n.hero", text: text)
     parsed = parse.parse(text)
     through = "In file included from build/tu-1/n.c:2:\nIn file included from runtime/heroes_unit.h:26:\nIn file included from runtime/heroes_runtime.h:55:\n"

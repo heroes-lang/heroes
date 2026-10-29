@@ -1,0 +1,25 @@
+# Fixed 2026-10-29, defect 2257, lane c-boundary (panel 232's R6, *nothing
+# catches that stop*): a Heroes function handed to libc's `signal` for
+# `SIGABRT`, with no C of the program's own.
+# Symptom: a read past an array's end printed the abort's report and its
+# place, then the handler's line, and the program exited 0: a supervisor
+# reading the status saw success after a stop.
+# Cause: `hero_abort` raised `SIGABRT` with whatever disposition the program
+# had installed, so the runtime's own stop ran the program's handler. The
+# runtime sets `SIGABRT` back to its default before it aborts, so the stop is
+# final: no handler line, and not 0.
+
+extern "signal.h"
+    constant SIGABRT: i32
+    function signal(sig: i32, handler: (function(sig: i32) -> ())) -> ptr
+
+function on_abort(sig: i32)
+    print("Heroes code ran inside the stop, signal ", sig)
+    exit(code: 0)
+
+function main()
+    _ = signal(sig: SIGABRT, handler: on_abort)
+    xs = [1, 2]
+    print("about to read past the end")
+    print(xs[len(args()) + 4])
+    print("never reached")

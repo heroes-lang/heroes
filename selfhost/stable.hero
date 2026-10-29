@@ -2,7 +2,7 @@
 # keys in ascending order, equal keys in the order they came. The compiler
 # ordered what it prints by inserting each item into a copy of the list so
 # far, a copy per item, quadratic in the items: the diagnostics by position
-# (`resolve.by_position`), the formatter's items (`print/fmt.hero`), the
+# (`diag.by_position`), the formatter's items (`print/fmt.hero`), the
 # certain fixes `check --apply` writes, the locals `--dump-scopes` lists. The
 # built-in `sort` orders numbers and strings, never records, and says
 # nothing of equal keys; this orders their indices by a key the caller

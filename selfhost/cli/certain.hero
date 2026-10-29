@@ -291,6 +291,7 @@ function fixing(start: i64, end: i64, text: str) -> diag.Diagnostic
     fix = diag.Fix(title: "t", replacement: text, span: token.Span(start: start, end: end), certainty: .certain)
     none: [str] = []
     carried: [token.Span] = []
+    nothing: [diag.Diagnostic] = []
     return diag.Diagnostic(
         kind: .error_kind,
         code: "c",
@@ -298,7 +299,8 @@ function fixing(start: i64, end: i64, text: str) -> diag.Diagnostic
         span: token.Span(start: start, end: end),
         fixes: [fix],
         notes: none,
-        carries: carried
+        carries: carried,
+        stands_for: nothing
     )
 
 # The text "abcdefghij", fixed.

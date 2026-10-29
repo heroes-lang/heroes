@@ -1,0 +1,21 @@
+# Fixed 2026-10-29, defect 2258, lane c-boundary (panel 230's R1, panel 232's R6,
+# *saying why and where*): `==` on a dead C handle.
+# Symptom: `kept == a`, after a helper taking `a` with `@` gave it back,
+# stopped at 134 with its sentence and no `at <file>:<line>:<column>, in
+# <function>`: `hero_handle_eq` had no `_at` entry point.
+# Cause: the one stop of a program's own operation panel 230 did not reach.
+# The `==` hands its place to `hero_handle_eq_at`.
+
+extern "fixedbugs-2258-slots.h"
+    record Outer tag outer
+    function make_at(i: i64) -> Outer acquires release
+    function release(o: Outer consumes)
+
+function closed(@x: Outer)
+    release(o: x)
+
+function main()
+    a: Outer @= make_at(i: 0)
+    kept = a
+    closed(@a)
+    print("kept == a: ", kept == a)

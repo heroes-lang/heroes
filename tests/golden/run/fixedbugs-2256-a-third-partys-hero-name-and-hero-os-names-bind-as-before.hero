@@ -1,0 +1,20 @@
+# Fixed 2026-10-29, defect 2256, lane c-boundary (panel 232's R6): what the
+# refusal of the runtime's own names leaves bound. A library's `hero_jump` and
+# `HERO_LEVEL`, of the forms the runtime writes and none of its names, bind and
+# run; so do `hero_os.h`'s own, `hero_program_sources` among them since it
+# moved there from `heroes_runtime.h`, where the compiler bound it. The names
+# the runtime's header writes are refused: `tests/golden/unsupported/
+# fixedbugs-2256-a-name-of-the-runtimes-own-bound-through-another-header-is-refused`.
+
+extern "fixedbugs-2256-a-library-of-hero-names.h"
+    function hero_jump(x: i64) -> i64
+    constant HERO_LEVEL: i64
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_program_sources() -> str
+
+function main()
+    print("jump: ", hero_jump(x: 41), ", level: ", HERO_LEVEL)
+    print("pid positive: ", hero_os_pid() > 0)
+    print("sources: ", hero_program_sources().len(), " characters")

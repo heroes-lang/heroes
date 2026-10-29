@@ -40,6 +40,7 @@ use resolve
 use checker
 use ir/lower
 use ir/questions
+use library_source
 
 record GateNote
     code: str
@@ -60,18 +61,37 @@ function note(@found: [GateNote], code: str, what: str, span: token.Span)
 
     found @ found.push(GateNote(code: code, what: what, span: span))
 
-# What the backend does emit. DERIVED, not maintained: the built-in
-# list is EMITTED, which entry is also exhaustive over — a hand-written
-# enumeration beside a machine-readable table is a sentence that
-# becomes a lie one milestone later. The second clause is load-bearing:
-# without it, the rewrite the message invites is itself a coin flip.
-function subset() -> str
+# What the backend builds. DERIVED, not maintained: a hand-written
+# enumeration beside a machine-readable table is a sentence that becomes a
+# lie one milestone later. The second clause is load-bearing (panel 021's
+# R10): without it, the rewrite the message invites is itself a coin flip.
+# So the list is every built-in a program can call, one the backend writes a
+# call of (EMITTED), one the lowering writes none of, or one the library
+# writes in Heroes, read from the program's own declarations. It named
+# EMITTED alone until defect 2273, and so told a reader past a refusal to
+# avoid `map`, `range` and `.must()`, which build.
+function subset(s: source.Source, decls: [ast.Decl]) -> str
+    written: {str: bool} @= {}
+
+    for decl in decls
+        if source.is_library(s, decl.name.start)
+            written[source.span_text(s, decl.name)] @ true
+
     quoted: [str] @= []
 
-    for name in builtins.EMITTED
-        quoted @ quoted.push("`" + name + "`")
+    for name in inventory.NAMES
+        if emitted(name) || questions.lowered_to_no_call(name) || !written[name].is_err()
+            quoted @ quoted.push("`" + name + "`")
 
-    return "the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins " + quoted.join(", ") + " — no other built-in is emitted yet"
+    return "the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins " + sort(quoted).join(", ") + " — no other built-in is emitted yet"
+
+# Whether the backend writes a call of this built-in, by name.
+function emitted(name: str) -> bool
+    for one in builtins.EMITTED
+        if one == name
+            return true
+
+    return false
 
 # Every capability this program needs and this backend lacks, sorted by
 # where it first appears.
@@ -150,6 +170,7 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
         ordered @ before
 
     out: [diag.Diagnostic] @= []
+    listed = subset(s, decls)
 
     for one in ordered
         d: diag.Diagnostic @= diag.new_unsupported(
@@ -158,7 +179,7 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
             span: one.span
         )
         d.notes @ d.notes.push(what_the_author_can_do(one.code))
-        d.notes @ d.notes.push(subset())
+        d.notes @ d.notes.push(listed)
         out @ out.push(d)
 
     return out
@@ -404,13 +425,8 @@ function callee_note(@found: [GateNote], callee: ir.Callee, span: token.Span)
         .heroes_fn | .extern_fn | .indirect => return
         .builtin_fn bt =>
             builtin_name = inventory.name_of(bt.at)
-            in_emitted: bool @= false
 
-            for one in builtins.EMITTED
-                if one == builtin_name
-                    in_emitted @ true
-
-            if !in_emitted
+            if !emitted(builtin_name)
                 note(@found, code: "builtin", what: "the built-in `" + builtin_name + "`", span: span)
 
 ## Tests
@@ -547,14 +563,36 @@ test "a type's notes found once and said at each use are the walk's at each use,
 test "every built-in the checker types is emitted, or lowered to no call"
     for name in inventory.NAMES
         typed = !inventory.arity_of(name).is_err() || name == "print"
-        emitted: bool @= false
 
-        for one in builtins.EMITTED
-            if one == name
-                emitted @ true
+        if typed && !emitted(name)
+            assert questions.lowered_to_no_call(name)
 
-        if typed && !emitted
-            assert name == "cstr" || questions.is_fallible_operation(name)
+# Defect 2273: the note after every refusal names each built-in a program
+# can call, so a refused line is rewritten with any of them. Asked of a
+# refusal with the library joined, as every build joins it: every name of
+# the inventory, sorted, and no other, the backend writing a call of it, the
+# lowering none, or the library its Heroes. A built-in added with none of
+# the three, or a library that drops one, fails here.
+test "the note after a refusal names every built-in a program can call"
+    text = "extern \"m.h\"\n    function make() -> ptr\n\nfunction main()\n    xs: [ptr] @= []\n    _ = xs\n    print(1)\n"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "t.hero", text: text)
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library_source.text(), is_library: true)
+    ]
+    s = source.from_files(inputs)
+    parsed = parse.parse_source(s)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    got = refuse(target: .program_build, p: low.program, c: c, s: s, decls: parsed.decls)
+    every: [str] @= []
+
+    for name in inventory.NAMES
+        every @ every.push("`" + name + "`")
+
+    assert got.len() == 1
+    assert got[0].notes[1] == "the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins " + sort(every).join(", ") + " — no other built-in is emitted yet"
 
 # The program beside the table: the six built-ins the backend writes no call
 # of, the four that take a dot in both spellings, pass the gate. `must(x)`,

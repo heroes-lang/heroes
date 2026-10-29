@@ -144,13 +144,11 @@ function fate(name: str, text: str, library: str, permissive: bool) -> Fate
         return .killed
     return .survived
 
+# Whether a stage refuses the mutant in the arm asked, by the one filter that
+# says what each arm keeps (`diag.kept`, which says what a dropped rule stood
+# for in its place, defect 2261).
 function reports(diagnostics: [diag.Diagnostic], permissive: bool) -> bool
-    for d in diagnostics
-        if permissive && diag.is_thesis_rule(d)
-            continue
-        return true
-
-    return false
+    return diag.kept(diagnostics, permissive: permissive).len() > 0
 
 # Whether a corpus program is one this measurement may use: it compiles, today,
 # with nothing to report.

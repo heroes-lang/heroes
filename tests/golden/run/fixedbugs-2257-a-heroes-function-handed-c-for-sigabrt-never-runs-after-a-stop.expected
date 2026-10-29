@@ -1,0 +1,3 @@
+about to read past the end
+!at: fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop.hero:24:11
+!panic: array index out of range

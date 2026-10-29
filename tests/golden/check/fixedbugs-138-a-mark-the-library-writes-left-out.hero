@@ -16,8 +16,13 @@
 # `hero_str_try_from_cstr`, its other function that writes one beside
 # `hero_file_read_str` (`fixedbugs-138-an-at-the-library-writes-left-out`).
 
-extern "heroes_runtime.h"
+extern "heroes_runtime.h"  #~ ffi_runtime_header
     function hero_str_try_from_cstr(p: cstr, status: i64) -> str  #~ contract_differs
 
 function main()
     print("hello")
+
+# Corrected 2026-10-29, defect 2256 (panel 232's R6): no program names
+# `heroes_runtime.h` since, and the library binds `hero_str_try_from_cstr` from
+# `hero_os.h`, so the group above is refused at its string as well; the
+# contract this case holds to the library's stands as it did.

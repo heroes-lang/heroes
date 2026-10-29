@@ -1,0 +1,29 @@
+# Defect 2261, the shapes beside its reproducer at the calls that are not a
+# declared function's, told whole: a construction, whose values are held to
+# the type of the field each stands at; a function value whose type names its
+# positions; a built-in, and `fail`; and an `@` that follows its label, the
+# `marker_mismatch` it drew at each value standing inside the one message too.
+# Each is one message, its order `certain`.
+record Point
+    x: i64
+    name: str
+
+function pair(first: i64, second: i64) -> i64
+    return first - second
+
+function bump(@total: i64, by: i64)
+    total @ total + by
+
+function refused() -> i64?
+    return fail(msg: "none here", code: "empty")  #~ wrong_label
+
+function main()
+    p = Point(name: "n", x: 1)  #~ wrong_label
+    print(p.x, p.name)
+    g = pair
+    print(g(second: 2, first: 10))  #~ wrong_label
+    line = "hello world"
+    print(line.slice(to: 5, from: 0))  #~ wrong_label
+    t: i64 @= 1
+    bump(by: 5, total: @t)  #~ wrong_label
+    print(t, refused().is_err())

@@ -51,6 +51,12 @@ function fallible_constructor(name: str) -> ir.Shape?
 function is_fallible_operation(name: str) -> bool
     return name == "must" || name == "default" || name == "is_err"
 
+# The built-ins the lowering writes no call of, whichever spelling wrote one
+# (`ir/flatten.hero`'s `builtin_call`): `cstr` a cast, `ok` and `fail`
+# constructions, the three readers of a T? branches.
+function lowered_to_no_call(name: str) -> bool
+    return name == "cstr" || is_fallible_operation(name) || !fallible_constructor(name).is_err()
+
 # The declared fields a construction names, by index, in the order written.
 # The checker has held every label to a field of the record, once each and in
 # the declared order (`check/walk.hero`'s `construct_record`), so this is every

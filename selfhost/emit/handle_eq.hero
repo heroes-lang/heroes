@@ -1,0 +1,152 @@
+# An `==` whose sides hold a C handle names its place when a dead one stops it
+# (design.md §1.12, §4.17; panel 230's R1; panel 232's R6, *saying why and
+# where*; defect 2258, 2026-10-29).
+#
+# `hero_handle_eq` refuses to read a dead handle, the poison a call marked
+# `consumes` or `transfers` leaves where the handle stood (panel 177's item 1),
+# and said so with no place: `kept == a`, after a helper gave `a` back, stopped
+# at 134 with its sentence and no `at <file>:<line>:<column>, in <function>`,
+# a stop of the program's own operation panel 230's R1 had not reached. Two
+# routes, by what the `==` compares:
+#
+# - **a handle itself**, by `hero_handle_eq_at`, its place handed by a pointer
+#   to the site's record, as every check the runtime makes is
+#   (`emit/stop_place.hero`);
+# - **a value holding one**, a record, a case, an array, a map or a `T?`, by
+#   its type's generated comparison, which is shared, reached through a
+#   descriptor and knows no call site; so the `==` hands the runtime its place
+#   for the comparison's length (`hero_handle_eq_from`), per thread, and takes
+#   it back after, so no comparison reads another's place. A comparison calls
+#   no code of the program's, so nothing runs between the two.
+#
+# Every other operation, and an `==` of values that hold no handle, is
+# `operator.binary`'s alone, and its C does not move.
+
+use ast
+use handles
+use source
+use ir
+use ir/containers
+use check/table
+use check/state
+use emit/ctype
+use emit/mangle
+use emit/writer
+use emit/operator
+use emit/stop_place
+
+# `operator.binary`, an `==` or `!=` of values holding a handle given its place.
+function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ctype.Names, decls: [ast.Decl], f: containers.Function, op: ir.BinaryOp, left: i64, right: i64, target: str?, site: i64)
+    ty = containers.value_type(f, left)
+
+    if target.is_err() || !compares(op) || !holds(c, decls, ty: ty)
+        operator.binary(@w, s, c, names, f, op: op, left: left, right: right, target: target, site: site)
+        return
+    l = mangle.value(left)
+    r = mangle.value(right)
+    not: str @= ""
+
+    match op
+        .ne                                                            => not @ "!"
+        .eq | .add | .sub | .mul | .div | .rem | .lt | .le | .gt | .ge => not @ ""
+        .bit_and | .bit_or | .bit_xor | .shl | .shr                    => not @ ""
+
+    assigned = target.must() + " = " + not
+
+    if is_handle(c, decls, ty: ty)
+        statement = assigned + "hero_handle_eq_at(" + l + ", " + r + ", &" + stop_place.HERE + ");"
+        writer.line(@w, text: "    " + stop_place.around(s, f, offset: site, statement: statement))
+        return
+    call = operator.aggregate_eq(c, names, ty: ty, l: l, r: r)
+
+    if call.is_err()
+        operator.binary(@w, s, c, names, f, op: op, left: left, right: right, target: target, site: site)
+        return
+    statement = "hero_handle_eq_from(&" + stop_place.HERE + "); " + assigned + call.must() + "; hero_handle_eq_from(NULL);"
+    writer.line(@w, text: "    " + stop_place.around(s, f, offset: site, statement: statement))
+
+# Whether `op` compares for equality.
+function compares(op: ir.BinaryOp) -> bool
+    match op
+        .eq | .ne                                                => return true
+        .add | .sub | .mul | .div | .rem | .lt | .le | .gt | .ge => return false
+        .bit_and | .bit_or | .bit_xor | .shl | .shr              => return false
+
+    return false
+
+# Whether a value of type `ty` is a handle itself.
+function is_handle(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
+    match table.get(c.types, ty)
+        .named n                                                     => return handles.is_handle(decls[n.decl])
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => return false
+        .array | .fixed | .map | .fallible | .function_ty | .case_ty => return false
+        .failure | .generic | .error                                 => return false
+
+    return false
+
+# Whether a value of type `ty` holds a handle anywhere its comparison reaches:
+# itself, a field of a record or of a case, an element of an array, fixed or
+# not, a key or a value of a map, a `T?`'s value. A declaration already on the
+# walk is not walked again, so a type that holds itself through an array ends.
+function holds(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
+    seen: {i64: bool} @= {}
+    stack: [i64] @= [ty]
+    live: i64 @= 1
+
+    while live > 0
+        live @ live - 1
+        here = stack[live]
+        inner: [i64] @= []
+
+        match table.get(c.types, here)
+            .named n =>
+                if handles.is_handle(decls[n.decl])
+                    return true
+
+                if seen[n.decl].is_err()
+                    seen[n.decl] @ true
+                    inner @ fields_of(c, decls[n.decl], at: -1)
+            .case_ty vc =>
+                inner @ fields_of(c, decls[vc.decl], at: vc.at)
+            .fixed x                                                  => inner @ [x.element]
+            .array arr                                                => inner @ [arr.element]
+            .fallible o                                               => inner @ [o.payload]
+            .map m                                                    => inner @ [m.key, m.value]
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .function_ty | .failure | .generic | .error               => continue
+
+        for one in inner
+            if live < stack.len()
+                stack[live] @ one
+            else
+                stack @ stack.push(one)
+            live @ live + 1
+
+    return false
+
+# The types of a declaration's fields as the checker wrote them: a record's, or
+# a variant's cases', all of them where `at` is -1 and case `at`'s alone
+# otherwise.
+function fields_of(c: state.Checked, decl: ast.Decl, at: i64) -> [i64]
+    out: [i64] @= []
+
+    match decl.kind
+        .record_decl rec =>
+            for field in rec.fields
+                out @ with(c, out, node: field.ty)
+        .variant_decl v =>
+            for index in range(from: 0, to: v.cases.len())
+                if at < 0 || index == at
+                    for field in v.cases[index].fields
+                        out @ with(c, out, node: field.ty)
+        .function_decl | .constant_decl | .test_decl => return out
+
+    return out
+
+# `out` and the type the checker wrote for the type node `node`, where it wrote one.
+function with(c: state.Checked, out: [i64], node: i64) -> [i64]
+    written = state.written_type(c, node)
+
+    if written.is_err()
+        return out
+    return out.push(written.must())

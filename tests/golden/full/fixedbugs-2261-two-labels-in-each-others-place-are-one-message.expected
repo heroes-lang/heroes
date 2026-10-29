@@ -1,0 +1,7 @@
+error[wrong_label]: `add2` takes `a`, `b` in that order, and these labels write `b`, `a` — a label names the value at its own position and moves none
+  at tests/golden/full/fixedbugs-2261-two-labels-in-each-others-place-are-one-message.hero:17:16
+     |
+  17 |     print(add2(b: "xy", a: 1))  #~ wrong_label
+     |                ^
+  note: read in the order written, each value is held to the position it stands at: at `a`, expected `i64`, found `str`; at `b`, expected `str`, found `i64`
+  fix (certain): write the values in `add2`'s order

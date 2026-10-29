@@ -23,6 +23,7 @@
 
 use ast
 use source
+use diag
 use parse
 use resolved
 use resolve
@@ -47,6 +48,7 @@ use check/freer_marks
 use check/endless
 use check/const_steps
 use check/kept_cells
+use check/runtime_header
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
@@ -84,6 +86,9 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # state above.
     acquiring.bindings_say_which(@c, s, decls)
     releasers.sets_name_releasers(@c, s, decls)
+
+    # Panel 232's R6 (defect 2256): a group naming the runtime's own header.
+    runtime_header.refused(@c, s, decls)
 
     # One C function, one contract: two modules declaring one C name must say
     # the same thing at every position they share (M-agreed-retention's
@@ -147,7 +152,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # Within the pass, source order — the same stable sort the resolver
     # uses, called across the module boundary rather than copied: two
     # sorts that could disagree are two answers to one question.
-    c.out.diagnostics @ resolve.by_position(c.out.diagnostics)
+    c.out.diagnostics @ diag.by_position(c.out.diagnostics)
 
     # Last, because it is dense over the interner and nothing may intern
     # a type after it without saying so.

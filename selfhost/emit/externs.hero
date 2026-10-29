@@ -87,9 +87,10 @@ constant SEEDS: [str]
     ["heroes_unit.h", "hero_os.h"]
 
 # Whether `header` is the compiler's own: a seed, or the runtime's header,
-# which the library binds and every unit has already included. The prelude
-# writes these above the groups' guard (`emit/macro_guard.hero`), so a
-# program that binds nothing else has no guard at all.
+# which every unit has already included and which no program names since
+# defect 2256 (`check/runtime_header.hero`). The prelude writes these above
+# the groups' guard (`emit/macro_guard.hero`), so a program that binds
+# nothing else has no guard at all.
 function is_own(header: str) -> bool
     if header == "heroes_runtime.h"
         return true
