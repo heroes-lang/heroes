@@ -78,6 +78,7 @@ static hero_locale hero_make_c_locale(void) { return _create_locale(LC_ALL, "C")
 static void hero_free_c_locale(hero_locale l) { _free_locale(l); }
 #define hero_snprintf_c(buf, cap, loc, prec, v) _snprintf_s_l((buf), (cap), _TRUNCATE, "%.*g", (loc), (prec), (v))
 #define hero_strtod_c(s, loc) _strtod_l((s), NULL, (loc))
+#define hero_strtof_c(s, loc) _strtof_l((s), NULL, (loc))
 #else
 typedef locale_t hero_locale;
 #define HERO_NO_LOCALE ((locale_t)0)
@@ -85,6 +86,7 @@ static hero_locale hero_make_c_locale(void) { return newlocale(LC_ALL_MASK, "C",
 static void hero_free_c_locale(hero_locale l) { freelocale(l); }
 #define hero_snprintf_c(buf, cap, loc, prec, v) snprintf((buf), (cap), "%.*g", (prec), (v))
 #define hero_strtod_c(s, loc) strtod((s), NULL)
+#define hero_strtof_c(s, loc) strtof((s), NULL)
 #endif
 
 /* THE ONE THE SWEEP FOUND, and it is why `suite_runtime.hero`'s rule 3 reads
@@ -173,11 +175,23 @@ static int hero_f64_render(char *buf, size_t cap, double v) {
  *
  * `FLT_DIG` (6) starts the search and 9 ends it: 9 significant decimal digits
  * round-trip every binary32, as 17 do every binary64. And the round trip is
- * tested through a **cast**, `(float)strtod(...)`, not through `strtof`: the
- * decimal text goes to a double exactly — every 9-digit decimal is exact in
- * binary64 — and the cast back to float is the single rounding the comparison is
- * asking about. `strtof` would round once in the library and once more never,
- * which is the same answer here but depends on the library getting it right.
+ * read by `strtof`, binary32's own reader, as the loop above reads it by
+ * `strtod`: one rounding, the one the comparison asks about.
+ *
+ * **It was read through a cast, `(float)strtod(...)`, until 2026-10-29**, on the
+ * premise that every 9-digit decimal is exact in binary64, which is false (`0.1`
+ * is not), and the cast rounds twice (defect 2271). A binary32 midpoint has 25
+ * significant bits, so it is a double: `strtod` cannot carry a decimal across
+ * one, but it can land a decimal just off one exactly on it, and the cast's
+ * tie-to-even then takes the neighbour the decimal is farther from. That is the
+ * only place the two readers can part. Over every decimal of at most 8
+ * significant digits from 1e-46 to 2^128, 7,584,028,237 of them, checked exactly
+ * on 2026-10-29, they part at nine, on this Mac and on glibc alike; a 9-digit
+ * spelling of a value cannot meet a midpoint, being within 5e-9 of the value,
+ * relative, where the midpoint is 2.98e-8 away. The ladder met one of the nine:
+ * the binary32 0x15ae43fe printed `7.038531e-26`, which is 0x15ae43fd's (it is
+ * 2.2e-42 below their midpoint), and now prints `7.0385313e-26`, while
+ * 0x15ae43fd, whose spelling the cast refused, now prints `7.038531e-26`.
  *
  * The subnormal branch and the trailing `.0` rider are the `f64` loop's own,
  * for the reasons its comments give. */
@@ -197,7 +211,7 @@ static int hero_f32_render(char *buf, size_t cap, float v) {
     for (int prec = first; prec <= 9; prec++) {
         n = hero_snprintf_c(buf, cap, c, prec, (double)v);
         if (n < 0 || (size_t)n >= cap) hero_panic("f32 render overflow");
-        if ((float)hero_strtod_c(buf, c) == v) break;
+        if (hero_strtof_c(buf, c) == v) break;
     }
     if (strpbrk(buf, ".eE") == NULL) {
         int m = snprintf(buf + n, cap - (size_t)n, ".0");

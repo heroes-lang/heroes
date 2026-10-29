@@ -1,0 +1,27 @@
+# Defect 2271, 2026-10-29. The `f32` ladder read its round trip through a
+# cast, `(float)strtod(...)`, which rounds the decimal twice: `strtod` can land
+# a decimal just off a binary32 midpoint exactly on it, a midpoint having 25
+# significant bits and so being a double, and the cast's tie-to-even then takes
+# the neighbour the decimal is farther from. `7.038531e-26` is 2.2e-42 below the
+# midpoint of the binary32s 0x15ae43fd and 0x15ae43fe, so it names 0x15ae43fd;
+# the cast read it as 0x15ae43fe, so 0x15ae43fe printed it, a text naming its
+# neighbour, and 0x15ae43fd, refused it, printed `7.0385307e-26`. Read back by
+# `strtof`, each prints a spelling of its own: `7.0385313e-26` and
+# `7.038531e-26`.
+#
+# Each value is written as its exact decimal, which `atof` reads exactly: an
+# `f32` literal is read through a double too, and the short
+# `0.00000000000000000000000007038531` would be read as 0x15ae43fe.
+
+function main()
+    # 0x15ae43fe: its seven digits name the neighbour below, so it takes eight.
+    above: f32 = 0.0000000000000000000000000703853130814879132477466099505324860128273323223169199991389177739620208740234375
+    print(above)
+    print(-above)
+    print(to_str(above))
+    print(f"{above}")
+
+    # 0x15ae43fd: the seven digits are its own, which the cast refused it.
+    below: f32 = 0.00000000000000000000000007038530691851209120859188017140306974105991300039164570989669300615787506103515625
+    print(below)
+    print(above == below)
