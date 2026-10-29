@@ -7,10 +7,12 @@
 # in. Its own module, out of `toolchain.hero`, for the ceiling and along a
 # seam: where things are, against what is built from them. And what is
 # missing at a place, which is what a `HEROES_RUNTIME` naming no runtime is
-# told (defect 276).
+# told (defect 276). And whether the runtime found is the one this compiler is
+# built for, asked of its header before any unit is written (defect 2259).
 
 use cli/process
 use module/reading
+use emit/runtime_abi
 
 # `runtime/parts/fs.c` is the C, and names each platform's call.
 extern "hero_os.h"
@@ -81,6 +83,47 @@ function missing_at(dir: str) -> [str]
 function unheld(hint: str, missing: [str]) -> str
     return "`HEROES_RUNTIME` is set to `" + hint + "`, and no Heroes runtime is there: " + missing.join("; ") + "\n  set HEROES_RUNTIME to the directory holding heroes_runtime.h and runtime.c, or unset it to look in ./runtime and beside the compiler"
 
+# Whether the runtime at `dir`, both of whose files are there, is the one this
+# compiler is built for: its `heroes_runtime.h` states the interface every unit
+# this compiler writes asserts (`emit/runtime_abi.hero`). Refused, code `abi`,
+# with which runtime was found, what its header states, what this compiler
+# needs and what to do (defect 2259): it was clang's static assertion in every
+# unit, told as *internal error* at exit 2, and `heroes doctor` called the
+# runtime ok. `named` says `HEROES_RUNTIME` named it; a runtime the search
+# found stops the search too, since it is the one the build would compile
+# against, and passing over it builds against a runtime nobody named.
+function of_this_release(dir: str, named: bool) -> ()?
+    read = reading.source_text(dir + "/heroes_runtime.h")
+
+    if read.is_err()
+        return fail(code: "abi", msg: unread_text(read))
+    said: str @= ""
+
+    match runtime_abi.stated(read.must().text)
+        .ok n =>
+            if n == runtime_abi.NEEDED
+                return ok()
+            said @ "states HERO_RUNTIME_ABI " + n.to_str()
+        .err e => said @ e.msg
+
+    return fail(code: "abi", msg: other_release(dir: dir, named: named, said: said))
+
+# The refusal of a runtime this compiler is not built for, `said` what its
+# header states, in the words defect 276 refuses a `HEROES_RUNTIME` naming no
+# runtime: which runtime, then what to do, either way round.
+function other_release(dir: str, named: bool, said: str) -> str
+    what = " is not the one this compiler is built for: its heroes_runtime.h " + said + ", and this compiler needs " + runtime_abi.NEEDED.to_str()
+    again = "build the compiler again from the sources this runtime came with"
+
+    if named
+        return "`HEROES_RUNTIME` is set to `" + dir + "`, and the Heroes runtime there" + what + "\n  set HEROES_RUNTIME to the runtime this compiler came with, or unset it to look in ./runtime and beside the compiler; or " + again
+    return "the Heroes runtime found at `" + dir + "`" + what + "\n  set HEROES_RUNTIME=<dir> to the runtime this compiler came with, or " + again
+
+function unread_text(failed: reading.Text?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
 # The places named, as they were looked in, and the way to name another:
 # where no `HEROES_RUNTIME` is set, since one that is set is the only place.
 function not_found(beside: Beside) -> str
@@ -122,3 +165,32 @@ test "what a place lacks of a runtime is said file by file"
     assert !write_file(path: dir + "/heroes_runtime.h", text: "/* a header and no runtime.c */\n").is_err()
     assert missing_at(dir) == ["no file at `" + dir + "/runtime.c`"]
     assert unheld(hint: dir, missing: missing_at(dir)) == "`HEROES_RUNTIME` is set to `" + dir + "`, and no Heroes runtime is there: no file at `" + dir + "/runtime.c`\n  set HEROES_RUNTIME to the directory holding heroes_runtime.h and runtime.c, or unset it to look in ./runtime and beside the compiler"
+
+# Defect 2259: a runtime whose header states another interface, or none, is
+# refused saying which runtime, what it states, what this compiler needs and
+# what to do, named or found by the search; the tree's own is this compiler's.
+test "a runtime of another release is told before clang, named or found (defect 2259)"
+    assert !of_this_release(dir: "runtime", named: true).is_err()
+    dir = "build/selftest-runtime-abi-2259"
+    assert !process.mkdir_all(dir).is_err()
+    other = (runtime_abi.NEEDED + 1).to_str()
+    needs = runtime_abi.NEEDED.to_str()
+    assert !write_file(path: dir + "/heroes_runtime.h", text: "/* another release */\n#define HERO_RUNTIME_ABI " + other + "\n").is_err()
+    assert !write_file(path: dir + "/runtime.c", text: "/* its parts */\n").is_err()
+    again = "build the compiler again from the sources this runtime came with"
+
+    match of_this_release(dir: dir, named: true)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "abi"
+            assert e.msg == "`HEROES_RUNTIME` is set to `" + dir + "`, and the Heroes runtime there is not the one this compiler is built for: its heroes_runtime.h states HERO_RUNTIME_ABI " + other + ", and this compiler needs " + needs + "\n  set HEROES_RUNTIME to the runtime this compiler came with, or unset it to look in ./runtime and beside the compiler; or " + again
+
+    match of_this_release(dir: dir, named: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "the Heroes runtime found at `" + dir + "` is not the one this compiler is built for: its heroes_runtime.h states HERO_RUNTIME_ABI " + other + ", and this compiler needs " + needs + "\n  set HEROES_RUNTIME=<dir> to the runtime this compiler came with, or " + again
+
+    assert !write_file(path: dir + "/heroes_runtime.h", text: "/* a header with no stamp */\n").is_err()
+
+    match of_this_release(dir: dir, named: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "the Heroes runtime found at `" + dir + "` is not the one this compiler is built for: its heroes_runtime.h defines no HERO_RUNTIME_ABI, and this compiler needs " + needs + "\n  set HEROES_RUNTIME=<dir> to the runtime this compiler came with, or " + again

@@ -12,6 +12,8 @@
 # expected; with the stamp the same C is `use of undeclared identifier`.
 # What the stamp catches is version skew — a decoy that copies the
 # number passes, and the CACHE KEY is what guards contents (CLAUDE.md §7).
+# Its number and words are `emit/runtime_abi.hero`'s, which the toolchain
+# asks of the runtime's header before any unit is written (defect 2259).
 #
 # The prelude's extern block landed with the FFI crossing: headers
 # (angled, never quoted — panel 036's decoy measurement), the record
@@ -36,6 +38,7 @@ use emit/c_text
 use emit/macro_guard
 use emit/nodebug
 use emit/entry_stop
+use emit/runtime_abi
 use parse
 use resolve
 use checker
@@ -118,7 +121,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
         writer.line(@w, text: line)
 
     writer.line(@w, text: "")
-    writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 31, \"heroes_runtime.h is from another compiler\");")
+    writer.line(@w, text: runtime_abi.stamp())
 
     # What a per-type function and a monomorphised instance are LINKED
     # as. One fused unit needs no linkage word; a per-module unit
@@ -306,7 +309,7 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
         kept: no_kept
     )
     got = writer.finish(w)
-    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 31")
+    assert has(text: got, needle: runtime_abi.stamp())
     assert has(text: got, needle: "run me")
 
     # The test block's literal is invisible to a program build — and
