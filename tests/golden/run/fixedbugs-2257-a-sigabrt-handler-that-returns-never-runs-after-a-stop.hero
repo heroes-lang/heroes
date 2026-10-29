@@ -1,0 +1,23 @@
+# Fixed 2026-10-29, defect 2257, lane c-boundary: the shape beside
+# `fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop`,
+# a handler that returns.
+# Symptom: the status was the abort's, 134, but the handler's lines were
+# printed after the runtime's report, Heroes code running inside the stop.
+# Cause: the one of `hero_abort` raising `SIGABRT` with the program's
+# disposition; the runtime sets it back to its default first, and the
+# handler never runs.
+
+extern "signal.h"
+    constant SIGABRT: i32
+    function signal(sig: i32, handler: (function(sig: i32) -> ())) -> ptr
+
+function on_abort(sig: i32)
+    print("Heroes code ran inside the stop, signal ", sig)
+    print("the handler returns")
+
+function main()
+    _ = signal(sig: SIGABRT, handler: on_abort)
+    xs = [1, 2]
+    print("about to read past the end")
+    print(xs[len(args()) + 4])
+    print("never reached")
