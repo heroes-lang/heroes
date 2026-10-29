@@ -167,3 +167,70 @@ older program compiling: no declared version, no mode, no old spelling kept
 beside the new, no deprecated alias. The sitting's shared brief carries it as
 a frame no seat may argue past, and the suite's `known` table is a list of a
 test and no part of the language.
+
+## Panel 232's resolution, provisional (2026-10-29)
+
+**The sitting**, `docs/panel/232-what-1-0-0-promises-and-what-it-leaves-out-said-before-it-binds-and-ten-sentences-the-compiler-keeps.md`,
+adopted its resolution provisionally, the author's ratification pending in decision 2262
+(https://github.com/heroes-lang/heroes/issues/2262). Its seats and its critic found nine defects
+running the sentences' shapes, 2253 to 2261, six of them `blocking`.
+
+**The paragraph `1.0.0` rests on, in the sitting's words** (R6), kept here until M-publication-gate
+publishes it in `README.md` (task 2268), and in no sentence of the specification (the
+spec-warden's veto):
+
+> **What 1.0.0 promises.** A program that compiles under Heroes 1.0.0 compiles under every later
+> 1.x compiler, and does what the specification says it does. Outside it: a program that relies on
+> a defect, the compiler doing other than the specification says, which a 1.x release may repair;
+> a repair that keeps a program from crashing or corrupting memory, which may refuse or stop a
+> program that did; what the specification leaves open, such as the order of a map's keys, how
+> deep a program may call and how much memory it may hold; and an error in the specification
+> itself, which a 1.x release may correct.
+>
+> **What it covers.** The language the specification describes and the functions it names; the
+> functions `hero_os.h` declares at 1.0.0, their names, their types and what each result hands its
+> caller, which a 1.x release may add to but never removes, narrows or changes; and the `heroes`
+> command's exit codes (0 clean, 1 the input has a diagnostic, 2 the tool could not run), its
+> diagnostics' codes and `heroes check --json`'s schema, never their words. Any other C a program
+> binds is outside it: its header is read again at every build, so a change in a name, a type or a
+> record's fields stops the program compiling where it binds it, and what no header shows is that
+> library's to promise. So is a built program meeting a newer shared library, the runtime's own
+> `heroes_runtime.h`, which a program may not bind, and every name the compiler's C takes, `h_`,
+> `hero_`, `Hero`, `HERO_` and `HEROES_`, which a program's own C may not declare.
+>
+> **It runs one way.** A program declares no version: a newer 1.x compiler reads an older 1.x
+> program, and a change of meaning, a new refusal, a new built-in or a new reserved word waits for
+> 2.0.0.
+>
+> **A Heroes program stops rather than guesses.** There are no exceptions: an error a program does
+> not handle ends it at once, saying why and where, with a status that is not 0, and nothing
+> catches that stop. A program meant to run for a long time runs under something that starts it
+> again.
+>
+> **The history stays.** `main` and the published tags are never rewritten again.
+>
+> **2.0.0 may break this promise**, and says which programs it breaks.
+
+**What lands in this milestone**, in one landing after the batch's repairs merge:
+
+- ten sentences of the specification, each with the repair that makes it true: E1, D1, M10c, B4r
+  and L2 for the order of evaluation; S6 for `<<` and `>>`; H3 for a handle given back, with defect
+  2255; K1 for the stack, with defect 2253 on Darwin and on Linux; X4 and N1 for `exit` and
+  `does_not_fit`; 10,343 to 10,497 real by the parts the spec-warden measured, measured again as
+  they land;
+- the batch, every defect open: 2253 to 2261, 2211, 2212, 2242, 2251 and 2252, fourteen;
+- task 2237, now (R8);
+- design.md § 4.17: a `1.x` renames no diagnostic code and withdraws none (R9);
+- `.claude/rules/records.md` § Release tags: `X` moves only with a release that breaks the promise
+  and says which programs it breaks (R11);
+- the compatibility suite on `build --emit-c`, its corpus `examples/` and the thesis references
+  (R10).
+
+**What M-publication-gate owes before the paragraph binds**: 2263 (`hero_os.h`'s functions and
+what each result owns), 2264 (the compiler's name forms reserved, P1 with its refusal), 2265 (a
+stop inside a bound function names its place), 2266 (the codes listed and held by the net), 2267
+(the suite runs the corpus), 2268 (the paragraph published) and 2269 (the CI fetches the tags).
+
+**The author's three choices**, inside decision 2262: R7, whether a `1.x` may add a refusal (rule
+(A), recommended, or (B)); R12, a map's order; R8, whether *no deprecated alias* reaches the
+runtime's C names. None changes what lands here.
