@@ -95,6 +95,12 @@
 
 #include "heroes_runtime.h"
 
+/* The program's three edges, files, arguments and exit status, declared before
+ * any part: `hero_os.h` holds the three declarations the Heroes sources bind
+ * (defect 2256), which `parts/str.c` defines, so clang checks each definition
+ * against its declaration. The part that defines the rest, `os.c`, stays last. */
+#include "hero_os.h"
+
 /* The two lists a generated unit includes around its groups' headers (defect
  * 361), its first header and the standard headers it reads after its groups
  * (defect 568), here so they compile with the runtime and are keyed with it:
@@ -216,10 +222,9 @@
 
 /* The program's three edges: files, arguments, exit status (M-ffi-ladder). Last,
  * because it needs `str` and nothing needs it. Its declarations live in their own
- * header, `hero_os.h`, which the **Heroes library** binds with `extern` — these
- * are Tier 2, not built-ins, and the header exists so that clang checks them the
- * same way it checks a binding against `<sqlite3.h>`. */
-#include "hero_os.h"
+ * header, `hero_os.h`, read at the top of this file, which the **Heroes library**
+ * binds with `extern` — these are Tier 2, not built-ins, and the header exists so
+ * that clang checks them the same way it checks a binding against `<sqlite3.h>`. */
 /* The doors only the compiler binds (`hero_compiler.h`, defect 509), declared
  * before the parts that define them, so clang checks each definition against
  * its declaration and the runtime's key covers the header. */

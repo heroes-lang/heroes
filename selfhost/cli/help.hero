@@ -24,8 +24,9 @@ use cli/table as cli_table
 
 # What this compiler was compiled from (panel 222's R1): its modules, its
 # library and its runtime, keyed by the compiler that built it and defined
-# beside its `main` (`emit/provenance.hero`).
-extern "heroes_runtime.h"
+# beside its `main` (`emit/provenance.hero`). Bound from `heroes_runtime.h`
+# until defect 2256, which no program may name.
+extern "hero_os.h"
     function hero_program_sources() -> str
 
 # `heroes --version`: the release this compiler is, then what it was compiled

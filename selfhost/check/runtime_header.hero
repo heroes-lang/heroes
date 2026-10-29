@@ -1,0 +1,97 @@
+# A group that names the Heroes runtime's own header, refused where it names
+# it (design.md §4.19, §4.20, §1.12; panel 232's R6, provisional, author
+# ratification pending; defect 2256, 2026-10-29).
+#
+# `heroes_runtime.h` is the interface the C this compiler writes calls: its
+# functions count the references of the program's own values and free them,
+# and nothing refused a program's `extern "heroes_runtime.h"`. A program with
+# no C of its own bound `function hero_str_release_at(@s: str)` from it,
+# released a string it still held, and the scope's own release then read the
+# freed block: exit 134 on the runtime's mark check, a heap-use-after-free
+# under `--sanitize`, with no `ptr` and no `cstr` in hand, the two types §4.10
+# leaves outside the guarantee. The Heroes library and the compiler bound three
+# of its functions; those three stand in `hero_os.h` since, so no tracked
+# source of the compiler names this header, and the panel's paragraph says a
+# program may not bind it.
+#
+# **Asked of the group's own string, at `check`**, which reads no header: the
+# name as its escapes decode it, a leading `./` or `.\` passed over, since
+# clang finds `<./heroes_runtime.h>` in the runtime's directory as well. One
+# message a group, at the string. A binding of a name the runtime's header
+# declares, through any other group, `stdio.h` or a header of the program's
+# own that includes it, is `build`'s to tell, which knows the runtime it
+# compiles against (`cli/runtime_bound.hero`); both are this one code.
+
+use ast
+use source
+use token
+use diag
+use escape
+use check/state
+
+constant CODE: str
+    "ffi_runtime_header"
+
+constant HEADER: str
+    "heroes_runtime.h"
+
+# What the runtime offers a program instead, said by both refusals: §4.17's
+# fix, which names no file the reader must open to find it.
+constant INSTEAD: str
+    "what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it"
+
+# Each group naming the runtime's header, told once, at its string.
+function refused(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    told: {i64: bool} @= {}
+
+    for decl in decls
+        named = header_of(decl)
+
+        if named.is_err()
+            continue
+        span = named.must()
+
+        if !told[span.start].is_err() || !names_runtime(escape.unescape(source.span_text(s, span)))
+            continue
+        told[span.start] @ true
+        state.push_diagnostic(@c, diagnostic(span))
+
+function diagnostic(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: "`heroes_runtime.h` is the Heroes runtime's own header, the interface the C this compiler writes calls, and no program binds it: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds",
+        span: span
+    )
+    d.notes @ d.notes.push(INSTEAD)
+    return d
+
+# Whether a group's header, as its escapes decode it, is the runtime's own:
+# its name, once each leading `./` or `.\` is passed over.
+function names_runtime(header: str) -> bool
+    at: i64 @= 0
+
+    while at + 1 < header.len() && header[at] == '.' && (header[at + 1] == '/' || header[at + 1] == '\\')
+        at @ at + 2
+
+    return header.slice(from: at, to: header.len()) == HEADER
+
+# The string a declaration's group names, or none.
+function header_of(decl: ast.Decl) -> token.Span?
+    match decl.kind
+        .function_decl fd          => return fd.value.header
+        .constant_decl k           => return k.header
+        .record_decl rec           => return rec.header
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no header")
+
+    return fail(code: "none", msg: "no header")
+
+## Tests
+
+test "the runtime's header is named by its own name, a leading `./` or `.\\` passed over (defect 2256)"
+    assert names_runtime("heroes_runtime.h")
+    assert names_runtime("./heroes_runtime.h")
+    assert names_runtime("././heroes_runtime.h")
+    assert names_runtime(".\\heroes_runtime.h")
+
+    for other in ["hero_os.h", "heroes_unit.h", "my/heroes_runtime.h", "heroes_runtime.hh", "xheroes_runtime.h", "", ".", "./"]
+        assert !names_runtime(other)

@@ -42,6 +42,7 @@ use cli/process
 use cli/whose
 use library_source
 use cli/kept
+use cli/runtime_bound
 use cli/publish
 use bytes
 
@@ -120,6 +121,10 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if unjudged.len() > 0
         io.eprint(text: "internal error: a group head's name was never judged\n  " + unjudged)
         return fail(code: "failed", msg: "a group head's name reached the tools unjudged")
+
+    # A binding of a name the runtime's own header declares, whatever header
+    # its group names, told before any unit is compiled (defect 2256).
+    runtime_bound.stopped(s, art.must().decls, runtime: t.runtime, permissive: options.permissive)?
 
     # Where the binary lands is the round's to learn, from the link line it
     # runs (`link.link_objects`), and the C of every unit is written where
