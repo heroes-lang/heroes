@@ -1,0 +1,14 @@
+# Defect 2254, 2026-10-29 (M-compatibility-promise): `must(x)` on an error
+# aborts as `x.must()` does, saying the code and the message the program
+# wrote, and names the column where its expression begins (panel 230's R1),
+# which in this spelling is the `must`. It was refused at build before,
+# `unsupported[builtin]`. The `4` first shows it extracts an `ok`.
+
+function half(n: i64) -> i64?
+    if n % 2 == 1
+        return fail(code: "odd", msg: "not divisible by two")
+    return ok(n / 2)
+
+function main()
+    print(must(half(n: 8)))
+    print(must(half(n: 7)))

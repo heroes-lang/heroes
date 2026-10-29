@@ -12,18 +12,21 @@
 # instruction and say "this one produced a value somebody owns".
 #
 # THE KNOT'S MAP (CLAUDE.md §11's due for a module the language refuses
-# to split). Twenty-five functions here are mutually recursive by
-# construction — a statement lowers its expressions, an if-expression
-# lowers its blocks, a block lowers its statements — so no cut exists:
-# `module_cycle` fires on the `use` edge whatever it carries.
+# to split). Every function here but `bind_payload` and `receiver_first`
+# is mutually recursive by construction — a statement lowers its
+# expressions, an if-expression lowers its blocks, a block lowers its
+# statements — so no cut exists: `module_cycle` fires on the `use` edge
+# whatever it carries.
 #
 # Entry points, top to bottom: `block` runs statements in order;
 # `statement` dispatches; `expr` flattens one expression to a temporary;
 # `place` walks the left side of a mutation to a root and steps.
 # Who calls whom: block -> statement -> {expr, place, block (loops)};
 # expr -> {call, case_construct, if_expr, lower_match, method,
-# short_circuit, try_expr} and each of those -> expr again; arm_body ->
-# {block, statement}; lower_args and with_receiver -> {expr, place}.
+# short_circuit, try_expr} and each of those -> expr again; call and
+# method -> builtin_call -> {expr, fallible_operation, lower_args}, a
+# built-in's call in either spelling; arm_body -> {block, statement};
+# lower_args and with_receiver -> {expr, place}.
 #
 # What is NOT in the knot left this module when it was cut, and the
 # rule for each is mechanical rather than a judgement call:
@@ -413,9 +416,10 @@ function short_circuit(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
 # edge owes the same chain.
 
 # .must(), .default(v), .is_err() — Part 5 calls all three "match", and
-# only two of them need an edge.
-function fallible_operation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: str, receiver: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
-    subject = hold(@b, a, r, c, s, decls, held_expr: receiver, span: span)
+# only two of them need an edge. `given` is the call's arguments as the
+# plain spelling writes them, the T? first (`builtin_call`).
+function fallible_operation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: str, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    subject = hold(@b, a, r, c, s, decls, held_expr: given[0].value, span: span)
     int_id = table.int_ty_id(c.types)
 
     if name == "is_err"
@@ -462,8 +466,10 @@ function fallible_operation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved
     build.switch_to(@b, target: fallback)
     fallback_value: i64 @= 0
 
-    if given.len() > 0
-        fallback_value @ expr(@b, a, r, c, s, decls, id: given[0].value)
+    # Lowered here, inside the error edge, so `v` is evaluated only where the
+    # T? is an error, whichever spelling wrote the call.
+    if given.len() > 1
+        fallback_value @ expr(@b, a, r, c, s, decls, id: given[1].value)
     else
         fallback_value @ build.emit(@b, op: .missing, ty: ty, span: span)
     build.store_slot(@b, slot_id: result, value: fallback_value, span: span)
@@ -550,31 +556,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                     )
                 handed = lower_args(@b, a, r, c, s, decls, given: given, callee: ok(t.at))
                 return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
-            .builtin bt =>
-                builtin_name = inventory.name_of(bt.at)
-
-                # `.cstr()` is a CAST, not a call: §4.3's no-implicit-
-                # conversions rule would be invisible in the dump if the
-                # conversion were hidden inside a call.
-                if builtin_name == "cstr"
-                    operand = expr(@b, a, r, c, s, decls, id: given[0].value)
-                    return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
-
-                # ok/fail build the two sides of a T? (§4.6, panel 002).
-                shape = questions.fallible_constructor(builtin_name)
-
-                if !shape.is_err()
-                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "ok or fail")).run
-                    return build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
-                handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a built-in"))
-                return emissions.emit_call(
-                    @b,
-                    target: .builtin_fn(at: bt.at),
-                    given: handed,
-                    variadic: questions.is_variadic(builtin_name),
-                    ty: ty,
-                    span: span
-                )
+            .builtin bt => return builtin_call(@b, a, r, c, s, decls, at: bt.at, given: given, ty: ty, span: span)
             # A local holding a function value (§4.13) — and geom(...),
             # which the checker refused, since lowering only runs on a
             # clean program.
@@ -582,6 +564,42 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             .module | .local | .unresolved => is_name @ is_name
     target = expr(@b, a, r, c, s, decls, id: callee)
     return value_call(@b, a, r, c, s, decls, target: target, given: given, ty: ty, span: span)
+
+# A built-in's call in either spelling, the dotted one handing its receiver
+# in as the first argument (spec § 9: `x.f(y)` is `f(x, y)`), so what the
+# built-in IS is asked here once for both. `must(x)` was asked only whether
+# it was a cast or a construction, and reached the emitter as a call of a
+# built-in it writes no call of, while `x.must()` branched (defect 2254).
+function builtin_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    name = inventory.name_of(at)
+
+    # `.cstr()` is a CAST, not a call: §4.3's no-implicit-conversions rule
+    # would be invisible in the dump if the conversion were hidden inside a
+    # call. Taken before the arguments are lowered: its one operand is the
+    # first.
+    if name == "cstr"
+        operand = expr(@b, a, r, c, s, decls, id: given[0].value)
+        return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
+
+    # .must(), .default(v) and .is_err() are branches, not calls (Part 5):
+    # they read a tag and choose an edge.
+    if questions.is_fallible_operation(name)
+        return fallible_operation(@b, a, r, c, s, decls, name: name, given: given, ty: ty, span: span)
+    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a built-in"))
+
+    # ok/fail build the two sides of a T? (§4.6, panel 002).
+    shape = questions.fallible_constructor(name)
+
+    if !shape.is_err()
+        return build.emit(@b, op: .construct(shape: shape.must(), arguments: handed.run), ty: ty, span: span)
+    return emissions.emit_call(
+        @b,
+        target: .builtin_fn(at: at),
+        given: handed,
+        variadic: questions.is_variadic(name),
+        ty: ty,
+        span: span
+    )
 
 # A call through a function value already in hand: no declaration is
 # known, so no parameter's mark is read, and the call is indirect.
@@ -723,6 +741,19 @@ function lent_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
 function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg], callee: i64?) -> inout.Args
     return lowered_from(@b, a, r, c, s, decls, receiver: ok(receiver), given: given, callee: callee)
 
+# A dotted call's arguments as the plain call writes them: the receiver
+# first, with no label and no `@`, which is how `lowered_from` hands a
+# receiver on, then the written ones.
+function receiver_first(receiver: i64, given: [ast.Arg]) -> [ast.Arg]
+    out: [ast.Arg] @= [
+        ast.Arg(name: fail(code: "none", msg: "a receiver has no label"), mutable: false, value: receiver)
+    ]
+
+    for arg in given
+        out @ out.push(arg)
+
+    return out
+
 ## `x.f(y)` — the three tokens with two meanings (§4.11, §4.13; panel 079)
 
 # The same three tokens are either a call to a free function with the
@@ -766,29 +797,12 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                 return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
             .local | .builtin | .module | .unresolved => is_qualified @ is_qualified
 
-    # .must(), .default(v) and .is_err() are branches, not calls
-    # (Part 5): they read a tag and choose an edge.
-    match r.uses[at]
-        .builtin bt =>
-            if questions.is_fallible_operation(inventory.name_of(bt.at))
-                return fallible_operation(
-                    @b,
-                    a,
-                    r,
-                    c,
-                    s,
-                    decls,
-                    name: inventory.name_of(bt.at),
-                    receiver: receiver,
-                    given: given,
-                    ty: ty,
-                    span: span
-                )
-        .local | .top | .module | .unresolved => is_qualified @ is_qualified
-
     # §4.11's order, asked HERE too, because this pass used to answer it
     # differently from the checker (panel 079): the field first, and
-    # only a field whose type is a function value.
+    # only a field whose type is a function value, before every built-in.
+    # The three readers of a T? asked before it until defect 2254, so a
+    # field `must` holding a function was lowered as a tag read of the
+    # record, and clang refused the program the checker had accepted.
     field_ty = layout.field_type(decls, c, s, owner: c.expr_types[receiver], name: name)
 
     if !field_ty.is_err()
@@ -804,35 +818,20 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
             return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
 
     match r.uses[at]
-        .builtin bt =>
-            builtin_name = inventory.name_of(bt.at)
-
-            # `s.cstr()` — the same cast the plain-call form makes, and
-            # the shape every program actually writes. Taken before the
-            # arguments are lowered, because a cast has exactly one
-            # operand and it is the receiver.
-            if builtin_name == "cstr"
-                operand = expr(@b, a, r, c, s, decls, id: receiver)
-                return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
-            handed = with_receiver(
-                @b,
-                a,
-                r,
-                c,
-                s,
-                decls,
-                receiver: receiver,
-                given: given,
-                callee: fail(code: "none", msg: "a built-in")
-            )
-            return emissions.emit_call(
-                @b,
-                target: .builtin_fn(at: bt.at),
-                given: handed,
-                variadic: questions.is_variadic(builtin_name),
-                ty: ty,
-                span: span
-            )
+        # `s.cstr()`, `x.must()` and every other built-in written with a dot
+        # are the plain call with the receiver first.
+        .builtin bt => return builtin_call(
+            @b,
+            a,
+            r,
+            c,
+            s,
+            decls,
+            at: bt.at,
+            given: receiver_first(receiver, given),
+            ty: ty,
+            span: span
+        )
         .top t =>
             handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given, callee: ok(t.at))
             return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)

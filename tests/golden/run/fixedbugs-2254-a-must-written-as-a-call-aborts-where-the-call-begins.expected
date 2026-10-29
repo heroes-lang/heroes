@@ -1,0 +1,3 @@
+4
+!at: fixedbugs-2254-a-must-written-as-a-call-aborts-where-the-call-begins.hero:14:11
+!panic: .must() on an error: odd: not divisible by two

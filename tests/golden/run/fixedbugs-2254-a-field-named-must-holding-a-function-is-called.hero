@@ -1,0 +1,27 @@
+# Defect 2254, 2026-10-29 (M-compatibility-promise), a shape beside it with its
+# cause: `b.must()` where `b` has a field `must` holding a function calls the
+# field, the field first and then the free function or built-in (§4.11, panel
+# 079), as the checker reads it. The lowering asked whether `must`, `default`
+# or `is_err` was one of the three readers of a T? before it asked for the
+# field, read a tag the record does not have, and clang refused the program
+# at exit 2. The built-in is still what a T? receiver calls, on the last line.
+
+record Box
+    must: (function() -> i64)
+    default: (function(n: i64) -> i64)
+    is_err: (function() -> bool)
+
+function seven() -> i64
+    return 7
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function yes() -> bool
+    return true
+
+function main()
+    b = Box(must: seven, default: twice, is_err: yes)
+    print(b.must(), " ", b.default(21), " ", b.is_err())
+    m: {str: i64} = {"a": 1}
+    print(m["a"].must(), " ", m["b"].default(3), " ", m["b"].is_err())

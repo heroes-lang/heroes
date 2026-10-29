@@ -1,0 +1,47 @@
+# Defect 2254, 2026-10-29 (M-compatibility-promise): `must(x)`, `default(x, v)`
+# and `is_err(x)` passed `heroes check` and were refused at build,
+# `unsupported[builtin]`, the note naming a type that does not exist. The
+# lowering asked a built-in's plain call whether it was a cast or a
+# construction, never whether it was one of the three readers of a T?, which
+# only the dotted call asked. Spec § 9 makes `x.f(y)` the call `f(x, y)`, so
+# every line prints its value once per spelling, the call's first: on a map's
+# read, a call's result, a binding, a field, an element and a conversion, in a
+# condition, a hole of an `f` literal, a generic function and a `()?`.
+
+record Box
+    v: i64?
+
+function half(n: i64) -> i64?
+    if n % 2 == 1
+        return fail(code: "odd", msg: "not even")
+    return ok(n / 2)
+
+function either<T>(x: T?, d: T) -> T
+    return default(x, d)
+
+function save(good: bool) -> ()?
+    if good
+        return ok()
+    return fail(code: "unsaved", msg: "not saved")
+
+function main()
+    m: {str: i64} = {"a": 1}
+    x = half(n: 6)
+    b = Box(v: half(n: 10))
+    xs: [i64?] = [half(n: 2), half(n: 3)]
+    print(must(m["a"]), " ", m["a"].must())
+    print(default(m["b"], 4), " ", m["b"].default(4))
+    print(is_err(m["b"]), " ", m["b"].is_err())
+    print(must(half(n: 4)), " ", half(n: 4).must())
+    print(default(half(n: 3), 7), " ", half(n: 3).default(7))
+    print(is_err(half(n: 3)), " ", half(n: 3).is_err())
+    print(must(x), " ", x.must(), " ", default(b.v, 0), " ", b.v.default(0))
+    print(is_err(xs[1]), " ", xs[1].is_err(), " ", must(to_u8(200)), " ", to_u8(200).must())
+    print(f"{default(m["z"], 5)} {m["z"].default(5)}")
+
+    if is_err(m["z"]) && m["z"].is_err()
+        print("z is missing")
+    print(either(x: m["c"], d: 8), " ", either(x: m["a"], d: 8))
+    must(save(good: true))
+    save(good: true).must()
+    print(is_err(save(good: false)), " ", save(good: false).is_err())
