@@ -34,3 +34,19 @@ nothing).
 
 The prototype that the sitting adopted is not here: it is the milestone's lane,
 `.claude/worktrees/lane-generated-programs`, and enters the tree with the step that lands it.
+
+## Added 2026-10-29, at the milestone's tag
+
+`scores-evidence.tar.xz` beside this file, 42,804 bytes, holds what the scoring of 2026-10-28
+cites beside these folders: the 68 reductions of step 3's experiment under two plants,
+`lane-generated-programs-scratch/slide/` by its path under `.claude/worktrees/`, **549 text
+files**, each under 2 MiB, made, read back byte for byte (549 files, 0 differ, no `._` entry) and
+scanned for keys as above (nothing). It leaves out the 272 other files of that folder, each a
+binary a seed built (`w.bin` and the planted compilers' outputs), which its `one.sh` builds again
+once the two planted compilers it names, measurement 058's plants built in `plant-b2`, are built
+again.
+
+**The folders this file names left the coordinator's Mac on 2026-10-29**, with the milestone's
+other scratch folders and the seats' worktrees, by the author's instruction of that day, meant as:
+*remove them all; whatever you think will serve later, copy elsewhere first*. These two archives
+are where they live.

@@ -403,3 +403,8 @@ of every program, not of a program with an `extern` alone) and
 https://github.com/heroes-lang/heroes/issues/2248 (the milestone page's two hard shapes built in
 this milestone). Owed after the push: R7's reading of `generated` on the CI's Windows leg, the
 sample halved where that leg passes 200 minutes.
+
+**Corrected 2026-10-29**: the folder the scoring's reductions bullet names,
+`.claude/worktrees/lane-generated-programs-scratch/slide/` on the coordinator's Mac, left it that
+day by the author's instruction; its 549 text files are `231-reports/scores-evidence.tar.xz`
+(`231-reports/evidence.md`, § Added 2026-10-29).
