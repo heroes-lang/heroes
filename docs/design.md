@@ -2360,7 +2360,11 @@ can write, `""` where the checker holds none. **When `"schema"` moves**: when a 
 changes or a member leaves. A member is added with what its absence means, and `"holes"` with
 `"holes_complete"`, whose absence a reader takes as false, so an answer written before them reads as
 not whole and never as finished, which a reader acting on `"holes"` only under a true flag gets from
-json-c's and cJSON's idiomatic reads alike (measured by the sitting's critic).
+json-c's and cJSON's idiomatic reads alike (measured by the sitting's critic). **A diagnostic's
+code from `1.0.0`** (panel 232's R9, provisional, author ratification pending): a `1.x` renames no
+code and withdraws none, and a mistake it told with one code it tells with the same code; a new code
+may be added, and the words are never promised. Before `1.0.0` the codes the compiler can hand a
+diagnostic are listed and held by the net (task 2266), so that a code vanishing fails.
 
 **A directory operand writes a module where every root under it agrees** (panel 211, provisional,
 author ratification pending; defect 607). `check <directory> --apply --in-place` takes every
