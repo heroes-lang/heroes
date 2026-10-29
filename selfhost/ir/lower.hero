@@ -24,6 +24,7 @@
 use token
 use ast
 use source
+use diag
 use resolved
 use check/table
 use check/state
@@ -65,10 +66,10 @@ function lower_as(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.
     # of its own, so the walk above lowers every return as it always did.
     exits.run(@b.out.program, unit: table.unit_ty(c.types))
 
-    # The resolver's stable sort, called across the module boundary
-    # rather than copied: two sorts that could disagree are two answers
-    # to one question.
-    b.out.diagnostics @ resolve.by_position(b.out.diagnostics)
+    # The diagnostics' stable sort, the resolver's and the checker's,
+    # called across the module boundary rather than copied: two sorts that
+    # could disagree are two answers to one question.
+    b.out.diagnostics @ diag.by_position(b.out.diagnostics)
     return b.out
 
 # Whether this declaration is the one the resolver recorded under its name:

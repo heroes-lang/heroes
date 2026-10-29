@@ -31,7 +31,6 @@ use resolve/state
 use resolve/unused_sweep
 use resolve/value_lines
 use resolve/written_nowhere
-use stable
 use resolve/top
 use resolve/decls as resolve_decls
 use resolve/cycles
@@ -117,26 +116,9 @@ function resolve_within(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
     # Within the pass, source order. Diagnostics from earlier stages stay
     # ahead of these (parse's rule): grouped by the stage that can explain
     # them, ordered by position inside it.
-    r.out.diagnostics @ by_position(r.out.diagnostics)
+    r.out.diagnostics @ diag.by_position(r.out.diagnostics)
     asking @ r.asking
     return r.out
-
-# The diagnostics in order of the span's start, equal starts in the order
-# they were found (`stable.order`, defect 105: the insertion this was
-# copied the list at every diagnostic, quadratic in them).
-function by_position(diagnostics: [diag.Diagnostic]) -> [diag.Diagnostic]
-    starts: [i64] @= []
-
-    for d in diagnostics
-        starts @ starts.push(d.span.start)
-
-    out: [diag.Diagnostic] @= []
-
-    for at in stable.order(by: starts)
-        taken = diagnostics[at]
-        out @ out.push(taken)
-
-    return out
 
 ## Tests
 

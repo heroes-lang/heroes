@@ -1,0 +1,51 @@
+# Defect 2261, 2026-10-29 (panel 232's spec-warden and completeness critic).
+# Symptom: labels written in one another's place were told once per label,
+# `wrong_label`, and once per value held to the type of its position,
+# `type_mismatch`: four messages for `add2(b: "xy", a: 1)`. Cause: each label
+# was read alone. Now the labels at fault that name exactly the positions
+# they stand at are one order, told once at the first of them, its fix the
+# values written in the order declared, each with its label, `certain` where
+# that order runs what the order written ran: here every value is a literal,
+# a name or a field of one, so `check --apply` writes this file's `.fixed`,
+# which checks clean. One call of each kind that reads labels: a declared
+# function, its dotted call, a function value whose type names its
+# positions, a construction, a built-in and `fail`; an `@` that follows its
+# label; and a swap beside a label naming nothing, which keeps its message.
+record Point
+    x: i64
+    name: str
+
+function add2(a: i64, b: str) -> str
+    return b + a.to_str()
+
+function pair(first: i64, second: i64) -> i64
+    return first - second
+
+function three(a: i64, b: str, c: bool) -> str
+    return f"{a}{b}{c}"
+
+function span3(x: i64, lo: i64, hi: str) -> str
+    return f"{x}{lo}{hi}"
+
+function bump(@total: i64, by: i64)
+    total @ total + by
+
+function refused() -> i64?
+    return fail(msg: "none here", code: "empty")  #~ wrong_label
+
+function main()
+    x = 3
+    print(add2(b: "xy", a: 1))  #~ wrong_label
+    print(pair(second: 2, first: x))  #~ wrong_label
+    print(three(c: true, a: 1, b: "x"))  #~ wrong_label
+    print(three(b: "x", a: 1, d: true))  #~ wrong_label wrong_label
+    print(x.span3(hi: "h", lo: 2))  #~ wrong_label
+    g = pair
+    print(g(second: 2, first: 10))  #~ wrong_label
+    p = Point(name: "n", x: 1)  #~ wrong_label
+    print(p.x, p.name)
+    line = "hello world"
+    print(line.slice(to: 5, from: 0))  #~ wrong_label
+    t: i64 @= 1
+    bump(by: 5, total: @t)  #~ wrong_label
+    print(t, refused().is_err())

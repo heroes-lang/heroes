@@ -11,9 +11,15 @@
 # Through a function value the question is asked of the TYPE's names, which is
 # what defect 026 gave it. Before the repair this program compiled at exit 0 and
 # printed `b -> a`.
+#
+# 2026-10-29, defect 2261: the two labels name each other's positions, so they
+# are one message now, and its fix writes the values in the order declared,
+# each with its label, `move(from: "a", to: "b")`, the meaning the labels
+# wrote: `certain`, since both values are literals. The rename above stays a
+# guess, and is no longer offered.
 function copy_text(from: str, to: str) -> str
     return from + " -> " + to
 
 function main()
     move: (function(from: str, to: str) -> str) = copy_text
-    print(move(to: "b", from: "a"))  #~ wrong_label wrong_label
+    print(move(to: "b", from: "a"))  #~ wrong_label

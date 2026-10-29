@@ -57,6 +57,8 @@ use check/consuming
 use check/join
 use check/builtins
 use check/labels
+use check/label_order
+use check/field_labels
 use check/builtin_args
 use check/group_fields
 use check/handle_built
@@ -1232,6 +1234,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
     counted = builtin_args.refused(@c, name: name, given: given, receiver: !receiver.is_err(), span: span)
     collected: [i64] @= []
     taken = labels.written_labels(s, given)
+    before = c.out.diagnostics.len()
 
     if !receiver.is_err()
         collected @ collected.push(receiver.must())
@@ -1265,6 +1268,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 
     if counted
         return state.error_ty_of(c)
+    label_order.told_builtin(@c, a, s, decls, name, collected, given, !receiver.is_err(), said: before)
 
     # ok and fail are not in the built-in table: they are ⇐-only and live
     # with the constructions, so reaching them here means they were
@@ -1302,6 +1306,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             shared = type_fit.shared(params)
             asked: labels.Asked @= labels.unasked()
             index: i64 @= 0
+            before = c.out.diagnostics.len()
 
             for arg in given
                 position = index + offset
@@ -1369,6 +1374,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                     )
                 index @ index + 1
 
+            label_order.told_value(@c, a, s, decls, callee, names, params, given, from: offset, said: before)
             return f.result
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
             got = state.show(c, s, decls, callee_ty)
@@ -1701,6 +1707,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
             given_width.after_call(@c, a, s, decls, call: call, given: given, from: said)
             exit_code.after_call(@c, a, s, decls, call: call, given: given)
+            label_order.told_declared(@c, a, s, decls, name, fd.value.params, params, given, from: offset, said: said)
 
             if generics > 0 && !expected.is_err()
                 check_generics.bind_missing(c, @bindings, param: result, got: expected.must())
@@ -2021,6 +2028,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     str_id = table.str_ty(c.out.types)
     at: i64 @= 0
     taken = labels.written_labels(s, given)
+    before = c.out.diagnostics.len()
 
     for arg in given
         labels.check_label(
@@ -2035,6 +2043,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         check(@c, a, r, s, decls, id: arg.value, expected: str_id)
         at @ at + 1
 
+    label_order.told_builtin(@c, a, s, decls, "fail", [str_id, str_id], given, false, said: before)
     return ok(expected)
 
 # Named fields, for a record or a case: every one mandatory, none
@@ -2059,6 +2068,7 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
     index: i64 @= 0
     spec_names: [str] @= []
     spec_types: [i64] @= []
+    before = c.out.diagnostics.len()
 
     for arg in given
         spec = expected[index]
@@ -2068,43 +2078,9 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
         spec_types @ spec_types.push(lowered)
         index @ index + 1
 
-    # A missing or a wrong label is told once every argument is checked:
-    # which other fields an argument could fill asks the type it has (defect
-    # 135), and the label must be the field at its position.
-    taken = labels.written_labels(s, given)
-    asked: labels.Asked @= labels.unasked()
-    index @ 0
-
-    for arg in given
-        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec_names[index]
-            if !asked.made
-                asked @ labels.asked_of(every: spec_names, open: spec_names, taken: taken)
-            state.push_diagnostic(
-                @c,
-                labels.misnamed(c, a, s, decls, asked: asked, holder: label, label: arg.name.must(), types: spec_types, at: index, from: 0, value: arg.value)
-            )
-
-        if arg.name.is_err()
-            others = labels.other_fields(
-                c,
-                a,
-                decls,
-                names: spec_names,
-                types: spec_types,
-                at: index,
-                value: arg.value,
-                taken: taken
-            )
-            front = label_errors.argument_front(
-                s.text,
-                value_start: a.exprs[arg.value].span.start,
-                mutable: arg.mutable
-            )
-            state.push_diagnostic(
-                @c,
-                label_errors.missing_label(holder: label, expected: spec_names[index], others: others, doubled: labels.listed(taken, spec_names[index]), span: a.exprs[arg.value].span, at: front)
-            )
-        index @ index + 1
+    # The labels are told once every argument is checked, since what else an
+    # argument could fill asks its type (`check/field_labels.hero`).
+    field_labels.told_fields(@c, a, s, decls, label, spec_names, spec_types, given, said: before)
 
 ## Tests
 

@@ -293,16 +293,10 @@ function at_stage(said: [diag.Diagnostic], found: i64, stage: i64) -> [diag.Diag
     return none
 
 # A stage's diagnostics as `--permissive` keeps them: without the ones that
-# exist for the thesis, the control arm of Part 11's measurement.
+# exist for the thesis, the control arm of Part 11's measurement, each saying
+# what it stood for in its place (`diag.kept`, defect 2261).
 function kept_of(diagnostics: [diag.Diagnostic], inv: argv.Invocation) -> [diag.Diagnostic]
-    kept: [diag.Diagnostic] @= []
-
-    for d in diagnostics
-        if argv.has(inv, spelling: "--permissive") && diag.is_thesis_rule(d)
-            continue
-        kept @ kept.push(d)
-
-    return kept
+    return diag.kept(diagnostics, permissive: argv.has(inv, spelling: "--permissive"))
 
 ## Tests
 

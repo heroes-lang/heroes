@@ -1,0 +1,194 @@
+# What the one message for labels out of their order offers (defect 2261,
+# `check/label_order.hero`): the values written in the order declared, each
+# with its label; and, where the values fit only the positions they stand at,
+# the labels renamed to those positions, a guess.
+#
+# **The order declared is `certain` where it runs what the order written
+# ran, in the same order** (`runs_in_order`). A label moves none of the values
+# (spec § 9), and they run as written, so writing them in the order declared
+# can move a value that prints, aborts or writes a cell to another point among
+# the others: `copy(to: dest(), from: src())` asks the two the other way round
+# once reordered. So the fix is certain only where no value that runs code
+# crosses another that is not a literal. A literal runs nothing and nothing
+# changes it; a name or a field of one runs nothing, but a call among the
+# values may change what it reads, so a value that runs code keeps its place
+# beside it too. Otherwise the order is offered and not applied.
+#
+# **Each fix is one edit** over the text from the first value it moves to the
+# last, the text between them kept as written: two edits, one written by
+# `check --apply` and one withheld because it touches another fix, would write
+# one value twice and lose the other (`cli/certain.hero`).
+#
+# `moved` are the values out of place, by index in the order written, and
+# `meant` the position each one's label names, `from` positions past the
+# first value: 1 behind a dotted call's receiver.
+
+use token
+use diag
+use ast
+use source
+use check/contextual
+
+# A value's text with its label, from the label to the value's end.
+function slot(a: ast.Ast, arg: ast.Arg) -> token.Span
+    return token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.end)
+
+# The values in the order declared, each with its label: each moved value's
+# place given the value whose label names it.
+function reordered(a: ast.Ast, s: source.Source, given: [ast.Arg], holder: str, moved: [i64], meant: [i64], from: i64, certainty: diag.Certainty) -> diag.Fix
+    whose: {i64: i64} @= {}
+    k: i64 @= 0
+
+    while k < moved.len()
+        whose[meant[k] - from] @ moved[k]
+        k @ k + 1
+
+    pieces: [str] @= []
+    last = moved.len() - 1
+    k @ 0
+
+    while k <= last
+        here = moved[k]
+        pieces @ pieces.push(source.span_text(s, slot(a, given[whose[here].must()])))
+
+        if k < last
+            pieces @ pieces.push(
+                source.span_text(s, token.Span(start: slot(a, given[here]).end, end: slot(a, given[moved[k + 1]]).start))
+            )
+        k @ k + 1
+
+    span = token.Span(start: slot(a, given[moved[0]]).start, end: slot(a, given[moved[last]]).end)
+    return diag.Fix(
+        title: "write the values in `" + holder + "`'s order",
+        replacement: pieces.join(""),
+        span: span,
+        certainty: certainty
+    )
+
+# The labels renamed to the positions they stand at, the values left where
+# they are.
+function renamed(s: source.Source, given: [ast.Arg], names: [str], moved: [i64], from: i64) -> diag.Fix
+    pieces: [str] @= []
+    last = moved.len() - 1
+    k: i64 @= 0
+
+    while k <= last
+        here = moved[k]
+        pieces @ pieces.push(names[here + from])
+
+        if k < last
+            pieces @ pieces.push(
+                source.span_text(s, token.Span(start: given[here].name.must().end, end: given[moved[k + 1]].name.must().start))
+            )
+        k @ k + 1
+
+    span = token.Span(start: given[moved[0]].name.must().start, end: given[moved[last]].name.must().end)
+    return diag.Fix(
+        title: "name each value by the position it stands at",
+        replacement: pieces.join(""),
+        span: span,
+        certainty: .guess
+    )
+
+# Whether the order declared runs the values' code as the order written does:
+# no value that runs code takes another place among the values that are not
+# literals.
+function runs_in_order(a: ast.Ast, given: [ast.Arg], moved: [i64], meant: [i64], from: i64) -> bool
+    placed: [i64] @= []
+    i: i64 @= 0
+
+    while i < given.len()
+        placed @ placed.push(i)
+        i @ i + 1
+
+    k: i64 @= 0
+
+    while k < moved.len()
+        placed[moved[k]] @ meant[k] - from
+        k @ k + 1
+
+    # The values that are not literals, in the order written, with their
+    # places once reordered, and whether each runs code.
+    places: [i64] @= []
+    runs: [bool] @= []
+    i @ 0
+
+    for arg in given
+        if !literal(a, arg.value)
+            places @ places.push(placed[i])
+            runs @ runs.push(!reads_only(a, arg.value))
+        i @ i + 1
+
+    return none_crossed(places, runs: runs)
+
+# Whether every value that runs code has every value before it placed before
+# it and every value after it placed after it: the largest place so far, and
+# the smallest place after, each asked once.
+function none_crossed(places: [i64], runs: [bool]) -> bool
+    count = places.len()
+    after: [i64] @= []
+    t: i64 @= 0
+
+    while t < count
+        after @ after.push(-1)
+        t @ t + 1
+
+    t @ count - 2
+
+    while t >= 0
+        after[t] @ places[t + 1]
+
+        if after[t + 1] >= 0 && after[t + 1] < after[t]
+            after[t] @ after[t + 1]
+        t @ t - 1
+
+    before: i64 @= -1
+    t @ 0
+
+    while t < count
+        crossed = before > places[t] || after[t] >= 0 && after[t] < places[t]
+
+        if runs[t] && crossed
+            return false
+
+        if places[t] > before
+            before @ places[t]
+        t @ t + 1
+
+    return true
+
+# A value nothing changes and whose reading runs nothing: a literal, a field's
+# own name, a number under its minus signs.
+function literal(a: ast.Ast, id: i64) -> bool
+    if contextual.number_literal(a, id) || contextual.float_literal(a, id)
+        return true
+
+    match a.exprs[id].kind
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .field_name => return true
+        .interp | .name | .hole | .unary | .binary | .field | .index | .call | .method     => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error        => return false
+
+# A value whose reading runs nothing: a literal, a name, a field of one.
+function reads_only(a: ast.Ast, id: i64) -> bool
+    match a.exprs[id].kind
+        .name => return true
+        .field f => return reads_only(a, f.base)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .field_name => return literal(a, id)
+        .interp | .hole | .unary | .binary | .index | .call | .method => return literal(a, id)
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+## Tests
+
+test "a value that runs code keeps its place among the values that are not literals"
+    # Two names change places: neither runs code.
+    assert none_crossed([1, 0], runs: [false, false])
+
+    # A call and a name change places, either way round.
+    assert !none_crossed([1, 0], runs: [true, false])
+    assert !none_crossed([1, 0], runs: [false, true])
+
+    # The call keeps its place while two names behind it change theirs.
+    assert none_crossed([0, 2, 1], runs: [true, false, false])
+    assert !none_crossed([2, 0, 1], runs: [false, true, false])
+    assert none_crossed([0], runs: [true])
+    assert none_crossed([], runs: [])

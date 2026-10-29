@@ -23,6 +23,7 @@
 
 use ast
 use source
+use diag
 use parse
 use resolved
 use resolve
@@ -147,7 +148,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # Within the pass, source order — the same stable sort the resolver
     # uses, called across the module boundary rather than copied: two
     # sorts that could disagree are two answers to one question.
-    c.out.diagnostics @ resolve.by_position(c.out.diagnostics)
+    c.out.diagnostics @ diag.by_position(c.out.diagnostics)
 
     # Last, because it is dense over the interner and nothing may intern
     # a type after it without saying so.

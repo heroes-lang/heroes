@@ -1,0 +1,36 @@
+error[wrong_label]: `pair` takes `first`, `second` in that order, and these labels write `second`, `first` — a label names the value at its own position and moves none
+  at tests/golden/full/fixedbugs-2261-an-order-that-would-move-code-is-offered-not-applied.hero:21:16
+     |
+  21 |     print(pair(second: noisy(2), first: noisy(10)))  #~ wrong_label
+     |                ^^^^^^
+  note: a value here runs code, a call, an index or an operator, and the order declared would run it at another point among the others, so the order is offered and not applied
+  fix (guess): write the values in `pair`'s order
+
+error[wrong_label]: `pair` takes `first`, `second` in that order, and these labels write `second`, `first` — a label names the value at its own position and moves none
+  at tests/golden/full/fixedbugs-2261-an-order-that-would-move-code-is-offered-not-applied.hero:22:16
+     |
+  22 |     print(pair(second: noisy(2), first: x))  #~ wrong_label
+     |                ^^^^^^
+  note: a value here runs code, a call, an index or an operator, and the order declared would run it at another point among the others, so the order is offered and not applied
+  fix (guess): write the values in `pair`'s order
+
+error[wrong_label]: `add2` takes `a`, `b` in that order, and these labels write `b`, `a` — a label names the value at its own position and moves none
+  at tests/golden/full/fixedbugs-2261-an-order-that-would-move-code-is-offered-not-applied.hero:23:16
+     |
+  23 |     print(add2(b: 1, a: "xy"))  #~ wrong_label
+     |                ^
+  note: the values fit the positions they stand at and not the ones their labels name, so it may be the labels that are out of place
+  fix (guess): name each value by the position it stands at
+
+error[wrong_label]: `add2` takes `a`, `b` in that order, and these labels write `b`, `a` — a label names the value at its own position and moves none
+  at tests/golden/full/fixedbugs-2261-an-order-that-would-move-code-is-offered-not-applied.hero:24:16
+     |
+  24 |     print(add2(b: true, a: 1))  #~ wrong_label type_mismatch
+     |                ^
+  note: read in the order written, each value is held to the position it stands at: at `b`, expected `str`, found `i64`
+
+error[type_mismatch]: expected `i64`, found `bool`
+  at tests/golden/full/fixedbugs-2261-an-order-that-would-move-code-is-offered-not-applied.hero:24:19
+     |
+  24 |     print(add2(b: true, a: 1))  #~ wrong_label type_mismatch
+     |                   ^^^^

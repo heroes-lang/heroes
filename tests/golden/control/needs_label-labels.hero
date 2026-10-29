@@ -10,4 +10,4 @@ function pair(a: i64, b: i64) -> i64
 
 function main()
     print(pair(1, 2))  #~ needs_label needs_label
-    print(pair(b: 1, a: 2))  #~ wrong_label wrong_label
+    print(pair(b: 1, a: 2))  #~ wrong_label

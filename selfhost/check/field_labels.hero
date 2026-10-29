@@ -1,0 +1,69 @@
+# A construction's labels, told once every value is checked: moved whole from
+# `check/walk.hero`'s `check_named_fields` on 2026-10-29 (defect 2261), whose
+# decided ceiling had no room for `check/label_order.hero`'s calls; it calls
+# nothing back in the walk.
+#
+# A missing or a wrong label is told once every argument is checked, since
+# which other fields an argument could fill asks the type it has (defect 135),
+# and the label must be the field at its position. Then the fields' labels
+# written in one another's place are told as the one mistake they are
+# (`label_order.told`).
+
+use ast
+use source
+use label_errors
+use check/state
+use check/labels
+use check/label_order
+
+# `names` and `types` are the record's fields in the order it declares them,
+# and `said` the first diagnostic told since its values were checked.
+function told_fields(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], given: [ast.Arg], said: i64)
+    taken = labels.written_labels(s, given)
+    asked: labels.Asked @= labels.unasked()
+    index: i64 @= 0
+
+    for arg in given
+        if !arg.name.is_err() && source.span_text(s, arg.name.must()) != names[index]
+            if !asked.made
+                asked @ labels.asked_of(every: names, open: names, taken: taken)
+            state.push_diagnostic(
+                @c,
+                labels.misnamed(c, a, s, decls, asked: asked, holder: holder, label: arg.name.must(), types: types, at: index, from: 0, value: arg.value)
+            )
+
+        if arg.name.is_err()
+            others = labels.other_fields(
+                c,
+                a,
+                decls,
+                names: names,
+                types: types,
+                at: index,
+                value: arg.value,
+                taken: taken
+            )
+            front = label_errors.argument_front(
+                s.text,
+                value_start: a.exprs[arg.value].span.start,
+                mutable: arg.mutable
+            )
+            state.push_diagnostic(
+                @c,
+                label_errors.missing_label(holder: holder, expected: names[index], others: others, doubled: labels.listed(taken, names[index]), span: a.exprs[arg.value].span, at: front)
+            )
+        index @ index + 1
+
+    label_order.told(
+        @c,
+        a,
+        s,
+        decls,
+        holder: holder,
+        names: names,
+        types: types,
+        marks: label_order.NO_MARKS,
+        given: given,
+        from: 0,
+        said: said
+    )

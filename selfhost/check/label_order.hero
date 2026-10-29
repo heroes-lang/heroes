@@ -1,0 +1,376 @@
+# Labels written in one another's place, told as the one mistake they are
+# (defect 2261, found by panel 232's spec-warden and completeness critic).
+#
+# A label names the value at its own position and moves none (spec § 9), so
+# `add2(b: "xy", a: 1)` over `add2(a: i64, b: str)` hands `"xy"` to `a`, and
+# it was told four times for one mistake: a `wrong_label` at each label and a
+# `type_mismatch` at each value. Where the labels at fault name exactly the
+# positions they stand at, each once, they are one order, told once
+# (`label_errors.order_written`) at the first of them, naming the order
+# declared and the order written: at a declared function, a function value,
+# a construction (`check/field_labels.hero`), a built-in and `fail`.
+#
+# **It stands for the rest** (`diag.Diagnostic`'s `stands_for`): the labels'
+# own `wrong_label`s and, where a value fits the parameter its label names,
+# what its position said of it (`type_mismatch`, `int_out_of_range`, an `@`'s
+# `marker_mismatch`). Part 11's control arm, which drops `wrong_label`, says
+# those in its place (`diag.kept`) and refuses the call as it always did. A
+# value that fits neither keeps its own message. Its fix: `check/order_fix.hero`.
+
+use token
+use diag
+use ast
+use source
+use inventory
+use label_errors
+use check/state
+use check/labels
+use check/callee_text
+use check/order_fix
+
+# The values of a call whose labels name one another's positions, by index in
+# the order written, and the position each one's label names.
+record Order
+    moved: [i64]
+    meant: [i64]
+
+# A callee with no `@` position.
+constant NO_MARKS: [bool]
+    []
+
+# The order `written` makes of the positions `names` past the receiver
+# (`from`), or none. `written[i]` is the label of value `i`, "" where it has
+# none, and `names[q]` the name of position `q`, "" where it has none. A value
+# is moved where its label names another position; the moved ones are one
+# order only where the positions their labels name are the positions they
+# stand at, each once. Any other label at fault is told by itself.
+function order_of(written: [str], names: [str], from: i64) -> Order
+    moved: [i64] @= []
+    meant: [i64] @= []
+    places = positions(names, from: from)
+    i: i64 @= 0
+
+    for label in written
+        position = i + from
+        q = places[label].default(-1)
+
+        if position < names.len() && q >= 0 && label != names[position]
+            moved @ moved.push(i)
+            meant @ meant.push(q)
+        i @ i + 1
+
+    if closed(moved: moved, meant: meant, from: from)
+        return Order(moved: moved, meant: meant)
+    none: [i64] = []
+    return Order(moved: none, meant: none)
+
+# Each name past `from` and the position it names, made once for the call so
+# that a long call reads each label once (defect 477's measure); "" names none.
+function positions(names: [str], from: i64) -> {str: i64}
+    out: {str: i64} @= {}
+    q: i64 @= from
+
+    while q < names.len()
+        if names[q].len() > 0 && out[names[q]].is_err()
+            out[names[q]] @ q
+        q @ q + 1
+
+    return out
+
+# Whether the positions the labels name are the positions they stand at, each
+# named once. Nothing moved is no order.
+function closed(moved: [i64], meant: [i64], from: i64) -> bool
+    if moved.len() == 0
+        return false
+    stands: {i64: bool} @= {}
+
+    for i in moved
+        stands[i + from] @ true
+
+    named: {i64: bool} @= {}
+
+    for q in meant
+        if stands[q].is_err() || !named[q].is_err()
+            return false
+        named[q] @ true
+
+    return true
+
+# Each value's label, "" where it has none.
+function labels_at(s: source.Source, given: [ast.Arg]) -> [str]
+    out: [str] @= []
+
+    for arg in given
+        if arg.name.is_err()
+            out @ out.push("")
+        else
+            out @ out.push(source.span_text(s, arg.name.must()))
+
+    return out
+
+## The rule at a call
+
+# A declared function's call: its parameters' names and `@`s, and their types.
+function told_declared(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, params: [ast.Param], types: [i64], given: [ast.Arg], from: i64, said: i64)
+    marks: [bool] @= []
+
+    for p in params
+        marks @ marks.push(p.mutable)
+
+    names = labels.parameter_names(s, params)
+    told(
+        @c,
+        a,
+        s,
+        decls,
+        holder: holder,
+        names: names,
+        types: types,
+        marks: marks,
+        given: given,
+        from: from,
+        said: said
+    )
+
+# A call through a function value, its positions' names the ones its type
+# carries, "" where it carries none; `callee` is what the call is written
+# through, named as the walk names it.
+function told_value(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: token.Span, names: [str], types: [i64], given: [ast.Arg], from: i64, said: i64)
+    holder = callee_text.written(s, callee)
+    told(
+        @c,
+        a,
+        s,
+        decls,
+        holder: holder,
+        names: names,
+        types: types,
+        marks: NO_MARKS,
+        given: given,
+        from: from,
+        said: said
+    )
+
+# A built-in's call, its positions' names its `Labelled` entry's; `dotted`
+# where its value stands before the dot.
+function told_builtin(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], name: str, types: [i64], given: [ast.Arg], dotted: bool, said: i64)
+    entry = inventory.labelled_of(name)
+
+    if entry.is_err()
+        return
+    from: i64 @= 0
+
+    if dotted
+        from @ 1
+    names = entry.must().params
+    told(
+        @c,
+        a,
+        s,
+        decls,
+        holder: name,
+        names: names,
+        types: types,
+        marks: NO_MARKS,
+        given: given,
+        from: from,
+        said: said
+    )
+
+# The rule at one call, once its values are checked and its labels told, over
+# the diagnostics from `said` on: `holder` names the callee as the messages do,
+# `names` and `types` are its positions', `marks` which of them take an `@`
+# (empty where none does), and `from` is 1 behind a dotted call's receiver.
+# The reports the order explains leave the list and ride inside the one
+# message, which takes the first one's place.
+function told(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], marks: [bool], given: [ast.Arg], from: i64, said: i64)
+    order = order_of(written: labels_at(s, given), names: names, from: from)
+
+    if order.moved.len() == 0
+        return
+    fits_meant: [bool] @= []
+    fits_here: [bool] @= []
+    k: i64 @= 0
+
+    while k < order.moved.len()
+        value = given[order.moved[k]].value
+        fits_meant @ fits_meant.push(fits(c, a, decls, value: value, types: types, at: order.meant[k]))
+        fits_here @ fits_here.push(fits(c, a, decls, value: value, types: types, at: order.moved[k] + from))
+        k @ k + 1
+
+    kept: [diag.Diagnostic] @= []
+    held: [diag.Diagnostic] @= []
+    shown: [str] @= []
+    first: i64 @= -1
+    d: i64 @= said
+
+    while d < c.out.diagnostics.len()
+        one = c.out.diagnostics[d]
+        at = explained(a, one, given: given, order: order, fitting: fits_meant, marks: marks)
+
+        if at < 0
+            kept @ kept.push(one)
+        else
+            if first < 0
+                first @ kept.len()
+            held @ held.push(one)
+
+            if one.code != "wrong_label" && one.code != "marker_mismatch"
+                shown @ shown.push("at `" + names[order.moved[at] + from] + "`, " + one.message)
+        d @ d + 1
+
+    whole = Told(
+        holder: holder,
+        names: names,
+        from: from,
+        fits_meant: fits_meant,
+        fits_here: fits_here,
+        shown: shown,
+        held: held
+    )
+    once = in_one(a, s, given, order: order, what: whole)
+
+    if first < 0
+        first @ kept.len()
+    spliced: [diag.Diagnostic] @= c.out.diagnostics.slice(from: 0, to: said)
+    j: i64 @= 0
+
+    while j < kept.len()
+        if j == first
+            spliced @ spliced.push(once)
+        spliced @ spliced.push(kept[j])
+        j @ j + 1
+
+    if first == kept.len()
+        spliced @ spliced.push(once)
+    c.out.diagnostics @ spliced
+
+# Whether the value can stand at position `at`, and false past the positions:
+# a position that is not there takes nothing.
+function fits(c: state.Checker, a: ast.Ast, decls: [ast.Decl], value: i64, types: [i64], at: i64) -> bool
+    if at < 0 || at >= types.len()
+        return false
+    return labels.could_take(c, a, decls, value: value, ty: types[at])
+
+# Which moved value the report `one` is about, as the order's consequence, or
+# -1: a moved label's own `wrong_label`; at a moved value that fits the
+# parameter its label names, what its position's type said of it; and the
+# `marker_mismatch` its `@` drew where the `@` agrees with that parameter's.
+function explained(a: ast.Ast, one: diag.Diagnostic, given: [ast.Arg], order: Order, fitting: [bool], marks: [bool]) -> i64
+    k: i64 @= 0
+
+    while k < order.moved.len()
+        arg = given[order.moved[k]]
+        label = arg.name.must()
+        value = a.exprs[arg.value].span
+
+        if one.code == "wrong_label" && one.span.start == label.start && one.span.end == label.end
+            return k
+        at_value = one.span.start == value.start && one.span.end == value.end
+        typed = one.code == "type_mismatch" || one.code == "int_out_of_range"
+
+        if at_value && typed && fitting[k]
+            return k
+
+        if at_value && one.code == "marker_mismatch" && arg.mutable == marked(marks, at: order.meant[k])
+            return k
+        k @ k + 1
+
+    return -1
+
+function marked(marks: [bool], at: i64) -> bool
+    return at >= 0 && at < marks.len() && marks[at]
+
+# What the one message is made of besides the order: the callee, where each
+# moved value fits, what its position said of it in words, and those reports.
+record Told
+    holder: str
+    names: [str]
+    from: i64
+    fits_meant: [bool]
+    fits_here: [bool]
+    shown: [str]
+    held: [diag.Diagnostic]
+
+# The one message: the order declared and the order written, what it stands
+# for, and its fix.
+function in_one(a: ast.Ast, s: source.Source, given: [ast.Arg], order: Order, what: Told) -> diag.Diagnostic
+    declared: [str] @= []
+    written: [str] @= []
+
+    # The moved values stand at the positions they name, so the positions in
+    # the order written are the order declared.
+    for i in order.moved
+        declared @ declared.push(what.names[i + what.from])
+        written @ written.push(source.span_text(s, given[i].name.must()))
+
+    first = given[order.moved[0]].name.must()
+    d: diag.Diagnostic @= label_errors.order_written(
+        holder: what.holder,
+        declared: declared,
+        written: written,
+        span: first
+    )
+    d.stands_for @ what.held
+
+    if what.shown.len() > 0
+        d.notes @ d.notes.push(
+            "read in the order written, each value is held to the position it stands at: " + what.shown.join("; ")
+        )
+
+    if every(what.fits_meant)
+        certainty: diag.Certainty @= .guess
+
+        if order_fix.runs_in_order(a, given, moved: order.moved, meant: order.meant, from: what.from)
+            certainty @ .certain
+        else
+            d.notes @ d.notes.push(
+                "a value here runs code, a call, an index or an operator, and the order declared would run it at another point among the others, so the order is offered and not applied"
+            )
+        d.fixes @ d.fixes.push(
+            order_fix.reordered(a, s, given, holder: what.holder, moved: order.moved, meant: order.meant, from: what.from, certainty: certainty)
+        )
+    else if every(what.fits_here)
+        d.notes @ d.notes.push(
+            "the values fit the positions they stand at and not the ones their labels name, so it may be the labels that are out of place"
+        )
+        d.fixes @ d.fixes.push(order_fix.renamed(s, given, names: what.names, moved: order.moved, from: what.from))
+    return d
+
+function every(xs: [bool]) -> bool
+    for x in xs
+        if !x
+            return false
+
+    return true
+
+## Tests
+
+test "two labels in each other's place are one order, and a rotation is too"
+    swapped = order_of(written: ["b", "a"], names: ["a", "b"], from: 0)
+    assert swapped.moved == [0, 1]
+    assert swapped.meant == [1, 0]
+    rotated = order_of(written: ["c", "a", "b"], names: ["a", "b", "c"], from: 0)
+    assert rotated.moved == [0, 1, 2]
+    assert rotated.meant == [2, 0, 1]
+
+    # Behind a receiver the labels start at the second position.
+    dotted = order_of(written: ["to", "from"], names: ["", "from", "to"], from: 1)
+    assert dotted.moved == [0, 1]
+    assert dotted.meant == [2, 1]
+
+test "a label naming nothing is told by itself, beside the order it leaves"
+    beside = order_of(written: ["b", "a", "d"], names: ["a", "b", "c"], from: 0)
+    assert beside.moved == [0, 1]
+    assert beside.meant == [1, 0]
+
+test "labels that name a position whose own value stands there are no order"
+    # `b` names the second position, where `b` stands already.
+    twice = order_of(written: ["b", "b"], names: ["a", "b"], from: 0)
+    assert twice.moved.len() == 0
+
+    # `c` names the third position, whose value is not moved.
+    open = order_of(written: ["c", "a", "x"], names: ["a", "b", "c"], from: 0)
+    assert open.moved.len() == 0
+    assert order_of(written: ["a", "b"], names: ["a", "b"], from: 0).moved.len() == 0
+    assert order_of(written: ["", ""], names: ["a", "b"], from: 0).moved.len() == 0

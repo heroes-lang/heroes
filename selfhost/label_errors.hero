@@ -65,6 +65,17 @@ function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, 
 
     return d
 
+# Labels written in one another's place (defect 2261, `check/label_order.hero`):
+# one mistake, told once, at the first label out of place, naming the order the
+# callee declares and the order the labels write. A label names the value at
+# its own position (spec § 9), so the values stand in the order written.
+function order_written(holder: str, declared: [str], written: [str], span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "wrong_label",
+        message: "`" + holder + "` takes " + listing(declared, last: ", ") + " in that order, and these labels write " + listing(written, last: ", ") + " — a label names the value at its own position and moves none",
+        span: span
+    )
+
 # A label at a call made through a FUNCTION VALUE of a type that carries no
 # names. `f(nonsense: "a")` was accepted and ignored at every function type
 # until panel 128 — a label there was not even a claim. Since defect 026 a type
