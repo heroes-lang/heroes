@@ -1,0 +1,55 @@
+# Defect 2212, 2026-10-29. The other values whose text the C library decides
+# and that no golden printed: the fixture the issue cites from the Goose
+# language, the values that told its backends apart (2^89, 2^-96, 2^87, 2^90
+# and 1.000000000000001), and the least subnormals, which the header of
+# `f64-rendering.hero` names and its program never printed.
+#
+# A power of two is the bottom of its binade, where the doubles below it are
+# half as far apart as those above. At 2^89 the correctly rounded 16 digits,
+# 6.189700196426901e+26, fall outside that narrower half and read back as the
+# double under it, so the ladder writes 17 digits where a shortest printer
+# writes 6.189700196426902e+26 (design.md §4.9: never shortest). At 2^87 and
+# 2^90 the 16 digits read back two doubles below, so they take 17 as well;
+# 2^-96 reads back at 16. The literal 1.000000000000001 is not exact, so it is
+# read by the compiling machine's own C library (`atof`,
+# `selfhost/emit/literal.hero`) before the runtime writes it back.
+#
+# Below the normals the ladder starts at one digit (design.md §4.9), so the
+# least double prints `5e-324` and twice it `1e-323`, and the least `f32`
+# `1e-45` and twice it `3e-45`. Every power of two is built from 1.0 by
+# doubling or halving, which is exact all the way down.
+
+function double_power(exponent: i64) -> f64
+    value @= 1.0
+    count @= 0
+
+    while count < exponent
+        value @ value * 2.0
+        count @ count + 1
+
+    while count > exponent
+        value @ value / 2.0
+        count @ count - 1
+
+    return value
+
+function main()
+    print(double_power(exponent: 89))
+    print(double_power(exponent: -96))
+    print(double_power(exponent: 87))
+    print(double_power(exponent: 90))
+    print(1.000000000000001)
+
+    least = double_power(exponent: -1074)
+    print(least)
+    print(least + least)
+
+    narrow: f32 @= 1.0
+    halvings @= 0
+
+    while halvings < 149
+        narrow @ narrow / 2.0
+        halvings @ halvings + 1
+
+    print(narrow)
+    print(narrow + narrow)

@@ -1,0 +1,40 @@
+# Defect 2212, 2026-10-29. A double exactly halfway between two spellings of
+# one length, both of which read back as it, prints the one whose last digit is
+# even. A float renders through C's `%.*g` at increasing precision until
+# `strtod` reads the same bits back (design.md §4.9), and spec § 11 promises
+# the read-back and not one text, so at such a value the text is the C
+# library's. A correctly rounded `%.*g` in the default rounding mode, IEEE 754's
+# round-half-to-even, writes the even spelling; a library that rounds a tie up
+# writes the other one, which reads back too and passes every other check. Each
+# CI leg runs this case through its own C library, so a leg whose library
+# breaks a tie another way turns it red.
+#
+# Every value here is a sum of powers of two, so its literal is the value
+# exactly and no reader of the literal can round it.
+
+function main()
+    # 2^49 + 1/4, whose double has an ulp of 1/8: at 16 digits it is halfway
+    # between ...312.2 and ...312.3, and both read back. The sign does not move
+    # the tie, and `to_str` and a hole render as `print` does.
+    tie = 562949953421312.25
+    print(tie)
+    print(-tie)
+    print(to_str(tie))
+    print(f"{tie}")
+
+    # The control: below 2^49 + 3/4 the candidate ends in 7, odd, so both
+    # rules write ...312.8 and this line cannot tell two libraries apart.
+    print(562949953421312.75)
+
+    # The same tie at 17 digits, below one, and in exponent form (2^-25).
+    print(1000000000000000.25)
+    print(0.50000762939453125)
+    print(0.0000000298023223876953125)
+
+    # 2^-24, at the bottom of its binade, where the doubles below are half as
+    # far apart as those above. At 16 digits it is halfway between
+    # 5.960464477539062e-08, which reads back as the double below it, and
+    # 5.960464477539063e-08, which reads back as it: the even one is refused,
+    # so the ladder writes all 17 digits, where a library rounding the tie up
+    # stops at 16 with a spelling one digit shorter.
+    print(0.000000059604644775390625)

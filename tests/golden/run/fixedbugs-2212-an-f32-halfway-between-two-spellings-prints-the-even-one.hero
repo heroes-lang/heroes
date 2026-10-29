@@ -1,0 +1,31 @@
+# Defect 2212, 2026-10-29. The `f32` mirror of the double's case: an `f32`
+# exactly halfway between two spellings of one length, both of which read back
+# as it, prints the one whose last digit is even. The `f32` ladder is the
+# double's over 6 to 9 digits, `%.*g` of the value widened to a double and read
+# back through `(float)strtod` (design.md §4.9), so its tie is the C library's
+# too: round-half-to-even writes the even spelling, a library that rounds a tie
+# up writes the other one, and both read back. Each CI leg runs this case
+# through its own C library.
+#
+# Counted over every binary32 on 2026-10-29, the ties at which the two rules
+# write different text all fall at 8 digits, as both of these do. Every value
+# here is a sum of powers of two, so its literal is the value exactly.
+
+function main()
+    # 2^20 + 1/4, whose `f32` has an ulp of 1/8: at 8 digits it is halfway
+    # between 1048576.2 and 1048576.3, and both read back. The sign does not
+    # move the tie, and `to_str` and a hole render as `print` does.
+    tie: f32 = 1048576.25
+    print(tie)
+    print(-tie)
+    print(to_str(tie))
+    print(f"{tie}")
+
+    # 2^17 + 1/8, the tie two decimals down: 131072.12 and 131072.13.
+    eighth: f32 = 131072.125
+    print(eighth)
+
+    # The control: below 2^20 + 3/4 the candidate ends in 7, odd, so both
+    # rules write 1048576.8 and this line cannot tell two libraries apart.
+    control: f32 = 1048576.75
+    print(control)
