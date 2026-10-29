@@ -37,14 +37,17 @@ use check/unwrap_removal
 
 ## What a built-in expects of an argument
 
-# What a built-in expects of its index-th argument, given the type of its
-# first — absent where the rule has nothing to say and the argument must
-# be synthesised instead. This exists so the ⇐-only forms are writable
-# inside a built-in call: `out.push(.num(v: 1))` is the shape design.md's
-# own appendix uses six times.
-function expectation(c: state.Checker, name: str, first: i64, index: i64) -> i64?
+# What a built-in expects of its next argument, given the types of the ones
+# `before` it, the receiver's first — absent where the rule has nothing to
+# say and the argument must be synthesised instead. This exists so the
+# ⇐-only forms are writable inside a built-in call: `out.push(.num(v: 1))`
+# is the shape design.md's own appendix uses six times.
+function expectation(c: state.Checker, name: str, before: [i64]) -> i64?
+    index = before.len()
+
     if index == 0
         return fail(code: "absent", msg: "the first argument is synthesised")
+    first = before[0]
 
     if name == "push" && index == 1
         match table.get(c.out.types, first)
@@ -65,7 +68,12 @@ function expectation(c: state.Checker, name: str, first: i64, index: i64) -> i64
             )
             .fixed | .map | .array | .function_ty | .named => return fail(code: "absent", msg: "not fallible")
             .case_ty | .failure | .generic | .error        => return fail(code: "absent", msg: "not fallible")
+    return fixed_expectation(c, name, index: index)
 
+# What a built-in expects of its index-th argument whatever the first is: a
+# type the language gives it and no program changes, so a literal past an
+# integer one is offered no wider type (defect 2251, `check/given_width`).
+function fixed_expectation(c: state.Checker, name: str, index: i64) -> i64?
     if name == "join" && index == 1
         return ok(table.str_ty(c.out.types))
 
@@ -541,9 +549,16 @@ test "an expectation is handed down where the ⇐-only forms need one"
     c: state.Checker @= fresh()
     int_id = table.int_ty_id(c.out.types)
     xs = table.intern(@c.out.types, .array(element: int_id))
-    assert expectation(c, "push", first: xs, index: 1).must() == int_id
-    assert expectation(c, "push", first: xs, index: 0).is_err()
-    assert expectation(c, "slice", first: xs, index: 2).must() == int_id
+    assert expectation(c, "push", before: [xs]).must() == int_id
+    assert expectation(c, "push", before: []).is_err()
+    assert expectation(c, "slice", before: [xs, int_id]).must() == int_id
     u64_id = table.intern(@c.out.types, .int_ty(kind: .u64))
-    assert expectation(c, "repeat", first: table.str_ty(c.out.types), index: 1).must() == u64_id
-    assert expectation(c, "len", first: xs, index: 1).is_err()
+    assert expectation(c, "repeat", before: [table.str_ty(c.out.types)]).must() == u64_id
+    assert expectation(c, "len", before: [xs]).is_err()
+
+    # The language's widths answer whatever the first argument is; push's and
+    # default's are the program's, read from its first (defect 2251).
+    assert fixed_expectation(c, "repeat", index: 1).must() == u64_id
+    assert fixed_expectation(c, "slice", index: 1).must() == int_id
+    assert fixed_expectation(c, "push", index: 1).is_err()
+    assert fixed_expectation(c, "default", index: 1).is_err()

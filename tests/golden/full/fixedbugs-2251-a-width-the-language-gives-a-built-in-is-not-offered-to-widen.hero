@@ -1,0 +1,42 @@
+# Fixed defect 2251, 2026-10-29: a literal past the width a built-in gives
+# its argument was told to widen the type, which no program can: `repeat`'s
+# count is a `u64` (panel 054) and `slice`'s bounds are `i64`s whatever the
+# program writes. The note says whose width it is and offers a number in
+# range alone: at `repeat` by its name and through the dot, under a minus
+# sign, handed by an operator and past the top, and at each bound of `slice`.
+# A width the program wrote keeps both repairs: the element of its own array
+# that `push` takes, the payload of its own map that `default` falls back to.
+
+function by_its_name()
+    print(repeat("a", -1))  #~ int_out_of_range
+
+function through_the_dot()
+    print("a".repeat(-1))  #~ int_out_of_range
+
+function handed_by_an_operator()
+    print(repeat("a", -1 + 0))  #~ int_out_of_range
+
+function past_the_top()
+    print(repeat("a", 18446744073709551616))  #~ int_out_of_range
+
+function the_bounds_of_a_slice(xs: [i64])
+    print(xs.slice(from: 0, to: 9223372036854775808).len())  #~ int_out_of_range
+    print(slice("abc", from: -9223372036854775809, to: 1))  #~ int_out_of_range
+
+function its_own_element()
+    xs: [u8] @= []
+    xs @ xs.push(300)  #~ int_out_of_range
+    print(xs.len())
+
+function its_own_payload()
+    m: {str: u8} = {}
+    print(m["a"].default(256))  #~ int_out_of_range
+
+function main()
+    by_its_name()
+    through_the_dot()
+    handed_by_an_operator()
+    past_the_top()
+    the_bounds_of_a_slice(xs: [1, 2])
+    its_own_element()
+    its_own_payload()

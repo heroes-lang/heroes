@@ -1,0 +1,55 @@
+error[int_out_of_range]: `-1` does not fit a `u64`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:11:23
+     |
+  11 |     print(repeat("a", -1))  #~ int_out_of_range
+     |                       ^^
+  note: a `u64` holds 0 through 18446744073709551615, and this one is the language's: `repeat` takes it at that width, which no program changes. Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `-1` does not fit a `u64`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:14:22
+     |
+  14 |     print("a".repeat(-1))  #~ int_out_of_range
+     |                      ^^
+  note: a `u64` holds 0 through 18446744073709551615, and this one is the language's: `repeat` takes it at that width, which no program changes. Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `-1` does not fit a `u64`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:17:23
+     |
+  17 |     print(repeat("a", -1 + 0))  #~ int_out_of_range
+     |                       ^^
+  note: a `u64` holds 0 through 18446744073709551615, and this one is the language's: `repeat` takes it at that width, which no program changes. Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `18446744073709551616` does not fit a `u64`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:20:23
+     |
+  20 |     print(repeat("a", 18446744073709551616))  #~ int_out_of_range
+     |                       ^^^^^^^^^^^^^^^^^^^^
+  note: a `u64` holds 0 through 18446744073709551615, and this one is the language's: `repeat` takes it at that width, which no program changes. Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `9223372036854775808` does not fit an `i64`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:23:33
+     |
+  23 |     print(xs.slice(from: 0, to: 9223372036854775808).len())  #~ int_out_of_range
+     |                                 ^^^^^^^^^^^^^^^^^^^
+  note: an `i64` holds -9223372036854775808 through 9223372036854775807, and this one is the language's: `slice` takes it at that width, which no program changes. Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `-9223372036854775809` does not fit an `i64`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:24:30
+     |
+  24 |     print(slice("abc", from: -9223372036854775809, to: 1))  #~ int_out_of_range
+     |                              ^^^^^^^^^^^^^^^^^^^^
+  note: an `i64` holds -9223372036854775808 through 9223372036854775807, and this one is the language's: `slice` takes it at that width, which no program changes. Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `300` does not fit a `u8`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:28:18
+     |
+  28 |     xs @ xs.push(300)  #~ int_out_of_range
+     |                  ^^^
+  note: a `u8` holds 0 through 255. Widen the type, or write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `256` does not fit a `u8`
+  at tests/golden/full/fixedbugs-2251-a-width-the-language-gives-a-built-in-is-not-offered-to-widen.hero:33:26
+     |
+  33 |     print(m["a"].default(256))  #~ int_out_of_range
+     |                          ^^^
+  note: a `u8` holds 0 through 255. Widen the type, or write a number in range — this language never truncates one silently

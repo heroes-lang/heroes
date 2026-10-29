@@ -1253,13 +1253,12 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
                 value_span: a.exprs[arg.value].span,
                 taken: taken
             )
-        expected: i64? @= fail(code: "absent", msg: "no first argument yet")
-
-        if collected.len() > 0
-            expected @ builtins.expectation(c, name, first: collected[0], index: collected.len())
+        expected = builtins.expectation(c, name, before: collected)
 
         if !expected.is_err()
+            said = c.out.diagnostics.len()
             check(@c, a, r, s, decls, id: arg.value, expected: expected.must())
+            given_width.after_builtin(@c, a, name: name, at: collected.len(), value: arg.value, from: said)
             collected @ collected.push(expected.must())
         else
             collected @ collected.push(synth(@c, a, r, s, decls, arg.value))
