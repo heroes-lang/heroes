@@ -1,0 +1,3 @@
+installed: 0
+!at: fixedbugs-2257-a-sigabrt-handler-of-the-programs-own-c-never-runs-after-a-stop.hero:17:11
+!panic: array index out of range

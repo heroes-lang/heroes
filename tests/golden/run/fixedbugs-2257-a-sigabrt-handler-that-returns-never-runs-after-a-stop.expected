@@ -1,0 +1,3 @@
+about to read past the end
+!at: fixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop.hero:22:11
+!panic: array index out of range

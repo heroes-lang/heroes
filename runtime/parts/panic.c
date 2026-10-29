@@ -31,8 +31,27 @@
  * one of the callers. */
 static volatile sig_atomic_t hero_runtime_spoke = 0;
 
+/* THE STOP IS FINAL (panel 232's R6, *nothing catches that stop*; defect 2257,
+ * 2026-10-29). `SIGABRT` goes back to its default before `abort()`, so no
+ * handler a program installed through C runs after the runtime's report: a
+ * Heroes function handed to libc's `signal`, with no C of the program's own,
+ * printed its line after the report and ended the program at 0, a stop told
+ * to whatever reads the status as success; one written in the program's own
+ * C did the same, and one that returned printed its lines before the 134.
+ * `signal` is on the async-signal-safe list beside `abort` (sigaction(2)),
+ * and stack.c's handler is one of the callers.
+ *
+ * The lease handler (`parts/os.c`) keeps its purpose: it speaks for a death
+ * this runtime did not raise, and for the runtime's own it said nothing and
+ * set the default back itself. What it costs is said: a crash reporter a
+ * program binds through C no longer sees the runtime's stops, only C's own;
+ * the report on stderr and the status stay. On Windows the UCRT's `abort`
+ * raises `SIGABRT` only to an installed handler, then fails fast; with the
+ * default it fails fast at once, as the lease handler's own re-abort ended a
+ * runtime stop there before (unrun on the box). */
 static _Noreturn void hero_abort(void) {
     hero_runtime_spoke = 1;
+    signal(SIGABRT, SIG_DFL);
     abort();
 }
 

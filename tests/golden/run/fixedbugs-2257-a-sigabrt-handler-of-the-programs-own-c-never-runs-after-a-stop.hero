@@ -1,0 +1,18 @@
+# Fixed 2026-10-29, defect 2257, lane c-boundary: the shape beside
+# `fixedbugs-2257-a-heroes-function-handed-c-for-sigabrt-never-runs-after-a-stop`,
+# a handler written in the program's own C (panel 232's critic, F20).
+# Symptom: after the runtime's report, the header's handler wrote `caught: the
+# stop did not stop` and the program exited 0.
+# Cause: the one of `hero_abort` raising `SIGABRT` with the program's
+# disposition; the runtime sets it back to its default first, and the
+# handler never runs.
+
+extern "fixedbugs-2257-a-sigabrt-handler-of-the-programs-own-c.h"
+    function catcher_install() -> i64
+
+function main()
+    print("installed: ", catcher_install())
+    xs = [1, 2]
+    i = len(args()) + 4
+    print(xs[i])
+    print("after")
