@@ -1,0 +1,17 @@
+# Defect 2254, 2026-10-29 (M-compatibility-promise): `default(x, v)` is
+# `x.default(v)` (spec § 9), so `v` is evaluated only where `x` is an error.
+# The call's spelling did not build before; lowered as a call of a function it
+# would have evaluated `v` first, as every argument is. `noisy` prints its
+# label each time it runs, so a fallback evaluated for the present key `a`
+# prints a line this case does not expect, in either spelling.
+
+function noisy(label: str, value: i64) -> i64
+    print(label)
+    return value
+
+function main()
+    m: {str: i64} = {"a": 1}
+    print(default(m["a"], noisy(label: "the call's fallback for a", value: 9)))
+    print(default(m["b"], noisy(label: "the call's fallback for b", value: 9)))
+    print(m["a"].default(noisy(label: "the dot's fallback for a", value: 9)))
+    print(m["b"].default(noisy(label: "the dot's fallback for b", value: 9)))

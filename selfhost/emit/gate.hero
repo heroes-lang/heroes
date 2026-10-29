@@ -39,6 +39,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use ir/questions
 
 record GateNote
     code: str
@@ -185,8 +186,14 @@ function what_the_author_can_do(code: str) -> str
     if code == "fixed_flow" || code == "fixed_element"
         return "write a fixed array out where its record is built, and compare the whole record or one element at a time — C has neither array assignment nor array comparison"
 
+    # Keyed on the built-in's NAME (`callee_note`), so no argument and no
+    # type moves it: *call it at a type the built-in accepts* pointed
+    # nowhere, and `must(x)` met it until defect 2254. Every built-in the
+    # checker types is emitted, or lowered to no call at all (the tests
+    # below), so a checked program reaches this row through the compiler's
+    # own gap alone.
     if code == "builtin"
-        return "call it at a type the built-in accepts"
+        return "the backend writes no call of it at any type, so the line compiles only without it"
     return "this is refused for what is on this line, so something else compiles"
 
 ## The type table (gate_types.rs)
@@ -529,3 +536,35 @@ test "a type's notes found once and said at each use are the walk's at each use,
 
     # And each type's notes were found once: one entry per type reached.
     assert memo.len() <= count
+
+# Defect 2254: the `builtin` row keys on a built-in's name, so a checked
+# program reaches it only where the lowering leaves as a call a built-in the
+# backend writes no call of. Every built-in the checker types by name
+# (`inventory.arity_of`'s claim, and `print`) is EMITTED, or is one the
+# lowering never leaves as a call: `cstr` a cast, the three readers of a T?
+# branches (`ir/flatten.hero`'s `builtin_call`). A built-in typed and neither
+# fails here, before a program meets the row.
+test "every built-in the checker types is emitted, or lowered to no call"
+    for name in inventory.NAMES
+        typed = !inventory.arity_of(name).is_err() || name == "print"
+        emitted: bool @= false
+
+        for one in builtins.EMITTED
+            if one == name
+                emitted @ true
+
+        if typed && !emitted
+            assert name == "cstr" || questions.is_fallible_operation(name)
+
+# The program beside the table: the six built-ins the backend writes no call
+# of, the four that take a dot in both spellings, pass the gate. `must(x)`,
+# `default(x, v)` and `is_err(x)` were each refused here before defect 2254.
+test "the built-ins lowered to no call pass the gate in either spelling"
+    text = "extern \"m.h\"\n    function width(s: cstr lent) -> u64\n\nfunction half(n: i64) -> i64?\n    if n > 2\n        return fail(code: \"big\", msg: \"too big\")\n    return ok(n)\n\nfunction main()\n    m: {str: i64} = {\"a\": 1}\n    print(must(m[\"a\"]), m[\"a\"].must(), default(m[\"b\"], 2), m[\"b\"].default(2))\n    print(is_err(half(n: 3)), half(n: 1).is_err(), width(cstr(\"ab\")), width(\"c\".cstr()))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    assert refuse(target: .program_build, p: low.program, c: c, s: s, decls: parsed.decls).len() == 0
