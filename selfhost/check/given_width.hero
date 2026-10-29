@@ -3,11 +3,13 @@
 # with a note giving the range and two repairs, a wider type or a number in
 # range (`digits.int_out_of_range_at`, design.md §4.17). Where the width is a
 # parameter of the library's, or one a header gives an `extern` binding, a
-# parameter or a field of a group's `record` (§4.19), the first repair is one
-# the program cannot make: the library's declaration is not its to change,
-# and a binding declared wider than its header is refused, `ffi_parameter_type`
-# and `ffi_field_type`. So once such a position's value is checked, the note
-# says whose width it is and offers a number in range alone.
+# parameter or a field of a group's `record` (§4.19), or an argument a
+# built-in takes at the language's width (defect 2251), the first repair is
+# one the program cannot make: the library's declaration and the language
+# are not its to change, and a binding declared wider than its header is
+# refused, `ffi_parameter_type` and `ffi_field_type`. So once such a
+# position's value is checked, the note says whose width it is and offers a
+# number in range alone.
 #
 # Written after the check, as `check/width_class.hero` writes its note,
 # rather than carried into it: every frame of the walk holds the checker,
@@ -26,6 +28,7 @@ use check/contextual
 use check/group_fields
 use check/settling
 use check/waiting as waits
+use check/builtins
 
 # After a call's values were checked, from diagnostic `from` on, where the
 # callee is the library's or an `extern` binding: the receiver's, where the
@@ -60,6 +63,18 @@ function after_call(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast
                 amend(@c, a, value: values[k], ty: call.params[k], whose: whose, from: from)
                 k @ k + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# After a built-in's argument at position `at`, the receiver's 0, was checked,
+# from diagnostic `from` on, where the language gives that position its width
+# whatever the program writes (`builtins.fixed_expectation`): `repeat`'s
+# count, a `u64` since panel 054, and `slice`'s two bounds (defect 2251).
+function after_builtin(@c: state.Checker, a: ast.Ast, name: str, at: i64, value: i64, from: i64)
+    fixed = builtins.fixed_expectation(c, name, index: at)
+
+    if c.out.diagnostics.len() == from || fixed.is_err()
+        return
+    whose = "the language's: `" + name + "` takes it at that width, which no program changes"
+    amend(@c, a, value: value, ty: fixed.must(), whose: whose, from: from)
 
 # After a construction of the record `decl` was checked, from diagnostic
 # `from` on, where the record is a group's: each field as the walk checked
