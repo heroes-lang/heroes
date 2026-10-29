@@ -1,0 +1,43 @@
+# Defect 2272, 2026-10-29 (M-compatibility-promise): where `ok(n)` is refused,
+# `n.ok()` is refused in the same words, its receiver the first argument (spec
+# § 9): one argument too many, one where a `()?` takes none, a payload of
+# another type from a receiver the position types and from one with a type of
+# its own, a type that is not fallible, and a position that asks for none,
+# whose message is true of it now. A generic argument nothing settles is told
+# once, as `ok(3)` is, where it was told twice in the words of a position
+# that asks for nothing.
+
+function pair<T>(a: T, b: T) -> [T]
+    return [a, b]
+
+function one_too_many(n: i64) -> i64?
+    return n.ok(5)  #~ wrong_arity
+
+function none_for_a_unit(n: i64) -> ()?
+    return n.ok()  #~ wrong_arity
+
+function a_literal_of_another_type(flag: bool) -> str?
+    if flag
+        return 5.ok()  #~ type_mismatch
+    return fail(code: "no", msg: "no")
+
+function a_value_of_another_type(n: i64) -> str?
+    return n.ok()  #~ type_mismatch
+
+function not_fallible(n: i64) -> i64
+    return n.ok()  #~ type_mismatch
+
+function nothing_asked(n: i64)
+    x = n.ok()  #~ cannot_infer
+    print(x.is_err())
+
+function nothing_settles()
+    w = pair(a: 3.ok(), b: 4.ok())  #~ cannot_infer
+    print(w.len())
+
+function main()
+    print(one_too_many(n: 1).is_err(), none_for_a_unit(n: 1).is_err())
+    print(a_literal_of_another_type(flag: true).is_err(), a_value_of_another_type(n: 1).is_err())
+    print(not_fallible(n: 2))
+    nothing_asked(n: 3)
+    nothing_settles()

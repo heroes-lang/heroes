@@ -40,8 +40,10 @@ use check/waiting
 # result owes a part to a literal's default or to nothing (`weight` above 0),
 # a number, a container or a fallible. A generic call whose result is all its
 # arguments' own may be a record with a field of that name, so it is read
-# first, as before.
-function by_the_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64) -> bool
+# first, as before. `x.ok()` is `ok(x)` (spec § 9; defect 2272), its receiver
+# the one argument the type its position asks for decides; where the position
+# `asked` none, it is read first, as the argument of `ok(x)` is.
+function by_the_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, asked: bool) -> bool
     match r.uses[at]
         .top t =>
             match decls[t.at].kind
@@ -49,7 +51,10 @@ function by_the_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
                     if fd.value.params.len() == 0 || fd.value.params[0].mutable
                         return false
                 .constant_decl | .record_decl | .variant_decl | .test_decl => return false
-        .local | .builtin | .module | .unresolved => return false
+        .builtin =>
+            if !asked || waiting.constructor(r.uses[at]).is_err()
+                return false
+        .local | .module | .unresolved => return false
 
     if !waiting.needs_context(a, r, s, decls, id: receiver)
         return false

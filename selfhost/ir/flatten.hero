@@ -12,8 +12,8 @@
 # instruction and say "this one produced a value somebody owns".
 #
 # THE KNOT'S MAP (CLAUDE.md §11's due for a module the language refuses
-# to split). Every function here but `bind_payload` and `receiver_first`
-# is mutually recursive by construction — a statement lowers its
+# to split). Every function here but `bind_payload` is mutually recursive
+# by construction — a statement lowers its
 # expressions, an if-expression lowers its blocks, a block lowers its
 # statements — so no cut exists: `module_cycle` fires on the `use` edge
 # whatever it carries.
@@ -741,19 +741,6 @@ function lent_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
 function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg], callee: i64?) -> inout.Args
     return lowered_from(@b, a, r, c, s, decls, receiver: ok(receiver), given: given, callee: callee)
 
-# A dotted call's arguments as the plain call writes them: the receiver
-# first, with no label and no `@`, which is how `lowered_from` hands a
-# receiver on, then the written ones.
-function receiver_first(receiver: i64, given: [ast.Arg]) -> [ast.Arg]
-    out: [ast.Arg] @= [
-        ast.Arg(name: fail(code: "none", msg: "a receiver has no label"), mutable: false, value: receiver)
-    ]
-
-    for arg in given
-        out @ out.push(arg)
-
-    return out
-
 ## `x.f(y)` — the three tokens with two meanings (§4.11, §4.13; panel 079)
 
 # The same three tokens are either a call to a free function with the
@@ -828,7 +815,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
             s,
             decls,
             at: bt.at,
-            given: receiver_first(receiver, given),
+            given: ast.receiver_first(receiver, given),
             ty: ty,
             span: span
         )

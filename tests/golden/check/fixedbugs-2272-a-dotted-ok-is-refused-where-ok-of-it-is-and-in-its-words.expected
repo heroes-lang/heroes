@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:14:12: error[wrong_arity]: `ok` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:17:12: error[wrong_arity]: `ok` takes 0 argument(s), found 1
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:21:16: error[type_mismatch]: expected `str`, found `i64`
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:25:12: error[type_mismatch]: expected `str`, found `i64`
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:28:12: error[type_mismatch]: `ok(…)` builds a fallible value, and `i64` is not one — no `T` is ever promoted to a `T?`
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:31:9: error[cannot_infer]: `ok(…)` builds a fallible value, and which one comes from the context — return it, bind it with an annotation, or pass it where a `T?` is expected
+tests/golden/check/fixedbugs-2272-a-dotted-ok-is-refused-where-ok-of-it-is-and-in-its-words.hero:35:17: error[cannot_infer]: `ok(…)` takes its type from the type its position asks for, and `a` of `pair` asks for `T`: no other argument and no context says what `T` is

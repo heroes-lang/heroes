@@ -1,0 +1,41 @@
+# Defect 2272, 2026-10-29 (M-compatibility-promise): `x.ok()` was refused
+# `cannot_infer` wherever a `T?` is asked for, its message naming the very
+# positions the program used. Spec § 9 makes `x.f(y)` the call `f(x, y)`, so
+# `n.ok()` is `ok(n)`: returned, bound with an annotation, passed as an
+# argument, written as an element, a branch's value and a generic argument
+# another argument settles, its receiver taking the payload's type from the
+# position where it has none of its own, so `255.ok()` builds a `u8?`. The
+# lowering builds `ok(n)` from it (`ir/flatten.hero`'s `builtin_call`). A
+# field `ok` holding a function is still the field, asked first (§4.11, panel
+# 079): the last value printed is the field's.
+
+record Box
+    ok: (function() -> i64?)
+
+function seven() -> i64?
+    return ok(7)
+
+function wrap(n: i64) -> i64?
+    return n.ok()
+
+function take(x: i64?) -> i64
+    return x.default(0)
+
+function pick(n: i64) -> i64?
+    z: i64? = if n > 1
+        n.ok()
+    else
+        fail(code: "small", msg: "too small")
+    return z
+
+function pair<T>(a: T, b: T) -> [T]
+    return [a, b]
+
+function main()
+    y: u8? = 255.ok()
+    print(wrap(n: 3).must(), " ", y.must(), " ", take(x: 5.ok()))
+    xs: [i64?] = [1.ok(), ok(2)]
+    print(xs[0].must(), " ", pick(n: 7).must(), " ", pick(n: 0).is_err())
+    x: i64? = pick(n: 4)
+    w = pair(a: x, b: 3.ok())
+    print(w[1].must(), " ", Box(ok: seven).ok().must())
