@@ -266,6 +266,22 @@ the coordinator on 2026-10-26**:
 | coordinator (blind) | correction turns after an abort within 2 points of 052's | unscorable until the author counts 052's base |
 | panel 159's llm-ergonomist | ≥1 in 3 first attempts at a fallible `main` write `-> ()?` | **unscored**: its condition never run (finding 2) |
 
+**The spec-warden's two counts, scored 2026-10-29** (decision 2241,
+https://github.com/heroes-lang/heroes/issues/2241): the author unsealed the primary's transcript,
+`tests/thesis/held-out/runs/c24a5b81.enc`, on their Mac and counted it with commands printing
+numbers alone, no line of a program on the screen (decision 4a of M-thesis-harness); the folder
+`build/thesis-runs/c24a5b81` this table's issue named had been cleared with the scratch on
+2026-10-25, measurement 052's own note. Of the 480 turn-1 answers: **W4 hit**, `main_returns`
+refused in **0** (at most 4 held; the strict arm's turn-1 codes read `needs_label` 74,
+`expected_arm_arrow` 25, `bad_operand` 24, `discarded_value` 10 at the top, so the path counted is
+the verdicts' own); **W5 missed**, a computed exit code passed in **3** (at most 2 held): 473
+answers pass a literal, 7 call `exit` nowhere, 2 pass a name and 1 another expression, and each of
+the three is an `i64` the compiler of `sources 5e0ca4c634086a7c` refuses at the call with
+`type_mismatch`, *expected `u8`*, none a name already of type `u8`. So R4's own condition is met and
+its fallback lands, `11abort`, a literal outside 0 to 255 refused and a computed code outside it an
+abort, +15 real: task 2250 on M-compatibility-promise
+(https://github.com/heroes-lang/heroes/issues/2250). R5 stands.
+
 ## What the seats could not run
 
 Linux, no leg in this sitting; the Windows box (`0xC0000409` again, `exit(code: 256)` there, dbghelp);
