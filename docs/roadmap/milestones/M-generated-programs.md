@@ -190,3 +190,14 @@ which this milestone finishes stating. Oracle 1 is read in five since the sittin
 (`docs/panel/231-programs-nobody-wrote-the-generator-its-oracles-its-reducer-and-what-it-leaves-in-the-net.md`,
 R5), and the reducer works over the generator's own tree rather than from
 `selfhost/mutate/sites.hero`, which no program of the harness can `use` (R6).
+
+**Ratified 2026-10-29** by the author's reading, panel 231 as it landed
+(https://github.com/heroes-lang/heroes/issues/2243). **Closed the same morning**,
+[072](../../records/journal/072-generated-programs.md): the full net 10,254 and 0, pushed at
+`cb8a6b3d9`; decision 2241 answered by the author's counts of the sealed run, W4 0 of 480 and W5 3
+of 480 (https://github.com/heroes-lang/heroes/issues/2241). **Tagged that afternoon**,
+`m-generated-programs` on `de2353e17`, once defects 2230 and 2238, `adjacent` at their second tag,
+were repaired at steps 21 and 22 and the tag's gate read the full net 10,217 and 0, pushed at
+`b0bfd2690`. What it carried forward is https://github.com/heroes-lang/heroes/issues/2245 and
+https://github.com/heroes-lang/heroes/issues/2250, on row 74, and the `adjacent`
+https://github.com/heroes-lang/heroes/issues/2242.
