@@ -1,0 +1,23 @@
+# Fixed 2026-10-29, defect 2255, lane c-boundary (panel 232's R3): C hands the
+# program a handle of another type at an address the program gave back, as a
+# library recycling one block across kinds of object does.
+# Symptom: `b_read(x: b)`, `b` a plain result of `b_get`, aborted as a copy made
+# before the ending call, a correct program refused with a false message.
+# Cause: the runtime forgot a given-back address only when an `acquires`
+# result, a `borrows` hand-back or a callback's argument brought it back
+# (panel 177's item 2). Every handle C hands the program clears its mark now,
+# which spec § 13's *unless C has since handed its address out again* says.
+
+extern "fixedbugs-2255-another-type.h"
+    record A tag ta
+    record B tag tb
+    function a_open() -> A acquires a_close
+    function a_close(x: A consumes)
+    function b_get() -> B
+    function b_read(x: B) -> i64
+
+function main()
+    a = a_open()
+    a_close(x: a)
+    b = b_get()
+    print("b_read: ", b_read(x: b))

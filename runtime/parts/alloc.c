@@ -883,8 +883,11 @@ void hero_handle_alive_at(const void *h, const char *where, const HeroPlace *sit
 
 void hero_handle_alive(const void *h, const char *where) { hero_handle_alive_at(h, where, NULL); }
 
-/* C HANDED THE ADDRESS BACK, whatever ended there before: a `borrows` result
- * or cell, or a handle C passes to a callback. The callback's clear runs in a
+/* C HANDED THE ADDRESS BACK, whatever ended there before: a result or an `@`
+ * cell, a field of either, a `borrows` one among them, or a handle C passes to
+ * a callback. Every one since defect 2255: a plain result was none, so a
+ * library recycling a given-back object's block for another type had its
+ * handle stopped as a stale copy (`selfhost/emit/handle_traffic.hero`). The callback's clear runs in a
  * THUNK at the address handed to C and never at the function's entry, because
  * a Heroes function called by name would otherwise clear the mark on a stale
  * copy handed to it (panel 177's critic, `cb_launder`, exit 0 reading freed

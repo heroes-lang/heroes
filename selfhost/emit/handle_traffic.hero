@@ -215,34 +215,38 @@ function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls
             lent(@w, c, s, decls, fd: fd.value, arguments: arguments, target: target)
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
 
-# What C LENT: a `borrows` result or `@` cell is an address C handed out,
-# and whatever life ended there before is over (panel 177's item 2). Told
-# after the acquisitions, because the two never name one address in one call
-# and the order is the reader's.
+# What C HANDED OUT (panel 177's item 2, read whole by defect 2255): every
+# handle C hands the program, a result or an `@` cell, a field of either among
+# them, is an address C gave out, and whatever life ended there before is
+# over, which spec § 13's *unless C has since handed its address out again*
+# says. Panel 177 named a `borrows` hand-back and a callback's argument
+# (`emit/callback_thunk.hero`) beside the acquisition and the reference, which
+# clear the address themselves; a plain result, a plain cell and a field of a
+# returned record are handed out all the same, and a library recycling a
+# given-back object's block for another type's had its handle stopped as a
+# copy made before the ending call, a correct program refused with a false
+# message. A cell whose parameter ends a life, `consumes` or `transfers`,
+# hands nothing out: its end is what marked the address. Told after the
+# acquisitions, because the two never name one address in one call and the
+# order is the reader's.
 function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, arguments: [str], target: str?)
-    if fd.borrows_result && !target.is_err()
-        written = state.written_type(c, fd.result)
-
-        if !written.is_err()
-            emit_each(@w, c, s, decls, ty: written.must(), value: target.must(), entry: "hero_handle_lent", tail: "")
+    if !target.is_err() && fd.acquires_result.is_err() && fd.retains_result.is_err()
+        handed_out(@w, c, s, decls, node: fd.result, value: target.must())
     at: i64 @= 0
 
     for p in fd.params
-        if at < arguments.len() && p.borrows && p.mutable
-            written = state.written_type(c, p.ty)
-
-            if !written.is_err()
-                emit_each(
-                    @w,
-                    c,
-                    s,
-                    decls,
-                    ty: written.must(),
-                    value: handle_text.cell_of(arguments[at]),
-                    entry: "hero_handle_lent",
-                    tail: ""
-                )
+        if at < arguments.len() && p.mutable && !p.consumes && p.transfers.is_err() && p.acquires.is_err() && p.retains.is_err()
+            handed_out(@w, c, s, decls, node: p.ty, value: handle_text.cell_of(arguments[at]))
         at @ at + 1
+
+# One clear per handle a value of the written type node `node` reaches, and
+# none where it reaches none, an `i64` result or a `cstr` cell.
+function handed_out(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], node: i64, value: str)
+    written = state.written_type(c, node)
+
+    if written.is_err() || reaches.handle_suffixes(c, s, decls, ty: written.must()).len() == 0
+        return
+    emit_each(@w, c, s, decls, ty: written.must(), value: value, entry: "hero_handle_lent", tail: "")
 
 # A `retains` result joins the life it finds, or begins one.
 function retained_result(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, target: str?, ends_here: str)
