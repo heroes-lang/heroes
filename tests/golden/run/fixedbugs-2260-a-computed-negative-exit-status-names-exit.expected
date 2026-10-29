@@ -1,0 +1,3 @@
+before
+!at: fixedbugs-2260-a-computed-negative-exit-status-names-exit.hero:6:5
+!panic: panic: `exit(code:)` takes 0 to 255, the statuses a shell reads, and was given -1

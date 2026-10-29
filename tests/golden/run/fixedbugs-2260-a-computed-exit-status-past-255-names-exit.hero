@@ -1,0 +1,12 @@
+# Fixed 2026-10-29, defect 2260, lane c-boundary (panel 232's R5): a computed `exit`
+# status outside 0 to 255.
+# Symptom: the stop read `panic: .must() on an error: does_not_fit: ...`, its
+# first words sending the reader to a `.must()` in the library's `exit`, in no
+# file of theirs; the place and the reason were the program's.
+# Cause: the library stops there with a `.must()` on a failure it builds, and
+# every `.must()` was told by `hero_panic_must_at`. A `.must()` of the
+# library's own is told by its message, which names `exit`, at the call.
+
+function main()
+    print("before")
+    exit(code: len(args()) + 256)

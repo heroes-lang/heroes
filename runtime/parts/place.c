@@ -243,6 +243,28 @@ _Noreturn void hero_panic_must_at(HeroFailure f, const char *file, const char *f
     hero_abort();
 }
 
+/* A stop of the Heroes library's own (defect 2260): `exit` with a computed status
+ * outside 0 to 255, `args()` with an argument that is not text, each written in
+ * the library as a `.must()` on a failure it builds. `hero_panic_must_at`'s line
+ * sent the reader to a `.must()` that stands in the library, in no file of
+ * theirs; this one is the failure's message, which names the library's function,
+ * then the place of the program's call, which the library was handed
+ * (`selfhost/emit/stop_place.hero`). The code is the library's own word and
+ * stays off the line. */
+_Noreturn void hero_panic_library_at(HeroFailure f, const char *file, const char *function, int64_t line,
+                                     int64_t column) {
+    hero_str_require(f.code);
+    hero_str_require(f.msg);
+    fflush(stdout);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "panic: ");
+    hero_report_message(&r, f.msg);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_place(&r, file, function, line, column);
+    hero_report_flush(&r);
+    hero_abort();
+}
+
 /* `assert` (§4.18, spec § 12 Tests and holes): the head line, the place, then the
  * sides where there are two, so a side's length never pushes the place out of a
  * reader's first glance (panel 230's R2, *called after the head line and the

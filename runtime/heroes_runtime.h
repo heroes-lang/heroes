@@ -469,6 +469,11 @@ _Noreturn void hero_panic_byte_at(HeroStr s, int64_t index, const char *, const 
  * message is the `code` and `msg` the author wrote — a panic saying only that a
  * `.must()` failed tells the reader the one thing they already know. */
 _Noreturn void hero_panic_must_at(HeroFailure f, const char *, const char *, int64_t, int64_t);
+/* A stop the Heroes library's own Heroes makes with a `.must()` on a failure it
+ * builds, `exit` with a status outside 0 to 255 and `args()` with an argument
+ * that is not text: the failure's message alone, at the program's call
+ * (defect 2260), never a `.must()` no file of the program's holds. */
+_Noreturn void hero_panic_library_at(HeroFailure f, const char *, const char *, int64_t, int64_t);
 /* `assert` (§4.18). Two entry points because C has no optional arguments and the
  * spec asks for both the source expression AND both sides — the second is what a
  * bare "assert failed" loses. The emitter renders each side through the same

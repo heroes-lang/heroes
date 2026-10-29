@@ -1,0 +1,6 @@
+# Fixed 2026-10-29, defect 2260, lane c-boundary: the shape beside
+# `fixedbugs-2260-a-computed-exit-status-past-255-names-exit`, a status below 0.
+
+function main()
+    print("before")
+    exit(code: len(args()) - 1)

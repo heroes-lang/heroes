@@ -351,6 +351,7 @@
 #pragma pop_macro("hero_panic_at")
 #pragma pop_macro("hero_panic_byte_at")
 #pragma pop_macro("hero_panic_index_at")
+#pragma pop_macro("hero_panic_library_at")
 #pragma pop_macro("hero_panic_must_at")
 #pragma pop_macro("hero_panic_overflow_at")
 #pragma pop_macro("hero_panic_unmatched_case_at")

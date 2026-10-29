@@ -19,6 +19,7 @@ use emit/builtins
 use emit/writer
 use emit/stop_place
 use emit/sides
+use emit/ffi_lookup
 use token
 use check/table
 use source
@@ -39,9 +40,20 @@ function stop(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
 # names the code and msg the author wrote rather than only that a
 # .must() failed, and since panel 230's R1 the place it was called at:
 # `site`, the start of the `.must()` expression (`emit/stop_place.hero`).
+#
+# **A `.must()` the library's own Heroes writes is the library's stop**
+# (defect 2260): `exit` with a computed status outside 0 to 255 and `args()`
+# with an argument that is not text are written so, on a failure the library
+# builds, and the report opened `.must() on an error:`, a call in no file of
+# the program's. It is told by the failure's message, which names the
+# library's function, at the place of the program's call.
 function must_stop(@w: writer.Writer, s: source.Source, f: containers.Function, run: ir.Run, site: i64)
     writer.at_generated(@w)
     given = containers.args_of(f, run)
+    entry: str @= "hero_panic_must_at("
+
+    if stop_place.in_library(s, f)
+        entry @ "hero_panic_library_at("
 
     if given.len() > 0
         handled: bool @= false
@@ -50,7 +62,7 @@ function must_stop(@w: writer.Writer, s: source.Source, f: containers.Function, 
             .value_arg v =>
                 writer.line(
                     @w,
-                    text: "    hero_panic_must_at(" + mangle.value(v.value) + ", " + stop_place.of(s, f, offset: site) + ");"
+                    text: "    " + entry + mangle.value(v.value) + ", " + stop_place.of(s, f, offset: site) + ");"
                 )
                 handled @ true
             .inout_arg => handled @ handled
@@ -262,3 +274,45 @@ test "two str sides are handed over by address and quoted by the runtime, an unm
     unmatched_value_stop(@w, c, s, f, run: ir.Run(start: 1, length: 1), site: 0)
     got = writer.finish(w)
     assert got == "#line 2 \"t.c\"\n    hero_panic_assert_shown_at(t0, hero_show_str, &t1, &t2, 0, \"t.hero\", \"t.t\", 1, 1);\n    hero_panic_unmatched_str_at(t1, \"t.hero\", \"t.t\", 1, 1);\n"
+
+# Defect 2260: a `.must()` the library's own Heroes writes, `exit`'s or
+# `args()`'s, is the library's stop, told in its message at its caller's place;
+# one the program writes keeps the `.must()` line and its own place.
+test "a .must() the library writes stops in the library's words at its caller's place, a program's in its own (defect 2260)"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "function main()\n    print(1)\n")
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "function exit(code: i64)\n", is_library: true)
+    ]
+    s = source.from_files(inputs)
+    w: writer.Writer @= writer.new_writer("t")
+    must_stop(@w, s, failing(start: s.files[1].start), run: ir.Run(start: 0, length: 1), site: s.files[1].start)
+    must_stop(@w, s, failing(start: s.files[0].start), run: ir.Run(start: 0, length: 1), site: s.files[0].start + 20)
+    got = ffi_lookup.lines(text: writer.finish(w))
+    calls: [str] @= []
+
+    for line in got
+        if line.len() > 0 && line[0] == ' '
+            calls @ calls.push(line)
+
+    assert calls == ["    hero_panic_library_at(t0, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);", "    hero_panic_must_at(t0, \"main.hero\", \"main.main\", 2, 5);"]
+
+# A function whose one argument is the failure a `.must()` stops on, its span at
+# `start`.
+function failing(start: i64) -> containers.Function
+    return containers.Function(
+        name: "main",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [0],
+        arguments: [.value_arg(value: 0)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: start, end: start + 1)
+    )
