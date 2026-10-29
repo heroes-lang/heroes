@@ -1,0 +1,39 @@
+# fixedbugs, defect 2238, 2026-10-29: the routes the messages name for a C
+# name a group cannot spell, run, for a keyword of Heroes and for a word the
+# lexer refuses. The program's own header names each again, a type and a tag by
+# a `typedef`, a field and a constant by a `#define`, a function by a `static
+# inline` caller, and the group binds the second names; one header plays the
+# library's part and the program's here. A field is written through its second
+# name as well as read. If this stops printing 1 to 4, 15, 6, 8 and 7, a
+# message is a lie.
+
+extern "fixedbugs-2238-the-routes-past-a-refused-c-name-run.h"
+    record kw_match
+        x: i32
+    record c_var
+        x: i32
+    record T
+        x: i32
+    record L
+        x: i32
+    record Pair tag pair
+        kw_in: i32
+        c_def: i32
+    function c_func(x: i32) -> i32
+    constant c_nil: i64
+
+function main()
+    m = kw_match(x: 1)
+    v = c_var(x: 2)
+    t = T(x: 3)
+    l = L(x: 4)
+    p: Pair @= Pair(kw_in: 5, c_def: 6)
+    p.kw_in @ p.kw_in + 10
+    print(m.x)
+    print(v.x)
+    print(t.x)
+    print(l.x)
+    print(p.kw_in)
+    print(p.c_def)
+    print(c_func(x: 7))
+    print(c_nil)

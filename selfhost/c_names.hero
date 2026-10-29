@@ -8,14 +8,142 @@
 # 2206). Both routes ran on 2026-10-26, the `static inline` caller and the
 # `#define`, and `run/fixedbugs-2206-*` runs them still.
 #
+# The same holds of a record's name, its `tag` and a field of a group's
+# record, and of a word another language spells, which the lexer refuses
+# (`func`, `var`, `nil`), where the messages were a line that cannot end, or
+# *choose another name* (defect 2238). Those the lexer tells, reading where
+# the word stands from the text alone as it reads every place
+# (`word_place.hero`): a keyword there becomes an error token carrying its
+# message, as a refused word is, so the parser says nothing more of it. Each
+# message names its route, a `typedef` for a type and for a tag, a `#define`
+# for a field as for a constant; all ran on 2026-10-29, for a keyword and for
+# a refused word, and `run/fixedbugs-2238-*` runs them still.
+#
 # Text from a token and its source alone, reading no parse: `parse/group.hero`
 # asks it of the token where a signature's name should stand, and a message
 # about a C name is not the parser's to hold against the lines its directory
 # is granted (`BUDGETS` in `tests/harness/suite_layout.hero`).
 
 use token
+use diag
+use bytes
 use describe
 use keywords
+use text_outline
+use word_place
+
+# What `tag` says where no name follows it (`parse/records.tag_marker`).
+constant NO_TAG: str
+    "`tag` names the struct tag C uses for this type: `record FileStat tag stat`"
+
+## Where a word names a C symbol
+
+# What a group's line names with a word: a function's, a constant's or a
+# record's name, a record's `tag`, or a field of a group's record.
+variant Named
+    function_name
+    constant_name
+    type_name
+    tag_name
+    field_name
+
+# What a word names, and the record's own name where it names a tag.
+record Place
+    named: Named
+    holder: str
+
+# The place of the word at `span` where a group names a C symbol with it,
+# else none. Its own line is read first, a few bytes back from the word, and
+# the group is asked of the outline only where the line has one of the
+# shapes, since every keyword the lexer reads asks this. A premise about the
+# productions, written as a claim (spec § 13): a group's members open their
+# lines one level in, a record's fields two levels in, and nothing else of a
+# group stands two levels in outside a bracket left open above it, which is
+# where a signature's parameters, the program's own names, go on.
+function place_of(text: str, span: token.Span, @outline: text_outline.Outline) -> Place?
+    before = spaces_before(text, at: span.start)
+    found: Place? @= fail(code: "none", msg: "no C name stands here")
+
+    if before < 0 || text[before] == '\n'
+        if span.start - before - 1 == 8 && colon_after(text, at: span.end)
+            found @ ok(Place(named: .field_name, holder: ""))
+    else if word_char(text[before])
+        start = word_start(text, end: before + 1)
+        word = text.slice(from: start, to: before + 1)
+
+        if opens_at(text, at: start, margin: 4)
+            if word == "function"
+                found @ ok(Place(named: .function_name, holder: ""))
+            else if word == "constant"
+                found @ ok(Place(named: .constant_name, holder: ""))
+            else if word == "record"
+                found @ ok(Place(named: .type_name, holder: ""))
+        else if word == "tag"
+            holder = record_named(text, before: start)
+
+            if holder != ""
+                found @ ok(Place(named: .tag_name, holder: holder))
+
+    if found.is_err() || !word_place.in_a_group(text, span, @outline)
+        return fail(code: "none", msg: "no C name stands here")
+
+    if text_outline.inside(outline, at: text_outline.line_start(@outline, text, at: span.start))
+        return fail(code: "none", msg: "a parameter's name is the program's")
+    return found
+
+# The record's name on a line `record <name> tag …` whose `tag` begins at
+# `before`, where `record` opens the line one level in; "" otherwise.
+function record_named(text: str, before: i64) -> str
+    name_end = spaces_before(text, at: before)
+
+    if name_end < 0 || !word_char(text[name_end])
+        return ""
+    name_start = word_start(text, end: name_end + 1)
+    head_end = spaces_before(text, at: name_start)
+
+    if head_end < 0 || !word_char(text[head_end])
+        return ""
+    head_start = word_start(text, end: head_end + 1)
+
+    if text.slice(from: head_start, to: head_end + 1) != "record" || !opens_at(text, at: head_start, margin: 4)
+        return ""
+    return text.slice(from: name_start, to: name_end + 1)
+
+# The offset of the last character before `at` that is not a space or a tab,
+# or -1 where only those stand before it.
+function spaces_before(text: str, at: i64) -> i64
+    i: i64 @= at - 1
+
+    while i >= 0 && (text[i] == ' ' || text[i] == '\t')
+        i @ i - 1
+
+    return i
+
+# Whether the word at `at` opens its line `margin` columns in.
+function opens_at(text: str, at: i64, margin: i64) -> bool
+    before = spaces_before(text, at: at)
+    return (before < 0 || text[before] == '\n') && at - before - 1 == margin
+
+# Whether a `:` that is not `::` follows the word ending at `at`.
+function colon_after(text: str, at: i64) -> bool
+    i: i64 @= at
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i < text.len() && text[i] == ':' && (i + 1 >= text.len() || text[i + 1] != ':')
+
+# Where the word that ends at `end` begins.
+function word_start(text: str, end: i64) -> i64
+    i: i64 @= end
+
+    while i > 0 && word_char(text[i - 1])
+        i @ i - 1
+
+    return i
+
+function word_char(b: u8) -> bool
+    return bytes.is_alnum(b) || b == '_'
 
 ## The message
 
@@ -29,12 +157,89 @@ function unnamed(t: token.Token, text: str, header: token.Span, is_constant: boo
         if is_constant
             return "expected the C constant's name, found " + describe.found(t, text) + " — `constant SQLITE_OK: i64`"
         return "expected the C function's name, found " + describe.found(t, text) + " — `function sqrt(x: f64) -> f64`"
-    own = " in a header of the program's own that includes " + text.slice(from: header.start, to: header.end)
-    again = "kw_" + word
+    named: Named @= .function_name
 
     if is_constant
-        return "`" + word + "` is a keyword of Heroes, so no `extern` group binds a C constant by that name — name it again" + own + ", `#define " + again + " " + word + "`, and bind `constant " + again + "` from that header"
-    return "`" + word + "` is a keyword of Heroes, so no `extern` group binds a C function by that name — call it" + own + ", `static inline int " + again + "(int x) { return " + word + "(x); }` with the C function's own types, and bind `function " + again + "` from that header"
+        named @ .constant_name
+    return told(
+        word: word,
+        place: Place(named: named, holder: ""),
+        header: text.slice(from: header.start, to: header.end),
+        keyword: true
+    )
+
+# A keyword at `span` where a group names a C type, a tag or a field: the
+# diagnostic the lexer gives it in place of the keyword's token. One naming a
+# function or a constant is the parser's to tell (`unnamed`).
+function keyword_named(text: str, span: token.Span, @outline: text_outline.Outline) -> diag.Diagnostic?
+    found = place_of(text, span, @outline)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no C name stands here")
+    place = found.must()
+    code: str @= "expected_name"
+
+    match place.named
+        .function_name | .constant_name => return fail(code: "none", msg: "the parser tells it")
+        .type_name | .tag_name          => code @ "expected_name"
+        .field_name                     => code @ "expected_field"
+
+    word = text.slice(from: span.start, to: span.end)
+    return ok(
+        diag.new_diagnostic(code: code, message: told(word: word, place: place, header: header_of(text, span, @outline), keyword: true), span: span)
+    )
+
+# A word another language spells, which the lexer refuses, at `span` where a
+# group names a C symbol: the message naming the route, else none.
+function foreign_named(text: str, span: token.Span, @outline: text_outline.Outline) -> str?
+    found = place_of(text, span, @outline)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no C name stands here")
+    return ok(
+        told(word: text.slice(from: span.start, to: span.end), place: found.must(), header: header_of(text, span, @outline), keyword: false)
+    )
+
+# What is said of `word`, naming what `place` says in a group whose header is
+# `header` as written: `keyword` whether the word is one of Heroes's own, else
+# one another language spells.
+function told(word: str, place: Place, header: str, keyword: bool) -> str
+    what: str @= "is a word Heroes refuses"
+    again: str @= "c_" + word
+
+    if keyword
+        what @ "is a keyword of Heroes"
+        again @ "kw_" + word
+    own = " in a header of the program's own that includes " + header
+    lead = "`" + word + "` " + what + ", so no "
+
+    return match place.named
+        .function_name => lead + "`extern` group binds a C function by that name — call it" + own + ", `static inline int " + again + "(int x) { return " + word + "(x); }` with the C function's own types, and bind `function " + again + "` from that header"
+        .constant_name => lead + "`extern` group binds a C constant by that name — name it again" + own + ", `#define " + again + " " + word + "`, and bind `constant " + again + "` from that header"
+        .type_name => lead + "`extern` group binds a C type by that name — name it again" + own + ", `typedef " + word + " " + again + ";`, and bind `record " + again + "` from that header"
+        .tag_name => lead + "`tag` names C's `struct " + word + "` — name the struct again" + own + ", `typedef struct " + word + " " + place.holder + ";`, and bind `record " + place.holder + "` from that header, with no `tag`"
+        .field_name => lead + "field of a group's `record` is bound by that name — name it again" + own + ", `#define " + again + " " + word + "`, and declare the field `" + again + "`"
+
+# The group's header written on the head over the word at `span`, quotes
+# included, which the outline holds once `place_of` has asked the group.
+function header_of(text: str, span: token.Span, @outline: text_outline.Outline) -> str
+    begins = text_outline.line_start(@outline, text, at: span.start)
+    return header_at(text, head: text_outline.top_above(outline, line: begins))
+
+# The first string on the head line at `head`, quotes included.
+function header_at(text: str, head: i64) -> str
+    open: i64 @= head
+
+    while open >= 0 && open < text.len() && text[open] != '"' && text[open] != '\n'
+        open @ open + 1
+
+    if open < 0 || open >= text.len() || text[open] != '"'
+        return "the group's header"
+    close = word_place.past_quoted(text, from: open, quote: '"', limit: text.len())
+
+    if close >= text.len() || text[close] != '"'
+        return "the group's header"
+    return text.slice(from: open, to: close + 1)
 
 ## Tests
 
@@ -50,3 +255,37 @@ test "a keyword where a C name stands is named, with the route past it"
     # "found" names it.
     n = unnamed(token.Token(kind: .int_lit, span: token.Span(start: 19, end: 20)), text, header, is_constant: false)
     assert n == "expected the C function's name, found a number (`3`) — `function sqrt(x: f64) -> f64`"
+
+# Where `word`, the first after `after` in `text`, names a C symbol.
+function named_in(text: str, after: str, word: str) -> Named?
+    at = word_place.at_word(text: text, word: after + " " + word)
+    span = token.Span(start: at.start + after.len() + 1, end: at.end)
+    o: text_outline.Outline @= text_outline.unread()
+    found = place_of(text, span, @o)
+
+    if found.is_err()
+        return fail(code: "none", msg: "none")
+    return ok(found.must().named)
+
+test "a group's names are read where its lines write them, and nowhere else (defect 2238)"
+    group = "extern \"kw.h\"\n    record match\n        in: i32\n    record M tag let\n    function func(x: i32) -> i32\n    constant nil: i64\n"
+    assert named_in(text: group, after: "record", word: "match").must() == .type_name
+    assert named_in(text: group, after: "tag", word: "let").must() == .tag_name
+    assert named_in(text: group, after: "function", word: "func").must() == .function_name
+    assert named_in(text: group, after: "constant", word: "nil").must() == .constant_name
+    assert named_in(text: group, after: "    ", word: "in").must() == .field_name
+
+    # A program's own record, and a signature's parameter on a line of its
+    # own, name nothing of C's: their names are the program's.
+    own = "record match\n    in: i32\n"
+    assert named_in(text: own, after: "record", word: "match").is_err()
+    assert named_in(text: own, after: "", word: "in").is_err()
+    spread = "extern \"kw.h\"\n    function f(\n        in: i32\n    ) -> i32\n"
+    assert named_in(text: spread, after: "    ", word: "in").is_err()
+
+test "each place names its route, for a keyword and for a refused word (defect 2238)"
+    tag = Place(named: .tag_name, holder: "M")
+    assert told(word: "test", place: tag, header: "\"kw.h\"", keyword: true) == "`test` is a keyword of Heroes, so no `tag` names C's `struct test` — name the struct again in a header of the program's own that includes \"kw.h\", `typedef struct test M;`, and bind `record M` from that header, with no `tag`"
+    field = Place(named: .field_name, holder: "")
+    assert told(word: "def", place: field, header: "\"kw.h\"", keyword: false) == "`def` is a word Heroes refuses, so no field of a group's `record` is bound by that name — name it again in a header of the program's own that includes \"kw.h\", `#define c_def def`, and declare the field `c_def`"
+    assert header_at("extern \"a\\\"b.h\" link \"m\"\n", head: 0) == "\"a\\\"b.h\""

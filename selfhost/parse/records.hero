@@ -21,6 +21,7 @@ use handles
 use keywords
 use parse/tails
 use parse/members_below
+use c_names
 use parse/heads
 use parse/brace_habit
 use parse/headless
@@ -68,13 +69,12 @@ function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
         return fail(code: "absent", msg: "no tag clause")
     keyword = cursor.bump(@c).span
 
+    # A word the lexer told already is passed in silence (defect 2238).
     if !cursor.at(c, .ident)
-        cursor.error(
-            @c,
-            code: "expected_declaration",
-            message: "`tag` names the struct tag C uses for this type: `record FileStat tag stat`",
-            span: tails.here_or(c, keyword)
-        )
+        if cursor.at_reported_error(c)
+            _ = cursor.bump(@c)
+        else
+            cursor.error(@c, code: "expected_declaration", message: c_names.NO_TAG, span: tails.here_or(c, keyword))
         return fail(code: "absent", msg: "the tag's name is missing")
     return ok(cursor.bump(@c).span)
 

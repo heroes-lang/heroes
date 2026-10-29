@@ -37,6 +37,7 @@ use bracket_reach
 use lost_quote
 use comment_habit
 use word_place
+use c_names
 use separator_runs
 use text_lines
 use comment_refusal
@@ -188,8 +189,15 @@ function ident(@l: state.LexState, text: str)
     word = text.slice(from: start, to: l.pos)
     kw = keywords.keyword(word)
 
+    # A keyword where a group names a C type, a tag or a field is that name's
+    # mistake, told here with its route (`c_names.keyword_named`, defect 2238).
     if !kw.is_err()
-        state.emit(@l, kw.must(), start)
+        named = c_names.keyword_named(text, token.Span(start: start, end: l.pos), @l.outline)
+
+        if named.is_err()
+            state.emit(@l, kw.must(), start)
+        else
+            state.error_token(@l, named.must())
         return
 
     # **The character after the word decides the repair** (defect 015). A

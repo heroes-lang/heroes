@@ -1,0 +1,28 @@
+# fixedbugs, defect 2238, 2026-10-29: a C name a group cannot spell, a keyword
+# of Heroes or a word another language spells and the lexer refuses, was told
+# as another mistake: a line that cannot end with `match`, three messages for
+# one `tag`, *expected a field name*, or *choose another name* where the name is
+# the header's. Each is now one message, from the lexer, naming the word and
+# the route past it: a `typedef` in a header of the program's own for a type
+# and for a tag, a `#define` for a field and for a constant, a `static inline`
+# caller for a function (`run/fixedbugs-2238-*` runs every one). A keyword
+# naming a function or a constant is defect 2206's, told by the parser.
+
+extern "fixedbugs-2238-a-c-name-heroes-refuses-is-told-the-route.h"
+    record match  #~ expected_name
+        x: i32
+    record var  #~ reserved_word
+        x: i32
+    record T tag test  #~ expected_name
+        x: i32
+    record L tag let  #~ reserved_word
+        x: i32
+    record Pair tag pair
+        in: i32  #~ expected_field
+        def: i32  #~ reserved_word
+        function: i32  #~ expected_field
+    function func(x: i32) -> i32  #~ reserved_word
+    constant nil: i64  #~ reserved_word
+
+function main()
+    print(1)
