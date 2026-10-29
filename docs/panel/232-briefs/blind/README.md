@@ -22,18 +22,25 @@ the compiler does (`00-shared.md` items 1, 2 and 5; `design.md` beside this file
 
 ## The tasks and their truths
 
-`tasks/O.md`, `tasks/S.md`, `tasks/X.md`, each one program and the question
+`tasks/O.md`, `tasks/S.md`, `tasks/X.md`, `tasks/W.md`, each one program and the question
 *what does this program print, and how does it end?* The truths, run by the
 lane's compiler at `afe983265` (`sources 3e3c95dc246b73b3`):
 
 - **O**: `left`, `right`, `a`, `b`, `10`, `ends: 0`;
 - **S**: `-4611686018427387904`, `-9223372036854775808`, `done`, `ends: 0`;
-- **X**: `refused`.
+- **X**: `refused`;
+- **W**: `index`, `value`, `ends: abort` (array index out of range).
 
 ## The cells and the run
 
-3 tasks × 2 specifications × 2 models (`claude-haiku-5-5`,
-`claude-sonnet-5-5`) × 7 = 84 sessions, each in its own folder under the
+**Task W added and every cell cut from 7 to 5 before any session ran**, on
+the spec-warden's registered note that task O is a ceiling task: every
+reader assumes left to right for operands and fields, so it cannot show
+item 1's sentence serving the thesis, while a write's two phases (F4) can.
+The budget holds: 80 sessions instead of 84.
+
+4 tasks × 2 specifications × 2 models (`claude-haiku-5-5`,
+`claude-sonnet-5-5`) × 5 = 80 sessions, each in its own folder under the
 lane's `build/b232/<n>` (git ignores `/build`, and the folders are inside the
 repository's root, CLAUDE.md § Hard stops), holding `heroes-spec.md` (T or
 P), `brief.md` and `task.md` and nothing else. The order is drawn by
@@ -52,7 +59,7 @@ cd build/b232/<n> && GIT_CEILING_DIRECTORIES=<lane>/build/b232 claude -p "Read b
   --max-budget-usd 0.14 --output-format stream-json --verbose < /dev/null > <lane>/build/b232-out/<n>.jsonl 2> <lane>/build/b232-out/<n>.err
 ```
 
-**The budget**: 84 × 0.14 = 11.76 USD at most, inside the author's 12. The
+**The budget**: 80 × 0.14 = 11.20 USD at most, inside the author's 12. The
 first session of each model runs alone and its cost is read before the
 others; one the bound stops is scored as no answer and never re-run; if the
 first of a model is stopped by the bound, the run stops and the author is
@@ -69,4 +76,16 @@ asked. The key is the trunk's `ANTHROPIC_API_KEY` from `.env`, never printed.
   lines, is wrong.
 - **Per task and specification**: the share right, by model and together.
 - **Predictions registered before the first session** (the spec-warden's,
-  copied here from its report): `<PREDICTIONS>`.
+  copied here from its report, `docs/panel/232-reports/spec-warden.md`,
+  out of the 10 sessions a cell holds, each a point with the band whose
+  crossing is a miss):
+
+  | task | P right of 10 | T right of 10 |
+  |---|---|---|
+  | O | 10 (a miss below 9) | 9 (a miss below 8) |
+  | S | 9 (a miss below 7) | 1 (a miss above 3) |
+  | X | 9 (a miss below 8) | 0 (a miss above 1) |
+  | W | 9 (a miss below 8) | 4 (a miss above 6) |
+
+  The effect each predicts, P minus T: O at most 1, S at least 5, X at
+  least 7, W at least 3.
