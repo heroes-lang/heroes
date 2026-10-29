@@ -1,0 +1,203 @@
+# A width the program did not write (defect 2230). An integer literal that
+# does not fit the type its position asks for is told `int_out_of_range`,
+# with a note giving the range and two repairs, a wider type or a number in
+# range (`digits.int_out_of_range_at`, design.md §4.17). Where the width is a
+# parameter of the library's, or one a header gives an `extern` binding, a
+# parameter or a field of a group's `record` (§4.19), the first repair is one
+# the program cannot make: the library's declaration is not its to change,
+# and a binding declared wider than its header is refused, `ffi_parameter_type`
+# and `ffi_field_type`. So once such a position's value is checked, the note
+# says whose width it is and offers a number in range alone.
+#
+# Written after the check, as `check/width_class.hero` writes its note,
+# rather than carried into it: every frame of the walk holds the checker,
+# and a field carried through each `check` widens all of them (panel 185).
+# A literal a walk below reaches is still asked what it was measured
+# against, so a walk that reached one too far changes no note.
+
+use ast
+use source
+use resolved
+use digits
+use check/state
+use check/table
+use check/lower
+use check/contextual
+use check/group_fields
+use check/settling
+use check/waiting as waits
+
+# After a call's values were checked, from diagnostic `from` on, where the
+# callee is the library's or an `extern` binding: the receiver's, where the
+# dot gave one, then the arguments', each against its parameter's type as
+# the call checked it (`call.params`).
+function after_call(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], call: settling.Call, given: [ast.Arg], from: i64)
+    if c.out.diagnostics.len() == from
+        return
+    values: [i64] @= []
+
+    if call.receiver >= 0
+        values @ values.push(call.receiver)
+
+    for arg in given
+        values @ values.push(arg.value)
+
+    match decls[call.decl].kind
+        .function_decl fd =>
+            name = source.span_text(s, decls[call.decl].name)
+            library = source.is_library(s, decls[call.decl].name.start)
+
+            if !library && !fd.value.is_extern
+                return
+            k: i64 @= 0
+
+            while k < values.len() && k < call.params.len() && k < fd.value.params.len()
+                param = source.span_text(s, fd.value.params[k].name)
+                whose: str @= "the header's: `" + param + "` of `" + name + "` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19)"
+
+                if library
+                    whose @ "the library's: `" + name + "` takes its `" + param + "` at that width, which no program changes"
+                amend(@c, a, value: values[k], ty: call.params[k], whose: whose, from: from)
+                k @ k + 1
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# After a construction of the record `decl` was checked, from diagnostic
+# `from` on, where the record is a group's: each field as the walk checked
+# it, by its position when every field is given and by its label when some
+# are (`walk.construct_record`).
+function after_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], from: i64)
+    if c.out.diagnostics.len() == from
+        return
+
+    match decls[decl].kind
+        .record_decl rec =>
+            if rec.header.is_err()
+                return
+            names: [str] @= []
+
+            for f in rec.fields
+                names @ names.push(source.span_text(s, f.name))
+
+            at: [i64] @= group_fields.fields_named(s, names: names, given: given)
+
+            if given.len() == names.len()
+                at @ []
+
+                for _ in given
+                    at @ at.push(at.len())
+
+            record_name = source.span_text(s, decls[decl].name)
+            k: i64 @= 0
+
+            for arg in given
+                if at[k] >= 0
+                    ty = lower.lower_ty(@c, a, r, rec.fields[at[k]].ty)
+                    amend(
+                        @c,
+                        a,
+                        value: arg.value,
+                        ty: ty,
+                        whose: field_whose(field: names[at[k]], holder: record_name),
+                        from: from
+                    )
+                k @ k + 1
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return
+
+# After a write into `place` was checked against `ty`, from diagnostic
+# `from` on, where the place is a field of a group's record.
+function after_write(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], place: i64, value: i64, ty: i64, from: i64)
+    if c.out.diagnostics.len() == from
+        return
+
+    match a.exprs[place].kind
+        .field f =>
+            match table.get(c.out.types, c.out.expr_types[f.base])
+                .named n =>
+                    match decls[n.decl].kind
+                        .record_decl rec =>
+                            if !rec.header.is_err()
+                                amend(
+                                    @c,
+                                    a,
+                                    value: value,
+                                    ty: ty,
+                                    whose: field_whose(field: source.span_text(s, f.name), holder: source.span_text(s, decls[n.decl].name)),
+                                    from: from
+                                )
+                        .constant_decl | .function_decl | .variant_decl | .test_decl => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => return
+                .fixed | .map | .fallible | .function_ty | .case_ty | .failure     => return
+                .generic | .error                                                  => return
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
+        .name | .hole | .unary | .binary | .field_name | .index | .call | .method      => return
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return
+
+function field_whose(field: str, holder: str) -> str
+    return "the header's: `" + field + "` of `" + holder + "` is bound at the width its header gives it, as every field of a group's `record` is (§4.19)"
+
+# Each `int_out_of_range` told from diagnostic `from` on at a literal
+# `value` hands its width to, where the literal was measured against `ty`,
+# takes the note saying the width is `whose`.
+function amend(@c: state.Checker, a: ast.Ast, value: i64, ty: i64, whose: str, from: i64)
+    match table.get(c.out.types, ty)
+        .int_ty k =>
+            literals: [i64] @= []
+            handed(a, id: value, @literals)
+
+            for literal in literals
+                if c.out.expr_types[literal] == ty
+                    span = a.exprs[literal].span
+                    d: i64 @= from
+
+                    while d < c.out.diagnostics.len()
+                        told = c.out.diagnostics[d]
+
+                        if told.code == "int_out_of_range" && told.span.start == span.start && told.span.end == span.end
+                            c.out.diagnostics[d].notes @ [digits.given_note(k.kind, whose: whose)]
+                        d @ d + 1
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed => return
+        .map | .fallible | .function_ty | .named | .case_ty | .failure    => return
+        .generic | .error                                                 => return
+
+# The literals a value hands the width its position asks for: itself, under
+# its minus signs; each operand of an arithmetic operator, which takes the
+# type its position asks for (spec § 2, `walk.context_operands`); and the
+# last line of each branch of an `if` or a `match` standing as the value
+# (`walk.check`). Every other form asks a type of its own.
+function handed(a: ast.Ast, id: i64, @out: [i64])
+    if contextual.number_literal(a, id)
+        out @ out.push(id)
+        return
+
+    match a.exprs[id].kind
+        .binary b =>
+            if waits.arithmetic(b.op)
+                handed(a, id: b.left, @out)
+                handed(a, id: b.right, @out)
+        .unary u =>
+            if u.op == .neg
+                handed(a, id: u.operand, @out)
+        .if_expr branches =>
+            for branch in branches.branches
+                last_line(a, body: branch.block, @out)
+
+            if !branches.otherwise.is_err()
+                last_line(a, body: branches.otherwise.must(), @out)
+        .match_expr m =>
+            for arm in m.arms
+                match arm.body
+                    .one_stmt one => line_value(a, at: one.at, @out)
+                    .block bb     => last_line(a, body: bb.block, @out)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
+        .name | .hole | .field | .field_name | .index | .call | .method                => return
+        .variant_case | .array | .map | .try_expr | .error                             => return
+
+function last_line(a: ast.Ast, body: ast.Block, @out: [i64])
+    if body.stmts.len() > 0
+        line_value(a, at: body.stmts[body.stmts.len() - 1], @out)
+
+function line_value(a: ast.Ast, at: i64, @out: [i64])
+    match a.stmts[at].kind
+        .expr_stmt v                                                             => handed(a, id: v.value, @out)
+        .bind | .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => return
+        .assert_stmt | .while_stmt | .for_in | .error                            => return

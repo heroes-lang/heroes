@@ -1,0 +1,75 @@
+# Fixed defect 2230, 2026-10-29: a literal that does not fit the width a
+# parameter of the library's or an `extern` binding asks for was told to
+# widen the type, which the library's declaration does not let a program do
+# and a binding wider than its header is refused for (`ffi_parameter_type`,
+# `ffi_field_type`). The note says whose width it is and offers a number in
+# range alone: at the library's `exit`, by its name and through the dot, a
+# literal under a minus sign and one an operator hands the width; at an
+# `extern` function's parameter; at a group's record's field, built whole,
+# built by one label and written, plain and through an `if`. A width the
+# program wrote keeps both repairs: its own function's parameter, its own
+# binding's that the operator takes, its own map's key.
+
+extern "fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+    function twice(x: i32) -> i32
+
+function by_name()
+    exit(code: 256)  #~ int_out_of_range
+
+function through_the_dot()
+    256.exit()  #~ int_out_of_range
+
+function under_a_minus()
+    exit(code: -1)  #~ int_out_of_range
+
+function handed_by_an_operator()
+    exit(code: 1 + 300)  #~ int_out_of_range
+
+function a_parameter_of_a_binding()
+    print(twice(x: 3000000000))  #~ int_out_of_range
+
+function a_field_built()
+    print(Pair(a: 3000000000, b: 1).a)  #~ int_out_of_range
+
+function a_field_built_by_one_label()
+    print(Pair(b: -3000000000).b)  #~ int_out_of_range
+
+function a_field_written(big: bool)
+    p: Pair @= Pair(a: 1, b: 1)
+    p.a @ 3000000000  #~ int_out_of_range
+
+    p.b @ if big
+        3000000000  #~ int_out_of_range
+    else
+        0
+    print(p.a + p.b)
+
+function stop(code: u8)
+    exit(code: code)
+
+function its_own_parameter()
+    stop(code: 256)  #~ int_out_of_range
+
+function its_own_binding()
+    y: i8 = 3
+    print(y + 300)  #~ int_out_of_range
+
+function its_own_key()
+    m: {u8: u8} = {1: 2}
+    print(m[300].default(0))  #~ int_out_of_range
+
+function main()
+    by_name()
+    through_the_dot()
+    under_a_minus()
+    handed_by_an_operator()
+    a_parameter_of_a_binding()
+    a_field_built()
+    a_field_built_by_one_label()
+    a_field_written(big: true)
+    its_own_parameter()
+    its_own_binding()
+    its_own_key()

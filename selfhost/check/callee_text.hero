@@ -46,6 +46,20 @@ function written(s: source.Source, span: token.Span) -> str
 function named(text: str, from: i64, to: i64) -> str
     return written(source.new_source(name: "t.hero", text: text), token.Span(start: from, end: to))
 
+# The header line of a declaration, sliced from the source, which an
+# arity message quotes as the callee's signature: the grammar keeps a
+# signature on one line, so the line IS the signature. (Rust renders it
+# through the printer; on canonical source the two agree byte for byte, and
+# the port's divergence on non-canonical input is this comment.) Moved here
+# from `check/walk.hero` with defect 2230, which paid for its lines there.
+function header_line(s: source.Source, from: i64) -> str
+    end: i64 @= from
+
+    while end < s.text.len() && s.text[end] != '\n'
+        end @ end + 1
+
+    return s.text.slice(from: from, to: end)
+
 test "a callee on one line is named as written"
     assert named("print(fs[0](1, 2))", from: 6, to: 11) == "fs[0]"
     assert named("x = r.op(3)", from: 4, to: 8) == "r.op"

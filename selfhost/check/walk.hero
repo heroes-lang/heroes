@@ -70,6 +70,7 @@ use check/waiting_order as settle_order
 use check/settling
 use check/empty_binding
 use check/width_class
+use check/given_width
 use check/discard
 use check/kept_cells
 use value_errors
@@ -795,6 +796,7 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             said = c.out.diagnostics.len()
             check(@c, a, r, s, decls, id: m.value, expected: narrowed)
             width_class.note(@c, a, r, s, decls, place: m.place, value: m.value, from: said)
+            given_width.after_write(@c, a, s, decls, place: m.place, value: m.value, ty: narrowed, from: said)
             return falls_with_nothing()
         .return_stmt rv => return returns(@c, a, r, s, decls, value: rv.value, span: span)
         .break_stmt     => return loop_jump(@c, word: "break", span: span)
@@ -1518,18 +1520,6 @@ record Receiver
     at: i64
     ty: i64?
 
-# The header line, sliced from the source: the grammar keeps a signature
-# on one line, so the line IS the signature. (Rust renders it through the
-# printer; on canonical source the two agree byte for byte, and the
-# port's divergence on non-canonical input is this comment.)
-function header_line(s: source.Source, from: i64) -> str
-    end: i64 @= from
-
-    while end < s.text.len() && s.text[end] != '\n'
-        end @ end + 1
-
-    return s.text.slice(from: from, to: end)
-
 function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], receiver: Receiver?, span: token.Span, expected: i64?) -> i64
     match decls[decl].kind
         .function_decl fd =>
@@ -1550,7 +1540,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 offset @ 1
 
             if given.len() + offset != arity
-                signature = header_line(s, from: decls[decl].span.start)
+                signature = callee_text.header_line(s, from: decls[decl].span.start)
                 at_line = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
                 state.push_diagnostic(
                     @c,
@@ -1599,6 +1589,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # The arguments with no type of their own a generic callee's
             # others settle (defect 541, `check/waiting.hero`).
             waiting: [waits.Held] @= []
+            said = c.out.diagnostics.len()
 
             if !receiver.is_err()
                 before = receiver.must()
@@ -1708,6 +1699,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 dot @ receiver.must().at
             call = settling.Call(decl: decl, params: params, receiver: dot, result: result, expected: expected)
             tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
+            given_width.after_call(@c, a, s, decls, call: call, given: given, from: said)
 
             if generics > 0 && !expected.is_err()
                 check_generics.bind_missing(c, @bindings, param: result, got: expected.must())
@@ -1845,6 +1837,7 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
                 expected @ expected.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
 
             declared_at = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
+            said = c.out.diagnostics.len()
 
             # A group's record is built naming one member of each C union
             # (panel 186 R7, spec § 13): a construction naming some of its
@@ -1852,19 +1845,20 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
             # leaves out (`check/group_fields.hero`).
             if !rec.header.is_err() && given.len() != expected.len()
                 built_from_some(@c, a, r, s, decls, label: name, expected: expected, given: given)
-                return table.intern(@c.out.types, .named(decl: decl))
-            check_named_fields(
-                @c,
-                a,
-                r,
-                s,
-                decls,
-                label: name,
-                declared_at: declared_at,
-                expected: expected,
-                given: given,
-                span: span
-            )
+            else
+                check_named_fields(
+                    @c,
+                    a,
+                    r,
+                    s,
+                    decls,
+                    label: name,
+                    declared_at: declared_at,
+                    expected: expected,
+                    given: given,
+                    span: span
+                )
+            given_width.after_fields(@c, a, r, s, decls, decl: decl, given: given, from: said)
             return table.intern(@c.out.types, .named(decl: decl))
         .constant_decl | .function_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 

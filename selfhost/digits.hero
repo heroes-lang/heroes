@@ -233,6 +233,13 @@ function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) 
     )
     return d
 
+# That note where the width is not the program's to widen, a parameter of
+# the library's or one a header gives an `extern` binding (defect 2230,
+# `check/given_width.hero`): `whose` says whose it is, and a number in range
+# is the one repair left.
+function given_note(kind: widths.IntKind, whose: str) -> str
+    return widths.int_article_name(kind) + " holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind) + ", and this one is " + whose + ". Write a number in range — this language never truncates one silently"
+
 ## The canonical spelling
 
 # What the author wrote, with hex digits lowercased. A C header spells a mask
