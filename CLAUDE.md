@@ -132,6 +132,13 @@ the compiler needs it (the closure list) **or** it provably serves the thesis (a
 measured design.md Part 11 effect, or a measured argument the panel accepts).
 Neither, and it waits, regardless of elegance.
 
+**Before `1.0.0`, no form enters to keep an older program compiling**
+(author, 2026-10-29, meant as: *I do not want to complicate the language for
+backward compatibility I do not need now; an absolute rule*): no declared
+version, no mode, no old spelling kept beside the new, no deprecated alias. A
+change that refuses a `0.x` program is told, never undone for it; the promise
+starts at `v1.0.0`.
+
 ## 3. Process: implement first, understand on the author's clock
 The assistant implements autonomously and **never stops mid-step to ask**, with
 three exceptions and no others: a **push or any outward-facing act**, a **panel
