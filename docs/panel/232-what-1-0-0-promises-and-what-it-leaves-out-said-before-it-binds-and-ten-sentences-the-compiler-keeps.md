@@ -477,3 +477,7 @@ promises a map's keys in the order they were first written (Python 3.7's route),
 no longer lists a map's order among what the specification leaves open, and the runtime's
 representation and § 10's sentence are owed before `1.0.0` (feature 2274, M-publication-gate).
 Recorded as a reading (CLAUDE.md § 4).
+
+**Moved the same night** by the author's instruction, meant as: *it should be done before the
+publication gate, since developing the packages' core without it would be a problem; let us do it
+now*: feature 2274 is M-compatibility-promise's, and § 10's sentence lands with the others.

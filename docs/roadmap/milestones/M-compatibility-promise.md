@@ -235,5 +235,6 @@ stop inside a bound function names its place), 2266 (the codes listed and held b
 2262): R7, rule (A), a `1.x` refusing no program its `1.0.0` compiled; R8, yes, the rule against a
 deprecated alias reaching the runtime's C names; and R12, **insertion order**: `1.0.0` promises a
 map's keys in the order they were first written, so the paragraph above no longer lists a map's
-order among what the specification leaves open, and the runtime and § 10 owe it before `1.0.0`
-(feature 2274). None changes what lands here.
+order among what the specification leaves open, and the runtime and § 10 owe it (feature 2274), **in this milestone**, by the
+author's instruction of the same night, meant as: *it should be done before the publication
+gate, since developing the packages' core without it would be a problem; let us do it now*.
