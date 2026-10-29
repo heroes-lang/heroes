@@ -1701,7 +1701,9 @@ interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year precedent.
 **round-trip-exact — never "shortest"**: the algorithm is `snprintf("%.*g")` at increasing
 precision until `strtod` reads back the same bits, starting at 1 for a subnormal and at `DBL_DIG`
 otherwise, which is what gnulib's `ftoastr` ships. It is not the shortest decimal, and the
-distinction is not pedantic: `5e-324` renders `4.94065645841247e-324`, which round-trips, and Java
+distinction is not pedantic: 2^89 renders `6.1897001964269014e+26`, which round-trips where the
+shortest is `6.189700196426902e+26` (defect 2270: until 2026-10-29 this sentence gave `5e-324`, which
+the subnormal branch prints as `5e-324`), and Java
 shipped `1.9999999999999998E23` for eighteen years before Schubfach. A value with no fractional
 part still prints a point (`1.0`, not `1`) — under `1`, `print(price * to_f64(count))` and
 `print(5 * 2)` emit identical bytes, so an accidental `i64`→`f64` drift would stay green in every
