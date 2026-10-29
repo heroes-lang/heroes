@@ -178,6 +178,16 @@ function foreign_comment(@l: state.LexState, text: str)
 
 ## The word
 
+# A keyword naming a C type, a tag or a field, its error token pushed (defect
+# 2238): apart from `ident`, which every word takes, and asked past `may_name`.
+function keyword_named(@l: state.LexState, text: str, start: i64) -> bool
+    named = c_names.keyword_named(text, token.Span(start: start, end: l.pos), @l.outline)
+
+    if named.is_err()
+        return false
+    state.error_token(@l, named.must())
+    return true
+
 # A word: Heroes keyword, foreign reserved word (loud failure with the repair
 # pre-written — the thesis, executable), or plain identifier.
 function ident(@l: state.LexState, text: str)
@@ -189,15 +199,9 @@ function ident(@l: state.LexState, text: str)
     word = text.slice(from: start, to: l.pos)
     kw = keywords.keyword(word)
 
-    # A keyword where a group names a C type, a tag or a field is that name's
-    # mistake, told here with its route (`c_names.keyword_named`, defect 2238).
     if !kw.is_err()
-        named = c_names.keyword_named(text, token.Span(start: start, end: l.pos), @l.outline)
-
-        if named.is_err()
+        if !c_names.may_name(text, start: start, end: l.pos) || !keyword_named(@l, text, start: start)
             state.emit(@l, kw.must(), start)
-        else
-            state.error_token(@l, named.must())
         return
 
     # **The character after the word decides the repair** (defect 015). A
