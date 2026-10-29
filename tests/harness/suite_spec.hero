@@ -27,6 +27,9 @@
 #   offered     every name the spec offers exists, because a name a model
 #               reads and the compiler lacks is a call to nothing;
 #   rejected    no word the lexer refuses appears in the spec's code;
+#   fences      every fence's declarations build, and its statements inside a
+#               `main`, or the part is listed with the reason it cannot compile
+#               alone (`fragments`, 2026-10-29, defect 2211);
 #   inventory   the spec's characters above ASCII are punctuation, which is
 #               the premise `selfhost/measure/pieces.hero` is written on;
 #   colouring   the editor's grammar admits the escapes the compiler accepts
@@ -407,6 +410,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     named(@r, spec: text.must(), reserved: reserved)
     offered(@r, spec: text.must(), reserved: reserved)
     rejected(@r, spec: text.must(), refused: refused)
+    fences(@r, scratch: scratch, compiler: compiler, spec: text.must())
     registered(@r, scratch: scratch, compiler: compiler)
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
@@ -1301,6 +1305,265 @@ test "a record with no digest under its constant holds this file to nothing, and
         text: digest_verdict(ours: "46d399486a3fec77", kept: ""),
         needle: "holds no `constant SPEC_DIGEST: str`"
     )
+
+## The fences
+
+# **Every fence of the specification is built, or listed with the reason it
+# cannot compile alone** (defect 2211). A fence is the text of the document a
+# reader copies, so an example that stopped compiling is a claim expired in
+# silence, and `.claude/rules/spec-shape.md`'s *a change to a fence is compiled
+# before it is written* was, until 2026-10-29, a rule a person kept. Each fence
+# is cut into its top-level items: its declarations are built as they stand,
+# and its statements inside a `main` (a `main` that returns where it has none
+# and the declarations declare none). What cannot compile alone is listed in
+# `fragments` by its section, byte for byte, with the reason measured when it
+# was listed; the text is pinned rather than read, because the entry judges
+# that text, so a fence that changes no longer matches it, is built, and is red
+# until the list is read again, and an entry no fence holds any more is red too.
+record SpecFence
+    section: i64
+    text: str
+
+record FenceParts
+    declarations: str
+    statements: str
+
+record Fragment
+    section: i64
+    text: str
+    why: str
+
+# A program a fence's parts make, built by `fences`.
+record FenceProgram
+    section: i64
+    text: str
+
+# What the check builds, and the entries no fence holds any more.
+record FencePlan
+    programs: [FenceProgram]
+    unheld: [str]
+
+constant LEAST_FENCES: i64
+    8
+
+# The parts of the specification's fences that cannot compile alone, each with
+# the reason measured on 2026-10-29 by building it alone and inside a `main`.
+function fragments() -> [Fragment]
+    return [
+        Fragment(section: 5, text: "x = 5              # immutable binding, type inferred\nv @= 0             # mutable cell, type inferred too\nv @ v + 1          # re-binding\n", why: "statements, and inside a `main` `x` is bound and never read, which spec § 5 refuses (`unused_binding`)")
+        Fragment(section: 6, text: "match head(names)\n    .ok n  => print(n)\n    .err e => print(e.code)\n", why: "a statement naming `names`, which nothing declares (`unknown_name`); the `head` above it is built")
+        Fragment(section: 7, text: "arithmetic   + - * / %          (both sides one numeric type — never mixed)\n             +                  (str with str: concatenation)\ncomparison   == != < <= > >=    (`< <= > >=`: a number only)\nboolean      && || !            (bool only; && and || short-circuit)\nbitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)\n", why: "the table of the operators, words in columns and not a program; the `rejected` check reads its words")
+        Fragment(section: 8, text: "value = match e\n    .num n  => n.v\n    .sum s  => sum_of(s.children)\n", why: "a statement naming `e` and `sum_of`, which nothing declares, and binding `value`, which nothing reads")
+        Fragment(section: 12, text: "test \"3-4-5 triangle\"\n    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25\n", why: "a test of `dist2` and `Point`, which spec § 4's fence declares and this one does not; `tests/golden/run/spec-the-documents-own-example.hero` holds it with them and runs it")
+        Fragment(section: 13, text: "extern \"sqlite3.h\" link \"sqlite3\"\n    constant SQLITE_OK: i64\n    record Db tag sqlite3\n    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64\n    function sqlite3_close(db: Db consumes) -> i64\n", why: "a binding of sqlite3, which the `special` suite builds and runs with a `main` that opens a database, skipped by name where the machine lacks the library")
+    ]
+
+function fences(@r: report.Report, scratch: str, compiler: str, spec: str)
+    found = spec_fences(spec)
+
+    if !floors.sound(@r, label: "spec/fences", found: found.len(), floor: LEAST_FENCES, what: "fenced blocks read out of " + SPEC)
+        return
+    plan = fence_plan(found: found, listed: fragments())
+    failures: [str] @= plan.unheld
+    at: i64 @= 0
+
+    for program in plan.programs
+        path = scratch + "/spec-fence-" + at.to_str() + ".hero"
+        at @ at + 1
+
+        if write_file(path: path, text: program.text).is_err()
+            failures @ failures.push("  cannot write " + path)
+            continue
+        said = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", path, "-o", path + ".bin"])
+
+        if said.is_err()
+            failures @ failures.push(
+                "  `build` of spec § " + program.section.to_str() + "'s fence: " + shell.refusal(said)
+            )
+            continue
+
+        if said.must().code != 0
+            failures @ failures.push(
+                "  spec § " + program.section.to_str() + "'s fence does not build, as the program below, exit " + said.must().code.to_str() + ":\n" + indented_block(program.text) + "  the compiler says:\n" + said.must().err + "  An example the document holds is a claim a reader copies: repair it, or list\n  in `fragments` the part that cannot compile alone, with the reason, measured."
+            )
+
+    if failures.len() > 0
+        report.keep_failure(@r, label: "spec/fences", detail: failures.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# The specification's fenced blocks, each with the number of the section it
+# stands in. A `## ` inside a fence is a Heroes section heading (spec § 1) and
+# not the document's, as `spec_text.section_named` reads it.
+function spec_fences(text: str) -> [SpecFence]
+    found: [SpecFence] @= []
+    section: i64 @= 0
+    inside: bool @= false
+    body: str @= ""
+
+    for line in strings.lines(text)
+        if strings.starts_with(text: line, prefix: "```")
+            if inside
+                found @ found.push(SpecFence(section: section, text: body))
+            body @ ""
+            inside @ !inside
+        else if inside
+            body @ body + line + "\n"
+        else if strings.starts_with(text: line, prefix: "## ")
+            section @ heading_number(strings.without_prefix(text: line, prefix: "## "))
+
+    return found
+
+# `13. FFI` is 13; a title with no number is 0.
+function heading_number(title: str) -> i64
+    number: i64 @= 0
+    i: i64 @= 0
+
+    while i < title.len() && title[i] >= 48 && title[i] <= 57
+        number @ number * 10 + title[i].to_i64().must() - 48
+        i @ i + 1
+
+    return number
+
+# What the check builds: each fence's parts the list does not name, and the
+# entries of the list that no fence holds any more, whole or as its statements.
+function fence_plan(found: [SpecFence], listed: [Fragment]) -> FencePlan
+    programs: [FenceProgram] @= []
+    unheld: [str] @= []
+
+    for fence in found
+        if is_listed(listed: listed, section: fence.section, text: fence.text)
+            continue
+        parts = fence_parts(fence.text)
+        statements: str @= parts.statements
+
+        if is_listed(listed: listed, section: fence.section, text: statements)
+            statements @ ""
+
+        if parts.declarations.len() > 0 || statements.len() > 0
+            programs @ programs.push(
+                FenceProgram(section: fence.section, text: fence_program(declarations: parts.declarations, statements: statements))
+            )
+
+    for one in listed
+        if !holds(found: found, one: one)
+            unheld @ unheld.push(
+                "  `fragments` lists spec § " + one.section.to_str() + " text that no fence of the specification holds any\n  more, so the fence it judged has changed: read the list again.\n" + indented_block(one.text)
+            )
+
+    return FencePlan(programs: programs, unheld: unheld)
+
+function is_listed(listed: [Fragment], section: i64, text: str) -> bool
+    for one in listed
+        if one.section == section && one.text == text
+            return true
+
+    return false
+
+function holds(found: [SpecFence], one: Fragment) -> bool
+    for fence in found
+        if fence.section == one.section && (fence.text == one.text || fence_parts(fence.text).statements == one.text)
+            return true
+
+    return false
+
+# A fence's top-level items, cut into its declarations and its statements: an
+# item opens at a line that is neither indented, blank nor a comment, and the
+# lines after it until the next such line are its own.
+function fence_parts(text: str) -> FenceParts
+    declarations: str @= ""
+    statements: str @= ""
+    in_declaration: bool @= false
+
+    for line in strings.lines(text)
+        if line.len() > 0 && line[0] != 32 && line[0] != 35
+            in_declaration @ opens_declaration(line)
+
+        if in_declaration
+            declarations @ declarations + line + "\n"
+        else
+            statements @ statements + line + "\n"
+
+    return FenceParts(declarations: declarations, statements: statements)
+
+function opens_declaration(line: str) -> bool
+    for word in ["function ", "record ", "variant ", "constant ", "extern ", "test ", "use "]
+        if strings.starts_with(text: line, prefix: word)
+            return true
+
+    return false
+
+# The program a fence's parts make: its declarations as they stand, and a
+# `main` holding its statements, or returning where it has none and the
+# declarations declare no `main` of their own.
+function fence_program(declarations: str, statements: str) -> str
+    if statements.len() > 0
+        return declarations + "\nfunction main()\n" + indented_block(statements)
+
+    for line in strings.lines(declarations)
+        if strings.starts_with(text: line, prefix: "function main(")
+            return declarations
+
+    return declarations + "\nfunction main()\n    return\n"
+
+# `text`, each line that is not blank indented by four spaces.
+function indented_block(text: str) -> str
+    out: str @= ""
+
+    for line in strings.lines(text)
+        if line.len() == 0
+            out @ out + "\n"
+        else
+            out @ out + "    " + line + "\n"
+
+    return out
+
+test "a fence is read with the number of its section, and a heading inside a fence is not one"
+    text = "## 4. Top-level declarations\nwords\n```\nrecord P\n    x: i64\n## a heading of Heroes\n```\n## 5. Bindings\n```\nx = 5\n```\n"
+    found = spec_fences(text)
+    assert found.len() == 2
+    assert found[0].section == 4
+    assert found[0].text == "record P\n    x: i64\n## a heading of Heroes\n"
+    assert found[1].section == 5
+    assert found[1].text == "x = 5\n"
+    assert heading_number("13. FFI") == 13
+    assert heading_number("FFI") == 0
+
+test "a fence's declarations are built as they stand, and its statements inside a main"
+    parts = fence_parts(
+        "function head(xs: [str]) -> str?\n    return ok(xs[0])\n\nmatch head(names)\n    .ok n  => print(n)\n"
+    )
+    assert parts.declarations == "function head(xs: [str]) -> str?\n    return ok(xs[0])\n\n"
+    assert parts.statements == "match head(names)\n    .ok n  => print(n)\n"
+    assert fence_program(declarations: "record P\n    x: i64\n", statements: "") == "record P\n    x: i64\n\nfunction main()\n    return\n"
+    assert fence_program(declarations: "", statements: "m = 1\n\nprint(m)\n") == "\nfunction main()\n    m = 1\n\n    print(m)\n"
+    assert fence_program(declarations: "function main()\n    print(1)\n", statements: "") == "function main()\n    print(1)\n"
+
+test "a listed part is not built, and a fence that moved under its entry is built and its entry told"
+    head = "function head(xs: [str]) -> str?\n    return ok(xs[0])\n\n"
+    tail = "match head(names)\n    .ok n  => print(n)\n"
+    listed = [Fragment(section: 6, text: tail, why: "names `names`")]
+
+    # As listed: the declaration alone is built, with a `main` that returns.
+    plan = fence_plan(found: [SpecFence(section: 6, text: head + tail)], listed: listed)
+    assert plan.unheld.len() == 0
+    assert plan.programs.len() == 1
+    assert plan.programs[0].text == head + "\nfunction main()\n    return\n"
+
+    # The statement changed under its entry: it is built inside the `main`,
+    # where it will fail, and the entry is told as one the list must re-read.
+    moved = fence_plan(
+        found: [SpecFence(section: 6, text: head + "match head(others)\n    .ok n  => print(n)\n")],
+        listed: listed
+    )
+    assert moved.unheld.len() == 1
+    assert strings.contains(text: moved.unheld[0], needle: "read the list again")
+    assert strings.contains(text: moved.programs[0].text, needle: "    match head(others)")
+
+    # The same text in another section is not the listed one.
+    elsewhere = fence_plan(found: [SpecFence(section: 8, text: tail)], listed: listed)
+    assert elsewhere.programs.len() == 1
+    assert elsewhere.unheld.len() == 1
 
 ## The fourth copy
 
