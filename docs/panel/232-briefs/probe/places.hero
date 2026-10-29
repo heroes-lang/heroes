@@ -1,0 +1,26 @@
+record Pair
+    a: i64
+    b: i64
+
+function noisy(label: str, value: i64) -> i64
+    print(label)
+    return value
+
+function both(first: i64, second: i64) -> i64
+    return first * 10 + second
+
+function main()
+    print("operands")
+    _ = noisy(label: "left", value: 1) + noisy(label: "right", value: 2)
+    print("arguments")
+    _ = both(first: noisy(label: "first", value: 1), second: noisy(label: "second", value: 2))
+    print("fields")
+    p = Pair(a: noisy(label: "a", value: 1), b: noisy(label: "b", value: 2))
+    print("elements")
+    xs = [noisy(label: "x0", value: 1), noisy(label: "x1", value: 2)]
+    print("holes")
+    print(f"{noisy(label: "h0", value: 1)} {noisy(label: "h1", value: 2)}")
+    print("place before value")
+    ys: [i64] @= [0, 0]
+    ys[noisy(label: "index", value: 0)] @ noisy(label: "value", value: 5)
+    print(p.a + p.b + xs[0] + ys[0])

@@ -1,0 +1,11 @@
+function noisy(label: str, value: i64) -> i64
+    print(label)
+    return value
+
+function pair(first: i64, second: i64) -> i64
+    return first * 10 + second
+
+function main()
+    total = noisy(label: "left", value: 1) + noisy(label: "right", value: 2)
+    print(total)
+    print(pair(second: noisy(label: "second", value: 2), first: noisy(label: "first", value: 1)))
