@@ -77,7 +77,7 @@ function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls
                 if needs_context(a, r, s, decls, id: e.key) || needs_context(a, r, s, decls, id: e.value)
                     return true
         .call cl => return made_by_context(a, r, decls, callee: cl.callee)
-        .method  => return generic_top(decls, named: r.uses[id])
+        .method  => return generic_top(decls, named: r.uses[id]) || !constructor(r.uses[id]).is_err()
         .binary b => return arithmetic(b.op) && needs_context(a, r, s, decls, id: b.left) && needs_context(a, r, s, decls, id: b.right)
         .unary u => return u.op == .neg && needs_context(a, r, s, decls, id: u.operand)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
@@ -99,12 +99,19 @@ function arithmetic(op: ast.BinaryOp) -> bool
 function made_by_context(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], callee: i64) -> bool
     if a.exprs[callee].kind != .name
         return false
+    return !constructor(r.uses[callee]).is_err() || generic_top(decls, named: r.uses[callee])
 
-    match r.uses[callee]
-        .builtin b => return inventory.name_of(b.at) == "ok" || inventory.name_of(b.at) == "fail"
-        .top | .local | .module | .unresolved => return generic_top(decls, named: r.uses[callee])
+# The construction of a `T?` a name resolved to, `ok` or `fail`; absent for
+# anything else. A dotted call's own resolution is asked the same, `x.ok()`
+# being `ok(x)` (spec § 9; defect 2272).
+function constructor(named: resolved.Ref) -> str?
+    match named
+        .builtin b =>
+            if inventory.name_of(b.at) == "ok" || inventory.name_of(b.at) == "fail"
+                return ok(inventory.name_of(b.at))
+        .top | .local | .module | .unresolved => return fail(code: "none", msg: "not a construction")
 
-    return false
+    return fail(code: "none", msg: "not a construction")
 
 function generic_top(decls: [ast.Decl], named: resolved.Ref) -> bool
     match named

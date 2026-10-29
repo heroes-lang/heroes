@@ -212,10 +212,20 @@ constant DELTA_GATE: i64
     50
 
 # The spec this count is OF, content-addressed, so a stale number is loud
-# rather than reassuring. `selfhost/cli/digest.hero` computes it and
-# `measure` refuses to give a verdict when it disagrees.
+# rather than reassuring. `selfhost/cli/digest.hero` computes it; `measure`
+# refuses to give a verdict when the spec's digest is not the one its record
+# carries (`RECORD`, below), and `recorded` refuses this copy when it is not
+# that record, so a refresh pasted into one file and not the other is red.
+# **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
+# digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
     "46d399486a3fec77"
+
+# The compiler's record of the judged documents, which `measure` is compiled
+# from and holds the spec to: the four constants of the spec's `real` row live
+# there as they live here.
+constant RECORD: str
+    "selfhost/measure/pinned.hero"
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -1201,6 +1211,29 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         )
         return
 
+    # **This file's digest, held to the one `measure` holds the spec to**
+    # (defect 2252). `measure` prints the `real` row found above only after
+    # finding the spec's digest equal to the one its record carries; where they
+    # part it prints `STALE` and the file's digest instead, and the row's
+    # absence is red above. So past this point the record's digest IS the
+    # spec's, computed offline by the instrument itself, and the record is read
+    # from the file the compiler is built from, which the gate's hook holds to
+    # the tree (panel 222).
+    kept = read_file(RECORD)
+
+    if kept.is_err()
+        report.keep_failure(
+            @r,
+            label: "spec/real",
+            detail: "  cannot read " + RECORD + ", the record `measure` holds the spec's digest to"
+        )
+        return
+    digest_said = digest_verdict(ours: SPEC_DIGEST, kept: kept.must())
+
+    if digest_said.len() > 0
+        report.keep_failure(@r, label: "spec/real", detail: digest_said)
+        return
+
     # **The contract's record, held to the same standard since 2026-09-12.** It
     # was not held to any: the contract had no real count at all, and `measure`
     # printed no `real` row for it, which is how it sat 1806 tokens over a
@@ -1220,6 +1253,54 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         )
         return
     report.keep_pass(@r)
+
+# The digest a record holds the spec to: the quoted value on the line under
+# `constant SPEC_DIGEST: str`, where `--refresh` prints it and the record keeps
+# it; "" where the text holds no such constant.
+function record_digest(text: str) -> str
+    take: bool @= false
+
+    for line in strings.lines(text)
+        if take
+            value = strings.trimmed(line)
+
+            if value.len() == 18 && strings.starts_with(text: value, prefix: "\"") && strings.ends_with(text: value, suffix: "\"")
+                return value.slice(from: 1, to: 17)
+            return ""
+        take @ line == "constant SPEC_DIGEST: str"
+
+    return ""
+
+# What `recorded` says of this file's digest against the record's text: nothing
+# where the two are one digest.
+function digest_verdict(ours: str, kept: str) -> str
+    theirs = record_digest(kept)
+
+    if theirs.len() == 0
+        return "  " + RECORD + " holds no `constant SPEC_DIGEST: str` with a digest under it,\n  so `measure` holds the spec to nothing this file can be held to; its\n  `--refresh` prints the constant, which goes into both files."
+
+    if theirs != ours
+        return "  SPEC_DIGEST here is " + ours + ", and the spec's digest is " + theirs + ": `measure`\n  printed the spec's `real` row, which it does only where the file's digest is\n  the one " + RECORD + " carries, so this copy is the stale one.\n  `heroes measure " + SPEC + " --refresh` prints the record; paste it\n  into both files, in one commit (defect 2252)."
+    return ""
+
+test "this file's digest is held to the record's, and a stale copy is told with both"
+    kept = "constant SPEC_REAL_TAKEN: str\n    \"2026-10-29\"\n\nconstant SPEC_DIGEST: str\n    \"46d399486a3fec77\"\n"
+    assert record_digest(kept) == "46d399486a3fec77"
+    assert digest_verdict(ours: "46d399486a3fec77", kept: kept) == ""
+
+    # The copy defect 2252 found, three days stale while the record moved.
+    stale = digest_verdict(ours: "68e23ff00454a136", kept: kept)
+    assert strings.contains(text: stale, needle: "SPEC_DIGEST here is 68e23ff00454a136")
+    assert strings.contains(text: stale, needle: "the spec's digest is 46d399486a3fec77")
+
+test "a record with no digest under its constant holds this file to nothing, and says so"
+    assert record_digest("constant SPEC_DIGEST: str\n") == ""
+    assert record_digest("constant SPEC_DIGEST: str\n    \"short\"\n") == ""
+    assert record_digest("constant OTHER: str\n    \"46d399486a3fec77\"\n") == ""
+    assert strings.contains(
+        text: digest_verdict(ours: "46d399486a3fec77", kept: ""),
+        needle: "holds no `constant SPEC_DIGEST: str`"
+    )
 
 ## The fourth copy
 

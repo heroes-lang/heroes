@@ -246,6 +246,18 @@ record Arg
     mutable: bool
     value: i64
 
+# A dotted call's arguments as the plain call writes them, spec § 9's `x.f(y)`
+# read as `f(x, y)`: the receiver first, with no label and no `@`, then the
+# written ones. The checker reads `x.ok()` through it (defect 2272), and the
+# lowering every built-in written with a dot (defect 2254).
+function receiver_first(receiver: i64, given: [Arg]) -> [Arg]
+    out: [Arg] @= [Arg(name: fail(code: "none", msg: "a receiver has no label"), mutable: false, value: receiver)]
+
+    for arg in given
+        out @ out.push(arg)
+
+    return out
+
 record MapEntry
     key: i64
     value: i64

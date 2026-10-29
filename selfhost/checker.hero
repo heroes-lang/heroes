@@ -48,6 +48,7 @@ use check/freer_marks
 use check/endless
 use check/const_steps
 use check/kept_cells
+use check/runtime_header
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
@@ -85,6 +86,9 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # state above.
     acquiring.bindings_say_which(@c, s, decls)
     releasers.sets_name_releasers(@c, s, decls)
+
+    # Panel 232's R6 (defect 2256): a group naming the runtime's own header.
+    runtime_header.refused(@c, s, decls)
 
     # One C function, one contract: two modules declaring one C name must say
     # the same thing at every position they share (M-agreed-retention's
