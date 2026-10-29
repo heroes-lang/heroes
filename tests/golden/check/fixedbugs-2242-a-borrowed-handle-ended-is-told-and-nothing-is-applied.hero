@@ -1,0 +1,77 @@
+# Defect 2242, 2026-10-28: every ordinary shape of a borrowed handle handed to
+# the call that ends it, refused at that call, each beside the function
+# written as the repaired note says, which is left alone. No message here
+# carries a fix: the repair is the borrowing function's signature and its
+# calls, which the note names, so `check --apply` leaves this file as it is
+# (`tests/harness/suite_fixes.hero`'s third answer), and nothing writes the
+# `@` the old note asked for at the call refused, where it is
+# `marker_mismatch`. The notes themselves are pinned by defect 2242's cases
+# in `tests/golden/full/`.
+extern "fixedbugs-2242-a-borrowed-handle-ended-is-told-and-nothing-is-applied.h"
+    record G5 tag g5_acc
+    function g5_open(start: i64) -> G5 acquires g5_close
+    function g5_close(a: G5 consumes) -> i32
+    function g5_into(child: G5 transfers g5_close, parent: G5)
+
+record Pair
+    left: G5
+    right: G5
+
+# The issue's own wrapper, a named call.
+function done(a: G5) -> i32
+    return g5_close(a)  #~ consumed_borrowed_handle
+
+# Through the dot.
+function done_dotted(a: G5) -> i32
+    return a.g5_close()  #~ consumed_borrowed_handle
+
+# A field and an element: the parameter at the root is the one named.
+function done_left(p: Pair) -> i32
+    return g5_close(p.left)  #~ consumed_borrowed_handle
+
+function done_first(gs: [G5]) -> i32
+    return g5_close(gs[0])  #~ consumed_borrowed_handle
+
+# A transfer into a parent that ends it later.
+function adopted(child: G5, parent: G5)
+    g5_into(child: child, parent: parent)  #~ consumed_borrowed_handle
+
+# A parameter lent read-only.
+function done_lent(a: G5 lent) -> i32
+    return g5_close(a)  #~ consumed_borrowed_handle
+
+# Left alone: each written as the note says.
+function done_well(@a: G5) -> i32
+    return g5_close(a)
+
+function done_dotted_well(@a: G5) -> i32
+    return a.g5_close()
+
+function done_left_well(@p: Pair) -> i32
+    return g5_close(p.left)
+
+function done_first_well(@gs: [G5]) -> i32
+    return g5_close(gs[0])
+
+function adopted_well(@child: G5, parent: G5)
+    g5_into(child: child, parent: parent)
+
+function main()
+    a = g5_open(start: 1)
+    print(done(a))
+    print(done_dotted(a))
+    print(done_left(Pair(left: g5_open(start: 2), right: g5_open(start: 3))))
+    print(done_first([g5_open(start: 4)]))
+    parent = g5_open(start: 5)
+    adopted(child: a, parent: parent)
+    print(done_lent(a))
+    b: G5 @= g5_open(start: 6)
+    print(done_well(@b))
+    c: G5 @= g5_open(start: 7)
+    print(done_dotted_well(@c))
+    p: Pair @= Pair(left: g5_open(start: 8), right: g5_open(start: 9))
+    print(done_left_well(@p))
+    gs: [G5] @= [g5_open(start: 10)]
+    print(done_first_well(@gs))
+    d: G5 @= g5_open(start: 11)
+    adopted_well(child: @d, parent: parent)

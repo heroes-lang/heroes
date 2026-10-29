@@ -1,0 +1,36 @@
+# Defect 2242, the shape beside its reproducer: the dotted call, judged as the
+# named one since defect 629 (`check/consuming.hero`'s
+# `refuse_borrowed_dotted`), had the same note, *the call site `@h`*, beside
+# a caret under a receiver no `@` can stand before. It is told the repaired
+# note: the `@` goes on the function the parameter belongs to and before the
+# argument at every call of it, and this call stays as it is. A field reached
+# through the dot names the parameter at its root, `@o`. `closed_well` and
+# `closed_field_well`, written as the note says, are left alone.
+extern "fixedbugs-2242-through-the-dot-the-at-goes-on-the-function-that-borrowed.h"
+    record G5 tag g5_acc
+    function g5_open(start: i64) -> G5 acquires g5_close
+    function g5_close(a: G5 consumes) -> i32
+
+record Holder
+    g: G5
+
+function closed(h: G5) -> i32
+    return h.g5_close()  #~ consumed_borrowed_handle
+
+function closed_field(o: Holder) -> i32
+    return o.g.g5_close()  #~ consumed_borrowed_handle
+
+# Left alone: an `@` parameter, whole or through a field.
+function closed_well(@h: G5) -> i32
+    return h.g5_close()
+
+function closed_field_well(@o: Holder) -> i32
+    return o.g.g5_close()
+
+function main()
+    print(closed(g5_open(start: 1)))
+    print(closed_field(Holder(g: g5_open(start: 2))))
+    b: G5 @= g5_open(start: 3)
+    print(closed_well(@b))
+    o: Holder @= Holder(g: g5_open(start: 4))
+    print(closed_field_well(@o))
