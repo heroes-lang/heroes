@@ -1,0 +1,25 @@
+# Defect 2242, the shape beside its reproducer: a parameter lent read-only,
+# `h: G5 lent`, is borrowed as a plain one is, and the note said *Mark the
+# parameter `@h` and the call site `@h` too*: written so, `@h: G5 lent` is
+# `lent_shape`, since a parameter takes one of the two words, and
+# `g5_close(@h)` is `marker_mismatch`. The note now says to write `@h`
+# without its `lent`, and `@` before the argument at every call of the
+# function, this call staying as it is. `ended_well`, written as the note
+# says, is left alone.
+extern "fixedbugs-2242-a-lent-parameter-ended-is-told-to-drop-its-lent.h"
+    record G5 tag g5_acc
+    function g5_open(start: i64) -> G5 acquires g5_close
+    function g5_close(a: G5 consumes) -> i32
+
+function ended(h: G5 lent) -> i32
+    return g5_close(h)  #~ consumed_borrowed_handle
+
+# Left alone: `@` in the place of `lent`.
+function ended_well(@h: G5) -> i32
+    return g5_close(h)
+
+function main()
+    a = g5_open(start: 1)
+    print(ended(a))
+    b: G5 @= g5_open(start: 2)
+    print(ended_well(@b))

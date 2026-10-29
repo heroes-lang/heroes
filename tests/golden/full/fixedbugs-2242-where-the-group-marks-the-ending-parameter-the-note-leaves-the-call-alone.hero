@@ -1,0 +1,20 @@
+# Defect 2242, the shape beside its reproducer: a group that marks its ending
+# parameter `@`, `g5_free(@a: G5 consumes)` for a C function taking a
+# `g5_acc **`, is refused `cell_cannot_end`, and `g5_free(h)` in a function
+# whose `h` has no `@` is told twice: the borrowed handle ended, and the `@`
+# the call's own parameter asks for. The note says what the borrowing
+# function owes and nothing of this call, since the other message asks this
+# call for its `@`; where the ending parameter is unmarked, as a group that
+# checks has it, the note says this call stays as it is.
+extern "fixedbugs-2242-where-the-group-marks-the-ending-parameter-the-note-leaves-the-call-alone.h"
+    record G5 tag g5_acc
+    function g5_open(start: i64) -> G5 acquires g5_close | g5_free
+    function g5_close(a: G5 consumes) -> i32
+    function g5_free(@a: G5 consumes)  #~ cell_cannot_end
+
+function gone(h: G5)
+    g5_free(h)  #~ consumed_borrowed_handle marker_mismatch
+
+function main()
+    a = g5_open(start: 1)
+    gone(a)

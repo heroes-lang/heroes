@@ -40,16 +40,21 @@ use token
 use diag
 use parse
 use resolved
+use read_lend
 use check/state
 use check/leasing
 use check/moved_calls as calls
 
 # One position a call takes a handle at for good, and with which word: the
 # refusal says what the callee does with the value, and a transfer does not
-# end it (panel 176's item 2), so the word rides with the position.
+# end it (panel 176's item 2), so the word rides with the position. `marked`
+# is the parameter's own `@`, which a group refuses beside either word
+# (`cell_cannot_end`): only where it is absent does the note say the call
+# stands as written (defect 2242).
 record Consumed
     at: i64
     transfers: bool
+    marked: bool
 
 # Every consuming parameter of a declaration, by position. Absent for anything
 # that is not a function, and empty for a function with no marked parameter,
@@ -66,21 +71,22 @@ function consuming_positions(decl: ast.Decl) -> [Consumed]
                 # (panel 176's item 2), so a borrowed value may not be handed to
                 # either.
                 if p.consumes || !p.transfers.is_err()
-                    out @ out.push(Consumed(at: at, transfers: !p.transfers.is_err()))
+                    out @ out.push(Consumed(at: at, transfers: !p.transfers.is_err(), marked: p.mutable))
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => out @ out
 
     return out
 
 # Is this expression's place rooted in a parameter the enclosing function
-# BORROWED — a parameter written without `@`?
+# BORROWED — a parameter written without `@`? The resolver's local for it,
+# whose `owner` is the function the note names (defect 2242).
 #
 # `leasing.place_root` walks a field path or an index down to the name it
 # stands on, which is exactly the question here: `h.cell` is `h`. The resolver
 # then says what that name IS, so the rule never has to carry the enclosing
 # function's parameter list around: a `.param` local that is not `mutable` is a
 # parameter written without `@`, and nothing else in the language is.
-function borrowed_root(a: ast.Ast, r: resolved.Resolved, at: i64) -> i64?
+function borrowed_param(a: ast.Ast, r: resolved.Resolved, at: i64) -> i64?
     root = leasing.place_root(a, at: at)
 
     if root.is_err()
@@ -94,45 +100,50 @@ function borrowed_root(a: ast.Ast, r: resolved.Resolved, at: i64) -> i64?
                 .param =>
                     if one.mutable
                         return fail(code: "none", msg: "an `@` parameter is not borrowed")
-                    return ok(root.must())
+                    return ok(l.at)
                 .bind | .cell | .loop_var | .payload => return fail(code: "none", msg: "not a parameter")
         .top | .module | .builtin | .unresolved => return fail(code: "none", msg: "not a local")
 
     return fail(code: "none", msg: "unreached")
 
-# The rule, at one call: for every parameter the callee marked `consumes`, if
-# the argument in that position is rooted in a borrowed parameter, refuse.
+# The rule, at one call: for every parameter the callee, `decls[decl]`, marked
+# `consumes`, if the argument in that position is rooted in a borrowed
+# parameter, refuse.
 #
 # It runs where the callee is a declaration, named `node_free(n)` or dotted
 # `n.node_free()` (`refuse_borrowed_dotted`). A call through a function value
 # carries no declaration, so there is no mark to read — which is a hole this
 # says out loud rather than hides: `(function(Db) -> i64)` erases the word, as
 # it erases every other thing a declaration knows.
-function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl: ast.Decl, given: [ast.Arg])
-    positions = consuming_positions(decl)
+function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg])
+    positions = consuming_positions(decls[decl])
 
     if positions.len() == 0
         return
-    callee = source.span_text(s, decl.name)
+    callee = source.span_text(s, decls[decl].name)
 
     for one in positions
         if one.at >= given.len()
             continue
-        borrowed = borrowed_root(a, r, at: given[one.at].value)
+        borrowed = borrowed_param(a, r, at: given[one.at].value)
 
         if !borrowed.is_err()
+            # A parameter's local lives in the function that declares it, so
+            # its owner is that function's declaration (`resolve.hero` sets it
+            # per declaration resolved).
+            param = r.locals[borrowed.must()]
             span = a.exprs[given[one.at].value].span
             state.push_diagnostic(
                 @c,
-                refusal(borrowed: source.span_text(s, a.exprs[borrowed.must()].span), callee: callee, transfers: one.transfers, span: span)
+                refusal(borrowed: source.span_text(s, param.name), owner: source.span_text(s, decls[param.owner].name), lent: read_lend.lent_param(decls, param), callee: callee, one: one, span: span)
             )
 
 # The dotted call: its receiver is the call's first argument (spec § 9, `x.f(y)`
 # is `f(x, y)`), so `n.node_free()` is judged as `node_free(n)` is. Until defect
 # 629 only the named spelling was asked, and a borrowed handle ended through
 # the dot was accepted, a later read of the caller's copy aborting at run time.
-function refuse_borrowed_dotted(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl: ast.Decl, receiver: i64, given: [ast.Arg])
-    refuse_borrowed(@c, a, r, s, decl: decl, given: calls.all_arguments(ok(receiver), given: given))
+function refuse_borrowed_dotted(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, receiver: i64, given: [ast.Arg])
+    refuse_borrowed(@c, a, r, s, decls, decl: decl, given: calls.all_arguments(ok(receiver), given: given))
 
 # The refusal. It names the parameter the caller borrowed, because that is the
 # name to put an `@` on, and the consuming function, because that is what takes
@@ -140,18 +151,36 @@ function refuse_borrowed_dotted(@c: state.Checker, a: ast.Ast, r: resolved.Resol
 # another value that will (panel 176's item 2). Until 2026-09-25 the message
 # said "ends" of both. The repair is the same either way, which is why one code
 # carries both.
-function refusal(borrowed: str, callee: str, transfers: bool, span: token.Span) -> diag.Diagnostic
+#
+# **The note names `owner`, the function the parameter belongs to** (defect
+# 2242): the `@` goes on that function's signature and before the argument at
+# each call OF it, spec § 9's pair, never at this call, the one the caret is
+# under. Until 2026-10-29 the note said *the call site*, and written at this
+# call the `@` is `marker_mismatch`, since a group refuses `@` beside
+# `consumes` and `transfers` (`cell_cannot_end`); so where the parameter is
+# unmarked the note says this call stands as written, and where a refused
+# group marked it, it says nothing of this call. A parameter lent read-only
+# drops its `lent` too, which no `@` parameter carries (`lent_shape`).
+function refusal(borrowed: str, owner: str, lent: bool, callee: str, one: Consumed, span: token.Span) -> diag.Diagnostic
     does: str @= "ends the life of what it is given"
 
-    if transfers
+    if one.transfers
         does @ "hands the life of what it is given into another value that will end it"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "consumed_borrowed_handle",
         message: "`" + callee + "` " + does + ", and `" + borrowed + "` was borrowed — this function promised not to change it",
         span: span
     )
+    mark: str @= "Write the parameter `@" + borrowed + "` in the signature of `" + owner + "`"
+
+    if lent
+        mark @ mark + ", without its `lent`,"
+    stays: str @= ""
+
+    if !one.marked
+        stays @ "; this call stays as it is, since `" + callee + "` takes this argument without `@`"
     d.notes @ d.notes.push(
-        "a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. Mark the parameter `@" + borrowed + "` and the call site `@" + borrowed + "` too, which says on both lines that the value does not survive"
+        "a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. " + mark + " and `@` before its argument at every call of `" + owner + "`, which says on both lines that the value does not survive" + stays
     )
     d.notes @ d.notes.push(
         "this refuses the call, not the copy: a copy made BEFORE the call still holds the freed address, and nothing here sees that. design.md Part 8 wart 20 states that cost and names what would close it"
@@ -162,7 +191,7 @@ function refusal(borrowed: str, callee: str, transfers: bool, span: token.Span) 
 
 test "the positions carry the word, and the message says what the callee does"
     p = parse.parse(
-        "extern \"m.h\"\n    record H tag hh\n    function h_put(a: H transfers h_close, b: H consumes, keep: H)\n    function h_close(x: H consumes)\n"
+        "extern \"m.h\"\n    record H tag hh\n    function h_put(a: H transfers h_close, b: H consumes, keep: H)\n    function h_close(x: H consumes)\n    function h_free(@x: H consumes)\n"
     )
     positions = consuming_positions(p.decls[1])
     assert positions.len() == 2
@@ -170,10 +199,47 @@ test "the positions carry the word, and the message says what the callee does"
     assert positions[0].transfers
     assert positions[1].at == 1
     assert !positions[1].transfers
+    assert !positions[1].marked
     assert consuming_positions(p.decls[0]).len() == 0
+    assert consuming_positions(p.decls[3])[0].marked
     span = token.Span(start: 0, end: 1)
-    ended = refusal(borrowed: "h", callee: "free", transfers: false, span: span)
+    ended = refusal(borrowed: "h", owner: "closed", lent: false, callee: "free", one: positions[1], span: span)
     assert ended.message == "`free` ends the life of what it is given, and `h` was borrowed — this function promised not to change it"
-    handed = refusal(borrowed: "h", callee: "h_put", transfers: true, span: span)
+    handed = refusal(borrowed: "h", owner: "closed", lent: false, callee: "h_put", one: positions[0], span: span)
     assert handed.message == "`h_put` hands the life of what it is given into another value that will end it, and `h` was borrowed — this function promised not to change it"
-    assert handed.notes[0] == ended.notes[0]
+    assert refusal(borrowed: "h", owner: "closed", lent: false, callee: "free", one: positions[0], span: span).notes[0] == ended.notes[0]
+
+# The note's `@` goes on the function the parameter belongs to and on the
+# calls of it, never on the call refused (defect 2242).
+test "the note puts the `@` on the borrowing function and its calls"
+    p = parse.parse(
+        "extern \"m.h\"\n    record H tag hh\n    function h_close(x: H consumes)\n    function h_free(@x: H consumes)\n"
+    )
+    span = token.Span(start: 0, end: 1)
+    plain = refusal(
+        borrowed: "h",
+        owner: "done",
+        lent: false,
+        callee: "h_close",
+        one: consuming_positions(p.decls[1])[0],
+        span: span
+    )
+    assert plain.notes[0] == "a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. Write the parameter `@h` in the signature of `done` and `@` before its argument at every call of `done`, which says on both lines that the value does not survive; this call stays as it is, since `h_close` takes this argument without `@`"
+    lent = refusal(
+        borrowed: "h",
+        owner: "done",
+        lent: true,
+        callee: "h_close",
+        one: consuming_positions(p.decls[1])[0],
+        span: span
+    )
+    assert lent.notes[0] == "a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. Write the parameter `@h` in the signature of `done`, without its `lent`, and `@` before its argument at every call of `done`, which says on both lines that the value does not survive; this call stays as it is, since `h_close` takes this argument without `@`"
+    marked = refusal(
+        borrowed: "h",
+        owner: "done",
+        lent: false,
+        callee: "h_free",
+        one: consuming_positions(p.decls[2])[0],
+        span: span
+    )
+    assert marked.notes[0] == "a parameter written without `@` is borrowed: the caller keeps the value and reads it again after the call, so a call that frees it leaves them holding an address C has taken back. Write the parameter `@h` in the signature of `done` and `@` before its argument at every call of `done`, which says on both lines that the value does not survive"

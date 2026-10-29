@@ -1,0 +1,32 @@
+# Defect 2242, 2026-10-28 (panel 231: the ffi-pragmatist writing a generated
+# group's Heroes wrapper by hand, reproduced by the sitting's critic).
+# Symptom: a wrapper `done(a: G5)` returning `g5_close(a)`, where `g5_close`
+# takes its handle `consumes`, is refused `consumed_borrowed_handle` with its
+# caret under the `a` of `g5_close(a)`, and the note said *Mark the parameter
+# `@a` and the call site `@a` too*: written at the call the caret is under,
+# `g5_close(@a)` is `marker_mismatch`, since a group's consuming parameter
+# takes no `@`. Cause: the call site meant was the wrapper's caller's,
+# `done(@a)`, spec § 9's pair, and the note named neither the wrapper nor its
+# calls. Now it names the function the parameter belongs to, puts the `@` on
+# its signature and before the argument at every call of it, and says this
+# call stays as it is. `done_well`, the wrapper written as the note says, is
+# left alone; the issue's program written so, its `a` a cell as the next
+# message asks, checks clean and built prints `0` (this Mac, 2026-10-29).
+extern "fixedbugs-2242-a-wrapper-ending-its-borrowed-handle-is-told-where-the-at-goes.h"
+    record G5 tag g5_acc
+    function g5_open(start: i64) -> G5 acquires g5_close
+    function g5_close(a: G5 consumes) -> i32
+
+# The issue's own wrapper.
+function done(a: G5) -> i32
+    return g5_close(a)  #~ consumed_borrowed_handle
+
+# Left alone: the wrapper the note writes, called with `@` on a cell.
+function done_well(@a: G5) -> i32
+    return g5_close(a)
+
+function main()
+    a = g5_open(start: 1)
+    print(done(a))
+    b: G5 @= g5_open(start: 2)
+    print(done_well(@b))

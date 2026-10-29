@@ -1210,7 +1210,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     # — the lowering reads expr_types, not the tree.
                     signature = function_value.signature_of(@c, a, r, s, decls, decl: t.at)
                     _ = state.record_expr(@c, at: callee, ty: signature)
-                    consuming.refuse_borrowed(@c, a, r, s, decl: decls[t.at], given: given)
+                    consuming.refuse_borrowed(@c, a, r, s, decls, decl: t.at, given: given)
                     return ok(
                         user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span, expected: expected)
                     )
@@ -1473,7 +1473,7 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             # drops them, lowers the call with its receiver lent as `@`.
             if markers.ufcs_hides_the_marker(decls, decl: t.at)
                 state.push_diagnostic(@c, data_errors.ufcs_on_mutable(name, called))
-            consuming.refuse_borrowed_dotted(@c, a, r, s, decl: decls[t.at], receiver: receiver, given: given)
+            consuming.refuse_borrowed_dotted(@c, a, r, s, decls, decl: t.at, receiver: receiver, given: given)
             return user_call(
                 @c,
                 a,
