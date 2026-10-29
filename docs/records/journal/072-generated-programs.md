@@ -166,3 +166,10 @@ for the parser's silence.
 suites, 10,217 passed and 0 failed; stage 2, built by the seed's stage 1, and
 stage 3 the same 28,596,638 bytes, so the seed stands; the compiler's own
 1,765 and the net's own 465; the site's build green.
+
+**The tag's commit**: `b0bfd2690` went out with the author's yes and the two
+issues were closed after it, so `records/tagged` read them open at a tag
+placed on it, a light tag's time being its commit's (`%(creatordate)`,
+`tests/harness/records_github.hero`). The tag goes on the commit that says
+so, made after the closes, as M-panic-location's went on the commit after
+its defect 2240.
