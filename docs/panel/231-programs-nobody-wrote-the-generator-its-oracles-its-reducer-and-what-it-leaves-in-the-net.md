@@ -306,6 +306,34 @@ those is measured wrong or blind above.
 | compiler-engineer | `emission` with `-fsyntax-only` and the packages' paths reads 0 refusals on this Mac's trunk | that landing |
 | ffi-pragmatist | the first 1,000 generated C-boundary programs whose `build` exits 0 produce an artifact that links and agrees with `build`; `ffi-missing-link` stays the only shape where the routes disagree | the C arm's first 1,000 |
 
+## Scored at M-generated-programs's close, measured 2026-10-28 and written 2026-10-29
+
+Each row of the table above, scored by the command that settles it, run that day on the lane at
+`dbae1e642` or after it as each line says, by the coordinator.
+
+- **The core's size: missed.** The generator's modules, `tests/harness/gen_*.hero` with
+  `generate.hero` and `suite_generated.hero`, hold **3,704** code lines in **26** modules, none past
+  300 (counted as `suite_layout` counts, a module's code without its comments, its `test` blocks or
+  its blank lines), against 2,500 in 10; the milestone built the page's two hard shapes as eight
+  families of their own (decision 2248), which the prediction did not price. Its second half holds:
+  `git diff --stat 8830e6621 dbae1e642 -- selfhost/` is one file, `selfhost/measure/pinned.hero`,
+  the specification's pins, and no defect needed a repair in `selfhost/`.
+- **Nine of ten operators: hit, on the nine planted.** Measurement 058 planted nine of the ten
+  integer operators' rules, `+ - * / % >> & ^ <<`, and the generator's sample of 128, built by the
+  base, saw all nine (E1 to E9, 9 to 28 programs each); `|` was not planted, so the tenth is unscored.
+- **The generator's counters past the `run` goldens: missed, 362 against 1,000.** The seat's own instrument re-run as the seat ran it (its instrumented compiler, `sources 5e0ca4c634086a7c`, functionally today's, `selfhost/` having moved since only in the specification's pins; one profile a program through `--emit-c`; its `counters.py`): the sample of 128 with every family reaches **38,857** counters, the `run` goldens' set of the sitting **56,943**, and **362** are the generator's alone, where the sitting's 300 programs reached 26,751 and **63**, a number the same commands give again from the sitting's own set. The C families and the depth shapes grew it nearly six times, and the prediction's thousand stays unreached.
+- **5,000 nested calls: hit on the limit, missed on its place.** The hunt's depth dial, `generate deep` (panel 231's R4, *in the hunt, up to and past 2,000 on purpose*, built at this close), wrote `g(g(...g(0)...))` 5,000 deep, and its first program's build ended `panic: stack exhausted in walk.check, inside the recursion of walk.check, walk.dispatch_call, walk.named_call and walk.user_call`: the designed limit of panel 184's R6, past the floor, in the checker's walk rather than in `lower.shape`, the stage after it. The same dial at 5,000 built and ran a chain of records and one of variants, and `if` and `while` blocks at 2,500, each printing its answer.
+- **Oracle 1's exit 2: void**, as the table says.
+- **Reduced witnesses under 20 lines: hit.** The 68 reductions of step 3's experiment under two
+  plants (`.claude/worktrees/lane-generated-programs-scratch/slide/` on the coordinator's Mac): 67 of
+  68 under 20 lines counting every line, 68 of 68 counting the lines that are not blank, from 4 to 22,
+  median 8; and **0** refused candidates judged in all 68 (`refused 0` in every `reduce.log`).
+- **`generated` ends before `run` in gate B: hit.** At the close's gate, six suites wide beside two hunts, `run` took from 20:28:15 to 21:07:04 and the eleven parts `generated` runs in had all ended by 20:34:13; alone on a still machine, before the C families, `generated` read `real 326.26`, `user 116.23`, `sys 49.27` (2026-10-28), so it adds no minute to a wall `run` sets. On the Windows box, two sessions wide, its parts took 7 min 17 s of wall and about 12 min 40 s in all (23:31:34 to 23:38:51), far under R7's 200.
+- **`emission` with `-fsyntax-only` reads 0 refusals: hit**, at step 4 (`a21ef026e`): 2,118 and 0
+  on this Mac, the two Linux-only cases skipped for `sys/prctl.h`; and at this close's gate,
+  2,118 and 0 again, the same skips.
+- **The first 1,000 C-boundary programs whose `build` exits 0: hit.** The close's hunt judged 3,200 seeds from 50,001 (eight processes of 400, two of them run again after the generator's own defect of step 17), 1,157 of them binding C, every one through oracle 4 at the boundary, and 0 failed: no artifact that does not link or disagrees with `build`, so `ffi-missing-link` stays the one shape where the routes disagree.
+
 ## What the seats could not run
 
 Linux (the Docker daemon down; no seat started it on a shared machine): LeakSanitizer on 972's shape,
@@ -365,3 +393,13 @@ facts move the sitting's reading without moving a resolution:
 ## Author's verdict
 
 *Pending*: https://github.com/heroes-lang/heroes/issues/2243.
+
+**Ratified 2026-10-28, by the author's reading** (the author's *3a*, given that evening to the
+decisions put at M-generated-programs' close): the resolution as it landed, R1 to R8, with the three
+decisions the coordinator took under the batches' standing default,
+https://github.com/heroes-lang/heroes/issues/2246 (the depth shapes the `generated` suite writes
+rather than commits), https://github.com/heroes-lang/heroes/issues/2247 (the two malloc fills asked
+of every program, not of a program with an `extern` alone) and
+https://github.com/heroes-lang/heroes/issues/2248 (the milestone page's two hard shapes built in
+this milestone). Owed after the push: R7's reading of `generated` on the CI's Windows leg, the
+sample halved where that leg passes 200 minutes.
