@@ -205,9 +205,20 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 
     # Every blessed emission compiled, after the sweep and apart from it, so
     # the sweep's own tests, which run it over stub trees, judge bytes alone.
+    # An emission that names Darwin's own C is compiled where it was blessed
+    # and skipped elsewhere by name, as its bytes are: the CI's first run
+    # over this pass (40756360364, 2026-10-28) refused six on both Linux legs
+    # (`pthread_mutex_t`'s `__sig`, `re_pattern_buffer`'s `re_magic`,
+    # `passwd`'s `pw_change`, `SDL_MouseWheelEvent`'s `integer_x`) and one on
+    # Windows (`tm`'s `tm_gmtoff`), every one a name of `darwin_emissions`.
     for one in programs
         if shell.exists(one.stored) && !blessing()
-            compiles(@r, one: one)
+            elsewhere = platform_skips.emission_reason(one.label)
+
+            if elsewhere.is_err()
+                compiles(@r, one: one)
+            else
+                report.keep_skip(@r, label: "emission/" + one.label + "/compiles", detail: "  " + elsewhere.must())
 
     return ok(report.tally(one: r, two: swept))
 
@@ -433,7 +444,8 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
 # green here (`.claude/rules/diagnostics-and-goldens.md` § An instrument
 # watches the world: the predicate beside the bytes). Re-measured on
 # 2026-10-28, 692 of 705 pass and every one of the 13 others stops at a
-# header this machine lacks, which is the machine's, told as a skip. The
+# header this machine lacks, which is the machine's, told as a skip; and an
+# emission naming Darwin's own C is asked on Darwin alone (`run_all`). The
 # words are the fewest that decide whether C11 with the compiler's dialect
 # parses and type-checks, `-std=gnu11 -fsigned-char`, its warnings off,
 # since the compiler's own warning words are its build's to hold and a
