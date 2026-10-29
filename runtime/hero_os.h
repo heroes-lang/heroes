@@ -425,4 +425,43 @@ int64_t hero_thread_join(int64_t handle);
  * A value rather than a form — `hero_word_bits`'s precedent. */
 int64_t hero_thread_limit(void);
 
+/* -- three the Heroes sources bind, here since defect 2256 (2026-10-29) ------
+ *
+ * A program binds nothing of `heroes_runtime.h`, the interface the C this
+ * compiler writes calls (panel 232's R6): its functions count the references
+ * of a program's own values and free them, and one bound from Heroes freed a
+ * string the program still held. The Heroes library and the compiler bound
+ * three of them, which stand here now, where every unit reads them before
+ * its groups as it read them there. */
+
+/* The bytes of a `str` to stdout, nothing added: the half of `print` before its
+ * newline, which the C this compiler writes for `print` calls too, and which
+ * the compiler binds for its artifact (`selfhost/cli/io.hero`). */
+void hero_print_str(HeroStr s);
+
+/* The conversion with a status instead of a grave (panel 089). The Heroes side
+ * is `validated(c: cstr) -> str?` in the Tier-2 library, and these three codes
+ * are what it branches on — small integers rather than errno, for the reason
+ * given above about this header's own set: the `e.code` string a program sees
+ * must be the same on every platform.
+ *
+ * **The codes are written HERE and nowhere else.** M-header-constants moved
+ * this header's set into it for exactly this, and `library_source.hero`
+ * records the rule in its own words: the header is the only place they live, so
+ * renumbering cannot leave the Heroes side behind. */
+#define HERO_STR_OK 0
+#define HERO_STR_NULL 1
+#define HERO_STR_NOT_TEXT 2
+HeroStr hero_str_try_from_cstr(const char *p, int64_t *status);
+
+/* -- what the program was compiled from (panel 222's R1) ------------------
+ * Sixteen characters, the key of the modules a program's root reaches, the
+ * library compiled into it and the runtime it links, which the emitter writes
+ * beside `main` in every program's root unit (`selfhost/emit/provenance.hero`):
+ * the definition is the program's, and this declaration is what clang holds
+ * it to. The runtime neither defines nor calls it, so no ABI stamp moves
+ * (panel 089's reading); the compiler prints its own on `--version`'s second
+ * line (`selfhost/cli/help.hero`). */
+HeroStr hero_program_sources(void);
+
 #endif /* HERO_OS_H */

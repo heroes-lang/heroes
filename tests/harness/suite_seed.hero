@@ -104,7 +104,7 @@ test "a seed that defines the function once holds, none or two is told, and no r
 
 test "the binding and the definition are spelt as the compiler's own source and emitter spell them"
     help = read_file("selfhost/cli/help.hero").must()
-    assert strings.contains(text: help, needle: "extern \"heroes_runtime.h\"\n" + BINDING + ") -> str\n")
+    assert strings.contains(text: help, needle: "extern \"hero_os.h\"\n" + BINDING + ") -> str\n")
     provenance = read_file("selfhost/emit/provenance.hero").must()
     assert strings.contains(text: provenance, needle: "\"hero_program_sources\"")
     assert strings.contains(

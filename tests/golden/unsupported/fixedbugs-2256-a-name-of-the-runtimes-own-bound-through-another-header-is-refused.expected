@@ -1,0 +1,34 @@
+error[ffi_runtime_header]: `hero_str_release_at` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds
+  at tests/golden/unsupported/fixedbugs-2256-a-name-of-the-runtimes-own-bound-through-another-header-is-refused.hero:17:14
+     |
+  17 |     function hero_str_release_at(@s: str)  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it
+
+error[ffi_runtime_header]: `hero_print_int` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds
+  at tests/golden/unsupported/fixedbugs-2256-a-name-of-the-runtimes-own-bound-through-another-header-is-refused.hero:21:14
+     |
+  21 |     function hero_print_int(v: i64)  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it
+
+error[ffi_runtime_header]: `hero_print_end` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds
+  at tests/golden/unsupported/fixedbugs-2256-a-name-of-the-runtimes-own-bound-through-another-header-is-refused.hero:24:14
+     |
+  24 |     function hero_print_end()  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it
+
+error[ffi_runtime_header]: `HERO_STR_MAGIC` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds
+  at tests/golden/unsupported/fixedbugs-2256-a-name-of-the-runtimes-own-bound-through-another-header-is-refused.hero:27:14
+     |
+  27 |     constant HERO_STR_MAGIC: u64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it
+
+error[ffi_runtime_header]: `hero_str_len` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds
+  at tests/golden/unsupported/fixedbugs-2256-a-name-of-the-runtimes-own-bound-through-another-header-is-refused.hero:28:14
+     |
+  28 |     function hero_str_len(s: str) -> i64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it

@@ -283,7 +283,6 @@ int64_t hero_str_byte(HeroStr s, int64_t i);        /* aborts out of range */
  * It is the only operation in the language that can break a `str`'s
  * well-formedness, which is why the rule lives here rather than at `chars`. */
 HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to);
-void hero_print_str(HeroStr s);
 
 /* cstr: the FFI spelling (design.md §4.19). Free because of the NUL. */
 const char *hero_str_cstr(HeroStr s);
@@ -372,38 +371,16 @@ HeroStr hero_str_from_bytes(const char *p, int64_t len);
 HeroStr hero_str_repeat(HeroStr s, uint64_t n); /* n copies, one allocation */
 HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
 
-/* The same conversion with a status instead of a grave (panel 089). The Heroes
- * side is `validated(c: cstr) -> str?` in the Tier-2 library, and these three
- * codes are what it branches on — small integers rather than errno, for the
- * reason `hero_os.h` gives about its own set: the `e.code` string a program sees
- * must be the same on every platform.
- *
- * **The codes are written HERE and nowhere else.** M-header-constants moved
- * `hero_os.h`'s set into its header for exactly this, and `library_source.hero`
- * records the rule in its own words: the header is the only place they live, so
- * renumbering cannot leave the Heroes side behind. */
-#define HERO_STR_OK 0
-#define HERO_STR_NULL 1
-#define HERO_STR_NOT_TEXT 2
-HeroStr hero_str_try_from_cstr(const char *p, int64_t *status);
-/* The same, for a run whose end the caller states: to its first zero, or whole.
-   A C `char[N]` field is not a `cstr` and need not be terminated (panel 162). */
+/* `hero_os.h`'s `hero_str_try_from_cstr`, the conversion with a status instead of
+   a grave (panel 089), for a run whose end the caller states: to its first zero,
+   or whole, its status one of the three codes `hero_os.h` writes beside it. A C
+   `char[N]` field is not a `cstr` and need not be terminated (panel 162). */
 HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status);
 /* The same over a `[u8]` this language owns; declared after HeroArrayHeader,
    below, because it names it (panel 162). */
 /* The same guard on the outbound side: a `cstr` handed to a C function, which is
    the path `hero_str_from_cstr` never sees (panel 053, CLAUDE.md §12). */
 const char *hero_cstr_nonnull(const char *p);
-
-/* -- what the program was compiled from (panel 222's R1) ------------------
- * Sixteen characters, the key of the modules a program's root reaches, the
- * library compiled into it and the runtime it links, which the emitter writes
- * beside `main` in every program's root unit (`selfhost/emit/provenance.hero`):
- * the definition is the program's, and this declaration is what clang holds
- * it to. The runtime neither defines nor calls it, so no ABI stamp moves
- * (panel 089's reading); the compiler prints its own on `--version`'s second
- * line. */
-HeroStr hero_program_sources(void);
 
 /* The program's own spellings of the names a walk of its stack finds, handed by
  * its `main` before any thread exists (panel 230's R1, kind 3; `parts/stack.c`). */

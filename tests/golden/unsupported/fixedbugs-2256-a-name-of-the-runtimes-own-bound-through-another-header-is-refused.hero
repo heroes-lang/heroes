@@ -1,0 +1,35 @@
+# Fixed 2026-10-29, defect 2256, lane c-boundary (panel 232's R6): a name of
+# the Heroes runtime's own bound through another header than the runtime's.
+# Symptom: every unit reads the runtime's `heroes_runtime.h` before its
+# groups' headers, so `hero_str_release_at(@s: str)` bound under
+# `extern "stdio.h"`, `"math.h"`, `"hero_os.h"`, `"heroes_unit.h"` or a header
+# of the program's own that includes the runtime's built at exit 0, freed a
+# string the program still held, and ended at 134 on the runtime's mark check.
+# Cause: a binding was asked whether its name is declared, never by whom.
+# Each name the runtime's header writes in the compiler's own forms is refused
+# at `build`, a function or a constant, whatever its group names; `hero_os.h`'s
+# own names and a third party's `hero_` name bind as before
+# (`tests/golden/run/fixedbugs-2256-a-third-partys-hero-name-and-hero-os-names-bind-as-before`).
+# A group naming the runtime's header itself is `check`'s:
+# `tests/golden/check/fixedbugs-2256-a-group-naming-the-runtimes-own-header-is-refused`.
+
+extern "stdio.h"
+    function hero_str_release_at(@s: str)  #~ ffi_runtime_header
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_print_int(v: i64)  #~ ffi_runtime_header
+
+extern "heroes_unit.h"
+    function hero_print_end()  #~ ffi_runtime_header
+
+extern "fixedbugs-2256-includes-the-runtime.h"
+    constant HERO_STR_MAGIC: u64  #~ ffi_runtime_header
+    function hero_str_len(s: str) -> i64  #~ ffi_runtime_header
+
+function main()
+    s: str @= f"built at run time from {len(args()) + 7} and more than a few bytes"
+    hero_str_release_at(s: @s)
+    hero_print_int(v: hero_str_len(s: s) + hero_os_pid())
+    print(HERO_STR_MAGIC > 0)
+    hero_print_end()
