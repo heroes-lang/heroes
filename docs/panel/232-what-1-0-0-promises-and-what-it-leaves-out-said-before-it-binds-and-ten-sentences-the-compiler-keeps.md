@@ -468,3 +468,12 @@ milestone closes: fourteen defects, every one open.
 
 *Pending*: https://github.com/heroes-lang/heroes/issues/2262, R7 (A or B), R12 (a map's order) and R8
 (the rule reaching the runtime's C names) the three choices inside it.
+
+**RATIFIED, 2026-10-29**, R1 to R12, the author answering that evening in the conversation the
+three choices decision 2262 put inside the ratification, meant as: *I ratify everything*. **R7**:
+rule (A), as adopted. **R8**: yes, as adopted; task 2237 had landed that evening. **R12**:
+**insertion order**, against the provisional resolution and the coordinator's recommendation: `1.0.0`
+promises a map's keys in the order they were first written (Python 3.7's route), so R6's paragraph
+no longer lists a map's order among what the specification leaves open, and the runtime's
+representation and § 10's sentence are owed before `1.0.0` (feature 2274, M-publication-gate).
+Recorded as a reading (CLAUDE.md § 4).

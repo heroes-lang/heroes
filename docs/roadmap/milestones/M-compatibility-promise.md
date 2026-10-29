@@ -171,7 +171,7 @@ test and no part of the language.
 ## Panel 232's resolution, provisional (2026-10-29)
 
 **The sitting**, `docs/panel/232-what-1-0-0-promises-and-what-it-leaves-out-said-before-it-binds-and-ten-sentences-the-compiler-keeps.md`,
-adopted its resolution provisionally, the author's ratification pending in decision 2262
+adopted its resolution provisionally, and the author ratified it the same evening, decision 2262
 (https://github.com/heroes-lang/heroes/issues/2262). Its seats and its critic found nine defects
 running the sentences' shapes, 2253 to 2261, six of them `blocking`.
 
@@ -183,9 +183,9 @@ spec-warden's veto):
 > 1.x compiler, and does what the specification says it does. Outside it: a program that relies on
 > a defect, the compiler doing other than the specification says, which a 1.x release may repair;
 > a repair that keeps a program from crashing or corrupting memory, which may refuse or stop a
-> program that did; what the specification leaves open, such as the order of a map's keys, how
-> deep a program may call and how much memory it may hold; and an error in the specification
-> itself, which a 1.x release may correct.
+> program that did; what the specification leaves open, such as how deep a program may call and
+> how much memory it may hold; and an error in the specification itself, which a 1.x release may
+> correct.
 >
 > **What it covers.** The language the specification describes and the functions it names; the
 > functions `hero_os.h` declares at 1.0.0, their names, their types and what each result hands its
@@ -231,6 +231,9 @@ what each result owns), 2264 (the compiler's name forms reserved, P1 with its re
 stop inside a bound function names its place), 2266 (the codes listed and held by the net), 2267
 (the suite runs the corpus), 2268 (the paragraph published) and 2269 (the CI fetches the tags).
 
-**The author's three choices**, inside decision 2262: R7, whether a `1.x` may add a refusal (rule
-(A), recommended, or (B)); R12, a map's order; R8, whether *no deprecated alias* reaches the
-runtime's C names. None changes what lands here.
+**The author's three choices, answered 2026-10-29** with the sitting's ratification (decision
+2262): R7, rule (A), a `1.x` refusing no program its `1.0.0` compiled; R8, yes, the rule against a
+deprecated alias reaching the runtime's C names; and R12, **insertion order**: `1.0.0` promises a
+map's keys in the order they were first written, so the paragraph above no longer lists a map's
+order among what the specification leaves open, and the runtime and § 10 owe it before `1.0.0`
+(feature 2274). None changes what lands here.

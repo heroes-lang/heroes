@@ -172,7 +172,7 @@ moves only in the commit that carries the tag. While `X` is 0, `Y` moves when
 `git diff vA vB -- spec/heroes-spec.md` is not empty and `Z` when it is; from
 `1.0.0` the same holds for `Y` and `Z`, and `X` moves only with a release that
 breaks the compatibility promise and says which programs it breaks (panel 232's
-R11, provisional, author ratification pending). The CI
+R11, ratified 2026-10-29). The CI
 is the instrument, and no binary is uploaded. The reasoning and the six choices
 are CL-067 and the decision issue of 2026-09-07.
 
