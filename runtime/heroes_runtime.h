@@ -105,10 +105,9 @@ typedef __UINTPTR_TYPE__ uintptr_t;
 #  define HERO_FLT_EVAL_METHOD 2
 #endif
 
-#define HERO_RUNTIME_ABI 31
+#define HERO_RUNTIME_ABI 32
 
 _Noreturn void hero_panic(const char *msg);
-_Noreturn void hero_panic_overflow(void);
 _Noreturn void hero_unreachable(void);
 
 /* The entry of a function this program hands to C as a callback, so that C
@@ -461,41 +460,17 @@ HeroFailure hero_failure_does_not_fit(void);
 /* Invalid UTF-8 from C, the same `not_text` `read_file` answers (panel 162). */
 HeroFailure hero_failure_not_text(void);
 
-/* `.must()` on an error (§4.6). Takes the failure, because the useful half of the
- * message is the `code` and `msg` the author wrote — a panic saying only that a
- * `.must()` failed tells the reader the one thing they already know. */
-_Noreturn void hero_panic_must(HeroFailure f);
-
-/* `assert` (§4.18). Two entry points because C has no optional arguments and the
- * spec asks for both the source expression AND both sides — the second is what a
- * bare "assert failed" loses. The emitter renders each side through the same
- * `to_str` entry points `print` uses, and falls back to the text-only form where
- * a side has no rendering (a record, an array). */
-_Noreturn void hero_panic_assert(HeroStr text);
-_Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right);
-/* The same where the two sides are `str` values, handed over as they are: the
- * report writes each quoted, in the specification's escapes, so a side's line
- * feed can never pass for a line of the report (panel 230's R3, defect 2225).
- * `hero_panic_assert_sides` keeps its shape for every side `print` renders. */
-_Noreturn void hero_panic_assert_str_sides(HeroStr text, HeroStr left, HeroStr right);
-/* A `match` built with `--permissive` that reached a case no arm names (panel 226):
- * the case's index and the variant's cases joined by `,`, or the value as `print`
- * renders it. The parameters are named with words the guard already keeps, so a
- * group's macro named `tag` reaches no prototype here and no program's guard grows. */
-_Noreturn void hero_panic_unmatched_case(int64_t index, HeroStr text);
-_Noreturn void hero_panic_unmatched_value(HeroStr text);
-/* The same for a `str` value, written quoted as a side is (panel 230's R3, defect
- * 2226): the value is the program's, and `%s` once let it write a line of its own. */
-_Noreturn void hero_panic_unmatched_str(HeroStr text);
-
-/* WHERE A STOP HAPPENED (panel 230's R1; `parts/place.c`). Each entry point is an
- * old one with the place added last, beneath the line the old one writes:
+/* WHERE A STOP HAPPENED (panel 230's R1; `parts/place.c`). Each entry point writes
+ * its stop's line and the place beneath it:
  * `  at <file>:<line>:<column>, in <function>`. The four are literals the emitter
  * writes on the failing branch alone, in this order: the file as the program's
- * modules name it, the function as a caller names it, the line and the column.
- * Added BESIDE the old names, never in their place (design.md §4.20), and the four
- * are unnamed here, as `hero_panic_unmatched_case`'s note above keeps its words,
- * so no word of these prototypes reaches the guard. */
+ * modules name it, the function as a caller names it, the line and the column,
+ * and they are unnamed here, so no word of these prototypes reaches the guard.
+ * They were added beside the old names, never in their place (design.md §4.20),
+ * and the eight old `hero_panic_*` names without a place left with task 2237
+ * (2026-10-29), `HERO_RUNTIME_ABI` 32: no seed called one since panel 230's
+ * refresh, and a name kept for an older program is what the author's rule before
+ * 1.0.0 refuses (panel 232's R8). */
 _Noreturn void hero_panic_at(const char *msg, const char *, const char *, int64_t, int64_t);
 
 /* WHERE A CHECK THE RUNTIME MAKES STANDS IN THE PROGRAM (panel 230's R1, kind 2).
@@ -503,9 +478,8 @@ _Noreturn void hero_panic_at(const char *msg, const char *, const char *, int64_
  * the entry point on every call and read only where the check fails, so the path
  * that does not abort pays one pointer argument. The four as `hero_panic_at`'s:
  * the file as the program's modules name it, the function as a caller names it,
- * the line and the column. Each `_at` below is an old entry point's twin, the
- * old one's body and words with the place beneath, the old one unchanged beside
- * it. */
+ * the line and the column. Each `_at` below writes its stop's words with the place
+ * beneath. */
 typedef struct {
     const char *path;
     const char *name;
@@ -514,12 +488,29 @@ typedef struct {
 } HeroPlace;
 _Noreturn void hero_panic_overflow_at(const char *, const char *, int64_t, int64_t);
 _Noreturn void hero_panic_byte_at(HeroStr s, int64_t index, const char *, const char *, int64_t, int64_t);
+/* `.must()` on an error (§4.6). Takes the failure, because the useful half of the
+ * message is the `code` and `msg` the author wrote — a panic saying only that a
+ * `.must()` failed tells the reader the one thing they already know. */
 _Noreturn void hero_panic_must_at(HeroFailure f, const char *, const char *, int64_t, int64_t);
+/* `assert` (§4.18). Two entry points because C has no optional arguments and the
+ * spec asks for both the source expression AND both sides — the second is what a
+ * bare "assert failed" loses. The emitter renders each side through the same
+ * `to_str` entry points `print` uses, and falls back to the text-only form where
+ * a side has no rendering (a record, an array). */
 _Noreturn void hero_panic_assert_at(HeroStr text, const char *, const char *, int64_t, int64_t);
 _Noreturn void hero_panic_assert_sides_at(HeroStr text, HeroStr left, HeroStr right, const char *, const char *,
                                           int64_t, int64_t);
+/* The same where the two sides are `str` values, handed over as they are: the
+ * report writes each quoted, in the specification's escapes, so a side's line
+ * feed can never pass for a line of the report (panel 230's R3, defect 2225).
+ * `hero_panic_assert_sides_at` keeps its shape for every side `print` renders. */
 _Noreturn void hero_panic_assert_str_sides_at(HeroStr text, HeroStr left, HeroStr right, const char *,
                                               const char *, int64_t, int64_t);
+/* A `match` built with `--permissive` that reached a case no arm names (panel 226):
+ * the case's index and the variant's cases joined by `,`, or the value as `print`
+ * renders it, a `str` written quoted as a side is (panel 230's R3, defect 2226).
+ * The parameters are named with words the guard already keeps, so a group's macro
+ * named `tag` reaches no prototype here and no program's guard grows. */
 _Noreturn void hero_panic_unmatched_case_at(int64_t index, HeroStr text, const char *, const char *, int64_t,
                                             int64_t);
 _Noreturn void hero_panic_unmatched_value_at(HeroStr text, const char *, const char *, int64_t, int64_t);

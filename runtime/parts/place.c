@@ -224,7 +224,9 @@ _Noreturn void hero_panic_byte_at(HeroStr s, int64_t index, const char *file, co
     hero_panic_at("string index out of range", file, function, line, column);
 }
 
-/* `.must()` on an error: `hero_panic_must`'s line, then the place. */
+/* `.must()` on an error: its line, `panic: .must() on an error: <code>: <msg>`,
+ * then the place. `code` and `msg` come from the program, so they are messages,
+ * read as every reader reads a str (defect 462). */
 _Noreturn void hero_panic_must_at(HeroFailure f, const char *file, const char *function, int64_t line,
                                   int64_t column) {
     hero_str_require(f.code);
@@ -241,9 +243,15 @@ _Noreturn void hero_panic_must_at(HeroFailure f, const char *file, const char *f
     hero_abort();
 }
 
-/* `assert`: the head line, the place, then the sides where there are two, so a
- * side's length never pushes the place out of a reader's first glance (panel
- * 230's R2, *called after the head line and the place are written*). */
+/* `assert` (§4.18, spec § 12 Tests and holes): the head line, the place, then the
+ * sides where there are two, so a side's length never pushes the place out of a
+ * reader's first glance (panel 230's R2, *called after the head line and the
+ * place are written*). "An `assert` failure shows the source expression and both
+ * sides": `dist2(3, 4) == 25` tells the reader what was claimed, and `26 != 25`
+ * what happened. Separate entry points rather than optional arguments, because C
+ * has no optional arguments and a NULL `HeroStr` is the one non-value every entry
+ * point here rejects. It is a PANIC, not a return: a test that fails stops, and
+ * `heroes test` runs each test in its own process for exactly that reason. */
 _Noreturn void hero_panic_assert_at(HeroStr text, const char *file, const char *function, int64_t line,
                                     int64_t column) {
     hero_str_require(text);
@@ -297,9 +305,13 @@ _Noreturn void hero_panic_assert_str_sides_at(HeroStr text, HeroStr left, HeroSt
     hero_abort();
 }
 
-/* The control arm's `match` that no arm took (panel 226's R1): the case named as
- * `hero_panic_unmatched_case` names it, the value as `parts/failure.c`'s two
- * write it, then the place. */
+/* The control arm's `match` that no arm took (panel 226's R1), in a program built
+ * with `--permissive`: the strict build proves exhaustiveness, so the block that
+ * calls these exists only there, and the words are the program's own mistake,
+ * never the compiler's. `text` holds the variant's cases joined by `,` in tag
+ * order and `index` the case reached; or the value as `print` renders it, an
+ * integer's digits a message and a `str` a value, quoted, so a line feed in it
+ * writes no line of its own (panel 230's R3, defect 2226); then the place. */
 _Noreturn void hero_panic_unmatched_case_at(int64_t index, HeroStr text, const char *file, const char *function,
                                             int64_t line, int64_t column) {
     hero_str_require(text);
