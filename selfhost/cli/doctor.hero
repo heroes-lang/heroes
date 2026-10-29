@@ -17,6 +17,7 @@ use cli/process
 use cli/publish
 use cli/clang_floor
 use cli/read_back
+use emit/runtime_abi
 
 record Check
     name: str
@@ -250,10 +251,31 @@ function run_doctor(build_dir: str, runtime_hint: str?) -> cli_table.Exit
 # What the runtime row says when none is found: a `HEROES_RUNTIME` that names
 # none is told by its own refusal's first line (defect 276), where the row
 # told an author who had set it to set it; with none set, the row's own words.
+# A runtime found that is not this compiler's is told by its refusal whole,
+# what to do after a dash (defect 2259): the row said `ok` of it while every
+# build was refused.
 function unfound(code: str, msg: str) -> str
     if code == "hint"
         return first_line(msg)
+
+    if code == "abi"
+        return on_one_row(msg)
     return "not found — set HEROES_RUNTIME=<dir>"
+
+# A refusal's lines on one row, each after the first behind a dash.
+function on_one_row(msg: str) -> str
+    rows: [str] @= []
+    run: [str] @= []
+
+    for ch in msg.chars()
+        if ch == "\n"
+            rows @ rows.push(trim_ends(run.join("")))
+            run @ []
+        else
+            run @ run.push(ch)
+
+    rows @ rows.push(trim_ends(run.join("")))
+    return rows.join(" — ")
 
 function pad_to(text: str, width: i64) -> str
     count = text.chars().len()
@@ -373,6 +395,20 @@ test "doctor's runtime row tells a HEROES_RUNTIME that names no runtime by what 
     assert got[4].name == "runtime"
     assert !got[4].ok
     assert got[4].detail == "`HEROES_RUNTIME` is set to `build/selftest-doctor-no-runtime-276`, and no Heroes runtime is there: no file at `build/selftest-doctor-no-runtime-276/heroes_runtime.h`; no file at `build/selftest-doctor-no-runtime-276/runtime.c`"
+
+# Defect 2259: a runtime this compiler is not built for is a failed row, its
+# refusal whole with what to do after a dash, where the row said `ok`.
+test "doctor's runtime row tells a runtime of another release, and what to do (defect 2259)"
+    dir = "build/selftest-doctor-abi-2259"
+    assert !process.mkdir_all(dir).is_err()
+    other = (runtime_abi.NEEDED + 1).to_str()
+    assert !write_file(path: dir + "/heroes_runtime.h", text: "#define HERO_RUNTIME_ABI " + other + "\n").is_err()
+    assert !write_file(path: dir + "/runtime.c", text: "/* its parts */\n").is_err()
+    got = checks(build_dir: "build", runtime_hint: ok(dir))
+    assert got[4].name == "runtime"
+    assert !got[4].ok
+    assert got[4].detail == "`HEROES_RUNTIME` is set to `" + dir + "`, and the Heroes runtime there is not the one this compiler is built for: its heroes_runtime.h states HERO_RUNTIME_ABI " + other + ", and this compiler needs " + runtime_abi.NEEDED.to_str() + " — set HEROES_RUNTIME to the runtime this compiler came with, or unset it to look in ./runtime and beside the compiler; or build the compiler again from the sources this runtime came with"
+    assert on_one_row("one\n  two\nthree") == "one — two — three"
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
