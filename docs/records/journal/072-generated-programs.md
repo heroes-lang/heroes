@@ -124,3 +124,45 @@ of the specification the compiler does not keep; the CI's reading of
 (run 40780595765 and the close's push); R7's Windows measurement on the CI's
 own runner; the four cases the reading kept by a citation alone and
 `no-size-self`'s twin, for the next debrief.
+
+## The tag, 2026-10-29
+
+**`records/tagged` refused the tag the close placed, and it was right.** Two
+`adjacent` defects filed at M-panic-location, 2230 and 2238, reached their
+second tag with this one, where the rule counts an aged `adjacent` as
+`blocking` (`.claude/rules/verification.md` § Bounded discovery). The tag
+was taken back before any push, and the author chose the repair over a
+waiver, to close the milestone well.
+
+- **Defect 2230, step 21** (`5350c6b19`): `int_out_of_range` told a program to
+  widen a type that was not its own, the library's `exit`'s `u8` or a width a
+  header gives an `extern` binding, which a wider binding is refused for at
+  build. The note now says whose width it is and offers a number in range
+  alone, written after the check rather than carried into it, since every
+  frame of the walk holds the checker. `check/walk.hero` stood at its
+  ceiling of 1870 lines, and `header_line` moved to `check/callee_text.hero`
+  to pay for its lines.
+- **Defect 2238, step 22** (`4820bcba7`): a C name a group cannot spell, a
+  keyword or a word another language spells, was a line that cannot end,
+  *expected a field name*, or the refused word's own lesson, never that the
+  name is the header's. 130 probes, ten keywords and sixteen refused words in
+  each of the five places a group writes a C name, now read one message
+  each, from the lexer, naming the route, and every route ran before a
+  message named it. Asked of every keyword the lexer reads, its first
+  reading cost `check selfhost/main.hero` 1.6% of its user time, a score of
+  owned slots zeroed and released at each call; a filter that reads the line
+  in place and holds nothing put it back inside the noise, 7.00 s against
+  the trunk's 7.00 s (`b8b991445`).
+
+**What surprised**: the tag's instrument found what the close's gate did not
+ask, which is what it was written for, so that the queue cannot only grow.
+And the repair of 2238 went where half of it already lived: the lexer reads
+where a refused word stands from the text alone, so a keyword in the same
+place is told by the same reading, and `parse/`, at 8736 lines of its budget
+of 8737, took no line more, `tag_marker`'s message moving to `c_names` to pay
+for the parser's silence.
+
+**Re-measured at the tag's gate, 2026-10-29**: the full net on stage 2, 33
+suites, 10,217 passed and 0 failed; stage 2, built by the seed's stage 1, and
+stage 3 the same 28,596,638 bytes, so the seed stands; the compiler's own
+1,765 and the net's own 465; the site's build green.
