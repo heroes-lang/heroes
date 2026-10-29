@@ -1,0 +1,2 @@
+!at: fixedbugs-2258-eq-on-a-handle-given-back-names-its-place.hero:21:26
+!panic: `==` read a dead C handle

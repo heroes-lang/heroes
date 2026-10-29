@@ -1,0 +1,18 @@
+# Fixed 2026-10-29, defect 2258, lane c-boundary: the shape beside
+# `fixedbugs-2258-eq-on-a-handle-given-back-names-its-place`, `!=`.
+# Symptom and cause the same: no place under the stop. The `!=` hands its
+# place as the `==` does.
+
+extern "fixedbugs-2258-slots.h"
+    record Outer tag outer
+    function make_at(i: i64) -> Outer acquires release
+    function release(o: Outer consumes)
+
+function closed(@x: Outer)
+    release(o: x)
+
+function main()
+    a: Outer @= make_at(i: 0)
+    kept = a
+    closed(@a)
+    print("kept != a: ", kept != a)

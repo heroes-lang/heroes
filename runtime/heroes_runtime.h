@@ -501,6 +501,11 @@ const char *hero_cstr_nonnull_at(const char *p, const HeroPlace *where);
 /* A handle crossing into C, given back or handed on, at the call's place: the
  * record last, unnamed, `where` being the crossing's own words. */
 void hero_handle_alive_at(const void *handle, const char *where, const HeroPlace *);
+/* `==` on two handles at its place (defect 2258), and the place an `==` of
+ * values holding a handle hands for the comparison's length, NULL taking it
+ * back: their generated comparison reaches `hero_handle_eq` with none. */
+bool hero_handle_eq_at(const void *, const void *, const HeroPlace *);
+void hero_handle_eq_from(const HeroPlace *);
 uint64_t hero_handle_ending_at(const void *handle, const char *by, const char *pays, const HeroPlace *);
 uint64_t hero_handle_transferring_at(const void *handle, const char *into, const HeroPlace *);
 /* A life a mark begins keeps the call's place, which the gate at exit names

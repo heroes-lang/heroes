@@ -1,0 +1,22 @@
+# Fixed 2026-10-29, defect 2258, lane c-boundary: the shape beside
+# `fixedbugs-2258-eq-on-a-handle-given-back-names-its-place`, a record holding
+# a handle its field gave back, compared whole.
+# Symptom: the stop named no place. Cause: the record's generated comparison
+# is shared, reached through a descriptor, and calls `hero_handle_eq` knowing
+# no call site. The `==` hands the runtime its place for the comparison's
+# length and takes it back after (`hero_handle_eq_from`).
+
+extern "fixedbugs-2258-slots.h"
+    record Outer tag outer
+    function make_at(i: i64) -> Outer acquires release
+    function release(o: Outer consumes)
+
+record Box
+    h: Outer
+
+function main()
+    b = Box(h: make_at(i: 0))
+    c = Box(h: make_at(i: 1))
+    release(o: b.h)
+    print("b == c: ", b == c)
+    release(o: c.h)

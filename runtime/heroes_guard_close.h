@@ -303,6 +303,8 @@
 #pragma pop_macro("hero_handle_ending")
 #pragma pop_macro("hero_handle_ending_at")
 #pragma pop_macro("hero_handle_eq")
+#pragma pop_macro("hero_handle_eq_at")
+#pragma pop_macro("hero_handle_eq_from")
 #pragma pop_macro("hero_handle_kept")
 #pragma pop_macro("hero_handle_lent")
 #pragma pop_macro("hero_handle_retained")

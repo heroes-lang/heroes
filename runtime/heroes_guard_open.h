@@ -303,6 +303,8 @@
 #pragma push_macro("hero_handle_ending")
 #pragma push_macro("hero_handle_ending_at")
 #pragma push_macro("hero_handle_eq")
+#pragma push_macro("hero_handle_eq_at")
+#pragma push_macro("hero_handle_eq_from")
 #pragma push_macro("hero_handle_kept")
 #pragma push_macro("hero_handle_lent")
 #pragma push_macro("hero_handle_retained")

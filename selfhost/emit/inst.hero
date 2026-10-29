@@ -27,6 +27,7 @@ use emit/mangle
 use emit/ctype
 use emit/literal
 use emit/operator
+use emit/handle_eq
 use emit/ops
 use emit/access
 use emit/func_ref
@@ -211,11 +212,12 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
             target: target,
             site: site
         )
-        .binary bin => operator.binary(
+        .binary bin => handle_eq.binary(
             @w,
             s,
             c,
             names,
+            decls,
             f,
             op: bin.op,
             left: bin.left,
