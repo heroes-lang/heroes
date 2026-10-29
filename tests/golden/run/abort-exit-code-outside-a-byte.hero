@@ -1,0 +1,16 @@
+# UNVERIFIED — pending debrief
+# Task 2250, M-compatibility-promise, 2026-10-29 (panel 230's fallback, its
+# condition met by decision 2241): a code computed as the program runs and
+# outside 0 to 255 stops the program at the program's own call of `exit`,
+# never at a line of `<heroes library>` (through a function value it is the
+# library's declaration, the one place such a call has, panel 230's R1),
+# where a shell reading only its low
+# eight bits once saw 256 as a success (defect 2224). The line before the
+# call prints, so the stop is the call's.
+
+function doubled(n: i64) -> i64
+    return n * 2
+
+function main()
+    print("before")
+    exit(code: doubled(128))

@@ -1,0 +1,8 @@
+# Task 2250, M-compatibility-promise, 2026-10-29: `exit(code: i64)` hands a
+# computed code inside 0 to 255 to the shell whole, the last of them
+# included, where a byte of 255 is the edge the range check must not cut.
+
+function main()
+    last: i64 @= 254
+    last @ last + 1
+    exit(code: last)

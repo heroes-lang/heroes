@@ -51,16 +51,10 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 HERO_STR_STATIC(hero_str_43560e4d, "before");
+HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
+HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 56 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
-typedef struct h_0opt_1ec004 {
-    int64_t tag;
-    union {
-        uint8_t ok;
-        HeroFailure err;
-    } as;
-} h_0opt_1ec004;
-
+#line 58 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,13 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
+#line 96 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v);
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -118,71 +108,56 @@ HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-uint8_t h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_status(int64_t h0_n);
+int64_t h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_status(int64_t h0_n);
 void h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_main(void);
-void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
-__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code);
 
-#line 6 "tests/golden/run/fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.hero"
-uint8_t h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_status(int64_t h0_n) { HERO_NODEBUG h_0opt_1ec004 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG uint8_t h2_r0, t8, t9, t10; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; if (t1 >= 0LL && t1 <= 255LL) { t2 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t1}; } else { t2 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t11 = h3_own3; h3_own3 = t2; h_0opt_1ec004_release(&t11); t12 = h1_f0; h_0opt_1ec004_retain(&t2); h1_f0 = t2; h_0opt_1ec004_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = UINT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0;
-#line 130 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
-    h_0opt_1ec004_release(hero_slot_escape(&h1_f0));
-    h_0opt_1ec004_release(hero_slot_escape(&h3_own3));
+#line 11 "tests/golden/run/fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.hero"
+int64_t h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_status(int64_t h0_n) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t5, t8, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 14
+    t9 = h0_n; h2_ret0 = t9; goto bb6; bb2:
+#line 12
+    t4 = h0_n; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = INT64_C(1); h2_ret0 = t8; goto bb6; bb5: goto bb1; bb6:
+#line 125 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
+    t10 = h2_ret0;
     return t10;
 }
 
-#line 9 "tests/golden/run/fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.hero"
-void h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 16 "tests/golden/run/fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.hero"
+void h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
-    t2 = INT64_C(300); t3 = h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_status(t2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.hero", "fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.main", 11, 5}; h_library_exit(t3, &hero_here); } hero_unreachable(); return;
-#line 140 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
+    t2 = INT64_C(300); t3 = h_fixedbugs2224anexitstatusisabyteandreachestheshellwhole_status(t2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.hero", "fixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole.main", 18, 5}; h_library_exit(t3, &hero_here); } hero_unreachable(); return;
+#line 134 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
 }
 
-#line 235 "<heroes library>"
-void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
-#line 146 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
-    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+#line 232 "<heroes library>"
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 236
+    t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
+#line 142 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
+    h_0opt_e201354_release(hero_slot_escape(&h2_status));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
+bb2:
+#line 233 "<heroes library>"
+    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
+    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
+#line 154 "fixedbugs2224anexitstatusisabyteandreachestheshellwhole.c"
+    hero_panic_must_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
 }
-__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 232, 1};
     h_library_exit(h0_code, &hero_here);
 }
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_retain(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_release(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
-}
-
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
-    const h_0opt_1ec004 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
-        * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
-    }
-    return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
-}
-
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
@@ -280,7 +255,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fef5bea139a3d0d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1e253bb5519e57d6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2224anexitstatusisabyteandreachestheshellwhole\tfixedbugs-2224-an-exit-status-is-a-byte-and-reaches-the-shell-whole\n");

@@ -391,7 +391,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("73b8f79d7777df76", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("30c34bf979541705", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413zlibknowsastreambyitsaddress\tfixedbugs-413-zlib-knows-a-stream-by-its-address\n");

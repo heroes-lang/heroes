@@ -117,7 +117,7 @@ function reduce(words: [str])
 # Every `.hero` of `dir` judged by `compiler`, one line each, `<name>
 # <WORD> <detail>`, then the counts: 0 where none is a defect, 1 where one
 # is, 2 where the judging itself could not run.
-function judge(dir: str, compiler: str) -> u8
+function judge(dir: str, compiler: str) -> i64
     names = shell.list_entries(scratch: dir + "/.judge", dir: dir)
 
     if names.is_err()
@@ -165,7 +165,7 @@ function judge(dir: str, compiler: str) -> u8
 # purpose*). A limit panel 184 designed, at build or at run, is a defect at
 # or under the floor and recorded past it; anything else wrong is a defect.
 # 0 where none is, 1 where one is.
-function deep(words: [str]) -> u8
+function deep(words: [str]) -> i64
     n = number_after(words, flag: "--depth", fallback: gen_depth.FLOOR)
     compiler = text_after(words, flag: "--compiler", fallback: "heroes")
     dir = text_after(words, flag: "-o", fallback: "build/deep")
@@ -256,7 +256,7 @@ function answers(count: i64, declared: i64)
 # what the compiler does wrong with seed N's program, the symptom a
 # reduction would hold, printed alone; 1 where it does something wrong, 0
 # where it does not.
-function symptom_word(words: [str]) -> u8
+function symptom_word(words: [str]) -> i64
     n = number_after(words, flag: "--seed", fallback: 1)
     dir = text_after(words, flag: "-o", fallback: "build/symptom")
     shell.mkdir_all(dir).must()
@@ -278,7 +278,7 @@ function symptom_word(words: [str]) -> u8
 # `hunt`: the failures of seeds S to S + K - 1 written into DIR, each wrong
 # answer reduced; 0 where none failed, 1 where one did, 2 where it could not
 # run (`gen_hunt.hero`).
-function hunt(words: [str]) -> u8
+function hunt(words: [str]) -> i64
     out = text_after(words, flag: "-o", fallback: "build/hunt")
     got = gen_hunt.hunted(
         from: number_after(words, flag: "--from", fallback: 1),

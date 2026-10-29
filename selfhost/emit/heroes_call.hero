@@ -118,21 +118,25 @@ test "exactly one declaration is the library's exit, and `main` is not it (defec
             assert writer.finish(quiet) == ""
         index @ index + 1
 
-# The premise, where it can die: the library's `exit` is the one call of
-# `hero_exit` and no statement after it, so the claim written after a call of
-# it is what the runtime's `_Noreturn` already makes true. Since panel 230's
-# R4 (defect 2224) `exit` takes a byte and widens it inside the call's own
-# argument, which is evaluated before the call, so the premise is unchanged.
-test "the library's exit is a call of hero_exit alone (defect 507)"
+# The premise, where it can die: every path through the library's `exit`
+# ends in a call that never returns, so the claim written after a call of it
+# is what the runtime's `_Noreturn` already makes true. Since task 2250 the
+# body checks the code first, and outside 0 to 255 hands `.must()` a `fail`,
+# whose abort is `_Noreturn` too; then the one call of `hero_exit`, and no
+# statement after it.
+test "every path through the library's exit ends in hero_exit or an abort (defect 507, task 2250)"
     at: i64 @= 0
 
-    while at < library_source.LINES.len() && library_source.LINES[at] != "function exit(code: u8)"
+    while at < library_source.LINES.len() && library_source.LINES[at] != "function exit(code: i64)"
         at @ at + 1
 
-    assert at + 1 < library_source.LINES.len()
-    assert library_source.LINES[at + 1] == "    hero_exit(to_i64(code).default(1))"
+    assert at + 4 < library_source.LINES.len()
+    assert library_source.LINES[at + 1] == "    if code < 0 || code > 255"
+    assert library_source.LINES[at + 2].slice(from: 0, to: 28) == "        status: i64? = fail("
+    assert library_source.LINES[at + 3] == "        _ = status.must()"
+    assert library_source.LINES[at + 4] == "    hero_exit(code)"
 
     # The next line, if any, opens no statement of `exit`'s body.
-    if at + 2 < library_source.LINES.len()
-        after_it = library_source.LINES[at + 2]
+    if at + 5 < library_source.LINES.len()
+        after_it = library_source.LINES[at + 5]
         assert after_it.len() == 0 || after_it[0] != 32

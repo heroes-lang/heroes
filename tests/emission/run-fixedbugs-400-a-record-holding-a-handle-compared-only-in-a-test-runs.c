@@ -281,7 +281,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0fd222c21a37f69e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("78ddc5d163a0ae79", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs400arecordholdingahandlecomparedonlyinatestruns\tfixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs\n");

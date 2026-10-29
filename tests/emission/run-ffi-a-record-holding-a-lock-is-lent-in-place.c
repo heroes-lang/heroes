@@ -361,7 +361,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13ac71b82ca98acb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d6eec563f4f48ef", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiarecordholdingalockislentinplace\tffi-a-record-holding-a-lock-is-lent-in-place\n");

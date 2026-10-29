@@ -10,26 +10,33 @@
 # program wrote keeps both repairs: its own function's parameter, its own
 # binding's that the operator takes, its own map's key.
 
+#
+# Amended 2026-10-29, task 2250: the library's `exit`, this case's first four
+# shapes until then, takes an `i64`, and a status outside 0 to 255 is told as
+# a status rather than as a width
+# (`check/exit-a-literal-status-outside-a-byte-is-refused-where-written`). So
+# the four shapes stand at `twice`'s parameter, the header's width, and the
+# library's own note is witnessed by a library written in
+# `selfhost/checker.hero`'s test, no function of the real library having a
+# parameter narrower than an `i64`.
+
 extern "fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.h"
     record Pair tag pair
         a: i32
         b: i32
     function twice(x: i32) -> i32
 
-function by_name()
-    exit(code: 256)  #~ int_out_of_range
-
-function through_the_dot()
-    256.exit()  #~ int_out_of_range
-
-function under_a_minus()
-    exit(code: -1)  #~ int_out_of_range
-
-function handed_by_an_operator()
-    exit(code: 1 + 300)  #~ int_out_of_range
-
 function a_parameter_of_a_binding()
     print(twice(x: 3000000000))  #~ int_out_of_range
+
+function through_the_dot()
+    print(3000000000.twice())  #~ int_out_of_range
+
+function under_a_minus()
+    print(twice(x: -3000000000))  #~ int_out_of_range
+
+function handed_by_an_operator()
+    print(twice(x: 1 + 3000000000))  #~ int_out_of_range
 
 function a_field_built()
     print(Pair(a: 3000000000, b: 1).a)  #~ int_out_of_range
@@ -48,7 +55,7 @@ function a_field_written(big: bool)
     print(p.a + p.b)
 
 function stop(code: u8)
-    exit(code: code)
+    print(code)
 
 function its_own_parameter()
     stop(code: 256)  #~ int_out_of_range
@@ -62,11 +69,10 @@ function its_own_key()
     print(m[300].default(0))  #~ int_out_of_range
 
 function main()
-    by_name()
+    a_parameter_of_a_binding()
     through_the_dot()
     under_a_minus()
     handed_by_an_operator()
-    a_parameter_of_a_binding()
     a_field_built()
     a_field_built_by_one_label()
     a_field_written(big: true)

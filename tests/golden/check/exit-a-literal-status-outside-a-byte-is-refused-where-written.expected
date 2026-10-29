@@ -1,0 +1,7 @@
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:16:16: error[int_out_of_range]: `256` is not a status `exit` can end a program with, which is 0 to 255
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:19:10: error[int_out_of_range]: `1000` is not a status `exit` can end a program with, which is 0 to 255
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:22:16: error[int_out_of_range]: `-1` is not a status `exit` can end a program with, which is 0 to 255
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:25:16: error[int_out_of_range]: `0x100` is not a status `exit` can end a program with, which is 0 to 255
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:28:16: error[int_out_of_range]: `1_000` is not a status `exit` can end a program with, which is 0 to 255
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:31:5: error[int_out_of_range]: `256` is not a status `exit` can end a program with, which is 0 to 255
+tests/golden/check/exit-a-literal-status-outside-a-byte-is-refused-where-written.hero:51:16: error[int_out_of_range]: `18446744073709551615` does not fit an `i64`

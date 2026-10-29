@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1e07453d4c71c402", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("33d07c151fe15dfe", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantreturningafallibleispropagated\tfixedbugs-510-a-constant-returning-a-fallible-is-propagated\n");

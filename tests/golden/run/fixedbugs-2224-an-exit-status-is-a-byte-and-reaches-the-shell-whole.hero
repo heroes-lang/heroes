@@ -2,9 +2,16 @@
 # shell reads the status the program asked for, every one of 0 to 255; a
 # computed status is converted first, and one that does not fit is the
 # program's own choice, here a failure, 1, rather than its low eight bits.
+#
+# Amended 2026-10-29, task 2250: `exit` takes an `i64` again and stops the
+# program on a code outside 0 to 255 (`run/abort-exit-code-outside-a-byte`),
+# so the program's own choice is made before the call, by the value and not
+# by a conversion, and the shell still reads 1.
 
-function status(n: i64) -> u8
-    return to_u8(n).default(1)
+function status(n: i64) -> i64
+    if n < 0 || n > 255
+        return 1
+    return n
 
 function main()
     print("before")

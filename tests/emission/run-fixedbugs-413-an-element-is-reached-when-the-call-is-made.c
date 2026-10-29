@@ -242,7 +242,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("40c413ec1252d8c5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6467bc2a0bac0720", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413anelementisreachedwhenthecallismade\tfixedbugs-413-an-element-is-reached-when-the-call-is-made\n");

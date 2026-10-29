@@ -403,7 +403,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b3fbdb53252a054", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("751a65a9247e83cb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown\tfixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own\nfixedbugs582pair\tpair\n");

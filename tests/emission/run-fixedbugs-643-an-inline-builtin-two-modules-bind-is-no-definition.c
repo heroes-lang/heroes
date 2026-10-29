@@ -276,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("28b9a35d0b3c3f18", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e51a8d90e6e3fa5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs643aninlinebuiltintwomodulesbindisnodefinition\tfixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition\nfixedbugs643other\tother\n");

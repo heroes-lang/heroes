@@ -154,7 +154,7 @@ function program(root: str) -> source.Source
     inputs: [source.InputFile] = [
         source.user_file(name: root, text: "function main()\n    print(1)\n")
         source.InputFile(name: "check/state.hero", module: "check/state", text: "function tag() -> i64\n    return 1\n", is_library: false)
-        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "function exit(code: u8)\n", is_library: true)
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "function exit(code: i64)\n", is_library: true)
     ]
     return source.from_files(inputs)
 

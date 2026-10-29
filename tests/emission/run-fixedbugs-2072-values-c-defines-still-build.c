@@ -389,7 +389,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("51879ae65120e9fc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55256cef371aa63c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2072valuescdefinesstillbuild\tfixedbugs-2072-values-c-defines-still-build\n");

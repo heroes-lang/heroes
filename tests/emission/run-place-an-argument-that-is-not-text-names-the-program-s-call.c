@@ -100,8 +100,10 @@ HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
+HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
+HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 105 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 107 "placeanargumentthatisnottextnamestheprogramscall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -109,14 +111,6 @@ typedef struct h_0opt_f87774a {
         HeroFailure err;
     } as;
 } h_0opt_f87774a;
-
-typedef struct h_0opt_1ec004 {
-    int64_t tag;
-    union {
-        uint8_t ok;
-        HeroFailure err;
-    } as;
-} h_0opt_1ec004;
 
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
@@ -163,17 +157,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 161 "placeanargumentthatisnottextnamestheprogramscall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v);
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
@@ -209,8 +199,8 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
 HeroArrayHeader * h_library_args_checked(const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args_checked(void);
-void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
-__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code);
 
 #line 15 "tests/golden/run/place-an-argument-that-is-not-text-names-the-program-s-call.hero"
 void h_placeanargumentthatisnottextnamestheprogramscall_main(void) {
@@ -219,25 +209,27 @@ void h_placeanargumentthatisnottextnamestheprogramscall_main(void) {
 #line 15
 #define h1_marks (*hero_lend_h1_marks)
 #line 15
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "placeanargumentthatisnottextnamestheprogramscall.main", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "placeanargumentthatisnottextnamestheprogramscall.main", "marks"); HeroStr h2_itself = {0}; int64_t h3_code; HERO_NODEBUG h_0opt_1ec004 h4_f0 = {0}, h8_own8 = {0}, t14, t15, t19, t26, t27; HERO_NODEBUG uint8_t h5_r0, t20, t21, t22; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h9_own9 = {0}, *t1, *t5, *t23, *t28; HERO_NODEBUG HeroStr h7_own7 = {0}, t9, t10, t24, t25; HERO_NODEBUG int64_t t2, t3, t6, t7, t8, t12, t13, t16, t17; HERO_NODEBUG bool t4, t18; HERO_NODEBUG const char *t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 16, 8}; t1 = h_library_args_checked(&hero_here); } t23 = h6_own6; h6_own6 = t1; hero_array_decref(t23); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "placeanargumentthatisnottextnamestheprogramscall.main", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "placeanargumentthatisnottextnamestheprogramscall.main", "marks"); HeroStr h2_itself = {0}; int64_t h3_code; HERO_NODEBUG bool h4_b0, t4, t15, t18, t19; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *t1, *t5, *t22, *t25; HERO_NODEBUG HeroStr h6_own6 = {0}, t9, t10, t23, t24; HERO_NODEBUG int64_t t2, t3, t6, t7, t8, t12, t13, t14, t16, t17, t20, t21; HERO_NODEBUG const char *t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 16, 8}; t1 = h_library_args_checked(&hero_here); } t22 = h5_own5; h5_own5 = t1; hero_array_decref(t22); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 19
     t7 = INT64_C(0); h0_status = t7;
     t8 = INT64_C(0); h1_marks = t8;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 21, 14}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t9 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t24 = h7_own7; h7_own7 = t9; hero_str_decref(t24); t25 = h2_itself; hero_str_incref(t9); h2_itself = t9; hero_str_decref(t25);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 21, 14}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t9 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t23 = h6_own6; h6_own6 = t9; hero_str_decref(t23); t24 = h2_itself; hero_str_incref(t9); h2_itself = t9; hero_str_decref(t24);
     t10 = h2_itself; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 22, 43}; t11 = hero_str_lend_at(t10, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 22, 12}; t12 = spawn_self_unreadable(hero_cstr_nonnull_at(t11, &hero_here)); } h3_code = t12;
-    t13 = h3_code; if (t13 >= 0LL && t13 <= 255LL) { t14 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t13}; } else { t14 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t26 = h8_own8; h8_own8 = t14; h_0opt_1ec004_release(&t26); t27 = h4_f0; h_0opt_1ec004_retain(&t14); h4_f0 = t14; h_0opt_1ec004_release(&t27); t15 = h4_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb4; else goto bb5; bb2:
+#line 26
+    t13 = h3_code; t14 = INT64_C(0); t15 = t13 < t14; h4_b0 = t15; if (t15) goto bb6; else goto bb5; bb2:
 #line 17
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 17, 15}; t5 = h_library_args(&hero_here); } t28 = h9_own9; h9_own9 = t5; hero_array_decref(t28); t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); hero_print_int(t6); hero_print_end(); goto bb7; bb3: goto bb1; bb4:
-#line 23
-    t19 = h4_f0; t20 = t19.as.ok; h5_r0 = t20; goto bb6; bb5: t21 = UINT64_C(1); h5_r0 = t21; goto bb6; bb6: t22 = h5_r0; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 23, 5}; h_library_exit(t22, &hero_here); } hero_unreachable(); goto bb7; bb7:
-#line 235 "placeanargumentthatisnottextnamestheprogramscall.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 17, 15}; t5 = h_library_args(&hero_here); } t25 = h7_own7; h7_own7 = t5; hero_array_decref(t25); t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); hero_print_int(t6); hero_print_end(); goto bb9; bb3: goto bb1; bb4:
+#line 28
+    t21 = h3_code; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 28, 5}; h_library_exit(t21, &hero_here); } hero_unreachable(); goto bb9; bb5:
+#line 26
+    t16 = h3_code; t17 = INT64_C(255); t18 = t16 > t17; h4_b0 = t18; goto bb6; bb6: t19 = h4_b0; if (t19) goto bb7; else goto bb8; bb7:
+    t20 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-an-argument-that-is-not-text-names-the-program-s-call.hero", "place-an-argument-that-is-not-text-names-the-program-s-call.main", 27, 9}; h_library_exit(t20, &hero_here); } hero_unreachable(); goto bb4; bb8: goto bb4; bb9:
+#line 229 "placeanargumentthatisnottextnamestheprogramscall.c"
     hero_str_release_at(&h2_itself);
-    h_0opt_1ec004_release(hero_slot_escape(&h4_f0));
-    hero_array_release_at(&h6_own6);
-    hero_str_release_at(&h7_own7);
-    h_0opt_1ec004_release(hero_slot_escape(&h8_own8));
-    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
     hero_lend_local_give(hero_lend_h1_marks);
     hero_lend_local_give(hero_lend_h0_status);
     return;
@@ -247,7 +239,7 @@ void h_placeanargumentthatisnottextnamestheprogramscall_main(void) {
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 251 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 243 "placeanargumentthatisnottextnamestheprogramscall.c"
 }
 
 #line 153 "<heroes library>"
@@ -267,7 +259,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 271 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 263 "placeanargumentthatisnottextnamestheprogramscall.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -293,7 +285,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 208
     t47 = h0_out;
-#line 297 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 289 "placeanargumentthatisnottextnamestheprogramscall.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -318,13 +310,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 204
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 322 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 314 "placeanargumentthatisnottextnamestheprogramscall.c"
     hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 206 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 328 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 320 "placeanargumentthatisnottextnamestheprogramscall.c"
     hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -341,7 +333,7 @@ HeroArrayHeader * h_library_args_checked(const HeroPlace *hero_caller) { HeroArr
     t7 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t8 = (const char *)hero_args_raw(t7); } t9 = h_library_validated(t8, hero_caller); t17 = h3_own3; h3_own3 = t9; h_0opt_f87774a_release(&t17); hero_array_push_owned(&h0_out, &t9);
     t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t13; goto bb1; bb3:
     t14 = h0_out;
-#line 345 "placeanargumentthatisnottextnamestheprogramscall.c"
+#line 337 "placeanargumentthatisnottextnamestheprogramscall.c"
     hero_array_incref(t14);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -353,16 +345,29 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args_checked(void
     return h_library_args_checked(&hero_here);
 }
 
-#line 235 "<heroes library>"
-void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
-#line 360 "placeanargumentthatisnottextnamestheprogramscall.c"
-    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+#line 232 "<heroes library>"
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 236
+    t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
+#line 354 "placeanargumentthatisnottextnamestheprogramscall.c"
+    h_0opt_e201354_release(hero_slot_escape(&h2_status));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
+bb2:
+#line 233 "<heroes library>"
+    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
+    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
+#line 366 "placeanargumentthatisnottextnamestheprogramscall.c"
+    hero_panic_must_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
 }
-__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 232, 1};
     h_library_exit(h0_code, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -395,38 +400,6 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
-}
-
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_retain(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_release(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
-}
-
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
-    const h_0opt_1ec004 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
-        * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
-    }
-    return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
@@ -494,7 +467,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2330e3c7684c56d5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28a453331298b1fb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanargumentthatisnottextnamestheprogramscall\tplace-an-argument-that-is-not-text-names-the-program-s-call\n");

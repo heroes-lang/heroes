@@ -20,4 +20,9 @@ function main()
     marks: i64 @= 0
     itself = hero_exe_path_shown(status: @status, marks: @marks)
     code = spawn_self_unreadable(program: itself.cstr())
-    exit(code: to_u8(code).default(1))
+
+    # The child's status, which on Windows is an abort's 32 bits, outside the
+    # 0 to 255 `exit` takes (task 2250): this program's own failure, 1.
+    if code < 0 || code > 255
+        exit(code: 1)
+    exit(code: code)

@@ -314,7 +314,7 @@ HERO_TU_LOCAL void h_0show_610e812c(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("24072086125fee5a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("16e44c2c2486bce6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonaunionwriteseachmember\tfixedbugs-016-an-assert-on-a-union-writes-each-member\n");

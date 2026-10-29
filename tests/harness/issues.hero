@@ -117,7 +117,7 @@ function main()
     else
         code @ listing(scratch: scratch, asked: asked)
     _ = shell.remove_tree(scratch).is_err()
-    exit(code: to_u8(code).default(2))
+    exit(code: code)
 
 # A session on the real transport, its lines printed as they are said.
 function live(scratch: str) -> issue_pace.Session

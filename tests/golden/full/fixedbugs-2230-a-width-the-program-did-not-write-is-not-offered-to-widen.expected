@@ -1,83 +1,76 @@
-error[int_out_of_range]: `256` does not fit a `u8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:20:16
-     |
-  20 |     exit(code: 256)  #~ int_out_of_range
-     |                ^^^
-  note: a `u8` holds 0 through 255, and this one is the library's: `exit` takes its `code` at that width, which no program changes. Write a number in range — this language never truncates one silently
-
-error[int_out_of_range]: `256` does not fit a `u8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:23:5
-     |
-  23 |     256.exit()  #~ int_out_of_range
-     |     ^^^
-  note: a `u8` holds 0 through 255, and this one is the library's: `exit` takes its `code` at that width, which no program changes. Write a number in range — this language never truncates one silently
-
-error[int_out_of_range]: `-1` does not fit a `u8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:26:16
-     |
-  26 |     exit(code: -1)  #~ int_out_of_range
-     |                ^^
-  note: a `u8` holds 0 through 255, and this one is the library's: `exit` takes its `code` at that width, which no program changes. Write a number in range — this language never truncates one silently
-
-error[int_out_of_range]: `300` does not fit a `u8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:29:20
-     |
-  29 |     exit(code: 1 + 300)  #~ int_out_of_range
-     |                    ^^^
-  note: a `u8` holds 0 through 255, and this one is the library's: `exit` takes its `code` at that width, which no program changes. Write a number in range — this language never truncates one silently
-
 error[int_out_of_range]: `3000000000` does not fit an `i32`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:32:20
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:30:20
      |
-  32 |     print(twice(x: 3000000000))  #~ int_out_of_range
+  30 |     print(twice(x: 3000000000))  #~ int_out_of_range
      |                    ^^^^^^^^^^
   note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:35:19
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:33:11
      |
-  35 |     print(Pair(a: 3000000000, b: 1).a)  #~ int_out_of_range
+  33 |     print(3000000000.twice())  #~ int_out_of_range
+     |           ^^^^^^^^^^
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `-3000000000` does not fit an `i32`
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:36:20
+     |
+  36 |     print(twice(x: -3000000000))  #~ int_out_of_range
+     |                    ^^^^^^^^^^^
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `3000000000` does not fit an `i32`
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:39:24
+     |
+  39 |     print(twice(x: 1 + 3000000000))  #~ int_out_of_range
+     |                        ^^^^^^^^^^
+  note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `x` of `twice` is bound at the width its header gives it, as every parameter of an `extern` binding is (§4.19). Write a number in range — this language never truncates one silently
+
+error[int_out_of_range]: `3000000000` does not fit an `i32`
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:42:19
+     |
+  42 |     print(Pair(a: 3000000000, b: 1).a)  #~ int_out_of_range
      |                   ^^^^^^^^^^
   note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `a` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `-3000000000` does not fit an `i32`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:38:19
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:45:19
      |
-  38 |     print(Pair(b: -3000000000).b)  #~ int_out_of_range
+  45 |     print(Pair(b: -3000000000).b)  #~ int_out_of_range
      |                   ^^^^^^^^^^^
   note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `b` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:42:11
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:49:11
      |
-  42 |     p.a @ 3000000000  #~ int_out_of_range
+  49 |     p.a @ 3000000000  #~ int_out_of_range
      |           ^^^^^^^^^^
   note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `a` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `3000000000` does not fit an `i32`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:45:9
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:52:9
      |
-  45 |         3000000000  #~ int_out_of_range
+  52 |         3000000000  #~ int_out_of_range
      |         ^^^^^^^^^^
   note: an `i32` holds -2147483648 through 2147483647, and this one is the header's: `b` of `Pair` is bound at the width its header gives it, as every field of a group's `record` is (§4.19). Write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `256` does not fit a `u8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:54:16
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:61:16
      |
-  54 |     stop(code: 256)  #~ int_out_of_range
+  61 |     stop(code: 256)  #~ int_out_of_range
      |                ^^^
   note: a `u8` holds 0 through 255. Widen the type, or write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `300` does not fit an `i8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:58:15
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:65:15
      |
-  58 |     print(y + 300)  #~ int_out_of_range
+  65 |     print(y + 300)  #~ int_out_of_range
      |               ^^^
   note: an `i8` holds -128 through 127. Widen the type, or write a number in range — this language never truncates one silently
 
 error[int_out_of_range]: `300` does not fit a `u8`
-  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:62:13
+  at tests/golden/full/fixedbugs-2230-a-width-the-program-did-not-write-is-not-offered-to-widen.hero:69:13
      |
-  62 |     print(m[300].default(0))  #~ int_out_of_range
+  69 |     print(m[300].default(0))  #~ int_out_of_range
      |             ^^^
   note: a `u8` holds 0 through 255. Widen the type, or write a number in range — this language never truncates one silently

@@ -56,8 +56,10 @@ HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
+HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
+HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 61 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 63 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -95,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 101 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -121,40 +123,40 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
-void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller);
-__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code);
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller);
+__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code);
 
 #line 19 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
 int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_next(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.next", 20, 12); return t3;
-#line 131 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 133 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t5, t6, t7, t8; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(3); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 25
     t5 = h0_n; hero_print_int(t5); hero_print_end();
     t6 = h0_n; t7 = h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_next(t6); t8 = h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm(t7); return t8; bb2:
 #line 24
-    t4 = UINT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.in_an_arm", 24, 9}; h_library_exit(t4, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1;
-#line 142 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+    t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.in_an_arm", 24, 9}; h_library_exit(t4, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1;
+#line 144 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm_with_an_else(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t5, t6, t7, t8; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm_with_an_else(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(3); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
 #line 33
     t6 = h0_n; t7 = h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_next(t6); t8 = h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm_with_an_else(t7); return t8; bb2:
 #line 30
-    t4 = UINT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.in_an_arm_with_an_else", 30, 9}; h_library_exit(t4, &hero_here); } hero_unreachable(); goto bb1; bb3:
+    t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.in_an_arm_with_an_else", 30, 9}; h_library_exit(t4, &hero_here); } hero_unreachable(); goto bb1; bb3:
 #line 32
     t5 = h0_n; hero_print_int(t5); hero_print_end(); goto bb1;
-#line 154 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 156 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 }
 
 #line 35 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_a_loop(int64_t h0_n) { int64_t h1_i; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t9, t10, t11, t12, t13; HERO_NODEBUG bool t4, t7; HERO_NODEBUG uint8_t t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_a_loop(int64_t h0_n) { int64_t h1_i; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; h1_i = t1; goto bb1; bb1:
 #line 38
     t2 = h1_i; t3 = INT64_C(10); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
@@ -165,8 +167,8 @@ int64_t h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_
     t9 = h1_i; hero_print_int(t9); hero_print_end();
     t10 = h1_i; t11 = h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_next(t10); h1_i = t11; goto bb1; bb5:
 #line 40
-    t8 = UINT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.in_a_loop", 40, 13}; h_library_exit(t8, &hero_here); } hero_unreachable(); goto bb4; bb6: goto bb4;
-#line 170 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+    t8 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.in_a_loop", 40, 13}; h_library_exit(t8, &hero_here); } hero_unreachable(); goto bb4; bb6: goto bb4;
+#line 172 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 }
 
 #line 46 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
@@ -174,19 +176,19 @@ void h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_mai
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero", "fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.main", 47, 8}; t1 = h_library_args(&hero_here); } t11 = h0_own0; h0_own0 = t1; hero_array_decref(t11); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(99); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
 #line 50
     t9 = INT64_C(1); h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm(t9);
-#line 178 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 180 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
     hero_array_release_at(&h0_own0);
     return;
 bb2:
 #line 48 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
     t5 = INT64_C(1); h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm_with_an_else(t5);
     t7 = INT64_C(1); h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_a_loop(t7); goto bb1; bb3: goto bb1;
-#line 185 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 187 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 190 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 192 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
 }
 
 #line 153 "<heroes library>"
@@ -206,7 +208,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 210 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 212 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -232,7 +234,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 208
     t47 = h0_out;
-#line 236 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 238 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -257,13 +259,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 204
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 261 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 263 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
     hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 206 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 267 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+#line 269 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
     hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -272,16 +274,29 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
     return h_library_args(&hero_here);
 }
 
-#line 235 "<heroes library>"
-void h_library_exit(uint8_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t11, t12; HERO_NODEBUG int64_t h2_r0, t4, t5, t8, t9, t10; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; h2_r0 = t8; goto bb3; bb2: t9 = INT64_C(1); h2_r0 = t9; goto bb3; bb3: t10 = h2_r0; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t10); }
-#line 279 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
-    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+#line 232 "<heroes library>"
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+#line 236
+    t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
+#line 283 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+    h_0opt_e201354_release(hero_slot_escape(&h2_status));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
+bb2:
+#line 233 "<heroes library>"
+    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
+    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
+#line 295 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
+    hero_panic_must_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+    hero_unreachable();
 }
-__attribute__((unused)) void hero_value_h_library_exit(uint8_t h0_code) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 235, 1};
+__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 232, 1};
     h_library_exit(h0_code, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -381,7 +396,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f12f9722a1eebae", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0caea43672233c61", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently\tfixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently\n");

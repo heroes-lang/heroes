@@ -428,7 +428,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("273d3b651ae75751", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("15c1fa9b159a18a9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsaufcschaingavetwocallsonekey\tfixedbugs-a-ufcs-chain-gave-two-calls-one-key\n");

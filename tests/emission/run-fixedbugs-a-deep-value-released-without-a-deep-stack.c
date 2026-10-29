@@ -410,7 +410,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("69c491d362e4bbc2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b7fe8251669b030", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadeepvaluereleasedwithoutadeepstack\tfixedbugs-a-deep-value-released-without-a-deep-stack\n");

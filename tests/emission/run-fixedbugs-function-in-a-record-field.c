@@ -330,7 +330,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e05bf6a762f5e3e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("730336ad4b99a09d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsfunctioninarecordfield\tfixedbugs-function-in-a-record-field\n");

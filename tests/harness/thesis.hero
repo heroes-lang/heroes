@@ -105,7 +105,7 @@ function main()
         _              => 2
 
     _ = shell.remove_tree(scratch).is_err()
-    exit(code: to_u8(code).default(2))
+    exit(code: code)
 
 # The folder a grading word reads: the one named, or the sealed archive
 # opened into the scratch under the key `--key` names.

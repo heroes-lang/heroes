@@ -361,7 +361,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3208e9d73de7b745", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ec801b52ea185f1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsanacquiredhandleiswrittenintoafixedarray\tfixedbugs-an-acquired-handle-is-written-into-a-fixed-array\n");

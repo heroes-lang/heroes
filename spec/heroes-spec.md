@@ -335,7 +335,7 @@ Files and the process, also provided: `read_file(path: str) -> str?` (failing
 `file_not_found`, `not_text` or `read_failed`) · `write_file(path: str, text:
 str) -> ()?` (`write_failed`) · `args() -> [str]` (the arguments after the
 program name; one that is not UTF-8 aborts) · `args_checked() -> [str?]` (which
-does not) · `exit(code: u8)` (ends the program).
+does not) · `exit(code: i64)` (ends the program; a code outside 0 to 255 aborts).
 
 ## 12. Tests and holes
 ```

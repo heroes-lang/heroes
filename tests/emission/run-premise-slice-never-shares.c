@@ -235,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("323c499148e567fb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("483147ce1b35d82e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("premiseslicenevershares\tpremise-slice-never-shares\n");

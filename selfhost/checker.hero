@@ -187,6 +187,26 @@ function typed(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
 
 ## Tests
 
+# A program beside a library of the test's own, as every program is read.
+function checked_beside(library: str, user: str) -> state.Checked
+    s = source.with_library(name: "t.hero", user: user, library: library)
+    p = parse.parse_source(s)
+    return check(p.tree, resolve.resolve(p.tree, s, p.decls, p.uses), s, p.decls)
+
+# Defect 2230's note where the width is the library's, which no function of
+# the real library reaches since task 2250 gave `exit` an `i64`: a parameter
+# narrower than that, in a library written here, keeps it witnessed for the
+# next one.
+test "a literal past a library parameter's width is told the width is the library's (defect 2230)"
+    out = checked_beside(
+        library: "function narrow(n: u8)\n    print(n)\n",
+        user: "function main()\n    narrow(n: 300)\n"
+    )
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "int_out_of_range"
+    assert out.diagnostics[0].message == "`300` does not fit a `u8`"
+    assert out.diagnostics[0].notes == ["a `u8` holds 0 through 255, and this one is the library's: `narrow` takes its `n` at that width, which no program changes. Write a number in range — this language never truncates one silently"]
+
 function checked(text: str) -> state.Checked
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)

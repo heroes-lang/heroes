@@ -388,7 +388,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2fb881751ab00073", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6173d7c64e34f4e0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs429amapindexliteraltakesthekeytype\tfixedbugs-429-a-map-index-literal-takes-the-key-type\n");

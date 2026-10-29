@@ -297,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("022d6a680d6df1b4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("710741da619514dc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeleasesneverendedatnineplacesnametheeighttakenfirst\tplace-leases-never-ended-at-nine-places-name-the-eight-taken-first\n");

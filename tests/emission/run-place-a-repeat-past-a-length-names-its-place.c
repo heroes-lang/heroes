@@ -277,7 +277,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c0250ce300ab29e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("75c4cb6c42b070c2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placearepeatpastalengthnamesitsplace\tplace-a-repeat-past-a-length-names-its-place\n");

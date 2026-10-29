@@ -71,6 +71,7 @@ use check/settling
 use check/empty_binding
 use check/width_class
 use check/given_width
+use check/exit_code
 use check/discard
 use check/kept_cells
 use value_errors
@@ -1700,6 +1701,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             call = settling.Call(decl: decl, params: params, receiver: dot, result: result, expected: expected)
             tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
             given_width.after_call(@c, a, s, decls, call: call, given: given, from: said)
+            exit_code.after_call(@c, a, s, decls, call: call, given: given)
 
             if generics > 0 && !expected.is_err()
                 check_generics.bind_missing(c, @bindings, param: result, got: expected.must())

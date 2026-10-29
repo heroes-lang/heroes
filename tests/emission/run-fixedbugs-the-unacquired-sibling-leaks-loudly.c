@@ -345,7 +345,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("150901e654583ef3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("038dc11c4f0b004b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugstheunacquiredsiblingleaksloudly\tfixedbugs-the-unacquired-sibling-leaks-loudly\n");

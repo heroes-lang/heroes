@@ -306,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ba1ed2556971c3d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ddc4c99045db032", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec\tfixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c\n");

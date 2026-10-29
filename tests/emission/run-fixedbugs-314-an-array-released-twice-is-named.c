@@ -268,7 +268,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1e88c0e0760a09ce", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c7699701fb381e1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs314anarrayreleasedtwiceisnamed\tfixedbugs-314-an-array-released-twice-is-named\n");

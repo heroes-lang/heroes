@@ -215,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cfcbdd66ccfd2b5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("666da6004f552f05", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanelementreadpasttheendnamesitsplace\tplace-an-element-read-past-the-end-names-its-place\n");

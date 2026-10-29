@@ -554,7 +554,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ed0a8c34cd33218", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6daa803620fa5541", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs425aprogramendedbyitswatchdogendstheoneitruns\tfixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs\n");

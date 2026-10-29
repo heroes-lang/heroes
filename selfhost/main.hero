@@ -80,8 +80,9 @@ extern "hero_os.h"
     function hero_thread_join(handle: i64) -> i64
     # The compiler's own way out, by a whole status: `heroes run` forwards its
     # child's, 32 bits on Windows (`0xC0000409` for an abort), where the language's
-    # `exit(code: u8)` takes a byte (panel 230's R4, defect 2224). A literal status
-    # below still goes through `exit`, whose path the checker knows ends there.
+    # `exit` takes 0 to 255 and stops the program outside them (defect 2224, task
+    # 2250). A literal status below still goes through `exit`, whose path the
+    # checker knows ends there.
     function hero_exit(code: i64)
     # An argument as the shown read gives a file (`arg_written` below).
     function hero_args_shown(index: i64, @status: i64, @marks: i64) -> str

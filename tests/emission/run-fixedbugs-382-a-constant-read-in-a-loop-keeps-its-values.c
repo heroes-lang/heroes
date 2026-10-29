@@ -416,7 +416,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("30ea507c63035866", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0efd26c742438774", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantreadinaloopkeepsitsvalues\tfixedbugs-382-a-constant-read-in-a-loop-keeps-its-values\n");

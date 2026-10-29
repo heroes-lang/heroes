@@ -1,0 +1,65 @@
+# UNVERIFIED — pending debrief
+# Task 2250, M-compatibility-promise, 2026-10-29 (panel 230's fallback, its
+# condition met by decision 2241): `exit(code: i64)`, and a status is 0 to
+# 255. A literal written as the code is refused where it is written, by its
+# label or its position, under a minus sign, in another base, with its digits
+# grouped and through the dot; the edges, minus zero and a character are
+# statuses; an operator on literals and a constant are computed codes, which
+# stop the program at the call where they fall outside the range, since
+# arithmetic in a function body aborts where it runs (panel 206's R2), so
+# neither is refused here; and a literal no `i64` holds is told that, once.
+
+constant LATE: i64
+    300
+
+function by_its_label()
+    exit(code: 256)  #~ int_out_of_range
+
+function by_its_position()
+    exit(1000)  #~ int_out_of_range
+
+function under_a_minus()
+    exit(code: -1)  #~ int_out_of_range
+
+function in_another_base()
+    exit(code: 0x100)  #~ int_out_of_range
+
+function its_digits_grouped()
+    exit(code: 1_000)  #~ int_out_of_range
+
+function through_the_dot()
+    256.exit()  #~ int_out_of_range
+
+function at_the_edges(last: bool)
+    if last
+        exit(code: 255)
+    exit(code: 0)
+
+function minus_zero()
+    exit(code: -0)
+
+function a_character()
+    exit(code: 'a')
+
+function computed()
+    exit(code: 1 + 300)
+
+function a_constant()
+    exit(code: LATE)
+
+function past_an_i64()
+    exit(code: 18446744073709551615)  #~ int_out_of_range
+
+function main()
+    by_its_label()
+    by_its_position()
+    under_a_minus()
+    in_another_base()
+    its_digits_grouped()
+    through_the_dot()
+    at_the_edges(last: true)
+    minus_zero()
+    a_character()
+    computed()
+    a_constant()
+    past_an_i64()

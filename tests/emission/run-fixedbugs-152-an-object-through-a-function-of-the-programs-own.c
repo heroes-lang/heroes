@@ -306,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e00f81a1d11bb54", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d09fb8a3c4baaee", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs152anobjectthroughafunctionoftheprogramsown\tfixedbugs-152-an-object-through-a-function-of-the-programs-own\n");

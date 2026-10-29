@@ -216,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b654b81275213e7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("291952cf5d2f9890", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeashiftpast63namesitsplace\tplace-a-shift-past-63-names-its-place\n");

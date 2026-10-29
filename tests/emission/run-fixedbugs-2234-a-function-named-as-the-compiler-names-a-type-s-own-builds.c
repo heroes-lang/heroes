@@ -262,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("02194ac633746772", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("42f8842c6ae9b523", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds\tfixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds\n");

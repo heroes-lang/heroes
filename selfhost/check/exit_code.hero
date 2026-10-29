@@ -1,0 +1,127 @@
+# A status `exit` cannot end a program with, refused where it is written
+# (task 2250: panel 230's fallback, its condition met by decision 2241;
+# design.md §1.12, §4.17; spec § 11).
+#
+# WHY A STATUS IS 0 TO 255. A shell keeps the low eight bits of a status
+# (POSIX's `_exit`), so `exit(code: 256)` once ended a program the shell read
+# as a success, and said nothing (defect 2224). The library's `exit` takes an
+# `i64`, and where the code is outside 0 to 255 it stops the program at the
+# program's own call, as `args()` stops on an argument that is not text: a
+# `fail` handed to `.must()` inside the library, whose report names the
+# caller's place (`emit/stop_place.hero`), or, through a function value,
+# the library's declaration, the one place such a call has (panel 230's R1,
+# `emit/signature.hero`'s `value_name`). The failing value is an `i64?`,
+# the one option type the library carried before, so a program that never
+# calls `exit` keeps its C but for its key of its sources. It never returns, and `hero_exit`
+# says so with `_Noreturn`, which keeps clang's flow analysis from reading on
+# past it.
+#
+# WHAT IS REFUSED HERE, AND WHAT IS NOT. A literal written as the code, under
+# its minus signs, is refused: its value is in the source, so the program is
+# told before it runs, as `int_out_of_range`, the code a literal outside its
+# range already carries. Anything else is a computed code and stops the
+# program where it runs, an operator on literals included: panel 206's R2 kept
+# literal arithmetic in a function body an abort where it runs, since a
+# refusal there refuses code that never runs.
+#
+# AFTER `given_width.after_call`, and the order is load-bearing: that pass
+# rewrites the note of each `int_out_of_range` at a literal a parameter of the
+# library's measured, saying the width is not the program's to widen, and this
+# refusal is not about a width: `256` fits an `i64`.
+
+use ast
+use diag
+use source
+use token
+use check/contextual
+use check/settling
+use check/state
+
+# After a call was checked: where the callee is the library's `exit`, each
+# value it is handed (the receiver, where the dot gave one, then the
+# arguments) that is a literal outside 0 to 255, unless that literal was
+# already told it does not fit, which says more.
+function after_call(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], call: settling.Call, given: [ast.Arg])
+    if !is_exit(s, decls, decl: call.decl)
+        return
+    values: [i64] @= []
+
+    if call.receiver >= 0
+        values @ values.push(call.receiver)
+
+    for arg in given
+        values @ values.push(arg.value)
+
+    for value in values
+        if contextual.number_literal(a, value)
+            literal = contextual.literal_value(a, s, value)
+            span = a.exprs[value].span
+
+            if !literal.is_err() && !a_status(literal.must()) && !told(c, span: span)
+                state.push_diagnostic(
+                    @c,
+                    refused(text: source.span_text(s, span), span: span, low: low_byte(literal.must()))
+                )
+
+# The library's `exit`, asked of the declaration as `check/path_end.hero` asks
+# it of a call: no program may declare `exit` (`builtin_name_taken`), so the
+# name and the library's source are the whole question.
+function is_exit(s: source.Source, decls: [ast.Decl], decl: i64) -> bool
+    return source.is_library(s, decls[decl].name.start) && source.span_text(s, decls[decl].name) == "exit"
+
+# 0 to 255, minus zero being zero.
+function a_status(v: contextual.LitValue) -> bool
+    return v.magnitude == 0 || !v.negative && v.magnitude <= 255
+
+# The status a shell would have read: the low eight bits, two's complement
+# for a negative code, so `-1` is 255.
+function low_byte(v: contextual.LitValue) -> u64
+    low = v.magnitude % 256
+
+    if v.negative && low != 0
+        return 256 - low
+    return low
+
+function told(c: state.Checker, span: token.Span) -> bool
+    for d in c.out.diagnostics
+        if d.code == "int_out_of_range" && d.span.start == span.start && d.span.end == span.end
+            return true
+
+    return false
+
+function refused(text: str, span: token.Span, low: u64) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "int_out_of_range",
+        message: "`" + text + "` is not a status `exit` can end a program with, which is 0 to 255",
+        span: span
+    )
+    reached: str @= "`" + text + "` would reach it as " + low.to_str()
+
+    if low == 0
+        reached @ reached + ", the status that says the program succeeded"
+    d.notes @ d.notes.push(
+        "a shell keeps only the low eight bits of a status, so " + reached + ". Write a number from 0 to 255; a code computed as the program runs is checked at this call, and one outside them stops the program there"
+    )
+    return d
+
+## Tests
+
+test "a status is 0 to 255, and minus zero is zero"
+    assert a_status(contextual.LitValue(negative: false, magnitude: 0))
+    assert a_status(contextual.LitValue(negative: false, magnitude: 255))
+    assert !a_status(contextual.LitValue(negative: false, magnitude: 256))
+    assert a_status(contextual.LitValue(negative: true, magnitude: 0))
+    assert !a_status(contextual.LitValue(negative: true, magnitude: 1))
+
+test "the note says what a shell would have read, a negative code by two's complement"
+    assert low_byte(contextual.LitValue(negative: false, magnitude: 256)) == 0
+    assert low_byte(contextual.LitValue(negative: false, magnitude: 300)) == 44
+    assert low_byte(contextual.LitValue(negative: true, magnitude: 1)) == 255
+    assert low_byte(contextual.LitValue(negative: true, magnitude: 256)) == 0
+    d = refused(text: "256", span: token.Span(start: 4, end: 7), low: 0)
+    assert d.code == "int_out_of_range"
+    assert d.span.start == 4 && d.span.end == 7
+    assert d.message == "`256` is not a status `exit` can end a program with, which is 0 to 255"
+    assert d.notes == ["a shell keeps only the low eight bits of a status, so `256` would reach it as 0, the status that says the program succeeded. Write a number from 0 to 255; a code computed as the program runs is checked at this call, and one outside them stops the program there"]
+    minus = refused(text: "-1", span: token.Span(start: 0, end: 2), low: 255)
+    assert minus.notes[0] == "a shell keeps only the low eight bits of a status, so `-1` would reach it as 255. Write a number from 0 to 255; a code computed as the program runs is checked at this call, and one outside them stops the program there"

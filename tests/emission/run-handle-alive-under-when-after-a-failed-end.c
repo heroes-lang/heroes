@@ -293,7 +293,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4442b1e304424256", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5eab78dd13f3bb4d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlealiveunderwhenafterafailedend\thandle-alive-under-when-after-a-failed-end\n");

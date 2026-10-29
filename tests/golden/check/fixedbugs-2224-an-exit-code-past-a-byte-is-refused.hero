@@ -4,6 +4,13 @@
 # now, `exit(code: u8)`: a literal outside 0 to 255 is refused as a literal
 # that does not fit, and a computed `i64` until it is converted, `to_u8(n)`
 # answering whether it fits.
+#
+# Amended 2026-10-29, task 2250 (panel 230's fallback, its condition met by
+# decision 2241): `exit` takes an `i64` again. A literal outside 0 to 255 is
+# still refused where it is written, told as a status rather than as a width,
+# and a computed code is accepted, stopping the program at its call where it
+# falls outside them (`run/abort-exit-code-outside-a-byte`), so the last line
+# below, refused until then, is a program's.
 
 function main()
     n = 3
@@ -13,4 +20,4 @@ function main()
 
     if n > 1
         exit(code: -1)  #~ int_out_of_range
-    exit(code: n)  #~ type_mismatch
+    exit(code: n)

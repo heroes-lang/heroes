@@ -363,7 +363,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("27c82e2e2f3047a8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5983847f62b53c15", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs381abranchingpushedvalueispushowned\tfixedbugs-381-a-branching-pushed-value-is-push-owned\n");

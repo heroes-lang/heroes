@@ -1226,7 +1226,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("54689b82300c227d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1699ff5f42fee224", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser\tfixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser\n");

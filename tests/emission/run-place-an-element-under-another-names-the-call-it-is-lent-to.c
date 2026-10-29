@@ -226,7 +226,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b9cc86f327ad4c6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3165ff4705ea6ec2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanelementunderanothernamesthecallitislentto\tplace-an-element-under-another-names-the-call-it-is-lent-to\n");

@@ -278,7 +278,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("691fe5c6092fdf68", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("568d66c742685a9d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2056aheadersownmacroofanameitbindsstands\tfixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands\n");

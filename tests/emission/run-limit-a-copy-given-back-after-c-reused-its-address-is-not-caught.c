@@ -291,7 +291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("675aa922688ce666", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a9217914f34b203", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("limitacopygivenbackaftercreuseditsaddressisnotcaught\tlimit-a-copy-given-back-after-c-reused-its-address-is-not-caught\n");

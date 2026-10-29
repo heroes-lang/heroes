@@ -267,13 +267,13 @@ constant LINES: [str]
         "        i @ i + 1"
         "    return out"
         ""
-        "# Ends the program with this status, a byte: the statuses a shell reads, POSIX"
-        "# keeping the low eight bits, so a code past them once told the shell success"
-        "# (defect 2224, panel 230's R4). It never returns, and the C function it calls"
-        "# says so with `_Noreturn` — which is what keeps clang's flow analysis from"
-        "# treating the code after it as reachable."
-        "function exit(code: u8)"
-        "    hero_exit(to_i64(code).default(1))"
+        "# Ends the program with this status, 0 to 255, the statuses a shell reads (defect 2224, task 2250; why, `check/exit_code.hero`):"
+        "# a computed one outside them stops the program here, at its call, as `args()` stops, and `hero_exit` is `_Noreturn`."
+        "function exit(code: i64)"
+        "    if code < 0 || code > 255"
+        "        status: i64? = fail(code: \"does_not_fit\", msg: \"`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given \" + to_str(code))"
+        "        _ = status.must()"
+        "    hero_exit(code)"
     ]
 
 # The library source, exactly as the bootstrap embeds it.
