@@ -41,6 +41,7 @@ use cli/strings
 use cli/runtime_places
 use cli/served
 use cli/clang_asked
+use emit/runtime_abi
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
 # `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
@@ -128,12 +129,18 @@ function runtime_hint() -> str?
 # against a runtime the author did not name. What `HEROES_RUNTIME` is for is
 # saying which runtime; a search that goes on past it decides otherwise, the
 # decoy panel 020's ABI stamp was written against.
+#
+# **And the runtime found is asked whether it is this compiler's before any
+# unit is written** (defect 2259): one of another release was refused by the
+# stamp in every unit, told as *internal error* at exit 2, twice a build, and
+# `heroes doctor`, which asks here too, called it ok.
 function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
     if hint.len() > 0
         missing = runtime_places.missing_at(hint)
 
         if missing.len() > 0
             return fail(code: "hint", msg: runtime_places.unheld(hint: hint, missing: missing))
+        runtime_places.of_this_release(dir: hint, named: true)?
         return toolchain_at(runtime: hint, fingerprint: fingerprint)
     candidates: [str] @= ["runtime"]
     beside = runtime_places.beside_the_compiler()
@@ -143,6 +150,7 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
 
     for candidate in candidates
         if runtime_places.missing_at(candidate).len() == 0
+            runtime_places.of_this_release(dir: candidate, named: false)?
             return toolchain_at(runtime: candidate, fingerprint: fingerprint)
 
     return fail(code: "failed", msg: runtime_places.not_found(beside))
@@ -319,6 +327,22 @@ test "a HEROES_RUNTIME that names no runtime is refused, never passed over (defe
 
     assert process.is_directory(path: "runtime")
     assert locate_toolchain(hint: "runtime", fingerprint: "port-test").must().runtime == "runtime"
+
+# Defect 2259: a runtime of another release is refused by the toolchain every
+# build and `doctor` locate, before any unit is written, in `runtime_places`'
+# words; it was clang's static assertion, told as *internal error* at exit 2.
+test "a HEROES_RUNTIME of another release is refused before any unit is written (defect 2259)"
+    dir = "build/selftest-toolchain-abi-2259"
+    assert !process.mkdir_all(dir).is_err()
+    other = (runtime_abi.NEEDED + 1).to_str()
+    assert !write_file(path: dir + "/heroes_runtime.h", text: "#define HERO_RUNTIME_ABI " + other + "\n").is_err()
+    assert !write_file(path: dir + "/runtime.c", text: "/* its parts */\n").is_err()
+
+    match locate_toolchain(hint: dir, fingerprint: "port-test")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "abi"
+            assert e.msg == runtime_places.other_release(dir: dir, named: true, said: "states HERO_RUNTIME_ABI " + other)
 
 # Defect 248: what clang says when it compiles a probe's unit is handed back
 # to the probe, a header's `#warning` in it; `run_clang` is the one that

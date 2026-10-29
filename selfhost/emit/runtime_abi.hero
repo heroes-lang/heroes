@@ -1,0 +1,168 @@
+# The runtime interface this compiler writes against, and what a runtime's
+# own header states it is (design.md §4.20; CLAUDE.md §7; defect 2259,
+# 2026-10-29).
+#
+# Every unit this compiler writes carries `stamp()`, a `_Static_assert` that
+# the runtime's `HERO_RUNTIME_ABI` is `NEEDED`, so a runtime of another
+# release is a compile error rather than a wrong answer (`emit/decls.hero`).
+# That error is clang's, and it reached the author as *internal error:
+# compiling the generated C failed* at exit 2, twice, from every build, while
+# `heroes doctor` called the runtime ok: the compiler wrote the number it was
+# refused on, and told the meeting as its own failure. So the toolchain asks
+# the runtime's header before any unit is written (`cli/runtime_places.hero`),
+# and `stated` is how it reads it. The stamp stays: what it alone sees is a
+# header the reading below takes for another, which no release writes.
+#
+# **The number is this one constant**, and `runtime/heroes_runtime.h` holds
+# the runtime's half; the first test below holds the two to each other, so a
+# step of one without the other fails here, before any build is refused.
+
+use bytes
+
+# The interface every unit this compiler writes is compiled against.
+constant NEEDED: i64
+    32
+
+# The name a runtime defines its interface by.
+constant NAME: str
+    "HERO_RUNTIME_ABI"
+
+# What a header that gives no plain number is told.
+constant UNREAD: str
+    "defines HERO_RUNTIME_ABI as no plain number"
+
+# The line every unit carries after its includes. Its words up to the number
+# are read back by the CI's job that rebuilds a refresh of the seed
+# (`HERO_RUNTIME_ABI == <n>`, `.github/workflows/ci.yml`), so they change only
+# with that job.
+function stamp() -> str
+    return "_Static_assert(HERO_RUNTIME_ABI == " + NEEDED.to_str() + ", \"heroes_runtime.h is from another compiler\");"
+
+# The interface a runtime's `heroes_runtime.h` states, read from `header`, its
+# text: the number of the one line that defines `HERO_RUNTIME_ABI`, read as
+# the preprocessor reads a directive, spaces and tabs around the `#` and
+# between its words, a comment after it. Absent, with what the header says
+# instead, where no line defines it, where more than one does, or where the
+# one that does gives no plain decimal number: told, never guessed, since a
+# leading `0` is C's octal and a suffix or an expression another value.
+function stated(header: str) -> i64?
+    values: [str] @= []
+    at: i64 @= 0
+
+    while at < header.len()
+        stop: i64 @= at
+
+        while stop < header.len() && header[stop] != '\n'
+            stop @ stop + 1
+
+        value = defined(text: header, from: at, to: stop)
+
+        if !value.is_err()
+            values @ values.push(value.must())
+        at @ stop + 1
+
+    if values.len() == 0
+        return fail(code: "unstated", msg: "defines no HERO_RUNTIME_ABI")
+
+    if values.len() > 1
+        return fail(code: "unread", msg: "defines HERO_RUNTIME_ABI on " + values.len().to_str() + " lines")
+    return number(values[0])
+
+# What the line of `text` from byte `from` to byte `to` defines
+# `HERO_RUNTIME_ABI` as, its value's text with the blanks and a comment after
+# it taken off; absent for every other line. Every cut is beside an ASCII
+# byte, so none splits a character.
+function defined(text: str, from: i64, to: i64) -> str?
+    at: i64 @= blank_end(text: text, from: from, to: to)
+
+    if at >= to || text[at] != '#'
+        return fail(code: "none", msg: "no directive")
+    at @ blank_end(text: text, from: at + 1, to: to)
+
+    if !bytes.bytes_at(text: text, at: at, needle: "define")
+        return fail(code: "none", msg: "no definition")
+    named = blank_end(text: text, from: at + 6, to: to)
+
+    if named == at + 6 || !bytes.bytes_at(text: text, at: named, needle: NAME)
+        return fail(code: "none", msg: "another name's definition")
+    start: i64 @= named + NAME.len()
+
+    if start < to && (bytes.is_alnum(text[start]) || text[start] == '_')
+        return fail(code: "none", msg: "a longer name's definition")
+    start @ blank_end(text: text, from: start, to: to)
+    stop: i64 @= start
+
+    while stop < to && !bytes.bytes_at(text: text, at: stop, needle: "/*") && !bytes.bytes_at(text: text, at: stop, needle: "//")
+        stop @ stop + 1
+
+    while stop > start && blank(text[stop - 1])
+        stop @ stop - 1
+
+    return ok(text.slice(from: start, to: stop))
+
+# The first byte at or after `from`, and before `to`, that is no blank.
+function blank_end(text: str, from: i64, to: i64) -> i64
+    at: i64 @= from
+
+    while at < to && blank(text[at])
+        at @ at + 1
+
+    return at
+
+# A space, a tab, or the `\r` of a line Windows ended.
+function blank(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\r'
+
+# A value's text as a plain decimal number: digits alone, no leading `0` but
+# the number 0 itself, and few enough to fit an `i64`.
+function number(value: str) -> i64?
+    if value.len() == 0 || value.len() > 18 || value[0] == '0' && value.len() > 1
+        return fail(code: "unread", msg: UNREAD)
+    n: i64 @= 0
+
+    for i in range(from: 0, to: value.len())
+        if !bytes.is_digit(value[i])
+            return fail(code: "unread", msg: UNREAD)
+        n @ n * 10 + (value[i] - '0').to_i64().must()
+
+    return ok(n)
+
+## Tests
+
+# THE PREMISE, written as a claim that fails when it dies: the runtime this
+# tree holds states the interface this compiler is written against. A step of
+# `HERO_RUNTIME_ABI` in `runtime/heroes_runtime.h` without `NEEDED`, or of
+# `NEEDED` alone, fails here; every build would refuse the tree's own runtime,
+# told by `cli/runtime_places.hero` before clang, and the seed's stamp would
+# refuse it at the first command of CLAUDE.md § Commands.
+test "the tree's runtime states the interface this compiler needs (defect 2259)"
+    header = read_file("runtime/heroes_runtime.h").must()
+    assert stated(header).must() == NEEDED
+    assert stamp() == "_Static_assert(HERO_RUNTIME_ABI == " + NEEDED.to_str() + ", \"heroes_runtime.h is from another compiler\");"
+
+# Defect 2259's readings: the directive as C allows it, and every header that
+# states no plain number told so, never guessed.
+test "a header's HERO_RUNTIME_ABI is read as the preprocessor reads it, or told unread (defect 2259)"
+    assert stated("/* a runtime */\n#define HERO_RUNTIME_ABI 32\n").must() == 32
+    assert stated("  #  define\tHERO_RUNTIME_ABI   7 /* the stamp */\r\n").must() == 7
+    assert stated("#define HERO_RUNTIME_ABI 0 // none yet").must() == 0
+    assert stated("#define HERO_RUNTIME_ABI_NEXT 9\n#define HERO_RUNTIME_ABI 30").must() == 30
+    assert stated("#define HERO_RUNTIME_ABI 30\n#undef HERO_RUNTIME_ABI\n").must() == 30
+
+    for header in ["", "/* HERO_RUNTIME_ABI is below */\n", "#define HERO_RUNTIME_ABIX 31\n", "#defineHERO_RUNTIME_ABI 31\n"]
+        match stated(header)
+            .ok _ => assert false
+            .err e =>
+                assert e.code == "unstated"
+                assert e.msg == "defines no HERO_RUNTIME_ABI"
+
+    for header in ["#define HERO_RUNTIME_ABI 031\n", "#define HERO_RUNTIME_ABI 31u\n", "#define HERO_RUNTIME_ABI (31)\n", "#define HERO_RUNTIME_ABI\n", "#define HERO_RUNTIME_ABI(x) 31\n", "#define HERO_RUNTIME_ABI 9999999999999999999\n", "#define HERO_RUNTIME_ABI é\n"]
+        match stated(header)
+            .ok _ => assert false
+            .err e =>
+                assert e.code == "unread"
+                assert e.msg == UNREAD
+
+    match stated("#if A\n#define HERO_RUNTIME_ABI 31\n#else\n#define HERO_RUNTIME_ABI 32\n#endif\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "defines HERO_RUNTIME_ABI on 2 lines"
