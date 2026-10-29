@@ -7,7 +7,8 @@
  * `WITH` in the tag above, because that operator takes an exception from
  * SPDX's own registry and this one is not in it. */
 
-/* parts/failure.c — the failure side of `T?`, and `.must()`'s abort.
+/* parts/failure.c — the failure side of `T?`, and the one printer of a stop's
+ * report, which `.must()`'s abort and every stop of `parts/place.c` write with.
  *
  * `HeroFailure` is the one record every `T?` in every program contains, which is
  * why it is declared in the public header rather than generated: §4.6 fixes its
@@ -256,109 +257,3 @@ static void hero_quote_value(HeroStr s, HeroQuoteSink put, void *sink) {
 static void hero_report_sink(void *sink, const char *p, size_t n) { hero_report_put((HeroReport *)sink, p, n); }
 
 static void hero_report_value(HeroReport *r, HeroStr s) { hero_quote_value(s, hero_report_sink, r); }
-
-_Noreturn void hero_panic_must(HeroFailure f) {
-    /* `code` and `msg` come from the program, so they are messages, read as every
-     * reader reads a str (defect 462). */
-    hero_str_require(f.code);
-    hero_str_require(f.msg);
-    fflush(stdout);
-    HeroReport r = {.used = 0};
-    HERO_REPORT_OWN(&r, "panic: .must() on an error: ");
-    hero_report_message(&r, f.code);
-    HERO_REPORT_OWN(&r, ": ");
-    hero_report_message(&r, f.msg);
-    HERO_REPORT_OWN(&r, "\n");
-    hero_report_flush(&r);
-    hero_abort();
-}
-
-/* -- `assert` (§4.18, spec § 12 Tests and holes) ---------------------------------------
- *
- * "An `assert` failure shows the source expression and both sides." Both halves
- * matter and the second is the one a bare `assert failed` loses: `dist2(3, 4)
- * == 25` tells the reader what was claimed, and `26 != 25` tells them what
- * happened. Separate entry points rather than optional arguments, because C has
- * no optional arguments and a NULL `HeroStr` is the one non-value every entry
- * point here rejects.
- *
- * It is a PANIC, not a return: a test that fails stops. `heroes test` runs each
- * test in its own process for exactly that reason, so one failure does not hide
- * the tests after it. */
-_Noreturn void hero_panic_assert(HeroStr text) {
-    hero_str_require(text);
-    fflush(stdout);
-    HeroReport r = {.used = 0};
-    HERO_REPORT_OWN(&r, "assert failed: ");
-    hero_report_message(&r, text);
-    HERO_REPORT_OWN(&r, "\n");
-    hero_report_flush(&r);
-    hero_abort();
-}
-
-/* The sides as `print` renders them: a number or a `bool`, and, from a compiler
- * older than panel 230's R3, a `str` side too, which is then written as a message
- * and so still cannot forge a line. */
-_Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right) {
-    hero_str_require(text);
-    hero_str_require(left);
-    hero_str_require(right);
-    fflush(stdout);
-    HeroReport r = {.used = 0};
-    HERO_REPORT_OWN(&r, "assert failed: ");
-    hero_report_message(&r, text);
-    HERO_REPORT_OWN(&r, "\n  left:  ");
-    hero_report_message(&r, left);
-    HERO_REPORT_OWN(&r, "\n  right: ");
-    hero_report_message(&r, right);
-    HERO_REPORT_OWN(&r, "\n");
-    hero_report_flush(&r);
-    hero_abort();
-}
-
-_Noreturn void hero_panic_assert_str_sides(HeroStr text, HeroStr left, HeroStr right) {
-    hero_str_require(text);
-    hero_str_require(left);
-    hero_str_require(right);
-    fflush(stdout);
-    HeroReport r = {.used = 0};
-    HERO_REPORT_OWN(&r, "assert failed: ");
-    hero_report_message(&r, text);
-    HERO_REPORT_OWN(&r, "\n  left:  ");
-    hero_report_value(&r, left);
-    HERO_REPORT_OWN(&r, "\n  right: ");
-    hero_report_value(&r, right);
-    HERO_REPORT_OWN(&r, "\n");
-    hero_report_flush(&r);
-    hero_abort();
-}
-
-/* -- the control arm's unmatched value (panel 226's R1; panel 230's R3, defect 2226)
- *
- * A `match` on an integer or a string that no arm took, in a program built with
- * `--permissive`: the value rendered as `print` renders it. Moved here from
- * `parts/panic.c` on 2026-10-26, where it wrote the value by `%s`: a value holding
- * a line feed printed a line of its own, an ESC reached the terminal as itself,
- * and a NUL stopped the text. An integer's digits are a message; a `str` is a
- * value, quoted. */
-_Noreturn void hero_panic_unmatched_value(HeroStr text) {
-    hero_str_require(text);
-    fflush(stdout);
-    HeroReport r = {.used = 0};
-    HERO_REPORT_OWN(&r, "panic: this match has no arm for ");
-    hero_report_message(&r, text);
-    HERO_REPORT_OWN(&r, "\n");
-    hero_report_flush(&r);
-    hero_abort();
-}
-
-_Noreturn void hero_panic_unmatched_str(HeroStr text) {
-    hero_str_require(text);
-    fflush(stdout);
-    HeroReport r = {.used = 0};
-    HERO_REPORT_OWN(&r, "panic: this match has no arm for ");
-    hero_report_value(&r, text);
-    HERO_REPORT_OWN(&r, "\n");
-    hero_report_flush(&r);
-    hero_abort();
-}

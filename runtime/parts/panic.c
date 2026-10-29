@@ -41,7 +41,6 @@ _Noreturn void hero_panic(const char *msg) {
     fprintf(stderr, "panic: %s\n", msg);
     hero_abort();
 }
-_Noreturn void hero_panic_overflow(void) { hero_panic("integer overflow"); }
 
 /* A check the runtime makes, stopping the program (panel 230's R1, kind 2):
  * `hero_panic`'s line, and beneath it the place `where` names, the program's
@@ -92,31 +91,12 @@ _Noreturn void hero_unreachable(void) {
 }
 
 /* A `match` that reached a case no arm names, in a program built with
- * `--permissive` (design.md Part 11's control arm; panel 226's R1). The strict
- * build proves exhaustiveness, so the block that calls this exists only there,
- * and the words are the program's own mistake, never the compiler's: `text`
- * holds the variant's cases joined by `,` in tag order, `index` the case reached. */
-_Noreturn void hero_panic_unmatched_case(int64_t index, HeroStr text) {
-    const char *p = text.ptr ? text.ptr : "";
-    const char *start = p;
-    int64_t k = 0;
-    while (*p && k < index) {
-        if (*p == ',') {
-            k++;
-            start = p + 1;
-        }
-        p++;
-    }
-    const char *end = start;
-    while (*end && *end != ',') end++;
-    fflush(stdout);
-    fprintf(stderr, "panic: this match has no arm for .%.*s\n", (int)(end - start), start);
-    hero_abort();
-}
-
-/* The same for a `match` on an integer or a string, `hero_panic_unmatched_value`
- * and `hero_panic_unmatched_str`, live in `parts/failure.c` since 2026-10-26,
- * beside the printer that writes a program's value (panel 230's R3, defect 2226). */
+ * `--permissive`, stops in `parts/place.c` with its place (panel 226's R1, panel
+ * 230's R1), and so does every stop of the language that once had an entry
+ * point without one here and in `parts/failure.c`: those eight left with task
+ * 2237 (2026-10-29), no seed calling them since panel 230's refresh, and a name
+ * kept for an older program being what the author's rule before 1.0.0 refuses
+ * (panel 232's R8). */
 
 void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
 /* See `hero_uint_to_str`: `u64` above 2^63 prints negative through the signed one. */

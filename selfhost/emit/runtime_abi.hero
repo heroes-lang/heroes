@@ -21,7 +21,7 @@ use bytes
 
 # The interface every unit this compiler writes is compiled against.
 constant NEEDED: i64
-    31
+    32
 
 # The name a runtime defines its interface by.
 constant NAME: str
