@@ -150,3 +150,44 @@ given a dated comment by 12:10; one (810) had a premise overtaken by panel 232's
 asks untouched, and none closed. The tag goes on the commit that says so, made after the closes,
 as M-generated-programs' went, over a list with no `blocking` or `systemic` defect (2275, 2277 and
 2278 `adjacent`, at their first tag) and no decision open.
+
+## After the push
+
+**The CI on the close (29715956f, run 41045262788)**: Linux x86-64, Linux arm64 and Darwin arm64
+green, the seed's refresh rebuilt by the seed before it green, the site deployed; **Windows x86-64
+red on one case**, `unsupported/ffi-a-header-defining-a-static-main-is-told`, its net 10,284 passed
+and 1 failed. Defect 2253 declares the runtime's `main` before any group's header, so the header's
+`static int main` follows a non-static declaration, which the clang of Darwin and Linux refuses and
+the Windows target's accepts as a Microsoft extension, an error there under `-Werror` in other
+words; the compiler's message there is true, and the case holds one side's words. Filed as defect
+2280, `blocking`, the next batch's first item, the repair defect 2053's shape (a twin judged on
+Windows alone); no revert, the trunk building on every platform. The run on the tag's commit
+(8c80ebc42, run 41066504418), whose tree differs from the close's by two documents, was still
+running when this section was written, the seed's refresh rebuilt by the seed before it already
+green.
+
+**The census of `check`**, 2,564 roots (`selfhost/main.hero` and every tracked `.hero` of
+`examples/` and `tests/`), `check --brief` eight at a time, the compiler of `m-generated-programs`
+(stage 2 of de2353e17, sources `1500196879cda0c8`) against the batch's (stage 2, sources
+`23825438285ee301`), each from a worktree of its own holding 8c80ebc42's files: 1,547 exit 0 and
+1,017 exit 1 before, 1,557 and 1,007 after, none exit 2. 29 roots moved, every one the milestone's:
+13 cases its batch added; 8 holding `exit` an `i64` the old compiler took for a `u8` (task 2250,
+step 1); 6 whose swapped labels are one message (defect 2261); 2 binding the runtime's own header,
+refused at `check` (defect 2256).
+
+**The census of `build`**, the 1,077 tracked programs outside `docs/` holding an `extern`, each
+compiler with its own runtime (`HERO_RUNTIME_ABI` 31 before, 32 after, since the old compiler cannot
+build against the new one): 394 exit 0 and 683 exit 1 before, 396 and 681 after. 6 moved their exit:
+two of defect 2256's cases; `selfhost/main.hero`, which binds two runtime functions the old runtime
+lacks (`hero_frame_probes_asked`, `hero_f32_of_decimal`, defects 2253 and 2276); and three holding
+`exit` an `i64`. 20 more moved their words alone once each arm's folders were read as one: five
+cases the batch added, and fifteen as their repairs say, defect 2253's `main` declared first (four),
+2273's note naming every built-in (three), 2242's note (three), task 2237's header lines one shorter
+(two), 2256's refusal (two) and 2261's labels (one).
+
+**Panel 187's R2**, the frozen plan replayed by each compiler with `heroes mutate --recovery` and
+read with `--compare`: 1,356 programs, 14,209 singles and 15,737 pairs, 1,043 s and 1,071 s, the
+normal and the control arm each: moved 0, findings 0. The unmutated corpus moved in two programs,
+both the milestone's: the frozen copy of `selfhost/cli/io.hero` binds `heroes_runtime.h` in an
+`extern` group, refused at `check` since defect 2256 (`ffi_runtime_header`, one message more in each
+arm), and the frozen interpreter hands `exit` an `i64`, which the base refused (task 2250).
