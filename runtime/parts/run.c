@@ -143,6 +143,28 @@ HeroStr hero_run_exe_suffix(void) {
 #endif
 }
 
+/* WHETHER A FRAME IS PROBED ONLY WHEN THE COMPILE ASKS (`hero_compiler.h`,
+ * defect 2253), a fact about this machine's C that the driver asks rather than
+ * knows, as it asks the suffix above. On Linux clang moves `sp` by a whole
+ * frame in one instruction, however large, unless the compile carries
+ * `-fstack-clash-protection`: `sub sp, sp, #1024, lsl #12` for a 4 MiB array
+ * on AArch64 and `subq $4194320, %rsp` on x86-64, with no touch between (Apple
+ * clang 21's assembly for both Linux targets, 2026-10-29); in the Linux arm64
+ * image (Debian clang 22.1.8) eight of ten thread stacks sized around such a
+ * frame died at 139 with nothing said that day, and none with the word.
+ * Darwin's prologue calls `___chkstk_darwin` and Windows' `__chkstk` with no
+ * word at all, and clang there calls the word unused, a warning on every
+ * compile, measured the same day for both targets. Its falsifiers are
+ * `selfhost/cli/flags.hero`'s test of a probed frame on every leg and
+ * `tests/golden/run/fixedbugs-2253-*`. */
+int64_t hero_frame_probes_asked(void) {
+#if defined(__linux__)
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 int64_t hero_os_pid(void) {
 #if defined(_WIN32)
     return (int64_t)GetCurrentProcessId();

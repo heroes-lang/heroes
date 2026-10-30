@@ -386,6 +386,27 @@ const char *hero_cstr_nonnull(const char *p);
  * its `main` before any thread exists (panel 230's R1, kind 3; `parts/stack.c`). */
 void hero_stack_spell(const char *text);
 
+/* THE SHIM IS COMPILED AS WRITTEN (defect 2253, 2026-10-29). Every root unit
+ * ends with an `int main` that calls `hero_args_set`, which installs the stack
+ * guard (`parts/stack.c`), and then the program's `main` or one test
+ * (`selfhost/emit/c_main.hero`). At `-O2` clang made the program's `main` part
+ * of it, so a frame larger than the stack was the shim's own, probed by its
+ * prologue before the guard existed: a program holding a record of 128 MiB in
+ * `main` died at 139 with nothing said, where `-O0` said `stack exhausted in
+ * <module>.main`. Nothing is inlined into a function marked `optnone`, so every
+ * call the shim makes stays a call and the program's first frame is its own
+ * function's, entered under the guard (read in clang 21's `-O2` assembly for
+ * the four legs' targets, sanitised and not, the same day; without this line
+ * Darwin's `main` called `___chkstk_darwin` itself). The shim does nothing
+ * worth optimising. Its definition is the program's, and this declaration is
+ * what clang holds it to; a program an older compiler wrote defines `main` the
+ * same way, so no ABI stamp moves. The attributes are spelled as C reserves
+ * them, so no group's header can define either as a macro
+ * (`emit/macro_guard.hero`'s list leaves such words out), and `main`, written
+ * here, is a name of the runtime's own that no group binds
+ * (`cli/runtime_bound.hero`; no tracked program bound it that day). */
+int main(int argc, char **argv) __attribute__((__optnone__, __noinline__));
+
 /* -- f64 (proposal point 4) ------------------------------------------------ */
 float hero_int_to_f32(int64_t v);
 float hero_f64_to_f32(double v);

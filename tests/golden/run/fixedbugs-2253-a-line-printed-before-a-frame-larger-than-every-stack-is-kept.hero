@@ -1,0 +1,13 @@
+# fixedbugs, defect 2253, 2026-10-29: one call past a line the program
+# printed, into a function whose frame is larger than what is left of the
+# stack, which died at 139 with nothing on stderr (the case of `main` beside
+# this one says how, and what repaired it). The line must survive the abort:
+# it is printed before the call, and the stop is the callee's own prologue,
+# in `fixedbugs2253/held`, a module whose unit is its own so `-O2` keeps the
+# call a call. Darwin and Linux name `held.kept`; Windows' guard names no
+# function and says the first sentence alone.
+use fixedbugs2253/held
+
+function main()
+    print("printed before the call")
+    print(held.kept(n: 7))
