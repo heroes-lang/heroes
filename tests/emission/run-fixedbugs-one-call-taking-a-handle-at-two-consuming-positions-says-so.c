@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -101,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3d501326, "one bio, two positions");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 105 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 104 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,9 +153,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 159 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_0Bio_eq(bio * const *a, bio * const *b);
@@ -186,7 +185,7 @@ void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void) { s
     t4 = h0_s; t5 = h1_b; t6 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero", "fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.main", 25, 5}; { hero_handle_alive_at(t4, "the argument `s` of `ssl_set_bio`", &hero_here); hero_handle_alive_at(t5, "the argument `rbio` of `ssl_set_bio`", &hero_here); hero_handle_alive_at(t6, "the argument `wbio` of `ssl_set_bio`", &hero_here); HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_transferring_at(t5, "bio_free", &hero_here); HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_transferring_at(t6, "bio_free", &hero_here); (void)ssl_set_bio(t4, t5, t6); if (hero_handle_ended(t5, hero_life_1_0) && h1_b == t5) h1_b = hero_handle_dead(); if (hero_handle_ended(t6, hero_life_2_0) && h1_b == t6) h1_b = hero_handle_dead(); } }
     t7 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero", "fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.main", 26, 5}; { hero_handle_alive_at(t7, "the argument `s` of `ssl_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t7, "ssl_free", NULL, &hero_here); (void)ssl_free(t7); if (hero_handle_ended(t7, hero_life_0_0) && h0_s == t7) h0_s = hero_handle_dead(); } }
     t8 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t8); hero_print_end(); return;
-#line 190 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 189 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_0Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);
@@ -307,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e3fb0434b7bee64", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("63207173313f591e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsonecalltakingahandleattwoconsumingpositionssaysso\tfixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so\n");

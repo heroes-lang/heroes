@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -117,7 +116,7 @@ HERO_STR_STATIC(hero_str_1c2098, "k63");
 HERO_STR_STATIC(hero_str_6b, "k");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 121 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 120 "fixedbugs393alongliteralisformattedinonepass.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 158 "fixedbugs393alongliteralisformattedinonepass.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -776,7 +775,7 @@ void h_fixedbugs393alongliteralisformattedinonepass_main(void) { HeroArrayHeader
     t568 = h10_i1; t569 = INT64_C(1); if (__builtin_add_overflow(t568, t569, &t570)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 420, 9); h10_i1 = t570; goto bb5; bb8:
 #line 423
     t571 = h0_xs; t572 = ((void)(t571 == NULL ? ((void)hero_array_len(t571), hero_unreachable()) : (void)0), t571->len); t573 = HERO_STR_LIT(hero_str_20); t574 = h3_weighted; t575 = HERO_STR_LIT(hero_str_20); t576 = h1_m; t577 = hero_map_len(t576); t578 = HERO_STR_LIT(hero_str_20); t579 = h8_keyed; t580 = HERO_STR_LIT(hero_str_20); t581 = h2_chained; hero_print_int(t572); hero_print_str(t573); hero_print_int(t574); hero_print_str(t575); hero_print_int(t577); hero_print_str(t578); hero_print_int(t579); hero_print_str(t580); hero_print_int(t581); hero_print_end();
-#line 780 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 779 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h5_xs0);
@@ -792,7 +791,7 @@ void h_fixedbugs393alongliteralisformattedinonepass_main(void) { HeroArrayHeader
 bb9:
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t561 = h12_f0; t562 = t561.as.ok; t563 = h11_k; t564 = INT64_C(1); if (__builtin_add_overflow(t563, t564, &t565)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 46); if (__builtin_mul_overflow(t562, t565, &t566)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 25); if (__builtin_add_overflow(t548, t566, &t567)) hero_panic_overflow_at("fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 17); h8_keyed = t567; goto bb7; bb10: t559 = h12_f0; t560 = t559.as.err;
-#line 796 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 795 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_panic_must_at(t560, "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero", "fixedbugs-393-a-long-literal-is-formatted-in-one-pass.main", 421, 25);
     hero_unreachable();
 }
@@ -805,7 +804,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 809 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 808 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -912,7 +911,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("166a9c97310d3498", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b75fdb57733ee05", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs393alongliteralisformattedinonepass\tfixedbugs-393-a-long-literal-is-formatted-in-one-pass\n");

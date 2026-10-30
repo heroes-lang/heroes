@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,11 +61,11 @@ _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_year) == 1 && sizeof
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_mon) == 1 && sizeof(((struct tm *)0)->tm_mon) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_mon, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_mon");
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_mday) == 1 && sizeof(((struct tm *)0)->tm_mday) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_mday, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_mday");
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_hour) == 1 && sizeof(((struct tm *)0)->tm_hour) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_hour, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_hour");
-#line 66 "main.c"
+#line 65 "main.c"
 
 #line 53 "examples/ctime/main.hero"
 _Static_assert(__builtin_classify_type(*(struct tm *)0) != 13, "heroes-ffi-union Broken tm_year tm_mon tm_mday tm_hour");
-#line 70 "main.c"
+#line 69 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -176,9 +175,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 182 "main.c"
+#line 181 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_0Broken_eq(const struct tm *a, const struct tm *b);
@@ -275,20 +274,20 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 66 "examples/ctime/main.hero"
 int64_t h_main_C_EPOCH_YEAR(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1900); return t1;
-#line 279 "main.c"
+#line 278 "main.c"
 }
 
 #line 69 "examples/ctime/main.hero"
 int64_t h_main_year_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_year; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = h_main_C_EPOCH_YEAR(); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.year_of", 70, 12);
-#line 285 "main.c"
+#line 284 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
 bb2:
 #line 70 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 292 "main.c"
+#line 291 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.year_of", 70, 12);
     hero_unreachable();
 }
@@ -296,14 +295,14 @@ bb2:
 #line 73 "examples/ctime/main.hero"
 int64_t h_main_month_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_mon; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.month_of", 74, 12);
-#line 300 "main.c"
+#line 299 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
 bb2:
 #line 74 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 307 "main.c"
+#line 306 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.month_of", 74, 12);
     hero_unreachable();
 }
@@ -311,14 +310,14 @@ bb2:
 #line 76 "examples/ctime/main.hero"
 int64_t h_main_day_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_mday; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok;
-#line 315 "main.c"
+#line 314 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
 bb2:
 #line 77 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 322 "main.c"
+#line 321 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.day_of", 77, 12);
     hero_unreachable();
 }
@@ -326,14 +325,14 @@ bb2:
 #line 79 "examples/ctime/main.hero"
 int64_t h_main_hour_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_hour; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok;
-#line 330 "main.c"
+#line 329 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
 bb2:
 #line 80 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 337 "main.c"
+#line 336 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.hour_of", 80, 12);
     hero_unreachable();
 }
@@ -356,7 +355,7 @@ h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, i
     t49 = h5_y; t50 = h7_m; t51 = h9_d; t52 = h11_h; t53 = (struct tm){.tm_year = t49, .tm_mon = t50, .tm_mday = t51, .tm_hour = t52}; t54 = (h_0opt_13b8cf25){.tag = INT64_C(0), .as.ok = t53}; t67 = h20_own20; h20_own20 = t54; h_0opt_13b8cf25_release(&t67); h12_ret0 = t54; goto bb9; bb8:
 #line 86
     t44 = h10_f3; t45 = t44.as.err; hero_failure_retain(&t45); t46 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t45}; t68 = h21_own21; h21_own21 = t46; h_0opt_13b8cf25_release(&t68); h12_ret0 = t46; goto bb9; bb9:
-#line 360 "main.c"
+#line 359 "main.c"
     t55 = h12_ret0;
     h_0opt_13b8cf25_retain(&t55);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -378,7 +377,7 @@ h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, i
 #line 89 "examples/ctime/main.hero"
 HeroStr h_main_shown(struct tm h0_b) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t3, t4, t5, t8, t9, t10, t11, t14, t15, t16, t17, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG struct tm t1, t6, t12, t18; HERO_NODEBUG int64_t t2, t7, t13, t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b; t2 = h_main_year_of(t1); t3 = hero_int_to_str(t2); t24 = h1_own1; h1_own1 = t3; hero_str_decref(t24); t4 = HERO_STR_LIT(hero_str_2d); t5 = hero_str_concat(t3, t4); t25 = h2_own2; h2_own2 = t5; hero_str_decref(t25); t6 = h0_b; t7 = h_main_month_of(t6); t8 = h_main_padded(t7); t26 = h3_own3; h3_own3 = t8; hero_str_decref(t26); t9 = hero_str_concat(t5, t8); t27 = h4_own4; h4_own4 = t9; hero_str_decref(t27); t10 = HERO_STR_LIT(hero_str_2d); t11 = hero_str_concat(t9, t10); t28 = h5_own5; h5_own5 = t11; hero_str_decref(t28); t12 = h0_b; t13 = h_main_day_of(t12); t14 = h_main_padded(t13); t29 = h6_own6; h6_own6 = t14; hero_str_decref(t29); t15 = hero_str_concat(t11, t14); t30 = h7_own7; h7_own7 = t15; hero_str_decref(t30); t16 = HERO_STR_LIT(hero_str_20); t17 = hero_str_concat(t15, t16); t31 = h8_own8; h8_own8 = t17; hero_str_decref(t31); t18 = h0_b; t19 = h_main_hour_of(t18); t20 = h_main_padded(t19); t32 = h9_own9; h9_own9 = t20; hero_str_decref(t32); t21 = hero_str_concat(t17, t20); t33 = h10_own10; h10_own10 = t21; hero_str_decref(t33); t22 = HERO_STR_LIT(hero_str_f48ca); t23 = hero_str_concat(t21, t22); t34 = h11_own11; h11_own11 = t23; hero_str_decref(t34);
-#line 382 "main.c"
+#line 381 "main.c"
     hero_str_incref(t23);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -397,7 +396,7 @@ HeroStr h_main_shown(struct tm h0_b) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_ow
 #line 92 "examples/ctime/main.hero"
 HeroStr h_main_padded(int64_t h0_n) { HERO_NODEBUG HeroStr h1_r0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t7, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t5, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(10); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1: t10 = h1_r0;
-#line 401 "main.c"
+#line 400 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -413,7 +412,7 @@ bb2:
     t8 = h0_n; t9 = hero_int_to_str(t8); t14 = h4_own4; h4_own4 = t9; hero_str_decref(t14);
 #line 93
     t15 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t15); goto bb1;
-#line 417 "main.c"
+#line 416 "main.c"
 }
 
 #line 98 "examples/ctime/main.hero"
@@ -432,7 +431,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_13b8cf25 h0_f0 = {0}, h2_f1 = {0}, 
     t25 = INT64_C(2000); t26 = INT64_C(1); t27 = INT64_C(1); t28 = INT64_C(0); t29 = h_main_made(t25, t26, t27, t28); t61 = h7_own7; h7_own7 = t29; h_0opt_13b8cf25_release(&t61); t62 = h2_f1; h_0opt_13b8cf25_retain(&t29); h2_f1 = t29; h_0opt_13b8cf25_release(&t62); t30 = h2_f1; t31 = t30.tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto bb3; else goto bb4; bb2:
 #line 100
     t10 = h0_f0; t11 = t10.as.err;
-#line 436 "main.c"
+#line 435 "main.c"
     hero_panic_must_at(t11, "main.hero", "main.main", 100, 15);
     hero_unreachable();
 bb3:
@@ -445,7 +444,7 @@ bb3:
     t46 = INT64_C(0); t47 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 118, 11}; t48 = difftime(t46, t47); } hero_print_f64(t48); hero_print_end();
 #line 121
     t49 = INT64_C(3000000000); t50 = INT64_C(1); t51 = INT64_C(1); t52 = INT64_C(0); t53 = h_main_made(t49, t50, t51, t52); t64 = h9_own9; h9_own9 = t53; h_0opt_13b8cf25_release(&t64); t65 = h4_f2; h_0opt_13b8cf25_retain(&t53); h4_f2 = t53; h_0opt_13b8cf25_release(&t65); t54 = h4_f2; t55 = t54.tag; t56 = INT64_C(1); t57 = t55 == t56; hero_print_bool(t57); hero_print_end();
-#line 449 "main.c"
+#line 448 "main.c"
     h_0opt_13b8cf25_release(hero_slot_escape(&h0_f0));
     h_0opt_13b8cf25_release(hero_slot_escape(&h2_f1));
     h_0opt_13b8cf25_release(hero_slot_escape(&h4_f2));
@@ -458,7 +457,7 @@ bb3:
 bb4:
 #line 112 "examples/ctime/main.hero"
     t34 = h2_f1; t35 = t34.as.err;
-#line 462 "main.c"
+#line 461 "main.c"
     hero_panic_must_at(t35, "main.hero", "main.main", 112, 18);
     hero_unreachable();
 }
@@ -631,7 +630,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e0478a56eb03a80", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("67718f1f62f74f83", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

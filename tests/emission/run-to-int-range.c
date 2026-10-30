@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "tointrange.c"
+#line 53 "tointrange.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "tointrange.c"
+#line 91 "tointrange.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -112,7 +111,7 @@ void h_tointrange_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = 
     t11 = 0x1.8p+0; t12 = -t11; if (hero_f64_fits_int(t12)) { t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t12)}; } else { t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t59 = h7_own7; h7_own7 = t13; h_0opt_e201354_release(&t59); t60 = h1_f1; h_0opt_e201354_retain(&t13); h1_f1 = t13; h_0opt_e201354_release(&t60); t14 = h1_f1; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb3; else goto bb4; bb2:
 #line 20
     t7 = h0_f0; t8 = t7.as.err;
-#line 116 "tointrange.c"
+#line 115 "tointrange.c"
     hero_panic_must_at(t8, "to-int-range.hero", "to-int-range.main", 20, 11);
     hero_unreachable();
 bb3:
@@ -121,7 +120,7 @@ bb3:
     t22 = 0x1.fffffffffffffp+62; if (hero_f64_fits_int(t22)) { t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t22)}; } else { t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t61 = h8_own8; h8_own8 = t23; h_0opt_e201354_release(&t61); t62 = h2_f2; h_0opt_e201354_retain(&t23); h2_f2 = t23; h_0opt_e201354_release(&t62); t24 = h2_f2; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb5; else goto bb6; bb4:
 #line 21
     t18 = h1_f1; t19 = t18.as.err;
-#line 125 "tointrange.c"
+#line 124 "tointrange.c"
     hero_panic_must_at(t19, "to-int-range.hero", "to-int-range.main", 21, 11);
     hero_unreachable();
 bb5:
@@ -131,14 +130,14 @@ bb5:
     t38 = 0x1p+63; t39 = -t38; if (hero_f64_fits_int(t39)) { t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t39)}; } else { t40 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t65 = h10_own10; h10_own10 = t40; h_0opt_e201354_release(&t65); t66 = h4_f4; h_0opt_e201354_retain(&t40); h4_f4 = t40; h_0opt_e201354_release(&t66); t41 = h4_f4; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb7; else goto bb8; bb6:
 #line 22
     t28 = h2_f2; t29 = t28.as.err;
-#line 135 "tointrange.c"
+#line 134 "tointrange.c"
     hero_panic_must_at(t29, "to-int-range.hero", "to-int-range.main", 22, 11);
     hero_unreachable();
 bb7:
 #line 24 "tests/golden/run/to-int-range.hero"
     t47 = h4_f4; t48 = t47.as.ok; hero_print_int(t48); hero_print_end();
     t49 = 0x0p+0; t50 = 0x0p+0; t51 = t49 / t50; if (hero_f64_fits_int(t51)) { t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t51)}; } else { t52 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t67 = h11_own11; h11_own11 = t52; h_0opt_e201354_release(&t67); t68 = h5_f5; h_0opt_e201354_retain(&t52); h5_f5 = t52; h_0opt_e201354_release(&t68); t53 = h5_f5; t54 = t53.tag; t55 = INT64_C(1); t56 = t54 == t55; hero_print_bool(t56); hero_print_end();
-#line 142 "tointrange.c"
+#line 141 "tointrange.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_f1));
     h_0opt_e201354_release(hero_slot_escape(&h2_f2));
@@ -155,7 +154,7 @@ bb7:
 bb8:
 #line 24 "tests/golden/run/to-int-range.hero"
     t45 = h4_f4; t46 = t45.as.err;
-#line 159 "tointrange.c"
+#line 158 "tointrange.c"
     hero_panic_must_at(t46, "to-int-range.hero", "to-int-range.main", 24, 11);
     hero_unreachable();
 }
@@ -256,7 +255,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ad66943067c24e6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("725329210dc4c66a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("tointrange\tto-int-range\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 57 "placestorec5.c"
+#line 56 "placestorec5.c"
 typedef struct h_placestorec5_Node {
     HeroArrayHeader * f_kids;
 } h_placestorec5_Node;
@@ -93,9 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "placestorec5.c"
+#line 98 "placestorec5.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_placestorec5_0Node_retain(const h_placestorec5_Node *v);
@@ -140,7 +139,7 @@ void h_placestorec5_main(void);
 int64_t h_placestorec5_bump(HeroArrayHeader * *ph0_v) { HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t2 = INT64_C(99); hero_array_push_owned(&(*ph0_v), &t2);
     t4 = (*ph0_v); t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); return t5;
-#line 144 "placestorec5.c"
+#line 143 "placestorec5.c"
 }
 
 #line 30 "tests/golden/run/place-store-c5.hero"
@@ -176,7 +175,7 @@ void h_placestorec5_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader 
     t80 = INT64_C(1); hero_array_push_owned(&h7_qs, &t80);
     t82 = h7_qs; hero_array_incref(t82); t115 = h22_own22; h22_own22 = t82; hero_array_decref(t115); t83 = h_placestorec5_bump(&h7_qs); t84 = hero_array_push(t82, &t83); t116 = h23_own23; h23_own23 = t84; hero_array_decref(t116); t117 = h7_qs; hero_array_incref(t84); h7_qs = t84; hero_array_decref(t117);
     t85 = h7_qs; t86 = ((void)(t85 == NULL ? ((void)hero_array_len(t85), hero_unreachable()) : (void)0), t85->len); t87 = HERO_STR_LIT(hero_str_20); t88 = h7_qs; t89 = INT64_C(1); t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? hero_panic_index_at(t88, t89, "place-store-c5.hero", "place-store-c5.main", 67, 26) : (void)0), (void)(t88->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t88 + 1))[t89]); hero_print_int(t86); hero_print_str(t87); hero_print_int(t90); hero_print_end();
-#line 180 "placestorec5.c"
+#line 179 "placestorec5.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_zs);
@@ -320,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2469f6310c129afb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("381c893854634d04", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placestorec5\tplace-store-c5\n");

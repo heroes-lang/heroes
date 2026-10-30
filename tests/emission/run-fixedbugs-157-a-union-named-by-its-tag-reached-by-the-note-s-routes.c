@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("i")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 _Static_assert(__builtin_classify_type(((UI *)0)->i) == 1 && sizeof(((UI *)0)->i) == sizeof(int32_t) && (_Generic(((UI *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UI i");
-#line 67 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 66 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 158 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_eq(const UI *a, const UI *b);
@@ -179,7 +178,7 @@ void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void);
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) { HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG void *t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 15, 11}; t1 = make_u(); } t2 = t1.i; hero_print_int(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 16, 21}; t3 = (void *)one_u(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero", "fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.main", 16, 11}; t4 = read_u(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 183 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 182 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_0UI_eq(const UI *a, const UI *b) {
     if (!(a->i == b->i)) return false;
@@ -290,7 +289,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("420cec1134ad198b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("12e7f40558adf03c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs157aunionnamedbyitstagreachedbythenotesroutes\tfixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes\n");

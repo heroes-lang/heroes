@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -99,7 +98,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_2cb37c54, "cannot_open");
 HERO_STR_STATIC(hero_str_38b9, "no");
 
-#line 103 "deadaddresscopyinagrowingarray.c"
+#line 102 "deadaddresscopyinagrowingarray.c"
 typedef struct h_deadaddresscopyinagrowingarray_Db {
     cdb * f_handle;
 } h_deadaddresscopyinagrowingarray_Db;
@@ -163,9 +162,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "deadaddresscopyinagrowingarray.c"
+#line 168 "deadaddresscopyinagrowingarray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscopyinagrowingarray_0CDb_eq(cdb * const *a, cdb * const *b);
@@ -240,7 +239,7 @@ h_0opt_5553b083 h_deadaddresscopyinagrowingarray_opened(void) {
     t10 = h0_db; t11 = (h_deadaddresscopyinagrowingarray_Db){.f_handle = t10}; t12 = (h_0opt_5553b083){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_5553b083_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 20
     t7 = HERO_STR_LIT(hero_str_2cb37c54); t8 = HERO_STR_LIT(hero_str_38b9); hero_str_incref(t7); hero_str_incref(t8); t9 = (h_0opt_5553b083){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}}; t15 = h3_own3; h3_own3 = t9; h_0opt_5553b083_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 244 "deadaddresscopyinagrowingarray.c"
+#line 243 "deadaddresscopyinagrowingarray.c"
     t13 = h1_ret0;
     h_0opt_5553b083_retain(&t13);
     h_0opt_5553b083_release(hero_slot_escape(&h2_own2));
@@ -253,7 +252,7 @@ h_0opt_5553b083 h_deadaddresscopyinagrowingarray_opened(void) {
 #line 23 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 int64_t h_deadaddresscopyinagrowingarray_closed(h_deadaddresscopyinagrowingarray_Db *ph0_db) { HERO_NODEBUG cdb *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_db).f_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-in-a-growing-array.hero", "dead-address-copy-in-a-growing-array.closed", 24, 12}; { hero_handle_alive_at(t1, "the argument `db` of `db_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "db_close", NULL, &hero_here); t2 = db_close(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_db).f_handle == t1) (*ph0_db).f_handle = hero_handle_dead(); } } return t2;
-#line 257 "deadaddresscopyinagrowingarray.c"
+#line 256 "deadaddresscopyinagrowingarray.c"
 }
 
 #line 26 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
@@ -262,7 +261,7 @@ void h_deadaddresscopyinagrowingarray_main(void) { HERO_NODEBUG h_0opt_5553b083 
     t10 = h1_db.f_handle; t11 = hero_array_new(&h_deadaddresscopyinagrowingarray_0CDb_desc, 1); hero_array_push_owned(&t11, &t10); t19 = h4_own4; h4_own4 = t11; hero_array_decref(t19); t20 = h2_handles; hero_array_incref(t11); h2_handles = t11; hero_array_decref(t20);
     h_deadaddresscopyinagrowingarray_closed(&h1_db);
     t13 = h2_handles; t14 = INT64_C(0); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "dead-address-copy-in-a-growing-array.hero", "dead-address-copy-in-a-growing-array.main", 30, 26) : (void)0), (void)(t13->elem->size != sizeof(cdb *) ? hero_unreachable() : (void)0), ((cdb * const *)(const void *)(t13 + 1))[t14]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-in-a-growing-array.hero", "dead-address-copy-in-a-growing-array.main", 30, 11}; hero_handle_alive_at(t15, "the argument `db` of `db_changes`", &hero_here); t16 = db_changes(t15); } hero_print_int(t16); hero_print_end();
-#line 266 "deadaddresscopyinagrowingarray.c"
+#line 265 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(hero_slot_escape(&h0_f0));
     hero_array_release_at(&h2_handles);
     h_0opt_5553b083_release(hero_slot_escape(&h3_own3));
@@ -271,7 +270,7 @@ void h_deadaddresscopyinagrowingarray_main(void) { HERO_NODEBUG h_0opt_5553b083 
 bb2:
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t6 = h0_f0; t7 = t6.as.err;
-#line 275 "deadaddresscopyinagrowingarray.c"
+#line 274 "deadaddresscopyinagrowingarray.c"
     hero_panic_must_at(t7, "dead-address-copy-in-a-growing-array.hero", "dead-address-copy-in-a-growing-array.main", 27, 15);
     hero_unreachable();
 }
@@ -427,7 +426,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("105405cc00fc9904", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2329c5a749e90cb0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadaddresscopyinagrowingarray\tdead-address-copy-in-a-growing-array\n");

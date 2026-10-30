@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -69,11 +68,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->zero) == 1 && sizeof(((struct pair *)0)->zero) == sizeof(int32_t) && (_Generic(((struct pair *)0)->zero, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair zero");
-#line 73 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 72 "fixedbugs401abindingcalledzerobesidethewords.c"
 
 #line 9 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b zero");
-#line 77 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 76 "fixedbugs401abindingcalledzerobesidethewords.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -162,9 +161,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 167 "fixedbugs401abindingcalledzerobesidethewords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_0Pair_eq(const struct pair *a, const struct pair *b);
@@ -208,13 +207,13 @@ struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) { int32_
     t1 = INT64_C(7); h0_zero = t1;
     t2 = h0_zero; hero_print_int(t2); hero_print_end();
     t3 = INT64_C(1); t4 = (struct pair){0}; __builtin_memset(&t4, 0, sizeof t4); t4.a = t3; return t4;
-#line 212 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 211 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG struct pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = h0_zero; t3 = (struct pair){0}; __builtin_memset(&t3, 0, sizeof t3); t3.a = t1; t3.zero = t2; return t3;
-#line 218 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 217 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
@@ -223,7 +222,7 @@ void h_fixedbugs401abindingcalledzerobesidethewords_main(void) { struct pair h0_
     t1 = h_fixedbugs401abindingcalledzerobesidethewords_beside(); h0_p = t1; hero_pad_fill(&h0_p, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = INT64_C(7); t3 = h_fixedbugs401abindingcalledzerobesidethewords_named(t2); h1_q = t3; hero_pad_fill(&h1_q, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h0_p.a; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p.b; t7 = HERO_STR_LIT(hero_str_20); t8 = h0_p.zero; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_q.a; t11 = HERO_STR_LIT(hero_str_20); t12 = h1_q.b; t13 = HERO_STR_LIT(hero_str_20); t14 = h1_q.zero; hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_end(); return;
-#line 227 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 226 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_0Pair_eq(const struct pair *a, const struct pair *b) {
     if (!(a->a == b->a)) return false;
@@ -338,7 +337,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("14609b3b65627e9b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e17871d0a985e12", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs401abindingcalledzerobesidethewords\tfixedbugs-401-a-binding-called-zero-beside-the-words\n");

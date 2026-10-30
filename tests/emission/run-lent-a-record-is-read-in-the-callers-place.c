@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ HERO_STR_STATIC(hero_str_2f372e9c, "hello");
 HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_1c7dfb, "lit");
 
-#line 67 "lentarecordisreadinthecallersplace.c"
+#line 66 "lentarecordisreadinthecallersplace.c"
 typedef struct h_lentarecordisreadinthecallersplace_Pt {
     int64_t f_x;
     HeroStr f_name;
@@ -109,9 +108,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "lentarecordisreadinthecallersplace.c"
+#line 114 "lentarecordisreadinthecallersplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_retain(const h_lentarecordisreadinthecallersplace_Pt *v);
@@ -168,7 +167,7 @@ HERO_TU_LOCAL h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadintheca
 #line 20 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 HeroStr h_lentarecordisreadinthecallersplace_label(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t1, t2, t3, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_p).f_name; t2 = HERO_STR_LIT(hero_str_3d); t3 = hero_str_concat(t1, t2); t7 = h1_own1; h1_own1 = t3; hero_str_decref(t7); t4 = (*ph0_p).f_x; t5 = hero_int_to_str(t4); t8 = h2_own2; h2_own2 = t5; hero_str_decref(t8); t6 = hero_str_concat(t3, t5); t9 = h3_own3; h3_own3 = t6; hero_str_decref(t9);
-#line 172 "lentarecordisreadinthecallersplace.c"
+#line 171 "lentarecordisreadinthecallersplace.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -179,7 +178,7 @@ HeroStr h_lentarecordisreadinthecallersplace_label(h_lentarecordisreadinthecalle
 #line 23 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 HeroStr h_lentarecordisreadinthecallersplace_via(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_feb75e6); t2 = h_lentarecordisreadinthecallersplace_label(&(*ph0_p)); t4 = h1_own1; h1_own1 = t2; hero_str_decref(t4); t3 = hero_str_concat(t1, t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5);
-#line 183 "lentarecordisreadinthecallersplace.c"
+#line 182 "lentarecordisreadinthecallersplace.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -193,7 +192,7 @@ int64_t h_lentarecordisreadinthecallersplace_depth(h_lentarecordisreadinthecalle
     t5 = h1_k; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.depth", 29, 24); t8 = h_lentarecordisreadinthecallersplace_depth(&(*ph0_p), t7); t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.depth", 29, 12); h2_ret0 = t10; goto bb4; bb2:
 #line 28
     t4 = (*ph0_p).f_x; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 197 "lentarecordisreadinthecallersplace.c"
+#line 196 "lentarecordisreadinthecallersplace.c"
     t11 = h2_ret0;
     return t11;
 }
@@ -202,7 +201,7 @@ int64_t h_lentarecordisreadinthecallersplace_depth(h_lentarecordisreadinthecalle
 HeroStr h_lentarecordisreadinthecallersplace_moved(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, t4, t5; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_p).f_x; t2 = INT64_C(10); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.moved", 32, 11); (*ph0_p).f_x = t3;
     t4 = h_lentarecordisreadinthecallersplace_label(&(*ph0_p)); t5 = h1_own1; h1_own1 = t4; hero_str_decref(t5);
-#line 206 "lentarecordisreadinthecallersplace.c"
+#line 205 "lentarecordisreadinthecallersplace.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     return t4;
@@ -211,7 +210,7 @@ HeroStr h_lentarecordisreadinthecallersplace_moved(h_lentarecordisreadinthecalle
 #line 35 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_keep(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_p);
-#line 215 "lentarecordisreadinthecallersplace.c"
+#line 214 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pt_retain(&t1);
     return t1;
 }
@@ -219,7 +218,7 @@ h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_kee
 #line 38 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 int64_t h_lentarecordisreadinthecallersplace_size(HeroStr *ph0_t) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_t); t2 = hero_str_len(t1); return t2;
-#line 223 "lentarecordisreadinthecallersplace.c"
+#line 222 "lentarecordisreadinthecallersplace.c"
 }
 
 #line 41 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
@@ -232,7 +231,7 @@ int64_t h_lentarecordisreadinthecallersplace_total(HeroArrayHeader * *ph0_xs) { 
     t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 44, 9); h3_i0 = t16; goto bb1; bb4:
 #line 47
     t17 = h1_sum;
-#line 236 "lentarecordisreadinthecallersplace.c"
+#line 235 "lentarecordisreadinthecallersplace.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 }
@@ -240,7 +239,7 @@ int64_t h_lentarecordisreadinthecallersplace_total(HeroArrayHeader * *ph0_xs) { 
 #line 52 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_make(int64_t h0_n) { HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt h1_own1 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = HERO_STR_LIT(hero_str_eb4a4f9); hero_str_incref(t2); t3 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t1, .f_name = t2}; t4 = h1_own1; h1_own1 = t3; h_lentarecordisreadinthecallersplace_0Pt_release(&t4);
-#line 244 "lentarecordisreadinthecallersplace.c"
+#line 243 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pt_retain(&t3);
     h_lentarecordisreadinthecallersplace_0Pt_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -280,7 +279,7 @@ void h_lentarecordisreadinthecallersplace_main(void) { h_lentarecordisreadinthec
     t71 = h_lentarecordisreadinthecallersplace_total(&h14_nums); hero_print_int(t71); hero_print_end();
     t72 = h_lentarecordisreadinthecallersplace_0first_of_1b9a87(&h14_nums); hero_print_int(t72); hero_print_end();
     t73 = h_lentarecordisreadinthecallersplace_0first_of_6c7c2487(&h3_pts); t114 = h40_own40; h40_own40 = t73; h_lentarecordisreadinthecallersplace_0Pt_release(&t114); t74 = t73.f_name; hero_print_str(t74); hero_print_end();
-#line 284 "lentarecordisreadinthecallersplace.c"
+#line 283 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pair_release(hero_slot_escape(&h0_pair));
     h_lentarecordisreadinthecallersplace_0Pt_release(hero_slot_escape(&h1_fixed));
     h_lentarecordisreadinthecallersplace_0Pt_release(hero_slot_escape(&h2_lent0));
@@ -327,13 +326,13 @@ void h_lentarecordisreadinthecallersplace_main(void) { h_lentarecordisreadinthec
 #line 49 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 /* first_of<i64> */ HERO_TU_LOCAL int64_t h_lentarecordisreadinthecallersplace_0first_of_1b9a87(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_xs); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.first_of", 50, 12) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]); return t3;
-#line 331 "lentarecordisreadinthecallersplace.c"
+#line 330 "lentarecordisreadinthecallersplace.c"
 }
 
 #line 49 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
 /* first_of<Pt> */ HERO_TU_LOCAL h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_0first_of_6c7c2487(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_xs); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.first_of", 50, 12) : (void)0), (void)(t1->elem->size != sizeof(h_lentarecordisreadinthecallersplace_Pt) ? hero_unreachable() : (void)0), ((h_lentarecordisreadinthecallersplace_Pt const *)(const void *)(t1 + 1))[t2]);
-#line 337 "lentarecordisreadinthecallersplace.c"
+#line 336 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pt_retain(&t3);
     return t3;
 }
@@ -480,7 +479,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0463ffb528cb9aef", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ab5708b39bdb0e1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lentarecordisreadinthecallersplace\tlent-a-record-is-read-in-the-callers-place\n");

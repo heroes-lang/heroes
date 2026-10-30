@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -95,7 +94,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 99 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 98 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -147,9 +146,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 152 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -178,7 +177,7 @@ int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanit
     t1 = INT64_C(0); h0_n = t1;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero", "fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.lend", 26, 5}; hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n); }
     t2 = h0_n; hero_lend_local_give(hero_lend_h0_n); return t2;
-#line 182 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 181 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 }
 #undef h0_n
 
@@ -192,7 +191,7 @@ int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanit
     t2 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero", "fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.later", 31, 5}; hero_lend_local_name(hero_lend_h0_m, "put_one", "x"); (void)put_one((void *)&h0_m, t2); }
     t3 = INT64_C(77); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero", "fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.later", 32, 5}; (void)cell_write_later(t3); }
     t4 = h0_m; hero_lend_local_give(hero_lend_h0_m); return t4;
-#line 196 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 195 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 }
 #undef h0_m
 
@@ -200,7 +199,7 @@ int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanit
 void h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_lend(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_later(); hero_print_int(t2); hero_print_end(); return;
-#line 204 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 203 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -299,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3421d1654ba9185f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0eecdb8663d2af00", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser\tfixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser\n");

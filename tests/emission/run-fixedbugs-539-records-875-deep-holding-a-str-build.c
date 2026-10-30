@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_3e65, "yz");
 
-#line 57 "fixedbugs539records875deepholdingastrbuild.c"
+#line 56 "fixedbugs539records875deepholdingastrbuild.c"
 typedef struct h_fixedbugs539records875deepholdingastrbuild_R0 {
     HeroStr f_s;
 } h_fixedbugs539records875deepholdingastrbuild_R0;
@@ -4485,9 +4484,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 4491 "fixedbugs539records875deepholdingastrbuild.c"
+#line 4490 "fixedbugs539records875deepholdingastrbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs539records875deepholdingastrbuild_0R0_retain(const h_fixedbugs539records875deepholdingastrbuild_R0 *v);
@@ -8889,7 +8888,7 @@ h_fixedbugs539records875deepholdingastrbuild_R875 h_fixedbugs539records875deepho
     HERO_COPY_HELD(t1749, (h874_v873)); h_fixedbugs539records875deepholdingastrbuild_0R873_retain(&t1749); HERO_COPY_HELD(t1750, ((h_fixedbugs539records875deepholdingastrbuild_R874){.f_inner = t1749})); HERO_COPY_HELD(t3502, (h1751_own1751)); HERO_COPY_HELD(h1751_own1751, (t1750)); h_fixedbugs539records875deepholdingastrbuild_0R874_release(&t3502); HERO_COPY_HELD(t3503, (h875_v874)); h_fixedbugs539records875deepholdingastrbuild_0R874_retain(&t1750); HERO_COPY_HELD(h875_v874, (t1750)); h_fixedbugs539records875deepholdingastrbuild_0R874_release(&t3503);
     HERO_COPY_HELD(t1751, (h875_v874)); h_fixedbugs539records875deepholdingastrbuild_0R874_retain(&t1751); HERO_COPY_HELD(t1752, ((h_fixedbugs539records875deepholdingastrbuild_R875){.f_inner = t1751})); HERO_COPY_HELD(t3504, (h1752_own1752)); HERO_COPY_HELD(h1752_own1752, (t1752)); h_fixedbugs539records875deepholdingastrbuild_0R875_release(&t3504); HERO_COPY_HELD(t3505, (h876_v875)); h_fixedbugs539records875deepholdingastrbuild_0R875_retain(&t1752); HERO_COPY_HELD(h876_v875, (t1752)); h_fixedbugs539records875deepholdingastrbuild_0R875_release(&t3505);
     HERO_COPY_HELD(t1753, (h876_v875));
-#line 8893 "fixedbugs539records875deepholdingastrbuild.c"
+#line 8892 "fixedbugs539records875deepholdingastrbuild.c"
     h_fixedbugs539records875deepholdingastrbuild_0R875_retain(&t1753);
     h_fixedbugs539records875deepholdingastrbuild_0R0_release(hero_slot_escape(&h1_v0));
     h_fixedbugs539records875deepholdingastrbuild_0R1_release(hero_slot_escape(&h2_v1));
@@ -10659,7 +10658,7 @@ void h_fixedbugs539records875deepholdingastrbuild_main(void) { h_fixedbugs539rec
     t6 = h0_kept.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_s;
 #line 3526
     hero_print_str(t6); hero_print_end();
-#line 10663 "fixedbugs539records875deepholdingastrbuild.c"
+#line 10662 "fixedbugs539records875deepholdingastrbuild.c"
     h_fixedbugs539records875deepholdingastrbuild_0R875_release(hero_slot_escape(&h0_kept));
     h_fixedbugs539records875deepholdingastrbuild_0R875_release(hero_slot_escape(&h1_own1));
     h_fixedbugs539records875deepholdingastrbuild_0R875_release(hero_slot_escape(&h2_own2));
@@ -28282,7 +28281,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dbf0edc75439415", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1346e80c6b61683b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs539records875deepholdingastrbuild\tfixedbugs-539-records-875-deep-holding-a-str-build\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
 HERO_STR_STATIC(hero_str_eb4ac31, "mars");
 HERO_STR_STATIC(hero_str_76c1f302, "spiders");
 
-#line 59 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+#line 58 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+#line 96 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -124,7 +123,7 @@ HeroArrayHeader * h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_kee
 #line 23
     t28 = h2_kept; t29 = h0_words; t30 = hero_array_eq(t28, t29);
     t31 = h2_kept; t32 = h3_longest; t33 = hero_array_push(t31, &t32); t39 = h8_own8; h8_own8 = t33; hero_array_decref(t39);
-#line 128 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+#line 127 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
     hero_array_incref(t33);
     hero_array_release_at(&h2_kept);
     hero_str_release_at(&h3_longest);
@@ -140,14 +139,14 @@ bb5:
     t17 = h6_word; hero_array_push_owned(&h2_kept, &t17); goto bb5; bb7: goto bb5; bb8: goto bb3; bb9:
 #line 21
     t24 = h6_word; t40 = h3_longest; hero_str_incref(t24); h3_longest = t24; hero_str_decref(t40); goto bb8; bb10: goto bb8;
-#line 144 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+#line 143 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
 }
 
 #line 26 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
 void h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_main(void) { HeroArrayHeader * h0_got = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t4, *t6, *t7, *t9, *t10, *t11; HERO_NODEBUG HeroStr t1, t2, t3; HERO_NODEBUG int64_t t5, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = HERO_STR_LIT(hero_str_eb4ac31); t3 = HERO_STR_LIT(hero_str_76c1f302); t4 = hero_array_new(&hero_desc_str, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t9 = h1_own1; h1_own1 = t4; hero_array_decref(t9); t5 = INT64_C(5); t6 = h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_keep(t4, t5); t10 = h2_own2; h2_own2 = t6; hero_array_decref(t10); t11 = h0_got; hero_array_incref(t6); h0_got = t6; hero_array_decref(t11);
     t7 = h0_got; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); hero_print_int(t8); hero_print_end();
-#line 151 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+#line 150 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
     hero_array_release_at(&h0_got);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -250,7 +249,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b7881fc09c82bef", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("687216f16fac96ba", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2050hiddendeclarationsofonespellingshareonemark\tfixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark\n");

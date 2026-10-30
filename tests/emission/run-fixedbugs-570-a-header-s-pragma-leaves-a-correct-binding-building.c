@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,7 +97,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
+#line 101 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,9 +148,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
+#line 154 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_0A_eq(struct a * const *a, struct a * const *b);
@@ -175,7 +174,7 @@ void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void);
 void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void) { HERO_NODEBUG int32_t t1, t2, t4; HERO_NODEBUG struct a *t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero", "fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.main", 13, 11}; t2 = abs(t1); } hero_print_int(t2); hero_print_end();
     t3 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero", "fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.main", 14, 11}; hero_handle_alive_at(t3, "the argument `p` of `take_a`", &hero_here); t4 = take_a(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 179 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
+#line 178 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_0A_eq(struct a * const *a, struct a * const *b) {
     return hero_handle_eq(*a, *b);
@@ -285,7 +284,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("112a1a9622417601", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e23af8a0825e0cd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs570aheaderspragmaleavesacorrectbindingbuilding\tfixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building\n");

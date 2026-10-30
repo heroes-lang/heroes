@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -59,7 +58,7 @@
 #pragma pop_macro("b")
 #pragma pop_macro("s")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -74,7 +73,7 @@ _Static_assert(_Generic(&((Inner *)0)->s, Slot * *: 1, default: 0) && sizeof(((I
 #line 24
 _Static_assert(_Generic(&((Pair *)0)->a, Inner *: 1, default: 0) && sizeof(((Pair *)0)->a) == sizeof(Inner), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((Pair *)0)->b, Inner *: 1, default: 0) && sizeof(((Pair *)0)->b) == sizeof(Inner), "heroes-ffi-field Pair b");
-#line 78 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 77 "fixedbugstheunacquiredsiblingleaksloudly.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -168,9 +167,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 174 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 173 "fixedbugstheunacquiredsiblingleaksloudly.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_0Slot_eq(Slot * const *a, Slot * const *b);
@@ -209,7 +208,7 @@ void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) { Pair h0_p; HERO_NOD
 #line 35
     t8 = h0_p.a.s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-the-unacquired-sibling-leaks-loudly.hero", "fixedbugs-the-unacquired-sibling-leaks-loudly.main", 35, 5}; { hero_handle_alive_at(t8, "the argument `s` of `slot_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "slot_close", NULL, &hero_here); (void)slot_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_p.a.s == t8) h0_p.a.s = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_38da945e); hero_print_str(t9); hero_print_end(); return;
-#line 213 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 212 "fixedbugstheunacquiredsiblingleaksloudly.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_0Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
@@ -345,7 +344,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("038dc11c4f0b004b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("496f1baa2e84a2f7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugstheunacquiredsiblingleaksloudly\tfixedbugs-the-unacquired-sibling-leaks-loudly\n");

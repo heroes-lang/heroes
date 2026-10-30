@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placealibraryfunctionstandsasavalue.c"
+#line 53 "placealibraryfunctionstandsasavalue.c"
 typedef HeroArrayHeader * (*h_0fn_60b7da88)(int64_t, int64_t);
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef HeroArrayHeader * (*h_0fn_59e11ce6)(HeroArrayHeader *, h_0fn_48ac9712);
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "placealibraryfunctionstandsasavalue.c"
+#line 95 "placealibraryfunctionstandsasavalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -120,7 +119,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
 #line 7 "tests/golden/run/place-a-library-function-stands-as-a-value.hero"
 int64_t h_placealibraryfunctionstandsasavalue_apply(h_0fn_60b7da88 h0_f) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t6; HERO_NODEBUG h_0fn_60b7da88 t1; HERO_NODEBUG int64_t t2, t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = INT64_C(0); t3 = INT64_C(3); t4 = t1(t2, t3); t6 = h1_own1; h1_own1 = t4; hero_array_decref(t6); t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 124 "placealibraryfunctionstandsasavalue.c"
+#line 123 "placealibraryfunctionstandsasavalue.c"
     hero_array_release_at(&h1_own1);
     return t5;
 }
@@ -128,13 +127,13 @@ int64_t h_placealibraryfunctionstandsasavalue_apply(h_0fn_60b7da88 h0_f) { HERO_
 #line 10 "tests/golden/run/place-a-library-function-stands-as-a-value.hero"
 int64_t h_placealibraryfunctionstandsasavalue_double(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("place-a-library-function-stands-as-a-value.hero", "place-a-library-function-stands-as-a-value.double", 11, 12); return t3;
-#line 132 "placealibraryfunctionstandsasavalue.c"
+#line 131 "placealibraryfunctionstandsasavalue.c"
 }
 
 #line 13 "tests/golden/run/place-a-library-function-stands-as-a-value.hero"
 int64_t h_placealibraryfunctionstandsasavalue_over(HeroArrayHeader * h0_xs, h_0fn_59e11ce6 h1_g) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t2, *t4, *t6; HERO_NODEBUG h_0fn_59e11ce6 t1; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_g; t2 = h0_xs; t3 = h_placealibraryfunctionstandsasavalue_double; t4 = t1(t2, t3); t6 = h2_own2; h2_own2 = t4; hero_array_decref(t6); t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 138 "placealibraryfunctionstandsasavalue.c"
+#line 137 "placealibraryfunctionstandsasavalue.c"
     hero_array_release_at(&h2_own2);
     return t5;
 }
@@ -145,7 +144,7 @@ void h_placealibraryfunctionstandsasavalue_main(void) { HERO_NODEBUG HeroArrayHe
     t5 = hero_value_h_library_range; t6 = h_placealibraryfunctionstandsasavalue_apply(t5); hero_print_int(t6); hero_print_end();
     t7 = INT64_C(1); t8 = INT64_C(2); t9 = INT64_C(3); t10 = INT64_C(4); t11 = hero_array_new(&hero_desc_int, 4); hero_array_push_owned(&t11, &t7); hero_array_push_owned(&t11, &t8); hero_array_push_owned(&t11, &t9); hero_array_push_owned(&t11, &t10); t22 = h1_own1; h1_own1 = t11; hero_array_decref(t22); t12 = hero_value_h_library_0map_37f8817a; t13 = h_placealibraryfunctionstandsasavalue_over(t11, t12); hero_print_int(t13); hero_print_end();
     t14 = INT64_C(1); t15 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-library-function-stands-as-a-value.hero", "place-a-library-function-stands-as-a-value.main", 20, 15}; t16 = h_library_range(t14, t15, &hero_here); } t23 = h2_own2; h2_own2 = t16; hero_array_decref(t23); t17 = h_placealibraryfunctionstandsasavalue_double; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-library-function-stands-as-a-value.hero", "place-a-library-function-stands-as-a-value.main", 20, 11}; t18 = h_library_0map_37f8817a(t16, t17, &hero_here); } t24 = h3_own3; h3_own3 = t18; hero_array_decref(t24); t19 = INT64_C(2); t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? hero_panic_index_at(t18, t19, "place-a-library-function-stands-as-a-value.hero", "place-a-library-function-stands-as-a-value.main", 20, 11) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]); hero_print_int(t20); hero_print_end();
-#line 149 "placealibraryfunctionstandsasavalue.c"
+#line 148 "placealibraryfunctionstandsasavalue.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -161,7 +160,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 165 "placealibraryfunctionstandsasavalue.c"
+#line 164 "placealibraryfunctionstandsasavalue.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -181,7 +180,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 185 "placealibraryfunctionstandsasavalue.c"
+#line 184 "placealibraryfunctionstandsasavalue.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -289,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("551ccb411059ee34", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b6e3c18214c0426", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placealibraryfunctionstandsasavalue\tplace-a-library-function-stands-as-a-value\n");

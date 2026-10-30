@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
+#line 53 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
 typedef struct h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point {
     int64_t f_x;
 } h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point;
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
+#line 95 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_0Point_eq(const h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point *a, const h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point *b);
@@ -134,13 +133,13 @@ void h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_main(void);
 #line 13 "tests/golden/run/fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero"
 int64_t h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point_eq(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero", "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.Point_eq", 14, 12); return t3;
-#line 138 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
+#line 137 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero"
 int64_t h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point_desc(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); return t1;
-#line 144 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
+#line 143 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero"
@@ -148,7 +147,7 @@ void h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_main(void) {
     t1 = INT64_C(1); t2 = (h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point){.f_x = t1}; t3 = INT64_C(2); t4 = (h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point){.f_x = t3}; t5 = hero_array_new(&h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_0Point_desc, 2); hero_array_push_owned(&t5, &t2); hero_array_push_owned(&t5, &t4); t20 = h1_own1; h1_own1 = t5; hero_array_decref(t20); t21 = h0_points; hero_array_incref(t5); h0_points = t5; hero_array_decref(t21);
     t6 = h0_points; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero", "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.main", 21, 11) : (void)0), (void)(t6->elem->size != sizeof(h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point) ? hero_unreachable() : (void)0), ((h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point const *)(const void *)(t6 + 1))[t7]); t9 = h0_points; t10 = INT64_C(1); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero", "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.main", 21, 24) : (void)0), (void)(t9->elem->size != sizeof(h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point) ? hero_unreachable() : (void)0), ((h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point const *)(const void *)(t9 + 1))[t10]); t12 = h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_0Point_eq(&t8, &t11); hero_print_bool(t12); hero_print_end();
     t13 = INT64_C(1); t14 = h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point_eq(t13); t15 = h_fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds_Point_desc(); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero", "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.main", 22, 11); t17 = h0_points; t18 = ((void)(t17 == NULL ? ((void)hero_array_len(t17), hero_unreachable()) : (void)0), t17->len); if (__builtin_add_overflow(t16, t18, &t19)) hero_panic_overflow_at("fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.hero", "fixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds.main", 22, 11); hero_print_int(t19); hero_print_end();
-#line 152 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
+#line 151 "fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds.c"
     hero_array_release_at(&h0_points);
     hero_array_release_at(&h1_own1);
     return;
@@ -262,7 +261,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("42f8842c6ae9b523", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("272ef28d16f364b7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2234afunctionnamedasthecompilernamesatypesownbuilds\tfixedbugs-2234-a-function-named-as-the-compiler-names-a-type-s-own-builds\n");

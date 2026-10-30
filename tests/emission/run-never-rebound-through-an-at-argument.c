@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "neverreboundthroughanatargument.c"
+#line 53 "neverreboundthroughanatargument.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "neverreboundthroughanatargument.c"
+#line 91 "neverreboundthroughanatargument.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -110,7 +109,7 @@ void h_neverreboundthroughanatargument_main(void);
 #line 5 "tests/golden/run/never-rebound-through-an-at-argument.hero"
 void h_neverreboundthroughanatargument_bump(int64_t *ph0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("never-rebound-through-an-at-argument.hero", "never-rebound-through-an-at-argument.bump", 6, 9); (*ph0_n) = t3; return;
-#line 114 "neverreboundthroughanatargument.c"
+#line 113 "neverreboundthroughanatargument.c"
 }
 
 #line 8 "tests/golden/run/never-rebound-through-an-at-argument.hero"
@@ -118,7 +117,7 @@ void h_neverreboundthroughanatargument_main(void) { int64_t h0_v; HERO_NODEBUG i
     t1 = INT64_C(5); h0_v = t1;
     h_neverreboundthroughanatargument_bump(&h0_v);
     t2 = h0_v; hero_print_int(t2); hero_print_end(); return;
-#line 122 "neverreboundthroughanatargument.c"
+#line 121 "neverreboundthroughanatargument.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -217,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c18f22566705c68", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3eeeb2002f5cd015", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("neverreboundthroughanatargument\tnever-rebound-through-an-at-argument\n");

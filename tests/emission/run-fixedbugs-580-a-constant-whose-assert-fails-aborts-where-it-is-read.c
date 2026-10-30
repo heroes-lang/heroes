@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_5e45c63d, "1 == 2");
 
-#line 56 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
+#line 55 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
+#line 93 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,7 +112,7 @@ void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void);
 int64_t h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t5; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5e45c63d); t2 = INT64_C(1); t3 = INT64_C(2); t4 = t2 == t3; if (t4) goto bb1; else goto bb2; bb1:
     t5 = INT64_C(5); return t5; bb2:
-#line 117 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
+#line 116 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
     hero_panic_assert_shown_at(t1, hero_show_i64, &t2, &t3, 1, "fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero", "fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.V", 7, 12);
     hero_unreachable();
 }
@@ -122,7 +121,7 @@ int64_t h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(void) { HER
 void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(); hero_print_int(t2); hero_print_end(); return;
-#line 126 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
+#line 125 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -221,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b8552821bfb99c0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c605a763ffc7071", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs580aconstantwhoseassertfailsabortswhereitisread\tfixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read\n");

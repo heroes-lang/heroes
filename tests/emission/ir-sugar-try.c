@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7ba188c6, "empty");
 HERO_STR_STATIC(hero_str_6105f16d, "no first element");
 
-#line 57 "sugartry.c"
+#line 56 "sugartry.c"
 typedef struct h_sugartry_Reader {
     int64_t f_pos;
 } h_sugartry_Reader;
@@ -93,9 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "sugartry.c"
+#line 98 "sugartry.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_sugartry_0Reader_eq(const h_sugartry_Reader *a, const h_sugartry_Reader *b);
@@ -123,7 +122,7 @@ h_0opt_e201354 h_sugartry_first_of(HeroArrayHeader * h0_xs) { HERO_NODEBUG h_0op
     t8 = h0_xs; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "sugar-try.hero", "sugar-try.first_of", 10, 15) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t10}; t13 = h2_own2; h2_own2 = t11; h_0opt_e201354_release(&t13); h1_ret0 = t11; goto bb4; bb2:
 #line 9
     t5 = HERO_STR_LIT(hero_str_7ba188c6); t6 = HERO_STR_LIT(hero_str_6105f16d); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t14 = h3_own3; h3_own3 = t7; h_0opt_e201354_release(&t14); h1_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
-#line 127 "sugartry.c"
+#line 126 "sugartry.c"
     t12 = h1_ret0;
     h_0opt_e201354_retain(&t12);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -138,7 +137,7 @@ h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs
     t15 = h3_v; t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15}; t20 = h6_own6; h6_own6 = t16; h_0opt_e201354_release(&t20); h4_ret0 = t16; goto bb3; bb2:
 #line 13
     t7 = h2_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t21 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t21); h4_ret0 = t9; goto bb3; bb3:
-#line 142 "sugartry.c"
+#line 141 "sugartry.c"
     t17 = h4_ret0;
     h_0opt_e201354_retain(&t17);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));

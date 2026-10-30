@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_3289, "bc");
 
-#line 60 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 59 "fixedbugs389everyarrayreadshapereadsinplace.c"
 typedef struct h_fixedbugs389everyarrayreadshapereadsinplace_Bag {
     HeroArrayHeader * f_items;
     HeroStr f_name;
@@ -97,9 +96,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 103 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 102 "fixedbugs389everyarrayreadshapereadsinplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs389everyarrayreadshapereadsinplace_0Bag_retain(const h_fixedbugs389everyarrayreadshapereadsinplace_Bag *v);
@@ -126,7 +125,7 @@ void h_fixedbugs389everyarrayreadshapereadsinplace_main(void);
 #line 13 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 void h_fixedbugs389everyarrayreadshapereadsinplace_bump(int64_t *ph0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-389-every-array-read-shape-reads-in-place.hero", "fixedbugs-389-every-array-read-shape-reads-in-place.bump", 14, 9); (*ph0_n) = t3; return;
-#line 130 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 129 "fixedbugs389everyarrayreadshapereadsinplace.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
@@ -139,7 +138,7 @@ int64_t h_fixedbugs389everyarrayreadshapereadsinplace_total(HeroArrayHeader * h0
     t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-389-every-array-read-shape-reads-in-place.hero", "fixedbugs-389-every-array-read-shape-reads-in-place.total", 19, 9); h3_i0 = t16; goto bb1; bb4:
 #line 22
     t17 = h1_sum;
-#line 143 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 142 "fixedbugs389everyarrayreadshapereadsinplace.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 }
@@ -170,7 +169,7 @@ void h_fixedbugs389everyarrayreadshapereadsinplace_main(void) { HeroArrayHeader 
     t67 = h5_small; t68 = INT64_C(0); t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? hero_panic_index_at(t67, t68, "fixedbugs-389-every-array-read-shape-reads-in-place.hero", "fixedbugs-389-every-array-read-shape-reads-in-place.main", 52, 11) : (void)0), (void)(t67->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t67 + 1))[t68]); hero_print_int(t69); hero_print_end();
     t70 = hero_array_new(&hero_desc_int, 1); t88 = h16_own16; h16_own16 = t70; hero_array_decref(t88); t89 = h6_empty; hero_array_incref(t70); h6_empty = t70; hero_array_decref(t89);
     t71 = h6_empty; t72 = ((void)(t71 == NULL ? ((void)hero_array_len(t71), hero_unreachable()) : (void)0), t71->len); hero_print_int(t72); hero_print_end();
-#line 174 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 173 "fixedbugs389everyarrayreadshapereadsinplace.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_grid);
     h_fixedbugs389everyarrayreadshapereadsinplace_0Bag_release(hero_slot_escape(&h2_bag));
@@ -192,7 +191,7 @@ void h_fixedbugs389everyarrayreadshapereadsinplace_main(void) { HeroArrayHeader 
 bb2:
 #line 31 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t17 = HERO_STR_LIT(hero_str_79718c63); hero_print_str(t17); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 196 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 195 "fixedbugs389everyarrayreadshapereadsinplace.c"
 }
 HERO_TU_LOCAL void h_fixedbugs389everyarrayreadshapereadsinplace_0Bag_retain(const h_fixedbugs389everyarrayreadshapereadsinplace_Bag *v) {
     hero_array_incref(v->f_items);
@@ -315,7 +314,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ae568347f7bfcbc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bda37d611c4a828", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs389everyarrayreadshapereadsinplace\tfixedbugs-389-every-array-read-shape-reads-in-place\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 53 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 91 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,13 +114,13 @@ HERO_TU_LOCAL uint8_t h_fixedbugs564theoperandsofanoperatortakethetypeitspositio
 #line 24 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_show(uint8_t h0_v) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; hero_print_int(t1); hero_print_end(); return;
-#line 119 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 118 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_wide(float h0_v) { HERO_NODEBUG float t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; hero_print_f32(t1); hero_print_end(); return;
-#line 125 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 124 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
@@ -145,7 +144,7 @@ void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_annotated(v
     t48 = h6_xs; t49 = ((void)(t48 == NULL ? ((void)hero_array_len(t48), hero_unreachable()) : (void)0), t48->len); hero_print_int(t49); hero_print_end();
     t50 = UINT64_C(18446744073709551615); t51 = UINT64_C(1); if (__builtin_sub_overflow(t50, t51, &t52)) hero_panic_overflow_at("fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.annotated", 48, 16); h7_top = t52;
     t53 = h7_top; hero_print_uint(t53); hero_print_end();
-#line 149 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 148 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
     hero_array_release_at(&h6_xs);
     hero_array_release_at(&h8_own8);
     return;
@@ -184,7 +183,7 @@ void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_branches(vo
     t17 = UINT64_C(4); t18 = UINT64_C(1); if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow_at("fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.branches", 63, 14);
 #line 61
     h5_r1 = t19; goto bb4;
-#line 188 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 187 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 67 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
@@ -195,7 +194,7 @@ void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_beside(void
     t12 = UINT64_C(1); t13 = UINT64_C(2); t14 = h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_0first_3c17(t12, t13); t15 = h0_b8; t16 = t14 == t15; hero_print_bool(t16); hero_print_end();
     t17 = h0_b8; t18 = UINT64_C(2); t19 = UINT64_C(3); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.beside", 72, 17); if (__builtin_add_overflow(t17, t20, &t21)) hero_panic_overflow_at("fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.beside", 72, 11); hero_print_int(t21); hero_print_end();
     t22 = UINT64_C(2); t23 = UINT64_C(3); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.beside", 73, 12); t25 = h0_b8; if (__builtin_mul_overflow(t24, t25, &t26)) hero_panic_overflow_at("fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.beside", 73, 11); hero_print_int(t26); hero_print_end(); return;
-#line 199 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 198 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 75 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
@@ -203,14 +202,14 @@ void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_main(void) 
     h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_annotated();
     h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_branches();
     h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_beside(); return;
-#line 207 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 206 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 /* first<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_0first_3c17(uint8_t h0_a, uint8_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero", "fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t4 + 1))[t5]);
-#line 214 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 213 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
@@ -312,7 +311,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("702299e704542859", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("54590848305dd7ec", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs564theoperandsofanoperatortakethetypeitspositionasks\tfixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks\n");

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,7 +59,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 30 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 _Static_assert(__builtin_classify_type(((Handle *)0)->pMethods) == 5 && _Generic(((Handle *)0)->pMethods, __typeof__(((Handle *)0)->pMethods): 1, default: 0) && sizeof(((Handle *)0)->pMethods) == sizeof(void *), "heroes-ffi-field Handle pMethods");
 _Static_assert(__builtin_classify_type(((Handle *)0)->id) == 1 && sizeof(((Handle *)0)->id) == sizeof(int32_t) && (_Generic(((Handle *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Handle id");
-#line 64 "fficonstpointer.c"
+#line 63 "fficonstpointer.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,9 +154,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fficonstpointer.c"
+#line 160 "fficonstpointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fficonstpointer_0Handle_eq(const Handle *a, const Handle *b);
@@ -198,7 +197,7 @@ void h_fficonstpointer_main(void) { Handle h0_h; void * h1_p; HERO_NODEBUG h_0op
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-const-pointer.hero", "ffi-const-pointer.main", 43, 11}; t21 = (const char *)get_name(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-const-pointer.hero", "ffi-const-pointer.main", 43, 11}; t22 = h_library_validated(t21, &hero_here); } t43 = h7_own7; h7_own7 = t22; h_0opt_f87774a_release(&t43); t44 = h4_f1; h_0opt_f87774a_retain(&t22); h4_f1 = t22; h_0opt_f87774a_release(&t44); t23 = h4_f1; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb3; else goto bb4; bb2:
 #line 40
     t13 = h2_f0; t14 = t13.as.err;
-#line 202 "fficonstpointer.c"
+#line 201 "fficonstpointer.c"
     hero_panic_must_at(t14, "ffi-const-pointer.hero", "ffi-const-pointer.main", 40, 30);
     hero_unreachable();
 bb3:
@@ -207,13 +206,13 @@ bb3:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-const-pointer.hero", "ffi-const-pointer.main", 44, 11}; t31 = (const char *)get_utext(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-const-pointer.hero", "ffi-const-pointer.main", 44, 11}; t32 = h_library_validated(t31, &hero_here); } t45 = h8_own8; h8_own8 = t32; h_0opt_f87774a_release(&t45); t46 = h5_f2; h_0opt_f87774a_retain(&t32); h5_f2 = t32; h_0opt_f87774a_release(&t46); t33 = h5_f2; t34 = t33.tag; t35 = INT64_C(0); t36 = t34 == t35; if (t36) goto bb5; else goto bb6; bb4:
 #line 43
     t27 = h4_f1; t28 = t27.as.err;
-#line 211 "fficonstpointer.c"
+#line 210 "fficonstpointer.c"
     hero_panic_must_at(t28, "ffi-const-pointer.hero", "ffi-const-pointer.main", 43, 11);
     hero_unreachable();
 bb5:
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t39 = h5_f2; t40 = t39.as.ok; hero_print_str(t40); hero_print_end();
-#line 217 "fficonstpointer.c"
+#line 216 "fficonstpointer.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h5_f2));
@@ -224,34 +223,34 @@ bb5:
 bb6:
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t37 = h5_f2; t38 = t37.as.err;
-#line 228 "fficonstpointer.c"
+#line 227 "fficonstpointer.c"
     hero_panic_must_at(t38, "ffi-const-pointer.hero", "ffi-const-pointer.main", 44, 11);
     hero_unreachable();
 }
 
-#line 123 "<heroes library>"
+#line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 235 "fficonstpointer.c"
+#line 234 "fficonstpointer.c"
 }
 
-#line 153 "<heroes library>"
+#line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
-#line 153
+#line 152
 #define h1_status (*hero_lend_h1_status)
-#line 153
+#line 152
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 156
+#line 155
     t7 = INT64_C(0); h1_status = t7;
     t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
-#line 155
+#line 154
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
-#line 160
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 255 "fficonstpointer.c"
+#line 254 "fficonstpointer.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -264,7 +263,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 }
 #undef h1_status
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 HERO_TU_LOCAL bool h_fficonstpointer_0Handle_eq(const Handle *a, const Handle *b) {
@@ -378,7 +377,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e0f9c03145b64d0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f70f93f27e0a869", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficonstpointer\tffi-const-pointer\n");

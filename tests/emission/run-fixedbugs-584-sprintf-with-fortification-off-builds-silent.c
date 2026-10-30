@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -97,7 +96,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_511b6db, "%lld");
 
-#line 101 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 100 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
 typedef struct h_0opt_fbbb698 {
     int64_t tag;
     union {
@@ -157,9 +156,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 162 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
@@ -187,14 +186,14 @@ void h_fixedbugs584sprintfwithfortificationoffbuildssilent_main(void) { HERO_NOD
     t12 = h1_p; t13 = HERO_STR_LIT(hero_str_511b6db); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero", "fixedbugs-584-sprintf-with-fortification-off-builds-silent.main", 22, 20}; t14 = hero_str_lend_at(t13, &hero_here); } t15 = INT64_C(42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero", "fixedbugs-584-sprintf-with-fortification-off-builds-silent.main", 22, 9}; t16 = sprintf(t12, hero_cstr_nonnull_at(t14, &hero_here), t15); } h2_k = t16;
     t17 = h2_k; hero_print_int(t17); hero_print_end();
     t18 = h1_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero", "fixedbugs-584-sprintf-with-fortification-off-builds-silent.main", 24, 5}; (void)free(t18); }
-#line 191 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 190 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
     return;
 bb2:
 #line 21 "tests/golden/run/fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero"
     t7 = h0_f0; t8 = t7.as.err;
-#line 198 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 197 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
     hero_panic_must_at(t8, "fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero", "fixedbugs-584-sprintf-with-fortification-off-builds-silent.main", 21, 16);
     hero_unreachable();
 }
@@ -327,7 +326,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ca34cba6b557440", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("25c3b3e1044d29d5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs584sprintfwithfortificationoffbuildssilent\tfixedbugs-584-sprintf-with-fortification-off-builds-silent\n");

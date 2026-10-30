@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -95,7 +94,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 99 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 98 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
 typedef struct h_fixedbugs582pair_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -173,9 +172,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 179 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 178 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582pair_0Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
@@ -210,25 +209,25 @@ void h_fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout_main(
     t1 = INT64_C(-123456789); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout.hero", "fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout.main", 21, 19}; t2 = llabs(t1); } t3 = h_fixedbugs582pair_make(t2); h0_p = t3;
     t4 = h0_p.f_b; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p; t7 = h_fixedbugs582pair_second(t6); t8 = HERO_STR_LIT(hero_str_20); t9 = UINT64_C(2); t10 = INT64_C(-987654321); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout.hero", "fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout.main", 22, 73}; t11 = llabs(t10); } t12 = (h_fixedbugs582pair_Pair){.f_a = t9, .f_b = t11}; t13 = h_fixedbugs582pair_second(t12); hero_print_int(t4); hero_print_str(t5); hero_print_int(t7); hero_print_str(t8); hero_print_int(t13); hero_print_end();
     t14 = INT64_C(-7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout.hero", "fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout.main", 23, 32}; t15 = llabs(t14); } t16 = h_fixedbugs582pair_shape(t15); t17 = h_fixedbugs582pair_area(t16); hero_print_int(t17); hero_print_end(); return;
-#line 214 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 213 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) { HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); t2 = h0_n; t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2}; return t3;
-#line 220 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 219 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p.f_b; return t1;
-#line 226 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 225 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h0_n; t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_0Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}}; return t3;
-#line 232 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 231 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
@@ -239,7 +238,7 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) { HERO_NODEBUG h_
     t17 = h1_s0; t18 = t17.as.c_rect; h4_r = t18; t19 = h4_r.f_w; t20 = h4_r.f_h; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs582/pair.hero", "pair.area", 30, 27); h5_ret0 = t21; goto bb7; bb5:
 #line 29
     t15 = h3_f0; t16 = t15.as.ok; h5_ret0 = t16; goto bb7; bb6: t13 = h3_f0; t14 = t13.as.err;
-#line 243 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
+#line 242 "fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout.c"
     hero_panic_must_at(t14, "fixedbugs582/pair.hero", "pair.area", 29, 27);
     hero_unreachable();
 bb7:
@@ -407,7 +406,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("46ff42fd463719b0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("48a778326da4be48", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout\tfixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout\nfixedbugs582pair\tpair\n");

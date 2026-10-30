@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 56 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 55 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
 typedef struct h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node {
     int64_t f_label;
     HeroArrayHeader * f_children;
@@ -105,9 +104,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 110 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_retain(const h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node *v);
@@ -185,7 +184,7 @@ h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node h_fixedbugsadeepvaluerelease
     t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-a-deep-value-released-without-a-deep-stack.hero", "fixedbugs-a-deep-value-released-without-a-deep-stack.deep", 51, 13); h2_i = t14; goto bb1; bb3:
 #line 53
     t15 = h1_out;
-#line 189 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 188 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_retain(&t15);
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_release(hero_slot_escape(&h1_out));
     hero_array_release_at(&h3_own3);
@@ -207,7 +206,7 @@ h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer h_fixedbugsadeepvaluereleas
     t13 = h2_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-a-deep-value-released-without-a-deep-stack.hero", "fixedbugs-a-deep-value-released-without-a-deep-stack.alternating", 63, 13); h2_i = t15; goto bb1; bb3:
 #line 65
     t16 = h1_out;
-#line 211 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 210 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Layer_retain(&t16);
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Layer_release(hero_slot_escape(&h1_out));
     hero_map_release_at(&h3_inner);
@@ -230,7 +229,7 @@ void h_fixedbugsadeepvaluereleasedwithoutadeepstack_main(void) { h_fixedbugsadee
 #line 82
     t8 = INT64_C(3); t9 = h_fixedbugsadeepvaluereleasedwithoutadeepstack_deep(t8); t18 = h5_own5; h5_own5 = t9; h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_release(&t18); t19 = h2_c; h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_retain(&t9); h2_c = t9; h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_release(&t19);
     t10 = h2_c.f_label; t11 = HERO_STR_LIT(hero_str_20); t12 = h2_c.f_children; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); hero_print_int(t10); hero_print_str(t11); hero_print_int(t13); hero_print_end();
-#line 234 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 233 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_release(hero_slot_escape(&h0_a));
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Layer_release(hero_slot_escape(&h1_b));
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_0Node_release(hero_slot_escape(&h2_c));
@@ -410,7 +409,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b7fe8251669b030", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0536d4083b9f8fa6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadeepvaluereleasedwithoutadeepstack\tfixedbugs-a-deep-value-released-without-a-deep-stack\n");

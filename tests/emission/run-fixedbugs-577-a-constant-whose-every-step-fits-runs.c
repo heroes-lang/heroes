@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 53 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 91 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -124,25 +123,25 @@ void h_fixedbugs577aconstantwhoseeverystepfitsruns_main(void);
 #line 12 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_A(void) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(200); return t1;
-#line 128 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 127 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_B(void) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_A(); t2 = UINT64_C(55); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.B", 16, 5); return t3;
-#line 134 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 133 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_C11(void) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_B(); t2 = h_fixedbugs577aconstantwhoseeverystepfitsruns_A(); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.C11", 19, 5); return t3;
-#line 140 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 139 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_C23(void) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(200); t2 = UINT64_C(50); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.C23", 22, 5); return t3;
-#line 146 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 145 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
@@ -155,7 +154,7 @@ uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_LOOPED(void) { uint8_t h0_
     t9 = h1_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.LOOPED", 30, 13); h1_i = t11; goto bb1; bb3:
 #line 32
     t12 = h0_v; return t12;
-#line 159 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 158 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
@@ -168,7 +167,7 @@ uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_UNTOUCHED(void) { uint8_t 
 #line 41
     t7 = UINT64_C(0); h0_v = t7;
     t8 = h0_v; t9 = UINT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.UNTOUCHED", 42, 5); return t10;
-#line 172 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 171 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 44 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
@@ -182,7 +181,7 @@ uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_CHOSEN(void) { uint8_t h0_
     t5 = UINT64_C(0); h0_v = t5; goto bb1; bb3:
 #line 50
     t6 = UINT64_C(1); h0_v = t6; goto bb1;
-#line 186 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 185 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
@@ -204,49 +203,49 @@ uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_ARMED(void) { uint8_t h0_v
     t8 = UINT64_C(2);
 #line 57
     h2_r0 = t8; goto bb1;
-#line 208 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 207 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 65 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint16_t h_fixedbugs577aconstantwhoseeverystepfitsruns_W16(void) { HERO_NODEBUG uint16_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(65535); t2 = UINT64_C(0); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.W16", 66, 5); return t3;
-#line 214 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 213 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 68 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int32_t h_fixedbugs577aconstantwhoseeverystepfitsruns_N32(void) { HERO_NODEBUG int32_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-2147483648); t2 = INT64_C(0); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.N32", 69, 5); return t3;
-#line 220 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 219 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 71 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_CHAR(void) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(97); t2 = UINT64_C(158); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.CHAR", 72, 5); return t3;
-#line 226 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 225 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 74 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_MIN64(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_MIN; t2 = INT64_C(1); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.MIN64", 75, 5); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.MIN64", 75, 5); t3 = t1 / t2; return t3;
-#line 232 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 231 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 77 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_MASK(void) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = ~t1; t3 = INT64_C(255); t4 = t2 & t3; return t4;
-#line 238 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 237 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 80 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_TOP(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(63); if (t2 < 0 || t2 > 63) hero_panic_at("shift count outside 0..63", "fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.TOP", 81, 5); t3 = (int64_t)((uint64_t)t1 << (uint64_t)t2); return t3;
-#line 244 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 243 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 83 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_BACK(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_TOP(); t2 = INT64_C(63); if (t2 < 0 || t2 > 63) hero_panic_at("shift count outside 0..63", "fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.BACK", 84, 5); t3 = (t1 < 0) ? ~(int64_t)((~(uint64_t)t1) >> (uint64_t)t2) : (int64_t)((uint64_t)t1 >> (uint64_t)t2); return t3;
-#line 250 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 249 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 
 #line 86 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
@@ -273,7 +272,7 @@ void h_fixedbugs577aconstantwhoseeverystepfitsruns_main(void) { uint8_t h0_y; HE
 #line 103
     t17 = h0_y; t18 = UINT64_C(200); t19 = UINT64_C(100); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-577-a-constant-whose-every-step-fits-runs.hero", "fixedbugs-577-a-constant-whose-every-step-fits-runs.main", 103, 22); t21 = t17 == t20; h1_b0 = t21; goto bb3; bb3: t22 = h1_b0; if (t22) goto bb4; else goto bb5; bb4:
     t23 = INT64_C(9); hero_print_int(t23); hero_print_end(); goto bb1; bb5: goto bb1;
-#line 277 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
+#line 276 "fixedbugs577aconstantwhoseeverystepfitsruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -372,7 +371,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21f264785159efa6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("12e7341a63a29b11", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs577aconstantwhoseeverystepfitsruns\tfixedbugs-577-a-constant-whose-every-step-fits-runs\n");

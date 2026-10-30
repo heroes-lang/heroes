@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "adversarialdivergingarms.c"
+#line 53 "adversarialdivergingarms.c"
 typedef enum h_adversarialdivergingarms_0Step_tag {
     h_adversarialdivergingarms_0Step_tag_stop = 0,
     h_adversarialdivergingarms_0Step_tag_skip = 1,
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "adversarialdivergingarms.c"
+#line 100 "adversarialdivergingarms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_adversarialdivergingarms_0Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b);
@@ -127,7 +126,7 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) { int64_t h1_se
     t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("adversarial-diverging-arms.hero", "adversarial-diverging-arms.walk", 14, 9); h3_i0 = t16; goto bb1; bb4:
 #line 21
     t17 = h1_seen;
-#line 131 "adversarialdivergingarms.c"
+#line 130 "adversarialdivergingarms.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 bb6:

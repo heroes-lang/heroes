@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 53 "fixedbugsafieldwinsthedotoverafreefunction.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Holder {
     int64_t f_tag;
@@ -108,9 +107,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 113 "fixedbugsafieldwinsthedotoverafreefunction.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b);
@@ -139,13 +138,13 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void);
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-field-wins-the-dot-over-a-free-function.hero", "fixedbugs-a-field-wins-the-dot-over-a-free-function.double_it", 36, 12); return t3;
-#line 143 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 142 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_n; t2 = INT64_C(1000); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-field-wins-the-dot-over-a-free-function.hero", "fixedbugs-a-field-wins-the-dot-over-a-free-function.g", 49, 12); t4 = h0_h.f_tag; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-a-field-wins-the-dot-over-a-free-function.hero", "fixedbugs-a-field-wins-the-dot-over-a-free-function.g", 49, 12); return t5;
-#line 149 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 148 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
@@ -158,7 +157,7 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) { h_fixedbugsafield
     t13 = h1_v; h2_s0 = t13; t14 = h2_s0; t15 = t14.tag; switch (t15) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: return; bb2:
     t16 = h2_s0; t17 = t16.as.c_apply; h3_a = t17; t18 = h3_a; t19 = t18.f_g; t20 = INT64_C(50); t21 = t19(t20); hero_print_int(t21); hero_print_end(); goto bb1; bb3:
     t22 = INT64_C(0); hero_print_int(t22); hero_print_end(); goto bb1;
-#line 162 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 161 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_0Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
     if (!(a->f_tag == b->f_tag)) return false;
@@ -303,7 +302,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("024cfec24f9d5fa7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7341ce6361e60b12", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafieldwinsthedotoverafreefunction\tfixedbugs-a-field-wins-the-dot-over-a-free-function\n");

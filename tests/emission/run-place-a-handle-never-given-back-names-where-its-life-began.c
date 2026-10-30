@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -96,7 +95,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 100 "placeahandlenevergivenbacknameswhereitslifebegan.c"
+#line 99 "placeahandlenevergivenbacknameswhereitslifebegan.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,9 +147,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "placeahandlenevergivenbacknameswhereitslifebegan.c"
+#line 153 "placeahandlenevergivenbacknameswhereitslifebegan.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_placeahandlenevergivenbacknameswhereitslifebegan_0Slot_eq(Slot * const *a, Slot * const *b);
@@ -176,7 +175,7 @@ void h_placeahandlenevergivenbacknameswhereitslifebegan_main(void) { Slot * h0_a
     t3 = INT64_C(9); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-never-given-back-names-where-its-life-began.hero", "place-a-handle-never-given-back-names-where-its-life-began.main", 15, 9}; t4 = slot_open(t3); hero_handle_acquired_at(t4, "slot_close", &hero_here); } h1_b = t4;
     t5 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-never-given-back-names-where-its-life-began.hero", "place-a-handle-never-given-back-names-where-its-life-began.main", 16, 11}; hero_handle_alive_at(t5, "the argument `s` of `slot_value`", &hero_here); t6 = slot_value(t5); } t7 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-never-given-back-names-where-its-life-began.hero", "place-a-handle-never-given-back-names-where-its-life-began.main", 16, 30}; hero_handle_alive_at(t7, "the argument `s` of `slot_value`", &hero_here); t8 = slot_value(t7); } if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow_at("place-a-handle-never-given-back-names-where-its-life-began.hero", "place-a-handle-never-given-back-names-where-its-life-began.main", 16, 11); hero_print_int(t9); hero_print_end();
     t10 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-handle-never-given-back-names-where-its-life-began.hero", "place-a-handle-never-given-back-names-where-its-life-began.main", 17, 5}; { hero_handle_alive_at(t10, "the argument `s` of `slot_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "slot_close", NULL, &hero_here); (void)slot_close(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); } } return;
-#line 180 "placeahandlenevergivenbacknameswhereitslifebegan.c"
+#line 179 "placeahandlenevergivenbacknameswhereitslifebegan.c"
 }
 HERO_TU_LOCAL bool h_placeahandlenevergivenbacknameswhereitslifebegan_0Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
@@ -286,7 +285,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6acca19023e76c96", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("13ed08b73cdf222a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeahandlenevergivenbacknameswhereitslifebegan\tplace-a-handle-never-given-back-names-where-its-life-began\n");

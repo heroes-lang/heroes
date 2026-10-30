@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 53 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
 typedef enum h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R0_tag {
     h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R0_tag_a = 0,
     h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R0_tag_b = 1,
@@ -16086,9 +16085,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 16092 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 16091 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R0_c_a_eq(const h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R0_c_a *a, const h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R0_c_a *b);
@@ -24127,7 +24126,7 @@ void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) { HeroArra
     t4 = h0_xs; t5 = h0_xs; t6 = hero_array_eq(t4, t5); hero_print_bool(t6); hero_print_end();
     t7 = hero_map_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_0R999_desc, &hero_desc_int, 0); t12 = h3_own3; h3_own3 = t7; hero_map_decref(t12); t13 = h1_m; hero_map_incref(t7); h1_m = t7; hero_map_decref(t13);
     t8 = h1_m; t9 = hero_map_len(t8); hero_print_int(t9); hero_print_end();
-#line 24131 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24130 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);
@@ -78209,7 +78208,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("081070af5a56d04e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3015e55713391fbd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs140variantsthrougharraysathousanddeepbuild\tfixedbugs-140-variants-through-arrays-a-thousand-deep-build\n");

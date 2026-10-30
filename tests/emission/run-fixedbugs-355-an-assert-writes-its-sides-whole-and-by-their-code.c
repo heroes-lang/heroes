@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_2cf99681, "a\033[2J\342\200\256b\302\205c");
 HERO_STR_STATIC(hero_str_31d87148, "x == \"y\"");
 HERO_STR_STATIC(hero_str_79, "y");
 
-#line 58 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 57 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 95 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -117,7 +116,7 @@ void h_fixedbugs355anassertwritesitssideswholeandbytheircode_main(void) { HeroAr
     t17 = HERO_STR_LIT(hero_str_31d87148); t18 = h2_x; t19 = HERO_STR_LIT(hero_str_79); t20 = hero_str_eq(t18, t19); t29 = h3_assert0; hero_str_incref(t18); h3_assert0 = t18; hero_str_decref(t29); t30 = h4_assert1; hero_str_incref(t19); h4_assert1 = t19; hero_str_decref(t30); if (t20) goto bb3; else goto bb4; bb2:
 #line 13
     t12 = h1_f0; t13 = t12.as.err;
-#line 121 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 120 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_panic_must_at(t13, "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero", "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.main", 13, 40);
     hero_unreachable();
 bb3:
@@ -133,7 +132,7 @@ bb3:
 bb4:
 #line 14 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t21 = h3_assert0; t22 = h4_assert1;
-#line 137 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 136 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_panic_assert_shown_at(t17, hero_show_str, &t21, &t22, 1, "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero", "fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.main", 14, 12);
     hero_unreachable();
 }
@@ -234,7 +233,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5601d7e8330ca387", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("60649932126b231e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs355anassertwritesitssideswholeandbytheircode\tfixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,7 +63,7 @@ HERO_STR_STATIC(hero_str_78a14ef2, "caff\303\250");
 HERO_STR_STATIC(hero_str_2e, ".");
 HERO_STR_STATIC(hero_str_0, "");
 
-#line 68 "builtins.c"
+#line 67 "builtins.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -100,9 +99,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 106 "builtins.c"
+#line 105 "builtins.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -154,20 +153,20 @@ void h_builtins_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1
     t118 = HERO_STR_LIT(hero_str_0); t119 = hero_str_chars(t118); t192 = h35_own35; h35_own35 = t119; hero_array_decref(t192); t120 = HERO_STR_LIT(hero_str_0); t121 = hero_str_join(t119, t120); t193 = h36_own36; h36_own36 = t121; hero_str_decref(t193); t122 = HERO_STR_LIT(hero_str_0); t123 = hero_str_eq(t121, t122); hero_print_bool(t123); hero_print_end();
 #line 58
     t124 = 0x1.f333333333333p+1; if (hero_f64_fits_int(t124)) { t125 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t124)}; } else { t125 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t194 = h37_own37; h37_own37 = t125; h_0opt_e201354_release(&t194); t195 = h9_f0; h_0opt_e201354_retain(&t125); h9_f0 = t125; h_0opt_e201354_release(&t195); t126 = h9_f0; t127 = t126.tag; t128 = INT64_C(0); t129 = t127 == t128; if (t129) goto bb1; else goto bb2; bb1: t132 = h9_f0; t133 = t132.as.ok; t134 = 0x1.f333333333333p+1; t135 = -t134; if (hero_f64_fits_int(t135)) { t136 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t135)}; } else { t136 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t196 = h38_own38; h38_own38 = t136; h_0opt_e201354_release(&t196); t197 = h10_f1; h_0opt_e201354_retain(&t136); h10_f1 = t136; h_0opt_e201354_release(&t197); t137 = h10_f1; t138 = t137.tag; t139 = INT64_C(0); t140 = t138 == t139; if (t140) goto bb3; else goto bb4; bb2: t130 = h9_f0; t131 = t130.as.err;
-#line 158 "builtins.c"
+#line 157 "builtins.c"
     hero_panic_must_at(t131, "builtins.hero", "builtins.main", 58, 11);
     hero_unreachable();
 bb3:
 #line 58 "tests/golden/run/builtins.hero"
     t143 = h10_f1; t144 = t143.as.ok; t145 = 0x0p+0; if (hero_f64_fits_int(t145)) { t146 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t145)}; } else { t146 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t198 = h39_own39; h39_own39 = t146; h_0opt_e201354_release(&t198); t199 = h11_f2; h_0opt_e201354_retain(&t146); h11_f2 = t146; h_0opt_e201354_release(&t199); t147 = h11_f2; t148 = t147.tag; t149 = INT64_C(0); t150 = t148 == t149; if (t150) goto bb5; else goto bb6; bb4: t141 = h10_f1; t142 = t141.as.err;
-#line 164 "builtins.c"
+#line 163 "builtins.c"
     hero_panic_must_at(t142, "builtins.hero", "builtins.main", 58, 31);
     hero_unreachable();
 bb5:
 #line 58 "tests/golden/run/builtins.hero"
     t153 = h11_f2; t154 = t153.as.ok; hero_print_int(t133); hero_print_int(t144); hero_print_int(t154); hero_print_end();
     t155 = INT64_C(3); t156 = hero_int_to_f64(t155); t157 = HERO_STR_LIT(hero_str_20); t158 = INT64_C(-1); t159 = hero_int_to_f64(t158); hero_print_f64(t156); hero_print_str(t157); hero_print_f64(t159); hero_print_end();
-#line 171 "builtins.c"
+#line 170 "builtins.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_sorted);
     hero_array_release_at(&h2_names);
@@ -212,7 +211,7 @@ bb5:
 bb6:
 #line 58 "tests/golden/run/builtins.hero"
     t151 = h11_f2; t152 = t151.as.err;
-#line 216 "builtins.c"
+#line 215 "builtins.c"
     hero_panic_must_at(t152, "builtins.hero", "builtins.main", 58, 52);
     hero_unreachable();
 }
@@ -313,7 +312,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1430b65b2731ae90", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b3d452b5c055e88", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_builtins_main();

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,7 +63,7 @@ HERO_STR_STATIC(hero_str_fca7be4, "unit");
 HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_79, "y");
 
-#line 68 "maps.c"
+#line 67 "maps.c"
 typedef struct h_maps_Point {
     int64_t f_x;
     int64_t f_y;
@@ -113,9 +112,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 119 "maps.c"
+#line 118 "maps.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_maps_0Point_eq(const h_maps_Point *a, const h_maps_Point *b);
@@ -206,7 +205,7 @@ void h_maps_main(void) { HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_e201354
     t245 = h31_i0; t246 = INT64_C(1); if (__builtin_add_overflow(t245, t246, &t247)) hero_panic_overflow_at("maps.hero", "maps.main", 86, 9); h31_i0 = t247; goto bb28; bb31:
 #line 89
     t248 = h27_big; t249 = hero_map_len(t248); t250 = h27_big; t251 = hero_map_keys(t250); t311 = h65_own65; h65_own65 = t251; hero_array_decref(t311); t252 = ((void)(t251 == NULL ? ((void)hero_array_len(t251), hero_unreachable()) : (void)0), t251->len); t253 = h29_total; hero_print_int(t249); hero_print_int(t252); hero_print_int(t253); hero_print_end();
-#line 210 "maps.c"
+#line 209 "maps.c"
     hero_map_release_at(&h0_m);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
@@ -267,7 +266,7 @@ void h_maps_main(void) { HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_e201354
 bb32:
 #line 87 "tests/golden/run/maps.hero"
     t240 = h33_f12; t241 = t240.as.ok; h34_r8 = t241; goto bb34; bb33: t242 = INT64_C(0); h34_r8 = t242; goto bb34; bb34: t243 = h34_r8; if (__builtin_add_overflow(t232, t243, &t244)) hero_panic_overflow_at("maps.hero", "maps.main", 87, 17); h29_total = t244; goto bb30;
-#line 271 "maps.c"
+#line 270 "maps.c"
 }
 HERO_TU_LOCAL bool h_maps_0Point_eq(const h_maps_Point *a, const h_maps_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
@@ -412,7 +411,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3317f9cd2f168bfe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c851047235da101", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_maps_main();

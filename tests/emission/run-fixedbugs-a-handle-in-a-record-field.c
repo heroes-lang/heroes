@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("handle")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -65,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(&((Slot *)0)->handle, Thing * *: 1, default: 0) && sizeof(((Slot *)0)->handle) == sizeof(Thing *), "heroes-ffi-field Slot handle");
 _Static_assert(_Generic(&((Slot *)0)->ratio, double *: 1, default: 0) && sizeof(((Slot *)0)->ratio) == sizeof(double), "heroes-ffi-field Slot ratio");
 _Static_assert(__builtin_classify_type(((Slot *)0)->count) == 1 && sizeof(((Slot *)0)->count) == sizeof(int64_t) && (_Generic(((Slot *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot count");
-#line 69 "fixedbugsahandleinarecordfield.c"
+#line 68 "fixedbugsahandleinarecordfield.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,9 +154,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugsahandleinarecordfield.c"
+#line 160 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Thing_eq(Thing * const *a, Thing * const *b);
@@ -189,12 +188,12 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) { Slot h0_s; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot t2, t3; HERO_NODEBUG Thing *t5, *t6; HERO_NODEBUG bool t7; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 51, 9}; t2 = slot_make(t1); } h0_s = t2; hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
+    t1 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 51, 9}; t2 = slot_make(t1); hero_handle_lent(t2.handle); } h0_s = t2; hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
     t3 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 52, 11}; hero_handle_alive_at(t3.handle, "the argument `s` of `slot_count`, at `.handle`", &hero_here); t4 = slot_count(t3); } hero_print_int(t4); hero_print_end();
 #line 56
-    t5 = h0_s.handle; t6 = ((void *)0); t7 = h_fixedbugsahandleinarecordfield_0Thing_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
+    t5 = h0_s.handle; t6 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 56, 11}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } hero_print_bool(t7); hero_print_end();
     t8 = h0_s.ratio; hero_print_f64(t8); hero_print_end(); return;
-#line 198 "fixedbugsahandleinarecordfield.c"
+#line 197 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);
@@ -320,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("33c4aeae3d67fa2d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("469a6e8906546dda", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsahandleinarecordfield\tfixedbugs-a-handle-in-a-record-field\n");

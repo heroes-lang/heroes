@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3b5e78d0, "dot product over ");
 HERO_STR_STATIC(hero_str_694794a4, " terms: ");
 
-#line 59 "main.c"
+#line 58 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "main.c"
+#line 100 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -132,25 +131,25 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 20 "examples/dotproduct/main.hero"
 int64_t h_main_BANDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(6); return t1;
-#line 136 "main.c"
+#line 135 "main.c"
 }
 
 #line 23 "examples/dotproduct/main.hero"
 int64_t h_main_PER_BAND(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(4000); return t1;
-#line 142 "main.c"
+#line 141 "main.c"
 }
 
 #line 29 "examples/dotproduct/main.hero"
 int64_t h_main_left(int64_t h0_at) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_at; t2 = INT64_C(97); if (t2 == 0) hero_panic_at("division by zero", "main.hero", "main.left", 30, 12); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.left", 30, 12); t3 = t1 % t2; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("main.hero", "main.left", 30, 12); return t5;
-#line 148 "main.c"
+#line 147 "main.c"
 }
 
 #line 32 "examples/dotproduct/main.hero"
 int64_t h_main_right(int64_t h0_at) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(53); t2 = h0_at; t3 = INT64_C(53); if (t3 == 0) hero_panic_at("division by zero", "main.hero", "main.right", 33, 17); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.right", 33, 17); t4 = t2 % t3; if (__builtin_sub_overflow(t1, t4, &t5)) hero_panic_overflow_at("main.hero", "main.right", 33, 12); return t5;
-#line 154 "main.c"
+#line 153 "main.c"
 }
 
 #line 35 "examples/dotproduct/main.hero"
@@ -163,7 +162,7 @@ int64_t h_main_band(int64_t h0_index) { hero_thread_guard("main.band"); int64_t 
     t19 = h2_at; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("main.hero", "main.band", 41, 14); h2_at = t21; goto bb1; bb3:
 #line 43
     t22 = h1_total; return t22;
-#line 167 "main.c"
+#line 166 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -188,7 +187,7 @@ int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i
     t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.together", 55, 9); h4_i0 = t30; goto bb4; bb7:
 #line 58
     t31 = h2_total;
-#line 192 "main.c"
+#line 191 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -205,13 +204,13 @@ int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_at; HERO_NODEBUG int64
     t15 = h1_at; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.alone", 66, 14); h1_at = t17; goto bb1; bb3:
 #line 68
     t18 = h0_total; return t18;
-#line 209 "main.c"
+#line 208 "main.c"
 }
 
 #line 70 "examples/dotproduct/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t5; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3b5e78d0); t2 = h_main_BANDS(); t3 = h_main_PER_BAND(); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow_at("main.hero", "main.main", 71, 32); t5 = HERO_STR_LIT(hero_str_694794a4); t6 = h_main_together(); hero_print_str(t1); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
-#line 215 "main.c"
+#line 214 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -310,7 +309,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("22d363a630af6e4b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c407a2024f6834e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

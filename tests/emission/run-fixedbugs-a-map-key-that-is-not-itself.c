@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugsamapkeythatisnotitself.c"
+#line 53 "fixedbugsamapkeythatisnotitself.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugsamapkeythatisnotitself.c"
+#line 91 "fixedbugsamapkeythatisnotitself.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -122,7 +121,7 @@ void h_fixedbugsamapkeythatisnotitself_main(void) { HeroArrayHeader * h0_ks = {0
     t24 = h0_ks; t25 = h1_vs; t26 = 0x1.3p+3; t27 = h_fixedbugsamapkeythatisnotitself_0missing_1ad16c(t24, t25, t26); hero_print_bool(t27); hero_print_end();
 #line 100
     t28 = h0_ks; t29 = h1_vs; t30 = h_fixedbugsamapkeythatisnotitself_0same_1ad16c(t28, t29); hero_print_bool(t30); hero_print_end();
-#line 126 "fixedbugsamapkeythatisnotitself.c"
+#line 125 "fixedbugsamapkeythatisnotitself.c"
     hero_array_release_at(&h0_ks);
     hero_array_release_at(&h1_vs);
     hero_array_release_at(&h2_own2);
@@ -140,7 +139,7 @@ void h_fixedbugsamapkeythatisnotitself_main(void) { HeroArrayHeader * h0_ks = {0
     t13 = h3_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-a-map-key-that-is-not-itself.hero", "fixedbugs-a-map-key-that-is-not-itself.keyed", 37, 13); h3_i = t15; goto bb1; bb3:
 #line 39
     t16 = h2_m; t17 = hero_map_len(t16);
-#line 144 "fixedbugsamapkeythatisnotitself.c"
+#line 143 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h2_m);
     hero_map_release_at(&h4_own4);
     return t17;
@@ -156,7 +155,7 @@ void h_fixedbugsamapkeythatisnotitself_main(void) { HeroArrayHeader * h0_ks = {0
     t13 = h4_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-a-map-key-that-is-not-itself.hero", "fixedbugs-a-map-key-that-is-not-itself.found", 47, 13); h4_i = t15; goto bb1; bb3:
 #line 49
     t16 = h3_m; t17 = h2_want; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-map-key-that-is-not-itself.hero", "fixedbugs-a-map-key-that-is-not-itself.found", 49, 12}; HERO_NODEBUG const void *found = hero_map_find_at(t16, &t17, &hero_here); if (found == NULL) { t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t18 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t18.as.ok, found); } } t29 = h8_own8; h8_own8 = t18; h_0opt_e201354_release(&t29); t30 = h5_f0; h_0opt_e201354_retain(&t18); h5_f0 = t18; h_0opt_e201354_release(&t30); t19 = h5_f0; t20 = t19.tag; t21 = INT64_C(0); t22 = t20 == t21; if (t22) goto bb4; else goto bb5; bb4: t23 = h5_f0; t24 = t23.as.ok; h6_r0 = t24; goto bb6; bb5: t25 = INT64_C(0); h6_r0 = t25; goto bb6; bb6: t26 = h6_r0;
-#line 160 "fixedbugsamapkeythatisnotitself.c"
+#line 159 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h3_m);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     hero_map_release_at(&h7_own7);
@@ -174,7 +173,7 @@ void h_fixedbugsamapkeythatisnotitself_main(void) { HeroArrayHeader * h0_ks = {0
     t13 = h4_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-a-map-key-that-is-not-itself.hero", "fixedbugs-a-map-key-that-is-not-itself.missing", 57, 13); h4_i = t15; goto bb1; bb3:
 #line 59
     t16 = h3_m; t17 = h2_want; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-map-key-that-is-not-itself.hero", "fixedbugs-a-map-key-that-is-not-itself.missing", 59, 12}; HERO_NODEBUG const void *found = hero_map_find_at(t16, &t17, &hero_here); if (found == NULL) { t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t18 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t18.as.ok, found); } } t25 = h7_own7; h7_own7 = t18; h_0opt_e201354_release(&t25); t26 = h5_f0; h_0opt_e201354_retain(&t18); h5_f0 = t18; h_0opt_e201354_release(&t26); t19 = h5_f0; t20 = t19.tag; t21 = INT64_C(1); t22 = t20 == t21;
-#line 178 "fixedbugsamapkeythatisnotitself.c"
+#line 177 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h3_m);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     hero_map_release_at(&h6_own6);
@@ -194,7 +193,7 @@ void h_fixedbugsamapkeythatisnotitself_main(void) { HeroArrayHeader * h0_ks = {0
     t20 = h4_i; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("fixedbugs-a-map-key-that-is-not-itself.hero", "fixedbugs-a-map-key-that-is-not-itself.same", 69, 13); h4_i = t22; goto bb1; bb3:
 #line 71
     t23 = h2_a; t24 = h3_b; t25 = hero_map_eq(t23, t24);
-#line 198 "fixedbugsamapkeythatisnotitself.c"
+#line 197 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h2_a);
     hero_map_release_at(&h3_b);
     hero_map_release_at(&h5_own5);
@@ -298,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("74bea091336f5a19", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3991706f77831863", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsamapkeythatisnotitself\tfixedbugs-a-map-key-that-is-not-itself\n");

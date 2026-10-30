@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "records.c"
+#line 53 "records.c"
 typedef struct h_records_Point {
     int64_t f_x;
     int64_t f_y;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "records.c"
+#line 101 "records.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_records_0Point_eq(const h_records_Point *a, const h_records_Point *b);
@@ -127,13 +126,13 @@ int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) { int64_t h2
     t1 = h0_a.f_x; t2 = h1_b.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("records.hero", "records.dist2", 19, 10); h2_dx = t3;
     t4 = h0_a.f_y; t5 = h1_b.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("records.hero", "records.dist2", 20, 10); h3_dy = t6;
     t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("records.hero", "records.dist2", 21, 12); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow_at("records.hero", "records.dist2", 21, 22); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow_at("records.hero", "records.dist2", 21, 12); return t13;
-#line 131 "records.c"
+#line 130 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_records_Point t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p.f_x; t2 = INT64_C(10); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("records.hero", "records.moved", 24, 21); t4 = h0_p.f_y; t5 = (h_records_Point){.f_x = t3, .f_y = t4}; return t5;
-#line 137 "records.c"
+#line 136 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
@@ -153,7 +152,7 @@ void h_records_main(void) { h_records_Point h0_p; h_records_Point h1_q; h_record
     t31 = h0_p.f_x; hero_print_int(t31); hero_print_end();
 #line 47
     t32 = h0_p; t33 = h0_p; t34 = (h_records_Pair){.f_one = t32, .f_two = t33}; t35 = h0_p; t36 = h1_q; t37 = (h_records_Pair){.f_one = t35, .f_two = t36}; t38 = h_records_0Pair_eq(&t34, &t37); hero_print_bool(t38); hero_print_end(); return;
-#line 157 "records.c"
+#line 156 "records.c"
 }
 HERO_TU_LOCAL bool h_records_0Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
@@ -280,7 +279,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6767b5db48c867f4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f8c136f7824e9ea", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_records_main();

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,13 +70,13 @@ _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof
 #line 19
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 75 "fficountedbyastatedextent.c"
+#line 74 "fficountedbyastatedextent.c"
 
 #line 15 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
 #line 18
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 81 "fficountedbyastatedextent.c"
+#line 80 "fficountedbyastatedextent.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -178,9 +177,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 184 "fficountedbyastatedextent.c"
+#line 183 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_0Held_eq(const struct held *a, const struct held *b);
@@ -218,7 +217,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 222 "fficountedbyastatedextent.c"
+#line 221 "fficountedbyastatedextent.c"
     _Static_assert(HERO_RET_INT(HELD_LEN), "heroes-ffi-return HELD_LEN i64");
     _Static_assert(__builtin_constant_p(HELD_LEN), "heroes-ffi-const HELD_LEN");
 #pragma clang diagnostic push
@@ -230,7 +229,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return HELD_LEN;
-#line 234 "fficountedbyastatedextent.c"
+#line 233 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -249,7 +248,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 struct held h_fficountedbyastatedextent_zero(void) { HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18; HERO_NODEBUG struct held t19; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(0); t10 = UINT64_C(0); t11 = UINT64_C(0); t12 = UINT64_C(0); t13 = UINT64_C(0); t14 = UINT64_C(0); t15 = UINT64_C(0); t16 = UINT64_C(0); t18 = INT64_C(7); t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18}; return t19;
-#line 253 "fficountedbyastatedextent.c"
+#line 252 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -276,7 +275,7 @@ void h_fficountedbyastatedextent_main(void) {
     t66 = INT64_C(0); t67 = INT64_C(0); t68 = (struct pair){.a = t66, .b = t67}; h1_pair = t68; hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-counted-by-a-stated-extent.hero", "ffi-counted-by-a-stated-extent.main", 48, 5}; _Static_assert(sizeof(*(struct pair *)0) != 1 || ((uint64_t)(1) <= (uint64_t)sizeof(h1_pair)), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 bytes struct pair *"); _Static_assert(sizeof(*(struct pair *)0) == 1 || ((uint64_t)(1) <= (uint64_t)(sizeof(h1_pair) / sizeof(*(struct pair *)0))), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 unit struct pair *"); hero_lend_local_name(hero_lend_h1_pair, "fill_pair", "p"); hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2); (void)fill_pair(&h1_pair); }
     t69 = h1_pair.a; t70 = HERO_STR_LIT(hero_str_20); t71 = h1_pair.b; hero_print_int(t69); hero_print_str(t70); hero_print_int(t71); hero_print_end(); hero_lend_local_give(hero_lend_h1_pair); return;
-#line 280 "fficountedbyastatedextent.c"
+#line 279 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_0Held_eq(const struct held *a, const struct held *b) {
@@ -419,7 +418,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ff6a1493395759d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7829c94b6982629f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficountedbyastatedextent\tffi-counted-by-a-stated-extent\n");

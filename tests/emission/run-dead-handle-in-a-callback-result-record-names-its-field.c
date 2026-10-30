@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("b")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,11 +67,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(_Generic(&((struct pair *)0)->a, node * *: 1, default: 0) && sizeof(((struct pair *)0)->a) == sizeof(node *), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((struct pair *)0)->b, node * *: 1, default: 0) && sizeof(((struct pair *)0)->b) == sizeof(node *), "heroes-ffi-field Pair b");
-#line 72 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 71 "deadhandleinacallbackresultrecordnamesitsfield.c"
 
 #line 11 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 76 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 75 "deadhandleinacallbackresultrecordnamesitsfield.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -169,9 +168,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 174 "deadhandleinacallbackresultrecordnamesitsfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_0Node_eq(node * const *a, node * const *b);
@@ -216,20 +215,20 @@ struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) 
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-in-a-callback-result-record-names-its-field.hero", "dead-handle-in-a-callback-result-record-names-its-field.give", 22, 8}; t4 = one(); } t5 = h0_k; t6 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t5}; t18 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t6); h2_f0 = t6; h_0opt_e201354_release(&t19); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb2; else goto bb3; bb1:
 #line 24
     t17 = h1_p;
-#line 220 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 219 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t17;
 bb2:
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t13 = h2_f0; t14 = t13.as.ok; t15 = t4 == t14; if (t15) goto bb4; else goto bb5; bb3: t11 = h2_f0; t12 = t11.as.err;
-#line 227 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 226 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_panic_must_at(t12, "dead-handle-in-a-callback-result-record-names-its-field.hero", "dead-handle-in-a-callback-result-record-names-its-field.give", 22, 17);
     hero_unreachable();
 bb4:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t16 = h1_p.b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-in-a-callback-result-record-names-its-field.hero", "dead-handle-in-a-callback-result-record-names-its-field.give", 23, 9}; { hero_handle_alive_at(t16, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t16, "node_free", NULL, &hero_here); (void)node_free(t16); if (hero_handle_ended(t16, hero_life_0_0) && h1_p.b == t16) h1_p.b = hero_handle_dead(); } } goto bb1; bb5: goto bb1;
-#line 233 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 232 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -242,7 +241,7 @@ struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0
 #line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 void h_deadhandleinacallbackresultrecordnamesitsfield_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_22e3cba1 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_21c9984d); t2 = h_deadhandleinacallbackresultrecordnamesitsfield_give; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-in-a-callback-result-record-names-its-field.hero", "dead-handle-in-a-callback-result-record-names-its-field.main", 27, 23}; t3 = ask_pair((h_0fn_22e3cba1)hero_callback_of((void (*)(void))t2)); } hero_print_str(t1); hero_print_int(t3); hero_print_end(); return;
-#line 246 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 245 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
@@ -366,7 +365,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f63e97901be30d3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("014dff9d03260898", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandleinacallbackresultrecordnamesitsfield\tdead-handle-in-a-callback-result-record-names-its-field\n");

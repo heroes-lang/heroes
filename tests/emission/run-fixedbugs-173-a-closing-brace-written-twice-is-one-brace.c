@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -61,7 +60,7 @@ HERO_STR_STATIC(hero_str_3ed33309, " and ");
 HERO_STR_STATIC(hero_str_206c91, "{k}");
 HERO_STR_STATIC(hero_str_14fec1fb, "{{a}} }} a}b");
 
-#line 65 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 64 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -97,9 +96,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 103 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 102 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -122,7 +121,7 @@ void h_fixedbugs173aclosingbracewrittentwiceisonebrace_main(void);
 #line 11 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
 HeroStr h_fixedbugs173aclosingbracewrittentwiceisonebrace_BRACED(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_10ce6de9);
-#line 126 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 125 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -130,7 +129,7 @@ HeroStr h_fixedbugs173aclosingbracewrittentwiceisonebrace_BRACED(void) { HERO_NO
 #line 14 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
 HeroStr h_fixedbugs173aclosingbracewrittentwiceisonebrace_wrapped(int64_t h0_n) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = HERO_STR_LIT(hero_str_7b); t3 = hero_int_to_str(t1); t7 = h1_own1; h1_own1 = t3; hero_str_decref(t7); t4 = HERO_STR_LIT(hero_str_7d); t5 = hero_str_concat(t2, t3); t8 = h2_own2; h2_own2 = t5; hero_str_decref(t8); t6 = hero_str_concat(t5, t4); t9 = h3_own3; h3_own3 = t6; hero_str_decref(t9);
-#line 134 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 133 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -156,7 +155,7 @@ void h_fixedbugs173aclosingbracewrittentwiceisonebrace_main(void) { int64_t h0_x
     t39 = HERO_STR_LIT(hero_str_206c91); t40 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero", "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.main", 31, 5}; hero_map_set_at(&(h2_m), &t39, &t40, &hero_here); }
     t41 = h2_m; t42 = HERO_STR_LIT(hero_str_206c91); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero", "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.main", 32, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t41, &t42, &hero_here); if (found == NULL) { t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t43 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t43.as.ok, found); } } t72 = h21_own21; h21_own21 = t43; h_0opt_e201354_release(&t72); t73 = h3_f0; h_0opt_e201354_retain(&t43); h3_f0 = t43; h_0opt_e201354_release(&t73); t44 = h3_f0; t45 = t44.tag; t46 = INT64_C(0); t47 = t45 == t46; if (t47) goto bb1; else goto bb2; bb1: t50 = h3_f0; t51 = t50.as.ok; hero_print_int(t51); hero_print_end();
     t52 = HERO_STR_LIT(hero_str_14fec1fb); hero_print_str(t52); hero_print_end();
-#line 160 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 159 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_release_at(&h1_word);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -182,7 +181,7 @@ void h_fixedbugs173aclosingbracewrittentwiceisonebrace_main(void) { int64_t h0_x
 bb2:
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t48 = h3_f0; t49 = t48.as.err;
-#line 186 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 185 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_panic_must_at(t49, "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero", "fixedbugs-173-a-closing-brace-written-twice-is-one-brace.main", 32, 11);
     hero_unreachable();
 }
@@ -283,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e662f741b9c7c13", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55a02f6b388117a1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs173aclosingbracewrittentwiceisonebrace\tfixedbugs-173-a-closing-brace-written-twice-is-one-brace\n");

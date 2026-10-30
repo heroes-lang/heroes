@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -58,7 +57,7 @@ HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_59e06249, "not_found");
 HERO_STR_STATIC(hero_str_7bc7477f, "no element satisfies the test");
 
-#line 62 "libraryhigherorder.c"
+#line 61 "libraryhigherorder.c"
 typedef HeroStr (*h_0fn_4a13fb08)(int64_t);
 typedef bool (*h_0fn_3d242f50)(int64_t);
 typedef int64_t (*h_0fn_6ca17148)(int64_t, int64_t);
@@ -99,9 +98,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "libraryhigherorder.c"
+#line 104 "libraryhigherorder.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -145,31 +144,31 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
 #line 16 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_double(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("library-higher-order.hero", "library-higher-order.double", 17, 12); return t3;
-#line 149 "libraryhigherorder.c"
+#line 148 "libraryhigherorder.c"
 }
 
 #line 19 "tests/golden/run/library-higher-order.hero"
 bool h_libraryhigherorder_odd(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "library-higher-order.hero", "library-higher-order.odd", 20, 12); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "library-higher-order.hero", "library-higher-order.odd", 20, 12); t3 = t1 % t2; t4 = INT64_C(1); t5 = t3 == t4; return t5;
-#line 155 "libraryhigherorder.c"
+#line 154 "libraryhigherorder.c"
 }
 
 #line 22 "tests/golden/run/library-higher-order.hero"
 bool h_libraryhigherorder_big(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(100); t3 = t1 > t2; return t3;
-#line 161 "libraryhigherorder.c"
+#line 160 "libraryhigherorder.c"
 }
 
 #line 25 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_add(int64_t h0_acc, int64_t h1_item) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("library-higher-order.hero", "library-higher-order.add", 26, 12); return t3;
-#line 167 "libraryhigherorder.c"
+#line 166 "libraryhigherorder.c"
 }
 
 #line 28 "tests/golden/run/library-higher-order.hero"
 HeroStr h_libraryhigherorder_label(int64_t h0_n) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = hero_int_to_str(t1); t3 = h1_own1; h1_own1 = t2; hero_str_decref(t3);
-#line 173 "libraryhigherorder.c"
+#line 172 "libraryhigherorder.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -178,13 +177,13 @@ HeroStr h_libraryhigherorder_label(int64_t h0_n) { HERO_NODEBUG HeroStr h1_own1 
 #line 35 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_sub(int64_t h0_acc, int64_t h1_item) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("library-higher-order.hero", "library-higher-order.sub", 36, 12); return t3;
-#line 182 "libraryhigherorder.c"
+#line 181 "libraryhigherorder.c"
 }
 
 #line 38 "tests/golden/run/library-higher-order.hero"
 HeroStr h_libraryhigherorder_glue(HeroStr h0_acc, HeroStr h1_item) { HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; t3 = hero_str_concat(t1, t2); t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 188 "libraryhigherorder.c"
+#line 187 "libraryhigherorder.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     return t3;
@@ -207,7 +206,7 @@ void h_libraryhigherorder_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEB
     t68 = hero_array_new(&hero_desc_int, 1); t103 = h17_own17; h17_own17 = t68; hero_array_decref(t103); t104 = h5_empty; hero_array_incref(t68); h5_empty = t68; hero_array_decref(t104);
     t69 = h5_empty; t70 = h_libraryhigherorder_double; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-higher-order.hero", "library-higher-order.main", 60, 15}; t71 = h_library_0map_37f8817a(t69, t70, &hero_here); } t105 = h18_own18; h18_own18 = t71; hero_array_decref(t105); t72 = ((void)(t71 == NULL ? ((void)hero_array_len(t71), hero_unreachable()) : (void)0), t71->len); t73 = h5_empty; t74 = INT64_C(7); t75 = h_libraryhigherorder_add; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-higher-order.hero", "library-higher-order.main", 60, 36}; t76 = h_library_0fold_37f8817a(t73, t74, t75, &hero_here); } hero_print_int(t72); hero_print_int(t76); hero_print_end();
     t77 = h5_empty; t78 = h_libraryhigherorder_odd; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-higher-order.hero", "library-higher-order.main", 61, 11}; t79 = h_library_0any_1b9a87(t77, t78, &hero_here); } t80 = h5_empty; t81 = h_libraryhigherorder_odd; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-higher-order.hero", "library-higher-order.main", 61, 28}; t82 = h_library_0all_1b9a87(t80, t81, &hero_here); } t83 = h5_empty; t84 = h_libraryhigherorder_odd; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-higher-order.hero", "library-higher-order.main", 61, 45}; t85 = h_library_0find_1b9a87(t83, t84, &hero_here); } t106 = h19_own19; h19_own19 = t85; h_0opt_e201354_release(&t106); t107 = h6_f2; h_0opt_e201354_retain(&t85); h6_f2 = t85; h_0opt_e201354_release(&t107); t86 = h6_f2; t87 = t86.tag; t88 = INT64_C(1); t89 = t87 == t88; hero_print_bool(t79); hero_print_bool(t82); hero_print_bool(t89); hero_print_end();
-#line 211 "libraryhigherorder.c"
+#line 210 "libraryhigherorder.c"
     hero_array_release_at(&h0_xs);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
@@ -238,7 +237,7 @@ void h_libraryhigherorder_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEB
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 242 "libraryhigherorder.c"
+#line 241 "libraryhigherorder.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -260,7 +259,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
     t17 = h4_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t19; goto bb1; bb4:
 #line 48
     t20 = h2_out;
-#line 264 "libraryhigherorder.c"
+#line 263 "libraryhigherorder.c"
     hero_array_incref(t20);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -271,7 +270,7 @@ bb5:
 bb6:
 #line 47 "<heroes library>"
     t15 = h5_x; hero_array_push_owned(&h2_out, &t15); goto bb5; bb7: goto bb5;
-#line 275 "libraryhigherorder.c"
+#line 274 "libraryhigherorder.c"
 }
 HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0filter_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.filter", 43, 1};
@@ -287,7 +286,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0fi
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 291 "libraryhigherorder.c"
+#line 290 "libraryhigherorder.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -305,7 +304,7 @@ HERO_TU_LOCAL __attribute__((unused)) int64_t hero_value_h_library_0fold_37f8817
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 309 "libraryhigherorder.c"
+#line 308 "libraryhigherorder.c"
     hero_str_incref(t18);
     hero_str_release_at(&h3_total);
     hero_array_release_at(&h4_xs0);
@@ -328,7 +327,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroStr hero_value_h_library_0fold_f720dcd
     t18 = HERO_STR_LIT(hero_str_59e06249); t19 = HERO_STR_LIT(hero_str_7bc7477f); hero_str_incref(t18); hero_str_incref(t19); t20 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t19}}; t23 = h6_own6; h6_own6 = t20; h_0opt_e201354_release(&t23); h5_ret0 = t20; goto bb8; bb5: goto bb3; bb6:
 #line 69
     t13 = h4_x; t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t13}; t24 = h7_own7; h7_own7 = t14; h_0opt_e201354_release(&t24); h5_ret0 = t14; goto bb8; bb7: goto bb5; bb8:
-#line 332 "libraryhigherorder.c"
+#line 331 "libraryhigherorder.c"
     t21 = h5_ret0;
     h_0opt_e201354_retain(&t21);
     hero_array_release_at(&h2_xs0);
@@ -351,7 +350,7 @@ HERO_TU_LOCAL __attribute__((unused)) h_0opt_e201354 hero_value_h_library_0find_
     t17 = false; h5_ret0 = t17; goto bb8; bb5: goto bb3; bb6:
 #line 77
     t13 = true; h5_ret0 = t13; goto bb8; bb7: goto bb5; bb8:
-#line 355 "libraryhigherorder.c"
+#line 354 "libraryhigherorder.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t18;
@@ -371,7 +370,7 @@ HERO_TU_LOCAL __attribute__((unused)) bool hero_value_h_library_0any_1b9a87(Hero
     t18 = true; h5_ret0 = t18; goto bb8; bb5: goto bb3; bb6:
 #line 85
     t14 = false; h5_ret0 = t14; goto bb8; bb7: goto bb5; bb8:
-#line 375 "libraryhigherorder.c"
+#line 374 "libraryhigherorder.c"
     t19 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t19;
@@ -390,7 +389,7 @@ HERO_TU_LOCAL __attribute__((unused)) bool hero_value_h_library_0all_1b9a87(Hero
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 394 "libraryhigherorder.c"
+#line 393 "libraryhigherorder.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -498,7 +497,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("167b1a572a487624", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e7b10e26211e5ed", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("libraryhigherorder\tlibrary-higher-order\n");

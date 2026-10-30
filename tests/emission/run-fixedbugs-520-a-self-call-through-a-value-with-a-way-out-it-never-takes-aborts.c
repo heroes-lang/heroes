@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
+#line 53 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -87,9 +86,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
+#line 92 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,7 +115,7 @@ int64_t h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_go(int
     t6 = h1_f; t7 = h0_n; t8 = t6(t7); h2_ret0 = t8; goto bb4; bb2:
 #line 11
     t4 = INT64_C(0); h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 120 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
+#line 119 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
     t9 = h2_ret0;
     return t9;
 }
@@ -124,7 +123,7 @@ int64_t h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_go(int
 #line 15 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
 void h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_go(t1); hero_print_int(t2); hero_print_end(); return;
-#line 128 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
+#line 127 "fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -223,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b9efc2e2b506768", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d60ae545ab680e9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts\tfixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts\n");

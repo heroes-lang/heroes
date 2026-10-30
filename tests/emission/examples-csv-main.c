@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_690861d0, "name,role,note\nada,engineer,\"first, and by
 HERO_STR_STATIC(hero_str_8a0b4, " | ");
 HERO_STR_STATIC(hero_str_141e32a0, "a,\"unclosed");
 
-#line 66 "main.c"
+#line 65 "main.c"
 typedef struct h_main_Table {
     HeroArrayHeader * f_rows;
 } h_main_Table;
@@ -118,9 +117,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "main.c"
+#line 123 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_main_0Table_retain(const h_main_Table *v);
@@ -237,7 +236,7 @@ h_0opt_755e4b59 h_main_parse(HeroStr h0_text) { HeroArrayHeader * h1_rows = {0};
     t74 = h3_field; t75 = hero_str_len(t74); t76 = INT64_C(0); t77 = t75 > t76; h12_b2 = t77; goto bb33; bb33: t78 = h12_b2; h11_b1 = t78; if (t78) goto bb35; else goto bb34; bb34: t79 = h2_row; t80 = ((void)(t79 == NULL ? ((void)hero_array_len(t79), hero_unreachable()) : (void)0), t79->len); t81 = INT64_C(0); t82 = t80 > t81; h11_b1 = t82; goto bb35; bb35: t83 = h11_b1; if (t83) goto bb36; else goto bb37; bb36:
     t85 = h3_field; hero_array_push_owned(&h2_row, &t85);
     t88 = h2_row; hero_array_push_owned(&h1_rows, &t88); goto bb31; bb37: goto bb31; bb38:
-#line 241 "main.c"
+#line 240 "main.c"
     t93 = h13_ret0;
     h_0opt_755e4b59_retain(&t93);
     hero_array_release_at(&h1_rows);
@@ -268,7 +267,7 @@ int64_t h_main_width(h_main_Table h0_t) { HERO_NODEBUG int64_t h1_r0, t2, t3, t5
     t6 = h0_t.f_rows; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "main.hero", "main.width", 87, 9) : (void)0), (void)(t6->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t6 + 1))[t7]); t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 84
     h1_r0 = t9; goto bb1;
-#line 272 "main.c"
+#line 271 "main.c"
 }
 
 #line 91 "examples/csv/main.hero"
@@ -281,7 +280,7 @@ bool h_main_rectangular(h_main_Table h0_t) { HERO_NODEBUG HeroArrayHeader *h1_xs
     t19 = true; h4_ret0 = t19; goto bb8; bb5: goto bb3; bb6:
 #line 94
     t15 = false; h4_ret0 = t15; goto bb8; bb7: goto bb5; bb8:
-#line 285 "main.c"
+#line 284 "main.c"
     t20 = h4_ret0;
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h3_one);
@@ -307,7 +306,7 @@ h_0opt_5a58f2ca h_main_column(h_main_Table h0_t, int64_t h1_at) { HERO_NODEBUG b
     t34 = h3_out; hero_array_incref(t34); t35 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t34}; t42 = h10_own10; h10_own10 = t35; h_0opt_5a58f2ca_release(&t42); h7_ret0 = t35; goto bb13; bb10: goto bb8; bb11:
 #line 105
     t27 = h6_one; t28 = h1_at; t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "main.hero", "main.column", 105, 28) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]); hero_array_push_owned(&h3_out, &t29); goto bb10; bb12: goto bb10; bb13:
-#line 311 "main.c"
+#line 310 "main.c"
     t36 = h7_ret0;
     h_0opt_5a58f2ca_retain(&t36);
     hero_array_release_at(&h3_out);
@@ -322,7 +321,7 @@ h_0opt_5a58f2ca h_main_column(h_main_Table h0_t, int64_t h1_at) { HERO_NODEBUG b
 #line 109 "examples/csv/main.hero"
 HeroStr h_main_SAMPLE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_690861d0);
-#line 326 "main.c"
+#line 325 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -339,7 +338,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_755e4b59 h0_f0 = {0}, h4_f3 = {0}, 
     t27 = h1_table; t28 = INT64_C(0); t29 = h_main_column(t27, t28); t71 = h10_own10; h10_own10 = t29; h_0opt_5a58f2ca_release(&t71); t72 = h2_f1; h_0opt_5a58f2ca_retain(&t29); h2_f1 = t29; h_0opt_5a58f2ca_release(&t72); t30 = h2_f1; t31 = t30.tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto bb3; else goto bb4; bb2:
 #line 113
     t7 = h0_f0; t8 = t7.as.err;
-#line 343 "main.c"
+#line 342 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.main", 113, 13);
     hero_unreachable();
 bb3:
@@ -351,13 +350,13 @@ bb3:
     t53 = HERO_STR_LIT(hero_str_0); t54 = h_main_parse(t53); t78 = h14_own14; h14_own14 = t54; h_0opt_755e4b59_release(&t78); t79 = h5_f4; h_0opt_755e4b59_retain(&t54); h5_f4 = t54; h_0opt_755e4b59_release(&t79); t55 = h5_f4; t56 = t55.tag; t57 = INT64_C(0); t58 = t56 == t57; if (t58) goto bb5; else goto bb6; bb4:
 #line 120
     t34 = h2_f1; t35 = t34.as.err;
-#line 355 "main.c"
+#line 354 "main.c"
     hero_panic_must_at(t35, "main.hero", "main.main", 120, 16);
     hero_unreachable();
 bb5:
 #line 125 "examples/csv/main.hero"
     t61 = h5_f4; t62 = t61.as.ok; t63 = t62.f_rows; t64 = ((void)(t63 == NULL ? ((void)hero_array_len(t63), hero_unreachable()) : (void)0), t63->len); hero_print_int(t64); hero_print_end();
-#line 361 "main.c"
+#line 360 "main.c"
     h_0opt_755e4b59_release(hero_slot_escape(&h0_f0));
     h_main_0Table_release(hero_slot_escape(&h1_table));
     h_0opt_5a58f2ca_release(hero_slot_escape(&h2_f1));
@@ -377,7 +376,7 @@ bb5:
 bb6:
 #line 125 "examples/csv/main.hero"
     t59 = h5_f4; t60 = t59.as.err;
-#line 381 "main.c"
+#line 380 "main.c"
     hero_panic_must_at(t60, "main.hero", "main.main", 125, 11);
     hero_unreachable();
 }
@@ -562,7 +561,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a0590cb18c1f494", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0372a7460d090997", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

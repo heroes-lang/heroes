@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_3e65, "yz");
 
-#line 57 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 56 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
 typedef struct h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0 {
     HeroStr f_s;
 } h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0;
@@ -217,9 +216,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 223 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 222 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R0_retain(const h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0 *v);
@@ -401,7 +400,7 @@ h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31 h_fixedbugs53
     t61 = h30_v29; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R29_retain(&t61); t62 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30){.f_inner = t61}; t126 = h63_own63; h63_own63 = t62; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R30_release(&t126); t127 = h31_v30; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R30_retain(&t62); h31_v30 = t62; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R30_release(&t127);
     t63 = h31_v30; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R30_retain(&t63); t64 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31){.f_inner = t63}; t128 = h64_own64; h64_own64 = t64; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_release(&t128); t129 = h32_v31; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_retain(&t64); h32_v31 = t64; h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_release(&t129);
     t65 = h32_v31;
-#line 405 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 404 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_retain(&t65);
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R0_release(hero_slot_escape(&h1_v0));
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R1_release(hero_slot_escape(&h2_v1));
@@ -483,7 +482,7 @@ void h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_main(void) {
     t6 = h0_kept.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_s;
 #line 147
     hero_print_str(t6); hero_print_end();
-#line 487 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 486 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_release(hero_slot_escape(&h0_kept));
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_release(hero_slot_escape(&h1_own1));
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_0R31_release(hero_slot_escape(&h2_own2));
@@ -1226,7 +1225,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1699ff5f42fee224", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f293cd073899110", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser\tfixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser\n");

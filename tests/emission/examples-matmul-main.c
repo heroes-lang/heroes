@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_75fe0b7e, "sum of a ");
 HERO_STR_STATIC(hero_str_4639add, " by ");
 HERO_STR_STATIC(hero_str_44de89c8, " product: ");
 
-#line 60 "main.c"
+#line 59 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "main.c"
+#line 101 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -134,25 +133,25 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 20 "examples/matmul/main.hero"
 int64_t h_main_SIZE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(48); return t1;
-#line 138 "main.c"
+#line 137 "main.c"
 }
 
 #line 23 "examples/matmul/main.hero"
 int64_t h_main_BANDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(6); return t1;
-#line 144 "main.c"
+#line 143 "main.c"
 }
 
 #line 27 "examples/matmul/main.hero"
 int64_t h_main_left_at(int64_t h0_row, int64_t h1_col) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_row; t2 = INT64_C(7); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.left_at", 28, 13); t4 = h1_col; t5 = INT64_C(3); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.left_at", 28, 23); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow_at("main.hero", "main.left_at", 28, 13); t8 = INT64_C(11); if (t8 == 0) hero_panic_at("division by zero", "main.hero", "main.left_at", 28, 12); if (t7 == INT64_MIN && t8 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.left_at", 28, 12); t9 = t7 % t8; return t9;
-#line 150 "main.c"
+#line 149 "main.c"
 }
 
 #line 30 "examples/matmul/main.hero"
 int64_t h_main_right_at(int64_t h0_row, int64_t h1_col) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_row; t2 = INT64_C(5); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.right_at", 31, 13); t4 = h1_col; t5 = INT64_C(2); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.right_at", 31, 23); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow_at("main.hero", "main.right_at", 31, 13); t8 = INT64_C(13); if (t8 == 0) hero_panic_at("division by zero", "main.hero", "main.right_at", 31, 12); if (t7 == INT64_MIN && t8 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.right_at", 31, 12); t9 = t7 % t8; return t9;
-#line 156 "main.c"
+#line 155 "main.c"
 }
 
 #line 34 "examples/matmul/main.hero"
@@ -165,7 +164,7 @@ HeroArrayHeader * h_main_product_row(int64_t h0_row) { HeroArrayHeader * h1_out 
     t7 = INT64_C(0); h4_k = t7; goto bb4; bb3:
 #line 49
     t29 = h1_out;
-#line 169 "main.c"
+#line 168 "main.c"
     hero_array_incref(t29);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
@@ -178,7 +177,7 @@ bb4:
 #line 46
     t24 = h3_total; hero_array_push_owned(&h1_out, &t24);
     t26 = h2_col; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("main.hero", "main.product_row", 47, 15); h2_col = t28; goto bb1;
-#line 182 "main.c"
+#line 181 "main.c"
 }
 
 #line 53 "examples/matmul/main.hero"
@@ -198,7 +197,7 @@ int64_t h_main_band(int64_t h0_index) { hero_thread_guard("main.band"); HeroArra
     t50 = h5_i0; t51 = INT64_C(1); if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow_at("main.hero", "main.band", 63, 9); h5_i0 = t52; goto bb4; bb7:
 #line 67
     t53 = h3_total;
-#line 202 "main.c"
+#line 201 "main.c"
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h4_xs0);
     hero_array_release_at(&h6_r);
@@ -212,7 +211,7 @@ bb8:
     t44 = h3_total; t45 = h9_v; if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("main.hero", "main.band", 65, 21); h3_total = t46; goto bb10; bb10:
 #line 64
     t47 = h8_i1; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("main.hero", "main.band", 64, 13); h8_i1 = t49; goto bb8; bb11: goto bb6;
-#line 216 "main.c"
+#line 215 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -237,7 +236,7 @@ int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i
     t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.together", 79, 9); h4_i0 = t30; goto bb4; bb7:
 #line 82
     t31 = h2_total;
-#line 241 "main.c"
+#line 240 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -253,7 +252,7 @@ int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_row; HERO_NODEBUG Hero
     t6 = h1_row; t7 = h_main_product_row(t6); t26 = h5_own5; h5_own5 = t7; hero_array_decref(t26); t27 = h2_xs0; hero_array_incref(t7); h2_xs0 = t7; hero_array_decref(t27); t8 = INT64_C(0); h3_i0 = t8; goto bb4; bb3:
 #line 94
     t25 = h0_total;
-#line 257 "main.c"
+#line 256 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t25;
@@ -265,13 +264,13 @@ bb4:
     t19 = h3_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("main.hero", "main.alone", 89, 13); h3_i0 = t21; goto bb4; bb7:
 #line 92
     t22 = h1_row; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("main.hero", "main.alone", 92, 15); h1_row = t24; goto bb1;
-#line 269 "main.c"
+#line 268 "main.c"
 }
 
 #line 96 "examples/matmul/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG int64_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_75fe0b7e); t2 = h_main_SIZE(); t3 = HERO_STR_LIT(hero_str_4639add); t4 = h_main_SIZE(); t5 = HERO_STR_LIT(hero_str_44de89c8); t6 = h_main_together(); hero_print_str(t1); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
-#line 275 "main.c"
+#line 274 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -370,7 +369,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49196b9d14c1c25e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("728682170908d761", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

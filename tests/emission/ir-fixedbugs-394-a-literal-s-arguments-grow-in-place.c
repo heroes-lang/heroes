@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,7 +56,7 @@ HERO_STR_STATIC(hero_str_76c1f302, "spiders");
 HERO_STR_STATIC(hero_str_e4ec6cc, "jean");
 HERO_STR_STATIC(hero_str_1da9fcca, "genie");
 
-#line 61 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 60 "fixedbugs394aliteralsargumentsgrowinplace.c"
 typedef struct h_fixedbugs394aliteralsargumentsgrowinplace_Wide {
     int64_t f_a;
     int64_t f_b;
@@ -104,9 +103,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 110 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 109 "fixedbugs394aliteralsargumentsgrowinplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs394aliteralsargumentsgrowinplace_0Wide_eq(const h_fixedbugs394aliteralsargumentsgrowinplace_Wide *a, const h_fixedbugs394aliteralsargumentsgrowinplace_Wide *b);
@@ -131,7 +130,7 @@ void h_fixedbugs394aliteralsargumentsgrowinplace_main(void);
 #if HERO_STATIC_CONSTANTS
 #line 23 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES_33, int64_t, &hero_desc_int, 32, INT64_C(2), INT64_C(3), INT64_C(5), INT64_C(7), INT64_C(11), INT64_C(13), INT64_C(17), INT64_C(19), INT64_C(23), INT64_C(29), INT64_C(31), INT64_C(37), INT64_C(41), INT64_C(43), INT64_C(47), INT64_C(53), INT64_C(59), INT64_C(61), INT64_C(67), INT64_C(71), INT64_C(73), INT64_C(79), INT64_C(83), INT64_C(89), INT64_C(97), INT64_C(101), INT64_C(103), INT64_C(107), INT64_C(109), INT64_C(113), INT64_C(127), INT64_C(131)); HeroArrayHeader * h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES_33);
-#line 135 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 134 "fixedbugs394aliteralsargumentsgrowinplace.c"
 }
 #else
 
@@ -172,7 +171,7 @@ HeroArrayHeader * h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(void) { HER
     t32 = INT64_C(131);
 #line 24
     t33 = hero_array_new(&hero_desc_int, 32); hero_array_push_owned(&t33, &t1); hero_array_push_owned(&t33, &t2); hero_array_push_owned(&t33, &t3); hero_array_push_owned(&t33, &t4); hero_array_push_owned(&t33, &t5); hero_array_push_owned(&t33, &t6); hero_array_push_owned(&t33, &t7); hero_array_push_owned(&t33, &t8); hero_array_push_owned(&t33, &t9); hero_array_push_owned(&t33, &t10); hero_array_push_owned(&t33, &t11); hero_array_push_owned(&t33, &t12); hero_array_push_owned(&t33, &t13); hero_array_push_owned(&t33, &t14); hero_array_push_owned(&t33, &t15); hero_array_push_owned(&t33, &t16); hero_array_push_owned(&t33, &t17); hero_array_push_owned(&t33, &t18); hero_array_push_owned(&t33, &t19); hero_array_push_owned(&t33, &t20); hero_array_push_owned(&t33, &t21); hero_array_push_owned(&t33, &t22); hero_array_push_owned(&t33, &t23); hero_array_push_owned(&t33, &t24); hero_array_push_owned(&t33, &t25); hero_array_push_owned(&t33, &t26); hero_array_push_owned(&t33, &t27); hero_array_push_owned(&t33, &t28); hero_array_push_owned(&t33, &t29); hero_array_push_owned(&t33, &t30); hero_array_push_owned(&t33, &t31); hero_array_push_owned(&t33, &t32); t34 = h0_own0; h0_own0 = t33; hero_array_decref(t34);
-#line 176 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 175 "fixedbugs394aliteralsargumentsgrowinplace.c"
     hero_array_incref(t33);
     hero_array_release_at(&h0_own0);
     return t33;
@@ -182,7 +181,7 @@ HeroArrayHeader * h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(void) { HER
 #line 59 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 HeroMapHeader * h_fixedbugs394aliteralsargumentsgrowinplace_AGES(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t13, *t14; HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = INT64_C(42); t3 = HERO_STR_LIT(hero_str_eb4ac31); t4 = INT64_C(7); t5 = HERO_STR_LIT(hero_str_318606e5); t6 = INT64_C(19); t7 = HERO_STR_LIT(hero_str_76c1f302); t8 = INT64_C(5); t9 = HERO_STR_LIT(hero_str_e4ec6cc); t10 = INT64_C(30); t11 = HERO_STR_LIT(hero_str_1da9fcca); t12 = INT64_C(8); t13 = hero_map_new(&hero_desc_str, &hero_desc_int, 6); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-394-a-literal-s-arguments-grow-in-place.hero", "fixedbugs-394-a-literal-s-arguments-grow-in-place.AGES", 60, 5}; hero_map_put_at(t13, &t1, &t2, &hero_here); hero_map_put_at(t13, &t3, &t4, &hero_here); hero_map_put_at(t13, &t5, &t6, &hero_here); hero_map_put_at(t13, &t7, &t8, &hero_here); hero_map_put_at(t13, &t9, &t10, &hero_here); hero_map_put_at(t13, &t11, &t12, &hero_here); } t14 = h0_own0; h0_own0 = t13; hero_map_decref(t14);
-#line 186 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 185 "fixedbugs394aliteralsargumentsgrowinplace.c"
     hero_map_incref(t13);
     hero_map_release_at(&h0_own0);
     return t13;
@@ -192,7 +191,7 @@ HeroMapHeader * h_fixedbugs394aliteralsargumentsgrowinplace_AGES(void) { HERO_NO
 void h_fixedbugs394aliteralsargumentsgrowinplace_main(void) { h_fixedbugs394aliteralsargumentsgrowinplace_Wide h0_w; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h6_own6 = {0}, t17, t18, t22, t32, t33; HERO_NODEBUG int64_t h2_r0, t1, t2, t3, t4, t5, t6, t7, t8, t11, t13, t14, t19, t20, t23, t24, t25, t26, t27, t28; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *t10, *t12, *t29, *t30; HERO_NODEBUG HeroMapHeader *h5_own5 = {0}, *t15, *t31; HERO_NODEBUG h_fixedbugs394aliteralsargumentsgrowinplace_Wide t9; HERO_NODEBUG HeroStr t16; HERO_NODEBUG bool t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = INT64_C(4); t5 = INT64_C(5); t6 = INT64_C(6); t7 = INT64_C(7); t8 = INT64_C(8); t9 = (h_fixedbugs394aliteralsargumentsgrowinplace_Wide){.f_a = t1, .f_b = t2, .f_c = t3, .f_d = t4, .f_e = t5, .f_f = t6, .f_g = t7, .f_h = t8}; h0_w = t9;
     t10 = h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(); t29 = h3_own3; h3_own3 = t10; hero_array_decref(t29); t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(); t30 = h4_own4; h4_own4 = t12; hero_array_decref(t30); t13 = INT64_C(31); t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "fixedbugs-394-a-literal-s-arguments-grow-in-place.hero", "fixedbugs-394-a-literal-s-arguments-grow-in-place.main", 64, 25) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); t15 = h_fixedbugs394aliteralsargumentsgrowinplace_AGES(); t31 = h5_own5; h5_own5 = t15; hero_map_decref(t31); t16 = HERO_STR_LIT(hero_str_eb4ac31); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-394-a-literal-s-arguments-grow-in-place.hero", "fixedbugs-394-a-literal-s-arguments-grow-in-place.main", 64, 37}; HERO_NODEBUG const void *found = hero_map_find_at(t15, &t16, &hero_here); if (found == NULL) { t17 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t17 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t17.as.ok, found); } } t32 = h6_own6; h6_own6 = t17; h_0opt_e201354_release(&t32); t33 = h1_f0; h_0opt_e201354_retain(&t17); h1_f0 = t17; h_0opt_e201354_release(&t33); t18 = h1_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb1; else goto bb2; bb1: t22 = h1_f0; t23 = t22.as.ok; h2_r0 = t23; goto bb3; bb2: t24 = INT64_C(0); h2_r0 = t24; goto bb3; bb3: t25 = h2_r0; t26 = h0_w.f_a; t27 = h0_w.f_h; if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("fixedbugs-394-a-literal-s-arguments-grow-in-place.hero", "fixedbugs-394-a-literal-s-arguments-grow-in-place.main", 64, 62); hero_print_int(t11); hero_print_int(t14); hero_print_int(t25); hero_print_int(t28); hero_print_end();
-#line 196 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 195 "fixedbugs394aliteralsargumentsgrowinplace.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -323,7 +322,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("501827a40107d3ce", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("173f6a6e3c14869d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs394aliteralsargumentsgrowinplace\tfixedbugs-394-a-literal-s-arguments-grow-in-place\n");

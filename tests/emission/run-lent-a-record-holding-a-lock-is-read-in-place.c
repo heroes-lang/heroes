@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("n")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/lent-a-record-holding-a-lock-is-read-in-place.hero"
 _Static_assert(__builtin_classify_type(((struct counter *)0)->n) == 1 && sizeof(((struct counter *)0)->n) == sizeof(int64_t) && (_Generic(((struct counter *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Counter n");
-#line 67 "lentarecordholdingalockisreadinplace.c"
+#line 66 "lentarecordholdingalockisreadinplace.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,9 +158,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "lentarecordholdingalockisreadinplace.c"
+#line 164 "lentarecordholdingalockisreadinplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_lentarecordholdingalockisreadinplace_0Counter_eq(const struct counter *a, const struct counter *b);
@@ -207,7 +206,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 19 "tests/golden/run/lent-a-record-holding-a-lock-is-read-in-place.hero"
 int64_t h_lentarecordholdingalockisreadinplace_doubled(struct counter *ph0_c) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-holding-a-lock-is-read-in-place.hero", "lent-a-record-holding-a-lock-is-read-in-place.doubled", 20, 12}; hero_lend_local_name(ph0_c, "counter_value", "c"); hero_pad_fill(&(*ph0_c), sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0); t1 = counter_value(&(*ph0_c)); } t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("lent-a-record-holding-a-lock-is-read-in-place.hero", "lent-a-record-holding-a-lock-is-read-in-place.doubled", 20, 12); return t3;
-#line 211 "lentarecordholdingalockisreadinplace.c"
+#line 210 "lentarecordholdingalockisreadinplace.c"
 }
 
 #line 22 "tests/golden/run/lent-a-record-holding-a-lock-is-read-in-place.hero"
@@ -218,7 +217,7 @@ void h_lentarecordholdingalockisreadinplace_main(void) { h_lentarecordholdingalo
     t8 = INT64_C(3); h0_s.f_first.n = t8;
     t9 = INT64_C(2); h0_s.f_second.n = t9;
     t10 = h_lentarecordholdingalockisreadinplace_doubled(&h0_s.f_first); t11 = HERO_STR_LIT(hero_str_20); t12 = h_lentarecordholdingalockisreadinplace_doubled(&h0_s.f_second); t13 = HERO_STR_LIT(hero_str_20); t14 = h0_s.f_first.n; t15 = h0_s.f_second.n; if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lent-a-record-holding-a-lock-is-read-in-place.hero", "lent-a-record-holding-a-lock-is-read-in-place.main", 28, 58); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_str(t13); hero_print_int(t16); hero_print_end(); return;
-#line 222 "lentarecordholdingalockisreadinplace.c"
+#line 221 "lentarecordholdingalockisreadinplace.c"
 }
 HERO_TU_LOCAL bool h_lentarecordholdingalockisreadinplace_0Counter_eq(const struct counter *a, const struct counter *b) {
     hero_panic("h_lentarecordholdingalockisreadinplace_0Counter_eq: a partial record has no structural equality");
@@ -339,7 +338,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f14bfa87b8e5e51", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("54f61a365b0800fd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lentarecordholdingalockisreadinplace\tlent-a-record-holding-a-lock-is-read-in-place\n");

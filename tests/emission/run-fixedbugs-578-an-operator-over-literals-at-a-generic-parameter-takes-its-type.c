@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 53 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 91 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,7 +114,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericpa
 #line 24 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 HeroStr h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_shown(uint8_t h0_v) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t2 = hero_int_to_str(t1); t3 = h1_own1; h1_own1 = t2; hero_str_decref(t3);
-#line 119 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 118 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -141,7 +140,7 @@ void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(vo
     t51 = INT64_C(1); t52 = INT64_C(2); t53 = INT64_C(3); if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 43, 26); t55 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_1b9a87(t51, t54); hero_print_int(t55); hero_print_end();
     t56 = INT64_C(2); t57 = INT64_C(3); if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 44, 21); t59 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t59, &t58); t71 = h7_own7; h7_own7 = t59; hero_array_decref(t71); t60 = hero_array_new(&hero_desc_int, 1); t72 = h8_own8; h8_own8 = t60; hero_array_decref(t72); t61 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(t59, t60); t73 = h9_own9; h9_own9 = t61; hero_array_decref(t73); t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len); hero_print_int(t62); hero_print_end();
     t63 = hero_array_new(&hero_desc_int, 1); t74 = h10_own10; h10_own10 = t63; hero_array_decref(t74); t64 = INT64_C(2); t65 = INT64_C(3); if (__builtin_add_overflow(t64, t65, &t66)) hero_panic_overflow_at("fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.main", 45, 28); t67 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t67, &t66); t75 = h11_own11; h11_own11 = t67; hero_array_decref(t75); t68 = h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(t63, t67); t76 = h12_own12; h12_own12 = t68; hero_array_decref(t76); t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len); hero_print_int(t69); hero_print_end();
-#line 145 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 144 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_str_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);
     hero_array_release_at(&h8_own8);
@@ -155,14 +154,14 @@ void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(vo
 #line 17 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 /* id<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_3c17(uint8_t h0_a) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; return t1;
-#line 159 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 158 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 /* first<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_3c17(uint8_t h0_a, uint8_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t4 + 1))[t5]);
-#line 166 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 165 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
@@ -171,14 +170,14 @@ void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(vo
 #line 17 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 /* id<i8> */ HERO_TU_LOCAL int8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0id_35f3(int8_t h0_a) { HERO_NODEBUG int8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; return t1;
-#line 175 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 174 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 /* first<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_1b9a87(int64_t h0_a, int64_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
-#line 182 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 181 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
@@ -188,7 +187,7 @@ void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(vo
 /* first<[i64]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_0first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero", "fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.first", 22, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 192 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
+#line 191 "fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype.c"
     hero_array_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -291,7 +290,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("20c964535fe2d146", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5dc61a1c67f78497", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype\tfixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type\n");

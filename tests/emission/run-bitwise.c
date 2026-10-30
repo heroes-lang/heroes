@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,7 +65,7 @@ HERO_STR_STATIC(hero_str_3e4223b, "every = ");
 HERO_STR_STATIC(hero_str_5671f1f7, "has write = ");
 HERO_STR_STATIC(hero_str_6cc5431, "cleared = ");
 
-#line 70 "bitwise.c"
+#line 69 "bitwise.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -102,9 +101,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "bitwise.c"
+#line 107 "bitwise.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -148,7 +147,7 @@ void h_bitwise_main(void) { int64_t h0_read; int64_t h1_write; int64_t h2_exec; 
     t75 = HERO_STR_LIT(hero_str_3e4223b); t76 = h3_every; hero_print_str(t75); hero_print_int(t76); hero_print_end();
     t77 = HERO_STR_LIT(hero_str_5671f1f7); t78 = h3_every; t79 = h1_write; t80 = t78 & t79; t81 = h1_write; t82 = t80 == t81; hero_print_str(t77); hero_print_bool(t82); hero_print_end();
     t83 = HERO_STR_LIT(hero_str_6cc5431); t84 = h3_every; t85 = h1_write; t86 = ~t85; t87 = t84 & t86; hero_print_str(t83); hero_print_int(t87); hero_print_end(); return;
-#line 152 "bitwise.c"
+#line 151 "bitwise.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -247,7 +246,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b9586d524406386", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("73b9e469539ce57c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_bitwise_main();

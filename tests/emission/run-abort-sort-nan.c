@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "abortsortnan.c"
+#line 53 "abortsortnan.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "abortsortnan.c"
+#line 91 "abortsortnan.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,7 +111,7 @@ void h_abortsortnan_main(void) { double h0_zero; double h1_n; HERO_NODEBUG HeroA
     t2 = h0_zero; t3 = h0_zero; t4 = t2 / t3; h1_n = t4;
     t5 = 0x1p+1; t6 = 0x1p+0; t7 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t18 = h2_own2; h2_own2 = t7; hero_array_decref(t18); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-sort-nan.hero", "abort-sort-nan.main", 17, 11}; t8 = hero_array_sort_at(t7, &hero_here); } t19 = h3_own3; h3_own3 = t8; hero_array_decref(t19); t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "abort-sort-nan.hero", "abort-sort-nan.main", 17, 11) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]); hero_print_f64(t10); hero_print_end();
     t11 = 0x1p+1; t12 = h1_n; t13 = 0x1p+0; t14 = hero_array_new(&hero_desc_f64, 3); hero_array_push_owned(&t14, &t11); hero_array_push_owned(&t14, &t12); hero_array_push_owned(&t14, &t13); t20 = h4_own4; h4_own4 = t14; hero_array_decref(t20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-sort-nan.hero", "abort-sort-nan.main", 18, 11}; t15 = hero_array_sort_at(t14, &hero_here); } t21 = h5_own5; h5_own5 = t15; hero_array_decref(t21); t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? hero_panic_index_at(t15, t16, "abort-sort-nan.hero", "abort-sort-nan.main", 18, 11) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]); hero_print_f64(t17); hero_print_end();
-#line 116 "abortsortnan.c"
+#line 115 "abortsortnan.c"
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -216,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2256d0664cab652e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3609636d14fc1738", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortsortnan\tabort-sort-nan\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 56 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 55 "fixedbugs413anelementisreachedwhenthecallismade.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 93 "fixedbugs413anelementisreachedwhenthecallismade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -114,7 +113,7 @@ void h_fixedbugs413anelementisreachedwhenthecallismade_main(void);
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 void h_fixedbugs413anelementisreachedwhenthecallismade_add(int64_t *ph0_n, int64_t h1_k) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); t2 = h1_k; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero", "fixedbugs-413-an-element-is-reached-when-the-call-is-made.add", 13, 9); (*ph0_n) = t3; return;
-#line 118 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 117 "fixedbugs413anelementisreachedwhenthecallismade.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
@@ -122,14 +121,14 @@ int64_t h_fixedbugs413anelementisreachedwhenthecallismade_grow(HeroArrayHeader *
     t1 = INT64_C(0); t2 = INT64_C(100); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*ph0_xs)); if (*hero_slot == NULL || t1 < 0 || t1 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t1, "fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero", "fixedbugs-413-an-element-is-reached-when-the-call-is-made.grow", 16, 5); hero_array_set(hero_slot, t1, &t2); }
     t4 = INT64_C(7); hero_array_push_owned(&(*ph0_xs), &t4);
     t6 = INT64_C(1); return t6;
-#line 126 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 125 "fixedbugs413anelementisreachedwhenthecallismade.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementisreachedwhenthecallismade_hundred(int64_t *ph0_n) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(100); (*ph0_n) = t1;
     t2 = INT64_C(1); return t2;
-#line 133 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 132 "fixedbugs413anelementisreachedwhenthecallismade.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
@@ -140,7 +139,7 @@ void h_fixedbugs413anelementisreachedwhenthecallismade_main(void) { HeroArrayHea
     t11 = INT64_C(1); h1_n = t11;
     t12 = h_fixedbugs413anelementisreachedwhenthecallismade_hundred(&h1_n); h_fixedbugs413anelementisreachedwhenthecallismade_add(&h1_n, t12);
     t13 = h1_n; hero_print_int(t13); hero_print_end();
-#line 144 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 143 "fixedbugs413anelementisreachedwhenthecallismade.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;
@@ -242,7 +241,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6467bc2a0bac0720", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("638663b35e55695c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413anelementisreachedwhenthecallismade\tfixedbugs-413-an-element-is-reached-when-the-call-is-made\n");

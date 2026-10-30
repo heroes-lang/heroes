@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,11 +59,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 9 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 _Static_assert(__builtin_classify_type(((PK *)0)->k) == 1 && sizeof(((PK *)0)->k) == sizeof(uint8_t) && (_Generic(((PK *)0)->k, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field PK k");
 _Static_assert(sizeof(PK) - __builtin_offsetof(PK, c) != 0, "heroes-ffi-flex PK c"); _Static_assert(_Generic(&((PK *)0)->c, _Bool (*)[5]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[5]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[5]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[5]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[5]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[5]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[5]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[5]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[5]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[5]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[5]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[5]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field PK c");
-#line 64 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 63 "fixedbugs151anarmaswideasapackedunioncompared.c"
 
 #line 8 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 _Static_assert(__builtin_classify_type(*(PK *)0) != 13 || sizeof(((PK *)0)->k) == sizeof(PK), "heroes-ffi-union-narrow PK k"); _Static_assert(__builtin_classify_type(*(PK *)0) != 13 || sizeof(((PK *)0)->c) == sizeof(PK), "heroes-ffi-union-narrow PK c");
-#line 68 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 67 "fixedbugs151anarmaswideasapackedunioncompared.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -156,9 +155,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 161 "fixedbugs151anarmaswideasapackedunioncompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(const PK *a, const PK *b);
@@ -181,7 +180,7 @@ void h_fixedbugs151anarmaswideasapackedunioncompared_main(void);
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 void h_fixedbugs151anarmaswideasapackedunioncompared_main(void) { HERO_NODEBUG uint8_t t1, t3, t7, t9; HERO_NODEBUG PK t2, t4, t8, t10; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 11}; t2 = make_pk(t1); } t3 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 31}; t4 = make_pk(t3); } t5 = h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(&t2, &t4); t6 = HERO_STR_LIT(hero_str_20); t7 = UINT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 54}; t8 = make_pk(t7); } t9 = UINT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero", "fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.main", 14, 74}; t10 = make_pk(t9); } t11 = h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(&t8, &t10); hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_end(); return;
-#line 185 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 184 "fixedbugs151anarmaswideasapackedunioncompared.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_0PK_eq(const PK *a, const PK *b) {
     if (!(a->k == b->k)) return false;
@@ -298,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d44cca13f4dd5b9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f2ee2c440b5ad7e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151anarmaswideasapackedunioncompared\tfixedbugs-151-an-arm-as-wide-as-a-packed-union-compared\n");

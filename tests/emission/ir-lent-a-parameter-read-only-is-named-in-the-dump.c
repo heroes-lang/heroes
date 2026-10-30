@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "lentaparameterreadonlyisnamedinthedump.c"
+#line 53 "lentaparameterreadonlyisnamedinthedump.c"
 typedef struct h_lentaparameterreadonlyisnamedinthedump_Pt {
     int64_t f_x;
 } h_lentaparameterreadonlyisnamedinthedump_Pt;
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "lentaparameterreadonlyisnamedinthedump.c"
+#line 95 "lentaparameterreadonlyisnamedinthedump.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_lentaparameterreadonlyisnamedinthedump_0Pt_eq(const h_lentaparameterreadonlyisnamedinthedump_Pt *a, const h_lentaparameterreadonlyisnamedinthedump_Pt *b);
@@ -117,7 +116,7 @@ void h_lentaparameterreadonlyisnamedinthedump_main(void);
 int64_t h_lentaparameterreadonlyisnamedinthedump_sum(h_lentaparameterreadonlyisnamedinthedump_Pt *ph0_p, h_lentaparameterreadonlyisnamedinthedump_Pt *ph1_q) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph1_q).f_x; t2 = (*ph0_p).f_x; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("lent-a-parameter-read-only-is-named-in-the-dump.hero", "lent-a-parameter-read-only-is-named-in-the-dump.sum", 10, 11); (*ph1_q).f_x = t3;
     t4 = (*ph0_p).f_x; t5 = (*ph1_q).f_x; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("lent-a-parameter-read-only-is-named-in-the-dump.hero", "lent-a-parameter-read-only-is-named-in-the-dump.sum", 11, 12); return t6;
-#line 121 "lentaparameterreadonlyisnamedinthedump.c"
+#line 120 "lentaparameterreadonlyisnamedinthedump.c"
 }
 
 #line 13 "tests/golden/ir/lent-a-parameter-read-only-is-named-in-the-dump.hero"
@@ -125,7 +124,7 @@ void h_lentaparameterreadonlyisnamedinthedump_main(void) { __attribute__((unused
     t1 = INT64_C(1); t2 = (h_lentaparameterreadonlyisnamedinthedump_Pt){.f_x = t1}; h0_a = t2;
     t3 = INT64_C(2); t4 = (h_lentaparameterreadonlyisnamedinthedump_Pt){.f_x = t3}; h1_b = t4;
     t5 = h_lentaparameterreadonlyisnamedinthedump_sum(&h0_a, &h1_b); hero_print_int(t5); hero_print_end(); return;
-#line 129 "lentaparameterreadonlyisnamedinthedump.c"
+#line 128 "lentaparameterreadonlyisnamedinthedump.c"
 }
 HERO_TU_LOCAL bool h_lentaparameterreadonlyisnamedinthedump_0Pt_eq(const h_lentaparameterreadonlyisnamedinthedump_Pt *a, const h_lentaparameterreadonlyisnamedinthedump_Pt *b) {
     if (!(a->f_x == b->f_x)) return false;
@@ -236,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e34311c61a550a5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("27ec65000acbb18a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lentaparameterreadonlyisnamedinthedump\tlent-a-parameter-read-only-is-named-in-the-dump\n");

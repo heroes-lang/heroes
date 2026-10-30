@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "abortmapkeynan.c"
+#line 53 "abortmapkeynan.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "abortmapkeynan.c"
+#line 91 "abortmapkeynan.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -111,7 +110,7 @@ HERO_TU_LOCAL int64_t h_abortmapkeynan_0count_1ad16c(HeroArrayHeader * h0_ks);
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
 double h_abortmapkeynan_nan(void) { HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x0p+0; t2 = 0x0p+0; t3 = t1 / t2; return t3;
-#line 115 "abortmapkeynan.c"
+#line 114 "abortmapkeynan.c"
 }
 
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
@@ -120,7 +119,7 @@ void h_abortmapkeynan_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, 
     t1 = 0x1.8p+0; t2 = 0x1.4p+1; t3 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t8 = h0_own0; h0_own0 = t3; hero_array_decref(t8); t4 = h_abortmapkeynan_0count_1ad16c(t3); hero_print_int(t4); hero_print_end();
 #line 40
     t5 = h_abortmapkeynan_nan(); t6 = hero_array_new(&hero_desc_f64, 1); hero_array_push_owned(&t6, &t5); t9 = h1_own1; h1_own1 = t6; hero_array_decref(t9); t7 = h_abortmapkeynan_0count_1ad16c(t6); hero_print_int(t7); hero_print_end();
-#line 124 "abortmapkeynan.c"
+#line 123 "abortmapkeynan.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return;
@@ -136,7 +135,7 @@ void h_abortmapkeynan_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, 
     t13 = h3_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("abort-map-key-nan.hero", "abort-map-key-nan.count", 30, 9); h3_i0 = t15; goto bb1; bb4:
 #line 33
     t16 = h1_m; t17 = hero_map_len(t16);
-#line 140 "abortmapkeynan.c"
+#line 139 "abortmapkeynan.c"
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_xs0);
     hero_map_release_at(&h5_own5);
@@ -239,7 +238,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("25cd3cf24eef4969", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("772e9a2d62748d02", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortmapkeynan\tabort-map-key-nan\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs564asumpastitswidthaborts.c"
+#line 53 "fixedbugs564asumpastitswidthaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs564asumpastitswidthaborts.c"
+#line 91 "fixedbugs564asumpastitswidthaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,14 +111,14 @@ void h_fixedbugs564asumpastitswidthaborts_main(void) { uint8_t h0_y; HERO_NODEBU
     t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
     t2 = UINT64_C(200); t3 = UINT64_C(2); t4 = h_fixedbugs564asumpastitswidthaborts_0first_3c17(t2, t3); t5 = UINT64_C(100); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-564-a-sum-past-its-width-aborts.hero", "fixedbugs-564-a-sum-past-its-width-aborts.main", 14, 13); h0_y = t6;
     t7 = h0_y; hero_print_int(t7); hero_print_end(); return;
-#line 116 "fixedbugs564asumpastitswidthaborts.c"
+#line 115 "fixedbugs564asumpastitswidthaborts.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs-564-a-sum-past-its-width-aborts.hero"
 /* first<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs564asumpastitswidthaborts_0first_3c17(uint8_t h0_a, uint8_t h1_b) { HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 10
     t2 = h0_a; return t2;
-#line 123 "fixedbugs564asumpastitswidthaborts.c"
+#line 122 "fixedbugs564asumpastitswidthaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -218,7 +217,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66bc543b4542ebb3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d680f62745c6153", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs564asumpastitswidthaborts\tfixedbugs-564-a-sum-past-its-width-aborts\n");

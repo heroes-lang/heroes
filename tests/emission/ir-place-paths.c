@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placepaths.c"
+#line 53 "placepaths.c"
 typedef struct h_placepaths_Row {
     HeroArrayHeader * f_cells;
 } h_placepaths_Row;
@@ -94,9 +93,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "placepaths.c"
+#line 99 "placepaths.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_placepaths_0Row_retain(const h_placepaths_Row *v);
@@ -126,13 +125,13 @@ int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c)
 #line 12 "tests/golden/ir/place-paths.hero"
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_r; t2 = h2_c; t3 = h3_v; hero_array_unshare(&((*ph0_g).f_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)(((*ph0_g).f_rows == NULL || t1 < 0 || t1 >= (*ph0_g).f_rows->len) ? hero_panic_index_at((*ph0_g).f_rows, t1, "place-paths.hero", "place-paths.set_cell", 13, 5) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), (h_placepaths_Row *)(void *)((*ph0_g).f_rows + 1) + t1)).f_cells); if (*hero_slot == NULL || t2 < 0 || t2 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t2, "place-paths.hero", "place-paths.set_cell", 13, 5); hero_array_set(hero_slot, t2, &t3); } return;
-#line 130 "placepaths.c"
+#line 129 "placepaths.c"
 }
 
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) { HERO_NODEBUG HeroArrayHeader *t1, *t4; HERO_NODEBUG int64_t t2, t5, t6; HERO_NODEBUG h_placepaths_Row t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g.f_rows; t2 = h1_r; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "place-paths.hero", "place-paths.cell_of", 16, 12) : (void)0), (void)(t1->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t1 + 1))[t2]); t4 = t3.f_cells; t5 = h2_c; t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "place-paths.hero", "place-paths.cell_of", 16, 12) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); return t6;
-#line 136 "placepaths.c"
+#line 135 "placepaths.c"
 }
 HERO_TU_LOCAL void h_placepaths_0Row_retain(const h_placepaths_Row *v) {
     hero_array_incref(v->f_cells);

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_4da9aa66, "xs == ys");
 
-#line 56 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
+#line 55 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
+#line 93 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -118,7 +117,7 @@ void h_asserttwosideswrittenalikepasttheboundaretoldwhy_main(void) { HeroArrayHe
     t4 = INT64_C(0); t5 = INT64_C(20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"assert-two-sides-written-alike-past-the-bound-are-told-why.hero", "assert-two-sides-written-alike-past-the-bound-are-told-why.main", 7, 18}; t6 = h_library_range(t4, t5, &hero_here); } t17 = h5_own5; h5_own5 = t6; hero_array_decref(t17); t18 = h1_ys; hero_array_incref(t6); h1_ys = t6; hero_array_decref(t18);
     t7 = INT64_C(19); t8 = INT64_C(99); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h1_ys); if (*hero_slot == NULL || t7 < 0 || t7 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t7, "assert-two-sides-written-alike-past-the-bound-are-told-why.hero", "assert-two-sides-written-alike-past-the-bound-are-told-why.main", 8, 5); hero_array_set(hero_slot, t7, &t8); }
     t9 = HERO_STR_LIT(hero_str_4da9aa66); t10 = h0_xs; t11 = h1_ys; t12 = hero_array_eq(t10, t11); t19 = h2_assert0; hero_array_incref(t10); h2_assert0 = t10; hero_array_decref(t19); t20 = h3_assert1; hero_array_incref(t11); h3_assert1 = t11; hero_array_decref(t20); if (t12) goto bb1; else goto bb2; bb1:
-#line 122 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
+#line 121 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_assert0);
@@ -129,7 +128,7 @@ void h_asserttwosideswrittenalikepasttheboundaretoldwhy_main(void) { HeroArrayHe
 bb2:
 #line 9 "tests/golden/run/assert-two-sides-written-alike-past-the-bound-are-told-why.hero"
     t13 = h2_assert0; t14 = h3_assert1;
-#line 133 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
+#line 132 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
     hero_panic_assert_shown_at(t9, h_0show_4b7fe249, &t13, &t14, 1, "assert-two-sides-written-alike-past-the-bound-are-told-why.hero", "assert-two-sides-written-alike-past-the-bound-are-told-why.main", 9, 12);
     hero_unreachable();
 }
@@ -142,7 +141,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 146 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
+#line 145 "asserttwosideswrittenalikepasttheboundaretoldwhy.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -253,7 +252,7 @@ HERO_TU_LOCAL void h_0show_4b7fe249(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6cf3e1c847f56eb5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("161448ef60ed2449", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("asserttwosideswrittenalikepasttheboundaretoldwhy\tassert-two-sides-written-alike-past-the-bound-are-told-why\n");

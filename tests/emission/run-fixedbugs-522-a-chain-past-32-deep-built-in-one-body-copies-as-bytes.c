@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 53 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
 typedef enum h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R0_tag {
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R0_tag_a = 0,
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R0_tag_b = 1,
@@ -962,9 +961,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 968 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 967 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R0_c_a_eq(const h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R0_c_a *a, const h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R0_c_a *b);
@@ -2587,7 +2586,7 @@ int64_t h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_down(h_fixedbu
     HERO_COPY(h192_r57, (t470)); goto bb172; bb178:
 #line 370
     t480 = h198_r59;
-#line 2591 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 2590 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R39_release(hero_slot_escape(&h1_s0));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R38_release(hero_slot_escape(&h2_r0));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R39_c_a_release(hero_slot_escape(&h3_x));
@@ -2848,7 +2847,7 @@ bb179:
     t479 = INT64_C(-1);
 #line 370
     h198_r59 = t479; goto bb178;
-#line 2852 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 2851 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
 }
 
 #line 374 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2898,7 +2897,7 @@ void h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_main(void) { h_fi
     t106 = h40_xs; t107 = INT64_C(0); t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? hero_panic_index_at(t106, t107, "fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero", "fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.main", 417, 11) : (void)0), (void)(t106->elem->size != sizeof(h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39) ? hero_unreachable() : (void)0), ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39 const *)(const void *)(t106 + 1))[t107]); HERO_COPY_HELD(t109, (h39_r39)); t110 = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R39_eq(&t108, &t109); hero_print_bool(t110); hero_print_end();
     t111 = h40_xs; t112 = INT64_C(1); t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? hero_panic_index_at(t111, t112, "fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero", "fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.main", 418, 11) : (void)0), (void)(t111->elem->size != sizeof(h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39) ? hero_unreachable() : (void)0), ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39 const *)(const void *)(t111 + 1))[t112]); HERO_COPY_HELD(t114, (h39_r39)); t115 = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R39_eq(&t113, &t114); hero_print_bool(t115); hero_print_end();
     t116 = h40_xs; t117 = INT64_C(1); t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? hero_panic_index_at(t116, t117, "fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero", "fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.main", 419, 16) : (void)0), (void)(t116->elem->size != sizeof(h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39) ? hero_unreachable() : (void)0), ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39 const *)(const void *)(t116 + 1))[t117]); t119 = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_down(t118); hero_print_int(t119); hero_print_end();
-#line 2902 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 2901 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R1_release(hero_slot_escape(&h1_r1));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R2_release(hero_slot_escape(&h2_r2));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_0R3_release(hero_slot_escape(&h3_r3));
@@ -5877,7 +5876,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a0cb2101b2f31b7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("26926fc83bf439b6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes\tfixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes\n");

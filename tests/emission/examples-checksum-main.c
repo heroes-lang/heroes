@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -83,7 +82,7 @@ HERO_STR_STATIC(hero_str_7eed3f00, "a base64 text is a multiple of four characte
 HERO_STR_STATIC(hero_str_42df8527, "` is padded and is not the last group");
 HERO_STR_STATIC(hero_str_16ecc41b, "nothing was refused");
 
-#line 87 "main.c"
+#line 86 "main.c"
 typedef struct h_main_Digest {
     uint32_t f_checksum;
     uint32_t f_rolling;
@@ -170,9 +169,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "main.c"
+#line 175 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_0Digest_eq(const h_main_Digest *a, const h_main_Digest *b);
@@ -245,7 +244,7 @@ int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width);
 #if HERO_STATIC_CONSTANTS
 #line 32 "examples/checksum/main.hero"
 HERO_ARRAY_STATIC(hero_constant_h_main_VECTORS_8, HeroStr, &hero_desc_str, 7, HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_66), HERO_STR_LIT(hero_str_34a1), HERO_STR_LIT(hero_str_1aeed2), HERO_STR_LIT(hero_str_dc835d8), HERO_STR_LIT(hero_str_d738df7), HERO_STR_LIT(hero_str_6221a5e4)); HeroArrayHeader * h_main_VECTORS(void) { return HERO_ARRAY_LIT(hero_constant_h_main_VECTORS_8);
-#line 249 "main.c"
+#line 248 "main.c"
 }
 #else
 
@@ -261,7 +260,7 @@ HeroArrayHeader * h_main_VECTORS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 =
     t7 = HERO_STR_LIT(hero_str_6221a5e4);
 #line 33
     t8 = hero_array_new(&hero_desc_str, 7); hero_array_push_owned(&t8, &t1); hero_array_push_owned(&t8, &t2); hero_array_push_owned(&t8, &t3); hero_array_push_owned(&t8, &t4); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t9 = h0_own0; h0_own0 = t8; hero_array_decref(t9);
-#line 265 "main.c"
+#line 264 "main.c"
     hero_array_incref(t8);
     hero_array_release_at(&h0_own0);
     return t8;
@@ -271,7 +270,7 @@ HeroArrayHeader * h_main_VECTORS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 =
 #line 43 "examples/checksum/main.hero"
 HeroStr h_main_DIGITS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
-#line 275 "main.c"
+#line 274 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -284,14 +283,14 @@ h_main_Digest h_main_digest_of(HeroStr h0_text) { HERO_NODEBUG h_0opt_fbbb698 h1
     t5 = h0_text; t6 = hero_str_len(t5); if (t6 >= 0LL) { t7 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t6}; } else { t7 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t17 = h2_own2; h2_own2 = t7; h_0opt_fbbb698_release(&t17); t18 = h1_f0; h_0opt_fbbb698_retain(&t7); h1_f0 = t7; h_0opt_fbbb698_release(&t18); t8 = h1_f0; t9 = t8.tag; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb1; else goto bb2; bb1: t14 = h1_f0; t15 = t14.as.ok;
 #line 55
     t16 = (h_main_Digest){.f_checksum = t2, .f_rolling = t4, .f_length = t15};
-#line 288 "main.c"
+#line 287 "main.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h1_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h2_own2));
     return t16;
 bb2:
 #line 58 "examples/checksum/main.hero"
     t12 = h1_f0; t13 = t12.as.err;
-#line 295 "main.c"
+#line 294 "main.c"
     hero_panic_must_at(t13, "main.hero", "main.digest_of", 58, 17);
     hero_unreachable();
 }
@@ -303,7 +302,7 @@ HeroStr h_main_hex(uint32_t h0_value) { HeroArrayHeader * h1_out = {0}; HERO_NOD
     t12 = INT64_C(28); h4_shift = t12; goto bb3; bb2:
 #line 66
     t8 = h2_f0; t9 = t8.as.err;
-#line 307 "main.c"
+#line 306 "main.c"
     hero_panic_must_at(t9, "main.hero", "main.hex", 66, 9);
     hero_unreachable();
 bb3:
@@ -314,7 +313,7 @@ bb3:
     t29 = h4_shift; t30 = INT64_C(4); if (__builtin_sub_overflow(t29, t30, &t31)) hero_panic_overflow_at("main.hero", "main.hex", 72, 17); h4_shift = t31; goto bb3; bb5:
 #line 74
     t32 = HERO_STR_LIT(hero_str_1908); t33 = h1_out; t34 = HERO_STR_LIT(hero_str_0); t35 = hero_str_join(t33, t34); t43 = h10_own10; h10_own10 = t35; hero_str_decref(t43); t36 = hero_str_concat(t32, t35); t44 = h11_own11; h11_own11 = t36; hero_str_decref(t44);
-#line 318 "main.c"
+#line 317 "main.c"
     hero_str_incref(t36);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -337,7 +336,7 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) { HeroArrayHeader * h1
     t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.shown", 82, 9); h3_i0 = t17; goto bb1; bb4:
 #line 85
     t18 = h1_out;
-#line 341 "main.c"
+#line 340 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -361,7 +360,7 @@ void h_main_main(void) { HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = 
 #line 101
     t30 = HERO_STR_LIT(hero_str_f4dae36); t31 = h_base64_decoded(t30); t52 = h11_own11; h11_own11 = t31; h_0opt_4d1c207c_release(&t52); t53 = h4_f0; h_0opt_4d1c207c_retain(&t31); h4_f0 = t31; h_0opt_4d1c207c_release(&t53); t32 = h4_f0; t33 = t32.tag; t34 = INT64_C(0); t35 = t33 == t34; if (t35) goto bb5; else goto bb6; bb5: t38 = h4_f0; t39 = t38.as.ok; t54 = h5_back; hero_array_incref(t39); h5_back = t39; hero_array_decref(t54);
     t40 = HERO_STR_LIT(hero_str_1907f49f); t41 = h5_back; t42 = h_main_shown(t41); t55 = h12_own12; h12_own12 = t42; hero_array_decref(t55); t43 = HERO_STR_LIT(hero_str_20); t44 = hero_str_join(t42, t43); t56 = h13_own13; h13_own13 = t44; hero_str_decref(t56); hero_print_str(t40); hero_print_str(t44); hero_print_end();
-#line 365 "main.c"
+#line 364 "main.c"
     hero_array_release_at(&h0_xs0);
     hero_str_release_at(&h2_text);
     h_0opt_4d1c207c_release(hero_slot_escape(&h4_f0));
@@ -378,7 +377,7 @@ void h_main_main(void) { HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = 
 bb6:
 #line 101 "examples/checksum/main.hero"
     t36 = h4_f0; t37 = t36.as.err;
-#line 382 "main.c"
+#line 381 "main.c"
     hero_panic_must_at(t37, "main.hero", "main.main", 101, 12);
     hero_unreachable();
 }
@@ -386,7 +385,7 @@ bb6:
 #line 33 "examples/checksum/adler.hero"
 int64_t h_adler_BASE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(65521); return t1;
-#line 390 "main.c"
+#line 389 "main.c"
 }
 
 #line 45 "examples/checksum/adler.hero"
@@ -406,19 +405,19 @@ h_adler_Halves h_adler_halves(HeroStr h0_text) { int64_t h1_s1; int64_t h2_s2; i
     t30 = h3_i; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("adler.hero", "adler.halves", 54, 13); h3_i = t32; goto bb1; bb5:
 #line 52
     t18 = h5_f0; t19 = t18.as.err;
-#line 410 "main.c"
+#line 409 "main.c"
     hero_panic_must_at(t19, "adler.hero", "adler.halves", 52, 20);
     hero_unreachable();
 bb6:
 #line 56 "examples/checksum/adler.hero"
     t41 = h6_f1; t42 = t41.as.ok; t43 = h2_s2; if (t43 >= 0LL && t43 <= 65535LL) { t44 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t43}; } else { t44 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t58 = h10_own10; h10_own10 = t44; h_0opt_fba6871_release(&t58); t59 = h7_f2; h_0opt_fba6871_retain(&t44); h7_f2 = t44; h_0opt_fba6871_release(&t59); t45 = h7_f2; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb8; else goto bb9; bb7: t39 = h6_f1; t40 = t39.as.err;
-#line 416 "main.c"
+#line 415 "main.c"
     hero_panic_must_at(t40, "adler.hero", "adler.halves", 56, 23);
     hero_unreachable();
 bb8:
 #line 56 "examples/checksum/adler.hero"
     t51 = h7_f2; t52 = t51.as.ok; t53 = (h_adler_Halves){.f_s1 = t42, .f_s2 = t52};
-#line 422 "main.c"
+#line 421 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     h_0opt_fba6871_release(hero_slot_escape(&h6_f1));
     h_0opt_fba6871_release(hero_slot_escape(&h7_f2));
@@ -429,7 +428,7 @@ bb8:
 bb9:
 #line 56 "examples/checksum/adler.hero"
     t49 = h7_f2; t50 = t49.as.err;
-#line 433 "main.c"
+#line 432 "main.c"
     hero_panic_must_at(t50, "adler.hero", "adler.halves", 56, 47);
     hero_unreachable();
 }
@@ -438,19 +437,19 @@ bb9:
 uint32_t h_adler_adler32(HeroStr h0_text) { h_adler_Halves h1_two; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_own5 = {0}, h6_own6 = {0}, t4, t5, t9, t11, t16, t17, t21, t23, t35, t36, t37, t38; HERO_NODEBUG h_0opt_fbaec77 h4_f2 = {0}, h7_own7 = {0}, t26, t27, t31, t33, t39, t40; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_adler_Halves t2; HERO_NODEBUG uint16_t t3, t15; HERO_NODEBUG int64_t t6, t7, t12, t13, t14, t18, t19, t24, t25, t28, t29; HERO_NODEBUG bool t8, t20, t30; HERO_NODEBUG HeroFailure t10, t22, t32; HERO_NODEBUG uint32_t t34; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_adler_halves(t1); h1_two = t2;
     t3 = h1_two.f_s2; t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3}; t35 = h5_own5; h5_own5 = t4; h_0opt_e201354_release(&t35); t36 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t36); t5 = h2_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; t13 = INT64_C(65536); if (__builtin_mul_overflow(t12, t13, &t14)) hero_panic_overflow_at("adler.hero", "adler.adler32", 61, 13); t15 = h1_two.f_s1; t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t15}; t37 = h6_own6; h6_own6 = t16; h_0opt_e201354_release(&t37); t38 = h3_f1; h_0opt_e201354_retain(&t16); h3_f1 = t16; h_0opt_e201354_release(&t38); t17 = h3_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb2: t9 = h2_f0; t10 = t9.as.err;
-#line 442 "main.c"
+#line 441 "main.c"
     hero_panic_must_at(t10, "adler.hero", "adler.adler32", 61, 13);
     hero_unreachable();
 bb3:
 #line 61 "examples/checksum/adler.hero"
     t23 = h3_f1; t24 = t23.as.ok; if (__builtin_add_overflow(t14, t24, &t25)) hero_panic_overflow_at("adler.hero", "adler.adler32", 61, 13); if (t25 >= 0LL && t25 <= 4294967295LL) { t26 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t25}; } else { t26 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t39 = h7_own7; h7_own7 = t26; h_0opt_fbaec77_release(&t39); t40 = h4_f2; h_0opt_fbaec77_retain(&t26); h4_f2 = t26; h_0opt_fbaec77_release(&t40); t27 = h4_f2; t28 = t27.tag; t29 = INT64_C(0); t30 = t28 == t29; if (t30) goto bb5; else goto bb6; bb4: t21 = h3_f1; t22 = t21.as.err;
-#line 448 "main.c"
+#line 447 "main.c"
     hero_panic_must_at(t22, "adler.hero", "adler.adler32", 61, 46);
     hero_unreachable();
 bb5:
 #line 61 "examples/checksum/adler.hero"
     t33 = h4_f2; t34 = t33.as.ok;
-#line 454 "main.c"
+#line 453 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f2));
@@ -461,7 +460,7 @@ bb5:
 bb6:
 #line 61 "examples/checksum/adler.hero"
     t31 = h4_f2; t32 = t31.as.err;
-#line 465 "main.c"
+#line 464 "main.c"
     hero_panic_must_at(t32, "adler.hero", "adler.adler32", 61, 12);
     hero_unreachable();
 }
@@ -482,7 +481,7 @@ bool h_adler_is_prime(int64_t h0_n) { int64_t h1_d; HERO_NODEBUG bool h2_ret0, t
     t17 = h1_d; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("adler.hero", "adler.is_prime", 73, 13); h1_d = t19; goto bb4; bb8:
 #line 72
     t16 = false; h2_ret0 = t16; goto bb10; bb9: goto bb7; bb10:
-#line 486 "main.c"
+#line 485 "main.c"
     t21 = h2_ret0;
     return t21;
 }
@@ -490,7 +489,7 @@ bool h_adler_is_prime(int64_t h0_n) { int64_t h1_d; HERO_NODEBUG bool h2_ret0, t
 #line 38 "examples/checksum/base64.hero"
 HeroStr h_base64_ALPHABET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_45fa86fe);
-#line 494 "main.c"
+#line 493 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -498,7 +497,7 @@ HeroStr h_base64_ALPHABET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto
 #line 41 "examples/checksum/base64.hero"
 HeroStr h_base64_PAD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3d);
-#line 502 "main.c"
+#line 501 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -506,7 +505,7 @@ HeroStr h_base64_PAD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 44 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_LENGTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_220131e1);
-#line 510 "main.c"
+#line 509 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -514,7 +513,7 @@ HeroStr h_base64_ERR_LENGTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; go
 #line 47 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_552a00f0);
-#line 518 "main.c"
+#line 517 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -522,7 +521,7 @@ HeroStr h_base64_ERR_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP;
 #line 50 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_PADDING(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1b630675);
-#line 526 "main.c"
+#line 525 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -537,7 +536,7 @@ HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out 
     t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("base64.hero", "base64.bytes_of", 62, 13); h2_i = t14; goto bb1; bb3:
 #line 64
     t15 = h1_out;
-#line 541 "main.c"
+#line 540 "main.c"
     hero_array_incref(t15);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -547,7 +546,7 @@ HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out 
 #line 67 "examples/checksum/base64.hero"
 HeroStr h_base64_letter(int64_t h0_value) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t6, t7, t8; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_base64_ALPHABET(); t7 = h1_own1; h1_own1 = t1; hero_str_decref(t7); t2 = h0_value; t3 = h0_value; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("base64.hero", "base64.letter", 68, 44); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"base64.hero", "base64.letter", 68, 12}; t6 = hero_str_slice_at(t1, t2, t5, &hero_here); } t8 = h2_own2; h2_own2 = t6; hero_str_decref(t8);
-#line 551 "main.c"
+#line 550 "main.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -566,7 +565,7 @@ h_0opt_e201354 h_base64_value_of(HeroStr h0_written) { int64_t h1_i; HERO_NODEBU
     t15 = h1_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("base64.hero", "base64.value_of", 77, 13); h1_i = t17; goto bb1; bb5:
 #line 76
     t13 = h1_i; t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t13}; t32 = h9_own9; h9_own9 = t14; h_0opt_e201354_release(&t32); h2_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 570 "main.c"
+#line 569 "main.c"
     t25 = h2_ret0;
     h_0opt_e201354_retain(&t25);
     hero_str_release_at(&h3_own3);
@@ -582,7 +581,7 @@ h_0opt_e201354 h_base64_value_of(HeroStr h0_written) { int64_t h1_i; HERO_NODEBU
 #line 83 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded(HeroStr h0_text) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_base64_bytes_of(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = h_base64_encoded_bytes(t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5);
-#line 586 "main.c"
+#line 585 "main.c"
     hero_str_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -599,7 +598,7 @@ HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) { HeroArrayHeader * h1
     t8 = h0_data; t9 = h2_i; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "base64.hero", "base64.encoded_bytes", 95, 14) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10}; t122 = h13_own13; h13_own13 = t11; h_0opt_e201354_release(&t122); t123 = h4_f0; h_0opt_e201354_retain(&t11); h4_f0 = t11; h_0opt_e201354_release(&t123); t12 = h4_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb4; else goto bb5; bb3:
 #line 127
     t117 = h1_out; t118 = HERO_STR_LIT(hero_str_0); t119 = hero_str_join(t117, t118); t124 = h14_own14; h14_own14 = t119; hero_str_decref(t124);
-#line 603 "main.c"
+#line 602 "main.c"
     hero_str_incref(t119);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
@@ -627,7 +626,7 @@ bb4:
     t23 = h2_i; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("base64.hero", "base64.encoded_bytes", 100, 12); t26 = h3_n; t27 = t25 < t26; if (t27) goto bb7; else goto bb8; bb5:
 #line 95
     t16 = h4_f0; t17 = t16.as.err;
-#line 631 "main.c"
+#line 630 "main.c"
     hero_panic_must_at(t17, "base64.hero", "base64.encoded_bytes", 95, 14);
     hero_unreachable();
 bb6:
@@ -638,7 +637,7 @@ bb6:
     t42 = INT64_C(2); h8_held = t42; goto bb6; bb10:
 #line 101
     t38 = h9_f1; t39 = t38.as.err;
-#line 642 "main.c"
+#line 641 "main.c"
     hero_panic_must_at(t39, "base64.hero", "base64.encoded_bytes", 101, 18);
     hero_unreachable();
 bb11:
@@ -653,7 +652,7 @@ bb11:
     t62 = INT64_C(3); h8_held = t62; goto bb11; bb15:
 #line 105
     t58 = h10_f2; t59 = t58.as.err;
-#line 657 "main.c"
+#line 656 "main.c"
     hero_panic_must_at(t59, "base64.hero", "base64.encoded_bytes", 105, 18);
     hero_unreachable();
 bb16:
@@ -669,7 +668,7 @@ bb16:
     t106 = h11_block; t107 = INT64_C(63); t108 = t106 & t107; t109 = h_base64_letter(t108); t133 = h21_own21; h21_own21 = t109; hero_str_decref(t133); hero_array_push_owned(&h1_out, &t109); goto bb19; bb21:
 #line 124
     t112 = h_base64_PAD(); t134 = h22_own22; h22_own22 = t112; hero_str_decref(t134); hero_array_push_owned(&h1_out, &t112); goto bb19;
-#line 673 "main.c"
+#line 672 "main.c"
 }
 
 #line 131 "examples/checksum/base64.hero"
@@ -704,7 +703,7 @@ h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) { HeroStr h1_third = {0}; H
     t53 = INT64_C(0); t54 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t53}; t77 = h25_own25; h25_own25 = t54; h_0opt_e201354_release(&t77); h5_ret0 = t54; goto bb17; bb15:
 #line 151
     t51 = INT64_C(1); t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t51}; t78 = h26_own26; h26_own26 = t52; h_0opt_e201354_release(&t78); h5_ret0 = t52; goto bb17; bb16: goto bb14; bb17:
-#line 708 "main.c"
+#line 707 "main.c"
     t55 = h5_ret0;
     h_0opt_e201354_retain(&t55);
     hero_str_release_at(&h1_third);
@@ -787,7 +786,7 @@ h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) { HeroArrayHeader * h1_out = {
     t147 = h5_pad; t148 = INT64_C(2); t149 = t147 < t148; if (t149) goto bb31; else goto bb32; bb29:
 #line 183
     t142 = h16_f5; t143 = t142.as.err;
-#line 791 "main.c"
+#line 790 "main.c"
     hero_panic_must_at(t143, "base64.hero", "base64.decoded", 183, 24);
     hero_unreachable();
 bb30:
@@ -795,7 +794,7 @@ bb30:
     t166 = h5_pad; t167 = INT64_C(1); t168 = t166 < t167; if (t168) goto bb36; else goto bb37; bb31:
 #line 186
     t151 = h15_block; t152 = INT64_C(8); if (t152 < 0 || t152 > 63) hero_panic_at("shift count outside 0..63", "base64.hero", "base64.decoded", 186, 29); t153 = (t151 < 0) ? ~(int64_t)((~(uint64_t)t151) >> (uint64_t)t152) : (int64_t)((uint64_t)t151 >> (uint64_t)t152); t154 = INT64_C(255); t155 = t153 & t154; if (t155 >= 0LL && t155 <= 255LL) { t156 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t155}; } else { t156 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t223 = h46_own46; h46_own46 = t156; h_0opt_1ec004_release(&t223); t224 = h17_f6; h_0opt_1ec004_retain(&t156); h17_f6 = t156; h_0opt_1ec004_release(&t224); t157 = h17_f6; t158 = t157.tag; t159 = INT64_C(0); t160 = t158 == t159; if (t160) goto bb33; else goto bb34; bb32: goto bb30; bb33: t163 = h17_f6; t164 = t163.as.ok; hero_array_push_owned(&h1_out, &t164); goto bb30; bb34: t161 = h17_f6; t162 = t161.as.err;
-#line 799 "main.c"
+#line 798 "main.c"
     hero_panic_must_at(t162, "base64.hero", "base64.decoded", 186, 28);
     hero_unreachable();
 bb35:
@@ -803,7 +802,7 @@ bb35:
     t183 = h2_i; t184 = INT64_C(4); if (__builtin_add_overflow(t183, t184, &t185)) hero_panic_overflow_at("base64.hero", "base64.decoded", 190, 13); h2_i = t185; goto bb4; bb36:
 #line 189
     t170 = h15_block; t171 = INT64_C(255); t172 = t170 & t171; if (t172 >= 0LL && t172 <= 255LL) { t173 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t172}; } else { t173 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t225 = h47_own47; h47_own47 = t173; h_0opt_1ec004_release(&t225); t226 = h18_f7; h_0opt_1ec004_retain(&t173); h18_f7 = t173; h_0opt_1ec004_release(&t226); t174 = h18_f7; t175 = t174.tag; t176 = INT64_C(0); t177 = t175 == t176; if (t177) goto bb38; else goto bb39; bb37: goto bb35; bb38: t180 = h18_f7; t181 = t180.as.ok; hero_array_push_owned(&h1_out, &t181); goto bb35; bb39: t178 = h18_f7; t179 = t178.as.err;
-#line 807 "main.c"
+#line 806 "main.c"
     hero_panic_must_at(t179, "base64.hero", "base64.decoded", 189, 28);
     hero_unreachable();
 bb40:
@@ -853,7 +852,7 @@ bb40:
 #line 196 "examples/checksum/base64.hero"
 HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) { HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_said; t9 = h1_s0; h_0opt_4d1c207c_retain(&t1); h1_s0 = t1; h_0opt_4d1c207c_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 857 "main.c"
+#line 856 "main.c"
     hero_str_incref(t8);
     h_0opt_4d1c207c_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -868,31 +867,31 @@ bb2:
     t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.code;
 #line 197
     t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
-#line 872 "main.c"
+#line 871 "main.c"
 }
 
 #line 40 "examples/checksum/crc.hero"
 int64_t h_crc_POLY(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(79764919); return t1;
-#line 878 "main.c"
+#line 877 "main.c"
 }
 
 #line 44 "examples/checksum/crc.hero"
 int64_t h_crc_POLY_REFLECTED(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3988292384); return t1;
-#line 884 "main.c"
+#line 883 "main.c"
 }
 
 #line 49 "examples/checksum/crc.hero"
 int64_t h_crc_INIT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(4294967295); return t1;
-#line 890 "main.c"
+#line 889 "main.c"
 }
 
 #line 52 "examples/checksum/crc.hero"
 int64_t h_crc_XOROUT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(4294967295); return t1;
-#line 896 "main.c"
+#line 895 "main.c"
 }
 
 #line 61 "examples/checksum/crc.hero"
@@ -910,7 +909,7 @@ uint32_t h_crc_crc32(HeroStr h0_text) { int64_t h1_reg; int64_t h2_i; uint8_t h3
     t22 = INT64_C(0); h5_bit = t22; goto bb6; bb5:
 #line 67
     t17 = h4_f0; t18 = t17.as.err;
-#line 914 "main.c"
+#line 913 "main.c"
     hero_panic_must_at(t18, "crc.hero", "crc.crc32", 67, 21);
     hero_unreachable();
 bb6:
@@ -928,7 +927,7 @@ bb6:
     t36 = h1_reg; t37 = INT64_C(1); if (t37 < 0 || t37 > 63) hero_panic_at("shift count outside 0..63", "crc.hero", "crc.crc32", 78, 23); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); h1_reg = t38; goto bb9; bb12:
 #line 83
     t55 = h6_f1; t56 = t55.as.ok;
-#line 932 "main.c"
+#line 931 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
     h_0opt_fbaec77_release(hero_slot_escape(&h6_f1));
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -937,7 +936,7 @@ bb6:
 bb13:
 #line 83 "examples/checksum/crc.hero"
     t53 = h6_f1; t54 = t53.as.err;
-#line 941 "main.c"
+#line 940 "main.c"
     hero_panic_must_at(t54, "crc.hero", "crc.crc32", 83, 12);
     hero_unreachable();
 }
@@ -952,7 +951,7 @@ int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width) { int64_t h2_out
     t15 = h3_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("crc.hero", "crc.reversed_bits", 93, 13); h3_i = t17; goto bb1; bb3:
 #line 95
     t18 = h2_out; return t18;
-#line 956 "main.c"
+#line 955 "main.c"
 }
 HERO_TU_LOCAL bool h_main_0Digest_eq(const h_main_Digest *a, const h_main_Digest *b) {
     if (!(a->f_checksum == b->f_checksum)) return false;
@@ -1241,7 +1240,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("328c0e3e47ef249a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("316eaf380d52b37c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

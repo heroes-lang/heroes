@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 56 "abortstrindex.c"
+#line 55 "abortstrindex.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "abortstrindex.c"
+#line 93 "abortstrindex.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,7 +112,7 @@ void h_abortstrindex_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr t1, t
     t1 = HERO_STR_LIT(hero_str_1998f2); t8 = h0_s; hero_str_incref(t1); h0_s = t1; hero_str_decref(t8);
     t2 = h0_s; t3 = INT64_C(2); t4 = ((void)((t2.ptr == NULL || t3 < 0 || t3 >= t2.len) ? hero_panic_byte_at(t2, t3, "abort-str-index.hero", "abort-str-index.main", 9, 11) : (void)0), (int64_t)(unsigned char)t2.ptr[t3]); hero_print_int(t4); hero_print_end();
     t5 = h0_s; t6 = INT64_C(9); t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "abort-str-index.hero", "abort-str-index.main", 10, 11) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); hero_print_int(t7); hero_print_end();
-#line 117 "abortstrindex.c"
+#line 116 "abortstrindex.c"
     hero_str_release_at(&h0_s);
     return;
 }
@@ -214,7 +213,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("19d98b1f724d7a84", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4aab73d401cee4c3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortstrindex\tabort-str-index\n");

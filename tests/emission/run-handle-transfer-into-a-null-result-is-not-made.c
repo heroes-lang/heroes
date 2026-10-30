@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -100,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1e4f0b6f, "grow failed, block kept: ");
 HERO_STR_STATIC(hero_str_614b144d, "grown: ");
 
-#line 104 "handletransferintoanullresultisnotmade.c"
+#line 103 "handletransferintoanullresultisnotmade.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "handletransferintoanullresultisnotmade.c"
+#line 158 "handletransferintoanullresultisnotmade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_0Mem_eq(mem * const *a, mem * const *b);
@@ -180,19 +179,19 @@ void h_handletransferintoanullresultisnotmade_main(void) { mem * h0_p; mem * h1_
     t1 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 15, 9}; t2 = mem_new(t1); hero_handle_acquired_at(t2, "mem_free", &hero_here); } h0_p = t2;
     t3 = h0_p; t4 = INT64_C(100); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 16, 9}; { hero_handle_alive_at(t3, "the argument `old` of `grow`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring_at(t3, "mem_free", &hero_here); t5 = grow(t3, t4); if (t5 != NULL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_p == t3) h0_p = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } hero_handle_acquired_at(t5, "mem_free", &hero_here); } } h1_q = t5;
 #line 18
-    t6 = h1_q; t7 = ((void *)0); t8 = h_handletransferintoanullresultisnotmade_0Mem_eq(&t6, &t7); if (t8) goto bb2; else goto bb3; bb1:
+    t6 = h1_q; t7 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 18, 8}; t8 = hero_handle_eq_at(t6, t7, &hero_here); } if (t8) goto bb2; else goto bb3; bb1:
 #line 21
     t13 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 21, 9}; t14 = mem_new(t13); hero_handle_acquired_at(t14, "mem_free", &hero_here); } h2_r = t14;
     t15 = h2_r; t16 = INT64_C(32); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 22, 9}; { hero_handle_alive_at(t15, "the argument `old` of `grow`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring_at(t15, "mem_free", &hero_here); t17 = grow(t15, t16); if (t17 != NULL) { if (hero_handle_ended(t15, hero_life_0_0) && h2_r == t15) h2_r = hero_handle_dead(); } else { hero_handle_kept(t15, hero_life_0_0); } hero_handle_acquired_at(t17, "mem_free", &hero_here); } } h3_t = t17;
 #line 24
-    t18 = h3_t; t19 = ((void *)0); t20 = !h_handletransferintoanullresultisnotmade_0Mem_eq(&t18, &t19); if (t20) goto bb5; else goto bb6; bb2:
+    t18 = h3_t; t19 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 24, 8}; t20 = !hero_handle_eq_at(t18, t19, &hero_here); } if (t20) goto bb5; else goto bb6; bb2:
 #line 19
     t9 = HERO_STR_LIT(hero_str_1e4f0b6f); t10 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 19, 44}; hero_handle_alive_at(t10, "the argument `m` of `mem_size`", &hero_here); t11 = mem_size(t10); } hero_print_str(t9); hero_print_int(t11); hero_print_end();
     t12 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 20, 9}; { hero_handle_alive_at(t12, "the argument `m` of `mem_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t12, "mem_free", NULL, &hero_here); (void)mem_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_p == t12) h0_p = hero_handle_dead(); } } goto bb1; bb3: goto bb1; bb4: return; bb5:
 #line 25
     t21 = HERO_STR_LIT(hero_str_614b144d); t22 = h3_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 25, 26}; hero_handle_alive_at(t22, "the argument `m` of `mem_size`", &hero_here); t23 = mem_size(t22); } hero_print_str(t21); hero_print_int(t23); hero_print_end();
     t24 = h3_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-transfer-into-a-null-result-is-not-made.hero", "handle-transfer-into-a-null-result-is-not-made.main", 26, 9}; { hero_handle_alive_at(t24, "the argument `m` of `mem_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t24, "mem_free", NULL, &hero_here); (void)mem_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h3_t == t24) h3_t = hero_handle_dead(); } } goto bb4; bb6: goto bb4;
-#line 196 "handletransferintoanullresultisnotmade.c"
+#line 195 "handletransferintoanullresultisnotmade.c"
 }
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_0Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);
@@ -302,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0aa84ec84f265768", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("696a51c543908871", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handletransferintoanullresultisnotmade\thandle-transfer-into-a-null-result-is-not-made\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "f64rendering.c"
+#line 53 "f64rendering.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "f64rendering.c"
+#line 91 "f64rendering.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,7 +114,7 @@ void h_f64rendering_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t16, t17; H
     t9 = 0x0p+0; t10 = 0x1p+0; t11 = t9 - t10; hero_print_f64(t11); hero_print_end();
     t12 = 0x1p+1; t13 = 0x1p-1; t14 = t12 * t13; hero_print_f64(t14); hero_print_end();
     t15 = 0x1p+0; t16 = hero_f64_to_str(t15); t17 = h0_own0; h0_own0 = t16; hero_str_decref(t17); hero_print_str(t16); hero_print_end();
-#line 119 "f64rendering.c"
+#line 118 "f64rendering.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -216,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2aca5ffa750d9c36", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c113aa8373e2f02", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("f64rendering\tf64-rendering\n");

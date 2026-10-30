@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -92,7 +91,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 96 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 95 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -140,9 +139,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 145 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -164,7 +163,7 @@ void h_fixedbugs2075amacrothatnamesitselfisexpandedonce_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
 int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(void) {
-#line 168 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 167 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
     _Static_assert(HERO_RET_I32(SELF_W), "heroes-ffi-return SELF_W i32");
     _Static_assert(__builtin_constant_p(SELF_W), "heroes-ffi-const SELF_W");
 #pragma clang diagnostic push
@@ -176,7 +175,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
     return SELF_W;
-#line 180 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 179 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -194,7 +193,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(void) {
 
 #line 11 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
 int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(void) {
-#line 198 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 197 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
     _Static_assert(HERO_RET_I32(SELF_V), "heroes-ffi-return SELF_V i32");
     _Static_assert(__builtin_constant_p(SELF_V), "heroes-ffi-const SELF_V");
 #pragma clang diagnostic push
@@ -206,7 +205,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-2075-a-macro-that-names-itself-is-expanded-once.hero"
     return SELF_V;
-#line 210 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 209 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -226,7 +225,7 @@ int32_t h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(void) {
 void h_fixedbugs2075amacrothatnamesitselfisexpandedonce_main(void) { HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_W(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs2075amacrothatnamesitselfisexpandedonce_SELF_V(); hero_print_int(t2); hero_print_end(); return;
-#line 230 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
+#line 229 "fixedbugs2075amacrothatnamesitselfisexpandedonce.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -325,7 +324,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("26378f565f5571e4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("255636df31fed421", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2075amacrothatnamesitselfisexpandedonce\tfixedbugs-2075-a-macro-that-names-itself-is-expanded-once\n");

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,11 +59,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 15 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 _Static_assert(__builtin_classify_type(((struct linger *)0)->l_onoff) == 1 && sizeof(((struct linger *)0)->l_onoff) == sizeof(int32_t) && (_Generic(((struct linger *)0)->l_onoff, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Linger l_onoff");
 _Static_assert(__builtin_classify_type(((struct linger *)0)->l_linger) == 1 && sizeof(((struct linger *)0)->l_linger) == sizeof(int32_t) && (_Generic(((struct linger *)0)->l_linger, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Linger l_linger");
-#line 64 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 63 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 
 #line 14 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 _Static_assert(__builtin_classify_type(*(struct linger *)0) != 13, "heroes-ffi-union Linger l_onoff l_linger");
-#line 68 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 67 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,9 +162,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 168 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092getsockoptreadsitslengththroughacell_0Linger_eq(const struct linger *a, const struct linger *b);
@@ -203,7 +202,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
-#line 207 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 206 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     _Static_assert(HERO_RET_INT(AF_UNIX), "heroes-ffi-return AF_UNIX i64");
     _Static_assert(__builtin_constant_p(AF_UNIX), "heroes-ffi-const AF_UNIX");
 #pragma clang diagnostic push
@@ -215,7 +214,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return AF_UNIX;
-#line 219 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 218 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -233,7 +232,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 
 #line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
-#line 237 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 236 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     _Static_assert(HERO_RET_INT(SOCK_STREAM), "heroes-ffi-return SOCK_STREAM i64");
     _Static_assert(__builtin_constant_p(SOCK_STREAM), "heroes-ffi-const SOCK_STREAM");
 #pragma clang diagnostic push
@@ -245,7 +244,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SOCK_STREAM;
-#line 249 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 248 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -263,7 +262,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
 
 #line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
-#line 267 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 266 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     _Static_assert(HERO_RET_INT(SOL_SOCKET), "heroes-ffi-return SOL_SOCKET i64");
     _Static_assert(__builtin_constant_p(SOL_SOCKET), "heroes-ffi-const SOL_SOCKET");
 #pragma clang diagnostic push
@@ -275,7 +274,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SOL_SOCKET;
-#line 279 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 278 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -293,7 +292,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
 
 #line 13 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void) {
-#line 297 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 296 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     _Static_assert(HERO_RET_INT(SO_LINGER), "heroes-ffi-return SO_LINGER i64");
     _Static_assert(__builtin_constant_p(SO_LINGER), "heroes-ffi-const SO_LINGER");
 #pragma clang diagnostic push
@@ -305,7 +304,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SO_LINGER;
-#line 309 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 308 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -330,7 +329,7 @@ void h_fixedbugs092getsockoptreadsitslengththroughacell_main(void) {
 #line 20
     HERO_NODEBUG h_0opt_e1f4933 h0_f0 = {0}, h1_f1 = {0}, h5_f2 = {0}, h6_f3 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t2, t3, t7, t9, t12, t13, t17, t19, t29, t30, t34, t36, t39, t40, t44, t46, t51, t52, t53, t54, t55, t56, t57, t58; int32_t h2_fd; struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l"); uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n"); HERO_NODEBUG int64_t t1, t4, t5, t11, t14, t15, t28, t31, t32, t38, t41, t42; HERO_NODEBUG bool t6, t16, t33, t43; HERO_NODEBUG HeroFailure t8, t18, t35, t45; HERO_NODEBUG int32_t t10, t20, t21, t22, t23, t24, t27, t37, t47, t48, t49; HERO_NODEBUG struct linger t25; HERO_NODEBUG uint32_t t26, t50; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(); if (t1 >= -2147483648LL && t1 <= 2147483647LL) { t2 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t1}; } else { t2 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t51 = h7_own7; h7_own7 = t2; h_0opt_e1f4933_release(&t51); t52 = h0_f0; h_0opt_e1f4933_retain(&t2); h0_f0 = t2; h_0opt_e1f4933_release(&t52); t3 = h0_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h0_f0; t10 = t9.as.ok; t11 = h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(); if (t11 >= -2147483648LL && t11 <= 2147483647LL) { t12 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t11}; } else { t12 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t53 = h8_own8; h8_own8 = t12; h_0opt_e1f4933_release(&t53); t54 = h1_f1; h_0opt_e1f4933_retain(&t12); h1_f1 = t12; h_0opt_e1f4933_release(&t54); t13 = h1_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb3; else goto bb4; bb2: t7 = h0_f0; t8 = t7.as.err;
-#line 334 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 333 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must_at(t8, "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.main", 21, 25);
     hero_unreachable();
 bb3:
@@ -341,13 +340,13 @@ bb3:
     t27 = h2_fd; t28 = h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(); if (t28 >= -2147483648LL && t28 <= 2147483647LL) { t29 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t28}; } else { t29 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t55 = h9_own9; h9_own9 = t29; h_0opt_e1f4933_release(&t55); t56 = h5_f2; h_0opt_e1f4933_retain(&t29); h5_f2 = t29; h_0opt_e1f4933_release(&t56); t30 = h5_f2; t31 = t30.tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto bb5; else goto bb6; bb4:
 #line 21
     t17 = h1_f1; t18 = t17.as.err;
-#line 345 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 344 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must_at(t18, "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.main", 21, 56);
     hero_unreachable();
 bb5:
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t36 = h5_f2; t37 = t36.as.ok; t38 = h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(); if (t38 >= -2147483648LL && t38 <= 2147483647LL) { t39 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t38}; } else { t39 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t57 = h10_own10; h10_own10 = t39; h_0opt_e1f4933_release(&t57); t58 = h6_f3; h_0opt_e1f4933_retain(&t39); h6_f3 = t39; h_0opt_e1f4933_release(&t58); t40 = h6_f3; t41 = t40.tag; t42 = INT64_C(0); t43 = t41 == t42; if (t43) goto bb7; else goto bb8; bb6: t34 = h5_f2; t35 = t34.as.err;
-#line 351 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 350 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must_at(t35, "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.main", 24, 37);
     hero_unreachable();
 bb7:
@@ -355,7 +354,7 @@ bb7:
     t46 = h6_f3; t47 = t46.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.main", 24, 11}; if ((uint64_t)(h4_n) > (uint64_t)(sizeof(h3_l) / sizeof(*(void *restrict)0))) hero_panic_at(sizeof(*(void *restrict)0) == 1 ? "`getsockopt` was given a count past the record lent whole to `value`, read from `len` at run time and counted in bytes" : "`getsockopt` was given a count past the record lent whole to `value`, read from `len` at run time and counted in what the header's `void *restrict` points at", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.main", 24, 11); hero_lend_local_name(hero_lend_h3_l, "getsockopt", "value"); hero_lend_local_name(hero_lend_h4_n, "getsockopt", "len"); hero_pad_fill(&h3_l, sizeof(struct linger), 1, hero_pad_g_4, hero_pad_n_4); t48 = getsockopt(t27, t37, t47, &h3_l, (void *)&h4_n); } hero_print_int(t48); hero_print_end();
     t49 = h3_l.l_onoff; hero_print_int(t49); hero_print_end();
     t50 = h4_n; hero_print_int(t50); hero_print_end();
-#line 359 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 358 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h0_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h1_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h5_f2));
@@ -370,7 +369,7 @@ bb7:
 bb8:
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t44 = h6_f3; t45 = t44.as.err;
-#line 374 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 373 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must_at(t45, "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero", "fixedbugs-092-getsockopt-reads-its-length-through-a-cell.main", 24, 71);
     hero_unreachable();
 }
@@ -519,7 +518,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("01579b4e47f19c5b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("18919b4564d637e9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs092getsockoptreadsitslengththroughacell\tfixedbugs-092-getsockopt-reads-its-length-through-a-cell\n");

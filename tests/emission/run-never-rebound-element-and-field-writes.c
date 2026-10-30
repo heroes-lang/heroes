@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "neverreboundelementandfieldwrites.c"
+#line 53 "neverreboundelementandfieldwrites.c"
 typedef struct h_neverreboundelementandfieldwrites_Pair {
     int64_t f_a;
     int64_t f_b;
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "neverreboundelementandfieldwrites.c"
+#line 96 "neverreboundelementandfieldwrites.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_neverreboundelementandfieldwrites_0Pair_eq(const h_neverreboundelementandfieldwrites_Pair *a, const h_neverreboundelementandfieldwrites_Pair *b);
@@ -120,7 +119,7 @@ void h_neverreboundelementandfieldwrites_main(void) { HeroArrayHeader * h0_xs = 
     t6 = INT64_C(1); t7 = INT64_C(2); t8 = (h_neverreboundelementandfieldwrites_Pair){.f_a = t6, .f_b = t7}; h1_p = t8;
     t9 = INT64_C(9); h1_p.f_b = t9;
     t10 = h0_xs; t11 = INT64_C(0); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "never-rebound-element-and-field-writes.hero", "never-rebound-element-and-field-writes.main", 13, 11) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); t13 = h1_p.f_b; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("never-rebound-element-and-field-writes.hero", "never-rebound-element-and-field-writes.main", 13, 11); hero_print_int(t14); hero_print_end();
-#line 124 "neverreboundelementandfieldwrites.c"
+#line 123 "neverreboundelementandfieldwrites.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;
@@ -236,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("69b78d914f07591a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e8a5d6f131b1765", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("neverreboundelementandfieldwrites\tnever-rebound-element-and-field-writes\n");

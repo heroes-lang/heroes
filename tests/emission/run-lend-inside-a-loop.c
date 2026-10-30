@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -95,7 +94,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 
-#line 99 "lendinsidealoop.c"
+#line 98 "lendinsidealoop.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,9 +144,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "lendinsidealoop.c"
+#line 150 "lendinsidealoop.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +174,7 @@ void h_lendinsidealoop_main(void) { int64_t h0_at; uint64_t h1_total; HERO_NODEB
     t14 = h0_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lend-inside-a-loop.hero", "lend-inside-a-loop.main", 18, 14); h0_at = t16; goto bb1; bb3:
 #line 20
     t17 = h1_total; hero_print_uint(t17); hero_print_end();
-#line 179 "lendinsidealoop.c"
+#line 178 "lendinsidealoop.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;
@@ -277,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("29f9df8218b01918", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b3d41126753692d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lendinsidealoop\tlend-inside-a-loop\n");

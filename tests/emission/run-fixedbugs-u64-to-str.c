@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugsu64tostr.c"
+#line 53 "fixedbugsu64tostr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugsu64tostr.c"
+#line 91 "fixedbugsu64tostr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,7 +112,7 @@ void h_fixedbugsu64tostr_main(void) { uint64_t h0_n; uint64_t h1_small; HERO_NOD
     t3 = h0_n; t4 = hero_uint_to_str(t3); t8 = h2_own2; h2_own2 = t4; hero_str_decref(t8); hero_print_str(t4); hero_print_end();
     t5 = UINT64_C(42); h1_small = t5;
     t6 = h1_small; t7 = hero_uint_to_str(t6); t9 = h3_own3; h3_own3 = t7; hero_str_decref(t9); hero_print_str(t7); hero_print_end();
-#line 117 "fixedbugsu64tostr.c"
+#line 116 "fixedbugsu64tostr.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;
@@ -215,7 +214,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1516dd997db29a7d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d16d424357c0a47", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsu64tostr\tfixedbugs-u64-to-str\n");

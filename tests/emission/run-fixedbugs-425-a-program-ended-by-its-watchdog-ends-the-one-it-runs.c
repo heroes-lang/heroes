@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -81,7 +80,7 @@ HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 
-#line 85 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 84 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -127,9 +126,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 133 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 132 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -165,7 +164,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
 
 #line 34 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_HERO_DIR_FILES(void) {
-#line 169 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 168 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
     _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
@@ -177,7 +176,7 @@ int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_HERO_DIR_FILES(
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 34 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     return HERO_DIR_FILES;
-#line 181 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 180 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 #pragma clang diagnostic pop
 }
 
@@ -192,7 +191,7 @@ HeroStr h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_itself(void) {
     t1 = INT64_C(0); h0_status = t1;
     t2 = INT64_C(0); h1_marks = t2;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.itself", 40, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 196 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 195 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -222,7 +221,7 @@ int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_again(HeroArray
     t18 = h2_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.again", 54, 33}; t19 = hero_str_lend_at(t18, &hero_here); } t20 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.again", 54, 58}; t21 = hero_str_lend_at(t20, &hero_here); } t22 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.again", 54, 79}; t23 = hero_str_lend_at(t22, &hero_here); } t24 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.again", 54, 100}; t25 = hero_str_lend_at(t24, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.again", 54, 12}; hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status"); t26 = hero_run_go(hero_cstr_nonnull_at(t19, &hero_here), hero_cstr_nonnull_at(t21, &hero_here), hero_cstr_nonnull_at(t23, &hero_here), hero_cstr_nonnull_at(t25, &hero_here), (void *)&h6_status); } h7_code = t26;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.again", 55, 5}; (void)hero_run_reset(); }
     t27 = h7_code;
-#line 226 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 225 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_release_at(&h2_program);
     hero_array_release_at(&h3_xs0);
     hero_str_release_at(&h5_word);
@@ -241,7 +240,7 @@ void h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_beat(HeroStr h0_di
     t4 = h1_n; t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beat", 65, 13); h1_n = t6;
 #line 67
     t7 = h1_n; t8 = INT64_C(16777216); if (t8 == 0) hero_panic_at("division by zero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beat", 67, 12); if (t7 == INT64_MIN && t8 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beat", 67, 12); t9 = t7 % t8; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb3:
-#line 245 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 244 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -256,7 +255,7 @@ bb5:
 #line 71
     t15 = h0_dir; t16 = HERO_STR_LIT(hero_str_2f); t17 = hero_str_concat(t15, t16); t30 = h4_own4; h4_own4 = t17; hero_str_decref(t30); t18 = h2_k; t19 = hero_int_to_str(t18); t31 = h5_own5; h5_own5 = t19; hero_str_decref(t31); t20 = hero_str_concat(t17, t19); t32 = h6_own6; h6_own6 = t20; hero_str_decref(t32); t21 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beat", 71, 16}; t22 = h_library_write_file(t20, t21, &hero_here); } t33 = h7_own7; h7_own7 = t22; h_0opt_a8ea2_release(&t33); t34 = h3_f0; h_0opt_a8ea2_retain(&t22); h3_f0 = t22; h_0opt_a8ea2_release(&t34); t23 = h3_f0; t24 = t23.tag; t25 = INT64_C(1); t26 = t24 == t25; if (t26) goto bb8; else goto bb9; bb6: goto bb4; bb7: goto bb4; bb8:
     t27 = h2_k; t28 = INT64_C(1); if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow_at("fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beat", 72, 21); h2_k = t29; goto bb7; bb9: goto bb7;
-#line 260 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 259 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 75 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -271,7 +270,7 @@ int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_spin(void) { in
     t10 = h0_n; return t10; bb4: goto bb1; bb5:
 #line 82
     t9 = INT64_C(0); h0_n = t9; goto bb4; bb6: goto bb4;
-#line 275 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 274 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 87 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -279,7 +278,7 @@ int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_beats(HeroStr h
     t1 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beats", 88, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beats", 88, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.beats", 89, 5}; (void)hero_dir_release(); }
     t6 = h1_count; return t6;
-#line 283 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 282 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 92 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -292,7 +291,7 @@ void h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_first(void) { Hero
     t16 = h1_before; t17 = INT64_C(1); t18 = t16 < t17; if (t18) goto bb2; else goto bb3; bb1:
 #line 107
     t30 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.first", 107, 36}; t31 = hero_str_lend_at(t30, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.first", 107, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t31, &hero_here)); }
-#line 296 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 295 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -309,7 +308,7 @@ bb2:
     t28 = HERO_STR_LIT(hero_str_31b442c5); hero_print_str(t28); hero_print_end(); goto bb4; bb6:
 #line 106
     t29 = HERO_STR_LIT(hero_str_6dbaa06f); hero_print_str(t29); hero_print_end(); goto bb4;
-#line 313 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 312 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -317,7 +316,7 @@ void h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_main(void) { HeroA
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.main", 110, 13}; t1 = h_library_args(&hero_here); } t28 = h1_own1; h1_own1 = t1; hero_array_decref(t28); t29 = h0_words; hero_array_incref(t1); h0_words = t1; hero_array_decref(t29);
 #line 112
     t2 = h0_words; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
-#line 321 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 320 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_release_at(&h0_words);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -331,42 +330,42 @@ bb2:
     t24 = h0_words; t25 = INT64_C(1); t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? hero_panic_index_at(t24, t25, "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero", "fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.main", 117, 14) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]); h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_beat(t26); goto bb1; bb7:
 #line 119
     t27 = h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_spin(); hero_print_int(t27); hero_print_end(); goto bb1;
-#line 335 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 334 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 340 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 339 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 345 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 344 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
-#line 123 "<heroes library>"
+#line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 350 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 349 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
-#line 153 "<heroes library>"
+#line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
-#line 153
+#line 152
 #define h1_status (*hero_lend_h1_status)
-#line 153
+#line 152
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 156
+#line 155
     t7 = INT64_C(0); h1_status = t7;
     t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
-#line 155
+#line 154
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
-#line 160
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 370 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 369 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -379,23 +378,23 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 }
 #undef h1_status
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 
-#line 186 "<heroes library>"
+#line 185 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
     t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 190
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
 #line 189
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 188
     t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
-#line 192
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 191
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+#line 190
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 399 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 398 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -405,20 +404,20 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     return t19;
 }
 __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 186, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 
-#line 197 "<heroes library>"
+#line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
     t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
     t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
-#line 208
+#line 207
     t47 = h0_out;
-#line 422 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 421 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -434,27 +433,27 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
 bb4:
-#line 207 "<heroes library>"
+#line 206 "<heroes library>"
     t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
-#line 203
+#line 202
     t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
     t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
-#line 206
+#line 205
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
-#line 204
+#line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 447 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
-    hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 446 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+    hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
-#line 206 "<heroes library>"
+#line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 453 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
-    hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 452 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+    hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 197, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
@@ -554,7 +553,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6daa803620fa5541", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4dd2658e04899f71", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs425aprogramendedbyitswatchdogendstheoneitruns\tfixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_2a0b7016, "heroes");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 58 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 57 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
 typedef struct h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row {
     HeroArrayHeader * f_cells;
     HeroStr f_label;
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 100 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *v);
@@ -141,7 +140,7 @@ void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void);
 #line 19 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
 void h_fixedbugs491nestedplacesandstringbytesarereadinplace_bump(int64_t *ph0_x, int64_t h1_by) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_x); t2 = h1_by; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.bump", 20, 9); (*ph0_x) = t3; return;
-#line 145 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 144 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
@@ -172,7 +171,7 @@ void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void) { HeroStr
     t110 = h2_grid; t111 = INT64_C(1); t112 = ((void)((t110 == NULL || t111 < 0 || t111 >= t110->len) ? hero_panic_index_at(t110, t111, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 47, 11) : (void)0), (void)(t110->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t110 + 1))[t111]); t113 = INT64_C(0); t114 = ((void)((t112 == NULL || t113 < 0 || t113 >= t112->len) ? hero_panic_index_at(t112, t113, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 47, 11) : (void)0), (void)(t112->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t112 + 1))[t113]); t115 = INT64_C(0); t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? hero_panic_index_at(t114, t115, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 47, 11) : (void)0), (void)(t114->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t114 + 1))[t115]); hero_print_int(t116); hero_print_end();
     t117 = h4_before; t118 = INT64_C(1); t119 = ((void)((t117 == NULL || t118 < 0 || t118 >= t117->len) ? hero_panic_index_at(t117, t118, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 48, 11) : (void)0), (void)(t117->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t117 + 1))[t118]); t120 = INT64_C(0); t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? hero_panic_index_at(t119, t120, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 48, 11) : (void)0), (void)(t119->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t119 + 1))[t120]); t122 = INT64_C(1); t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? hero_panic_index_at(t121, t122, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 48, 11) : (void)0), (void)(t121->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t121 + 1))[t122]); hero_print_int(t123); hero_print_end();
     t124 = h4_before; t125 = INT64_C(0); t126 = ((void)((t124 == NULL || t125 < 0 || t125 >= t124->len) ? hero_panic_index_at(t124, t125, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 49, 11) : (void)0), (void)(t124->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t124 + 1))[t125]); t127 = INT64_C(1); t128 = ((void)((t126 == NULL || t127 < 0 || t127 >= t126->len) ? hero_panic_index_at(t126, t127, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 49, 11) : (void)0), (void)(t126->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t126 + 1))[t127]); t129 = INT64_C(0); t130 = ((void)((t128 == NULL || t129 < 0 || t129 >= t128->len) ? hero_panic_index_at(t128, t129, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 49, 11) : (void)0), (void)(t128->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t128 + 1))[t129]); hero_print_int(t130); hero_print_end();
-#line 176 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 175 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_str_release_at(&h0_text);
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h2_grid);
@@ -200,7 +199,7 @@ bb4:
     t55 = h5_i; t56 = INT64_C(1); if (__builtin_add_overflow(t55, t56, &t57)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 33, 13); h5_i = t57; goto bb1; bb5:
 #line 32
     t50 = h7_f0; t51 = t50.as.err;
-#line 204 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 203 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_panic_must_at(t51, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 32, 21);
     hero_unreachable();
 }
@@ -325,7 +324,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("16e2438925d225ba", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bb71c9677391287", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs491nestedplacesandstringbytesarereadinplace\tfixedbugs-491-nested-places-and-string-bytes-are-read-in-place\n");

@@ -95,8 +95,12 @@ constant LIBRARY_FILE: str
 # **498 on 2026-10-10**, at batch 19's gate: batches 18 and 19 took the
 # directory from 398 to 498, past it by more than a quarter, and the suite
 # asked 498.
+#
+# **632 on 2026-10-30**, at M-compatibility-promise's batch gate: the run
+# cases of its nineteen repairs and of feature 2274 took the directory past
+# 498 by more than a quarter, and the suite asked 632.
 constant LEAST: i64
-    498
+    632
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()

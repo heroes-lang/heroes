@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 
 #line 14 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
 _Static_assert(__builtin_classify_type(((struct old_pair *)0)->a) == 1 && sizeof(((struct old_pair *)0)->a) == sizeof(int64_t) && (_Generic(((struct old_pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field OldPair a");
-#line 67 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+#line 66 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -135,9 +134,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 141 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+#line 140 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordasalocalbuildssilent_0OldPair_eq(const struct old_pair *a, const struct old_pair *b);
@@ -172,7 +171,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void) { struct old_pair h0_p; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct old_pair t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(5); t2 = (struct old_pair){.a = t1}; h0_p = t2; hero_pad_fill(&h0_p, sizeof(struct old_pair), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_p.a; hero_print_int(t3); hero_print_end(); return;
-#line 176 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+#line 175 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordasalocalbuildssilent_0OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;
@@ -283,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4586b22b22db3842", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ea719513bd2edd6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs584adeprecatedrecordasalocalbuildssilent\tfixedbugs-584-a-deprecated-record-as-a-local-builds-silent\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_12becefb, "abcdef");
 HERO_STR_STATIC(hero_str_21, "!");
 
-#line 58 "premiseslicenevershares.c"
+#line 57 "premiseslicenevershares.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "premiseslicenevershares.c"
+#line 95 "premiseslicenevershares.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -126,7 +125,7 @@ void h_premiseslicenevershares_main(void) { HeroArrayHeader * h0_xs = {0}; HeroA
     t30 = h2_s; t31 = INT64_C(2); t32 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"premise-slice-never-shares.hero", "premise-slice-never-shares.main", 37, 11}; t33 = hero_str_slice_at(t30, t31, t32, &hero_here); } t45 = h7_own7; h7_own7 = t33; hero_str_decref(t45); t46 = h3_mid; hero_str_incref(t33); h3_mid = t33; hero_str_decref(t46);
     t34 = h2_s; t35 = HERO_STR_LIT(hero_str_21); t36 = hero_str_concat(t34, t35); t47 = h8_own8; h8_own8 = t36; hero_str_decref(t47); t48 = h4_joined; hero_str_incref(t36); h4_joined = t36; hero_str_decref(t48);
     t37 = h3_mid; t38 = HERO_STR_LIT(hero_str_20); t39 = h4_joined; hero_print_str(t37); hero_print_str(t38); hero_print_str(t39); hero_print_end();
-#line 130 "premiseslicenevershares.c"
+#line 129 "premiseslicenevershares.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_part);
     hero_str_release_at(&h2_s);
@@ -235,7 +234,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("483147ce1b35d82e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6fe8a719259f1a7d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("premiseslicenevershares\tpremise-slice-never-shares\n");

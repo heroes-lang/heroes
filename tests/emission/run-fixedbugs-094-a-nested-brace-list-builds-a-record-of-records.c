@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -59,7 +58,7 @@
 #pragma pop_macro("b")
 #pragma pop_macro("line")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -75,7 +74,7 @@ _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((str
 #line 11
 _Static_assert(_Generic(&((struct line *)0)->a, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->a) == sizeof(struct pt), "heroes-ffi-field Line a");
 _Static_assert(_Generic(&((struct line *)0)->b, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->b) == sizeof(struct pt), "heroes-ffi-field Line b");
-#line 79 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 78 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,9 +158,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 164 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -195,7 +194,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void) {
-#line 199 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 198 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -207,7 +206,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     static struct line hero_constant_value = LINE_INIT;
-#line 211 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 210 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -226,7 +225,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void) {
-#line 230 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 229 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -238,7 +237,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     static struct line hero_constant_value = LINE_FLAT;
-#line 242 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 241 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -264,7 +263,7 @@ void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) { struct li
     t5 = h0_l.b.y; hero_print_int(t5); hero_print_end();
     t6 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(); h1_f = t6; hero_pad_fill(&h1_f, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
     t7 = h1_f.a.x; t8 = h1_f.b.y; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero", "fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.main", 23, 11); hero_print_int(t9); hero_print_end(); return;
-#line 268 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 267 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_0Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;
@@ -391,7 +390,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("681214e66f18ce0b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f4d73133c877346", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094anestedbracelistbuildsarecordofrecords\tfixedbugs-094-a-nested-brace-list-builds-a-record-of-records\n");

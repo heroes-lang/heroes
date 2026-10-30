@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -95,7 +94,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_fa5daa5, "text");
 
-#line 99 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 98 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,9 +144,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 150 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -171,7 +170,7 @@ void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void) { bo
     t3 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero", "fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.main", 17, 18}; t4 = thrice(t3); } t5 = INT64_C(2); t6 = t4 > t5; h0_flag = t6;
     t7 = h0_flag; hero_print_bool(t7); hero_print_end();
     t8 = HERO_STR_LIT(hero_str_fa5daa5); hero_print_str(t8); hero_print_end(); return;
-#line 175 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 174 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -270,7 +269,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6cc0842825bb4b62", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("78340c1b77a18bef", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo\tfixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too\n");

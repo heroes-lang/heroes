@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,7 +65,7 @@ _Static_assert(sizeof(Sl) - __builtin_offsetof(Sl, name) != 0, "heroes-ffi-flex 
 _Static_assert(__builtin_classify_type(((Sl *)0)->id) == 1 && sizeof(((Sl *)0)->id) == sizeof(int64_t) && (_Generic(((Sl *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Sl id");
 #line 24
 _Static_assert(sizeof(Both) - __builtin_offsetof(Both, name) != 0, "heroes-ffi-flex Both name"); _Static_assert(_Generic(&((Both *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Both name");
-#line 70 "ffialentfieldcountedbyaconstant.c"
+#line 69 "ffialentfieldcountedbyaconstant.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -158,9 +157,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "ffialentfieldcountedbyaconstant.c"
+#line 163 "ffialentfieldcountedbyaconstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Sl_eq(const Sl *a, const Sl *b);
@@ -206,7 +205,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
-#line 210 "ffialentfieldcountedbyaconstant.c"
+#line 209 "ffialentfieldcountedbyaconstant.c"
     _Static_assert(HERO_RET_INT(SL_NAME_LEN), "heroes-ffi-return SL_NAME_LEN i64");
     _Static_assert(__builtin_constant_p(SL_NAME_LEN), "heroes-ffi-const SL_NAME_LEN");
 #pragma clang diagnostic push
@@ -218,7 +217,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return SL_NAME_LEN;
-#line 222 "ffialentfieldcountedbyaconstant.c"
+#line 221 "ffialentfieldcountedbyaconstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -251,7 +250,7 @@ void h_ffialentfieldcountedbyaconstant_main(void) { Sl h0_s; int64_t h1_k; __att
 #line 48
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 48, 9}; t35 = both_make(); } h2_b = t35; hero_pad_fill(&h2_b, sizeof(Both), 1, hero_pad_g_2, hero_pad_n_2);
     t38 = (const void *)(h2_b.name); t39 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 49, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name)), "heroes-ffi-extent sum_n p n 2122 2134 2139 2150 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h2_b.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 2122 2134 2139 2150 8 const void *"); t40 = sum_n(t38, t39); } hero_print_int(t40); hero_print_end(); return;
-#line 255 "ffialentfieldcountedbyaconstant.c"
+#line 254 "ffialentfieldcountedbyaconstant.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Sl_eq(const Sl *a, const Sl *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
@@ -379,7 +378,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f4a4a8e50d91c4f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("141d1a6c14ecda9a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffialentfieldcountedbyaconstant\tffi-a-lent-field-counted-by-a-constant\n");

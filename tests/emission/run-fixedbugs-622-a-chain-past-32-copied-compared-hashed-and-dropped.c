@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_79, "y");
 
-#line 57 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
+#line 56 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
 typedef struct h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 {
     HeroStr f_s;
     int64_t f_n;
@@ -311,9 +310,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 317 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
+#line 316 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *v);
@@ -558,7 +557,7 @@ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h_fixedbugs622achai
     HERO_COPY_HELD(t80, (h40_v38)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(&t80); HERO_COPY_HELD(t81, ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39){.f_inner = t80})); HERO_COPY_HELD(t163, (h82_own82)); HERO_COPY_HELD(h82_own82, (t81)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(&t163); HERO_COPY_HELD(t164, (h41_v39)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(&t81); HERO_COPY_HELD(h41_v39, (t81)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(&t164);
     HERO_COPY_HELD(t82, (h41_v39)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(&t82); HERO_COPY_HELD(t83, ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40){.f_inner = t82})); HERO_COPY_HELD(t165, (h83_own83)); HERO_COPY_HELD(h83_own83, (t83)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t165); HERO_COPY_HELD(t166, (h42_v40)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(&t83); HERO_COPY_HELD(h42_v40, (t83)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t166);
     HERO_COPY_HELD(t84, (h42_v40));
-#line 562 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
+#line 561 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(&t84);
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(hero_slot_escape(&h2_v0));
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(hero_slot_escape(&h3_v1));
@@ -670,7 +669,7 @@ void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main(void) { h_fix
     t105 = h8_copies; t106 = INT64_C(0); t107 = ((void)((t105 == NULL || t106 < 0 || t106 >= t105->len) ? hero_panic_index_at(t105, t106, "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 203, 9) : (void)0), (void)(t105->elem->size != sizeof(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40) ? hero_unreachable() : (void)0), ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 const *)(const void *)(t105 + 1))[t106]); HERO_COPY_HELD(t108, (h0_a)); t109 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(&t107, &t108);
 #line 199
     hero_print_int(t59); hero_print_str(t103); hero_print_int(t104); hero_print_bool(t109); hero_print_end();
-#line 674 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
+#line 673 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(hero_slot_escape(&h0_a));
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(hero_slot_escape(&h1_b));
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(hero_slot_escape(&h2_c));
@@ -1607,7 +1606,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38bc98c37cfe42c3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("431f5a0d5c5cc25a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs622achainpast32copiedcomparedhashedanddropped\tfixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped\n");

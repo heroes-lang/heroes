@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,11 +63,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 14 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(((struct label *)0)->id) == 1 && sizeof(((struct label *)0)->id) == sizeof(int32_t) && (_Generic(((struct label *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Label id");
 _Static_assert(sizeof(struct label) - __builtin_offsetof(struct label, name) != 0, "heroes-ffi-flex Label name"); _Static_assert(_Generic(&((struct label *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Label name");
-#line 68 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 67 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 
 #line 13 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(*(struct label *)0) != 13, "heroes-ffi-union Label id name");
-#line 72 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 71 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -157,9 +156,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 162 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *a, const struct label *b);
@@ -194,13 +193,13 @@ void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void) { stru
     t23 = h0_l; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11}; t24 = label_id(t23); } t25 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t24}; t36 = h4_own4; h4_own4 = t25; h_0opt_e201354_release(&t36); t37 = h2_f1; h_0opt_e201354_retain(&t25); h2_f1 = t25; h_0opt_e201354_release(&t37); t26 = h2_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb3; else goto bb4; bb2:
 #line 19
     t19 = h1_f0; t20 = t19.as.err;
-#line 198 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 197 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must_at(t20, "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 19, 11);
     hero_unreachable();
 bb3:
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t32 = h2_f1; t33 = t32.as.ok; hero_print_int(t33); hero_print_end();
-#line 204 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 203 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -209,7 +208,7 @@ bb3:
 bb4:
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t30 = h2_f1; t31 = t30.as.err;
-#line 213 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 212 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must_at(t31, "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11);
     hero_unreachable();
 }
@@ -331,7 +330,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a2f6be61d9b1dc0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b0a73da419bf471", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs185achararrayfieldbeforeablanklinekeepsitsline\tfixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line\n");

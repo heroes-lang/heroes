@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 53 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 91 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -114,7 +113,7 @@ int64_t h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_sum_to
     t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero", "fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.sum_to", 16, 22); t8 = h1_acc; t9 = h0_n; if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero", "fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.sum_to", 16, 34); t11 = h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_sum_to(t7, t10); h2_ret0 = t11; goto bb4; bb2:
 #line 15
     t4 = h1_acc; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 118 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 117 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
     t12 = h2_ret0;
     return t12;
 }
@@ -122,7 +121,7 @@ int64_t h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_sum_to
 #line 18 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
 void h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_main(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(20000); t2 = INT64_C(0); t3 = h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_sum_to(t1, t2); hero_print_int(t3); hero_print_end(); return;
-#line 126 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 125 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -221,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ea9171809f47998", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("22f43eab77759291", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel\tfixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "arithmetic.c"
+#line 53 "arithmetic.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "arithmetic.c"
+#line 91 "arithmetic.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,7 +111,7 @@ void h_arithmetic_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, 
     t6 = INT64_C(7); t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "arithmetic.hero", "arithmetic.main", 7, 11); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("arithmetic.hero", "arithmetic.main", 7, 11); t8 = t6 / t7; hero_print_int(t8); hero_print_end();
     t9 = INT64_C(7); t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "arithmetic.hero", "arithmetic.main", 8, 11); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "arithmetic.hero", "arithmetic.main", 8, 11); t11 = t9 % t10; hero_print_int(t11); hero_print_end();
     t12 = INT64_C(0); t13 = INT64_C(5); if (__builtin_sub_overflow(t12, t13, &t14)) hero_panic_overflow_at("arithmetic.hero", "arithmetic.main", 9, 11); hero_print_int(t14); hero_print_end(); return;
-#line 116 "arithmetic.c"
+#line 115 "arithmetic.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -211,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("496ba95e2abb4b02", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c55fa31032abdd6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_arithmetic_main();

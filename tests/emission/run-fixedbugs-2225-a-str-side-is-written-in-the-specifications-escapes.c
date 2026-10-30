@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_5212f4a7, "say \"hi\" \\ there\015");
 HERO_STR_STATIC(hero_str_5cc42b21, "s == \"x\"");
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 58 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
+#line 57 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
+#line 95 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -114,7 +113,7 @@ void h_fixedbugs2225astrsideiswritteninthespecificationsescapes_main(void);
 void h_fixedbugs2225astrsideiswritteninthespecificationsescapes_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_assert0 = {0}, h2_assert1 = {0}, t1, t2, t3, t4, t6, t7, t8, t9, t10; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_5212f4a7); t8 = h0_s; hero_str_incref(t1); h0_s = t1; hero_str_decref(t8);
     t2 = HERO_STR_LIT(hero_str_5cc42b21); t3 = h0_s; t4 = HERO_STR_LIT(hero_str_78); t5 = hero_str_eq(t3, t4); t9 = h1_assert0; hero_str_incref(t3); h1_assert0 = t3; hero_str_decref(t9); t10 = h2_assert1; hero_str_incref(t4); h2_assert1 = t4; hero_str_decref(t10); if (t5) goto bb1; else goto bb2; bb1:
-#line 118 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
+#line 117 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_assert0);
     hero_str_release_at(&h2_assert1);
@@ -122,7 +121,7 @@ void h_fixedbugs2225astrsideiswritteninthespecificationsescapes_main(void) { Her
 bb2:
 #line 7 "tests/golden/run/fixedbugs-2225-a-str-side-is-written-in-the-specifications-escapes.hero"
     t6 = h1_assert0; t7 = h2_assert1;
-#line 126 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
+#line 125 "fixedbugs2225astrsideiswritteninthespecificationsescapes.c"
     hero_panic_assert_shown_at(t2, hero_show_str, &t6, &t7, 1, "fixedbugs-2225-a-str-side-is-written-in-the-specifications-escapes.hero", "fixedbugs-2225-a-str-side-is-written-in-the-specifications-escapes.main", 7, 12);
     hero_unreachable();
 }
@@ -223,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("467052ce2c3acf56", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("269838260fca1986", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2225astrsideiswritteninthespecificationsescapes\tfixedbugs-2225-a-str-side-is-written-in-the-specifications-escapes\n");

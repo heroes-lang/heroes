@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,7 +56,7 @@ HERO_STR_STATIC(hero_str_20286c, "zig");
 HERO_STR_STATIC(hero_str_352e, "gy");
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 61 "fixedbugs506acommentonamapkeysparenthesis.c"
+#line 60 "fixedbugs506acommentonamapkeysparenthesis.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -101,9 +100,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "fixedbugs506acommentonamapkeysparenthesis.c"
+#line 106 "fixedbugs506acommentonamapkeysparenthesis.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -129,7 +128,7 @@ void h_fixedbugs506acommentonamapkeysparenthesis_main(void);
 #line 11 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
 void h_fixedbugs506acommentonamapkeysparenthesis_show(HeroMapHeader * h0_m) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t6, t7, t11, t15, t16; HERO_NODEBUG int64_t h2_r0, t2, t8, t9, t12, t13, t14; HERO_NODEBUG HeroMapHeader *t1, *t4; HERO_NODEBUG HeroStr t3, t5; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_m; t2 = hero_map_len(t1); t3 = HERO_STR_LIT(hero_str_20); t4 = h0_m; t5 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero", "fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.show", 12, 25}; HERO_NODEBUG const void *found = hero_map_find_at(t4, &t5, &hero_here); if (found == NULL) { t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t6 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t6.as.ok, found); } } t15 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t15); t16 = h1_f0; h_0opt_e201354_retain(&t6); h1_f0 = t6; h_0opt_e201354_release(&t16); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; h2_r0 = t12; goto bb3; bb2: t13 = INT64_C(0); h2_r0 = t13; goto bb3; bb3: t14 = h2_r0; hero_print_int(t2); hero_print_str(t3); hero_print_int(t14); hero_print_end();
-#line 133 "fixedbugs506acommentonamapkeysparenthesis.c"
+#line 132 "fixedbugs506acommentonamapkeysparenthesis.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return;
@@ -175,7 +174,7 @@ void h_fixedbugs506acommentonamapkeysparenthesis_main(void) { HeroMapHeader * h0
     t35 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero", "fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.main", 53, 9}; hero_map_put_at(t35, &t33, &t34, &hero_here); } t51 = h14_own14; h14_own14 = t35; hero_map_decref(t51);
 #line 52
     h_fixedbugs506acommentonamapkeysparenthesis_show(t35);
-#line 179 "fixedbugs506acommentonamapkeysparenthesis.c"
+#line 178 "fixedbugs506acommentonamapkeysparenthesis.c"
     hero_map_release_at(&h0_first);
     hero_map_release_at(&h1_second);
     hero_map_release_at(&h2_third);
@@ -322,7 +321,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f09f4f3458f216d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7491ce233bacf593", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs506acommentonamapkeysparenthesis\tfixedbugs-506-a-comment-on-a-map-key-s-parenthesis\n");

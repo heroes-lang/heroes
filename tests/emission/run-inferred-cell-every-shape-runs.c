@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_6b, "k");
 HERO_STR_STATIC(hero_str_6a, "j");
 
-#line 59 "inferredcelleveryshaperuns.c"
+#line 58 "inferredcelleveryshaperuns.c"
 typedef struct h_inferredcelleveryshaperuns_Point {
     int64_t f_x;
     int64_t f_y;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "inferredcelleveryshaperuns.c"
+#line 101 "inferredcelleveryshaperuns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_inferredcelleveryshaperuns_0Point_eq(const h_inferredcelleveryshaperuns_Point *a, const h_inferredcelleveryshaperuns_Point *b);
@@ -122,7 +121,7 @@ void h_inferredcelleveryshaperuns_main(void);
 #line 10 "tests/golden/run/inferred-cell-every-shape-runs.hero"
 void h_inferredcelleveryshaperuns_bump(int64_t *ph0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("inferred-cell-every-shape-runs.hero", "inferred-cell-every-shape-runs.bump", 11, 9); (*ph0_n) = t3; return;
-#line 126 "inferredcelleveryshaperuns.c"
+#line 125 "inferredcelleveryshaperuns.c"
 }
 
 #line 13 "tests/golden/run/inferred-cell-every-shape-runs.hero"
@@ -151,7 +150,7 @@ void h_inferredcelleveryshaperuns_main(void) { int64_t h0_v; HeroStr h1_s = {0};
     t39 = h5_f; hero_print_f64(t39); hero_print_end();
     t40 = h6_b; hero_print_bool(t40); hero_print_end();
     t41 = h7_n; hero_print_int(t41); hero_print_end();
-#line 155 "inferredcelleveryshaperuns.c"
+#line 154 "inferredcelleveryshaperuns.c"
     hero_str_release_at(&h1_s);
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
@@ -271,7 +270,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e46f4d630d39fa6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("667a1cd866c08ca8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("inferredcelleveryshaperuns\tinferred-cell-every-shape-runs\n");

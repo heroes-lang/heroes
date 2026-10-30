@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,11 +59,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 43 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 _Static_assert(_Generic(((struct passwd *)0)->pw_name, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((struct passwd *)0)->pw_name) == sizeof(char *), "heroes-ffi-field Passwd pw_name");
 _Static_assert(_Generic(((struct passwd *)0)->pw_dir, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((struct passwd *)0)->pw_dir) == sizeof(char *), "heroes-ffi-field Passwd pw_dir");
-#line 64 "aheaderfieldthatisnotconst.c"
+#line 63 "aheaderfieldthatisnotconst.c"
 
 #line 42 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 _Static_assert(__builtin_classify_type(*(struct passwd *)0) != 13, "heroes-ffi-union Passwd pw_name pw_dir");
-#line 68 "aheaderfieldthatisnotconst.c"
+#line 67 "aheaderfieldthatisnotconst.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -138,9 +137,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "aheaderfieldthatisnotconst.c"
+#line 143 "aheaderfieldthatisnotconst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_0Passwd_eq(const struct passwd *a, const struct passwd *b);
@@ -205,7 +204,7 @@ void h_aheaderfieldthatisnotconst_main(void) { struct passwd h0_empty; struct pa
     t4 = h0_empty.pw_name; t5 = ((void *)0); t6 = t4 == t5; hero_print_bool(t6); hero_print_end();
     t7 = ((void *)0); t8 = ((void *)0); t9 = (struct passwd){.pw_name = (__typeof__(((struct passwd *)0)->pw_name))t7, .pw_dir = (__typeof__(((struct passwd *)0)->pw_dir))t8}; h1_filled = t9; hero_pad_fill(&h1_filled, sizeof(struct passwd), 1, hero_pad_g_0, hero_pad_n_0);
     t10 = h1_filled.pw_dir; t11 = ((void *)0); t12 = t10 == t11; hero_print_bool(t12); hero_print_end(); return;
-#line 209 "aheaderfieldthatisnotconst.c"
+#line 208 "aheaderfieldthatisnotconst.c"
 }
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_0Passwd_eq(const struct passwd *a, const struct passwd *b) {
     hero_panic("h_aheaderfieldthatisnotconst_0Passwd_eq: a partial record has no structural equality");
@@ -312,7 +311,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("02ff9574299e0622", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a5d3e1e0d71a3c1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("aheaderfieldthatisnotconst\ta-header-field-that-is-not-const\n");

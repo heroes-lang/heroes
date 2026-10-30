@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_6185c9b, "rows[0].cells[0].n == 10");
 HERO_STR_STATIC(hero_str_7a, "z");
 HERO_STR_STATIC(hero_str_6b, "k");
 
-#line 66 "fixedbugsafieldstoredbehindanindex.c"
+#line 65 "fixedbugsafieldstoredbehindanindex.c"
 typedef struct h_fixedbugsafieldstoredbehindanindex_Cell {
     int64_t f_n;
     HeroStr f_tag;
@@ -108,9 +107,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugsafieldstoredbehindanindex.c"
+#line 113 "fixedbugsafieldstoredbehindanindex.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_0Cell_retain(const h_fixedbugsafieldstoredbehindanindex_Cell *v);
@@ -186,7 +185,7 @@ void h_fixedbugsafieldstoredbehindanindex_main(void) { HeroArrayHeader * h0_rows
     t24 = INT64_C(0); t25 = INT64_C(0); t26 = INT64_C(10); hero_array_unshare(&(h0_rows)); hero_array_unshare(&((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t24, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 47, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells)); (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut_at((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t24, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 47, 5) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells, t25, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 47, 5)).f_n = t26;
     t27 = HERO_STR_LIT(hero_str_3ed3d9ee); t28 = h1_kept; t29 = INT64_C(0); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? hero_panic_index_at(t28, t29, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 48, 12) : (void)0), (void)(t28->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t28 + 1))[t29]); t31 = t30.f_cells; t32 = INT64_C(0); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 48, 12) : (void)0), (void)(t31->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t31 + 1))[t32]); t34 = t33.f_n; t35 = INT64_C(9); t36 = t34 == t35; if (t36) goto bb1; else goto bb2; bb1:
     t37 = HERO_STR_LIT(hero_str_6185c9b); t38 = h0_rows; t39 = INT64_C(0); t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? hero_panic_index_at(t38, t39, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 49, 12) : (void)0), (void)(t38->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t38 + 1))[t39]); t41 = t40.f_cells; t42 = INT64_C(0); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 49, 12) : (void)0), (void)(t41->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t41 + 1))[t42]); t44 = t43.f_n; t45 = INT64_C(10); t46 = t44 == t45; if (t46) goto bb3; else goto bb4; bb2:
-#line 190 "fixedbugsafieldstoredbehindanindex.c"
+#line 189 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_shown_at(t27, hero_show_i64, &t34, &t35, 1, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 48, 12);
     hero_unreachable();
 bb3:
@@ -195,13 +194,13 @@ bb3:
     t52 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t93 = h11_own11; h11_own11 = t52; hero_map_decref(t93); t94 = h2_m; hero_map_incref(t52); h2_m = t52; hero_map_decref(t94);
     t53 = HERO_STR_LIT(hero_str_6b); t54 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 54, 5}; hero_map_set_at(&(h2_m), &t53, &t54, &hero_here); }
     t55 = h0_rows; t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 11) : (void)0), (void)(t55->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t55 + 1))[t56]); t58 = t57.f_label; t59 = h0_rows; t60 = INT64_C(0); t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? hero_panic_index_at(t59, t60, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 26) : (void)0), (void)(t59->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t59 + 1))[t60]); t62 = t61.f_cells; t63 = INT64_C(0); t64 = ((void)((t62 == NULL || t63 < 0 || t63 >= t62->len) ? hero_panic_index_at(t62, t63, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 26) : (void)0), (void)(t62->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t62 + 1))[t63]); t65 = t64.f_n; t66 = h0_rows; t67 = INT64_C(0); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? hero_panic_index_at(t66, t67, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 46) : (void)0), (void)(t66->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t66 + 1))[t67]); t69 = t68.f_cells; t70 = INT64_C(0); t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? hero_panic_index_at(t69, t70, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 46) : (void)0), (void)(t69->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t69 + 1))[t70]); t72 = t71.f_tag; t73 = h2_m; t74 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 68}; HERO_NODEBUG const void *found = hero_map_find_at(t73, &t74, &hero_here); if (found == NULL) { t75 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t75 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t75.as.ok, found); } } t95 = h12_own12; h12_own12 = t75; h_0opt_e201354_release(&t95); t96 = h3_f0; h_0opt_e201354_retain(&t75); h3_f0 = t75; h_0opt_e201354_release(&t96); t76 = h3_f0; t77 = t76.tag; t78 = INT64_C(0); t79 = t77 == t78; if (t79) goto bb5; else goto bb6; bb4:
-#line 199 "fixedbugsafieldstoredbehindanindex.c"
+#line 198 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_shown_at(t37, hero_show_i64, &t44, &t45, 1, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 49, 12);
     hero_unreachable();
 bb5:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t82 = h3_f0; t83 = t82.as.ok; hero_print_str(t58); hero_print_int(t65); hero_print_str(t72); hero_print_int(t83); hero_print_end();
-#line 205 "fixedbugsafieldstoredbehindanindex.c"
+#line 204 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h1_kept);
     hero_map_release_at(&h2_m);
@@ -219,7 +218,7 @@ bb5:
 bb6:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t80 = h3_f0; t81 = t80.as.err;
-#line 223 "fixedbugsafieldstoredbehindanindex.c"
+#line 222 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_must_at(t81, "fixedbugs-a-field-stored-behind-an-index.hero", "fixedbugs-a-field-stored-behind-an-index.main", 55, 68);
     hero_unreachable();
 }
@@ -366,7 +365,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b489f263ada3399", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d319f432aa3991b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafieldstoredbehindanindex\tfixedbugs-a-field-stored-behind-an-index\n");

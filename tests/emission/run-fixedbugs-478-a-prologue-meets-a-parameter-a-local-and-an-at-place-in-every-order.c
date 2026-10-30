@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_73, "s");
 
-#line 57 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 56 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 94 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -234,7 +233,7 @@ int64_t h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_mix
     t551 = (*ph79_b39); t552 = HERO_STR_LIT(hero_str_21); t553 = hero_str_concat(t551, t552); t641 = h160_own160; h160_own160 = t553; hero_str_decref(t641); t642 = (*ph79_b39); hero_str_incref(t553); (*ph79_b39) = t553; hero_str_decref(t642);
     t554 = h80_total; t555 = h78_a39; if (__builtin_add_overflow(t554, t555, &t556)) hero_panic_overflow_at("fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero", "fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.mix", 136, 13); t557 = h120_l39; if (__builtin_add_overflow(t556, t557, &t558)) hero_panic_overflow_at("fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero", "fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.mix", 136, 13); t559 = (*ph79_b39); t560 = hero_str_len(t559); if (__builtin_add_overflow(t558, t560, &t561)) hero_panic_overflow_at("fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero", "fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.mix", 136, 13); h80_total = t561;
     t562 = h80_total;
-#line 238 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 237 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
     hero_str_release_at(&h121_own121);
     hero_str_release_at(&h122_own122);
     hero_str_release_at(&h123_own123);
@@ -327,7 +326,7 @@ void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(v
 #line 183
     t82 = h0_s0; hero_print_str(t82); hero_print_end();
     t83 = h39_s39; hero_print_str(t83); hero_print_end();
-#line 331 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 330 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
     hero_str_release_at(&h0_s0);
     hero_str_release_at(&h1_s1);
     hero_str_release_at(&h2_s2);
@@ -467,7 +466,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21dc30347b8edce5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("34ce0c3e2d0595fd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder\tfixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order\n");

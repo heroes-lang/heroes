@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_515417d6, "Pfannkuchen(");
 HERO_STR_STATIC(hero_str_586ee4a, ") = ");
 
-#line 57 "main.c"
+#line 56 "main.c"
 typedef struct h_main_Fannkuch {
     int64_t f_checksum;
     int64_t f_max_flips;
@@ -102,9 +101,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "main.c"
+#line 107 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_0Fannkuch_eq(const h_main_Fannkuch *a, const h_main_Fannkuch *b);
@@ -145,7 +144,7 @@ int64_t h_main_flips(HeroArrayHeader * h0_order) { HeroArrayHeader * h1_work = {
     t9 = h1_work; t10 = INT64_C(0); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.flips", 79, 22) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); h4_high = t11; goto bb4; bb3:
 #line 90
     t33 = h2_done;
-#line 149 "main.c"
+#line 148 "main.c"
     hero_array_release_at(&h1_work);
     return t33;
 bb4:
@@ -158,7 +157,7 @@ bb4:
     t27 = h4_high; t28 = INT64_C(1); if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow_at("main.hero", "main.flips", 86, 20); h4_high = t29; goto bb4; bb6:
 #line 88
     t30 = h2_done; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("main.hero", "main.flips", 88, 16); h2_done = t32; goto bb1;
-#line 162 "main.c"
+#line 161 "main.c"
 }
 
 #line 94 "examples/fannkuch/main.hero"
@@ -173,7 +172,7 @@ h_main_Walk h_main_start(int64_t h0_n) { HeroArrayHeader * h1_order = {0}; HeroA
     t13 = h3_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("main.hero", "main.start", 102, 13); h3_i = t15; goto bb1; bb3:
 #line 104
     t16 = h1_order; t17 = h2_left; t18 = h0_n; t19 = false; hero_array_incref(t16); hero_array_incref(t17); t20 = (h_main_Walk){.f_order = t16, .f_left = t17, .f_at = t18, .f_ended = t19}; t25 = h6_own6; h6_own6 = t20; h_main_0Walk_release(&t25);
-#line 177 "main.c"
+#line 176 "main.c"
     h_main_0Walk_retain(&t20);
     hero_array_release_at(&h1_order);
     hero_array_release_at(&h2_left);
@@ -188,7 +187,7 @@ void h_main_reset(h_main_Walk *ph0_w) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6,
     t1 = (*ph0_w).f_at; t2 = INT64_C(1); t3 = t1 != t2; if (t3) goto bb2; else goto bb3; bb2:
     t4 = (*ph0_w).f_at; t5 = INT64_C(1); if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.reset", 111, 16); t7 = (*ph0_w).f_at; { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*ph0_w).f_left); if (*hero_slot == NULL || t6 < 0 || t6 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t6, "main.hero", "main.reset", 111, 9); hero_array_set(hero_slot, t6, &t7); }
     t8 = (*ph0_w).f_at; t9 = INT64_C(1); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("main.hero", "main.reset", 112, 16); (*ph0_w).f_at = t10; goto bb1; bb3: return;
-#line 192 "main.c"
+#line 191 "main.c"
 }
 
 #line 118 "examples/fannkuch/main.hero"
@@ -211,7 +210,7 @@ void h_main_advance(h_main_Walk *ph0_w) { int64_t h1_head; int64_t h2_i; HERO_NO
     t31 = (*ph0_w).f_left; t32 = (*ph0_w).f_at; t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "main.hero", "main.advance", 133, 12) : (void)0), (void)(t31->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t31 + 1))[t32]); t34 = INT64_C(0); t35 = t33 > t34; if (t35) goto bb11; else goto bb12; bb10:
 #line 135
     t36 = (*ph0_w).f_at; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow_at("main.hero", "main.advance", 135, 16); (*ph0_w).f_at = t38; goto bb1; bb11: goto bb13; bb12: goto bb10; bb13: return;
-#line 215 "main.c"
+#line 214 "main.c"
 }
 
 #line 140 "examples/fannkuch/main.hero"
@@ -228,7 +227,7 @@ h_main_Fannkuch h_main_fannkuch(int64_t h0_n) { h_main_Walk h1_w = {0}; int64_t 
     t10 = h5_count; t11 = h3_max_flips; t12 = t10 > t11; if (t12) goto bb5; else goto bb6; bb3:
 #line 160
     t28 = h2_checksum; t29 = h3_max_flips; t30 = h4_visited; t31 = (h_main_Fannkuch){.f_checksum = t28, .f_max_flips = t29, .f_visited = t30};
-#line 232 "main.c"
+#line 231 "main.c"
     h_main_0Walk_release(hero_slot_escape(&h1_w));
     h_main_0Walk_release(hero_slot_escape(&h6_own6));
     return t31;
@@ -244,7 +243,7 @@ bb4:
     t19 = h2_checksum; t20 = h5_count; if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("main.hero", "main.fannkuch", 154, 24); h2_checksum = t21; goto bb7; bb9:
 #line 156
     t22 = h2_checksum; t23 = h5_count; if (__builtin_sub_overflow(t22, t23, &t24)) hero_panic_overflow_at("main.hero", "main.fannkuch", 156, 24); h2_checksum = t24; goto bb7;
-#line 248 "main.c"
+#line 247 "main.c"
 }
 
 #line 163 "examples/fannkuch/main.hero"
@@ -257,7 +256,7 @@ int64_t h_main_factorial(int64_t h0_n) { int64_t h1_out; int64_t h2_i; HERO_NODE
     t9 = h2_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("main.hero", "main.factorial", 169, 13); h2_i = t11; goto bb1; bb3:
 #line 171
     t12 = h1_out; return t12;
-#line 261 "main.c"
+#line 260 "main.c"
 }
 
 #line 175 "examples/fannkuch/main.hero"
@@ -266,7 +265,7 @@ void h_main_main(void) { int64_t h0_n; h_main_Fannkuch h1_said; HERO_NODEBUG int
     t2 = h0_n; t3 = h_main_fannkuch(t2); h1_said = t3;
     t4 = h1_said.f_checksum; hero_print_int(t4); hero_print_end();
     t5 = HERO_STR_LIT(hero_str_515417d6); t6 = h0_n; t7 = HERO_STR_LIT(hero_str_586ee4a); t8 = h1_said.f_max_flips; hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_end(); return;
-#line 270 "main.c"
+#line 269 "main.c"
 }
 
 #line 267 "examples/fannkuch/main.hero"
@@ -279,7 +278,7 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) { HeroArrayHeader *
     t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.shown", 270, 9); h3_i0 = t17; goto bb1; bb4:
 #line 273
     t18 = h1_out;
-#line 283 "main.c"
+#line 282 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -428,7 +427,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("33d4e01e7c9d683c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d41f69870e47d3f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

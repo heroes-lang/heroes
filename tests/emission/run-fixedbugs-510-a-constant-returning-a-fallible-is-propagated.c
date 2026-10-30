@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d4477, "odd");
 HERO_STR_STATIC(hero_str_52d4a3de, "an odd number has no half");
 
-#line 57 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 56 "fixedbugs510aconstantreturningafallibleispropagated.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 95 "fixedbugs510aconstantreturningafallibleispropagated.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -120,7 +119,7 @@ h_0opt_e201354 h_fixedbugs510aconstantreturningafallibleispropagated_half(int64_
     t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero", "fixedbugs-510-a-constant-returning-a-fallible-is-propagated.half", 9, 15); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero", "fixedbugs-510-a-constant-returning-a-fallible-is-propagated.half", 9, 15); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 8
     t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_52d4a3de); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
-#line 124 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 123 "fixedbugs510aconstantreturningafallibleispropagated.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -131,13 +130,13 @@ h_0opt_e201354 h_fixedbugs510aconstantreturningafallibleispropagated_half(int64_
 #line 11 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 h_0fn_305159eb h_fixedbugs510aconstantreturningafallibleispropagated_HALF(void) { HERO_NODEBUG h_0fn_305159eb t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs510aconstantreturningafallibleispropagated_half; return t1;
-#line 135 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 134 "fixedbugs510aconstantreturningafallibleispropagated.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 h_0opt_e201354 h_fixedbugs510aconstantreturningafallibleispropagated_quarter(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t4, t5, t9, t11, t12, t14, t15, t19, t21, t22, t24, t25, t26, t27, t28, t29, t30, t31, t32; HERO_NODEBUG h_0fn_305159eb t1, t2; HERO_NODEBUG int64_t t3, t6, t7, t13, t16, t17, t23; HERO_NODEBUG bool t8, t18; HERO_NODEBUG HeroFailure t10, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs510aconstantreturningafallibleispropagated_HALF(); t2 = h_fixedbugs510aconstantreturningafallibleispropagated_HALF(); t3 = h0_n; t4 = t2(t3); t26 = h4_own4; h4_own4 = t4; h_0opt_e201354_release(&t26); t27 = h1_f0; h_0opt_e201354_retain(&t4); h1_f0 = t4; h_0opt_e201354_release(&t27); t5 = h1_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t12 = h1_f0; t13 = t12.as.ok; t14 = t1(t13); t28 = h5_own5; h5_own5 = t14; h_0opt_e201354_release(&t28); t29 = h2_f1; h_0opt_e201354_retain(&t14); h2_f1 = t14; h_0opt_e201354_release(&t29); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2: t9 = h1_f0; t10 = t9.as.err; hero_failure_retain(&t10); t11 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t10}; t30 = h6_own6; h6_own6 = t11; h_0opt_e201354_release(&t30); h3_ret0 = t11; goto bb5; bb3: t22 = h2_f1; t23 = t22.as.ok; t24 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t23}; t31 = h7_own7; h7_own7 = t24; h_0opt_e201354_release(&t31); h3_ret0 = t24; goto bb5; bb4: t19 = h2_f1; t20 = t19.as.err; hero_failure_retain(&t20); t21 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t20}; t32 = h8_own8; h8_own8 = t21; h_0opt_e201354_release(&t32); h3_ret0 = t21; goto bb5; bb5:
-#line 141 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 140 "fixedbugs510aconstantreturningafallibleispropagated.c"
     t25 = h3_ret0;
     h_0opt_e201354_retain(&t25);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -158,7 +157,7 @@ void h_fixedbugs510aconstantreturningafallibleispropagated_main(void) { HERO_NOD
     t18 = INT64_C(6); t19 = h_fixedbugs510aconstantreturningafallibleispropagated_quarter(t18); t32 = h7_own7; h7_own7 = t19; h_0opt_e201354_release(&t32); t33 = h2_s0; h_0opt_e201354_retain(&t19); h2_s0 = t19; h_0opt_e201354_release(&t33); t20 = h2_s0; t21 = t20.tag; switch (t21) { case 0: goto bb4; case 1: goto bb5; default: hero_unreachable(); } bb2:
 #line 18
     t7 = h0_f0; t8 = t7.as.err;
-#line 162 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 161 "fixedbugs510aconstantreturningafallibleispropagated.c"
     hero_panic_must_at(t8, "fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero", "fixedbugs-510-a-constant-returning-a-fallible-is-propagated.main", 18, 11);
     hero_unreachable();
 bb3:
@@ -174,7 +173,7 @@ bb4:
 #line 22 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t22 = h2_s0; t23 = t22.as.ok; h3_q = t23; t24 = h3_q; hero_print_int(t24); hero_print_end(); goto bb3; bb5:
     t25 = h2_s0; t26 = t25.as.err; t34 = h4_e; hero_failure_retain(&t26); h4_e = t26; hero_failure_release(&t34); t27 = h4_e.code; hero_print_str(t27); hero_print_end(); goto bb3;
-#line 178 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 177 "fixedbugs510aconstantreturningafallibleispropagated.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
@@ -273,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("33d07c151fe15dfe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5bd5f0bd58c3ad6c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantreturningafallibleispropagated\tfixedbugs-510-a-constant-returning-a-fallible-is-propagated\n");

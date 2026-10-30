@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_73bdf5b2, "closed twice");
 
-#line 102 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 101 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,9 +147,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 153 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_0G_eq(gg * const *a, gg * const *b);
@@ -178,7 +177,7 @@ void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void) { 
     t4 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero", "fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.main", 29, 5}; { hero_handle_alive_at(t4, "the argument `x` of `g_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t4, "g_close", NULL, &hero_here); (void)g_close(t4); if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead(); } }
     t5 = h1_twice; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero", "fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.main", 30, 5}; { hero_handle_alive_at(t5, "the argument `x` of `g_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "g_close", NULL, &hero_here); (void)g_close(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_twice == t5) h1_twice = hero_handle_dead(); } }
     t6 = HERO_STR_LIT(hero_str_73bdf5b2); hero_print_str(t6); hero_print_end(); return;
-#line 182 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 181 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_0G_eq(gg * const *a, gg * const *b) {
     return hero_handle_eq(*a, *b);
@@ -288,7 +287,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("21bb99744dc2a902", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("769c5aa4338613bc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec\tfixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c\n");

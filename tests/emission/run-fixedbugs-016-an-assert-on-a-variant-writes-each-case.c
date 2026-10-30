@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_36613ec7, "s == t");
 
-#line 56 "fixedbugs016anassertonavariantwriteseachcase.c"
+#line 55 "fixedbugs016anassertonavariantwriteseachcase.c"
 typedef enum h_fixedbugs016anassertonavariantwriteseachcase_0Shape_tag {
     h_fixedbugs016anassertonavariantwriteseachcase_0Shape_tag_circle = 0,
     h_fixedbugs016anassertonavariantwriteseachcase_0Shape_tag_square = 1,
@@ -110,9 +109,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "fixedbugs016anassertonavariantwriteseachcase.c"
+#line 115 "fixedbugs016anassertonavariantwriteseachcase.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs016anassertonavariantwriteseachcase_0Shape_c_circle_eq(const h_fixedbugs016anassertonavariantwriteseachcase_0Shape_c_circle *a, const h_fixedbugs016anassertonavariantwriteseachcase_0Shape_c_circle *b);
@@ -143,7 +142,7 @@ void h_fixedbugs016anassertonavariantwriteseachcase_main(void) { h_fixedbugs016a
     t1 = 0x1.4p+1; t2 = (h_fixedbugs016anassertonavariantwriteseachcase_Shape){.tag = h_fixedbugs016anassertonavariantwriteseachcase_0Shape_tag_circle, .as.c_circle = {.f_r = t1}}; h0_s = t2;
     t3 = INT64_C(4); t4 = (h_fixedbugs016anassertonavariantwriteseachcase_Shape){.tag = h_fixedbugs016anassertonavariantwriteseachcase_0Shape_tag_square, .as.c_square = {.f_side = t3}}; h1_t = t4;
     t5 = HERO_STR_LIT(hero_str_36613ec7); t6 = h0_s; t7 = h1_t; t8 = h_fixedbugs016anassertonavariantwriteseachcase_0Shape_eq(&t6, &t7); if (t8) goto bb1; else goto bb2; bb1: return; bb2:
-#line 147 "fixedbugs016anassertonavariantwriteseachcase.c"
+#line 146 "fixedbugs016anassertonavariantwriteseachcase.c"
     hero_panic_assert_shown_at(t5, h_0show_6936ea81, &t6, &t7, 1, "fixedbugs-016-an-assert-on-a-variant-writes-each-case.hero", "fixedbugs-016-an-assert-on-a-variant-writes-each-case.main", 16, 12);
     hero_unreachable();
 }
@@ -316,7 +315,7 @@ HERO_TU_LOCAL void h_0show_6936ea81(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7922866c305f990d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e2de78b7686527a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonavariantwriteseachcase\tfixedbugs-016-an-assert-on-a-variant-writes-each-case\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 58 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 57 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -94,9 +93,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 99 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -134,7 +133,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice; t2 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice; t3 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t4 = h0_own0; h0_own0 = t3; hero_array_decref(t4);
-#line 138 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 137 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -143,7 +142,7 @@ HeroArrayHeader * h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(vo
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n) { hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.twice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.twice", 17, 12); return t3;
-#line 147 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 146 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 }
 
 int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n) {
@@ -154,7 +153,7 @@ int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t 
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_n) { hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.thrice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(3); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.thrice", 20, 12); return t3;
-#line 158 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 157 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 }
 
 int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_n) {
@@ -172,7 +171,7 @@ int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_
     t16 = h3_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.worker", 25, 9); h3_i0 = t18; goto bb1; bb4:
 #line 28
     t19 = h1_total;
-#line 176 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 175 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t19;
@@ -187,7 +186,7 @@ int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t
 void h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_main(void) { int64_t h0_spawned; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t10, *t16, *t18, *t19; HERO_NODEBUG h_0fn_48ac9712 t1, t12; HERO_NODEBUG int64_t t2, t3, t4, t5, t7, t8, t11, t13, t14, t17; HERO_NODEBUG HeroStr t6, t9, t15; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker; t2 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 31, 15}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_spawned = t3;
     t4 = INT64_C(7); t5 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(t4); t6 = HERO_STR_LIT(hero_str_20); t7 = h0_spawned; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 32, 27}; t8 = hero_thread_join(t7); } t9 = HERO_STR_LIT(hero_str_20); t10 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t18 = h1_own1; h1_own1 = t10; hero_array_decref(t18); t11 = INT64_C(1); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 32, 67) : (void)0), (void)(t10->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t10 + 1))[t11]); t13 = INT64_C(4); t14 = t12(t13); t15 = HERO_STR_LIT(hero_str_20); t16 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t19 = h2_own2; h2_own2 = t16; hero_array_decref(t19); t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); hero_print_int(t5); hero_print_str(t6); hero_print_int(t8); hero_print_str(t9); hero_print_int(t14); hero_print_str(t15); hero_print_int(t17); hero_print_end();
-#line 191 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
+#line 190 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     return;
@@ -289,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13288072514e9783", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a63de9f1ebd3cbe", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantoffunctionskeepsitsthreadguard\tfixedbugs-382-a-constant-of-functions-keeps-its-thread-guard\n");

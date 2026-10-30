@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,13 +61,13 @@ _Static_assert(sizeof(ADDR) - __builtin_offsetof(ADDR, addr_bytes) != 0, "heroes
 #line 13
 _Static_assert(__builtin_classify_type(((ACT *)0)->act_one) == 5 && _Generic(((ACT *)0)->act_one, __typeof__(((ACT *)0)->act_one): 1, default: 0) && sizeof(((ACT *)0)->act_one) == sizeof(void *), "heroes-ffi-field ACT act_one");
 _Static_assert(__builtin_classify_type(((ACT *)0)->flags) == 1 && sizeof(((ACT *)0)->flags) == sizeof(int32_t) && (_Generic(((ACT *)0)->flags, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ACT flags");
-#line 66 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 65 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 
 #line 10 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(ADDR *)0) != 13 || sizeof(((ADDR *)0)->addr_bytes) == sizeof(ADDR), "heroes-ffi-union-narrow ADDR addr_bytes");
 #line 12
 _Static_assert(__builtin_classify_type(*(ACT *)0) != 13 || sizeof(((ACT *)0)->act_one) == sizeof(ACT), "heroes-ffi-union-narrow ACT act_one"); _Static_assert(__builtin_classify_type(*(ACT *)0) != 13 || sizeof(((ACT *)0)->flags) == sizeof(ACT), "heroes-ffi-union-narrow ACT flags");
-#line 72 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 71 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -162,9 +161,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 167 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_eq(const ADDR *a, const ADDR *b);
@@ -198,7 +197,7 @@ void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void) 
     hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t17); hero_print_end();
 #line 26
     t18 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 11}; t19 = make_act(t18); } t20 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 33}; t21 = make_act(t20); } t22 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_eq(&t19, &t21); t23 = HERO_STR_LIT(hero_str_20); t24 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 58}; t25 = make_act(t24); } t26 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero", "fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.main", 26, 80}; t27 = make_act(t26); } t28 = h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ACT_eq(&t25, &t27); hero_print_bool(t22); hero_print_str(t23); hero_print_bool(t28); hero_print_end(); return;
-#line 202 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 201 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_0ADDR_eq(const ADDR *a, const ADDR *b) {
     if (!((a->addr_bytes[0] == b->addr_bytes[0] && a->addr_bytes[1] == b->addr_bytes[1] && a->addr_bytes[2] == b->addr_bytes[2] && a->addr_bytes[3] == b->addr_bytes[3] && a->addr_bytes[4] == b->addr_bytes[4] && a->addr_bytes[5] == b->addr_bytes[5] && a->addr_bytes[6] == b->addr_bytes[6] && a->addr_bytes[7] == b->addr_bytes[7] && a->addr_bytes[8] == b->addr_bytes[8] && a->addr_bytes[9] == b->addr_bytes[9] && a->addr_bytes[10] == b->addr_bytes[10] && a->addr_bytes[11] == b->addr_bytes[11] && a->addr_bytes[12] == b->addr_bytes[12] && a->addr_bytes[13] == b->addr_bytes[13] && a->addr_bytes[14] == b->addr_bytes[14] && a->addr_bytes[15] == b->addr_bytes[15]))) return false;
@@ -338,7 +337,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e1cadee37ce560f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("32531c4f63d805a2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151armsamacroreachesaswideastheirnamedunionscompared\tfixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared\n");

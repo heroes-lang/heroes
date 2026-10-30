@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -92,7 +91,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 96 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 95 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -140,9 +139,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 145 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -163,7 +162,7 @@ void h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
 int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) {
-#line 167 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 166 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
     _Static_assert(HERO_RET_INT(OLD_LIMIT), "heroes-ffi-return OLD_LIMIT i64");
     _Static_assert(__builtin_constant_p(OLD_LIMIT), "heroes-ffi-const OLD_LIMIT");
 #pragma clang diagnostic push
@@ -175,7 +174,7 @@ int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) 
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     return OLD_LIMIT;
-#line 179 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 178 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -194,7 +193,7 @@ int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) 
 #line 15 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
 void h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(); hero_print_int(t1); hero_print_end(); return;
-#line 198 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 197 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -293,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5900d0407e2c4915", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5dd5a94d4f9335e3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs571adeprecatedconstantreadprintsnoclangwords\tfixedbugs-571-a-deprecated-constant-read-prints-no-clang-words\n");

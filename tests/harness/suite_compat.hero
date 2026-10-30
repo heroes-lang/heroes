@@ -7,7 +7,7 @@
 # same `X` after it. The corpus is two things as the tag holds them (panel
 # 232's R10): every file under `CORPUS` with a line opening `function
 # main(`, the gallery's lessons included, and the reference program of each
-# task of `THESIS`, `tests/thesis/NN/reference.hero` alone, never a task's
+# task of `THESIS`, its `reference.hero` alone, never a task's
 # cases, its mutants or the held-out archive. Both are read by `git archive`
 # and never from the working tree, which has moved on; `git grep` and `git
 # ls-tree` count them at the tag, and the counts must agree with what was

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8")
 HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 
-#line 66 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 65 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder {
     h_0fn_48ac9712 f_f;
@@ -114,9 +113,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 120 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 119 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *b);
@@ -159,19 +158,19 @@ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextna
 #line 23 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_twice(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero", "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.twice", 24, 12); return t3;
-#line 163 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 162 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_apply(h_0fn_48ac9712 h0_f, int64_t h1_v) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h1_v; t3 = t1(t2); return t3;
-#line 169 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 168 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 h_0fn_6f1dc5d7 h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_shout(void) { HERO_NODEBUG h_0fn_6f1dc5d7 t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9; return t1;
-#line 175 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 174 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -179,7 +178,7 @@ int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(h_
     t1 = h0_f; t14 = h1_s0; h_0opt_30514ebf_retain(&t1); h1_s0 = t1; h_0opt_30514ebf_release(&t14); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb2:
     t4 = h1_s0; t5 = t4.as.ok; h2_g = t5; t6 = h2_g; t7 = INT64_C(8); t8 = t6(t7); h4_ret0 = t8; goto bb4; bb3:
     t9 = h1_s0; t10 = t9.as.err; t15 = h3_e; hero_failure_retain(&t10); h3_e = t10; hero_failure_release(&t15); t11 = h3_e.code; t12 = hero_str_len(t11); h4_ret0 = t12; goto bb4; bb4:
-#line 183 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 182 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     t13 = h4_ret0;
     h_0opt_30514ebf_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h3_e);
@@ -218,7 +217,7 @@ void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void) { 
     t79 = HERO_STR_LIT(hero_str_14ab8a64); t80 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0counted_1e58d9(t79); t95 = h18_own18; h18_own18 = t80; hero_str_decref(t95); hero_print_str(t80); hero_print_end();
     t81 = INT64_C(14); t82 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1b9a87(t81); hero_print_int(t82); hero_print_end();
     t83 = HERO_STR_LIT(hero_str_368d30e9); t84 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1e58d9(t83); t96 = h19_own19; h19_own19 = t84; hero_str_decref(t96); hero_print_str(t84); hero_print_end();
-#line 222 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 221 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h3_fs);
     hero_array_release_at(&h4_mixed);
     hero_array_release_at(&h5_grown);
@@ -241,32 +240,32 @@ bb2:
     t59 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87;
 #line 70
     h7_r0 = t59; goto bb1;
-#line 245 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 244 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
-#line 123 "<heroes library>"
+#line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 250 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 249 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
-#line 153 "<heroes library>"
+#line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
-#line 153
+#line 152
 #define h1_status (*hero_lend_h1_status)
-#line 153
+#line 152
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 156
+#line 155
     t7 = INT64_C(0); h1_status = t7;
     t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
-#line 155
+#line 154
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
-#line 160
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 270 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 269 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -279,20 +278,20 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 }
 #undef h1_status
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 
-#line 197 "<heroes library>"
+#line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
     t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
     t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
-#line 208
+#line 207
     t47 = h0_out;
-#line 296 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 295 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -308,34 +307,34 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
 bb4:
-#line 207 "<heroes library>"
+#line 206 "<heroes library>"
     t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
-#line 203
+#line 202
     t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
     t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
-#line 206
+#line 205
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
-#line 204
+#line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 321 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
-    hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 320 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+    hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
-#line 206 "<heroes library>"
+#line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 327 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
-    hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 326 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+    hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 197, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
 
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 /* ident<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9(HeroStr h0_x) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x;
-#line 339 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 338 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -343,7 +342,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 /* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87(int64_t h0_x) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 347 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 346 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -351,7 +350,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
     t1 = h1_y; t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t9 = h3_own3; h3_own3 = t2; hero_array_decref(t9); t10 = h2_kept; hero_array_incref(t2); h2_kept = t2; hero_array_decref(t10);
     t3 = HERO_STR_LIT(hero_str_4bb496f); t4 = h2_kept; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
     t8 = h0_x;
-#line 355 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 354 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
     return t8;
@@ -365,7 +364,7 @@ bb2:
     t1 = h1_y; t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t9 = h3_own3; h3_own3 = t2; hero_array_decref(t9); t10 = h2_kept; hero_array_incref(t2); h2_kept = t2; hero_array_decref(t10);
     t3 = HERO_STR_LIT(hero_str_4bb496f); t4 = h2_kept; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
     t8 = h0_x;
-#line 369 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 368 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t8);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
@@ -380,7 +379,7 @@ bb2:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; h1_f = t1;
     t2 = h1_f; t3 = INT64_C(16); t4 = t2(t3); hero_print_int(t4); hero_print_end();
     t5 = h0_x;
-#line 384 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 383 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t5);
     return t5;
 }
@@ -389,14 +388,14 @@ bb2:
 /* outer<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1b9a87(int64_t h0_x) { h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; h1_f = t1;
     t2 = h1_f; t3 = h0_x; t4 = t2(t3); return t4;
-#line 393 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 392 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 /* outer<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1e58d9(HeroStr h0_x) { h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4, t5; HERO_NODEBUG h_0fn_6f1dc5d7 t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9; h1_f = t1;
     t2 = h1_f; t3 = h0_x; t4 = t2(t3); t5 = h2_own2; h2_own2 = t4; hero_str_decref(t5);
-#line 400 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 399 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t4);
     hero_str_release_at(&h2_own2);
     return t4;
@@ -542,7 +541,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("683ea5db352ac52d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d1f670c1aee2fe7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs402agenericfunctiontakestheinstanceitscontextnames\tfixedbugs-402-a-generic-function-takes-the-instance-its-context-names\n");

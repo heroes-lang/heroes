@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_1b6fd0, "hey");
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 58 "adversarialstrcopyout.c"
+#line 57 "adversarialstrcopyout.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "adversarialstrcopyout.c"
+#line 95 "adversarialstrcopyout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -120,7 +119,7 @@ void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) { int64_t 
     t8 = h2_i; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("adversarial-str-copy-out.hero", "adversarial-str-copy-out.extend", 18, 13); h2_i = t10;
 #line 20
     t11 = h2_i; t12 = INT64_C(2); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3: goto bb7; bb4: goto bb1; bb5: goto bb7; bb6: goto bb4; bb7:
-#line 124 "adversarialstrcopyout.c"
+#line 123 "adversarialstrcopyout.c"
     hero_str_release_at(&h3_own3);
     return;
 }
@@ -135,7 +134,7 @@ void h_adversarialstrcopyout_main(void) { HeroStr h0_a = {0}; HeroStr h1_b = {0}
     t7 = INT64_C(0); h_adversarialstrcopyout_extend(&h1_b, t7);
     t8 = h1_b; hero_print_str(t8); hero_print_end();
     t9 = h1_b; t10 = hero_str_len(t9); hero_print_int(t10); hero_print_end();
-#line 139 "adversarialstrcopyout.c"
+#line 138 "adversarialstrcopyout.c"
     hero_str_release_at(&h0_a);
     hero_str_release_at(&h1_b);
     return;
@@ -237,7 +236,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0a8baf323ff21e9c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4156701e08a5eade", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialstrcopyout\tadversarial-str-copy-out\n");

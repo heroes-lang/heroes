@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -58,7 +57,7 @@ HERO_STR_STATIC(hero_str_2c, ",");
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 62 "closurelist.c"
+#line 61 "closurelist.c"
 typedef struct h_closurelist_Point {
     int64_t f_x;
     int64_t f_y;
@@ -116,9 +115,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "closurelist.c"
+#line 121 "closurelist.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_closurelist_0Point_eq(const h_closurelist_Point *a, const h_closurelist_Point *b);
@@ -159,13 +158,13 @@ int64_t h_closurelist_area(h_closurelist_Shape h0_s) { HERO_NODEBUG h_closurelis
     t5 = h1_s0; t6 = t5.as.c_seg; h3_g = t6; t7 = h3_g.f_from.f_x;
 #line 27
     h2_r0 = t7; goto bb1;
-#line 163 "closurelist.c"
+#line 162 "closurelist.c"
 }
 
 #line 31 "tests/golden/run/closure-list.hero"
 void h_closurelist_shift(h_closurelist_Point *ph0_p, int64_t h1_by) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_closurelist_Point t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_p).f_x; t2 = h1_by; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("closure-list.hero", "closure-list.shift", 32, 18); t4 = (*ph0_p).f_y; t5 = (h_closurelist_Point){.f_x = t3, .f_y = t4}; (*ph0_p) = t5; return;
-#line 169 "closurelist.c"
+#line 168 "closurelist.c"
 }
 
 #line 34 "tests/golden/run/closure-list.hero"
@@ -175,7 +174,7 @@ h_0opt_e201354 h_closurelist_halve(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h
     t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "closure-list.hero", "closure-list.halve", 37, 15); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("closure-list.hero", "closure-list.halve", 37, 15); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 36
     t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_60844662); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
-#line 179 "closurelist.c"
+#line 178 "closurelist.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -189,7 +188,7 @@ h_0opt_e201354 h_closurelist_chain(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h
     t12 = h2_v; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("closure-list.hero", "closure-list.chain", 41, 15); t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t14}; t19 = h5_own5; h5_own5 = t15; h_0opt_e201354_release(&t19); h3_ret0 = t15; goto bb3; bb2:
 #line 40
     t7 = h1_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t20 = h6_own6; h6_own6 = t9; h_0opt_e201354_release(&t20); h3_ret0 = t9; goto bb3; bb3:
-#line 193 "closurelist.c"
+#line 192 "closurelist.c"
     t16 = h3_ret0;
     h_0opt_e201354_retain(&t16);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -202,7 +201,7 @@ h_0opt_e201354 h_closurelist_chain(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h
 #line 43 "tests/golden/run/closure-list.hero"
 HeroStr h_closurelist_show(int64_t h0_n) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = hero_int_to_str(t1); t3 = h1_own1; h1_own1 = t2; hero_str_decref(t3);
-#line 206 "closurelist.c"
+#line 205 "closurelist.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -225,7 +224,7 @@ void h_closurelist_main(void) { HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h
     t40 = INT64_C(0); h8_i = t40; goto bb7; bb5:
 #line 55
     t34 = h7_f0; t35 = t34.as.ok; if (__builtin_add_overflow(t24, t35, &t36)) hero_panic_overflow_at("closure-list.hero", "closure-list.main", 55, 17); h3_total = t36; goto bb3; bb6: t32 = h7_f0; t33 = t32.as.err;
-#line 229 "closurelist.c"
+#line 228 "closurelist.c"
     hero_panic_must_at(t33, "closure-list.hero", "closure-list.main", 55, 25);
     hero_unreachable();
 bb7:
@@ -243,7 +242,7 @@ bb7:
     t73 = h9_f1; t74 = t73.as.ok; h10_r0 = t74; goto bb15; bb14: t75 = INT64_C(0); t76 = INT64_C(1); if (__builtin_sub_overflow(t75, t76, &t77)) hero_panic_overflow_at("closure-list.hero", "closure-list.main", 66, 66); h10_r0 = t77; goto bb15; bb15: t78 = h10_r0; hero_print_int(t61); hero_print_str(t62); hero_print_int(t65); hero_print_str(t66); hero_print_int(t78); hero_print_end();
     t79 = h0_xs; t80 = ((void)(t79 == NULL ? ((void)hero_array_len(t79), hero_unreachable()) : (void)0), t79->len); t81 = HERO_STR_LIT(hero_str_20); t82 = h0_xs; t83 = h_closurelist_show; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"closure-list.hero", "closure-list.main", 67, 31}; t84 = h_library_0map_37fb3fcc(t82, t83, &hero_here); } t119 = h18_own18; h18_own18 = t84; hero_array_decref(t119); t85 = HERO_STR_LIT(hero_str_2c); t86 = hero_str_join(t84, t85); t120 = h19_own19; h19_own19 = t86; hero_str_decref(t120); hero_print_int(t80); hero_print_str(t81); hero_print_str(t86); hero_print_end();
     t87 = HERO_STR_LIT(hero_str_3205); t88 = hero_str_chars(t87); t121 = h20_own20; h20_own20 = t88; hero_array_decref(t121); t89 = INT64_C(0); t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? hero_panic_index_at(t88, t89, "closure-list.hero", "closure-list.main", 68, 11) : (void)0), (void)(t88->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t88 + 1))[t89]); t91 = HERO_STR_LIT(hero_str_1998f2); t92 = INT64_C(0); t93 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"closure-list.hero", "closure-list.main", 68, 27}; t94 = hero_str_slice_at(t91, t92, t93, &hero_here); } t122 = h21_own21; h21_own21 = t94; hero_str_decref(t122); t95 = 0x1.e666666666666p+0; if (hero_f64_fits_int(t95)) { t96 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t95)}; } else { t96 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t123 = h22_own22; h22_own22 = t96; h_0opt_e201354_release(&t123); t124 = h11_f2; h_0opt_e201354_retain(&t96); h11_f2 = t96; h_0opt_e201354_release(&t124); t97 = h11_f2; t98 = t97.tag; t99 = INT64_C(0); t100 = t98 == t99; if (t100) goto bb16; else goto bb17; bb16: t103 = h11_f2; t104 = t103.as.ok; t105 = INT64_C(2); t106 = hero_int_to_f64(t105); hero_print_str(t90); hero_print_str(t94); hero_print_int(t104); hero_print_f64(t106); hero_print_end();
-#line 247 "closurelist.c"
+#line 246 "closurelist.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h4_xs0);
@@ -266,7 +265,7 @@ bb7:
 bb17:
 #line 68 "tests/golden/run/closure-list.hero"
     t101 = h11_f2; t102 = t101.as.err;
-#line 270 "closurelist.c"
+#line 269 "closurelist.c"
     hero_panic_must_at(t102, "closure-list.hero", "closure-list.main", 68, 57);
     hero_unreachable();
 }
@@ -280,7 +279,7 @@ bb17:
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 284 "closurelist.c"
+#line 283 "closurelist.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -435,7 +434,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0194003368b07472", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0910c0116ff915f6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("closurelist\tclosure-list\n");

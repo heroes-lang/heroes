@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "sugarvariantcase.c"
+#line 53 "sugarvariantcase.c"
 typedef enum h_sugarvariantcase_0Token_tag {
     h_sugarvariantcase_0Token_tag_num = 0,
     h_sugarvariantcase_0Token_tag_plus = 1,
@@ -102,9 +101,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "sugarvariantcase.c"
+#line 107 "sugarvariantcase.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_sugarvariantcase_0Token_c_num_eq(const h_sugarvariantcase_0Token_c_num *a, const h_sugarvariantcase_0Token_c_num *b);
@@ -137,13 +136,13 @@ int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) { HERO_NODEBU
     t7 = INT64_C(0);
 #line 10
     h2_r0 = t7; goto bb1;
-#line 141 "sugarvariantcase.c"
+#line 140 "sugarvariantcase.c"
 }
 
 #line 14 "tests/golden/ir/sugar-variant-case.hero"
 h_sugarvariantcase_Token h_sugarvariantcase_one(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_sugarvariantcase_Token t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_0Token_tag_num, .as.c_num = {.f_v = t1}}; return t2;
-#line 147 "sugarvariantcase.c"
+#line 146 "sugarvariantcase.c"
 }
 HERO_TU_LOCAL bool h_sugarvariantcase_0Token_c_num_eq(const h_sugarvariantcase_0Token_c_num *a, const h_sugarvariantcase_0Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;

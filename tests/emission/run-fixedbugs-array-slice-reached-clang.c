@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_33edea20, "abcde");
 
-#line 56 "fixedbugsarrayslicereachedclang.c"
+#line 55 "fixedbugsarrayslicereachedclang.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugsarrayslicereachedclang.c"
+#line 93 "fixedbugsarrayslicereachedclang.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,7 +115,7 @@ void h_fixedbugsarrayslicereachedclang_main(void) { HeroArrayHeader * h0_xs = {0
     t11 = h1_ys; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 37, 11) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); t14 = h1_ys; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 37, 18) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); hero_print_int(t13); hero_print_int(t16); hero_print_end();
 #line 40
     t17 = HERO_STR_LIT(hero_str_33edea20); t18 = INT64_C(1); t19 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-array-slice-reached-clang.hero", "fixedbugs-array-slice-reached-clang.main", 40, 11}; t20 = hero_str_slice_at(t17, t18, t19, &hero_here); } t25 = h4_own4; h4_own4 = t20; hero_str_decref(t25); hero_print_str(t20); hero_print_end();
-#line 120 "fixedbugsarrayslicereachedclang.c"
+#line 119 "fixedbugsarrayslicereachedclang.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);
@@ -221,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bc85180637daf70", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2af9f1e51a7934b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsarrayslicereachedclang\tfixedbugs-array-slice-reached-clang\n");

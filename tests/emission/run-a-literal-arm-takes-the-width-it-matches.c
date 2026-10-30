@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,7 +56,7 @@ HERO_STR_STATIC(hero_str_2c18a733, "other");
 HERO_STR_STATIC(hero_str_6548112e, "hi you");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 61 "aliteralarmtakesthewidthitmatches.c"
+#line 60 "aliteralarmtakesthewidthitmatches.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -93,9 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "aliteralarmtakesthewidthitmatches.c"
+#line 98 "aliteralarmtakesthewidthitmatches.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -126,7 +125,7 @@ HeroStr h_aliteralarmtakesthewidthitmatches_byte_class(uint8_t h0_b) { HERO_NODE
     t3 = UINT64_C(97);
 #line 12
     t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t30 = h2_r0;
-#line 130 "aliteralarmtakesthewidthitmatches.c"
+#line 129 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t30);
     hero_str_release_at(&h2_r0);
     return t30;
@@ -171,7 +170,7 @@ bb2:
     t29 = HERO_STR_LIT(hero_str_2c18a733);
 #line 12
     t34 = h2_r0; hero_str_incref(t29); h2_r0 = t29; hero_str_decref(t34); goto bb1;
-#line 175 "aliteralarmtakesthewidthitmatches.c"
+#line 174 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 18 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -195,7 +194,7 @@ int64_t h_aliteralarmtakesthewidthitmatches_narrow(int32_t h0_n) { HERO_NODEBUG 
     t10 = INT64_C(0);
 #line 19
     h2_r0 = t10; goto bb1;
-#line 199 "aliteralarmtakesthewidthitmatches.c"
+#line 198 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 24 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -219,7 +218,7 @@ int64_t h_aliteralarmtakesthewidthitmatches_wide(uint64_t h0_n) { HERO_NODEBUG u
     t10 = INT64_C(0);
 #line 25
     h2_r0 = t10; goto bb1;
-#line 223 "aliteralarmtakesthewidthitmatches.c"
+#line 222 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 30 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -243,7 +242,7 @@ int64_t h_aliteralarmtakesthewidthitmatches_signed_edge(int64_t h0_n) { HERO_NOD
     t10 = INT64_C(0);
 #line 31
     h2_r0 = t10; goto bb1;
-#line 247 "aliteralarmtakesthewidthitmatches.c"
+#line 246 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 36 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -275,7 +274,7 @@ int64_t h_aliteralarmtakesthewidthitmatches_small(int8_t h0_n) { HERO_NODEBUG in
     t14 = INT64_C(0);
 #line 37
     h2_r0 = t14; goto bb1;
-#line 279 "aliteralarmtakesthewidthitmatches.c"
+#line 278 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 43 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -294,7 +293,7 @@ void h_aliteralarmtakesthewidthitmatches_main(void) { HeroStr h0_text = {0}; Her
     t38 = UINT64_C(18446744073709551615); t39 = h_aliteralarmtakesthewidthitmatches_wide(t38); t40 = UINT64_C(0); t41 = h_aliteralarmtakesthewidthitmatches_wide(t40); t42 = UINT64_C(7); t43 = h_aliteralarmtakesthewidthitmatches_wide(t42); hero_print_int(t39); hero_print_int(t41); hero_print_int(t43); hero_print_end();
     t44 = INT64_MIN; t45 = h_aliteralarmtakesthewidthitmatches_signed_edge(t44); t46 = INT64_C(9223372036854775807); t47 = h_aliteralarmtakesthewidthitmatches_signed_edge(t46); t48 = INT64_C(1); t49 = h_aliteralarmtakesthewidthitmatches_signed_edge(t48); hero_print_int(t45); hero_print_int(t47); hero_print_int(t49); hero_print_end();
     t50 = INT64_C(-128); t51 = h_aliteralarmtakesthewidthitmatches_small(t50); t52 = INT64_C(127); t53 = h_aliteralarmtakesthewidthitmatches_small(t52); t54 = INT64_C(0); t55 = h_aliteralarmtakesthewidthitmatches_small(t54); t56 = INT64_C(5); t57 = h_aliteralarmtakesthewidthitmatches_small(t56); hero_print_int(t51); hero_print_int(t53); hero_print_int(t55); hero_print_int(t57); hero_print_end();
-#line 298 "aliteralarmtakesthewidthitmatches.c"
+#line 297 "aliteralarmtakesthewidthitmatches.c"
     hero_str_release_at(&h0_text);
     hero_array_release_at(&h1_classes);
     hero_array_release_at(&h2_xs0);
@@ -315,7 +314,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 319 "aliteralarmtakesthewidthitmatches.c"
+#line 318 "aliteralarmtakesthewidthitmatches.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -422,7 +421,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("57638ac42ceb2662", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("194c8ae21cb48be4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("aliteralarmtakesthewidthitmatches\ta-literal-arm-takes-the-width-it-matches\n");

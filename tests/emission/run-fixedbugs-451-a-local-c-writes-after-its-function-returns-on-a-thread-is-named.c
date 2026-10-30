@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_210c7913, "on a thread");
 
-#line 102 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 101 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 158 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -191,7 +190,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_lend(
     t1 = INT64_C(0); h0_n = t1;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.lend", 21, 5}; hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n); }
     t2 = h0_n; hero_lend_local_give(hero_lend_h0_n); return t2;
-#line 195 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 194 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 #undef h0_n
 
@@ -200,7 +199,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worke
     t1 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_lend(); h1_got = t1;
     t2 = h0_arg; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.worker", 26, 5}; (void)cell_write_later(t2); }
     t3 = h1_got; return t3;
-#line 204 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 203 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 
 int64_t h_0cb_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker(int64_t h0_arg) {
@@ -213,7 +212,7 @@ void h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_main(voi
     t1 = HERO_STR_LIT(hero_str_210c7913); hero_print_str(t1); hero_print_end();
     t2 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker; t3 = INT64_C(77); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.main", 31, 9}; t4 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } h0_t = t4;
     t5 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero", "fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.main", 32, 11}; t6 = hero_thread_join(t5); } hero_print_int(t6); hero_print_end(); return;
-#line 217 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
+#line 216 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -312,7 +311,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("316b215715a83ba1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("032cd37d450e5522", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed\tfixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named\n");

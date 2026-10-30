@@ -408,3 +408,10 @@ sample halved where that leg passes 200 minutes.
 `.claude/worktrees/lane-generated-programs-scratch/slide/` on the coordinator's Mac, left it that
 day by the author's instruction; its 549 text files are `231-reports/scores-evidence.tar.xz`
 (`231-reports/evidence.md`, § Added 2026-10-29).
+
+**Ratified, 2026-10-28**, the author's reading the paragraph above records, restated on
+2026-10-30 in the words `records/verdicts` reads (`tests/harness/suite_records.hero`,
+`answered_beneath`: a line opening `Ratified,` and its date). That paragraph opens
+`Ratified 2026-10-28,`, without the comma, and the check read this sitting as pending from the
+moment its ratification, https://github.com/heroes-lang/heroes/issues/2243, was closed on
+2026-10-29; M-compatibility-promise's batch gate found it, `records` 25 and 3.

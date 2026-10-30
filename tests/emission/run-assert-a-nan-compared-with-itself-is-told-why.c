@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1ff6b864, "x == x");
 
-#line 56 "assertanancomparedwithitselfistoldwhy.c"
+#line 55 "assertanancomparedwithitselfistoldwhy.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "assertanancomparedwithitselfistoldwhy.c"
+#line 93 "assertanancomparedwithitselfistoldwhy.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,14 +112,14 @@ void h_assertanancomparedwithitselfistoldwhy_main(void);
 double h_assertanancomparedwithitselfistoldwhy_nan_of(void) { double h0_zero; HERO_NODEBUG double t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x0p+0; h0_zero = t1;
     t2 = h0_zero; t3 = h0_zero; t4 = t2 / t3; return t4;
-#line 117 "assertanancomparedwithitselfistoldwhy.c"
+#line 116 "assertanancomparedwithitselfistoldwhy.c"
 }
 
 #line 9 "tests/golden/run/assert-a-nan-compared-with-itself-is-told-why.hero"
 void h_assertanancomparedwithitselfistoldwhy_main(void) { double h0_x; HERO_NODEBUG double t1, t3, t4; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_assertanancomparedwithitselfistoldwhy_nan_of(); h0_x = t1;
     t2 = HERO_STR_LIT(hero_str_1ff6b864); t3 = h0_x; t4 = h0_x; t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: return; bb2:
-#line 124 "assertanancomparedwithitselfistoldwhy.c"
+#line 123 "assertanancomparedwithitselfistoldwhy.c"
     hero_panic_assert_shown_at(t2, hero_show_f64, &t3, &t4, 1, "assert-a-nan-compared-with-itself-is-told-why.hero", "assert-a-nan-compared-with-itself-is-told-why.main", 11, 12);
     hero_unreachable();
 }
@@ -221,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("16de6aed2f61ee70", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5cbfc57b0edb911c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("assertanancomparedwithitselfistoldwhy\tassert-a-nan-compared-with-itself-is-told-why\n");

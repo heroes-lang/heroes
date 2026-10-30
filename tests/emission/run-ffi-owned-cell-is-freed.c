@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -48,7 +47,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -107,7 +106,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 111 "ffiownedcellisfreed.c"
+#line 110 "ffiownedcellisfreed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -160,9 +159,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "ffiownedcellisfreed.c"
+#line 165 "ffiownedcellisfreed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -207,7 +206,7 @@ void h_ffiownedcellisfreed_main(void) {
     t71 = INT64_C(3); t72 = ((void *)0); h17_cell2 = t72; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; hero_lend_local_name(hero_lend_h17_cell2, "hero_owned_silent", "out"); (void)hero_owned_silent(t71, (char **)&h17_cell2); } t74 = h17_cell2; h18_owned4 = t74; t75 = h18_owned4; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; t76 = h_library_validated(t75, &hero_here); } t118 = h28_own28; h28_own28 = t76; h_0opt_f87774a_release(&t118); t119 = h19_owned5; h_0opt_f87774a_retain(&t76); h19_owned5 = t76; h_0opt_f87774a_release(&t119); t77 = ((void *)0); t78 = h18_owned4; t79 = t78 != t77; if (t79) goto bb17; else goto bb18; bb17: t80 = h18_owned4; t81 = (void *)(char *)t80; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; (void)free(t81); } goto bb18; bb18: t82 = h19_owned5; t120 = h16_quiet; h_0opt_f87774a_retain(&t82); h16_quiet = t82; h_0opt_f87774a_release(&t120);
 #line 66
     t83 = h16_quiet; t121 = h20_s0; h_0opt_f87774a_retain(&t83); h20_s0 = t83; h_0opt_f87774a_release(&t121); t84 = h20_s0; t85 = t84.tag; switch (t85) { case 0: goto bb20; case 1: goto bb21; default: hero_unreachable(); } bb19:
-#line 211 "ffiownedcellisfreed.c"
+#line 210 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_first));
     h_0opt_f87774a_release(hero_slot_escape(&h3_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -239,35 +238,35 @@ bb20:
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t86 = h20_s0; t87 = t86.as.ok; t122 = h21_text; hero_str_incref(t87); h21_text = t87; hero_str_decref(t122); t88 = HERO_STR_LIT(hero_str_2c0c20d2); t89 = h21_text; hero_print_str(t88); hero_print_str(t89); hero_print_end(); goto bb19; bb21:
     t90 = h20_s0; t91 = t90.as.err; t123 = h22_e; hero_failure_retain(&t91); h22_e = t91; hero_failure_release(&t123); t92 = HERO_STR_LIT(hero_str_5d6883a8); t93 = h22_e.code; hero_print_str(t92); hero_print_str(t93); hero_print_end(); goto bb19;
-#line 243 "ffiownedcellisfreed.c"
+#line 242 "ffiownedcellisfreed.c"
 }
 #undef h1_cell0
 #undef h7_cell1
 #undef h17_cell2
 
-#line 123 "<heroes library>"
+#line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 251 "ffiownedcellisfreed.c"
+#line 250 "ffiownedcellisfreed.c"
 }
 
-#line 153 "<heroes library>"
+#line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
-#line 153
+#line 152
 #define h1_status (*hero_lend_h1_status)
-#line 153
+#line 152
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 156
+#line 155
     t7 = INT64_C(0); h1_status = t7;
     t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
-#line 155
+#line 154
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
-#line 160
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 271 "ffiownedcellisfreed.c"
+#line 270 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -280,7 +279,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 }
 #undef h1_status
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -380,7 +379,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("384e8a663af33346", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("230303b844265d9e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiownedcellisfreed\tffi-owned-cell-is-freed\n");

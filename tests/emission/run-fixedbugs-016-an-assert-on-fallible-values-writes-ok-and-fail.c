@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_edaa336, "nope");
 HERO_STR_STATIC(hero_str_e6fe597, "no value\there");
 HERO_STR_STATIC(hero_str_713ef5c, "a == b");
 
-#line 58 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
+#line 57 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
+#line 95 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -117,7 +116,7 @@ void h_fixedbugs016anassertonfalliblevalueswritesokandfail_main(void) { h_0opt_e
     t1 = INT64_C(3); t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t1}; t12 = h4_own4; h4_own4 = t2; h_0opt_e201354_release(&t12); t13 = h0_a; h_0opt_e201354_retain(&t2); h0_a = t2; h_0opt_e201354_release(&t13);
     t3 = HERO_STR_LIT(hero_str_edaa336); t4 = HERO_STR_LIT(hero_str_e6fe597); hero_str_incref(t3); hero_str_incref(t4); t5 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t3, .msg = t4}}; t14 = h5_own5; h5_own5 = t5; h_0opt_e201354_release(&t14); t15 = h1_b; h_0opt_e201354_retain(&t5); h1_b = t5; h_0opt_e201354_release(&t15);
     t6 = HERO_STR_LIT(hero_str_713ef5c); t7 = h0_a; t8 = h1_b; t9 = h_0opt_e201354_eq(&t7, &t8); t16 = h2_assert0; h_0opt_e201354_retain(&t7); h2_assert0 = t7; h_0opt_e201354_release(&t16); t17 = h3_assert1; h_0opt_e201354_retain(&t8); h3_assert1 = t8; h_0opt_e201354_release(&t17); if (t9) goto bb1; else goto bb2; bb1:
-#line 121 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
+#line 120 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_a));
     h_0opt_e201354_release(hero_slot_escape(&h1_b));
     h_0opt_e201354_release(hero_slot_escape(&h2_assert0));
@@ -128,7 +127,7 @@ void h_fixedbugs016anassertonfalliblevalueswritesokandfail_main(void) { h_0opt_e
 bb2:
 #line 9 "tests/golden/run/fixedbugs-016-an-assert-on-fallible-values-writes-ok-and-fail.hero"
     t10 = h2_assert0; t11 = h3_assert1;
-#line 132 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
+#line 131 "fixedbugs016anassertonfalliblevalueswritesokandfail.c"
     hero_panic_assert_shown_at(t6, h_0show_e201354, &t10, &t11, 1, "fixedbugs-016-an-assert-on-fallible-values-writes-ok-and-fail.hero", "fixedbugs-016-an-assert-on-fallible-values-writes-ok-and-fail.main", 9, 12);
     hero_unreachable();
 }
@@ -243,7 +242,7 @@ HERO_TU_LOCAL void h_0show_e201354(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("582796cd07c8ae74", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57f973f854513df0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonfalliblevalueswritesokandfail\tfixedbugs-016-an-assert-on-fallible-values-writes-ok-and-fail\n");

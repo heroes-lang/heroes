@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("n")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,11 +63,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 20 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
 _Static_assert(__builtin_classify_type(((Kept *)0)->c) == 1 && sizeof(((Kept *)0)->c) == sizeof(uint8_t) && (_Generic(((Kept *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Kept c");
 _Static_assert(__builtin_classify_type(((Kept *)0)->n) == 1 && sizeof(((Kept *)0)->n) == sizeof(int64_t) && (_Generic(((Kept *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Kept n");
-#line 68 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 67 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 
 #line 19 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
 _Static_assert(__builtin_classify_type(*(Kept *)0) != 13, "heroes-ffi-union Kept c n");
-#line 72 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 71 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -158,9 +157,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 163 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_0Kept_eq(const Kept *a, const Kept *b);
@@ -192,7 +191,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 25 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
 Kept h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(int64_t h0_n) { HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG Kept t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); t2 = h0_n; t3 = (Kept){.c = t1, .n = t2}; return t3;
-#line 196 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 195 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
@@ -206,7 +205,7 @@ void h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_main(void) {
     t4 = INT64_C(3); t5 = h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(t4); h0_k = t5; hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero", "fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.main", 32, 11}; t6 = padding_set(); } hero_print_int(t6); hero_print_end();
     t7 = h0_k.n; hero_print_int(t7); hero_print_end(); hero_lend_local_give(hero_lend_h0_k); return;
-#line 210 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 209 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 }
 #undef h0_k
 HERO_TU_LOCAL bool h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_0Kept_eq(const Kept *a, const Kept *b) {
@@ -320,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4921e90d4108bb47", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("361b7e0226ed2613", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2112arecordstoredafterthezeroingreachesczeroed\tfixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed\n");

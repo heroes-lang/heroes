@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_6db1dd9a, "\t check: ");
 HERO_STR_STATIC(hero_str_77f91b0d, "\t trees of depth ");
 HERO_STR_STATIC(hero_str_6772d07, "long lived tree of depth ");
 
-#line 59 "main.c"
+#line 58 "main.c"
 typedef enum h_main_0Tree_tag {
     h_main_0Tree_tag_leaf = 0,
     h_main_0Tree_tag_branch = 1,
@@ -107,9 +106,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 113 "main.c"
+#line 112 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_main_0Tree_c_branch_retain(const h_main_0Tree_c_branch *v);
@@ -162,13 +161,13 @@ void h_main_main(void);
 #line 56 "examples/binarytrees/main.hero"
 int64_t h_main_MIN_DEPTH(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(4); return t1;
-#line 166 "main.c"
+#line 165 "main.c"
 }
 
 #line 61 "examples/binarytrees/main.hero"
 int64_t h_main_DEPTH(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(10); return t1;
-#line 172 "main.c"
+#line 171 "main.c"
 }
 
 #line 74 "examples/binarytrees/main.hero"
@@ -178,7 +177,7 @@ h_main_Tree h_main_grown(int64_t h0_depth) { HERO_NODEBUG h_main_Tree h1_ret0 = 
     t5 = h0_depth; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("main.hero", "main.grown", 78, 35); t8 = h_main_grown(t7); t16 = h2_own2; h2_own2 = t8; h_main_0Tree_release(&t16); t9 = h0_depth; t10 = INT64_C(1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("main.hero", "main.grown", 78, 53); t12 = h_main_grown(t11); t17 = h3_own3; h3_own3 = t12; h_main_0Tree_release(&t17); t13 = hero_array_new(&h_main_0Tree_desc, 2); hero_array_push_owned(&t13, &t8); hero_array_push_owned(&t13, &t12); t18 = h4_own4; h4_own4 = t13; hero_array_decref(t18); hero_array_incref(t13); t14 = (h_main_Tree){.tag = h_main_0Tree_tag_branch, .as.c_branch = {.f_halves = t13}}; t19 = h5_own5; h5_own5 = t14; h_main_0Tree_release(&t19); h1_ret0 = t14; goto bb4; bb2:
 #line 76
     t4 = (h_main_Tree){.tag = h_main_0Tree_tag_leaf}; t20 = h6_own6; h6_own6 = t4; h_main_0Tree_release(&t20); h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 182 "main.c"
+#line 181 "main.c"
     t15 = h1_ret0;
     h_main_0Tree_retain(&t15);
     h_main_0Tree_release(hero_slot_escape(&h2_own2));
@@ -192,7 +191,7 @@ h_main_Tree h_main_grown(int64_t h0_depth) { HERO_NODEBUG h_main_Tree h1_ret0 = 
 #line 84 "examples/binarytrees/main.hero"
 int64_t h_main_checked(h_main_Tree h0_t) { HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t10, t15, t19; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t11, t12, t14, t16, t17, t18; h_main_0Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_0Tree_c_branch t6, t20; HERO_NODEBUG HeroArrayHeader *t8, *t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_t; t19 = h1_s0; h_main_0Tree_retain(&t1); h1_s0 = t1; h_main_0Tree_release(&t19); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t18 = h2_r0;
-#line 196 "main.c"
+#line 195 "main.c"
     h_main_0Tree_release(hero_slot_escape(&h1_s0));
     h_main_0Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t18;
@@ -205,13 +204,13 @@ bb2:
     t5 = h1_s0; t6 = t5.as.c_branch; t20 = h3_b; h_main_0Tree_c_branch_retain(&t6); h3_b = t6; h_main_0Tree_c_branch_release(&t20); t7 = INT64_C(1); t8 = h3_b.f_halves; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.checked", 87, 34) : (void)0), (void)(t8->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t8 + 1))[t9]); t11 = h_main_checked(t10); if (__builtin_add_overflow(t7, t11, &t12)) hero_panic_overflow_at("main.hero", "main.checked", 87, 22); t13 = h3_b.f_halves; t14 = INT64_C(1); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "main.hero", "main.checked", 87, 57) : (void)0), (void)(t13->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t13 + 1))[t14]); t16 = h_main_checked(t15); if (__builtin_add_overflow(t12, t16, &t17)) hero_panic_overflow_at("main.hero", "main.checked", 87, 22);
 #line 85
     h2_r0 = t17; goto bb1;
-#line 209 "main.c"
+#line 208 "main.c"
 }
 
 #line 91 "examples/binarytrees/main.hero"
 int64_t h_main_depth_of(h_main_Tree h0_t) { HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t10, t14; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t11, t12, t13; h_main_0Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_0Tree_c_branch t6, t15; HERO_NODEBUG HeroArrayHeader *t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_t; t14 = h1_s0; h_main_0Tree_retain(&t1); h1_s0 = t1; h_main_0Tree_release(&t14); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t13 = h2_r0;
-#line 215 "main.c"
+#line 214 "main.c"
     h_main_0Tree_release(hero_slot_escape(&h1_s0));
     h_main_0Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t13;
@@ -224,13 +223,13 @@ bb2:
     t5 = h1_s0; t6 = t5.as.c_branch; t15 = h3_b; h_main_0Tree_c_branch_retain(&t6); h3_b = t6; h_main_0Tree_c_branch_release(&t15); t7 = INT64_C(1); t8 = h3_b.f_halves; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.depth_of", 94, 35) : (void)0), (void)(t8->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t8 + 1))[t9]); t11 = h_main_depth_of(t10); if (__builtin_add_overflow(t7, t11, &t12)) hero_panic_overflow_at("main.hero", "main.depth_of", 94, 22);
 #line 92
     h2_r0 = t12; goto bb1;
-#line 228 "main.c"
+#line 227 "main.c"
 }
 
 #line 101 "examples/binarytrees/main.hero"
 bool h_main_balanced(h_main_Tree h0_t) { HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t9, t13, t18, t22, t27; HERO_NODEBUG bool h2_r0, h4_b0, h5_b1, t4, t10, t14, t15, t24, t25, t26; h_main_0Tree_c_branch h3_b = {0}; HERO_NODEBUG int64_t t3, t8, t12, t17, t19, t21, t23; HERO_NODEBUG h_main_0Tree_c_branch t6, t28; HERO_NODEBUG HeroArrayHeader *t7, *t11, *t16, *t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_t; t27 = h1_s0; h_main_0Tree_retain(&t1); h1_s0 = t1; h_main_0Tree_release(&t27); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t26 = h2_r0;
-#line 234 "main.c"
+#line 233 "main.c"
     h_main_0Tree_release(hero_slot_escape(&h1_s0));
     h_main_0Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t26;
@@ -243,7 +242,7 @@ bb2:
     t5 = h1_s0; t6 = t5.as.c_branch; t28 = h3_b; h_main_0Tree_c_branch_retain(&t6); h3_b = t6; h_main_0Tree_c_branch_release(&t28); t7 = h3_b.f_halves; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "main.hero", "main.balanced", 104, 31) : (void)0), (void)(t7->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t7 + 1))[t8]); t10 = h_main_balanced(t9); h5_b1 = t10; if (t10) goto bb4; else goto bb5; bb4: t11 = h3_b.f_halves; t12 = INT64_C(1); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "main.hero", "main.balanced", 104, 56) : (void)0), (void)(t11->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t11 + 1))[t12]); t14 = h_main_balanced(t13); h5_b1 = t14; goto bb5; bb5: t15 = h5_b1; h4_b0 = t15; if (t15) goto bb6; else goto bb7; bb6: t16 = h3_b.f_halves; t17 = INT64_C(0); t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "main.hero", "main.balanced", 104, 81) : (void)0), (void)(t16->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t16 + 1))[t17]); t19 = h_main_depth_of(t18); t20 = h3_b.f_halves; t21 = INT64_C(1); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? hero_panic_index_at(t20, t21, "main.hero", "main.balanced", 104, 106) : (void)0), (void)(t20->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t20 + 1))[t21]); t23 = h_main_depth_of(t22); t24 = t19 == t23; h4_b0 = t24; goto bb7; bb7: t25 = h4_b0;
 #line 102
     h2_r0 = t25; goto bb1;
-#line 247 "main.c"
+#line 246 "main.c"
 }
 
 #line 109 "examples/binarytrees/main.hero"
@@ -260,7 +259,7 @@ void h_main_main(void) { h_main_Tree h0_long_lived = {0}; int64_t h1_depth; int6
     t25 = INT64_C(0); h4_i = t25; goto bb4; bb3:
 #line 134
     t45 = HERO_STR_LIT(hero_str_6772d07); t46 = h_main_DEPTH(); t47 = HERO_STR_LIT(hero_str_6db1dd9a); t48 = h0_long_lived; t49 = h_main_checked(t48); hero_print_str(t45); hero_print_int(t46); hero_print_str(t47); hero_print_int(t49); hero_print_end();
-#line 264 "main.c"
+#line 263 "main.c"
     h_main_0Tree_release(hero_slot_escape(&h0_long_lived));
     h_main_0Tree_release(hero_slot_escape(&h5_own5));
     h_main_0Tree_release(hero_slot_escape(&h6_own6));
@@ -274,7 +273,7 @@ bb4:
 #line 131
     t37 = h2_iterations; t38 = HERO_STR_LIT(hero_str_77f91b0d); t39 = h1_depth; t40 = HERO_STR_LIT(hero_str_6db1dd9a); t41 = h3_total; hero_print_int(t37); hero_print_str(t38); hero_print_int(t39); hero_print_str(t40); hero_print_int(t41); hero_print_end();
     t42 = h1_depth; t43 = INT64_C(2); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow_at("main.hero", "main.main", 132, 17); h1_depth = t44; goto bb1;
-#line 278 "main.c"
+#line 277 "main.c"
 }
 HERO_TU_LOCAL void h_main_0Tree_c_branch_retain(const h_main_0Tree_c_branch *v) {
     hero_array_incref(v->f_halves);
@@ -427,7 +426,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0efb2110030035dd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3868378a77474adf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

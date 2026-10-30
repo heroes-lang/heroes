@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_785c2d54, "s == \"ab\"");
 
-#line 57 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
+#line 56 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
 typedef struct h_0opt_fbbb698 {
     int64_t tag;
     union {
@@ -97,9 +96,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 103 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
+#line 102 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
@@ -127,7 +126,7 @@ void h_fixedbugs2225astrsidelongerthan1024bytesiscut_main(void) { HERO_NODEBUG h
     t13 = HERO_STR_LIT(hero_str_785c2d54); t14 = h1_s; t15 = HERO_STR_LIT(hero_str_3205); t16 = hero_str_eq(t14, t15); t23 = h2_assert0; hero_str_incref(t14); h2_assert0 = t14; hero_str_decref(t23); t24 = h3_assert1; hero_str_incref(t15); h3_assert1 = t15; hero_str_decref(t24); if (t16) goto bb3; else goto bb4; bb2:
 #line 7
     t8 = h0_f0; t9 = t8.as.err;
-#line 131 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
+#line 130 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
     hero_panic_must_at(t9, "fixedbugs-2225-a-str-side-longer-than-1024-bytes-is-cut.hero", "fixedbugs-2225-a-str-side-longer-than-1024-bytes-is-cut.main", 7, 22);
     hero_unreachable();
 bb3:
@@ -141,7 +140,7 @@ bb3:
 bb4:
 #line 8 "tests/golden/run/fixedbugs-2225-a-str-side-longer-than-1024-bytes-is-cut.hero"
     t17 = h2_assert0; t18 = h3_assert1;
-#line 145 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
+#line 144 "fixedbugs2225astrsidelongerthan1024bytesiscut.c"
     hero_panic_assert_shown_at(t13, hero_show_str, &t17, &t18, 1, "fixedbugs-2225-a-str-side-longer-than-1024-bytes-is-cut.hero", "fixedbugs-2225-a-str-side-longer-than-1024-bytes-is-cut.main", 8, 12);
     hero_unreachable();
 }
@@ -274,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2dd4f82a417d12b1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2fbf0e4d42e4ea76", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2225astrsidelongerthan1024bytesiscut\tfixedbugs-2225-a-str-side-longer-than-1024-bytes-is-cut\n");

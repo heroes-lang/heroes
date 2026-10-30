@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_7ba188c6, "empty");
 
-#line 60 "adversarialaggregateoverwrite.c"
+#line 59 "adversarialaggregateoverwrite.c"
 typedef struct h_adversarialaggregateoverwrite_Cell {
     HeroStr f_tag;
     int64_t f_n;
@@ -113,9 +112,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 119 "adversarialaggregateoverwrite.c"
+#line 118 "adversarialaggregateoverwrite.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_adversarialaggregateoverwrite_0Cell_retain(const h_adversarialaggregateoverwrite_Cell *v);
@@ -199,7 +198,7 @@ void h_adversarialaggregateoverwrite_main(void) { h_adversarialaggregateoverwrit
     t67 = h13_r2; h15_n = t67;
 #line 71
     t68 = h15_n; hero_print_int(t68); hero_print_end();
-#line 203 "adversarialaggregateoverwrite.c"
+#line 202 "adversarialaggregateoverwrite.c"
     h_adversarialaggregateoverwrite_0Cell_release(hero_slot_escape(&h0_c));
     h_adversarialaggregateoverwrite_0Slot_release(hero_slot_escape(&h2_s));
     h_adversarialaggregateoverwrite_0Slot_release(hero_slot_escape(&h4_s0));
@@ -236,7 +235,7 @@ bb14:
     t64 = h12_s2; t65 = t64.as.c_full; t101 = h14_f; h_adversarialaggregateoverwrite_0Slot_c_full_retain(&t65); h14_f = t65; h_adversarialaggregateoverwrite_0Slot_c_full_release(&t101); t66 = h14_f.f_item.f_n;
 #line 67
     h13_r2 = t66; goto bb13;
-#line 240 "adversarialaggregateoverwrite.c"
+#line 239 "adversarialaggregateoverwrite.c"
 }
 HERO_TU_LOCAL void h_adversarialaggregateoverwrite_0Cell_retain(const h_adversarialaggregateoverwrite_Cell *v) {
     hero_str_incref(v->f_tag);
@@ -411,7 +410,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3cb464e93c211b0e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b528a04743e1479", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialaggregateoverwrite\tadversarial-aggregate-overwrite\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -59,7 +58,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 
-#line 63 "generics.c"
+#line 62 "generics.c"
 typedef HeroStr (*h_0fn_4a13fb08)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "generics.c"
+#line 101 "generics.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -126,7 +125,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_generics_0first_4ce7463f(HeroArrayHeader * h0_
 #line 31 "tests/golden/run/generics.hero"
 HeroStr h_generics_label(int64_t h0_n) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t3, t4, t5, t6; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_23); t2 = h0_n; t3 = hero_int_to_str(t2); t5 = h1_own1; h1_own1 = t3; hero_str_decref(t5); t4 = hero_str_concat(t1, t3); t6 = h2_own2; h2_own2 = t4; hero_str_decref(t6);
-#line 130 "generics.c"
+#line 129 "generics.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -145,7 +144,7 @@ void h_generics_main(void) { HeroArrayHeader * h0_rows = {0}; HERO_NODEBUG HeroA
 #line 47
     t37 = HERO_STR_LIT(hero_str_61); t38 = HERO_STR_LIT(hero_str_62); t39 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t39, &t37); hero_array_push_owned(&t39, &t38); t61 = h12_own12; h12_own12 = t39; hero_array_decref(t61); t40 = HERO_STR_LIT(hero_str_63); t41 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t41, &t40); t62 = h13_own13; h13_own13 = t41; hero_array_decref(t62); t42 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t42, &t39); hero_array_push_owned(&t42, &t41); t63 = h14_own14; h14_own14 = t42; hero_array_decref(t63); t64 = h0_rows; hero_array_incref(t42); h0_rows = t42; hero_array_decref(t64);
     t43 = h0_rows; t44 = h_generics_0first_4ce7463f(t43); t65 = h15_own15; h15_own15 = t44; hero_array_decref(t65); t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); t46 = HERO_STR_LIT(hero_str_20); t47 = h0_rows; t48 = h_generics_0first_4ce7463f(t47); t66 = h16_own16; h16_own16 = t48; hero_array_decref(t66); t49 = h_generics_0first_1e58d9(t48); t67 = h17_own17; h17_own17 = t49; hero_str_decref(t67); hero_print_int(t45); hero_print_str(t46); hero_print_str(t49); hero_print_end();
-#line 149 "generics.c"
+#line 148 "generics.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -170,7 +169,7 @@ void h_generics_main(void) { HeroArrayHeader * h0_rows = {0}; HERO_NODEBUG HeroA
 #line 16 "tests/golden/run/generics.hero"
 /* first<str> */ HERO_TU_LOCAL HeroStr h_generics_0first_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "generics.hero", "generics.first", 17, 12) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
-#line 174 "generics.c"
+#line 173 "generics.c"
     hero_str_incref(t3);
     return t3;
 }
@@ -178,13 +177,13 @@ void h_generics_main(void) { HeroArrayHeader * h0_rows = {0}; HERO_NODEBUG HeroA
 #line 16 "tests/golden/run/generics.hero"
 /* first<i64> */ HERO_TU_LOCAL int64_t h_generics_0first_1b9a87(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "generics.hero", "generics.first", 17, 12) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]); return t3;
-#line 182 "generics.c"
+#line 181 "generics.c"
 }
 
 #line 19 "tests/golden/run/generics.hero"
 /* last<str> */ HERO_TU_LOCAL HeroStr h_generics_0last_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1, *t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = h0_xs; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(1); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("generics.hero", "generics.last", 20, 15); t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? hero_panic_index_at(t1, t5, "generics.hero", "generics.last", 20, 12) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t5]);
-#line 188 "generics.c"
+#line 187 "generics.c"
     hero_str_incref(t6);
     return t6;
 }
@@ -192,7 +191,7 @@ void h_generics_main(void) { HeroArrayHeader * h0_rows = {0}; HERO_NODEBUG HeroA
 #line 19 "tests/golden/run/generics.hero"
 /* last<i64> */ HERO_TU_LOCAL int64_t h_generics_0last_1b9a87(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1, *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = h0_xs; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(1); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("generics.hero", "generics.last", 20, 15); t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? hero_panic_index_at(t1, t5, "generics.hero", "generics.last", 20, 12) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t5]); return t6;
-#line 196 "generics.c"
+#line 195 "generics.c"
 }
 
 #line 23 "tests/golden/run/generics.hero"
@@ -205,7 +204,7 @@ void h_generics_main(void) { HeroArrayHeader * h0_rows = {0}; HERO_NODEBUG HeroA
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("generics.hero", "generics.convert", 26, 9); h4_i0 = t18; goto bb1; bb4:
 #line 29
     t19 = h2_out;
-#line 209 "generics.c"
+#line 208 "generics.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -217,7 +216,7 @@ void h_generics_main(void) { HeroArrayHeader * h0_rows = {0}; HERO_NODEBUG HeroA
 #line 16 "tests/golden/run/generics.hero"
 /* first<[str]> */ HERO_TU_LOCAL HeroArrayHeader * h_generics_0first_4ce7463f(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1, *t3; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "generics.hero", "generics.first", 17, 12) : (void)0), (void)(t1->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t1 + 1))[t2]);
-#line 221 "generics.c"
+#line 220 "generics.c"
     hero_array_incref(t3);
     return t3;
 }
@@ -318,7 +317,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("744a0dda41fa6f4b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b569cab76ce1f43", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_generics_main();

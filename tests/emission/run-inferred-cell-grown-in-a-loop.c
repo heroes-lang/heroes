@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_0, "");
 
-#line 56 "inferredcellgrowninaloop.c"
+#line 55 "inferredcellgrowninaloop.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "inferredcellgrowninaloop.c"
+#line 93 "inferredcellgrowninaloop.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -121,7 +120,7 @@ void h_inferredcellgrowninaloop_main(void) { int64_t h0_total; int64_t h1_i; Her
 #line 15
     t17 = h0_total; hero_print_int(t17); hero_print_end();
     t18 = h2_row; hero_print_str(t18); hero_print_end();
-#line 125 "inferredcellgrowninaloop.c"
+#line 124 "inferredcellgrowninaloop.c"
     hero_str_release_at(&h2_row);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -224,7 +223,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b4c304d2e7226c5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e130c1e78e90100", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("inferredcellgrowninaloop\tinferred-cell-grown-in-a-loop\n");

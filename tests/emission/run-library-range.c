@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_2c, ",");
 
-#line 56 "libraryrange.c"
+#line 55 "libraryrange.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "libraryrange.c"
+#line 93 "libraryrange.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -130,7 +129,7 @@ void h_libraryrange_main(void) { HeroArrayHeader * h0_xs = {0}; int64_t h1_total
     t39 = INT64_C(0); t40 = INT64_C(2); if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow_at("library-range.hero", "library-range.main", 33, 36); t42 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-range.hero", "library-range.main", 33, 24}; t43 = h_library_range(t41, t42, &hero_here); } t66 = h9_own9; h9_own9 = t43; hero_array_decref(t66); t44 = h_libraryrange_map_str(t43); t67 = h10_own10; h10_own10 = t44; hero_array_decref(t67); t45 = HERO_STR_LIT(hero_str_2c); t46 = hero_str_join(t44, t45); t68 = h11_own11; h11_own11 = t46; hero_str_decref(t68); hero_print_str(t46); hero_print_end();
 #line 36
     t47 = INT64_C(0); t48 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-range.hero", "library-range.main", 36, 16}; t49 = h_library_range(t47, t48, &hero_here); } t69 = h12_own12; h12_own12 = t49; hero_array_decref(t69); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-range.hero", "library-range.main", 36, 11}; t50 = hero_array_sort_at(t49, &hero_here); } t70 = h13_own13; h13_own13 = t50; hero_array_decref(t70); t51 = INT64_C(2); t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? hero_panic_index_at(t50, t51, "library-range.hero", "library-range.main", 36, 11) : (void)0), (void)(t50->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t50 + 1))[t51]); t53 = INT64_C(0); t54 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-range.hero", "library-range.main", 36, 53}; t55 = h_library_range(t53, t54, &hero_here); } t71 = h14_own14; h14_own14 = t55; hero_array_decref(t71); t56 = INT64_C(1); t57 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"library-range.hero", "library-range.main", 36, 47}; t58 = hero_array_slice_at(t55, t56, t57, &hero_here); } t72 = h15_own15; h15_own15 = t58; hero_array_decref(t72); t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len); hero_print_int(t52); hero_print_int(t59); hero_print_end();
-#line 134 "libraryrange.c"
+#line 133 "libraryrange.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
@@ -157,7 +156,7 @@ HeroArrayHeader * h_libraryrange_map_str(HeroArrayHeader * h0_xs) { HeroArrayHea
     t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("library-range.hero", "library-range.map_str", 41, 9); h3_i0 = t17; goto bb1; bb4:
 #line 44
     t18 = h1_out;
-#line 161 "libraryrange.c"
+#line 160 "libraryrange.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -174,7 +173,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 178 "libraryrange.c"
+#line 177 "libraryrange.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -281,7 +280,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e7d079d3a974f4f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fc3e24b7cc7e21a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("libraryrange\tlibrary-range\n");

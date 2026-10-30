@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,7 +59,7 @@ HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 64 "variants.c"
+#line 63 "variants.c"
 typedef enum h_variants_0Token_tag {
     h_variants_0Token_tag_num = 0,
     h_variants_0Token_tag_word = 1,
@@ -118,9 +117,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "variants.c"
+#line 123 "variants.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_variants_0Token_c_num_eq(const h_variants_0Token_c_num *a, const h_variants_0Token_c_num *b);
@@ -153,7 +152,7 @@ void h_variants_main(void);
 #line 19 "tests/golden/run/variants.hero"
 int64_t h_variants_size(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t4, t7, t13; HERO_NODEBUG int64_t h2_r0, t3, t6, t10, t11, t12; h_variants_0Token_c_num h3_n; h_variants_0Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_0Token_c_num t5; HERO_NODEBUG h_variants_0Token_c_word t8, t14; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_t; t13 = h1_s0; h_variants_0Token_retain(&t1); h1_s0 = t1; h_variants_0Token_release(&t13); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb1: t12 = h2_r0;
-#line 157 "variants.c"
+#line 156 "variants.c"
     h_variants_0Token_release(hero_slot_escape(&h1_s0));
     h_variants_0Token_c_word_release(hero_slot_escape(&h4_w));
     return t12;
@@ -170,13 +169,13 @@ bb2:
     t11 = INT64_C(0);
 #line 20
     h2_r0 = t11; goto bb1;
-#line 174 "variants.c"
+#line 173 "variants.c"
 }
 
 #line 25 "tests/golden/run/variants.hero"
 HeroStr h_variants_label(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t5, t12; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t4, t7, t8, t9, t10, t11, t13, t15, t16, t17; h_variants_0Token_c_word h3_w = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_0Token_c_word t6, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_t; t12 = h1_s0; h_variants_0Token_retain(&t1); h1_s0 = t1; h_variants_0Token_release(&t12); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb1: t11 = h2_r0;
-#line 180 "variants.c"
+#line 179 "variants.c"
     hero_str_incref(t11);
     h_variants_0Token_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -196,7 +195,7 @@ bb2:
     t10 = HERO_STR_LIT(hero_str_1aab3b);
 #line 26
     t17 = h2_r0; hero_str_incref(t10); h2_r0 = t10; hero_str_decref(t17); goto bb1;
-#line 200 "variants.c"
+#line 199 "variants.c"
 }
 
 #line 31 "tests/golden/run/variants.hero"
@@ -219,7 +218,7 @@ void h_variants_main(void) { h_variants_Token h0_a = {0}; h_variants_Token h1_b 
     t35 = HERO_STR_LIT(hero_str_3205); hero_str_incref(t35); t36 = (h_variants_Token){.tag = h_variants_0Token_tag_word, .as.c_word = {.f_text = t35}}; t60 = h18_own18; h18_own18 = t36; h_variants_0Token_release(&t60); t61 = h4_w1; h_variants_0Token_retain(&t36); h4_w1 = t36; h_variants_0Token_release(&t61);
     t37 = HERO_STR_LIT(hero_str_61); t38 = HERO_STR_LIT(hero_str_62); t39 = hero_str_concat(t37, t38); t62 = h19_own19; h19_own19 = t39; hero_str_decref(t62); hero_str_incref(t39); t40 = (h_variants_Token){.tag = h_variants_0Token_tag_word, .as.c_word = {.f_text = t39}}; t63 = h20_own20; h20_own20 = t40; h_variants_0Token_release(&t63); t64 = h5_w2; h_variants_0Token_retain(&t40); h5_w2 = t40; h_variants_0Token_release(&t64);
     t41 = h4_w1; t42 = h5_w2; t43 = h_variants_0Token_eq(&t41, &t42); hero_print_bool(t43); hero_print_end();
-#line 223 "variants.c"
+#line 222 "variants.c"
     h_variants_0Token_release(hero_slot_escape(&h0_a));
     h_variants_0Token_release(hero_slot_escape(&h1_b));
     h_variants_0Token_release(hero_slot_escape(&h2_c));
@@ -408,7 +407,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6108db5e57d57633", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28156a2f0ca9262c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_variants_main();

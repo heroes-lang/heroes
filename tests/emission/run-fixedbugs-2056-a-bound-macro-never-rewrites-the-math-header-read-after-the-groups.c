@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("sqrt")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -97,7 +96,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 101 "fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups.c"
+#line 100 "fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -147,9 +146,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups.c"
+#line 152 "fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -170,7 +169,7 @@ void h_fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups_main
 #line 17 "tests/golden/run/fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.hero"
 void h_fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups_main(void) { HERO_NODEBUG float t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1p+2; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.hero", "fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.main", 18, 11}; t2 = sqrt(t1); } hero_print_f32(t2); hero_print_end(); return;
-#line 174 "fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups.c"
+#line 173 "fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -269,7 +268,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("55f51d8721c6f5fd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("68e6f991533daf14", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups\tfixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups\n");

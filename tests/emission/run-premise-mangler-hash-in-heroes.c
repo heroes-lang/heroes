@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_38777701, "fold<i64, i64>");
 HERO_STR_STATIC(hero_str_642c20d9, "pair<i64, str_x>");
 HERO_STR_STATIC(hero_str_1343f73c, "pair<i64_str, x>");
 
-#line 59 "premisemanglerhashinheroes.c"
+#line 58 "premisemanglerhashinheroes.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "premisemanglerhashinheroes.c"
+#line 96 "premisemanglerhashinheroes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -124,7 +123,7 @@ int64_t h_premisemanglerhashinheroes_typehash(HeroStr h0_rendered) { int64_t h1_
     t32 = h3_i0; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("premise-mangler-hash-in-heroes.hero", "premise-mangler-hash-in-heroes.typehash", 27, 9); h3_i0 = t34; goto bb1; bb4:
 #line 30
     t35 = h1_h;
-#line 128 "premisemanglerhashinheroes.c"
+#line 127 "premisemanglerhashinheroes.c"
     hero_array_release_at(&h2_xs0);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     hero_array_release_at(&h6_own6);
@@ -133,7 +132,7 @@ int64_t h_premisemanglerhashinheroes_typehash(HeroStr h0_rendered) { int64_t h1_
 bb5:
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t27 = h5_f0; t28 = t27.as.ok; if (__builtin_add_overflow(t16, t28, &t29)) hero_panic_overflow_at("premise-mangler-hash-in-heroes.hero", "premise-mangler-hash-in-heroes.typehash", 28, 14); t30 = INT64_C(2147483647); if (t30 == 0) hero_panic_at("division by zero", "premise-mangler-hash-in-heroes.hero", "premise-mangler-hash-in-heroes.typehash", 28, 13); if (t29 == INT64_MIN && t30 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "premise-mangler-hash-in-heroes.hero", "premise-mangler-hash-in-heroes.typehash", 28, 13); t31 = t29 % t30; h1_h = t31; goto bb3; bb6: t25 = h5_f0; t26 = t25.as.err;
-#line 137 "premisemanglerhashinheroes.c"
+#line 136 "premisemanglerhashinheroes.c"
     hero_panic_must_at(t26, "premise-mangler-hash-in-heroes.hero", "premise-mangler-hash-in-heroes.typehash", 28, 24);
     hero_unreachable();
 }
@@ -145,7 +144,7 @@ void h_premisemanglerhashinheroes_main(void) { HERO_NODEBUG HeroStr t1, t3, t5, 
 #line 38
     t5 = HERO_STR_LIT(hero_str_642c20d9); t6 = h_premisemanglerhashinheroes_typehash(t5); hero_print_int(t6); hero_print_end();
     t7 = HERO_STR_LIT(hero_str_1343f73c); t8 = h_premisemanglerhashinheroes_typehash(t7); hero_print_int(t8); hero_print_end(); return;
-#line 149 "premisemanglerhashinheroes.c"
+#line 148 "premisemanglerhashinheroes.c"
 }
 
 #line 26 "<heroes library>"
@@ -156,7 +155,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 160 "premisemanglerhashinheroes.c"
+#line 159 "premisemanglerhashinheroes.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -263,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("42e5c838535f365b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b18f03a094c235e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("premisemanglerhashinheroes\tpremise-mangler-hash-in-heroes\n");

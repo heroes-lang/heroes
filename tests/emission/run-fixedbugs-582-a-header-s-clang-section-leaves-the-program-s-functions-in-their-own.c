@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -93,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 96 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 typedef struct h_fixedbugs582pair_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -171,9 +170,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 177 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 176 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582pair_0Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
@@ -206,25 +205,25 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
 void h_fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown_main(void) { HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero", "fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.main", 14, 33}; t2 = llabs(t1); } t3 = h_fixedbugs582pair_make(t2); t4 = h_fixedbugs582pair_second(t3); hero_print_int(t4); hero_print_end(); return;
-#line 210 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 209 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) { HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(1); t2 = h0_n; t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2}; return t3;
-#line 216 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 215 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p.f_b; return t1;
-#line 222 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 221 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = h0_n; t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_0Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}}; return t3;
-#line 228 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 227 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
@@ -235,7 +234,7 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) { HERO_NODEBUG h_
     t17 = h1_s0; t18 = t17.as.c_rect; h4_r = t18; t19 = h4_r.f_w; t20 = h4_r.f_h; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs582/pair.hero", "pair.area", 30, 27); h5_ret0 = t21; goto bb7; bb5:
 #line 29
     t15 = h3_f0; t16 = t15.as.ok; h5_ret0 = t16; goto bb7; bb6: t13 = h3_f0; t14 = t13.as.err;
-#line 239 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 238 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
     hero_panic_must_at(t14, "fixedbugs582/pair.hero", "pair.area", 29, 27);
     hero_unreachable();
 bb7:
@@ -403,7 +402,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("751a65a9247e83cb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3409dab22665f592", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown\tfixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own\nfixedbugs582pair\tpair\n");

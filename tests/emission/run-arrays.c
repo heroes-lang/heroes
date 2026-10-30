@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_64, "d");
 
-#line 59 "arrays.c"
+#line 58 "arrays.c"
 typedef struct h_arrays_Point {
     int64_t f_x;
     int64_t f_y;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "arrays.c"
+#line 101 "arrays.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_arrays_0Point_eq(const h_arrays_Point *a, const h_arrays_Point *b);
@@ -146,7 +145,7 @@ int64_t h_arrays_total(HeroArrayHeader * h0_xs) { int64_t h1_sum; HERO_NODEBUG H
     t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("arrays.hero", "arrays.total", 28, 9); h3_i0 = t16; goto bb1; bb4:
 #line 31
     t17 = h1_sum;
-#line 150 "arrays.c"
+#line 149 "arrays.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 }
@@ -172,7 +171,7 @@ void h_arrays_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_w
     t70 = h0_xs; t71 = INT64_C(5); t72 = hero_array_push(t70, &t71); t101 = h18_own18; h18_own18 = t72; hero_array_decref(t101); t102 = h4_more; hero_array_incref(t72); h4_more = t72; hero_array_decref(t102);
     t73 = h4_more; t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len); t75 = h0_xs; t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len); hero_print_int(t74); hero_print_int(t76); hero_print_end();
     t77 = h0_xs; t78 = INT64_C(1); t79 = INT64_C(2); t80 = INT64_C(3); t81 = INT64_C(4); t82 = hero_array_new(&hero_desc_int, 4); hero_array_push_owned(&t82, &t78); hero_array_push_owned(&t82, &t79); hero_array_push_owned(&t82, &t80); hero_array_push_owned(&t82, &t81); t103 = h19_own19; h19_own19 = t82; hero_array_decref(t103); t83 = hero_array_eq(t77, t82); hero_print_bool(t83); hero_print_end();
-#line 176 "arrays.c"
+#line 175 "arrays.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_words);
     hero_array_release_at(&h2_ps);
@@ -306,7 +305,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("375c2769002ed975", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("632cabb253f142ca", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_arrays_main();

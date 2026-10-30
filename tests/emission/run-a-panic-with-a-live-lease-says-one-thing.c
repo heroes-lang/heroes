@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -95,7 +94,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 99 "apanicwithaliveleasesaysonething.c"
+#line 98 "apanicwithaliveleasesaysonething.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,9 +144,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "apanicwithaliveleasesaysonething.c"
+#line 150 "apanicwithaliveleasesaysonething.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -173,7 +172,7 @@ void h_apanicwithaliveleasesaysonething_main(void) { HeroStr h0_x = {0}; const c
     t5 = INT64_C(1); t6 = INT64_C(2); t7 = INT64_C(3); t8 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t14 = h3_own3; h3_own3 = t8; hero_array_decref(t14); t15 = h2_a; hero_array_incref(t8); h2_a = t8; hero_array_decref(t15);
     t9 = h2_a; t10 = INT64_C(9); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "a-panic-with-a-live-lease-says-one-thing.hero", "a-panic-with-a-live-lease-says-one-thing.main", 15, 18) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); t12 = hero_int_to_str(t11); t16 = h4_own4; h4_own4 = t12; hero_str_decref(t16); hero_print_str(t12); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-panic-with-a-live-lease-says-one-thing.hero", "a-panic-with-a-live-lease-says-one-thing.main", 16, 5}; hero_held_release_at(&h1_c, &hero_here); }
-#line 177 "apanicwithaliveleasesaysonething.c"
+#line 176 "apanicwithaliveleasesaysonething.c"
     hero_str_release_at(&h0_x);
     hero_array_release_at(&h2_a);
     hero_array_release_at(&h3_own3);
@@ -277,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5aeff12445a729f2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1cd8f14235708f74", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("apanicwithaliveleasesaysonething\ta-panic-with-a-live-lease-says-one-thing\n");

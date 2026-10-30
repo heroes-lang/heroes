@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -96,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 100 "fixedbugs396anextentaboveapageaborts.c"
+#line 99 "fixedbugs396anextentaboveapageaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,9 +145,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs396anextentaboveapageaborts.c"
+#line 151 "fixedbugs396anextentaboveapageaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +171,7 @@ void h_fixedbugs396anextentaboveapageaborts_main(void) { HeroArrayHeader * h0_bu
     t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
     t3 = UINT64_C(20000); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-an-extent-above-a-page-aborts.hero", "fixedbugs-396-an-extent-above-a-page-aborts.main", 12, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer fill_one_more buf 438 441 u8 void *"); HERO_NODEBUG int64_t hero_lend_e1_0 = hero_lend_count_u64_at((uint64_t)(t3), "fill_one_more", "buf", &hero_here); HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take_at(h0_buf, hero_lend_e1_0, "fill_one_more", "buf", &hero_here); t4 = fill_one_more((void *)hero_lend_b1_0, t3); h0_buf = hero_lend_give_at(h0_buf, hero_lend_b1_0, hero_lend_e1_0, &hero_here); } } hero_print_int(t4); hero_print_end();
     t5 = HERO_STR_LIT(hero_str_5687795c); t6 = h0_buf; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); hero_print_str(t5); hero_print_int(t7); hero_print_end();
-#line 176 "fixedbugs396anextentaboveapageaborts.c"
+#line 175 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_release_at(&h0_buf);
     hero_array_release_at(&h1_own1);
     return;
@@ -274,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("779d374c22238029", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fbaa154100361dd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396anextentaboveapageaborts\tfixedbugs-396-an-extent-above-a-page-aborts\n");

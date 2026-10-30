@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 56 "main.c"
+#line 55 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "main.c"
+#line 93 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -120,37 +119,37 @@ void h_main_main(void);
 #line 29 "examples/floats/main.hero"
 double h_main_a_nan(void) { HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x0p+0; t2 = 0x0p+0; t3 = t1 / t2; return t3;
-#line 124 "main.c"
+#line 123 "main.c"
 }
 
 #line 32 "examples/floats/main.hero"
 double h_main_an_infinity(void) { HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1p+0; t2 = 0x0p+0; t3 = t1 / t2; return t3;
-#line 130 "main.c"
+#line 129 "main.c"
 }
 
 #line 35 "examples/floats/main.hero"
 double h_main_a_negative_infinity(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x0p+0; t2 = 0x1p+0; t3 = 0x0p+0; t4 = t2 / t3; t5 = t1 - t4; return t5;
-#line 136 "main.c"
+#line 135 "main.c"
 }
 
 #line 39 "examples/floats/main.hero"
 bool h_main_is_nan(double h0_x) { HERO_NODEBUG double t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = h0_x; t3 = t1 != t2; return t3;
-#line 142 "main.c"
+#line 141 "main.c"
 }
 
 #line 44 "examples/floats/main.hero"
 bool h_main_is_infinite(double h0_x) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG double t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = h_main_an_infinity(); t3 = t1 == t2; h1_b0 = t3; if (t3) goto bb2; else goto bb1; bb1: t4 = h0_x; t5 = h_main_a_negative_infinity(); t6 = t4 == t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
-#line 148 "main.c"
+#line 147 "main.c"
 }
 
 #line 47 "examples/floats/main.hero"
 bool h_main_is_a_number(double h0_x) { HERO_NODEBUG bool h1_b0, t2, t3, t5, t6, t7; HERO_NODEBUG double t1, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = h_main_is_nan(t1); t3 = !t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_x; t5 = h_main_is_infinite(t4); t6 = !t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
-#line 154 "main.c"
+#line 153 "main.c"
 }
 
 #line 52 "examples/floats/main.hero"
@@ -163,7 +162,7 @@ HeroArrayHeader * h_main_usable(HeroArrayHeader * h0_readings) { HeroArrayHeader
     t16 = h3_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("main.hero", "main.usable", 55, 9); h3_i0 = t18; goto bb1; bb4:
 #line 59
     t19 = h1_out;
-#line 167 "main.c"
+#line 166 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -174,7 +173,7 @@ bb5:
 bb6:
 #line 57 "examples/floats/main.hero"
     t14 = h4_one; hero_array_push_owned(&h1_out, &t14); goto bb5; bb7: goto bb5;
-#line 178 "main.c"
+#line 177 "main.c"
 }
 
 #line 64 "examples/floats/main.hero"
@@ -195,7 +194,7 @@ double h_main_mean(HeroArrayHeader * h0_readings) { HeroArrayHeader * h1_good = 
     t21 = h4_i0; t22 = INT64_C(1); if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("main.hero", "main.mean", 71, 9); h4_i0 = t23; goto bb4; bb7:
 #line 74
     t24 = h2_total; t25 = h1_good; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); t27 = hero_int_to_f64(t26); t28 = t24 / t27; h6_ret0 = t28; goto bb8; bb8:
-#line 199 "main.c"
+#line 198 "main.c"
     t29 = h6_ret0;
     hero_array_release_at(&h1_good);
     hero_array_release_at(&h3_xs0);
@@ -213,7 +212,7 @@ HeroStr h_main_report(HeroArrayHeader * h0_readings) { HeroArrayHeader * h1_rows
     t17 = h3_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("main.hero", "main.report", 85, 9); h3_i0 = t19; goto bb1; bb4:
 #line 88
     t20 = h1_rows; t21 = HERO_STR_LIT(hero_str_20); t22 = hero_str_join(t20, t21); t29 = h9_own9; h9_own9 = t22; hero_str_decref(t29);
-#line 217 "main.c"
+#line 216 "main.c"
     hero_str_incref(t22);
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h2_xs0);
@@ -258,7 +257,7 @@ void h_main_main(void) { double h0_n; double h1_up; double h2_down; HeroArrayHea
     t67 = h3_readings; t68 = h_main_report(t67); t81 = h12_own12; h12_own12 = t68; hero_str_decref(t81); hero_print_str(t68); hero_print_end();
     t69 = hero_array_new(&hero_desc_f64, 1); t82 = h13_own13; h13_own13 = t69; hero_array_decref(t82); t83 = h4_empty; hero_array_incref(t69); h4_empty = t69; hero_array_decref(t83);
     t70 = h4_empty; t71 = h_main_mean(t70); t72 = h_main_is_nan(t71); hero_print_bool(t72); hero_print_end();
-#line 262 "main.c"
+#line 261 "main.c"
     hero_array_release_at(&h3_readings);
     hero_array_release_at(&h4_empty);
     hero_str_release_at(&h5_own5);
@@ -369,7 +368,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("733105d3477a5b38", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c9e1c4e3bc1703b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

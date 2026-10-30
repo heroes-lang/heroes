@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 56 "fixedbugseqhadnorowforamap.c"
+#line 55 "fixedbugseqhadnorowforamap.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugseqhadnorowforamap.c"
+#line 100 "fixedbugseqhadnorowforamap.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugseqhadnorowforamap_0Box_retain(const h_fixedbugseqhadnorowforamap_Box *v);
@@ -159,7 +158,7 @@ void h_fixedbugseqhadnorowforamap_main(void);
 #line 23 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 int64_t h_fixedbugseqhadnorowforamap_bump(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-eq-had-no-row-for-a-map.hero", "fixedbugs-eq-had-no-row-for-a-map.bump", 24, 12); return t3;
-#line 163 "fixedbugseqhadnorowforamap.c"
+#line 162 "fixedbugseqhadnorowforamap.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -174,7 +173,7 @@ void h_fixedbugseqhadnorowforamap_main(void) { h_fixedbugseqhadnorowforamap_Box 
     t29 = h0_a; t30 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-eq-had-no-row-for-a-map.hero", "fixedbugs-eq-had-no-row-for-a-map.main", 36, 5}; hero_map_set_at(&(h3_seen), &t29, &t30, &hero_here); }
     t31 = h3_seen; t32 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-eq-had-no-row-for-a-map.hero", "fixedbugs-eq-had-no-row-for-a-map.main", 37, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t31, &t32, &hero_here); if (found == NULL) { t33 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t33 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t33.as.ok, found); } } t67 = h18_own18; h18_own18 = t33; h_0opt_e201354_release(&t67); t68 = h4_f0; h_0opt_e201354_retain(&t33); h4_f0 = t33; h_0opt_e201354_release(&t68); t34 = h4_f0; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb1; else goto bb2; bb1: t38 = h4_f0; t39 = t38.as.ok; h5_r0 = t39; goto bb3; bb2: t40 = INT64_C(0); h5_r0 = t40; goto bb3; bb3: t41 = h5_r0; hero_print_int(t41); hero_print_end();
     t42 = h3_seen; t43 = h2_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-eq-had-no-row-for-a-map.hero", "fixedbugs-eq-had-no-row-for-a-map.main", 38, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t42, &t43, &hero_here); if (found == NULL) { t44 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t44 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t44.as.ok, found); } } t69 = h19_own19; h19_own19 = t44; h_0opt_e201354_release(&t69); t70 = h6_f1; h_0opt_e201354_retain(&t44); h6_f1 = t44; h_0opt_e201354_release(&t70); t45 = h6_f1; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb4; else goto bb5; bb4: t49 = h6_f1; t50 = t49.as.ok; h7_r1 = t50; goto bb6; bb5: t51 = INT64_C(0); h7_r1 = t51; goto bb6; bb6: t52 = h7_r1; hero_print_int(t52); hero_print_end();
-#line 178 "fixedbugseqhadnorowforamap.c"
+#line 177 "fixedbugseqhadnorowforamap.c"
     h_fixedbugseqhadnorowforamap_0Box_release(hero_slot_escape(&h0_a));
     h_fixedbugseqhadnorowforamap_0Box_release(hero_slot_escape(&h1_b));
     h_fixedbugseqhadnorowforamap_0Box_release(hero_slot_escape(&h2_c));
@@ -318,7 +317,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("367a652666963dbf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("07d8608a2f27bad8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugseqhadnorowforamap\tfixedbugs-eq-had-no-row-for-a-map\n");

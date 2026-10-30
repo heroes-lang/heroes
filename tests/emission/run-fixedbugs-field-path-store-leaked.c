@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugsfieldpathstoreleaked.c"
+#line 53 "fixedbugsfieldpathstoreleaked.c"
 typedef struct h_fixedbugsfieldpathstoreleaked_Row {
     HeroArrayHeader * f_cells;
 } h_fixedbugsfieldpathstoreleaked_Row;
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugsfieldpathstoreleaked.c"
+#line 100 "fixedbugsfieldpathstoreleaked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_0Row_retain(const h_fixedbugsfieldpathstoreleaked_Row *v);
@@ -141,7 +140,7 @@ void h_fixedbugsfieldpathstoreleaked_main(void) { h_fixedbugsfieldpathstoreleake
 #line 49
     t42 = h1_q.f_right; t63 = h1_q.f_right; h_fixedbugsfieldpathstoreleaked_0Row_retain(&t42); h1_q.f_right = t42; h_fixedbugsfieldpathstoreleaked_0Row_release(&t63);
     t43 = h1_q.f_right.f_cells; t44 = ((void)(t43 == NULL ? ((void)hero_array_len(t43), hero_unreachable()) : (void)0), t43->len); hero_print_int(t44); hero_print_end();
-#line 145 "fixedbugsfieldpathstoreleaked.c"
+#line 144 "fixedbugsfieldpathstoreleaked.c"
     h_fixedbugsfieldpathstoreleaked_0Row_release(hero_slot_escape(&h0_p));
     h_fixedbugsfieldpathstoreleaked_0Pair_release(hero_slot_escape(&h1_q));
     hero_array_release_at(&h2_own2);
@@ -299,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d46c4b14ee51b25", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ea4c0141776983e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsfieldpathstoreleaked\tfixedbugs-field-path-store-leaked\n");

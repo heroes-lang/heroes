@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_38b9, "no");
 HERO_STR_STATIC(hero_str_edaa230, "none");
 
-#line 57 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 56 "fixedbugsdescriptorforwhattheemitternames.c"
 typedef struct h_fixedbugsdescriptorforwhattheemitternames_P {
     int64_t f_x;
 } h_fixedbugsdescriptorforwhattheemitternames_P;
@@ -125,9 +124,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 130 "fixedbugsdescriptorforwhattheemitternames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsdescriptorforwhattheemitternames_0P_eq(const h_fixedbugsdescriptorforwhattheemitternames_P *a, const h_fixedbugsdescriptorforwhattheemitternames_P *b);
@@ -223,7 +222,7 @@ h_0opt_786b106a h_fixedbugsdescriptorforwhattheemitternames_grab(bool h0_f) { HE
     t5 = HERO_STR_LIT(hero_str_38b9); t6 = HERO_STR_LIT(hero_str_edaa230); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_786b106a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t9 = h2_own2; h2_own2 = t7; h_0opt_786b106a_release(&t9); h1_ret0 = t7; goto bb4; bb2:
 #line 29
     t2 = INT64_C(1); t3 = (h_fixedbugsdescriptorforwhattheemitternames_P){.f_x = t2}; t4 = (h_0opt_786b106a){.tag = INT64_C(0), .as.ok = t3}; t10 = h3_own3; h3_own3 = t4; h_0opt_786b106a_release(&t10); h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 227 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 226 "fixedbugsdescriptorforwhattheemitternames.c"
     t8 = h1_ret0;
     h_0opt_786b106a_retain(&t8);
     h_0opt_786b106a_release(hero_slot_escape(&h2_own2));
@@ -238,7 +237,7 @@ h_0opt_538f2d82 h_fixedbugsdescriptorforwhattheemitternames_shape_of(bool h0_f) 
     t5 = HERO_STR_LIT(hero_str_38b9); t6 = HERO_STR_LIT(hero_str_edaa230); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_538f2d82){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t9 = h2_own2; h2_own2 = t7; h_0opt_538f2d82_release(&t9); h1_ret0 = t7; goto bb4; bb2:
 #line 34
     t2 = INT64_C(2); t3 = (h_fixedbugsdescriptorforwhattheemitternames_Shape){.tag = h_fixedbugsdescriptorforwhattheemitternames_0Shape_tag_box, .as.c_box = {.f_w = t2}}; t4 = (h_0opt_538f2d82){.tag = INT64_C(0), .as.ok = t3}; t10 = h3_own3; h3_own3 = t4; h_0opt_538f2d82_release(&t10); h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 242 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 241 "fixedbugsdescriptorforwhattheemitternames.c"
     t8 = h1_ret0;
     h_0opt_538f2d82_retain(&t8);
     h_0opt_538f2d82_release(hero_slot_escape(&h2_own2));
@@ -256,13 +255,13 @@ int64_t h_fixedbugsdescriptorforwhattheemitternames_width_of(h_fixedbugsdescript
     t5 = h1_s0; t6 = t5.as.c_box; h3_b = t6; t7 = h3_b.f_w;
 #line 43
     h2_r0 = t7; goto bb1;
-#line 260 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 259 "fixedbugsdescriptorforwhattheemitternames.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 int64_t h_fixedbugsdescriptorforwhattheemitternames_width(bool h0_f) { HERO_NODEBUG h_0opt_538f2d82 h1_s0 = {0}, h4_own4 = {0}, t2, t3, t5, t13, t14; HERO_NODEBUG int64_t h2_r0, t4, t8, t9, t10, t11, t12; h_fixedbugsdescriptorforwhattheemitternames_Shape h3_s; HERO_NODEBUG bool t1; HERO_NODEBUG h_fixedbugsdescriptorforwhattheemitternames_Shape t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h_fixedbugsdescriptorforwhattheemitternames_shape_of(t1); t13 = h4_own4; h4_own4 = t2; h_0opt_538f2d82_release(&t13); t14 = h1_s0; h_0opt_538f2d82_retain(&t2); h1_s0 = t2; h_0opt_538f2d82_release(&t14); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t12 = h2_r0;
-#line 266 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 265 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_538f2d82_release(hero_slot_escape(&h1_s0));
     h_0opt_538f2d82_release(hero_slot_escape(&h4_own4));
     return t12;
@@ -275,7 +274,7 @@ bb2:
     t9 = INT64_C(0); t10 = INT64_C(1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-descriptor-for-what-the-emitter-names.hero", "fixedbugs-descriptor-for-what-the-emitter-names.width", 50, 19);
 #line 48
     h2_r0 = t11; goto bb1;
-#line 279 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 278 "fixedbugsdescriptorforwhattheemitternames.c"
 }
 
 #line 52 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -285,7 +284,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_main(void) { HERO_NODEBUG h_0op
     t18 = true; t19 = h_fixedbugsdescriptorforwhattheemitternames_width(t18); hero_print_int(t19); hero_print_end();
     t20 = hero_array_new(&h_0opt_e201354_desc, 1); t27 = h5_own5; h5_own5 = t20; hero_array_decref(t27); t28 = h2_ys; hero_array_incref(t20); h2_ys = t20; hero_array_decref(t28);
     t21 = h2_ys; t22 = h_fixedbugsdescriptorforwhattheemitternames_0count_1b9a87(t21); hero_print_int(t22); hero_print_end();
-#line 289 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 288 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_786b106a_release(hero_slot_escape(&h0_f0));
     h_0opt_786b106a_release(hero_slot_escape(&h1_f1));
     hero_array_release_at(&h2_ys);
@@ -296,7 +295,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_main(void) { HERO_NODEBUG h_0op
 bb2:
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t7 = h0_f0; t8 = t7.as.err;
-#line 300 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 299 "fixedbugsdescriptorforwhattheemitternames.c"
     hero_panic_must_at(t8, "fixedbugs-descriptor-for-what-the-emitter-names.hero", "fixedbugs-descriptor-for-what-the-emitter-names.main", 53, 11);
     hero_unreachable();
 }
@@ -304,7 +303,7 @@ bb2:
 #line 39 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 /* count<i64> */ HERO_TU_LOCAL int64_t h_fixedbugsdescriptorforwhattheemitternames_0count_1b9a87(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); return t2;
-#line 308 "fixedbugsdescriptorforwhattheemitternames.c"
+#line 307 "fixedbugsdescriptorforwhattheemitternames.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsdescriptorforwhattheemitternames_0P_eq(const h_fixedbugsdescriptorforwhattheemitternames_P *a, const h_fixedbugsdescriptorforwhattheemitternames_P *b) {
     if (!(a->f_x == b->f_x)) return false;
@@ -511,7 +510,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0de7589a30368edd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("279f8c7e595cefc1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsdescriptorforwhattheemitternames\tfixedbugs-descriptor-for-what-the-emitter-names\n");

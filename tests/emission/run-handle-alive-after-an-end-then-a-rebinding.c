@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6f955e8a, "renewed: ");
 
-#line 102 "handlealiveafteranendthenarebinding.c"
+#line 101 "handlealiveafteranendthenarebinding.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,9 +149,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "handlealiveafteranendthenarebinding.c"
+#line 155 "handlealiveafteranendthenarebinding.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_0Node_eq(node * const *a, node * const *b);
@@ -179,7 +178,7 @@ void h_handlealiveafteranendthenarebinding_main(void) { node * h0_n; HERO_NODEBU
     t4 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-then-a-rebinding.hero", "handle-alive-after-an-end-then-a-rebinding.main", 14, 9}; t5 = node_new(t4); hero_handle_acquired_at(t5, "node_free", &hero_here); } h0_n = t5;
     t6 = HERO_STR_LIT(hero_str_6f955e8a); t7 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-then-a-rebinding.hero", "handle-alive-after-an-end-then-a-rebinding.main", 15, 24}; hero_handle_alive_at(t7, "the argument `n` of `node_peek`", &hero_here); t8 = node_peek(t7); } hero_print_str(t6); hero_print_int(t8); hero_print_end();
     t9 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-after-an-end-then-a-rebinding.hero", "handle-alive-after-an-end-then-a-rebinding.main", 16, 5}; { hero_handle_alive_at(t9, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t9, "node_free", NULL, &hero_here); (void)node_free(t9); if (hero_handle_ended(t9, hero_life_0_0) && h0_n == t9) h0_n = hero_handle_dead(); } } return;
-#line 183 "handlealiveafteranendthenarebinding.c"
+#line 182 "handlealiveafteranendthenarebinding.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
@@ -289,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c01548a2b2ab3b0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5252c5613c1cc9a2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlealiveafteranendthenarebinding\thandle-alive-after-an-end-then-a-rebinding\n");

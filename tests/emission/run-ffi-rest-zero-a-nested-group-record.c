@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -65,11 +64,11 @@ _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x
 #line 13
 _Static_assert(__builtin_classify_type(((struct outer *)0)->k) == 1 && sizeof(((struct outer *)0)->k) == sizeof(int32_t) && (_Generic(((struct outer *)0)->k, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Outer k");
 _Static_assert(_Generic(&((struct outer *)0)->inner, SA *: 1, default: 0) && sizeof(((struct outer *)0)->inner) == sizeof(SA), "heroes-ffi-field Outer inner");
-#line 69 "ffirestzeroanestedgrouprecord.c"
+#line 68 "ffirestzeroanestedgrouprecord.c"
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer k inner");
-#line 73 "ffirestzeroanestedgrouprecord.c"
+#line 72 "ffirestzeroanestedgrouprecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -161,9 +160,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "ffirestzeroanestedgrouprecord.c"
+#line 166 "ffirestzeroanestedgrouprecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroanestedgrouprecord_0SA_eq(const SA *a, const SA *b);
@@ -216,13 +215,13 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 18 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_left_out(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG struct outer t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = (struct outer){0}; __builtin_memset(&t2, 0, sizeof t2); t2.k = t1; return t2;
-#line 220 "ffirestzeroanestedgrouprecord.c"
+#line 219 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_built(void) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG SA t3; HERO_NODEBUG struct outer t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2); t2 = INT64_C(3); t3 = (SA){0}; __builtin_memset(&t3, 0, sizeof t3); t3.kind = t2; t4 = (struct outer){0}; __builtin_memset(&t4, 0, sizeof t4); t4.k = t1; t4.inner = t3; return t4;
-#line 226 "ffirestzeroanestedgrouprecord.c"
+#line 225 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
@@ -239,7 +238,7 @@ void h_ffirestzeroanestedgrouprecord_main(void) {
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-nested-group-record.hero", "ffi-rest-zero-a-nested-group-record.main", 28, 5}; (void)dirty(); }
     t7 = h_ffirestzeroanestedgrouprecord_built(); h1_b = t7; hero_pad_fill(&h1_b, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1);
     t8 = h1_b.k; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_b.inner.kind; t11 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-nested-group-record.hero", "ffi-rest-zero-a-nested-group-record.main", 30, 40}; hero_lend_local_name(hero_lend_h1_b, "outer_union", "o"); hero_pad_fill(&h1_b, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1); t12 = outer_union(&h1_b); } hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
-#line 243 "ffirestzeroanestedgrouprecord.c"
+#line 242 "ffirestzeroanestedgrouprecord.c"
 }
 #undef h0_a
 #undef h1_b
@@ -372,7 +371,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ed80d2319c4ce12", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e09ad8850c05354", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroanestedgrouprecord\tffi-rest-zero-a-nested-group-record\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone.c"
+#line 53 "fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone.c"
+#line 91 "fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -122,7 +121,7 @@ void h_fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone_main(void)
     t12 = 0x1p-25; hero_print_f64(t12); hero_print_end();
 #line 40
     t13 = 0x1p-24; hero_print_f64(t13); hero_print_end();
-#line 126 "fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone.c"
+#line 125 "fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;
@@ -224,7 +223,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("71d1caf50fe40e6d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("560839563bedbe00", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2212adoublehalfwaybetweentwospellingsprintstheevenone\tfixedbugs-2212-a-double-halfway-between-two-spellings-prints-the-even-one\n");

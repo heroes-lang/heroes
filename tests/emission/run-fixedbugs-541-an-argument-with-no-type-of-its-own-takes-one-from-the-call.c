@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_fab1332, "type");
 HERO_STR_STATIC(hero_str_69, "i");
 HERO_STR_STATIC(hero_str_6b, "k");
 
-#line 58 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 57 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 100 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -186,37 +185,37 @@ HERO_TU_LOCAL h_0fn_48ac9712 h_fixedbugs541anargumentwithnotypeofitsowntakesonef
 #line 91 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_double(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.double", 92, 12); return t3;
-#line 190 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 189 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_less(uint8_t h0_x) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = UINT64_C(100); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.less", 95, 12); return t3;
-#line 196 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 195 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 97 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_add(uint8_t h0_acc, uint8_t h1_item) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.add", 98, 12); return t3;
-#line 202 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 201 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 100 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_count(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); return t2;
-#line 208 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 207 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 103 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_times_two(uint8_t h0_x) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; t2 = UINT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.times_two", 104, 12); return t3;
-#line 214 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 213 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 106 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_value(h_0opt_e201354 h0_n) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, t1, t2, t6, t10; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t8, t9; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t10 = h1_f0; h_0opt_e201354_retain(&t1); h1_f0 = t1; h_0opt_e201354_release(&t10); t2 = h1_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t6 = h1_f0; t7 = t6.as.ok; h2_r0 = t7; goto bb3; bb2: t8 = INT64_C(0); h2_r0 = t8; goto bb3; bb3: t9 = h2_r0;
-#line 220 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 219 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     return t9;
 }
@@ -224,7 +223,7 @@ int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_value(h_0o
 #line 109 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HeroStr h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_shown(uint8_t h0_v) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t2 = hero_int_to_str(t1); t3 = h1_own1; h1_own1 = t2; hero_str_decref(t3);
-#line 228 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 227 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -233,13 +232,13 @@ HeroStr h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_shown(uint
 #line 112 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_wide(uint8_t h0_v) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; hero_print_int(t1); hero_print_end(); return;
-#line 237 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 236 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 115 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_declared(void) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(250); t2 = UINT64_C(1); t3 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_3c17(t1, t2); return t3;
-#line 243 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 242 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 118 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
@@ -257,7 +256,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_fourteen(void
     t39 = h1_y; t40 = INT64_C(2); t41 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t40}; t99 = h17_own17; h17_own17 = t41; h_0opt_e201354_release(&t99); t42 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_e201354(t39, t41); t100 = h18_own18; h18_own18 = t42; h_0opt_e201354_release(&t100); t101 = h6_f1; h_0opt_e201354_retain(&t42); h6_f1 = t42; h_0opt_e201354_release(&t101); t43 = h6_f1; t44 = t43.tag; t45 = INT64_C(0); t46 = t44 == t45; if (t46) goto bb3; else goto bb4; bb2:
 #line 128
     t35 = h5_f0; t36 = t35.as.err;
-#line 261 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 260 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_panic_must_at(t36, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.fourteen", 128, 11);
     hero_unreachable();
 bb3:
@@ -266,7 +265,7 @@ bb3:
     t51 = h1_y; t52 = HERO_STR_LIT(hero_str_69); t53 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0wanted_1b9a87(t52); t102 = h19_own19; h19_own19 = t53; h_0opt_e201354_release(&t102); t54 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_e201354(t51, t53); t103 = h20_own20; h20_own20 = t54; h_0opt_e201354_release(&t103); t104 = h7_f2; h_0opt_e201354_retain(&t54); h7_f2 = t54; h_0opt_e201354_release(&t104); t55 = h7_f2; t56 = t55.tag; t57 = INT64_C(0); t58 = t56 == t57; if (t58) goto bb5; else goto bb6; bb4:
 #line 129
     t47 = h6_f1; t48 = t47.as.err;
-#line 270 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 269 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_panic_must_at(t48, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.fourteen", 129, 11);
     hero_unreachable();
 bb5:
@@ -279,7 +278,7 @@ bb5:
     t76 = INT64_C(1); t77 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87; t78 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0valued_1b9a87(t76, t77); hero_print_int(t78); hero_print_end();
     t79 = INT64_C(7); t80 = UINT64_C(255); t81 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0narrow_1b9a87(t79, t80); hero_print_int(t81); hero_print_end();
     t82 = h3_xs; t83 = hero_array_new(&hero_desc_int, 1); t106 = h22_own22; h22_own22 = t83; hero_array_decref(t106); t84 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_4b7fe249(t82, t83); t107 = h23_own23; h23_own23 = t84; hero_array_decref(t107); t85 = ((void)(t84 == NULL ? ((void)hero_array_len(t84), hero_unreachable()) : (void)0), t84->len); hero_print_int(t85); hero_print_end();
-#line 283 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 282 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h0_ns);
     h_0opt_e201354_release(hero_slot_escape(&h1_y));
     hero_array_release_at(&h3_xs);
@@ -313,7 +312,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_widths(void) 
     t8 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_declared(); hero_print_int(t8); hero_print_end();
     t9 = UINT64_C(1); t10 = UINT64_C(2); t11 = UINT64_C(3); t12 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t12, &t9); hero_array_push_owned(&t12, &t10); hero_array_push_owned(&t12, &t11); t17 = h2_own2; h2_own2 = t12; hero_array_decref(t17); t18 = h1_us; hero_array_incref(t12); h1_us = t12; hero_array_decref(t18);
     t13 = h1_us; t14 = UINT64_C(0); t15 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_add; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.widths", 145, 11}; t16 = h_library_0fold_5064595f(t13, t14, t15, &hero_here); } hero_print_int(t16); hero_print_end();
-#line 317 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 316 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h1_us);
     hero_array_release_at(&h2_own2);
     return;
@@ -335,7 +334,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_both_orders(v
     t55 = INT64_C(2); t56 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t55}; t107 = h31_own31; h31_own31 = t56; h_0opt_e201354_release(&t107); t57 = h1_y; t58 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_e201354(t56, t57); t108 = h32_own32; h32_own32 = t58; h_0opt_e201354_release(&t108); t109 = h2_f0; h_0opt_e201354_retain(&t58); h2_f0 = t58; h_0opt_e201354_release(&t109); t59 = h2_f0; t60 = t59.tag; t61 = INT64_C(0); t62 = t60 == t61; if (t62) goto bb1; else goto bb2; bb1: t65 = h2_f0; t66 = t65.as.ok; hero_print_int(t66); hero_print_end();
     t67 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87; t68 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_double; t69 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t69, &t67); hero_array_push_owned(&t69, &t68); t110 = h33_own33; h33_own33 = t69; hero_array_decref(t110); t70 = INT64_C(3); t71 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0apply_all_1b9a87(t69, t70); hero_print_int(t71); hero_print_end();
     t72 = INT64_C(3); t73 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87; t74 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_double; t75 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t75, &t73); hero_array_push_owned(&t75, &t74); t111 = h34_own34; h34_own34 = t75; hero_array_decref(t111); t76 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0apply_rev_1b9a87(t72, t75); hero_print_int(t76); hero_print_end();
-#line 339 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 338 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h0_xs);
     h_0opt_e201354_release(hero_slot_escape(&h1_y));
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -375,7 +374,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_both_orders(v
 bb2:
 #line 159 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
     t63 = h2_f0; t64 = t63.as.err;
-#line 379 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 378 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_panic_must_at(t64, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.both_orders", 159, 11);
     hero_unreachable();
 }
@@ -396,7 +395,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_own_before_de
     t54 = h2_k64; t55 = UINT64_C(2); t56 = INT64_C(3); t57 = hero_map_new(&hero_desc_u16, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 175, 26}; hero_map_put_at(t57, &t55, &t56, &hero_here); } t101 = h23_own23; h23_own23 = t57; hero_map_decref(t101); t58 = hero_map_new(&hero_desc_int, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 175, 20}; hero_map_put_at(t58, &t54, &t57, &hero_here); } t102 = h24_own24; h24_own24 = t58; hero_map_decref(t102); t59 = INT64_C(4); t60 = h3_k16; t61 = INT64_C(5); t62 = hero_map_new(&hero_desc_u16, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 175, 42}; hero_map_put_at(t62, &t60, &t61, &hero_here); } t103 = h25_own25; h25_own25 = t62; hero_map_decref(t103); t63 = hero_map_new(&hero_desc_int, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 175, 38}; hero_map_put_at(t63, &t59, &t62, &hero_here); } t104 = h26_own26; h26_own26 = t63; hero_map_decref(t104); t64 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_240a7cde(t58, t63); t105 = h27_own27; h27_own27 = t64; hero_map_decref(t105); t65 = hero_map_len(t64); hero_print_int(t65); hero_print_end();
     t66 = INT64_C(4); t67 = h3_k16; t68 = INT64_C(5); t69 = hero_map_new(&hero_desc_u16, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 176, 24}; hero_map_put_at(t69, &t67, &t68, &hero_here); } t106 = h28_own28; h28_own28 = t69; hero_map_decref(t106); t70 = hero_map_new(&hero_desc_int, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 176, 20}; hero_map_put_at(t70, &t66, &t69, &hero_here); } t107 = h29_own29; h29_own29 = t70; hero_map_decref(t107); t71 = h2_k64; t72 = UINT64_C(2); t73 = INT64_C(3); t74 = hero_map_new(&hero_desc_u16, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 176, 44}; hero_map_put_at(t74, &t72, &t73, &hero_here); } t108 = h30_own30; h30_own30 = t74; hero_map_decref(t108); t75 = hero_map_new(&hero_desc_int, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.own_before_default", 176, 38}; hero_map_put_at(t75, &t71, &t74, &hero_here); } t109 = h31_own31; h31_own31 = t75; hero_map_decref(t109); t76 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_240a7cde(t70, t75); t110 = h32_own32; h32_own32 = t76; hero_map_decref(t110); t77 = hero_map_len(t76); hero_print_int(t77); hero_print_end();
     t78 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_less; t79 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_3c17; t80 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t80, &t78); hero_array_push_owned(&t80, &t79); t111 = h33_own33; h33_own33 = t80; hero_array_decref(t111); t81 = UINT64_C(200); t82 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0apply_all_3c17(t80, t81); hero_print_int(t82); hero_print_end();
-#line 400 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 399 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h5_own5);
     hero_array_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);
@@ -436,7 +435,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_calls_and_nam
     t13 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87; t14 = INT64_C(1); t15 = hero_array_new(&hero_desc_int, 1); t35 = h8_own8; h8_own8 = t15; hero_array_decref(t35); t16 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0pairs_37f8817a(t13, t14, t15); hero_print_int(t16); hero_print_end();
     t17 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87; t18 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_double; t19 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_48ac9712(t17, t18); t20 = INT64_C(3); t21 = t19(t20); hero_print_int(t21); hero_print_end();
     t22 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_double; t23 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87; t24 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_48ac9712(t22, t23); t25 = INT64_C(3); t26 = t24(t25); hero_print_int(t26); hero_print_end();
-#line 440 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 439 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -455,7 +454,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_receivers(voi
     t3 = UINT64_C(5); t4 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_times_two(t3); hero_print_int(t4); hero_print_end();
     t5 = INT64_C(1); t6 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t5}; t13 = h1_own1; h1_own1 = t6; h_0opt_e201354_release(&t13); t7 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_value(t6); hero_print_int(t7); hero_print_end();
     t8 = UINT64_C(1); t9 = UINT64_C(2); t10 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_3c17(t8, t9); t11 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_shown(t10); t14 = h2_own2; h2_own2 = t11; hero_str_decref(t14); hero_print_str(t11); hero_print_end();
-#line 459 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 458 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h0_own0);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     hero_str_release_at(&h2_own2);
@@ -470,14 +469,14 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_main(void) { 
     h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_own_before_default();
     h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_calls_and_names();
     h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_receivers(); return;
-#line 474 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 473 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* first<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_3c17(uint8_t h0_a, uint8_t h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t4 + 1))[t5]);
-#line 481 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 480 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
@@ -486,13 +485,13 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_main(void) { 
 #line 25 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_1b9a87(int64_t h0_x) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 490 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 489 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* app<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0app_1b9a87(h_0fn_48ac9712 h0_f, int64_t h1_x) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h1_x; t3 = t1(t2); return t3;
-#line 496 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 495 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 36 "<heroes library>"
@@ -504,7 +503,7 @@ void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_main(void) { 
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 508 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 507 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -520,7 +519,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
 /* keep_left<i64, i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0keep_left_37f8817a(int64_t h0_acc, int64_t h1_item) { HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 69
     t2 = h0_acc; return t2;
-#line 524 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 523 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 58 "<heroes library>"
@@ -532,7 +531,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 536 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 535 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -545,7 +544,7 @@ HERO_TU_LOCAL __attribute__((unused)) int64_t hero_value_h_library_0fold_37f8817
 /* keep<i64> */ HERO_TU_LOCAL bool h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0keep_1b9a87(int64_t h0_x) { HERO_NODEBUG bool t2; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 73
     t2 = true; return t2;
-#line 549 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 548 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 43 "<heroes library>"
@@ -557,7 +556,7 @@ HERO_TU_LOCAL __attribute__((unused)) int64_t hero_value_h_library_0fold_37f8817
     t17 = h4_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t19; goto bb1; bb4:
 #line 48
     t20 = h2_out;
-#line 561 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 560 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t20);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -568,7 +567,7 @@ bb5:
 bb6:
 #line 47 "<heroes library>"
     t15 = h5_x; hero_array_push_owned(&h2_out, &t15); goto bb5; bb7: goto bb5;
-#line 572 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 571 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0filter_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.filter", 43, 1};
@@ -579,7 +578,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0fi
 /* first<i64?> */ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_e201354(h_0opt_e201354 h0_a, h_0opt_e201354 h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG h_0opt_e201354 t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&h_0opt_e201354_desc, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(h_0opt_e201354) ? hero_unreachable() : (void)0), ((h_0opt_e201354 const *)(const void *)(t4 + 1))[t5]);
-#line 583 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 582 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     h_0opt_e201354_retain(&t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -589,7 +588,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0fi
 #line 39 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* wanted<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0wanted_1b9a87(HeroStr h0_what) { HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_e201354_release(&t4);
-#line 593 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 592 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     h_0opt_e201354_retain(&t3);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -599,14 +598,14 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0fi
 /* narrow<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0narrow_1b9a87(int64_t h0_x, uint8_t h1_n) { HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 77
     t2 = h0_x; return t2;
-#line 603 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 602 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* fallible<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0fallible_1b9a87(int64_t h0_x, h_0opt_e201354 h1_n) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, t1, t2, t6, t11; HERO_NODEBUG __attribute__((unused)) int64_t h3_r0; HERO_NODEBUG int64_t t3, t4, t7, t8, t10; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_n; t11 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t11); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t6 = h2_f0; t7 = t6.as.ok; h3_r0 = t7; goto bb3; bb2: t8 = INT64_C(0); h3_r0 = t8; goto bb3; bb3:
     t10 = h0_x;
-#line 610 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 609 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     return t10;
 }
@@ -615,14 +614,14 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0fi
 /* valued<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0valued_1b9a87(int64_t h0_x, h_0fn_48ac9712 h1_f) { HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 85
     t2 = h0_x; return t2;
-#line 619 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 618 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* first<[i64]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 626 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 625 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -638,7 +637,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0fi
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 642 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 641 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -651,7 +650,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* first<{str: i64}> */ HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_7348c008(HeroMapHeader * h0_a, HeroMapHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_map, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroMapHeader *) ? hero_unreachable() : (void)0), ((HeroMapHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 655 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 654 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_map_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -662,7 +661,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* first<[[i64]]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_5df176b8(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 666 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 665 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -672,13 +671,13 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 #line 45 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* app_rev<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0app_rev_1b9a87(int64_t h0_x, h_0fn_48ac9712 h1_f) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_f; t2 = h0_x; t3 = t1(t2); return t3;
-#line 676 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 675 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* mapr<i64, i64> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0mapr_37f8817a(h_0fn_48ac9712 h0_f, HeroArrayHeader * h1_xs) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t4; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_xs; t2 = h0_f; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.mapr", 49, 12}; t3 = h_library_0map_37f8817a(t1, t2, &hero_here); } t4 = h2_own2; h2_own2 = t3; hero_array_decref(t4);
-#line 682 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 681 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t3);
     hero_array_release_at(&h2_own2);
     return t3;
@@ -694,7 +693,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
     t14 = h4_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.apply_all", 54, 9); h4_i0 = t16; goto bb1; bb4:
 #line 57
     t17 = h2_out;
-#line 698 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 697 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h3_xs0);
     return t17;
 }
@@ -709,7 +708,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
     t14 = h4_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.apply_rev", 62, 9); h4_i0 = t16; goto bb1; bb4:
 #line 65
     t17 = h2_out;
-#line 713 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 712 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h3_xs0);
     return t17;
 }
@@ -718,7 +717,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* first<[u8]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_c50563b(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 722 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 721 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -729,7 +728,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* first<{u8: i64}> */ HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_9ef1555(HeroMapHeader * h0_a, HeroMapHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_map, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroMapHeader *) ? hero_unreachable() : (void)0), ((HeroMapHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 733 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 732 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_map_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -740,7 +739,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* first<{i64: u8}> */ HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_611f7680(HeroMapHeader * h0_a, HeroMapHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_map, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroMapHeader *) ? hero_unreachable() : (void)0), ((HeroMapHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 744 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 743 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_map_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -751,7 +750,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* first<{i64: {u16: i64}}> */ HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_240a7cde(HeroMapHeader * h0_a, HeroMapHeader * h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_map, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(HeroMapHeader *) ? hero_unreachable() : (void)0), ((HeroMapHeader * const *)(const void *)(t4 + 1))[t5]);
-#line 755 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 754 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_map_incref(t6);
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
@@ -761,7 +760,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 #line 25 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* ident<u8> */ HERO_TU_LOCAL uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0ident_3c17(uint8_t h0_x) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 765 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 764 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
@@ -774,7 +773,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
     t14 = h4_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.apply_all", 54, 9); h4_i0 = t16; goto bb1; bb4:
 #line 57
     t17 = h2_out;
-#line 778 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 777 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h3_xs0);
     return t17;
 }
@@ -783,7 +782,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* empty<i64> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0empty_1b9a87(void) { HeroArrayHeader * h0_out = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t3, *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t3 = h1_own1; h1_own1 = t1; hero_array_decref(t3); t4 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t4);
     t2 = h0_out;
-#line 787 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 786 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t2);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_own1);
@@ -793,7 +792,7 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 #line 32 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* same<[i64]> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0same_4b7fe249(HeroArrayHeader * h0_x) { HERO_NODEBUG HeroArrayHeader *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x;
-#line 797 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 796 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_incref(t1);
     return t1;
 }
@@ -802,14 +801,14 @@ HERO_TU_LOCAL __attribute__((unused)) uint8_t hero_value_h_library_0fold_5064595
 /* pairs<i64, i64> */ HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0pairs_37f8817a(h_0fn_48ac9712 h0_f, int64_t h1_x, HeroArrayHeader * h2_ys) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h1_x; t1(t2);
     t4 = h2_ys; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); return t5;
-#line 806 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 805 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 /* first<(function(i64) -> i64)> */ HERO_TU_LOCAL h_0fn_48ac9712 h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_0first_48ac9712(h_0fn_48ac9712 h0_a, h_0fn_48ac9712 h1_b) { HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG h_0fn_48ac9712 t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t7 = h3_own3; h3_own3 = t3; hero_array_decref(t7); t8 = h2_pair; hero_array_incref(t3); h2_pair = t3; hero_array_decref(t8);
     t4 = h2_pair; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero", "fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.first", 30, 12) : (void)0), (void)(t4->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t4 + 1))[t5]);
-#line 813 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
+#line 812 "fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;
@@ -911,7 +910,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c1e65d34c8f8351", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2054d434789932e4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall\tfixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call\n");

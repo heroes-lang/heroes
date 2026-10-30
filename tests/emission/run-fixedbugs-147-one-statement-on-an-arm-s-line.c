@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_5c684f9f, "i % 2 == 0");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 57 "fixedbugs147onestatementonanarmsline.c"
+#line 56 "fixedbugs147onestatementonanarmsline.c"
 typedef enum h_fixedbugs147onestatementonanarmsline_0Color_tag {
     h_fixedbugs147onestatementonanarmsline_0Color_tag_red = 0,
     h_fixedbugs147onestatementonanarmsline_0Color_tag_green = 1,
@@ -119,9 +118,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 125 "fixedbugs147onestatementonanarmsline.c"
+#line 124 "fixedbugs147onestatementonanarmsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs147onestatementonanarmsline_0Color_eq(const h_fixedbugs147onestatementonanarmsline_Color *a, const h_fixedbugs147onestatementonanarmsline_Color *b);
@@ -161,14 +160,14 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 #line 28 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_twice(int64_t h0_k) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.twice", 29, 12); return t3;
-#line 165 "fixedbugs147onestatementonanarmsline.c"
+#line 164 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_noisy(int64_t h0_k) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; hero_print_int(t1); hero_print_end();
     t2 = h0_k; return t2;
-#line 172 "fixedbugs147onestatementonanarmsline.c"
+#line 171 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 35 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -180,7 +179,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_mutations(h_fixedbugs147onestatem
     t7 = h0_c; h4_s0 = t7; t8 = h4_s0; t9 = t8.tag; switch (t9) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb1:
 #line 45
     t14 = h1_n; t15 = h2_b.f_v; if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.mutations", 45, 12); t17 = h3_ys; t18 = INT64_C(1); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.mutations", 45, 22) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); if (__builtin_add_overflow(t16, t19, &t20)) hero_panic_overflow_at("fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.mutations", 45, 12);
-#line 184 "fixedbugs147onestatementonanarmsline.c"
+#line 183 "fixedbugs147onestatementonanarmsline.c"
     hero_array_release_at(&h3_ys);
     hero_array_release_at(&h5_own5);
     return t20;
@@ -189,7 +188,7 @@ bb2:
     t10 = INT64_C(1); h1_n = t10; goto bb1; bb3:
     t11 = INT64_C(2); h2_b.f_v = t11; goto bb1; bb4:
     t12 = INT64_C(1); t13 = INT64_C(3); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h3_ys); if (*hero_slot == NULL || t12 < 0 || t12 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t12, "fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.mutations", 43, 19); hero_array_set(hero_slot, t12, &t13); } goto bb1;
-#line 193 "fixedbugs147onestatementonanarmsline.c"
+#line 192 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -199,7 +198,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_loops(h_fixedbugs147onestatemento
     t2 = h0_c; h2_s0 = t2; t3 = h2_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb1:
 #line 58
     t32 = h1_n;
-#line 203 "fixedbugs147onestatementonanarmsline.c"
+#line 202 "fixedbugs147onestatementonanarmsline.c"
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
     return t32;
@@ -219,7 +218,7 @@ bb3:
     t25 = h4_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.loops", 53, 23); h4_i0 = t27; goto bb8; bb11: goto bb1; bb12: goto bb1; bb13:
 #line 56
     t31 = INT64_C(7); h1_n = t31; goto bb12; bb14: goto bb12;
-#line 223 "fixedbugs147onestatementonanarmsline.c"
+#line 222 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -260,7 +259,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_jumps(int64_t h0_n) { int64_t h1_
 #line 67
     t28 = HERO_STR_LIT(hero_str_5c684f9f); t29 = h4_i; t30 = INT64_C(2); if (t30 == 0) hero_panic_at("division by zero", "fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.jumps", 67, 25); if (t29 == INT64_MIN && t30 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.jumps", 67, 25); t31 = t29 % t30; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto bb13; else goto bb14; bb11: goto bb12; bb12:
     goto bb5; bb13: goto bb5; bb14:
-#line 264 "fixedbugs147onestatementonanarmsline.c"
+#line 263 "fixedbugs147onestatementonanarmsline.c"
     hero_panic_assert_shown_at(t28, hero_show_i64, &t31, &t32, 1, "fixedbugs-147-one-statement-on-an-arm-s-line.hero", "fixedbugs-147-one-statement-on-an-arm-s-line.jumps", 67, 25);
     hero_unreachable();
 bb15:
@@ -277,7 +276,7 @@ bb18:
 #line 75
     t48 = INT64_C(-1); h8_ret0 = t48; goto bb23; bb21: goto bb22; bb22:
     t49 = h1_total; hero_print_int(t49); hero_print_end(); goto bb19; bb23:
-#line 281 "fixedbugs147onestatementonanarmsline.c"
+#line 280 "fixedbugs147onestatementonanarmsline.c"
     t51 = h8_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h9_own9);
@@ -300,7 +299,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_discards(h_fixedbugs147onestateme
     t12 = INT64_C(15); h_fixedbugs147onestatementonanarmsline_twice(t12); goto bb4; bb6:
     t14 = INT64_C(1); h1_k = t14; goto bb4; bb7:
     t15 = INT64_C(2); h1_k = t15; goto bb4;
-#line 304 "fixedbugs147onestatementonanarmsline.c"
+#line 303 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -313,7 +312,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_measured(h_fixedbugs147onestateme
 #line 98
     goto bb1; bb3:
     t6 = h2_s0; t7 = t6.as.c_line; h3_l = t7; t8 = h3_l.f_length; h1_total = t8; goto bb1;
-#line 317 "fixedbugs147onestatementonanarmsline.c"
+#line 316 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 103 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -333,7 +332,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_nested(h_fixedbugs147onestatement
 #line 108
     goto bb4; bb6: goto bb7; bb7:
     t10 = h1_n; h2_m = t10; goto bb4;
-#line 337 "fixedbugs147onestatementonanarmsline.c"
+#line 336 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -344,7 +343,7 @@ int64_t h_fixedbugs147onestatementonanarmsline_early(h_fixedbugs147onestatemento
 #line 116
     t4 = INT64_C(100); h2_ret0 = t4; goto bb4; bb3:
     goto bb1; bb4:
-#line 348 "fixedbugs147onestatementonanarmsline.c"
+#line 347 "fixedbugs147onestatementonanarmsline.c"
     t7 = h2_ret0;
     return t7;
 }
@@ -358,7 +357,7 @@ void h_fixedbugs147onestatementonanarmsline_main(void) { HERO_NODEBUG h_fixedbug
     t24 = (h_fixedbugs147onestatementonanarmsline_Shape){.tag = h_fixedbugs147onestatementonanarmsline_0Shape_tag_dot}; t25 = h_fixedbugs147onestatementonanarmsline_measured(t24); t26 = HERO_STR_LIT(hero_str_20); t27 = INT64_C(9); t28 = (h_fixedbugs147onestatementonanarmsline_Shape){.tag = h_fixedbugs147onestatementonanarmsline_0Shape_tag_line, .as.c_line = {.f_length = t27}}; t29 = h_fixedbugs147onestatementonanarmsline_measured(t28); hero_print_int(t25); hero_print_str(t26); hero_print_int(t29); hero_print_end();
     t30 = (h_fixedbugs147onestatementonanarmsline_Color){.tag = h_fixedbugs147onestatementonanarmsline_0Color_tag_red}; t31 = INT64_C(0); t32 = h_fixedbugs147onestatementonanarmsline_nested(t30, t31); t33 = HERO_STR_LIT(hero_str_20); t34 = (h_fixedbugs147onestatementonanarmsline_Color){.tag = h_fixedbugs147onestatementonanarmsline_0Color_tag_red}; t35 = INT64_C(5); t36 = h_fixedbugs147onestatementonanarmsline_nested(t34, t35); t37 = HERO_STR_LIT(hero_str_20); t38 = (h_fixedbugs147onestatementonanarmsline_Color){.tag = h_fixedbugs147onestatementonanarmsline_0Color_tag_blue}; t39 = INT64_C(5); t40 = h_fixedbugs147onestatementonanarmsline_nested(t38, t39); hero_print_int(t32); hero_print_str(t33); hero_print_int(t36); hero_print_str(t37); hero_print_int(t40); hero_print_end();
     t41 = (h_fixedbugs147onestatementonanarmsline_Color){.tag = h_fixedbugs147onestatementonanarmsline_0Color_tag_red}; t42 = h_fixedbugs147onestatementonanarmsline_early(t41); t43 = HERO_STR_LIT(hero_str_20); t44 = (h_fixedbugs147onestatementonanarmsline_Color){.tag = h_fixedbugs147onestatementonanarmsline_0Color_tag_green}; t45 = h_fixedbugs147onestatementonanarmsline_early(t44); hero_print_int(t42); hero_print_str(t43); hero_print_int(t45); hero_print_end(); return;
-#line 362 "fixedbugs147onestatementonanarmsline.c"
+#line 361 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 26 "<heroes library>"
@@ -369,7 +368,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 373 "fixedbugs147onestatementonanarmsline.c"
+#line 372 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -542,7 +541,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("376b17955d058524", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ae9055f06277185", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs147onestatementonanarmsline\tfixedbugs-147-one-statement-on-an-arm-s-line\n");

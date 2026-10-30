@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -61,7 +60,7 @@ HERO_STR_STATIC(hero_str_a, "\n");
 HERO_STR_STATIC(hero_str_4e2cb1e5, "at_end");
 HERO_STR_STATIC(hero_str_702e6a8f, "the reader is past its last line");
 
-#line 65 "main.c"
+#line 64 "main.c"
 typedef struct h_readsource_Reader {
     HeroArrayHeader * f_lines;
     int64_t f_at;
@@ -106,9 +105,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 112 "main.c"
+#line 111 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_readsource_0Reader_retain(const h_readsource_Reader *v);
@@ -168,7 +167,7 @@ HeroStr h_main_report(HeroStr h0_text) { h_readsource_Reader h1_r = {0}; h_write
     t26 = h9_row; t27 = hero_str_len(t26); t28 = h3_longest; t29 = t27 > t28; if (t29) goto bb10; else goto bb11; bb8:
 #line 47
     t19 = h8_f1; t20 = t19.as.err;
-#line 172 "main.c"
+#line 171 "main.c"
     hero_panic_must_at(t20, "main.hero", "main.report", 47, 15);
     hero_unreachable();
 bb9:
@@ -181,7 +180,7 @@ bb9:
     t39 = h9_row; t72 = h5_heading; hero_str_incref(t39); h5_heading = t39; hero_str_decref(t72); goto bb12; bb16: goto bb12; bb17:
 #line 64
     t56 = h2_s; t57 = h_writesource_rendered(t56); t73 = h18_own18; h18_own18 = t57; hero_str_decref(t73);
-#line 185 "main.c"
+#line 184 "main.c"
     hero_str_incref(t57);
     h_readsource_0Reader_release(hero_slot_escape(&h1_r));
     h_writesource_0Sink_release(hero_slot_escape(&h2_s));
@@ -205,7 +204,7 @@ bb18:
     t52 = HERO_STR_LIT(hero_str_3fb4f71c); t53 = h5_heading; t54 = hero_str_concat(t52, t53); t74 = h19_own19; h19_own19 = t54; hero_str_decref(t74); h_writesource_emit(&h2_s, t54); goto bb17; bb19:
 #line 62
     t55 = HERO_STR_LIT(hero_str_5df34af3); h_writesource_emit(&h2_s, t55); goto bb17;
-#line 209 "main.c"
+#line 208 "main.c"
 }
 
 #line 68 "examples/pipeline/main.hero"
@@ -226,7 +225,7 @@ bool h_main_looks_like_heading(HeroStr h0_row) { HeroStr h1_first = {0}; HERO_NO
     t25 = h1_first; t26 = HERO_STR_LIT(hero_str_23); t27 = hero_str_eq(t25, t26); h5_ret0 = t27; goto bb11; bb8: goto bb6; bb9:
 #line 75
     t21 = h4_ch; t33 = h1_first; hero_str_incref(t21); h1_first = t21; hero_str_decref(t33); goto bb8; bb10: goto bb8; bb11:
-#line 230 "main.c"
+#line 229 "main.c"
     t28 = h5_ret0;
     hero_str_release_at(&h1_first);
     hero_array_release_at(&h2_xs0);
@@ -238,7 +237,7 @@ bool h_main_looks_like_heading(HeroStr h0_row) { HeroStr h1_first = {0}; HERO_NO
 #line 82 "examples/pipeline/main.hero"
 HeroStr h_main_SAMPLE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_663ae3de);
-#line 242 "main.c"
+#line 241 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -247,7 +246,7 @@ HeroStr h_main_SAMPLE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0
 void h_main_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_main_SAMPLE(); t5 = h0_own0; h0_own0 = t1; hero_str_decref(t5); t2 = h_main_report(t1); t6 = h1_own1; h1_own1 = t2; hero_str_decref(t6); hero_print_str(t2); hero_print_end();
     t3 = HERO_STR_LIT(hero_str_0); t4 = h_main_report(t3); t7 = h2_own2; h2_own2 = t4; hero_str_decref(t7); hero_print_str(t4); hero_print_end();
-#line 251 "main.c"
+#line 250 "main.c"
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -272,7 +271,7 @@ h_readsource_Reader h_readsource_new_reader(HeroStr h0_text) { HeroArrayHeader *
     t20 = h2_piece; t21 = h5_ch; t22 = hero_str_concat(t20, t21); t43 = h8_own8; h8_own8 = t22; hero_str_decref(t43); t44 = h2_piece; hero_str_incref(t22); h2_piece = t22; hero_str_decref(t44); goto bb5; bb8:
 #line 26
     t33 = h1_rows; t34 = INT64_C(0); hero_array_incref(t33); t35 = (h_readsource_Reader){.f_lines = t33, .f_at = t34}; t45 = h9_own9; h9_own9 = t35; h_readsource_0Reader_release(&t45);
-#line 276 "main.c"
+#line 275 "main.c"
     h_readsource_0Reader_retain(&t35);
     hero_array_release_at(&h1_rows);
     hero_str_release_at(&h2_piece);
@@ -286,7 +285,7 @@ h_readsource_Reader h_readsource_new_reader(HeroStr h0_text) { HeroArrayHeader *
 bb9:
 #line 24 "examples/pipeline/read/source.hero"
     t31 = h2_piece; hero_array_push_owned(&h1_rows, &t31); goto bb8; bb10: goto bb8;
-#line 290 "main.c"
+#line 289 "main.c"
 }
 
 #line 30 "examples/pipeline/read/source.hero"
@@ -298,7 +297,7 @@ h_0opt_f87774a h_readsource_next_line(h_readsource_Reader *ph0_r) { HeroStr h1_o
     t14 = h1_one; hero_str_incref(t14); t15 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t14}; t18 = h3_own3; h3_own3 = t15; h_0opt_f87774a_release(&t18); h2_ret0 = t15; goto bb4; bb2:
 #line 32
     t5 = HERO_STR_LIT(hero_str_4e2cb1e5); t6 = HERO_STR_LIT(hero_str_702e6a8f); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t19 = h4_own4; h4_own4 = t7; h_0opt_f87774a_release(&t19); h2_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
-#line 302 "main.c"
+#line 301 "main.c"
     t16 = h2_ret0;
     h_0opt_f87774a_retain(&t16);
     hero_str_release_at(&h1_one);
@@ -310,14 +309,14 @@ h_0opt_f87774a h_readsource_next_line(h_readsource_Reader *ph0_r) { HeroStr h1_o
 #line 37 "examples/pipeline/read/source.hero"
 int64_t h_readsource_remaining(h_readsource_Reader h0_r) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_r.f_lines; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = h0_r.f_at; if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow_at("read/source.hero", "source.remaining", 38, 12); return t4;
-#line 314 "main.c"
+#line 313 "main.c"
 }
 
 #line 13 "examples/pipeline/write/source.hero"
 h_writesource_Sink h_writesource_new_sink(void) { HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5; HERO_NODEBUG h_writesource_Sink h2_own2 = {0}, t3, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t4 = h1_own1; h1_own1 = t1; hero_array_decref(t4); t5 = h0_empty; hero_array_incref(t1); h0_empty = t1; hero_array_decref(t5);
     t2 = h0_empty; hero_array_incref(t2); t3 = (h_writesource_Sink){.f_rows = t2}; t6 = h2_own2; h2_own2 = t3; h_writesource_0Sink_release(&t6);
-#line 321 "main.c"
+#line 320 "main.c"
     h_writesource_0Sink_retain(&t3);
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
@@ -328,7 +327,7 @@ h_writesource_Sink h_writesource_new_sink(void) { HeroArrayHeader * h0_empty = {
 #line 17 "examples/pipeline/write/source.hero"
 void h_writesource_emit(h_writesource_Sink *ph0_s, HeroStr h1_row) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t4, *t5; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_s).f_rows; t2 = h1_row; t3 = hero_array_push(t1, &t2); t4 = h2_own2; h2_own2 = t3; hero_array_decref(t4); t5 = (*ph0_s).f_rows; hero_array_incref(t3); (*ph0_s).f_rows = t3; hero_array_decref(t5);
-#line 332 "main.c"
+#line 331 "main.c"
     hero_array_release_at(&h2_own2);
     return;
 }
@@ -336,7 +335,7 @@ void h_writesource_emit(h_writesource_Sink *ph0_s, HeroStr h1_row) { HERO_NODEBU
 #line 20 "examples/pipeline/write/source.hero"
 HeroStr h_writesource_rendered(h_writesource_Sink h0_s) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3, t4; HERO_NODEBUG HeroArrayHeader *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s.f_rows; t2 = HERO_STR_LIT(hero_str_a); t3 = hero_str_join(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4);
-#line 340 "main.c"
+#line 339 "main.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -345,7 +344,7 @@ HeroStr h_writesource_rendered(h_writesource_Sink h0_s) { HERO_NODEBUG HeroStr h
 #line 23 "examples/pipeline/write/source.hero"
 int64_t h_writesource_count(h_writesource_Sink h0_s) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s.f_rows; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); return t2;
-#line 349 "main.c"
+#line 348 "main.c"
 }
 HERO_TU_LOCAL void h_readsource_0Reader_retain(const h_readsource_Reader *v) {
     hero_array_incref(v->f_lines);
@@ -486,7 +485,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("62e3f4a11eac9158", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fe0aa6b26c144a9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("readsource\tsource\nwritesource\tsource\n");

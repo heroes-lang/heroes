@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placeasortmeetinganannamesitsplace.c"
+#line 53 "placeasortmeetinganannamesitsplace.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "placeasortmeetinganannamesitsplace.c"
+#line 91 "placeasortmeetinganannamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,7 +111,7 @@ void h_placeasortmeetinganannamesitsplace_main(void) { double h0_zero; HeroArray
     t2 = 0x1p+1; t3 = 0x1p+0; t4 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t17 = h2_own2; h2_own2 = t4; hero_array_decref(t17); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-sort-meeting-a-nan-names-its-place.hero", "place-a-sort-meeting-a-nan-names-its-place.main", 7, 11}; t5 = hero_array_sort_at(t4, &hero_here); } t18 = h3_own3; h3_own3 = t5; hero_array_decref(t18); t6 = INT64_C(0); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "place-a-sort-meeting-a-nan-names-its-place.hero", "place-a-sort-meeting-a-nan-names-its-place.main", 7, 11) : (void)0), (void)(t5->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t5 + 1))[t6]); hero_print_f64(t7); hero_print_end();
     t8 = 0x1p+1; t9 = h0_zero; t10 = h0_zero; t11 = t9 / t10; t12 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t12, &t8); hero_array_push_owned(&t12, &t11); t19 = h4_own4; h4_own4 = t12; hero_array_decref(t19); t20 = h1_ys; hero_array_incref(t12); h1_ys = t12; hero_array_decref(t20);
     t13 = h1_ys; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-sort-meeting-a-nan-names-its-place.hero", "place-a-sort-meeting-a-nan-names-its-place.main", 9, 11}; t14 = hero_array_sort_at(t13, &hero_here); } t21 = h5_own5; h5_own5 = t14; hero_array_decref(t21); t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "place-a-sort-meeting-a-nan-names-its-place.hero", "place-a-sort-meeting-a-nan-names-its-place.main", 9, 11) : (void)0), (void)(t14->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t14 + 1))[t15]); hero_print_f64(t16); hero_print_end();
-#line 116 "placeasortmeetinganannamesitsplace.c"
+#line 115 "placeasortmeetinganannamesitsplace.c"
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
@@ -217,7 +216,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b28bfc5572c3aad", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("117a309c681e509f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeasortmeetinganannamesitsplace\tplace-a-sort-meeting-a-nan-names-its-place\n");

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -97,7 +96,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_46d0b2be, "recovered: ");
 
-#line 101 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 100 "fixedbugsachandlerthatrecoversleavesnoline.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,9 +144,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 150 "fixedbugsachandlerthatrecoversleavesnoline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -171,7 +170,7 @@ void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) { HeroStr h0_word =
     t4 = h0_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 28, 19}; t5 = hero_str_held_at(t4, &hero_here); } h1_held = t5;
     t6 = HERO_STR_LIT(hero_str_46d0b2be); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 29, 26}; t7 = try_abort(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 29, 40}; t8 = try_trap(); } if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 29, 26); hero_print_str(t6); hero_print_int(t9); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero", "fixedbugs-a-c-handler-that-recovers-leaves-no-line.main", 30, 5}; hero_held_release_at(&h1_held, &hero_here); }
-#line 175 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 174 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;
@@ -273,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("05947479009bd381", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b1c4da976b9a7a6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsachandlerthatrecoversleavesnoline\tfixedbugs-a-c-handler-that-recovers-leaves-no-line\n");

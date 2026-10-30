@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_eb4aad8, "map ");
 HERO_STR_STATIC(hero_str_6f33a5d2, " and nested ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 66 "interpolationholesandbraces.c"
+#line 65 "interpolationholesandbraces.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -98,9 +97,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 104 "interpolationholesandbraces.c"
+#line 103 "interpolationholesandbraces.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -131,7 +130,7 @@ void h_interpolationholesandbraces_main(void) { int64_t h0_n; HeroStr h1_word = 
     t47 = 0x1.4p+1; h4_x = t47;
     t48 = true; h5_flag = t48;
     t49 = h4_x; t50 = h5_flag; t51 = INT64_C(97); t52 = hero_f64_to_str(t49); t80 = h22_own22; h22_own22 = t52; hero_str_decref(t80); t53 = HERO_STR_LIT(hero_str_20); t54 = hero_bool_to_str(t50); t81 = h23_own23; h23_own23 = t54; hero_str_decref(t81); t55 = HERO_STR_LIT(hero_str_20); t56 = hero_int_to_str(t51); t82 = h24_own24; h24_own24 = t56; hero_str_decref(t82); t57 = hero_str_concat(t52, t53); t83 = h25_own25; h25_own25 = t57; hero_str_decref(t83); t58 = hero_str_concat(t57, t54); t84 = h26_own26; h26_own26 = t58; hero_str_decref(t84); t59 = hero_str_concat(t58, t55); t85 = h27_own27; h27_own27 = t59; hero_str_decref(t85); t60 = hero_str_concat(t59, t56); t86 = h28_own28; h28_own28 = t60; hero_str_decref(t86); hero_print_str(t60); hero_print_end();
-#line 135 "interpolationholesandbraces.c"
+#line 134 "interpolationholesandbraces.c"
     hero_str_release_at(&h1_word);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -162,7 +161,7 @@ void h_interpolationholesandbraces_main(void) { int64_t h0_n; HeroStr h1_word = 
 bb2:
 #line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
     t33 = h3_f0; t34 = t33.as.err;
-#line 166 "interpolationholesandbraces.c"
+#line 165 "interpolationholesandbraces.c"
     hero_panic_must_at(t34, "interpolation-holes-and-braces.hero", "interpolation-holes-and-braces.main", 22, 18);
     hero_unreachable();
 }
@@ -263,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bc988ae4eb25cc6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("73fcb0b0049f49c9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("interpolationholesandbraces\tinterpolation-holes-and-braces\n");

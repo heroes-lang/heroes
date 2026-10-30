@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,7 +56,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_2c, ",");
 
-#line 61 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 60 "fixedbugs382aconstantmapisbuiltateachread.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -101,9 +100,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 106 "fixedbugs382aconstantmapisbuiltateachread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -132,13 +131,13 @@ void h_fixedbugs382aconstantmapisbuiltateachread_main(void);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 int64_t h_fixedbugs382aconstantmapisbuiltateachread_BASE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(40); return t1;
-#line 136 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 135 "fixedbugs382aconstantmapisbuiltateachread.c"
 }
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_AGES(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = INT64_C(42); t3 = HERO_STR_LIT(hero_str_eb4ac31); t4 = INT64_C(7); t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.AGES", 12, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t6 = h0_own0; h0_own0 = t5; hero_map_decref(t6);
-#line 142 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 141 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
     return t5;
@@ -147,7 +146,7 @@ HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_AGES(void) { HERO_NO
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_COMPUTED(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t7, *t8; HERO_NODEBUG HeroStr t1, t5; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = h_fixedbugs382aconstantmapisbuiltateachread_BASE(); t3 = INT64_C(2); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.COMPUTED", 15, 15); t5 = HERO_STR_LIT(hero_str_eb4ac31); t6 = INT64_C(7); t7 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.COMPUTED", 15, 5}; hero_map_put_at(t7, &t1, &t4, &hero_here); hero_map_put_at(t7, &t5, &t6, &hero_here); } t8 = h0_own0; h0_own0 = t7; hero_map_decref(t8);
-#line 151 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 150 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_incref(t7);
     hero_map_release_at(&h0_own0);
     return t7;
@@ -156,7 +155,7 @@ HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_COMPUTED(void) { HER
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_LISTS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *t4, *t6, *t8, *t9; HERO_NODEBUG HeroMapHeader *h2_own2 = {0}, *t7, *t10; HERO_NODEBUG HeroStr t1, t5; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_61); t2 = INT64_C(1); t3 = INT64_C(2); t4 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t8 = h0_own0; h0_own0 = t4; hero_array_decref(t8); t5 = HERO_STR_LIT(hero_str_62); t6 = hero_array_new(&hero_desc_int, 1); t9 = h1_own1; h1_own1 = t6; hero_array_decref(t9); t7 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.LISTS", 18, 5}; hero_map_put_at(t7, &t1, &t4, &hero_here); hero_map_put_at(t7, &t5, &t6, &hero_here); } t10 = h2_own2; h2_own2 = t7; hero_map_decref(t10);
-#line 160 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 159 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_incref(t7);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -178,7 +177,7 @@ void h_fixedbugs382aconstantmapisbuiltateachread_main(void) { int64_t h0_total; 
     t47 = h1_at; t48 = INT64_C(1); if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow_at("fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 26, 14); h1_at = t49; goto bb1; bb11:
 #line 25
     t38 = h6_f2; t39 = t38.as.err;
-#line 182 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 181 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_panic_must_at(t39, "fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 25, 82);
     hero_unreachable();
 bb12:
@@ -187,7 +186,7 @@ bb12:
     t73 = h_fixedbugs382aconstantmapisbuiltateachread_COMPUTED(); t130 = h29_own29; h29_own29 = t73; hero_map_decref(t130); t131 = h9_copy; hero_map_incref(t73); h9_copy = t73; hero_map_decref(t131);
     t74 = HERO_STR_LIT(hero_str_6bb5e50a); t75 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 30, 5}; hero_map_set_at(&(h9_copy), &t74, &t75, &hero_here); }
     t76 = h9_copy; t77 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 31, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t76, &t77, &hero_here); if (found == NULL) { t78 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t78 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t78.as.ok, found); } } t132 = h30_own30; h30_own30 = t78; h_0opt_e201354_release(&t132); t133 = h10_f4; h_0opt_e201354_retain(&t78); h10_f4 = t78; h_0opt_e201354_release(&t133); t79 = h10_f4; t80 = t79.tag; t81 = INT64_C(0); t82 = t80 == t81; if (t82) goto bb15; else goto bb16; bb15: t83 = h10_f4; t84 = t83.as.ok; h11_r3 = t84; goto bb17; bb16: t85 = INT64_C(0); h11_r3 = t85; goto bb17; bb17: t86 = h11_r3; t87 = HERO_STR_LIT(hero_str_20); t88 = h_fixedbugs382aconstantmapisbuiltateachread_COMPUTED(); t134 = h31_own31; h31_own31 = t88; hero_map_decref(t134); t89 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 31, 42}; HERO_NODEBUG const void *found = hero_map_find_at(t88, &t89, &hero_here); if (found == NULL) { t90 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t90 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t90.as.ok, found); } } t135 = h32_own32; h32_own32 = t90; h_0opt_e201354_release(&t135); t136 = h12_f5; h_0opt_e201354_retain(&t90); h12_f5 = t90; h_0opt_e201354_release(&t136); t91 = h12_f5; t92 = t91.tag; t93 = INT64_C(0); t94 = t92 == t93; if (t94) goto bb18; else goto bb19; bb18: t95 = h12_f5; t96 = t95.as.ok; h13_r4 = t96; goto bb20; bb19: t97 = INT64_C(0); h13_r4 = t97; goto bb20; bb20: t98 = h13_r4; t99 = HERO_STR_LIT(hero_str_20); t100 = h_fixedbugs382aconstantmapisbuiltateachread_LISTS(); t137 = h33_own33; h33_own33 = t100; hero_map_decref(t137); t101 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 31, 77}; HERO_NODEBUG const void *found = hero_map_find_at(t100, &t101, &hero_here); if (found == NULL) { t102 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t102 = (h_0opt_2270cbe7){.tag = INT64_C(0)}; (&hero_desc_array)->copy(&t102.as.ok, found); } } t138 = h34_own34; h34_own34 = t102; h_0opt_2270cbe7_release(&t138); t139 = h14_f6; h_0opt_2270cbe7_retain(&t102); h14_f6 = t102; h_0opt_2270cbe7_release(&t139); t103 = h14_f6; t104 = t103.tag; t105 = INT64_C(0); t106 = t104 == t105; if (t106) goto bb21; else goto bb22; bb21: t109 = h14_f6; t110 = t109.as.ok; t111 = ((void)(t110 == NULL ? ((void)hero_array_len(t110), hero_unreachable()) : (void)0), t110->len); hero_print_int(t86); hero_print_str(t87); hero_print_int(t98); hero_print_str(t99); hero_print_int(t111); hero_print_end();
-#line 191 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 190 "fixedbugs382aconstantmapisbuiltateachread.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_f1));
     h_0opt_2270cbe7_release(hero_slot_escape(&h6_f2));
@@ -220,7 +219,7 @@ bb12:
 bb22:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     t107 = h14_f6; t108 = t107.as.err;
-#line 224 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 223 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_panic_must_at(t108, "fixedbugs-382-a-constant-map-is-built-at-each-read.hero", "fixedbugs-382-a-constant-map-is-built-at-each-read.main", 31, 77);
     hero_unreachable();
 }
@@ -353,7 +352,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("324d6aae68d2a7e8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("37d543de5ef07c0e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantmapisbuiltateachread\tfixedbugs-382-a-constant-map-is-built-at-each-read\n");

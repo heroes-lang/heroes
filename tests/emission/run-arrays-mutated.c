@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,7 +63,7 @@ HERO_STR_STATIC(hero_str_1e9d68, "two");
 HERO_STR_STATIC(hero_str_1d0204, "new");
 HERO_STR_STATIC(hero_str_188c5254, "newer");
 
-#line 68 "arraysmutated.c"
+#line 67 "arraysmutated.c"
 typedef struct h_arraysmutated_Point {
     int64_t f_x;
     int64_t f_y;
@@ -109,9 +108,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "arraysmutated.c"
+#line 114 "arraysmutated.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_arraysmutated_0Point_eq(const h_arraysmutated_Point *a, const h_arraysmutated_Point *b);
@@ -200,7 +199,7 @@ void h_arraysmutated_main(void) { HeroArrayHeader * h0_ns = {0}; HeroArrayHeader
     t124 = h4_gs; t125 = INT64_C(0); t126 = ((void)((t124 == NULL || t125 < 0 || t125 >= t124->len) ? hero_panic_index_at(t124, t125, "arrays-mutated.hero", "arrays-mutated.main", 49, 15) : (void)0), (void)(t124->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t124 + 1))[t125]); t127 = ((void)(t126 == NULL ? ((void)hero_array_len(t126), hero_unreachable()) : (void)0), t126->len); t128 = h4_gs; t129 = ((void)(t128 == NULL ? ((void)hero_array_len(t128), hero_unreachable()) : (void)0), t128->len); hero_print_int(t127); hero_print_int(t129); hero_print_end();
 #line 53
     t130 = h0_ns; t131 = ((void)(t130 == NULL ? ((void)hero_array_len(t130), hero_unreachable()) : (void)0), t130->len); hero_print_int(t131); hero_print_end();
-#line 204 "arraysmutated.c"
+#line 203 "arraysmutated.c"
     hero_array_release_at(&h0_ns);
     hero_array_release_at(&h1_ws);
     hero_array_release_at(&h2_ps);
@@ -360,7 +359,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a865f560ff5bc95", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e38f25d58466e9e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("arraysmutated\tarrays-mutated\n");

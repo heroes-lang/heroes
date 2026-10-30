@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,11 +59,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 _Static_assert(__builtin_classify_type(((struct keeper *)0)->self) == 5 && _Generic(((struct keeper *)0)->self, __typeof__(((struct keeper *)0)->self): 1, default: 0) && sizeof(((struct keeper *)0)->self) == sizeof(void *), "heroes-ffi-field Keeper self");
 _Static_assert(__builtin_classify_type(((struct keeper *)0)->count) == 1 && sizeof(((struct keeper *)0)->count) == sizeof(int64_t) && (_Generic(((struct keeper *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Keeper count");
-#line 64 "fixedbugs396alocallentinplaceisguarded.c"
+#line 63 "fixedbugs396alocallentinplaceisguarded.c"
 
 #line 18 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 _Static_assert(__builtin_classify_type(*(struct keeper *)0) != 13, "heroes-ffi-union Keeper self count");
-#line 68 "fixedbugs396alocallentinplaceisguarded.c"
+#line 67 "fixedbugs396alocallentinplaceisguarded.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -181,9 +180,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 187 "fixedbugs396alocallentinplaceisguarded.c"
+#line 186 "fixedbugs396alocallentinplaceisguarded.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396alocallentinplaceisguarded_0Keeper_eq(const struct keeper *a, const struct keeper *b);
@@ -241,7 +240,7 @@ void h_fixedbugs396alocallentinplaceisguarded_inner(void) {
     t1 = INT64_C(0); h0_y = t1;
     t2 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.inner", 34, 5}; hero_lend_local_name(hero_lend_h0_y, "put_one", "x"); (void)put_one((void *)&h0_y, t2); }
     t3 = HERO_STR_LIT(hero_str_42ff5603); t4 = h0_y; hero_print_str(t3); hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_y); return;
-#line 245 "fixedbugs396alocallentinplaceisguarded.c"
+#line 244 "fixedbugs396alocallentinplaceisguarded.c"
 }
 #undef h0_y
 
@@ -261,7 +260,7 @@ int64_t h_fixedbugs396alocallentinplaceisguarded_depth(int64_t h0_n) {
     t12 = h0_n; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb2:
 #line 39
     t8 = h2_f0; t9 = t8.as.err;
-#line 265 "fixedbugs396alocallentinplaceisguarded.c"
+#line 264 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must_at(t9, "fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.depth", 39, 23);
     hero_unreachable();
 bb3:
@@ -272,7 +271,7 @@ bb3:
     t15 = INT64_C(0); h5_ret0 = t15; goto bb8; bb5: goto bb3; bb6:
 #line 44
     t29 = h4_f1; t30 = t29.as.ok; if (__builtin_add_overflow(t20, t30, &t31)) hero_panic_overflow_at("fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.depth", 44, 12); h5_ret0 = t31; goto bb8; bb7: t27 = h4_f1; t28 = t27.as.err;
-#line 276 "fixedbugs396alocallentinplaceisguarded.c"
+#line 275 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must_at(t28, "fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.depth", 44, 20);
     hero_unreachable();
 bb8:
@@ -301,7 +300,7 @@ int32_t h_fixedbugs396alocallentinplaceisguarded_early(bool h0_flag) {
     t5 = h1_x; h2_ret0 = t5; goto bb4; bb2:
 #line 51
     t4 = h1_x; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 305 "fixedbugs396alocallentinplaceisguarded.c"
+#line 304 "fixedbugs396alocallentinplaceisguarded.c"
     t6 = h2_ret0;
     hero_lend_local_give(hero_lend_h1_x);
     return t6;
@@ -320,13 +319,13 @@ int64_t h_fixedbugs396alocallentinplaceisguarded_on_a_thread(int64_t h0_n) {
     t12 = h1_x; t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t12}; t24 = h5_own5; h5_own5 = t13; h_0opt_e201354_release(&t24); t25 = h3_f1; h_0opt_e201354_retain(&t13); h3_f1 = t13; h_0opt_e201354_release(&t25); t14 = h3_f1; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb3; else goto bb4; bb2:
 #line 57
     t8 = h2_f0; t9 = t8.as.err;
-#line 324 "fixedbugs396alocallentinplaceisguarded.c"
+#line 323 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must_at(t9, "fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.on_a_thread", 57, 23);
     hero_unreachable();
 bb3:
 #line 59 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t20 = h3_f1; t21 = t20.as.ok;
-#line 330 "fixedbugs396alocallentinplaceisguarded.c"
+#line 329 "fixedbugs396alocallentinplaceisguarded.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h4_own4));
@@ -336,7 +335,7 @@ bb3:
 bb4:
 #line 59 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t18 = h3_f1; t19 = t18.as.err;
-#line 340 "fixedbugs396alocallentinplaceisguarded.c"
+#line 339 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must_at(t19, "fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.on_a_thread", 59, 12);
     hero_unreachable();
 }
@@ -350,19 +349,19 @@ int64_t h_0cb_fixedbugs396alocallentinplaceisguarded_on_a_thread(int64_t h0_n) {
 #line 61 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 void h_fixedbugs396alocallentinplaceisguarded_start(struct keeper *ph0_k) { HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.start", 62, 5}; hero_lend_local_name(ph0_k, "keeper_init", "k"); hero_pad_fill(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0); (void)keeper_init(&(*ph0_k)); } return;
-#line 354 "fixedbugs396alocallentinplaceisguarded.c"
+#line 353 "fixedbugs396alocallentinplaceisguarded.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 int32_t h_fixedbugs396alocallentinplaceisguarded_step(struct keeper *ph0_k) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.step", 65, 12}; hero_lend_local_name(ph0_k, "keeper_step", "k"); hero_pad_fill(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0); t1 = keeper_step(&(*ph0_k)); } return t1;
-#line 360 "fixedbugs396alocallentinplaceisguarded.c"
+#line 359 "fixedbugs396alocallentinplaceisguarded.c"
 }
 
 #line 67 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 int32_t h_fixedbugs396alocallentinplaceisguarded_step_twice(struct keeper *ph0_k) { HERO_NODEBUG int32_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs396alocallentinplaceisguarded_step(&(*ph0_k)); t2 = h_fixedbugs396alocallentinplaceisguarded_step(&(*ph0_k)); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.step_twice", 68, 12); return t3;
-#line 366 "fixedbugs396alocallentinplaceisguarded.c"
+#line 365 "fixedbugs396alocallentinplaceisguarded.c"
 }
 
 #line 70 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
@@ -405,7 +404,7 @@ void h_fixedbugs396alocallentinplaceisguarded_main(void) {
     t52 = ((void *)0); t53 = INT64_C(0); t54 = (struct keeper){.self = t52, .count = t53}; h8_w = t54; hero_pad_fill(&h8_w, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
     h_fixedbugs396alocallentinplaceisguarded_start(&h8_w);
     t55 = h_fixedbugs396alocallentinplaceisguarded_step_twice(&h8_w); t56 = HERO_STR_LIT(hero_str_20); t57 = h8_w.count; hero_print_int(t55); hero_print_str(t56); hero_print_int(t57); hero_print_end();
-#line 409 "fixedbugs396alocallentinplaceisguarded.c"
+#line 408 "fixedbugs396alocallentinplaceisguarded.c"
     hero_array_release_at(&h5_md);
     h_0opt_e1f4933_release(hero_slot_escape(&h7_f0));
     hero_array_release_at(&h9_own9);
@@ -419,7 +418,7 @@ void h_fixedbugs396alocallentinplaceisguarded_main(void) {
 bb5:
 #line 92 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t43 = h7_f0; t44 = t43.as.err;
-#line 423 "fixedbugs396alocallentinplaceisguarded.c"
+#line 422 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must_at(t44, "fixedbugs-396-a-local-lent-in-place-is-guarded.hero", "fixedbugs-396-a-local-lent-in-place-is-guarded.main", 92, 23);
     hero_unreachable();
 }
@@ -571,7 +570,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ecd02877f495f95", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d8f058473b3909e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396alocallentinplaceisguarded\tfixedbugs-396-a-local-lent-in-place-is-guarded\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_21, "!");
 
-#line 56 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 55 "fixedbugs540areleaseinsidealinekeepstheline.c"
 typedef struct h_fixedbugs540areleaseinsidealinekeepstheline_Box {
     HeroStr f_s;
 } h_fixedbugs540areleaseinsidealinekeepstheline_Box;
@@ -92,9 +91,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 97 "fixedbugs540areleaseinsidealinekeepstheline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v);
@@ -128,7 +127,7 @@ HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) { Hero
     t10 = h2_b; h3_ret0 = t10; goto bb4; bb2:
 #line 22
     t9 = h1_a; h3_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 132 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 131 "fixedbugs540areleaseinsidealinekeepstheline.c"
     t11 = h3_ret0;
     hero_str_incref(t11);
     hero_str_release_at(&h1_a);
@@ -142,7 +141,7 @@ HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) { Hero
 h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsidealinekeepstheline_keep(HeroStr h0_s) { h_fixedbugs540areleaseinsidealinekeepstheline_Box h1_b = {0}; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t2, t3, t4, t5; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; hero_str_incref(t1); t2 = (h_fixedbugs540areleaseinsidealinekeepstheline_Box){.f_s = t1}; t4 = h2_own2; h2_own2 = t2; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(&t4); t5 = h1_b; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(&t2); h1_b = t2; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(&t5);
     t3 = h1_b;
-#line 146 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 145 "fixedbugs540areleaseinsidealinekeepstheline.c"
     h_fixedbugs540areleaseinsidealinekeepstheline_0Box_retain(&t3);
     h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(hero_slot_escape(&h1_b));
     h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(hero_slot_escape(&h2_own2));
@@ -153,7 +152,7 @@ h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsideal
 void h_fixedbugs540areleaseinsidealinekeepstheline_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3, t4, t6, t7, t8; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t5, t9; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = h_fixedbugs540areleaseinsidealinekeepstheline_greet(t1); t7 = h1_own1; h1_own1 = t2; hero_str_decref(t7); t8 = h0_s; hero_str_incref(t2); h0_s = t2; hero_str_decref(t8);
     t3 = h0_s; t4 = h0_s; t5 = h_fixedbugs540areleaseinsidealinekeepstheline_keep(t4); t9 = h2_own2; h2_own2 = t5; h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(&t9); t6 = t5.f_s; hero_print_str(t3); hero_print_str(t6); hero_print_end();
-#line 157 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 156 "fixedbugs540areleaseinsidealinekeepstheline.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     h_fixedbugs540areleaseinsidealinekeepstheline_0Box_release(hero_slot_escape(&h2_own2));
@@ -276,7 +275,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("060e533a5886022f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6fc53f1c7dbbe1a5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs540areleaseinsidealinekeepstheline\tfixedbugs-540-a-release-inside-a-line-keeps-the-line\n");

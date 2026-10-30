@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_1073a930, "zero");
 HERO_STR_STATIC(hero_str_1d4996, "one");
 HERO_STR_STATIC(hero_str_eb4aa2b, "many");
 
-#line 58 "coreblocks.c"
+#line 57 "coreblocks.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "coreblocks.c"
+#line 95 "coreblocks.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -125,7 +124,7 @@ int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor)
 #line 15
     t15 = h3_v; t16 = INT64_C(2); if (t16 == 0) hero_panic_at("division by zero", "core-blocks.hero", "core-blocks.first_even_after", 15, 12); if (t15 == INT64_MIN && t16 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "core-blocks.hero", "core-blocks.first_even_after", 15, 12); t17 = t15 % t16; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb8; else goto bb9; bb5: goto bb1; bb6: goto bb4; bb7: goto bb3; bb8:
     t20 = h3_v; h4_ret0 = t20; goto bb10; bb9: goto bb7; bb10:
-#line 129 "coreblocks.c"
+#line 128 "coreblocks.c"
     t24 = h4_ret0;
     return t24;
 }
@@ -136,7 +135,7 @@ HeroStr h_coreblocks_named(int64_t h0_n) { HERO_NODEBUG int64_t h1_s0, t1, t2, t
     t3 = INT64_C(0);
 #line 22
     t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t11 = h2_r0;
-#line 140 "coreblocks.c"
+#line 139 "coreblocks.c"
     hero_str_incref(t11);
     hero_str_release_at(&h2_r0);
     return t11;
@@ -157,7 +156,7 @@ bb2:
     t10 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 22
     t14 = h2_r0; hero_str_incref(t10); h2_r0 = t10; hero_str_decref(t14); goto bb1;
-#line 161 "coreblocks.c"
+#line 160 "coreblocks.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

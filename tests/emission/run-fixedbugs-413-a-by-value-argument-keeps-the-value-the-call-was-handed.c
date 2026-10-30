@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 56 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 55 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
 typedef struct h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B {
     HeroArrayHeader * f_items;
 } h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 101 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_0B_retain(const h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B *v);
@@ -132,14 +131,14 @@ void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_main(void);
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_rewrite(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P *ph0_p, h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h1_q) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(5); t2 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P){.f_a = t1}; (*ph0_p) = t2;
     t3 = h1_q.f_a; return t3;
-#line 136 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 135 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_element(int64_t *ph0_e, HeroArrayHeader * h1_q) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t2, *t5; HERO_NODEBUG int64_t t1, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(9); (*ph0_e) = t1;
     t2 = h1_q; hero_array_incref(t2); t5 = h2_own2; h2_own2 = t2; hero_array_decref(t5); t3 = INT64_C(0); t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? hero_panic_index_at(t2, t3, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.set_element", 34, 12) : (void)0), (void)(t2->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t2 + 1))[t3]);
-#line 143 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 142 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t4;
 }
@@ -148,7 +147,7 @@ int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_element(
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_field(HeroArrayHeader * *ph0_items, h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h1_q) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(7); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*ph0_items)); if (*hero_slot == NULL || t1 < 0 || t1 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t1, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.set_in_field", 37, 5); hero_array_set(hero_slot, t1, &t2); }
     t3 = h1_q.f_items; hero_array_incref(t3); t6 = h2_own2; h2_own2 = t3; hero_array_decref(t6); t4 = INT64_C(0); t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? hero_panic_index_at(t3, t4, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.set_in_field", 38, 12) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
-#line 152 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 151 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t5;
 }
@@ -157,7 +156,7 @@ int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_field
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_record(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B *ph0_b, HeroArrayHeader * h1_items) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(7); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*ph0_b).f_items); if (*hero_slot == NULL || t1 < 0 || t1 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t1, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.set_in_record", 41, 5); hero_array_set(hero_slot, t1, &t2); }
     t3 = h1_items; hero_array_incref(t3); t6 = h2_own2; h2_own2 = t3; hero_array_decref(t6); t4 = INT64_C(0); t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? hero_panic_index_at(t3, t4, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.set_in_record", 42, 12) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
-#line 161 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 160 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t5;
 }
@@ -166,7 +165,7 @@ int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_recor
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_replace(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B *ph0_b, HeroArrayHeader * h1_items) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t4, *t7, *t11, *t12; HERO_NODEBUG int64_t t1, t2, t5, t6, t8, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(5); t2 = INT64_C(6); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t11 = h2_own2; h2_own2 = t3; hero_array_decref(t11); t12 = (*ph0_b).f_items; hero_array_incref(t3); (*ph0_b).f_items = t3; hero_array_decref(t12);
     t4 = h1_items; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.replace", 46, 12) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); t7 = h1_items; t8 = INT64_C(1); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.replace", 46, 23) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]); if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow_at("fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.replace", 46, 12);
-#line 170 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 169 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t10;
 }
@@ -174,7 +173,7 @@ int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_replace(h_fi
 #line 48 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_through(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG HeroArrayHeader *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = (*ph0_xs); hero_array_incref(t2); hero_array_unshare(&((*ph0_xs))); t3 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_element(&(*((void)(((*ph0_xs) == NULL || t1 < 0 || t1 >= (*ph0_xs)->len) ? hero_panic_index_at((*ph0_xs), t1, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.through", 49, 12) : (void)0), (void)((*ph0_xs)->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)((*ph0_xs) + 1) + t1)), t2); hero_array_decref(t2); return t3;
-#line 178 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 177 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -198,7 +197,7 @@ void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_main(void) { h_
     t59 = INT64_C(1); hero_array_push_owned(&h5_ws, &t59);
     t62 = INT64_C(2); hero_array_push_owned(&h5_ws, &t62);
     t64 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_through(&h5_ws); t65 = HERO_STR_LIT(hero_str_20); t66 = h5_ws; t67 = INT64_C(0); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? hero_panic_index_at(t66, t67, "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero", "fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.main", 70, 30) : (void)0), (void)(t66->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t66 + 1))[t67]); hero_print_int(t64); hero_print_str(t65); hero_print_int(t68); hero_print_end();
-#line 202 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 201 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h1_xs);
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_0B_release(hero_slot_escape(&h2_f));
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_0B_release(hero_slot_escape(&h3_r));
@@ -343,7 +342,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("244cba134e1efca5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("792d7b4333e2675f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded\tfixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed\n");

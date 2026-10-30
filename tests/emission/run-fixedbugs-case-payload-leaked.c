@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_334014a4, "alphabet");
 HERO_STR_STATIC(hero_str_68e7bae0, "betamax");
 HERO_STR_STATIC(hero_str_1d7a5355, "alphabetical");
 
-#line 58 "fixedbugscasepayloadleaked.c"
+#line 57 "fixedbugscasepayloadleaked.c"
 typedef enum h_fixedbugscasepayloadleaked_0Token_tag {
     h_fixedbugscasepayloadleaked_0Token_tag_num = 0,
     h_fixedbugscasepayloadleaked_0Token_tag_name = 1,
@@ -111,9 +110,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fixedbugscasepayloadleaked.c"
+#line 116 "fixedbugscasepayloadleaked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_0Token_c_num_eq(const h_fixedbugscasepayloadleaked_0Token_c_num *a, const h_fixedbugscasepayloadleaked_0Token_c_num *b);
@@ -163,7 +162,7 @@ void h_fixedbugscasepayloadleaked_main(void);
 #line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 h_fixedbugscasepayloadleaked_Token h_fixedbugscasepayloadleaked_label(HeroStr h0_text, int64_t h1_from, int64_t h2_to) { HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t4, t6; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h4_own4 = {0}, t5, t7; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h1_from; t3 = h2_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-case-payload-leaked.hero", "fixedbugs-case-payload-leaked.label", 35, 21}; t4 = hero_str_slice_at(t1, t2, t3, &hero_here); } t6 = h3_own3; h3_own3 = t4; hero_str_decref(t6); hero_str_incref(t4); t5 = (h_fixedbugscasepayloadleaked_Token){.tag = h_fixedbugscasepayloadleaked_0Token_tag_name, .as.c_name = {.f_s = t4}}; t7 = h4_own4; h4_own4 = t5; h_fixedbugscasepayloadleaked_0Token_release(&t7);
-#line 167 "fixedbugscasepayloadleaked.c"
+#line 166 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_0Token_retain(&t5);
     hero_str_release_at(&h3_own3);
     h_fixedbugscasepayloadleaked_0Token_release(hero_slot_escape(&h4_own4));
@@ -184,7 +183,7 @@ void h_fixedbugscasepayloadleaked_main(void) { HeroArrayHeader * h0_out = {0}; H
 #line 52
     t23 = h0_out; t24 = INT64_C(0); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "fixedbugs-case-payload-leaked.hero", "fixedbugs-case-payload-leaked.main", 52, 11) : (void)0), (void)(t23->elem->size != sizeof(h_fixedbugscasepayloadleaked_Token) ? hero_unreachable() : (void)0), ((h_fixedbugscasepayloadleaked_Token const *)(const void *)(t23 + 1))[t24]); t26 = HERO_STR_LIT(hero_str_1d7a5355); t27 = INT64_C(0); t28 = INT64_C(5); t29 = h_fixedbugscasepayloadleaked_label(t26, t27, t28); t43 = h6_own6; h6_own6 = t29; h_fixedbugscasepayloadleaked_0Token_release(&t43); t30 = h_fixedbugscasepayloadleaked_0Token_eq(&t25, &t29); hero_print_bool(t30); hero_print_end();
     t31 = h0_out; t32 = INT64_C(0); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "fixedbugs-case-payload-leaked.hero", "fixedbugs-case-payload-leaked.main", 53, 11) : (void)0), (void)(t31->elem->size != sizeof(h_fixedbugscasepayloadleaked_Token) ? hero_unreachable() : (void)0), ((h_fixedbugscasepayloadleaked_Token const *)(const void *)(t31 + 1))[t32]); t34 = INT64_C(12); t35 = (h_fixedbugscasepayloadleaked_Token){.tag = h_fixedbugscasepayloadleaked_0Token_tag_num, .as.c_num = {.f_v = t34}}; t44 = h7_own7; h7_own7 = t35; h_fixedbugscasepayloadleaked_0Token_release(&t44); t36 = h_fixedbugscasepayloadleaked_0Token_eq(&t33, &t35); hero_print_bool(t36); hero_print_end();
-#line 188 "fixedbugscasepayloadleaked.c"
+#line 187 "fixedbugscasepayloadleaked.c"
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_copy);
     hero_array_release_at(&h2_own2);
@@ -358,7 +357,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7eda8d37738fd178", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("01a169093e06abb4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugscasepayloadleaked\tfixedbugs-case-payload-leaked\n");

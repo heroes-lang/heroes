@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_75, "u");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_713ef5c, "a == b");
 
-#line 60 "fixedbugs016anassertonrecordswritesbothconstructions.c"
+#line 59 "fixedbugs016anassertonrecordswritesbothconstructions.c"
 typedef struct h_fixedbugs016anassertonrecordswritesbothconstructions_Point {
     int64_t f_x;
     int64_t f_y;
@@ -105,9 +104,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugs016anassertonrecordswritesbothconstructions.c"
+#line 110 "fixedbugs016anassertonrecordswritesbothconstructions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *b);
@@ -140,7 +139,7 @@ void h_fixedbugs016anassertonrecordswritesbothconstructions_main(void) { h_fixed
     t1 = HERO_STR_LIT(hero_str_28123646); t2 = INT64_C(0); t3 = INT64_C(0); t4 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Point){.f_x = t2, .f_y = t3}; t5 = HERO_STR_LIT(hero_str_74); t6 = HERO_STR_LIT(hero_str_75); t7 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t25 = h4_own4; h4_own4 = t7; hero_array_decref(t25); t8 = 0x1.8p+0; t9 = true; hero_str_incref(t1); hero_array_incref(t7); t10 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Named){.f_label = t1, .f_at = t4, .f_tags = t7, .f_weight = t8, .f_open = t9}; t26 = h5_own5; h5_own5 = t10; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t26); t27 = h0_a; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t10); h0_a = t10; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t27);
     t11 = HERO_STR_LIT(hero_str_61); t12 = INT64_C(0); t13 = INT64_C(1); t14 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Point){.f_x = t12, .f_y = t13}; t15 = hero_array_new(&hero_desc_str, 1); t28 = h6_own6; h6_own6 = t15; hero_array_decref(t28); t16 = 0x1p+1; t17 = false; hero_str_incref(t11); hero_array_incref(t15); t18 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Named){.f_label = t11, .f_at = t14, .f_tags = t15, .f_weight = t16, .f_open = t17}; t29 = h7_own7; h7_own7 = t18; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t29); t30 = h1_b; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t18); h1_b = t18; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t30);
     t19 = HERO_STR_LIT(hero_str_713ef5c); t20 = h0_a; t21 = h1_b; t22 = h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(&t20, &t21); t31 = h2_assert0; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t20); h2_assert0 = t20; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t31); t32 = h3_assert1; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t21); h3_assert1 = t21; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t32); if (t22) goto bb1; else goto bb2; bb1:
-#line 144 "fixedbugs016anassertonrecordswritesbothconstructions.c"
+#line 143 "fixedbugs016anassertonrecordswritesbothconstructions.c"
     h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(hero_slot_escape(&h0_a));
     h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(hero_slot_escape(&h1_b));
     h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(hero_slot_escape(&h2_assert0));
@@ -153,7 +152,7 @@ void h_fixedbugs016anassertonrecordswritesbothconstructions_main(void) { h_fixed
 bb2:
 #line 20 "tests/golden/run/fixedbugs-016-an-assert-on-records-writes-both-constructions.hero"
     t23 = h2_assert0; t24 = h3_assert1;
-#line 157 "fixedbugs016anassertonrecordswritesbothconstructions.c"
+#line 156 "fixedbugs016anassertonrecordswritesbothconstructions.c"
     hero_panic_assert_shown_at(t19, h_0show_610c13af, &t23, &t24, 1, "fixedbugs-016-an-assert-on-records-writes-both-constructions.hero", "fixedbugs-016-an-assert-on-records-writes-both-constructions.main", 20, 12);
     hero_unreachable();
 }
@@ -332,7 +331,7 @@ HERO_TU_LOCAL void h_0show_610c13af(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2194150a5a85d272", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("38cf733727f477ad", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonrecordswritesbothconstructions\tfixedbugs-016-an-assert-on-records-writes-both-constructions\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_e0a312d, "held");
 HERO_STR_STATIC(hero_str_572f22bc, "built four shapes and called none of them");
 
-#line 58 "functiontypedfieldnevercalledthrough.c"
+#line 57 "functiontypedfieldnevercalledthrough.c"
 typedef int64_t (*h_0fn_1fe2350b)(int64_t);
 typedef struct h_functiontypedfieldnevercalledthrough_Direct {
     h_0fn_1fe2350b f_f;
@@ -123,9 +122,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "functiontypedfieldnevercalledthrough.c"
+#line 128 "functiontypedfieldnevercalledthrough.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_0Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b);
@@ -179,13 +178,13 @@ void h_functiontypedfieldnevercalledthrough_main(void);
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 int64_t h_functiontypedfieldnevercalledthrough_twice(int64_t h0_v) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("function-typed-field-never-called-through.hero", "function-typed-field-never-called-through.twice", 55, 12); return t3;
-#line 183 "functiontypedfieldnevercalledthrough.c"
+#line 182 "functiontypedfieldnevercalledthrough.c"
 }
 
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 HeroStr h_functiontypedfieldnevercalledthrough_shout(HeroStr h0_a) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4);
-#line 189 "functiontypedfieldnevercalledthrough.c"
+#line 188 "functiontypedfieldnevercalledthrough.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -199,7 +198,7 @@ void h_functiontypedfieldnevercalledthrough_main(void) { __attribute__((unused))
     t11 = h_functiontypedfieldnevercalledthrough_shout; t12 = (h_functiontypedfieldnevercalledthrough_Either){.tag = h_functiontypedfieldnevercalledthrough_0Either_tag_one, .as.c_one = {.f_f = t11}}; h3_either = t12;
 #line 73
     t17 = HERO_STR_LIT(hero_str_572f22bc); hero_print_str(t17); hero_print_end();
-#line 203 "functiontypedfieldnevercalledthrough.c"
+#line 202 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_0Outer_release(hero_slot_escape(&h1_outer));
     h_functiontypedfieldnevercalledthrough_0Held_release(hero_slot_escape(&h2_held));
     h_functiontypedfieldnevercalledthrough_0Outer_release(hero_slot_escape(&h4_own4));
@@ -390,7 +389,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("00bec3521d94ae5b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("576a7e784cae23fb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("functiontypedfieldnevercalledthrough\tfunction-typed-field-never-called-through\n");

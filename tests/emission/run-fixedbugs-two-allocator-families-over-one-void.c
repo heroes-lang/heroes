@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("void")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -101,7 +100,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 105 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 104 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 158 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_0Arena_eq(void * const *a, void * const *b);
@@ -184,7 +183,7 @@ void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void) { void * h0_a; void *
 #line 45
     t3 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-allocator-families-over-one-void.hero", "fixedbugs-two-allocator-families-over-one-void.main", 45, 5}; { hero_handle_alive_at(t3, "the argument `b` of `arena_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t3, "arena_free", NULL, &hero_here); (void)arena_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); } }
     t4 = h1_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-two-allocator-families-over-one-void.hero", "fixedbugs-two-allocator-families-over-one-void.main", 46, 5}; { hero_handle_alive_at(t4, "the argument `b` of `heap_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t4, "heap_free", NULL, &hero_here); (void)heap_free(t4); if (hero_handle_ended(t4, hero_life_0_0) && h1_h == t4) h1_h = hero_handle_dead(); } } return;
-#line 188 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 187 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_0Arena_eq(void * const *a, void * const *b) {
     return hero_handle_eq(*a, *b);
@@ -305,7 +304,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b7784cc4dc4aa7c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a3987ca422edb85", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugstwoallocatorfamiliesoveronevoid\tfixedbugs-two-allocator-families-over-one-void\n");

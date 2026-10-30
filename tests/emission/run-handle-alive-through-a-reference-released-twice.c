@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -102,7 +101,7 @@ HERO_STR_STATIC(hero_str_11f05721, " refs: ");
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_58753951, "released twice, as C expects");
 
-#line 106 "handlealivethroughareferencereleasedtwice.c"
+#line 105 "handlealivethroughareferencereleasedtwice.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,9 +153,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "handlealivethroughareferencereleasedtwice.c"
+#line 159 "handlealivethroughareferencereleasedtwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_0Cert_eq(x509 * const *a, x509 * const *b);
@@ -185,7 +184,7 @@ void h_handlealivethroughareferencereleasedtwice_main(void) { x509 * h0_cert; in
     t10 = HERO_STR_LIT(hero_str_7b9bb5d3); t11 = h0_cert; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-through-a-reference-released-twice.hero", "handle-alive-through-a-reference-released-twice.main", 20, 21}; hero_handle_alive_at(t11, "the argument `a` of `cert_refs`", &hero_here); t12 = cert_refs(t11); } hero_print_str(t10); hero_print_int(t12); hero_print_end();
     t13 = h0_cert; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-alive-through-a-reference-released-twice.hero", "handle-alive-through-a-reference-released-twice.main", 21, 5}; { hero_handle_alive_at(t13, "the argument `a` of `cert_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "cert_free", NULL, &hero_here); (void)cert_free(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_cert == t13) h0_cert = hero_handle_dead(); } }
     t14 = HERO_STR_LIT(hero_str_58753951); hero_print_str(t14); hero_print_end(); return;
-#line 189 "handlealivethroughareferencereleasedtwice.c"
+#line 188 "handlealivethroughareferencereleasedtwice.c"
 }
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_0Cert_eq(x509 * const *a, x509 * const *b) {
     return hero_handle_eq(*a, *b);
@@ -295,7 +294,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dbf02e3318a9869", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("277736c75ab0f94d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlealivethroughareferencereleasedtwice\thandle-alive-through-a-reference-released-twice\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_35485bab, "alpha");
 HERO_STR_STATIC(hero_str_1cc0f4, "mid");
 HERO_STR_STATIC(hero_str_2e7dfe72, "ages == one");
 
-#line 59 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
+#line 58 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
+#line 96 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -118,7 +117,7 @@ void h_fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext_main(vo
     t1 = HERO_STR_LIT(hero_str_1073aa28); t2 = INT64_C(1); t3 = HERO_STR_LIT(hero_str_35485bab); t4 = INT64_C(2); t5 = HERO_STR_LIT(hero_str_1cc0f4); t6 = INT64_C(3); t7 = hero_map_new(&hero_desc_str, &hero_desc_int, 3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.hero", "fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.main", 8, 12}; hero_map_put_at(t7, &t1, &t2, &hero_here); hero_map_put_at(t7, &t3, &t4, &hero_here); hero_map_put_at(t7, &t5, &t6, &hero_here); } t17 = h4_own4; h4_own4 = t7; hero_map_decref(t17); t18 = h0_ages; hero_map_incref(t7); h0_ages = t7; hero_map_decref(t18);
     t8 = HERO_STR_LIT(hero_str_35485bab); t9 = INT64_C(2); t10 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.hero", "fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.main", 9, 11}; hero_map_put_at(t10, &t8, &t9, &hero_here); } t19 = h5_own5; h5_own5 = t10; hero_map_decref(t19); t20 = h1_one; hero_map_incref(t10); h1_one = t10; hero_map_decref(t20);
     t11 = HERO_STR_LIT(hero_str_2e7dfe72); t12 = h0_ages; t13 = h1_one; t14 = hero_map_eq(t12, t13); t21 = h2_assert0; hero_map_incref(t12); h2_assert0 = t12; hero_map_decref(t21); t22 = h3_assert1; hero_map_incref(t13); h3_assert1 = t13; hero_map_decref(t22); if (t14) goto bb1; else goto bb2; bb1:
-#line 122 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
+#line 121 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
     hero_map_release_at(&h0_ages);
     hero_map_release_at(&h1_one);
     hero_map_release_at(&h2_assert0);
@@ -129,7 +128,7 @@ void h_fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext_main(vo
 bb2:
 #line 10 "tests/golden/run/fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.hero"
     t15 = h2_assert0; t16 = h3_assert1;
-#line 133 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
+#line 132 "fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext.c"
     hero_panic_assert_shown_at(t11, h_0show_7348c008, &t15, &t16, 1, "fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.hero", "fixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text.main", 10, 12);
     hero_unreachable();
 }
@@ -234,7 +233,7 @@ HERO_TU_LOCAL void h_0show_7348c008(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ae8c3b25f2c8639", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d77990119224f95", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonmapswritestheirentriesintheorderoftheirtext\tfixedbugs-016-an-assert-on-maps-writes-their-entries-in-the-order-of-their-text\n");

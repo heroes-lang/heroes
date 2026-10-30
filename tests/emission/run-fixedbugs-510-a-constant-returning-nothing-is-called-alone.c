@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_35a1, "hi");
 HERO_STR_STATIC(hero_str_240d104, "there");
 
-#line 57 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 56 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 typedef void (*h_0fn_54cd2b7b)(HeroStr);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 95 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,20 +114,20 @@ void h_fixedbugs510aconstantreturningnothingiscalledalone_main(void);
 #line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 void h_fixedbugs510aconstantreturningnothingiscalledalone_shout(HeroStr h0_s) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; hero_print_str(t1); hero_print_end(); return;
-#line 119 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 118 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 h_0fn_54cd2b7b h_fixedbugs510aconstantreturningnothingiscalledalone_SHOUT(void) { HERO_NODEBUG h_0fn_54cd2b7b t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs510aconstantreturningnothingiscalledalone_shout; return t1;
-#line 125 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 124 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 void h_fixedbugs510aconstantreturningnothingiscalledalone_main(void) { HERO_NODEBUG h_0fn_54cd2b7b t1, t3; HERO_NODEBUG HeroStr t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs510aconstantreturningnothingiscalledalone_SHOUT(); t2 = HERO_STR_LIT(hero_str_35a1); t1(t2);
     t3 = h_fixedbugs510aconstantreturningnothingiscalledalone_SHOUT(); t4 = HERO_STR_LIT(hero_str_240d104); t3(t4); return;
-#line 132 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 131 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -227,7 +226,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2cf03d15589d7b93", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5610a43b71953127", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantreturningnothingiscalledalone\tfixedbugs-510-a-constant-returning-nothing-is-called-alone\n");

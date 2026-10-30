@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -58,7 +57,7 @@ HERO_STR_STATIC(hero_str_48e8a9b3, "no more words");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_2d, "-");
 
-#line 62 "fixedbugs231oneexitcopiesoutonce.c"
+#line 61 "fixedbugs231oneexitcopiesoutonce.c"
 typedef struct h_fixedbugs231oneexitcopiesoutonce_Reader {
     HeroArrayHeader * f_words;
     int64_t f_pos;
@@ -99,9 +98,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "fixedbugs231oneexitcopiesoutonce.c"
+#line 104 "fixedbugs231oneexitcopiesoutonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs231oneexitcopiesoutonce_0Reader_retain(const h_fixedbugs231oneexitcopiesoutonce_Reader *v);
@@ -132,7 +131,7 @@ h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_known(HeroStr h0_word) { HERO_
     t7 = h0_word; t8 = HERO_STR_LIT(hero_str_21); t9 = hero_str_concat(t7, t8); t12 = h2_own2; h2_own2 = t9; hero_str_decref(t12); hero_str_incref(t9); t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t9}; t13 = h3_own3; h3_own3 = t10; h_0opt_f87774a_release(&t13); h1_ret0 = t10; goto bb4; bb2:
 #line 16
     t4 = HERO_STR_LIT(hero_str_d93bba2); t5 = h0_word; hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t14 = h4_own4; h4_own4 = t6; h_0opt_f87774a_release(&t14); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 136 "fixedbugs231oneexitcopiesoutonce.c"
+#line 135 "fixedbugs231oneexitcopiesoutonce.c"
     t11 = h1_ret0;
     h_0opt_f87774a_retain(&t11);
     hero_str_release_at(&h2_own2);
@@ -152,7 +151,7 @@ h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_next(h_fixedbugs231oneexitcopi
     t5 = HERO_STR_LIT(hero_str_1aab3b); t6 = HERO_STR_LIT(hero_str_48e8a9b3); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t30 = h5_own5; h5_own5 = t7; h_0opt_f87774a_release(&t30); h3_ret0 = t7; goto bb6; bb3: goto bb1; bb4:
 #line 24
     t23 = h2_f0; t24 = t23.as.ok; hero_str_incref(t24); t25 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t24}; t31 = h6_own6; h6_own6 = t25; h_0opt_f87774a_release(&t31); h3_ret0 = t25; goto bb6; bb5: t20 = h2_f0; t21 = t20.as.err; hero_failure_retain(&t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t21}; t32 = h7_own7; h7_own7 = t22; h_0opt_f87774a_release(&t32); h3_ret0 = t22; goto bb6; bb6:
-#line 156 "fixedbugs231oneexitcopiesoutonce.c"
+#line 155 "fixedbugs231oneexitcopiesoutonce.c"
     t26 = h3_ret0;
     h_0opt_f87774a_retain(&t26);
     hero_str_release_at(&h1_word);
@@ -168,7 +167,7 @@ h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_next(h_fixedbugs231oneexitcopi
 void h_fixedbugs231oneexitcopiesoutonce_main(void) { h_fixedbugs231oneexitcopiesoutonce_Reader h0_r = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t6, t7, t11, t15, t16, t20, t24, t25, t29, t37, t38, t41, t42, t45, t46; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_r1 = {0}, h6_r2 = {0}, t1, t2, t12, t13, t14, t21, t22, t23, t30, t31, t32, t39, t40, t43, t44, t47, t48; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t3, *t34; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader h8_own8 = {0}, t5, t35, t36; HERO_NODEBUG int64_t t4, t8, t9, t17, t18, t26, t27, t33; HERO_NODEBUG bool t10, t19, t28; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_61); t2 = HERO_STR_LIT(hero_str_78); t3 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t34 = h7_own7; h7_own7 = t3; hero_array_decref(t34); t4 = INT64_C(0); hero_array_incref(t3); t5 = (h_fixedbugs231oneexitcopiesoutonce_Reader){.f_words = t3, .f_pos = t4}; t35 = h8_own8; h8_own8 = t5; h_fixedbugs231oneexitcopiesoutonce_0Reader_release(&t35); t36 = h0_r; h_fixedbugs231oneexitcopiesoutonce_0Reader_retain(&t5); h0_r = t5; h_fixedbugs231oneexitcopiesoutonce_0Reader_release(&t36);
     t6 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r); t37 = h9_own9; h9_own9 = t6; h_0opt_f87774a_release(&t37); t38 = h1_f0; h_0opt_f87774a_retain(&t6); h1_f0 = t6; h_0opt_f87774a_release(&t38); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; t39 = h2_r0; hero_str_incref(t12); h2_r0 = t12; hero_str_decref(t39); goto bb3; bb2: t13 = HERO_STR_LIT(hero_str_2d); t40 = h2_r0; hero_str_incref(t13); h2_r0 = t13; hero_str_decref(t40); goto bb3; bb3: t14 = h2_r0; t15 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r); t41 = h10_own10; h10_own10 = t15; h_0opt_f87774a_release(&t41); t42 = h3_f1; h_0opt_f87774a_retain(&t15); h3_f1 = t15; h_0opt_f87774a_release(&t42); t16 = h3_f1; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb4; else goto bb5; bb4: t20 = h3_f1; t21 = t20.as.ok; t43 = h4_r1; hero_str_incref(t21); h4_r1 = t21; hero_str_decref(t43); goto bb6; bb5: t22 = HERO_STR_LIT(hero_str_2d); t44 = h4_r1; hero_str_incref(t22); h4_r1 = t22; hero_str_decref(t44); goto bb6; bb6: t23 = h4_r1; t24 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r); t45 = h11_own11; h11_own11 = t24; h_0opt_f87774a_release(&t45); t46 = h5_f2; h_0opt_f87774a_retain(&t24); h5_f2 = t24; h_0opt_f87774a_release(&t46); t25 = h5_f2; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb7; else goto bb8; bb7: t29 = h5_f2; t30 = t29.as.ok; t47 = h6_r2; hero_str_incref(t30); h6_r2 = t30; hero_str_decref(t47); goto bb9; bb8: t31 = HERO_STR_LIT(hero_str_2d); t48 = h6_r2; hero_str_incref(t31); h6_r2 = t31; hero_str_decref(t48); goto bb9; bb9: t32 = h6_r2; t33 = h0_r.f_pos; hero_print_str(t14); hero_print_str(t23); hero_print_str(t32); hero_print_int(t33); hero_print_end();
-#line 172 "fixedbugs231oneexitcopiesoutonce.c"
+#line 171 "fixedbugs231oneexitcopiesoutonce.c"
     h_fixedbugs231oneexitcopiesoutonce_0Reader_release(hero_slot_escape(&h0_r));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
@@ -302,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("729024877fdce693", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3762f46543f0a4de", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs231oneexitcopiesoutonce\tfixedbugs-231-one-exit-copies-out-once\n");

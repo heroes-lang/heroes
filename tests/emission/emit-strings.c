@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_1b7183, "hi ");
 HERO_STR_STATIC(hero_str_2d678ad8, "good day ");
 HERO_STR_STATIC(hero_str_39ff1ae6, "Ziggy");
 
-#line 58 "strings.c"
+#line 57 "strings.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "strings.c"
+#line 95 "strings.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -118,7 +117,7 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) { HeroStr h2_prefix = {
     t2 = h1_formal; if (t2) goto bb2; else goto bb3; bb1:
 #line 12
     t4 = h2_prefix; t5 = h0_name; t6 = hero_str_concat(t4, t5); t8 = h3_own3; h3_own3 = t6; hero_str_decref(t8);
-#line 122 "strings.c"
+#line 121 "strings.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_prefix);
     hero_str_release_at(&h3_own3);
@@ -126,13 +125,13 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) { HeroStr h2_prefix = {
 bb2:
 #line 11 "tests/golden/emit/strings.hero"
     t3 = HERO_STR_LIT(hero_str_2d678ad8); t9 = h2_prefix; hero_str_incref(t3); h2_prefix = t3; hero_str_decref(t9); goto bb1; bb3: goto bb1;
-#line 130 "strings.c"
+#line 129 "strings.c"
 }
 
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t4; HERO_NODEBUG bool t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_39ff1ae6); t2 = true; t3 = h_strings_greet(t1, t2); t4 = h0_own0; h0_own0 = t3; hero_str_decref(t4); hero_print_str(t3); hero_print_end();
-#line 136 "strings.c"
+#line 135 "strings.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -233,7 +232,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a5035af7309a55f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7274934322662756", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_strings_main();

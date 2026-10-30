@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -59,7 +58,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_222679ce, "found: ");
 
-#line 63 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 62 "fixedbugs275afailuremessagekeepsitslastletter.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -103,9 +102,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 109 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 108 "fixedbugs275afailuremessagekeepsitslastletter.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -150,7 +149,7 @@ void h_fixedbugs275afailuremessagekeepsitslastletter_main(void) { HeroArrayHeade
 #line 30
     t62 = true; t63 = hero_bool_to_str(t62); t89 = h17_own17; h17_own17 = t63; hero_str_decref(t89); t64 = HERO_STR_LIT(hero_str_1088); t65 = true; t66 = hero_bool_to_str(t65); t90 = h18_own18; h18_own18 = t66; hero_str_decref(t90); t67 = hero_str_len(t66); t68 = HERO_STR_LIT(hero_str_29); hero_print_str(t63); hero_print_str(t64); hero_print_int(t67); hero_print_str(t68); hero_print_end();
     t69 = false; t70 = hero_bool_to_str(t69); t91 = h19_own19; h19_own19 = t70; hero_str_decref(t91); t71 = HERO_STR_LIT(hero_str_1088); t72 = false; t73 = hero_bool_to_str(t72); t92 = h20_own20; h20_own20 = t73; hero_str_decref(t92); t74 = hero_str_len(t73); t75 = HERO_STR_LIT(hero_str_29); hero_print_str(t70); hero_print_str(t71); hero_print_int(t74); hero_print_str(t75); hero_print_end();
-#line 154 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 153 "fixedbugs275afailuremessagekeepsitslastletter.c"
     hero_array_release_at(&h0_b);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_s);
@@ -174,7 +173,7 @@ bb8:
 #line 27 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t49 = h9_s2; t50 = t49.as.ok; h10_n = t50; t51 = HERO_STR_LIT(hero_str_222679ce); t52 = h10_n; hero_print_str(t51); hero_print_int(t52); hero_print_end(); goto bb7; bb9:
     t53 = h9_s2; t54 = t53.as.err; t93 = h11_e; hero_failure_retain(&t54); h11_e = t54; hero_failure_release(&t93); t55 = h11_e.code; t56 = HERO_STR_LIT(hero_str_1dce); t57 = h11_e.msg; t58 = HERO_STR_LIT(hero_str_1088); t59 = h11_e.msg; t60 = hero_str_len(t59); t61 = HERO_STR_LIT(hero_str_29); hero_print_str(t55); hero_print_str(t56); hero_print_str(t57); hero_print_str(t58); hero_print_int(t60); hero_print_str(t61); hero_print_end(); goto bb7;
-#line 178 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 177 "fixedbugs275afailuremessagekeepsitslastletter.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -305,7 +304,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("63c4033d0f888369", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("18cf645c55af3cd6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs275afailuremessagekeepsitslastletter\tfixedbugs-275-a-failure-message-keeps-its-last-letter\n");

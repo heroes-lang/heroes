@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_eb4ac31, "mars");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 60 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 59 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 typedef enum h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag {
     h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_dot = 0,
     h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_line = 1,
@@ -108,9 +107,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 113 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_c_line_eq(const h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_c_line *a, const h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_c_line *b);
@@ -158,14 +157,14 @@ void h_fixedbugs382aconstantreadinaloopkeepsitsvalues_main(void);
 #if HERO_STATIC_CONSTANTS
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_DIGITS_9, int64_t, &hero_desc_int, 8, INT64_C(3), INT64_C(1), INT64_C(4), INT64_C(1), INT64_C(5), INT64_C(9), INT64_C(2), INT64_C(6)); HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_DIGITS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_DIGITS_9);
-#line 162 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 161 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 #else
 
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_DIGITS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t9, *t10; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = INT64_C(1); t3 = INT64_C(4); t4 = INT64_C(1); t5 = INT64_C(5); t6 = INT64_C(9); t7 = INT64_C(2); t8 = INT64_C(6); t9 = hero_array_new(&hero_desc_int, 8); hero_array_push_owned(&t9, &t1); hero_array_push_owned(&t9, &t2); hero_array_push_owned(&t9, &t3); hero_array_push_owned(&t9, &t4); hero_array_push_owned(&t9, &t5); hero_array_push_owned(&t9, &t6); hero_array_push_owned(&t9, &t7); hero_array_push_owned(&t9, &t8); t10 = h0_own0; h0_own0 = t9; hero_array_decref(t10);
-#line 169 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 168 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     return t9;
@@ -175,14 +174,14 @@ HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_DIGITS(void) 
 #if HERO_STATIC_CONSTANTS
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_WORDS_5, HeroStr, &hero_desc_str, 4, HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_318606e5), HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_eb4ac31)); HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_WORDS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_WORDS_5);
-#line 179 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 178 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 #else
 
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_WORDS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG HeroStr t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = HERO_STR_LIT(hero_str_318606e5); t3 = HERO_STR_LIT(hero_str_0); t4 = HERO_STR_LIT(hero_str_eb4ac31); t5 = hero_array_new(&hero_desc_str, 4); hero_array_push_owned(&t5, &t1); hero_array_push_owned(&t5, &t2); hero_array_push_owned(&t5, &t3); hero_array_push_owned(&t5, &t4); t6 = h0_own0; h0_own0 = t5; hero_array_decref(t6);
-#line 186 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 185 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -192,14 +191,14 @@ HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_WORDS(void) {
 #if HERO_STATIC_CONSTANTS
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_3, int64_t, &hero_desc_int, 2, INT64_C(1), INT64_C(2)); HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_4, &hero_desc_int); HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_8, int64_t, &hero_desc_int, 3, INT64_C(3), INT64_C(4), INT64_C(5)); HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_9, HeroArrayHeader *, &hero_desc_array, 3, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_3), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_4), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_8)); HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID_9);
-#line 196 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 195 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 #else
 
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *t3, *t4, *t8, *t9, *t10, *t11, *t12, *t13; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t10 = h0_own0; h0_own0 = t3; hero_array_decref(t10); t4 = hero_array_new(&hero_desc_int, 1); t11 = h1_own1; h1_own1 = t4; hero_array_decref(t11); t5 = INT64_C(3); t6 = INT64_C(4); t7 = INT64_C(5); t8 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t12 = h2_own2; h2_own2 = t8; hero_array_decref(t12); t9 = hero_array_new(&hero_desc_array, 3); hero_array_push_owned(&t9, &t3); hero_array_push_owned(&t9, &t4); hero_array_push_owned(&t9, &t8); t13 = h3_own3; h3_own3 = t9; hero_array_decref(t13);
-#line 203 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 202 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -212,14 +211,14 @@ HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID(void) { 
 #if HERO_STATIC_CONSTANTS
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_SHAPES_5, h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape, &h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_desc, 3, (h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape){.tag = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_dot}, (h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape){.tag = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_line, .as.c_line = {.f_n = INT64_C(7)}}, (h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape){.tag = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_dot}); HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_SHAPES(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_SHAPES_5);
-#line 216 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 215 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 #else
 
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_SHAPES(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape t1, t3, t4; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape){.tag = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_dot}; t2 = INT64_C(7); t3 = (h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape){.tag = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_line, .as.c_line = {.f_n = t2}}; t4 = (h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape){.tag = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_tag_dot}; t5 = hero_array_new(&h_fixedbugs382aconstantreadinaloopkeepsitsvalues_0Shape_desc, 3); hero_array_push_owned(&t5, &t1); hero_array_push_owned(&t5, &t3); hero_array_push_owned(&t5, &t4); t6 = h0_own0; h0_own0 = t5; hero_array_decref(t6);
-#line 223 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 222 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -229,14 +228,14 @@ HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_SHAPES(void) 
 #if HERO_STATIC_CONSTANTS
 #line 35 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_NONE_1, &hero_desc_int); HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_NONE(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantreadinaloopkeepsitsvalues_NONE_1);
-#line 233 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 232 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 #else
 
 #line 35 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantreadinaloopkeepsitsvalues_NONE(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t1, *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t2 = h0_own0; h0_own0 = t1; hero_array_decref(t2);
-#line 240 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 239 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -253,7 +252,7 @@ int64_t h_fixedbugs382aconstantreadinaloopkeepsitsvalues_measure(h_fixedbugs382a
     t5 = h1_s0; t6 = t5.as.c_line; h3_l = t6; t7 = h3_l.f_n;
 #line 39
     h2_r0 = t7; goto bb1;
-#line 257 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 256 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -274,7 +273,7 @@ void h_fixedbugs382aconstantreadinaloopkeepsitsvalues_main(void) { int64_t h0_to
 #line 58
     t65 = h0_total; t66 = HERO_STR_LIT(hero_str_20); t67 = h1_letters; t68 = HERO_STR_LIT(hero_str_20); t69 = h2_cells; t70 = HERO_STR_LIT(hero_str_20); t71 = h3_lengths; hero_print_int(t65); hero_print_str(t66); hero_print_int(t67); hero_print_str(t68); hero_print_int(t69); hero_print_str(t70); hero_print_int(t71); hero_print_end();
     t72 = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_WORDS(); t91 = h12_own12; h12_own12 = t72; hero_array_decref(t91); t73 = INT64_C(1); t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? hero_panic_index_at(t72, t73, "fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero", "fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.main", 59, 11) : (void)0), (void)(t72->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t72 + 1))[t73]); t75 = HERO_STR_LIT(hero_str_20); t76 = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_GRID(); t92 = h13_own13; h13_own13 = t76; hero_array_decref(t92); t77 = INT64_C(2); t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? hero_panic_index_at(t76, t77, "fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero", "fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.main", 59, 26) : (void)0), (void)(t76->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t76 + 1))[t77]); t79 = INT64_C(2); t80 = ((void)((t78 == NULL || t79 < 0 || t79 >= t78->len) ? hero_panic_index_at(t78, t79, "fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero", "fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.main", 59, 26) : (void)0), (void)(t78->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t78 + 1))[t79]); t81 = HERO_STR_LIT(hero_str_20); t82 = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_NONE(); t93 = h14_own14; h14_own14 = t82; hero_array_decref(t93); t83 = ((void)(t82 == NULL ? ((void)hero_array_len(t82), hero_unreachable()) : (void)0), t82->len); hero_print_str(t74); hero_print_str(t75); hero_print_int(t80); hero_print_str(t81); hero_print_int(t83); hero_print_end();
-#line 278 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 277 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_release_at(&h5_here);
     hero_array_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);
@@ -416,7 +415,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0efd26c742438774", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("263726be5f282302", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantreadinaloopkeepsitsvalues\tfixedbugs-382-a-constant-read-in-a-loop-keeps-its-values\n");

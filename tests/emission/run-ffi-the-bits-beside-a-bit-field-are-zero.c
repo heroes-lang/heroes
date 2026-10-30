@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("n")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -81,7 +80,7 @@ _Static_assert(_Generic(&((struct ob *)0)->inr, struct bf *: 1, default: 0) && s
 #line 26
 _Static_assert(sizeof(struct ar) - __builtin_offsetof(struct ar, e) != 0, "heroes-ffi-flex Ar e"); _Static_assert(_Generic(&((struct ar *)0)->e, struct bf (*)[2]: 1, default: 0) && sizeof(struct ar) - __builtin_offsetof(struct ar, e) >= sizeof(struct bf[2]), "heroes-ffi-field Ar e");
 _Static_assert(__builtin_classify_type(((struct ar *)0)->n) == 1 && sizeof(((struct ar *)0)->n) == sizeof(int32_t) && (_Generic(((struct ar *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Ar n");
-#line 85 "ffithebitsbesideabitfieldarezero.c"
+#line 84 "ffithebitsbesideabitfieldarezero.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -197,9 +196,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 203 "ffithebitsbesideabitfieldarezero.c"
+#line 202 "ffithebitsbesideabitfieldarezero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Bf_eq(const struct bf *a, const struct bf *b);
@@ -384,7 +383,7 @@ void h_ffithebitsbesideabitfieldarezero_main(void) { __attribute__((unused)) h_f
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 56, 9}; hero_pad_fill(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_g_4, hero_pad_n_4); hero_pad_clear(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_m_4, hero_pad_mn_4); t13 = check_ob(&h0_h.f_ob); } h5_e = t13;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 57, 9}; hero_pad_fill(&h0_h.f_ar, sizeof(struct ar), 1, hero_pad_g_5, hero_pad_n_5); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_m_0, hero_pad_mn_0); } t14 = check_ar(&h0_h.f_ar); } h6_f = t14;
     t15 = h1_a; t16 = HERO_STR_LIT(hero_str_20); t17 = h2_b; t18 = HERO_STR_LIT(hero_str_20); t19 = h3_c; t20 = HERO_STR_LIT(hero_str_20); t21 = h4_d; t22 = HERO_STR_LIT(hero_str_20); t23 = h5_e; t24 = HERO_STR_LIT(hero_str_20); t25 = h6_f; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_int(t23); hero_print_str(t24); hero_print_int(t25); hero_print_end(); return;
-#line 388 "ffithebitsbesideabitfieldarezero.c"
+#line 387 "ffithebitsbesideabitfieldarezero.c"
 }
 HERO_TU_LOCAL bool h_ffithebitsbesideabitfieldarezero_0Bf_eq(const struct bf *a, const struct bf *b) {
     hero_panic("h_ffithebitsbesideabitfieldarezero_0Bf_eq: a partial record has no structural equality");
@@ -555,7 +554,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d3bb1dd3d23ce95", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f24b1fb2ced3417", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffithebitsbesideabitfieldarezero\tffi-the-bits-beside-a-bit-field-are-zero\n");

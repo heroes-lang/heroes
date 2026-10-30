@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "main.c"
+#line 53 "main.c"
 typedef struct h_0opt_1ec004 {
     int64_t tag;
     union {
@@ -142,9 +141,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "main.c"
+#line 147 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
@@ -200,31 +199,31 @@ void h_main_main(void);
 #line 31 "examples/widths/main.hero"
 int64_t h_main_BYTE_MAX(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(255); return t1;
-#line 204 "main.c"
+#line 203 "main.c"
 }
 
 #line 34 "examples/widths/main.hero"
 int64_t h_main_TOO_BIG_FOR_A_BYTE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(256); return t1;
-#line 210 "main.c"
+#line 209 "main.c"
 }
 
 #line 39 "examples/widths/main.hero"
 int64_t h_main_I8_MIN(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(128); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.I8_MIN", 40, 5); return t3;
-#line 216 "main.c"
+#line 215 "main.c"
 }
 
 #line 42 "examples/widths/main.hero"
 int64_t h_main_I8_MAX(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(127); return t1;
-#line 222 "main.c"
+#line 221 "main.c"
 }
 
 #line 48 "examples/widths/main.hero"
 bool h_main_fits_a_byte(int64_t h0_value) { HERO_NODEBUG h_0opt_1ec004 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t8, t9; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_value; if (t1 >= 0LL && t1 <= 255LL) { t2 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t1}; } else { t2 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t8 = h2_own2; h2_own2 = t2; h_0opt_1ec004_release(&t8); t9 = h1_f0; h_0opt_1ec004_retain(&t2); h1_f0 = t2; h_0opt_1ec004_release(&t9); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(1); t6 = t4 == t5; t7 = !t6;
-#line 228 "main.c"
+#line 227 "main.c"
     h_0opt_1ec004_release(hero_slot_escape(&h1_f0));
     h_0opt_1ec004_release(hero_slot_escape(&h2_own2));
     return t7;
@@ -239,7 +238,7 @@ h_0opt_e201354 h_main_through_a_byte(int64_t h0_value) { HERO_NODEBUG h_0opt_1ec
     t7 = h1_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t28 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t28); h4_ret0 = t9; goto bb5; bb3:
 #line 59
     t20 = h3_f1; t21 = t20.as.ok; t22 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t21}; t29 = h8_own8; h8_own8 = t22; h_0opt_e201354_release(&t29); h4_ret0 = t22; goto bb5; bb4: t18 = h3_f1; t19 = t18.as.err;
-#line 243 "main.c"
+#line 242 "main.c"
     hero_panic_must_at(t19, "main.hero", "main.through_a_byte", 59, 15);
     hero_unreachable();
 bb5:
@@ -257,14 +256,14 @@ bb5:
 #line 64 "examples/widths/main.hero"
 int64_t h_main_truncated(double h0_value) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG double t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_value; if (hero_f64_fits_int(t1)) { t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t1)}; } else { t2 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t11 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok;
-#line 261 "main.c"
+#line 260 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
 bb2:
 #line 65 "examples/widths/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 268 "main.c"
+#line 267 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.truncated", 65, 12);
     hero_unreachable();
 }
@@ -300,7 +299,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h
     t79 = h10_b; t80 = hero_int_to_str(t79); t101 = h18_own18; h18_own18 = t80; hero_str_decref(t101); hero_print_str(t80); hero_print_end();
     t81 = INT64_C(0); t82 = INT64_C(1); if (__builtin_sub_overflow(t81, t82, &t83)) hero_panic_overflow_at("main.hero", "main.main", 107, 12); t84 = hero_int_to_str(t83); t102 = h19_own19; h19_own19 = t84; hero_str_decref(t102); hero_print_str(t84); hero_print_end();
     t85 = 0x1.4p+1; t86 = hero_f64_to_str(t85); t103 = h20_own20; h20_own20 = t86; hero_str_decref(t103); hero_print_str(t86); hero_print_end();
-#line 304 "main.c"
+#line 303 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_f1));
     h_0opt_1b9b98_release(hero_slot_escape(&h2_f2));
@@ -322,7 +321,7 @@ void h_main_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h
 bb2:
 #line 76 "examples/widths/main.hero"
     t17 = h0_f0; t18 = t17.as.err;
-#line 326 "main.c"
+#line 325 "main.c"
     hero_panic_must_at(t18, "main.hero", "main.main", 76, 11);
     hero_unreachable();
 }
@@ -647,7 +646,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f3d9093790196c4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("68aaa70d6d48abc7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

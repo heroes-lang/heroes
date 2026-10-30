@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_45197abb, "unreached");
 
-#line 56 "placeanelementunderanothernamesthecallitislentto.c"
+#line 55 "placeanelementunderanothernamesthecallitislentto.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "placeanelementunderanothernamesthecallitislentto.c"
+#line 93 "placeanelementunderanothernamesthecallitislentto.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,7 +111,7 @@ void h_placeanelementunderanothernamesthecallitislentto_main(void);
 #line 6 "tests/golden/run/place-an-element-under-another-names-the-call-it-is-lent-to.hero"
 void h_placeanelementunderanothernamesthecallitislentto_bump(int64_t *ph0_x, int64_t h1_by) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_x); t2 = h1_by; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("place-an-element-under-another-names-the-call-it-is-lent-to.hero", "place-an-element-under-another-names-the-call-it-is-lent-to.bump", 7, 9); (*ph0_x) = t3; return;
-#line 116 "placeanelementunderanothernamesthecallitislentto.c"
+#line 115 "placeanelementunderanothernamesthecallitislentto.c"
 }
 
 #line 9 "tests/golden/run/place-an-element-under-another-names-the-call-it-is-lent-to.hero"
@@ -122,7 +121,7 @@ void h_placeanelementunderanothernamesthecallitislentto_main(void) { HeroArrayHe
     t10 = h0_g; t11 = INT64_C(0); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "place-an-element-under-another-names-the-call-it-is-lent-to.hero", "place-an-element-under-another-names-the-call-it-is-lent-to.main", 12, 11) : (void)0), (void)(t10->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t10 + 1))[t11]); t13 = INT64_C(1); t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "place-an-element-under-another-names-the-call-it-is-lent-to.hero", "place-an-element-under-another-names-the-call-it-is-lent-to.main", 12, 11) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); hero_print_int(t14); hero_print_end();
     t15 = INT64_C(1); t16 = INT64_C(1); t17 = INT64_C(10); hero_array_unshare(&(h0_g)); hero_array_unshare(&((*((void)((h0_g == NULL || t15 < 0 || t15 >= h0_g->len) ? hero_panic_index_at(h0_g, t15, "place-an-element-under-another-names-the-call-it-is-lent-to.hero", "place-an-element-under-another-names-the-call-it-is-lent-to.main", 13, 5) : (void)0), (void)(h0_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h0_g + 1) + t15)))); h_placeanelementunderanothernamesthecallitislentto_bump(&(*(int64_t *)hero_array_at_mut_at((*((void)((h0_g == NULL || t15 < 0 || t15 >= h0_g->len) ? hero_panic_index_at(h0_g, t15, "place-an-element-under-another-names-the-call-it-is-lent-to.hero", "place-an-element-under-another-names-the-call-it-is-lent-to.main", 13, 5) : (void)0), (void)(h0_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h0_g + 1) + t15)), t16, "place-an-element-under-another-names-the-call-it-is-lent-to.hero", "place-an-element-under-another-names-the-call-it-is-lent-to.main", 13, 5)), t17);
     t18 = HERO_STR_LIT(hero_str_45197abb); hero_print_str(t18); hero_print_end();
-#line 126 "placeanelementunderanothernamesthecallitislentto.c"
+#line 125 "placeanelementunderanothernamesthecallitislentto.c"
     hero_array_release_at(&h0_g);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -226,7 +225,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3165ff4705ea6ec2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("596b73ef3eccbe30", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanelementunderanothernamesthecallitislentto\tplace-an-element-under-another-names-the-call-it-is-lent-to\n");

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -49,7 +48,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -101,7 +100,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_52c92387, "heroes-589-XXXXXX");
 
-#line 105 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 104 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 typedef struct h_0opt_fbbb698 {
     int64_t tag;
     union {
@@ -164,9 +163,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 170 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 169 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
@@ -191,7 +190,7 @@ void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
 int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
-#line 195 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 194 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     _Static_assert(HERO_RET_I32(PR_GET_PDEATHSIG), "heroes-ffi-return PR_GET_PDEATHSIG i32");
     _Static_assert(__builtin_constant_p(PR_GET_PDEATHSIG), "heroes-ffi-const PR_GET_PDEATHSIG");
 #pragma clang diagnostic push
@@ -203,7 +202,7 @@ int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     return PR_GET_PDEATHSIG;
-#line 207 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 206 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -226,14 +225,14 @@ void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void) { HERO_NODEBUG h_0
     t16 = h1_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero", "fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.main", 30, 13}; t17 = (void *)mktemp(t16); } h2_named = t17;
     t18 = h2_named; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero", "fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.main", 31, 11}; t19 = strlen(t18); } hero_print_uint(t19); hero_print_end();
     t20 = h1_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero", "fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.main", 32, 5}; (void)free(t20); }
-#line 230 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 229 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
     return;
 bb2:
 #line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     t7 = h0_f0; t8 = t7.as.err;
-#line 237 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 236 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     hero_panic_must_at(t8, "fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero", "fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.main", 28, 16);
     hero_unreachable();
 }
@@ -366,7 +365,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5aaddc5449576bd7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4464c8376e8d4b4d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs589acallofmktemplinkssilentonlinux\tfixedbugs-589-a-call-of-mktemp-links-silent-on-linux\n");

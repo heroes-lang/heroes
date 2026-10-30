@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -99,7 +98,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 103 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
+#line 102 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -154,9 +153,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
+#line 159 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_0FdSet_eq(fd_set * const *a, fd_set * const *b);
@@ -185,7 +184,7 @@ void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void) { fd_
     t7 = INT64_C(3); t8 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 25, 11}; hero_handle_alive_at(t8, "the argument `s` of `hero_fd_isset`", &hero_here); t9 = hero_fd_isset(t7, t8); } hero_print_int(t9); hero_print_end();
     t10 = INT64_C(4); t11 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 26, 11}; hero_handle_alive_at(t11, "the argument `s` of `hero_fd_isset`", &hero_here); t12 = hero_fd_isset(t10, t11); } hero_print_int(t12); hero_print_end();
     t13 = h0_s; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero", "fixedbugs-143-system-macros-through-functions-of-the-programs-own.main", 27, 5}; { hero_handle_alive_at(t13, "the argument `s` of `hero_fd_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "hero_fd_free", NULL, &hero_here); (void)hero_fd_free(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_s == t13) h0_s = hero_handle_dead(); } } return;
-#line 189 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
+#line 188 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_0FdSet_eq(fd_set * const *a, fd_set * const *b) {
     return hero_handle_eq(*a, *b);
@@ -295,7 +294,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("078c387a2811784f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7485cd6e0df5e31b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs143systemmacrosthroughfunctionsoftheprogramsown\tfixedbugs-143-system-macros-through-functions-of-the-programs-own\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_0, "");
 
-#line 59 "acallbacknamedthelibraryway.c"
+#line 58 "acallbacknamedthelibraryway.c"
 typedef HeroStr (*h_0fn_2248724e)(HeroStr, HeroStr);
 typedef int64_t (*h_0fn_6ca17148)(int64_t, int64_t);
 typedef HeroStr (*h_0fn_1fb9aa18)(HeroStr, int64_t);
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "acallbacknamedthelibraryway.c"
+#line 101 "acallbacknamedthelibraryway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -128,7 +127,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroStr hero_value_h_library_0fold_37fb3fc
 #line 20 "tests/golden/run/a-callback-named-the-library-way.hero"
 HeroStr h_acallbacknamedthelibraryway_join_up(HeroStr h0_acc, HeroStr h1_item) { HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; t3 = hero_str_concat(t1, t2); t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 132 "acallbacknamedthelibraryway.c"
+#line 131 "acallbacknamedthelibraryway.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     return t3;
@@ -137,13 +136,13 @@ HeroStr h_acallbacknamedthelibraryway_join_up(HeroStr h0_acc, HeroStr h1_item) {
 #line 23 "tests/golden/run/a-callback-named-the-library-way.hero"
 int64_t h_acallbacknamedthelibraryway_running(int64_t h0_acc, int64_t h1_item) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("a-callback-named-the-library-way.hero", "a-callback-named-the-library-way.running", 24, 12); return t3;
-#line 141 "acallbacknamedthelibraryway.c"
+#line 140 "acallbacknamedthelibraryway.c"
 }
 
 #line 26 "tests/golden/run/a-callback-named-the-library-way.hero"
 HeroStr h_acallbacknamedthelibraryway_tally(HeroStr h0_acc, int64_t h1_item) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t3, t4, t5, t6; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; t3 = hero_int_to_str(t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5); t4 = hero_str_concat(t1, t3); t6 = h3_own3; h3_own3 = t4; hero_str_decref(t6);
-#line 147 "acallbacknamedthelibraryway.c"
+#line 146 "acallbacknamedthelibraryway.c"
     hero_str_incref(t4);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -157,7 +156,7 @@ void h_acallbacknamedthelibraryway_main(void) { HeroArrayHeader * h0_words = {0}
     t9 = INT64_C(1); t10 = INT64_C(2); t11 = INT64_C(3); t12 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t12, &t9); hero_array_push_owned(&t12, &t10); hero_array_push_owned(&t12, &t11); t24 = h4_own4; h4_own4 = t12; hero_array_decref(t24); t25 = h1_ns; hero_array_incref(t12); h1_ns = t12; hero_array_decref(t25);
     t13 = h1_ns; t14 = INT64_C(0); t15 = h_acallbacknamedthelibraryway_running; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-callback-named-the-library-way.hero", "a-callback-named-the-library-way.main", 33, 11}; t16 = h_library_0fold_37f8817a(t13, t14, t15, &hero_here); } hero_print_int(t16); hero_print_end();
     t17 = h1_ns; t18 = HERO_STR_LIT(hero_str_0); t19 = h_acallbacknamedthelibraryway_tally; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-callback-named-the-library-way.hero", "a-callback-named-the-library-way.main", 34, 11}; t20 = h_library_0fold_37fb3fcc(t17, t18, t19, &hero_here); } t26 = h5_own5; h5_own5 = t20; hero_str_decref(t26); hero_print_str(t20); hero_print_end();
-#line 161 "acallbacknamedthelibraryway.c"
+#line 160 "acallbacknamedthelibraryway.c"
     hero_array_release_at(&h0_words);
     hero_array_release_at(&h1_ns);
     hero_array_release_at(&h2_own2);
@@ -176,7 +175,7 @@ void h_acallbacknamedthelibraryway_main(void) { HeroArrayHeader * h0_words = {0}
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 180 "acallbacknamedthelibraryway.c"
+#line 179 "acallbacknamedthelibraryway.c"
     hero_str_incref(t18);
     hero_str_release_at(&h3_total);
     hero_array_release_at(&h4_xs0);
@@ -198,7 +197,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroStr hero_value_h_library_0fold_f720dcd
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 202 "acallbacknamedthelibraryway.c"
+#line 201 "acallbacknamedthelibraryway.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -216,7 +215,7 @@ HERO_TU_LOCAL __attribute__((unused)) int64_t hero_value_h_library_0fold_37f8817
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 220 "acallbacknamedthelibraryway.c"
+#line 219 "acallbacknamedthelibraryway.c"
     hero_str_incref(t18);
     hero_str_release_at(&h3_total);
     hero_array_release_at(&h4_xs0);
@@ -324,7 +323,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e27590e3f24909b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("658501b822f82e3a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("acallbacknamedthelibraryway\ta-callback-named-the-library-way\n");

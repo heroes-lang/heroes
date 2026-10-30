@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_19db79, "bad");
 HERO_STR_STATIC(hero_str_2841ae77, "x\ty\npanic: integer overflow");
 
-#line 57 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
+#line 56 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
+#line 94 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -117,7 +116,7 @@ h_0opt_e201354 h_fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheir
     t7 = h0_n; t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t7}; t10 = h2_own2; h2_own2 = t8; h_0opt_e201354_release(&t10); h1_ret0 = t8; goto bb4; bb2:
 #line 11
     t4 = HERO_STR_LIT(hero_str_19db79); t5 = HERO_STR_LIT(hero_str_2841ae77); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t11 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t11); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 121 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
+#line 120 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
     t9 = h1_ret0;
     h_0opt_e201354_retain(&t9);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -128,14 +127,14 @@ h_0opt_e201354 h_fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheir
 #line 14 "tests/golden/run/fixedbugs-2225-a-must-message-holding-a-line-feed-or-a-tab-is-written-by-their-codes.hero"
 void h_fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_own1 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int64_t t1, t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = h_fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes_check(t1); t11 = h1_own1; h1_own1 = t2; h_0opt_e201354_release(&t11); t12 = h0_f0; h_0opt_e201354_retain(&t2); h0_f0 = t2; h_0opt_e201354_release(&t12); t3 = h0_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h0_f0; t10 = t9.as.ok; hero_print_int(t10); hero_print_end();
-#line 132 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
+#line 131 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return;
 bb2:
 #line 15 "tests/golden/run/fixedbugs-2225-a-must-message-holding-a-line-feed-or-a-tab-is-written-by-their-codes.hero"
     t7 = h0_f0; t8 = t7.as.err;
-#line 139 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
+#line 138 "fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes.c"
     hero_panic_must_at(t8, "fixedbugs-2225-a-must-message-holding-a-line-feed-or-a-tab-is-written-by-their-codes.hero", "fixedbugs-2225-a-must-message-holding-a-line-feed-or-a-tab-is-written-by-their-codes.main", 15, 11);
     hero_unreachable();
 }
@@ -236,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7dd92ebb61fdbf74", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("15e77423007dbdbc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2225amustmessageholdingalinefeedoratabiswrittenbytheircodes\tfixedbugs-2225-a-must-message-holding-a-line-feed-or-a-tab-is-written-by-their-codes\n");

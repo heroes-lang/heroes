@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ HERO_STR_STATIC(hero_str_6745c33, "mask ");
 HERO_STR_STATIC(hero_str_eb4aef0, "max ");
 HERO_STR_STATIC(hero_str_d1be6eb, "all ");
 
-#line 67 "literalbases.c"
+#line 66 "literalbases.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -99,9 +98,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "literalbases.c"
+#line 104 "literalbases.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -132,7 +131,7 @@ void h_literalbases_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t5,
     t24 = HERO_STR_LIT(hero_str_6745c33); t25 = INT64_C(240); t26 = INT64_C(60); t27 = t25 & t26; t28 = HERO_STR_LIT(hero_str_20); t29 = INT64_C(10); t30 = INT64_C(5); t31 = t29 | t30; t32 = HERO_STR_LIT(hero_str_20); t33 = INT64_C(255); t34 = INT64_C(15); t35 = t33 ^ t34; hero_print_str(t24); hero_print_int(t27); hero_print_str(t28); hero_print_int(t31); hero_print_str(t32); hero_print_int(t35); hero_print_end();
     t36 = HERO_STR_LIT(hero_str_eb4aef0); t37 = INT64_C(9223372036854775807); hero_print_str(t36); hero_print_int(t37); hero_print_end();
     t38 = HERO_STR_LIT(hero_str_d1be6eb); t39 = INT64_C(0); t40 = ~t39; hero_print_str(t38); hero_print_int(t40); hero_print_end();
-#line 136 "literalbases.c"
+#line 135 "literalbases.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -233,7 +232,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66c7bc047d482b65", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("580e96b23f78be31", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("literalbases\tliteral-bases\n");

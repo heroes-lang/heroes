@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_56e1b672, "blue dot");
 HERO_STR_STATIC(hero_str_77dba954, "red line");
 HERO_STR_STATIC(hero_str_769134a3, "blue line");
 
-#line 59 "nestedmatch.c"
+#line 58 "nestedmatch.c"
 typedef enum h_nestedmatch_0Shape_tag {
     h_nestedmatch_0Shape_tag_dot = 0,
     h_nestedmatch_0Shape_tag_line = 1,
@@ -116,9 +115,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "nestedmatch.c"
+#line 121 "nestedmatch.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_nestedmatch_0Shape_c_line_eq(const h_nestedmatch_0Shape_c_line *a, const h_nestedmatch_0Shape_c_line *b);
@@ -145,7 +144,7 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
 #line 21 "tests/golden/ir/nested-match.hero"
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) { HERO_NODEBUG h_nestedmatch_Shape h2_s0, t1, t2; HERO_NODEBUG HeroStr h3_r0 = {0}, h5_r1 = {0}, h7_r2 = {0}, t7, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_nestedmatch_Colour h4_s1, h6_s2, t4, t5, t10, t11; HERO_NODEBUG int64_t t3, t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; h2_s0 = t1; t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t16 = h3_r0;
-#line 149 "nestedmatch.c"
+#line 148 "nestedmatch.c"
     hero_str_incref(t16);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h5_r1);
@@ -180,7 +179,7 @@ bb2:
     t14 = HERO_STR_LIT(hero_str_769134a3);
 #line 28
     t22 = h7_r2; hero_str_incref(t14); h7_r2 = t14; hero_str_decref(t22); goto bb7;
-#line 184 "nestedmatch.c"
+#line 183 "nestedmatch.c"
 }
 HERO_TU_LOCAL bool h_nestedmatch_0Shape_c_line_eq(const h_nestedmatch_0Shape_c_line *a, const h_nestedmatch_0Shape_c_line *b) {
     if (!(a->f_length == b->f_length)) return false;

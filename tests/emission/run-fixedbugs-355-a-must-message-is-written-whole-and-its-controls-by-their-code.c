@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_65, "e");
 HERO_STR_STATIC(hero_str_5ef853e9, "m \033[2J here ");
 
-#line 57 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 56 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 94 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,13 +115,13 @@ void h_fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode_main(void
     t19 = h2_r; t35 = h3_f1; h_0opt_f87774a_retain(&t19); h3_f1 = t19; h_0opt_f87774a_release(&t35); t20 = h3_f1; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb3; else goto bb4; bb2:
 #line 10
     t13 = h1_f0; t14 = t13.as.err;
-#line 120 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 119 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
     hero_panic_must_at(t14, "fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero", "fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.main", 10, 58);
     hero_unreachable();
 bb3:
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t26 = h3_f1; t27 = t26.as.ok; hero_print_str(t27); hero_print_end();
-#line 126 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 125 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
     hero_array_release_at(&h0_b);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r));
@@ -135,7 +134,7 @@ bb3:
 bb4:
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t24 = h3_f1; t25 = t24.as.err;
-#line 139 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 138 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
     hero_panic_must_at(t25, "fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero", "fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.main", 11, 11);
     hero_unreachable();
 }
@@ -236,7 +235,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ea1129d55882468", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ab997920fc73a04", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode\tfixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code\n");

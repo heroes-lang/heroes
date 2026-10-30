@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -99,7 +98,7 @@ HERO_STR_STATIC(hero_str_203132, "zzz");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 103 "placeanullcstrhandedtocnamesthecall.c"
+#line 102 "placeanullcstrhandedtocnamesthecall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,9 +148,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "placeanullcstrhandedtocnamesthecall.c"
+#line 154 "placeanullcstrhandedtocnamesthecall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -176,7 +175,7 @@ void h_placeanullcstrhandedtocnamesthecall_main(void) { const char * h0_absent; 
 #line 13
     t7 = h0_absent; t8 = HERO_STR_LIT(hero_str_79); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-null-cstr-handed-to-c-names-the-call.hero", "place-a-null-cstr-handed-to-c-names-the-call.main", 13, 41}; t9 = hero_str_lend_at(t8, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-null-cstr-handed-to-c-names-the-call.hero", "place-a-null-cstr-handed-to-c-names-the-call.main", 13, 8}; t10 = (const char *)strstr(hero_cstr_nonnull_at(t7, &hero_here), hero_cstr_nonnull_at(t9, &hero_here)); } t11 = ((void *)0); t12 = t10 == t11; if (t12) goto bb2; else goto bb3; bb1: return; bb2:
     t13 = HERO_STR_LIT(hero_str_187ae0ee); hero_print_str(t13); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 180 "placeanullcstrhandedtocnamesthecall.c"
+#line 179 "placeanullcstrhandedtocnamesthecall.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -275,7 +274,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b4ddf9c6b9dcd4e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ecbcd6714bfb9af", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanullcstrhandedtocnamesthecall\tplace-a-null-cstr-handed-to-c-names-the-call\n");

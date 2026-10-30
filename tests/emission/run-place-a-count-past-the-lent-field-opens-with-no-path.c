@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -60,11 +59,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 8 "tests/golden/run/place-a-count-past-the-lent-field-opens-with-no-path.hero"
 _Static_assert(sizeof(struct held) - __builtin_offsetof(struct held, buf) != 0, "heroes-ffi-flex Held buf"); _Static_assert(_Generic(&((struct held *)0)->buf, _Bool (*)[16]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[16]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[16]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[16]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[16]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[16]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[16]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[16]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[16]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[16]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[16]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[16]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Held buf");
 _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof(((struct held *)0)->after) == sizeof(int64_t) && (_Generic(((struct held *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held after");
-#line 64 "placeacountpastthelentfieldopenswithnopath.c"
+#line 63 "placeacountpastthelentfieldopenswithnopath.c"
 
 #line 7 "tests/golden/run/place-a-count-past-the-lent-field-opens-with-no-path.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
-#line 68 "placeacountpastthelentfieldopenswithnopath.c"
+#line 67 "placeacountpastthelentfieldopenswithnopath.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "placeacountpastthelentfieldopenswithnopath.c"
+#line 158 "placeacountpastthelentfieldopenswithnopath.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_placeacountpastthelentfieldopenswithnopath_0Held_eq(const struct held *a, const struct held *b);
@@ -187,14 +186,14 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 12 "tests/golden/run/place-a-count-past-the-lent-field-opens-with-no-path.hero"
 uint64_t h_placeacountpastthelentfieldopenswithnopath_at_run_time(uint64_t h0_k) { HERO_NODEBUG uint64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; t2 = UINT64_C(4); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("place-a-count-past-the-lent-field-opens-with-no-path.hero", "place-a-count-past-the-lent-field-opens-with-no-path.at_run_time", 13, 12); return t3;
-#line 191 "placeacountpastthelentfieldopenswithnopath.c"
+#line 190 "placeacountpastthelentfieldopenswithnopath.c"
 }
 
 #line 15 "tests/golden/run/place-a-count-past-the-lent-field-opens-with-no-path.hero"
 void h_placeacountpastthelentfieldopenswithnopath_main(void) { __attribute__((unused)) struct held h0_h; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18, t25; HERO_NODEBUG struct held t19; HERO_NODEBUG void *t22; HERO_NODEBUG uint64_t t23, t24; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(0); t10 = UINT64_C(0); t11 = UINT64_C(0); t12 = UINT64_C(0); t13 = UINT64_C(0); t14 = UINT64_C(0); t15 = UINT64_C(0); t16 = UINT64_C(0); t18 = INT64_C(7); t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18}; h0_h = t19; hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_0, hero_pad_n_0);
     t22 = (void *)(h0_h.buf); t23 = UINT64_C(4); t24 = h_placeacountpastthelentfieldopenswithnopath_at_run_time(t23); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-count-past-the-lent-field-opens-with-no-path.hero", "place-a-count-past-the-lent-field-opens-with-no-path.main", 17, 11}; if ((uint64_t)(t24) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic_at(sizeof(*(int *)0) == 1 ? "`fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "`fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at", "place-a-count-past-the-lent-field-opens-with-no-path.hero", "place-a-count-past-the-lent-field-opens-with-no-path.main", 17, 24); t25 = fill_ints(t22, t24); } hero_print_int(t25); hero_print_end(); return;
-#line 198 "placeacountpastthelentfieldopenswithnopath.c"
+#line 197 "placeacountpastthelentfieldopenswithnopath.c"
 }
 HERO_TU_LOCAL bool h_placeacountpastthelentfieldopenswithnopath_0Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
@@ -322,7 +321,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("203cdea52ab88972", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09f3ca884fee68e8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeacountpastthelentfieldopenswithnopath\tplace-a-count-past-the-lent-field-opens-with-no-path\n");

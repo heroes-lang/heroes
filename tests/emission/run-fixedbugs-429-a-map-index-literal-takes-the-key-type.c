@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -59,7 +58,7 @@ HERO_STR_STATIC(hero_str_f1e77ee, "plus");
 HERO_STR_STATIC(hero_str_dc6a73a, "five");
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 63 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 62 "fixedbugs429amapindexliteraltakesthekeytype.c"
 typedef enum h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag {
     h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus = 0,
     h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_minus = 1,
@@ -108,9 +107,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 113 "fixedbugs429amapindexliteraltakesthekeytype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *b);
@@ -159,7 +158,7 @@ void h_fixedbugs429amapindexliteraltakesthekeytype_main(void) { HeroMapHeader * 
     t17 = h0_names; t18 = UINT64_C(12); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 25, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t17, &t18, &hero_here); if (found == NULL) { t19 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t19 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t19.as.ok, found); } } t118 = h18_own18; h18_own18 = t19; h_0opt_f87774a_release(&t118); t119 = h2_f1; h_0opt_f87774a_retain(&t19); h2_f1 = t19; h_0opt_f87774a_release(&t119); t20 = h2_f1; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb3; else goto bb4; bb2:
 #line 23
     t11 = h1_f0; t12 = t11.as.err;
-#line 163 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 162 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t12, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 23, 11);
     hero_unreachable();
 bb3:
@@ -168,7 +167,7 @@ bb3:
     t28 = h0_names; t29 = UINT64_C(13); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 26, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t28, &t29, &hero_here); if (found == NULL) { t30 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t30 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t30.as.ok, found); } } t120 = h19_own19; h19_own19 = t30; h_0opt_f87774a_release(&t120); t121 = h3_f2; h_0opt_f87774a_retain(&t30); h3_f2 = t30; h_0opt_f87774a_release(&t121); t31 = h3_f2; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb5; else goto bb6; bb4:
 #line 25
     t24 = h2_f1; t25 = t24.as.err;
-#line 172 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 171 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t25, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 25, 11);
     hero_unreachable();
 bb5:
@@ -180,7 +179,7 @@ bb5:
     t57 = h7_h.f_m; t58 = UINT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 30, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t57, &t58, &hero_here); if (found == NULL) { t59 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t59 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t59.as.ok, found); } } t131 = h24_own24; h24_own24 = t59; h_0opt_f87774a_release(&t131); t132 = h8_f4; h_0opt_f87774a_retain(&t59); h8_f4 = t59; h_0opt_f87774a_release(&t132); t60 = h8_f4; t61 = t60.tag; t62 = INT64_C(0); t63 = t61 == t62; if (t63) goto bb10; else goto bb11; bb9:
 #line 28
     t49 = h6_f3; t50 = t49.as.err;
-#line 184 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 183 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t50, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 28, 11);
     hero_unreachable();
 bb10:
@@ -190,7 +189,7 @@ bb10:
     t71 = h9_ops; t72 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus}; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 32, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t71, &t72, &hero_here); if (found == NULL) { t73 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t73 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t73.as.ok, found); } } t135 = h26_own26; h26_own26 = t73; h_0opt_f87774a_release(&t135); t136 = h10_f5; h_0opt_f87774a_retain(&t73); h10_f5 = t73; h_0opt_f87774a_release(&t136); t74 = h10_f5; t75 = t74.tag; t76 = INT64_C(0); t77 = t75 == t76; if (t77) goto bb12; else goto bb13; bb11:
 #line 30
     t64 = h8_f4; t65 = t64.as.err;
-#line 194 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 193 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t65, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 30, 11);
     hero_unreachable();
 bb12:
@@ -201,7 +200,7 @@ bb12:
     t92 = h12_wide; t93 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 35, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t92, &t93, &hero_here); if (found == NULL) { t94 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t94 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t94.as.ok, found); } } t141 = h29_own29; h29_own29 = t94; h_0opt_f87774a_release(&t141); t142 = h13_f7; h_0opt_f87774a_retain(&t94); h13_f7 = t94; h_0opt_f87774a_release(&t142); t95 = h13_f7; t96 = t95.tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto bb14; else goto bb15; bb13:
 #line 32
     t78 = h10_f5; t79 = t78.as.err;
-#line 205 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 204 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t79, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 32, 11);
     hero_unreachable();
 bb14:
@@ -211,7 +210,7 @@ bb14:
     t107 = h14_xs; t108 = INT64_C(1); t109 = ((void)((t107 == NULL || t108 < 0 || t108 >= t107->len) ? hero_panic_index_at(t107, t108, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 37, 11) : (void)0), (void)(t107->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t107 + 1))[t108]); hero_print_int(t109); hero_print_end();
     t110 = HERO_STR_LIT(hero_str_1998f2); t145 = h15_s; hero_str_incref(t110); h15_s = t110; hero_str_decref(t145);
     t111 = h15_s; t112 = INT64_C(2); t113 = ((void)((t111.ptr == NULL || t112 < 0 || t112 >= t111.len) ? hero_panic_byte_at(t111, t112, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 39, 11) : (void)0), (int64_t)(unsigned char)t111.ptr[t112]); hero_print_int(t113); hero_print_end();
-#line 215 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 214 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_map_release_at(&h0_names);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -247,7 +246,7 @@ bb14:
 bb15:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t99 = h13_f7; t100 = t99.as.err;
-#line 251 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 250 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t100, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 35, 11);
     hero_unreachable();
 }
@@ -388,7 +387,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6173d7c64e34f4e0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b2ac3a9736ad456", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs429amapindexliteraltakesthekeytype\tfixedbugs-429-a-map-index-literal-takes-the-key-type\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7ba188c6, "empty");
 HERO_STR_STATIC(hero_str_3f4c217a, "nothing to parse");
 
-#line 57 "adversarialtrycopiesout.c"
+#line 56 "adversarialtrycopiesout.c"
 typedef struct h_adversarialtrycopiesout_Reader {
     int64_t f_pos;
 } h_adversarialtrycopiesout_Reader;
@@ -93,9 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "adversarialtrycopiesout.c"
+#line 98 "adversarialtrycopiesout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_adversarialtrycopiesout_0Reader_eq(const h_adversarialtrycopiesout_Reader *a, const h_adversarialtrycopiesout_Reader *b);
@@ -123,7 +122,7 @@ h_0opt_e201354 h_adversarialtrycopiesout_parsed(HeroStr h0_s) { HERO_NODEBUG h_0
     t8 = h0_s; t9 = hero_str_len(t8); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
 #line 12
     t5 = HERO_STR_LIT(hero_str_7ba188c6); t6 = HERO_STR_LIT(hero_str_3f4c217a); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t13 = h3_own3; h3_own3 = t7; h_0opt_e201354_release(&t13); h1_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
-#line 127 "adversarialtrycopiesout.c"
+#line 126 "adversarialtrycopiesout.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -143,7 +142,7 @@ h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_
     t20 = h3_n; t21 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t20}; t26 = h7_own7; h7_own7 = t21; h_0opt_e201354_release(&t26); h4_ret0 = t21; goto bb6; bb4:
 #line 19
     t15 = INT64_C(0); t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15}; t27 = h8_own8; h8_own8 = t16; h_0opt_e201354_release(&t27); h4_ret0 = t16; goto bb6; bb5: goto bb3; bb6:
-#line 147 "adversarialtrycopiesout.c"
+#line 146 "adversarialtrycopiesout.c"
     t22 = h4_ret0;
     h_0opt_e201354_retain(&t22);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));

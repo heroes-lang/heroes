@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_21c9984d, "C wrote ");
 
-#line 102 "deadhandlereturnedbyacallbackischecked.c"
+#line 101 "deadhandlereturnedbyacallbackischecked.c"
 typedef node * (*h_0fn_4dd6fcee)(int32_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -150,9 +149,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "deadhandlereturnedbyacallbackischecked.c"
+#line 155 "deadhandlereturnedbyacallbackischecked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereturnedbyacallbackischecked_0Node_eq(node * const *a, node * const *b);
@@ -189,7 +188,7 @@ node * h_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) { hero_thread
     t6 = h1_m; return t6; bb2:
 #line 22
     t5 = h1_m; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-returned-by-a-callback-is-checked.hero", "dead-handle-returned-by-a-callback-is-checked.give", 22, 9}; { hero_handle_alive_at(t5, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t5, "node_free", NULL, &hero_here); (void)node_free(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_m == t5) h1_m = hero_handle_dead(); } } goto bb1; bb3: goto bb1;
-#line 193 "deadhandlereturnedbyacallbackischecked.c"
+#line 192 "deadhandlereturnedbyacallbackischecked.c"
 }
 
 node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
@@ -201,7 +200,7 @@ node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
 #line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 void h_deadhandlereturnedbyacallbackischecked_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_4dd6fcee t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_21c9984d); t2 = h_deadhandlereturnedbyacallbackischecked_give; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-returned-by-a-callback-is-checked.hero", "dead-handle-returned-by-a-callback-is-checked.main", 26, 23}; t3 = ask((h_0fn_4dd6fcee)hero_callback_of((void (*)(void))t2)); } hero_print_str(t1); hero_print_int(t3); hero_print_end(); return;
-#line 205 "deadhandlereturnedbyacallbackischecked.c"
+#line 204 "deadhandlereturnedbyacallbackischecked.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereturnedbyacallbackischecked_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
@@ -311,7 +310,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5bcb78a91a2de763", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("21acd33879a78a0e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandlereturnedbyacallbackischecked\tdead-handle-returned-by-a-callback-is-checked\n");

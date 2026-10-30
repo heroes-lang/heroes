@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,7 +67,7 @@ HERO_STR_STATIC(hero_str_4e0af3a0, "a constant:");
 HERO_STR_STATIC(hero_str_48dd3963, "a pattern matches it");
 HERO_STR_STATIC(hero_str_142ec5aa, "no pattern matched");
 
-#line 72 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 71 "fixedbugs251anescapebycodewritesitscharacter.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -104,9 +103,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 110 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 109 "fixedbugs251anescapebycodewritesitscharacter.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -131,7 +130,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 #line 10 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_RESET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3b61c89);
-#line 135 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 134 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -146,7 +145,7 @@ HeroStr h_fixedbugs251anescapebycodewritesitscharacter_bytes_of(HeroStr h0_s) { 
     t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-251-an-escape-by-code-writes-its-character.hero", "fixedbugs-251-an-escape-by-code-writes-its-character.bytes_of", 16, 9); h3_i0 = t24; goto bb1; bb4:
 #line 19
     t25 = h1_out;
-#line 150 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 149 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -171,7 +170,7 @@ void h_fixedbugs251anescapebycodewritesitscharacter_main(void) { int64_t h0_x; H
     t27 = HERO_STR_LIT(hero_str_3b61c89);
 #line 30
     t28 = hero_str_eq(t26, t27); if (t28) goto bb2; else goto bb3; bb1:
-#line 175 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 174 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_release_at(&h1_s0);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -189,7 +188,7 @@ bb2:
 #line 31 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t29 = HERO_STR_LIT(hero_str_48dd3963); hero_print_str(t29); hero_print_end(); goto bb1; bb3: goto bb4; bb4:
     t30 = HERO_STR_LIT(hero_str_142ec5aa); hero_print_str(t30); hero_print_end(); goto bb1;
-#line 193 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 192 "fixedbugs251anescapebycodewritesitscharacter.c"
 }
 
 #line 26 "<heroes library>"
@@ -200,7 +199,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 204 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 203 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -307,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("00a1f606715f616d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a58e1e8169540e4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs251anescapebycodewritesitscharacter\tfixedbugs-251-an-escape-by-code-writes-its-character\n");

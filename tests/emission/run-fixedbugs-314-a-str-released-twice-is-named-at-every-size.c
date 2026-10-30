@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -95,7 +94,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 99 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 98 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,9 +144,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 150 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -170,7 +169,7 @@ void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void) { HeroStr h0_w
     t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(32768); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero", "fixedbugs-314-a-str-released-twice-is-named-at-every-size.main", 26, 12}; t3 = hero_str_repeat_at(t1, t2, &hero_here); } t8 = h1_own1; h1_own1 = t3; hero_str_decref(t8); t9 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t9);
     t4 = h0_word; t5 = hero_str_len(t4); hero_print_int(t5); hero_print_end();
     t6 = h0_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero", "fixedbugs-314-a-str-released-twice-is-named-at-every-size.main", 28, 23}; t7 = hero_str_lend_at(t6, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero", "fixedbugs-314-a-str-released-twice-is-named-at-every-size.main", 28, 5}; (void)release_behind(hero_cstr_nonnull_at(t7, &hero_here)); }
-#line 174 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 173 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;
@@ -272,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6402411a2fa79ffb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6320e8a302510238", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs314astrreleasedtwiceisnamedateverysize\tfixedbugs-314-a-str-released-twice-is-named-at-every-size\n");

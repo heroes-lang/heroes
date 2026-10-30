@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_4808f94f, "built");
 
-#line 56 "adversarialforevaluatesonce.c"
+#line 55 "adversarialforevaluatesonce.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "adversarialforevaluatesonce.c"
+#line 93 "adversarialforevaluatesonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,7 +112,7 @@ int64_t h_adversarialforevaluatesonce_total(void);
 HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4808f94f); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(1); t3 = INT64_C(2); t4 = INT64_C(3); t5 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t5, &t2); hero_array_push_owned(&t5, &t3); hero_array_push_owned(&t5, &t4); t6 = h0_own0; h0_own0 = t5; hero_array_decref(t6);
-#line 117 "adversarialforevaluatesonce.c"
+#line 116 "adversarialforevaluatesonce.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -129,7 +128,7 @@ int64_t h_adversarialforevaluatesonce_total(void) { int64_t h0_sum; HERO_NODEBUG
     t14 = h2_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("adversarial-for-evaluates-once.hero", "adversarial-for-evaluates-once.total", 14, 9); h2_i0 = t16; goto bb1; bb4:
 #line 17
     t17 = h0_sum;
-#line 133 "adversarialforevaluatesonce.c"
+#line 132 "adversarialforevaluatesonce.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return t17;

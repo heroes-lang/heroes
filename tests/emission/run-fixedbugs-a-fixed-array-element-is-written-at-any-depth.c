@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("v")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -77,13 +76,13 @@ _Static_assert(__builtin_classify_type(((struct cell *)0)->w) == 1 && sizeof(((s
 _Static_assert(sizeof(struct holder) - __builtin_offsetof(struct holder, xs) != 0, "heroes-ffi-flex Holder xs"); _Static_assert(_Generic(&((struct holder *)0)->xs, struct cell (*)[3]: 1, default: 0) && sizeof(struct holder) - __builtin_offsetof(struct holder, xs) >= sizeof(struct cell[3]), "heroes-ffi-field Holder xs");
 #line 34
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a"); _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
-#line 81 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 80 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 
 #line 25 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer rows tail");
 #line 28
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell v w");
-#line 87 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 86 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -183,9 +182,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 189 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 188 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatanydepth_0Row_eq(const struct row *a, const struct row *b);
@@ -274,7 +273,7 @@ void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void) { int64_t h0_k;
     t110 = h3_xs; t137 = h4_ys; hero_array_incref(t110); h4_ys = t110; hero_array_decref(t137);
     t111 = INT64_C(1); t112 = h0_k; t113 = INT64_C(70); hero_array_unshare(&(h3_xs)); (*((void)((h3_xs == NULL || t111 < 0 || t111 >= h3_xs->len) ? hero_panic_index_at(h3_xs, t111, "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 54, 5) : (void)0), (void)(h3_xs->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), (struct nums *)(void *)(h3_xs + 1) + t111)).a[((uint64_t)(t112) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 54, 5), (int64_t)0) : (t112))] = t113;
     t114 = h3_xs; t115 = INT64_C(1); t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? hero_panic_index_at(t114, t115, "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 55, 11) : (void)0), (void)(t114->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t114 + 1))[t115]); t118 = INT64_C(2); t119 = t116.a[((uint64_t)(t118) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 55, 11), (int64_t)0) : (t118))]; t120 = HERO_STR_LIT(hero_str_20); t121 = h4_ys; t122 = INT64_C(1); t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? hero_panic_index_at(t121, t122, "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 55, 28) : (void)0), (void)(t121->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t121 + 1))[t122]); t125 = INT64_C(2); t126 = t123.a[((uint64_t)(t125) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 55, 28), (int64_t)0) : (t125))]; t127 = HERO_STR_LIT(hero_str_20); t128 = h3_xs; t129 = INT64_C(0); t130 = ((void)((t128 == NULL || t129 < 0 || t129 >= t128->len) ? hero_panic_index_at(t128, t129, "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 55, 45) : (void)0), (void)(t128->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t128 + 1))[t129]); t132 = INT64_C(2); t133 = t130.a[((uint64_t)(t132) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero", "fixedbugs-a-fixed-array-element-is-written-at-any-depth.main", 55, 45), (int64_t)0) : (t132))]; hero_print_int(t119); hero_print_str(t120); hero_print_int(t126); hero_print_str(t127); hero_print_int(t133); hero_print_end();
-#line 278 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 277 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_release_at(&h3_xs);
     hero_array_release_at(&h4_ys);
     hero_array_release_at(&h5_own5);
@@ -282,29 +281,29 @@ void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void) { int64_t h0_k;
     return;
 }
 
-#line 123 "<heroes library>"
+#line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 288 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 287 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 }
 
-#line 153 "<heroes library>"
+#line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller) {
-#line 153
+#line 152
 #define h1_status (*hero_lend_h1_status)
-#line 153
+#line 152
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 156
+#line 155
     t7 = INT64_C(0); h1_status = t7;
     t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
     t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
-#line 155
+#line 154
     t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
-#line 160
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 159
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 308 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 307 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -317,20 +316,20 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 }
 #undef h1_status
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 153, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 
-#line 197 "<heroes library>"
+#line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
     t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
     t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
     t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
-#line 208
+#line 207
     t47 = h0_out;
-#line 334 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 333 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -346,27 +345,27 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
 bb4:
-#line 207 "<heroes library>"
+#line 206 "<heroes library>"
     t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
-#line 203
+#line 202
     t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
     t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
-#line 206
+#line 205
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
-#line 204
+#line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 359 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
-    hero_panic_must_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 358 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+    hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
-#line 206 "<heroes library>"
+#line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 365 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
-    hero_panic_must_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 364 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+    hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 197, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatanydepth_0Row_eq(const struct row *a, const struct row *b) {
@@ -538,7 +537,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("53ed6eb938806082", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55d784dc39e83847", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafixedarrayelementiswrittenatanydepth\tfixedbugs-a-fixed-array-element-is-written-at-any-depth\n");

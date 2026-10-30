@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,11 +63,11 @@ _Static_assert(__builtin_classify_type(((V *)0)->fd) == 1 && sizeof(((V *)0)->fd
 #line 15
 _Static_assert(__builtin_classify_type(((struct nu *)0)->kind) == 1 && sizeof(((struct nu *)0)->kind) == sizeof(int32_t) && (_Generic(((struct nu *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nu kind");
 _Static_assert(_Generic(&((struct nu *)0)->via, V *: 1, default: 0) && sizeof(((struct nu *)0)->via) == sizeof(V), "heroes-ffi-field Nu via");
-#line 68 "ffiaunionarmcwroteiskept.c"
+#line 67 "ffiaunionarmcwroteiskept.c"
 
 #line 14 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
 _Static_assert(__builtin_classify_type(*(struct nu *)0) != 13, "heroes-ffi-union Nu kind via");
-#line 72 "ffiaunionarmcwroteiskept.c"
+#line 71 "ffiaunionarmcwroteiskept.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,9 +162,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "ffiaunionarmcwroteiskept.c"
+#line 168 "ffiaunionarmcwroteiskept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaunionarmcwroteiskept_0UN_eq(const UN *a, const UN *b);
@@ -215,7 +214,7 @@ void h_ffiaunionarmcwroteiskept_main(void) {
     t4 = INT64_C(1); t5 = INT64_C(0); t6 = (V){.fd = t5}; t7 = (struct nu){.kind = t4, .via = t6}; h1_n = t7; hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-union-arm-c-wrote-is-kept.hero", "ffi-a-union-arm-c-wrote-is-kept.main", 27, 5}; hero_lend_local_name(hero_lend_h1_n, "nu_set", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); (void)nu_set(&h1_n); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-union-arm-c-wrote-is-kept.hero", "ffi-a-union-arm-c-wrote-is-kept.main", 28, 11}; hero_lend_local_name(hero_lend_h1_n, "nu_get", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); t8 = nu_get(&h1_n); } hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_u); return;
-#line 219 "ffiaunionarmcwroteiskept.c"
+#line 218 "ffiaunionarmcwroteiskept.c"
 }
 #undef h0_u
 #undef h1_n
@@ -354,7 +353,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("642aec4f4ccf74aa", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("32c9116a04ec6e16", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiaunionarmcwroteiskept\tffi-a-union-arm-c-wrote-is-kept\n");

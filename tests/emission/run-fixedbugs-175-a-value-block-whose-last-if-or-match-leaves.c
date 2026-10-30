@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -58,7 +57,7 @@ HERO_STR_STATIC(hero_str_b928f19, "false");
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 62 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 61 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 typedef enum h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag {
     h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_red = 0,
     h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_tag_green = 1,
@@ -109,9 +108,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 114 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b);
@@ -175,7 +174,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t 
 #line 32
     t9 = INT64_C(1); h6_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(2); h6_ret0 = t10; goto bb9; bb9:
-#line 179 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 178 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h6_ret0;
     return t14;
 }
@@ -198,7 +197,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_if_returns(int64
     t8 = INT64_C(1); h4_ret0 = t8; goto bb8; bb7:
 #line 45
     t9 = INT64_C(2); h4_ret0 = t9; goto bb8; bb8:
-#line 202 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 201 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h4_ret0;
     return t13;
 }
@@ -225,7 +224,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_a_statement_first(int6
 #line 57
     t10 = INT64_C(1); h5_ret0 = t10; goto bb9; bb7: goto bb8; bb8:
     t11 = INT64_C(2); h5_ret0 = t11; goto bb9; bb9:
-#line 229 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 228 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t15 = h5_ret0;
     return t15;
 }
@@ -247,7 +246,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_outer_if(int64_t h0_k,
 #line 67
     t8 = INT64_C(1); h5_ret0 = t8; goto bb8; bb6: goto bb7; bb7:
     t9 = INT64_C(2); h5_ret0 = t9; goto bb8; bb8:
-#line 251 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 250 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -272,7 +271,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inline_head(int64_t h0
 #line 78
     t9 = INT64_C(1); h6_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(2); h6_ret0 = t10; goto bb9; bb9:
-#line 276 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 275 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h6_ret0;
     return t14;
 }
@@ -295,7 +294,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_returned_directly(int6
 #line 89
     t9 = INT64_C(1); h5_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(2); h5_ret0 = t10; goto bb9; bb9:
-#line 299 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 298 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -325,7 +324,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_two_deep(int64_t h0_k,
     t12 = INT64_C(1); h6_ret0 = t12; goto bb12; bb11:
 #line 102
     t13 = INT64_C(3); h6_ret0 = t13; goto bb12; bb12:
-#line 329 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 328 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t18 = h6_ret0;
     return t18;
 }
@@ -343,7 +342,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_in_a_loop(HeroArrayHea
     t23 = h3_i0; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.in_a_loop", 112, 9); h3_i0 = t25; goto bb1; bb4:
 #line 123
     t26 = h1_total;
-#line 347 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 346 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_release_at(&h2_xs0);
     return t26;
 bb5:
@@ -357,7 +356,7 @@ bb5:
     t18 = h4_v;
 #line 113
     h6_r0 = t18; goto bb5; bb10: goto bb4; bb11: goto bb3;
-#line 361 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 360 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -378,7 +377,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_value_if_arm(int64_t h
     t8 = INT64_C(1); h5_ret0 = t8; goto bb8; bb7:
 #line 131
     t9 = INT64_C(2); h5_ret0 = t9; goto bb8; bb8:
-#line 382 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 381 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -403,7 +402,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked(int64_t h0_k, 
 #line 141
     t9 = INT64_C(2); h6_ret0 = t9; goto bb9; bb7: goto bb8; bb8:
     t10 = INT64_C(3); h6_ret0 = t10; goto bb9; bb9:
-#line 407 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 406 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h6_ret0;
     return t14;
 }
@@ -422,7 +421,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_return_if(int64_t h0_k
 #line 151
     t8 = INT64_C(1); h3_ret0 = t8; goto bb8; bb6: goto bb7; bb7:
     t9 = INT64_C(2); h3_ret0 = t9; goto bb8; bb8:
-#line 426 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 425 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t12 = h3_ret0;
     return t12;
 }
@@ -451,7 +450,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_while_tail(int64_t h0_
     t16 = h1_i;
 #line 164
     h4_r0 = t16; goto bb4; bb9: goto bb3; bb10: goto bb1;
-#line 455 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 454 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -477,7 +476,7 @@ HeroStr h_fixedbugs175avalueblockwhoselastiformatchleaves_word(int64_t h0_k) { H
     t12 = HERO_STR_LIT(hero_str_1d4996); h3_ret0 = t12; goto bb10; bb9:
 #line 184
     t13 = HERO_STR_LIT(hero_str_188c0f4b); h3_ret0 = t13; goto bb10; bb10:
-#line 481 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 480 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t16 = h3_ret0;
     hero_str_incref(t16);
     hero_str_release_at(&h2_r0);
@@ -502,7 +501,7 @@ h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h_fixedbugs175avalueblock
     t8 = INT64_C(1); t9 = INT64_C(5); t10 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair){.f_first = t8, .f_second = t9}; h4_ret0 = t10; goto bb8; bb7:
 #line 194
     t11 = INT64_C(0); t12 = INT64_C(0); t13 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair){.f_first = t11, .f_second = t12}; h4_ret0 = t13; goto bb8; bb8:
-#line 506 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 505 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t19 = h4_ret0;
     return t19;
 }
@@ -523,7 +522,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(h_fixedbugs175av
     t8 = INT64_C(3); h3_ret0 = t8; goto bb8; bb7:
 #line 207
     t9 = INT64_C(4); h3_ret0 = t9; goto bb8; bb8:
-#line 527 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 526 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t12 = h3_ret0;
     return t12;
 }
@@ -546,7 +545,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64
     t8 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.exits_or_returns", 215, 17}; h_library_exit(t8, &hero_here); } hero_unreachable(); goto bb5; bb7:
 #line 217
     t9 = INT64_C(2); h5_ret0 = t9; goto bb8; bb8:
-#line 550 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 549 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t13 = h5_ret0;
     return t13;
 }
@@ -571,7 +570,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(int64_
 #line 226
     t9 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.every_arm_exits", 226, 22}; h_library_exit(t9, &hero_here); } hero_unreachable(); goto bb5; bb7: goto bb8; bb8:
     t10 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.every_arm_exits", 227, 22}; h_library_exit(t10, &hero_here); } hero_unreachable(); goto bb5;
-#line 575 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 574 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -593,7 +592,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_loops_or_returns(int64
 #line 236
     t8 = true; if (t8) goto bb9; else goto bb10; bb9:
     t9 = INT64_C(0); hero_print_int(t9); hero_print_end(); goto bb8; bb10: goto bb5; bb11:
-#line 597 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 596 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t14 = h5_ret0;
     return t14;
 }
@@ -616,7 +615,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h
     t8 = HERO_STR_LIT(hero_str_b928f19); t9 = false; if (t9) goto bb8; else goto bb9; bb7:
 #line 250
     t10 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.checked_ends", 250, 17}; h_library_exit(t10, &hero_here); } hero_unreachable(); goto bb5; bb8: goto bb5; bb9:
-#line 620 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 619 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_panic_assert_at(t8, "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero", "fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.checked_ends", 248, 24);
     hero_unreachable();
 }
@@ -648,7 +647,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(int64_t h0_
 #line 261
     t13 = INT64_C(1); h8_ret0 = t13; goto bb13; bb11: goto bb12; bb12:
     t14 = INT64_C(2); h8_ret0 = t14; goto bb13; bb13:
-#line 652 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 651 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t19 = h8_ret0;
     return t19;
 }
@@ -683,18 +682,18 @@ void h_fixedbugs175avalueblockwhoselastiformatchleaves_main(void) { h_fixedbugs1
     t72 = INT64_C(0); t73 = INT64_C(0); t74 = INT64_C(1); t75 = h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(t72, t73, t74); hero_print_int(t75); hero_print_end();
     t76 = INT64_C(0); t77 = INT64_C(1); t78 = INT64_C(0); t79 = h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(t76, t77, t78); hero_print_int(t79); hero_print_end();
     t80 = INT64_C(5); t81 = INT64_C(0); t82 = INT64_C(0); t83 = h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(t80, t81, t82); hero_print_int(t83); hero_print_end();
-#line 687 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 686 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;
 }
 
-#line 232 "<heroes library>"
+#line 231 "<heroes library>"
 void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
-#line 236
+#line 235
     t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 698 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 697 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
@@ -702,16 +701,16 @@ void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBU
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
 bb2:
-#line 233 "<heroes library>"
+#line 232 "<heroes library>"
     t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
     t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 710 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_panic_must_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 709 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
 __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 232, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 231, 1};
     h_library_exit(h0_code, &hero_here);
 }
 HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_0Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b) {
@@ -847,7 +846,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c37a6aa16530b0c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b564e3368fc6d48", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs175avalueblockwhoselastiformatchleaves\tfixedbugs-175-a-value-block-whose-last-if-or-match-leaves\n");

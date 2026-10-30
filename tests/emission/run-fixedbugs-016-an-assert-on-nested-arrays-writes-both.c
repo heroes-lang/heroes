@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_749648b4, "grid == other");
 
-#line 56 "fixedbugs016anassertonnestedarrayswritesboth.c"
+#line 55 "fixedbugs016anassertonnestedarrayswritesboth.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugs016anassertonnestedarrayswritesboth.c"
+#line 93 "fixedbugs016anassertonnestedarrayswritesboth.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,7 +115,7 @@ void h_fixedbugs016anassertonnestedarrayswritesboth_main(void) { HeroArrayHeader
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t20 = h4_own4; h4_own4 = t3; hero_array_decref(t20); t4 = INT64_C(3); t5 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t5, &t4); t21 = h5_own5; h5_own5 = t5; hero_array_decref(t21); t6 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t6, &t3); hero_array_push_owned(&t6, &t5); t22 = h6_own6; h6_own6 = t6; hero_array_decref(t22); t23 = h0_grid; hero_array_incref(t6); h0_grid = t6; hero_array_decref(t23);
     t7 = INT64_C(1); t8 = INT64_C(2); t9 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t9, &t7); hero_array_push_owned(&t9, &t8); t24 = h7_own7; h7_own7 = t9; hero_array_decref(t24); t10 = INT64_C(3); t11 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t11, &t10); t25 = h8_own8; h8_own8 = t11; hero_array_decref(t25); t12 = hero_array_new(&hero_desc_int, 1); t26 = h9_own9; h9_own9 = t12; hero_array_decref(t26); t13 = hero_array_new(&hero_desc_array, 3); hero_array_push_owned(&t13, &t9); hero_array_push_owned(&t13, &t11); hero_array_push_owned(&t13, &t12); t27 = h10_own10; h10_own10 = t13; hero_array_decref(t27); t28 = h1_other; hero_array_incref(t13); h1_other = t13; hero_array_decref(t28);
     t14 = HERO_STR_LIT(hero_str_749648b4); t15 = h0_grid; t16 = h1_other; t17 = hero_array_eq(t15, t16); t29 = h2_assert0; hero_array_incref(t15); h2_assert0 = t15; hero_array_decref(t29); t30 = h3_assert1; hero_array_incref(t16); h3_assert1 = t16; hero_array_decref(t30); if (t17) goto bb1; else goto bb2; bb1:
-#line 120 "fixedbugs016anassertonnestedarrayswritesboth.c"
+#line 119 "fixedbugs016anassertonnestedarrayswritesboth.c"
     hero_array_release_at(&h0_grid);
     hero_array_release_at(&h1_other);
     hero_array_release_at(&h2_assert0);
@@ -132,7 +131,7 @@ void h_fixedbugs016anassertonnestedarrayswritesboth_main(void) { HeroArrayHeader
 bb2:
 #line 9 "tests/golden/run/fixedbugs-016-an-assert-on-nested-arrays-writes-both.hero"
     t18 = h2_assert0; t19 = h3_assert1;
-#line 136 "fixedbugs016anassertonnestedarrayswritesboth.c"
+#line 135 "fixedbugs016anassertonnestedarrayswritesboth.c"
     hero_panic_assert_shown_at(t14, h_0show_5df176b8, &t18, &t19, 1, "fixedbugs-016-an-assert-on-nested-arrays-writes-both.hero", "fixedbugs-016-an-assert-on-nested-arrays-writes-both.main", 9, 12);
     hero_unreachable();
 }
@@ -241,7 +240,7 @@ HERO_TU_LOCAL void h_0show_5df176b8(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("05e6a19f6d43cfac", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f9d8d811279af23", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonnestedarrayswritesboth\tfixedbugs-016-an-assert-on-nested-arrays-writes-both\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d4477, "odd");
 HERO_STR_STATIC(hero_str_7fc615fd, "not divisible by two");
 
-#line 57 "fallible.c"
+#line 56 "fallible.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fallible.c"
+#line 94 "fallible.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -117,7 +116,7 @@ h_0opt_e201354 h_fallible_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_re
     t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_7fc615fd); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 20
     t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fallible.hero", "fallible.half", 20, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fallible.hero", "fallible.half", 20, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 121 "fallible.c"
+#line 120 "fallible.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -136,7 +135,7 @@ void h_fallible_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h3_f1 = {0
     t29 = INT64_C(4); t30 = h_fallible_half(t29); t50 = h10_own10; h10_own10 = t30; h_0opt_e201354_release(&t50); t31 = INT64_C(4); t32 = h_fallible_half(t31); t51 = h11_own11; h11_own11 = t32; h_0opt_e201354_release(&t51); t33 = h_0opt_e201354_eq(&t30, &t32); hero_print_bool(t33); hero_print_end();
     t34 = INT64_C(4); t35 = h_fallible_half(t34); t52 = h12_own12; h12_own12 = t35; h_0opt_e201354_release(&t52); t36 = INT64_C(6); t37 = h_fallible_half(t36); t53 = h13_own13; h13_own13 = t37; h_0opt_e201354_release(&t53); t38 = h_0opt_e201354_eq(&t35, &t37); hero_print_bool(t38); hero_print_end();
     t39 = INT64_C(3); t40 = h_fallible_half(t39); t54 = h14_own14; h14_own14 = t40; h_0opt_e201354_release(&t54); t41 = INT64_C(5); t42 = h_fallible_half(t41); t55 = h15_own15; h15_own15 = t42; h_0opt_e201354_release(&t55); t43 = h_0opt_e201354_eq(&t40, &t42); hero_print_bool(t43); hero_print_end();
-#line 140 "fallible.c"
+#line 139 "fallible.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_s0));
@@ -155,7 +154,7 @@ bb5:
 #line 31 "tests/golden/run/fallible.hero"
     t22 = h4_s0; t23 = t22.as.ok; h5_v = t23; t24 = h5_v; hero_print_int(t24); hero_print_end(); goto bb4; bb6:
     t25 = h4_s0; t26 = t25.as.err; t56 = h6_e; hero_failure_retain(&t26); h6_e = t26; hero_failure_release(&t56); t27 = h6_e.code; t28 = h6_e.msg; hero_print_str(t27); hero_print_str(t28); hero_print_end(); goto bb4;
-#line 159 "fallible.c"
+#line 158 "fallible.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
@@ -254,7 +253,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("651655284cb0b75b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c22e3f901846754", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fallible_main();

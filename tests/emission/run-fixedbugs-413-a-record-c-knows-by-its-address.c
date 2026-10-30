@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -66,11 +65,11 @@ _Static_assert(_Generic(&((struct wrap *)0)->k, struct keeper *: 1, default: 0) 
 #line 29
 _Static_assert(sizeof(struct pair) - __builtin_offsetof(struct pair, k) != 0, "heroes-ffi-flex Pair k"); _Static_assert(_Generic(&((struct pair *)0)->k, struct keeper (*)[2]: 1, default: 0) && sizeof(struct pair) - __builtin_offsetof(struct pair, k) >= sizeof(struct keeper[2]), "heroes-ffi-field Pair k");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->after) == 1 && sizeof(((struct pair *)0)->after) == sizeof(int64_t) && (_Generic(((struct pair *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair after");
-#line 70 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 69 "fixedbugs413arecordcknowsbyitsaddress.c"
 
 #line 25 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(__builtin_classify_type(*(struct wrap *)0) != 13, "heroes-ffi-union Wrap before k");
-#line 74 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 73 "fixedbugs413arecordcknowsbyitsaddress.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,9 +162,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 168 "fixedbugs413arecordcknowsbyitsaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413arecordcknowsbyitsaddress_0Keeper_eq(const struct keeper *a, const struct keeper *b);
@@ -266,13 +265,13 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_start(struct keeper *ph0_k) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.start", 35, 12}; hero_lend_local_name(ph0_k, "keep_init", "k"); hero_pad_fill(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0); t1 = keep_init(&(*ph0_k)); } return t1;
-#line 270 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 269 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_passed_on(struct keeper *ph0_k) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs413arecordcknowsbyitsaddress_start(&(*ph0_k)); return t1;
-#line 276 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 275 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -282,7 +281,7 @@ int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64
     t5 = h1_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.deep", 43, 24); t8 = h_fixedbugs413arecordcknowsbyitsaddress_deep(&(*ph0_k), t7); h2_ret0 = t8; goto bb4; bb2:
 #line 42
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.deep", 42, 16}; hero_lend_local_name(ph0_k, "keep_init", "k"); hero_pad_fill(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0); t4 = keep_init(&(*ph0_k)); } h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 286 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 285 "fixedbugs413arecordcknowsbyitsaddress.c"
     t9 = h2_ret0;
     return t9;
 }
@@ -297,7 +296,7 @@ int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0
     t21 = h3_i0; t22 = INT64_C(1); if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.every_one", 48, 9); h3_i0 = t23; goto bb1; bb4:
 #line 52
     t24 = h1_refused;
-#line 301 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 300 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t24;
@@ -306,7 +305,7 @@ bb5:
 bb6:
 #line 50 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t18 = h1_refused; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.every_one", 50, 23); h1_refused = t20; goto bb5; bb7: goto bb5;
-#line 310 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 309 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -344,7 +343,7 @@ void h_fixedbugs413arecordcknowsbyitsaddress_main(void) {
     t66 = h1_ks; t67 = INT64_C(1); t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? hero_panic_index_at(t66, t67, "fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.main", 73, 11) : (void)0), (void)(t66->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), ((struct keeper const *)(const void *)(t66 + 1))[t67]); t69 = t68.uses; t70 = HERO_STR_LIT(hero_str_20); t71 = h2_ws; t72 = INT64_C(1); t73 = ((void)((t71 == NULL || t72 < 0 || t72 >= t71->len) ? hero_panic_index_at(t71, t72, "fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.main", 73, 28) : (void)0), (void)(t71->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), ((struct wrap const *)(const void *)(t71 + 1))[t72]); t74 = t73.before; t75 = HERO_STR_LIT(hero_str_20); t76 = h2_ws; t77 = INT64_C(1); t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? hero_panic_index_at(t76, t77, "fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.main", 73, 47) : (void)0), (void)(t76->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), ((struct wrap const *)(const void *)(t76 + 1))[t77]); t79 = t78.k; t80 = t79.uses; t81 = HERO_STR_LIT(hero_str_20); t82 = h3_p.after; hero_print_int(t69); hero_print_str(t70); hero_print_int(t74); hero_print_str(t75); hero_print_int(t80); hero_print_str(t81); hero_print_int(t82); hero_print_end();
     t83 = h0_k; h8_copy = t83; hero_pad_fill(&h8_copy, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.main", 75, 11}; hero_lend_local_name(hero_lend_h8_copy, "keep_use", "k"); hero_pad_fill(&h8_copy, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0); t84 = keep_use(&h8_copy); } t85 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-a-record-c-knows-by-its-address.hero", "fixedbugs-413-a-record-c-knows-by-its-address.main", 75, 33}; hero_lend_local_name(hero_lend_h0_k, "keep_use", "k"); hero_pad_fill(&h0_k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0); t86 = keep_use(&h0_k); } hero_print_int(t84); hero_print_str(t85); hero_print_int(t86); hero_print_end();
-#line 348 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 347 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -370,7 +369,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 374 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 373 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -520,7 +519,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("481910b045814742", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dfa6b3f24fae9ee", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413arecordcknowsbyitsaddress\tfixedbugs-413-a-record-c-knows-by-its-address\n");

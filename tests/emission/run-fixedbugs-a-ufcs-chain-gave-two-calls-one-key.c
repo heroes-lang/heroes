@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_0, "");
 
-#line 56 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 55 "fixedbugsaufcschaingavetwocallsonekey.c"
 typedef struct h_fixedbugsaufcschaingavetwocallsonekey_R {
     int64_t f_n;
 } h_fixedbugsaufcschaingavetwocallsonekey_R;
@@ -97,9 +96,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 103 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 102 "fixedbugsaufcschaingavetwocallsonekey.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsaufcschaingavetwocallsonekey_0R_eq(const h_fixedbugsaufcschaingavetwocallsonekey_R *a, const h_fixedbugsaufcschaingavetwocallsonekey_R *b);
@@ -154,19 +153,19 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
 #line 47 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
 int64_t h_fixedbugsaufcschaingavetwocallsonekey_to_n(h_fixedbugsaufcschaingavetwocallsonekey_R h0_r) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_r.f_n; return t1;
-#line 158 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 157 "fixedbugsaufcschaingavetwocallsonekey.c"
 }
 
 #line 50 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
 int64_t h_fixedbugsaufcschaingavetwocallsonekey_times_ten(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(10); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero", "fixedbugs-a-ufcs-chain-gave-two-calls-one-key.times_ten", 51, 12); return t3;
-#line 164 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 163 "fixedbugsaufcschaingavetwocallsonekey.c"
 }
 
 #line 53 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
 HeroStr h_fixedbugsaufcschaingavetwocallsonekey_shown(h_fixedbugsaufcschaingavetwocallsonekey_R h0_r) { HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_r.f_n; t2 = hero_int_to_str(t1); t3 = h1_own1; h1_own1 = t2; hero_str_decref(t3);
-#line 170 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 169 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -175,13 +174,13 @@ HeroStr h_fixedbugsaufcschaingavetwocallsonekey_shown(h_fixedbugsaufcschaingavet
 #line 59 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
 int64_t h_fixedbugsaufcschaingavetwocallsonekey_add(int64_t h0_acc, int64_t h1_item) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero", "fixedbugs-a-ufcs-chain-gave-two-calls-one-key.add", 60, 12); return t3;
-#line 179 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 178 "fixedbugsaufcschaingavetwocallsonekey.c"
 }
 
 #line 62 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
 HeroStr h_fixedbugsaufcschaingavetwocallsonekey_glue(HeroStr h0_acc, HeroStr h1_item) { HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_acc; t2 = h1_item; t3 = hero_str_concat(t1, t2); t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 185 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 184 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     return t3;
@@ -201,7 +200,7 @@ void h_fixedbugsaufcschaingavetwocallsonekey_main(void) { HeroArrayHeader * h0_x
     t32 = h0_xs; t33 = h_fixedbugsaufcschaingavetwocallsonekey_to_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero", "fixedbugs-a-ufcs-chain-gave-two-calls-one-key.main", 83, 10}; t34 = h_library_0map_42b12237(t32, t33, &hero_here); } t53 = h9_own9; h9_own9 = t34; hero_array_decref(t53); t54 = h1_ns; hero_array_incref(t34); h1_ns = t34; hero_array_decref(t54);
     t35 = h1_ns; t36 = INT64_C(0); t37 = h_fixedbugsaufcschaingavetwocallsonekey_add; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero", "fixedbugs-a-ufcs-chain-gave-two-calls-one-key.main", 84, 11}; t38 = h_library_0fold_37f8817a(t35, t36, t37, &hero_here); } hero_print_int(t38); hero_print_end();
     t39 = h0_xs; t40 = h_fixedbugsaufcschaingavetwocallsonekey_to_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero", "fixedbugs-a-ufcs-chain-gave-two-calls-one-key.main", 85, 16}; t41 = h_library_0map_42b12237(t39, t40, &hero_here); } t55 = h10_own10; h10_own10 = t41; hero_array_decref(t55); t42 = INT64_C(0); t43 = h_fixedbugsaufcschaingavetwocallsonekey_add; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero", "fixedbugs-a-ufcs-chain-gave-two-calls-one-key.main", 85, 11}; t44 = h_library_0fold_37f8817a(t41, t42, t43, &hero_here); } hero_print_int(t44); hero_print_end();
-#line 205 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 204 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ns);
     hero_array_release_at(&h2_own2);
@@ -225,7 +224,7 @@ void h_fixedbugsaufcschaingavetwocallsonekey_main(void) { HeroArrayHeader * h0_x
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 229 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 228 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -246,7 +245,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 250 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 249 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -264,7 +263,7 @@ HERO_TU_LOCAL __attribute__((unused)) int64_t hero_value_h_library_0fold_37f8817
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 268 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 267 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -286,7 +285,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroArrayHeader * hero_value_h_library_0ma
     t15 = h5_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h5_i0 = t17; goto bb1; bb4:
 #line 62
     t18 = h3_total;
-#line 290 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 289 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_str_incref(t18);
     hero_str_release_at(&h3_total);
     hero_array_release_at(&h4_xs0);
@@ -308,7 +307,7 @@ HERO_TU_LOCAL __attribute__((unused)) HeroStr hero_value_h_library_0fold_f720dcd
     t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h4_i0 = t18; goto bb1; bb4:
 #line 40
     t19 = h2_out;
-#line 312 "fixedbugsaufcschaingavetwocallsonekey.c"
+#line 311 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -428,7 +427,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("15c1fa9b159a18a9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ba355297513bb54", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsaufcschaingavetwocallsonekey\tfixedbugs-a-ufcs-chain-gave-two-calls-one-key\n");

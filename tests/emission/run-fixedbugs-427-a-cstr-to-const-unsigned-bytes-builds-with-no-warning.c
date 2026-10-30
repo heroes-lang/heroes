@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -103,7 +102,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 HERO_STR_STATIC(hero_str_7a, "z");
 
-#line 107 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 106 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -160,9 +159,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 165 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -197,7 +196,7 @@ void h_fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning_main(void) { Her
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero", "fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.main", 40, 5}; hero_held_release_at(&h2_x, &hero_here); }
     t33 = HERO_STR_LIT(hero_str_7a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero", "fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.main", 41, 19}; t34 = hero_str_lend_at(t33, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero", "fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.main", 41, 11}; t35 = r_u8((const uint8_t *)hero_cstr_nonnull_at(t34, &hero_here)); } hero_print_int(t35); hero_print_end();
     t36 = h1_t; hero_print_str(t36); hero_print_end();
-#line 201 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 200 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);
@@ -300,7 +299,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e15ec085b2868af", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ef0f3fc7f293f60", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning\tfixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning\n");

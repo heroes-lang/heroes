@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -96,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 100 "fixedbugs396abuffercoverrunsaborts.c"
+#line 99 "fixedbugs396abuffercoverrunsaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,9 +145,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs396abuffercoverrunsaborts.c"
+#line 151 "fixedbugs396abuffercoverrunsaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +171,7 @@ void h_fixedbugs396abuffercoverrunsaborts_main(void) { HeroArrayHeader * h0_md =
     t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-buffer-c-overruns-aborts.hero", "fixedbugs-396-a-buffer-c-overruns-aborts.main", 14, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer digest32 md 528 530 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e1_0 = INT64_C(16); HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take_at(h0_md, hero_lend_e1_0, "digest32", "md", &hero_here); t3 = digest32((void *)hero_lend_b1_0); h0_md = hero_lend_give_at(h0_md, hero_lend_b1_0, hero_lend_e1_0, &hero_here); } } hero_print_int(t3); hero_print_end();
     t4 = HERO_STR_LIT(hero_str_5687795c); t5 = h0_md; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); hero_print_str(t4); hero_print_int(t6); hero_print_end();
-#line 176 "fixedbugs396abuffercoverrunsaborts.c"
+#line 175 "fixedbugs396abuffercoverrunsaborts.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return;
@@ -274,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("148da0396f28fc9a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5676a0565ef2621c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396abuffercoverrunsaborts\tfixedbugs-396-a-buffer-c-overruns-aborts\n");

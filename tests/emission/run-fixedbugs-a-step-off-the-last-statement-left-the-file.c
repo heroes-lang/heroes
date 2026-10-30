@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_351cd275, "we can be heroes");
 
-#line 58 "fixedbugsastepoffthelaststatementleftthefile.c"
+#line 57 "fixedbugsastepoffthelaststatementleftthefile.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugsastepoffthelaststatementleftthefile.c"
+#line 95 "fixedbugsastepoffthelaststatementleftthefile.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,14 +115,14 @@ void h_fixedbugsastepoffthelaststatementleftthefile_main(void);
 int64_t h_fixedbugsastepoffthelaststatementleftthefile_twice(int64_t h0_n) { int64_t h1_doubled; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-a-step-off-the-last-statement-left-the-file.hero", "fixedbugs-a-step-off-the-last-statement-left-the-file.twice", 26, 15); h1_doubled = t3;
     t4 = h1_doubled; return t4;
-#line 120 "fixedbugsastepoffthelaststatementleftthefile.c"
+#line 119 "fixedbugsastepoffthelaststatementleftthefile.c"
 }
 
 #line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 HeroStr h_fixedbugsastepoffthelaststatementleftthefile_shout(HeroStr h0_s) { HeroStr h1_loud = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5); t6 = h1_loud; hero_str_incref(t3); h1_loud = t3; hero_str_decref(t6);
     t4 = h1_loud;
-#line 127 "fixedbugsastepoffthelaststatementleftthefile.c"
+#line 126 "fixedbugsastepoffthelaststatementleftthefile.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_loud);
     hero_str_release_at(&h2_own2);
@@ -137,7 +136,7 @@ void h_fixedbugsastepoffthelaststatementleftthefile_main(void) { HeroArrayHeader
     t7 = INT64_C(4); t8 = h_fixedbugsastepoffthelaststatementleftthefile_twice(t7); hero_array_push_owned(&h0_xs, &t8);
     t10 = h0_xs; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = HERO_STR_LIT(hero_str_20); t13 = h0_xs; t14 = INT64_C(0); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "fixedbugs-a-step-off-the-last-statement-left-the-file.hero", "fixedbugs-a-step-off-the-last-statement-left-the-file.main", 37, 25) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]); t16 = HERO_STR_LIT(hero_str_20); t17 = h0_xs; t18 = INT64_C(1); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "fixedbugs-a-step-off-the-last-statement-left-the-file.hero", "fixedbugs-a-step-off-the-last-statement-left-the-file.main", 37, 37) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); hero_print_int(t11); hero_print_str(t12); hero_print_int(t15); hero_print_str(t16); hero_print_int(t19); hero_print_end();
     t20 = HERO_STR_LIT(hero_str_351cd275); t21 = h_fixedbugsastepoffthelaststatementleftthefile_shout(t20); t24 = h2_own2; h2_own2 = t21; hero_str_decref(t24); hero_print_str(t21); hero_print_end();
-#line 141 "fixedbugsastepoffthelaststatementleftthefile.c"
+#line 140 "fixedbugsastepoffthelaststatementleftthefile.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -240,7 +239,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("407d321b72968e88", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7588933938bd47f6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsastepoffthelaststatementleftthefile\tfixedbugs-a-step-off-the-last-statement-left-the-file\n");

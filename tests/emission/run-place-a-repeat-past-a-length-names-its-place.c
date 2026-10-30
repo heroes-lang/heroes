@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 56 "placearepeatpastalengthnamesitsplace.c"
+#line 55 "placearepeatpastalengthnamesitsplace.c"
 typedef struct h_0opt_fbbb698 {
     int64_t tag;
     union {
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "placearepeatpastalengthnamesitsplace.c"
+#line 101 "placearepeatpastalengthnamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
@@ -126,14 +125,14 @@ void h_placearepeatpastalengthnamesitsplace_main(void) { HERO_NODEBUG h_0opt_fbb
     t13 = INT64_C(9223372036854775807); if (t13 >= 0LL) { t14 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t13}; } else { t14 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t30 = h5_own5; h5_own5 = t14; h_0opt_fbbb698_release(&t30); t31 = h1_f1; h_0opt_fbbb698_retain(&t14); h1_f1 = t14; h_0opt_fbbb698_release(&t31); t15 = h1_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
 #line 6
     t8 = h0_f0; t9 = t8.as.err;
-#line 130 "placearepeatpastalengthnamesitsplace.c"
+#line 129 "placearepeatpastalengthnamesitsplace.c"
     hero_panic_must_at(t9, "place-a-repeat-past-a-length-names-its-place.hero", "place-a-repeat-past-a-length-names-its-place.main", 6, 24);
     hero_unreachable();
 bb3:
 #line 7 "tests/golden/run/place-a-repeat-past-a-length-names-its-place.hero"
     t21 = h1_f1; t22 = t21.as.ok; h2_huge = t22;
     t23 = HERO_STR_LIT(hero_str_3205); t24 = h2_huge; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-repeat-past-a-length-names-its-place.hero", "place-a-repeat-past-a-length-names-its-place.main", 8, 11}; t25 = hero_str_repeat_at(t23, t24, &hero_here); } t32 = h6_own6; h6_own6 = t25; hero_str_decref(t32); t26 = hero_str_len(t25); hero_print_int(t26); hero_print_end();
-#line 137 "placearepeatpastalengthnamesitsplace.c"
+#line 136 "placearepeatpastalengthnamesitsplace.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h1_f1));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
@@ -144,7 +143,7 @@ bb3:
 bb4:
 #line 7 "tests/golden/run/place-a-repeat-past-a-length-names-its-place.hero"
     t19 = h1_f1; t20 = t19.as.err;
-#line 148 "placearepeatpastalengthnamesitsplace.c"
+#line 147 "placearepeatpastalengthnamesitsplace.c"
     hero_panic_must_at(t20, "place-a-repeat-past-a-length-names-its-place.hero", "place-a-repeat-past-a-length-names-its-place.main", 7, 12);
     hero_unreachable();
 }
@@ -277,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("75c4cb6c42b070c2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1942b9376bd25d22", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placearepeatpastalengthnamesitsplace\tplace-a-repeat-past-a-length-names-its-place\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -78,7 +77,7 @@ HERO_STR_STATIC(hero_str_7a4c6b76, "MMXXIV");
 HERO_STR_STATIC(hero_str_2f6a3112, "MMMCMXCIX");
 HERO_STR_STATIC(hero_str_a65ab1f, "MMQX");
 
-#line 82 "main.c"
+#line 81 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,9 +113,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 120 "main.c"
+#line 119 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -144,13 +143,13 @@ void h_main_main(void);
 #line 18 "examples/roman/main.hero"
 int64_t h_main_LARGEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3999); return t1;
-#line 148 "main.c"
+#line 147 "main.c"
 }
 
 #line 25 "examples/roman/main.hero"
 HeroArrayHeader * h_main_values(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t14, *t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1000); t2 = INT64_C(900); t3 = INT64_C(500); t4 = INT64_C(400); t5 = INT64_C(100); t6 = INT64_C(90); t7 = INT64_C(50); t8 = INT64_C(40); t9 = INT64_C(10); t10 = INT64_C(9); t11 = INT64_C(5); t12 = INT64_C(4); t13 = INT64_C(1); t14 = hero_array_new(&hero_desc_int, 13); hero_array_push_owned(&t14, &t1); hero_array_push_owned(&t14, &t2); hero_array_push_owned(&t14, &t3); hero_array_push_owned(&t14, &t4); hero_array_push_owned(&t14, &t5); hero_array_push_owned(&t14, &t6); hero_array_push_owned(&t14, &t7); hero_array_push_owned(&t14, &t8); hero_array_push_owned(&t14, &t9); hero_array_push_owned(&t14, &t10); hero_array_push_owned(&t14, &t11); hero_array_push_owned(&t14, &t12); hero_array_push_owned(&t14, &t13); t15 = h0_own0; h0_own0 = t14; hero_array_decref(t15);
-#line 154 "main.c"
+#line 153 "main.c"
     hero_array_incref(t14);
     hero_array_release_at(&h0_own0);
     return t14;
@@ -159,7 +158,7 @@ HeroArrayHeader * h_main_values(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = 
 #line 28 "examples/roman/main.hero"
 HeroArrayHeader * h_main_letters(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t14, *t15; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_4d); t2 = HERO_STR_LIT(hero_str_2296); t3 = HERO_STR_LIT(hero_str_44); t4 = HERO_STR_LIT(hero_str_228d); t5 = HERO_STR_LIT(hero_str_43); t6 = HERO_STR_LIT(hero_str_2d4b); t7 = HERO_STR_LIT(hero_str_4c); t8 = HERO_STR_LIT(hero_str_2d54); t9 = HERO_STR_LIT(hero_str_58); t10 = HERO_STR_LIT(hero_str_25b3); t11 = HERO_STR_LIT(hero_str_56); t12 = HERO_STR_LIT(hero_str_25b1); t13 = HERO_STR_LIT(hero_str_49); t14 = hero_array_new(&hero_desc_str, 13); hero_array_push_owned(&t14, &t1); hero_array_push_owned(&t14, &t2); hero_array_push_owned(&t14, &t3); hero_array_push_owned(&t14, &t4); hero_array_push_owned(&t14, &t5); hero_array_push_owned(&t14, &t6); hero_array_push_owned(&t14, &t7); hero_array_push_owned(&t14, &t8); hero_array_push_owned(&t14, &t9); hero_array_push_owned(&t14, &t10); hero_array_push_owned(&t14, &t11); hero_array_push_owned(&t14, &t12); hero_array_push_owned(&t14, &t13); t15 = h0_own0; h0_own0 = t14; hero_array_decref(t15);
-#line 163 "main.c"
+#line 162 "main.c"
     hero_array_incref(t14);
     hero_array_release_at(&h0_own0);
     return t14;
@@ -190,7 +189,7 @@ h_0opt_f87774a h_main_to_roman(int64_t h0_value) { HeroStr h1_out = {0}; int64_t
     t32 = h2_left; t33 = h4_all_values; t34 = h3_at; t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? hero_panic_index_at(t33, t34, "main.hero", "main.to_roman", 49, 27) : (void)0), (void)(t33->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t33 + 1))[t34]); if (__builtin_sub_overflow(t32, t35, &t36)) hero_panic_overflow_at("main.hero", "main.to_roman", 49, 20); h2_left = t36; goto bb10; bb12:
 #line 51
     t37 = h3_at; t38 = INT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow_at("main.hero", "main.to_roman", 51, 14); h3_at = t39; goto bb7; bb13:
-#line 194 "main.c"
+#line 193 "main.c"
     t42 = h6_ret0;
     h_0opt_f87774a_retain(&t42);
     hero_str_release_at(&h1_out);
@@ -211,7 +210,7 @@ h_0opt_e201354 h_main_value_of_letter(HeroStr h0_letter) { HERO_NODEBUG HeroStr 
     t3 = HERO_STR_LIT(hero_str_49);
 #line 56
     t4 = hero_str_eq(t2, t3); if (t4) goto bb2; else goto bb3; bb1: t44 = h2_r0;
-#line 215 "main.c"
+#line 214 "main.c"
     h_0opt_e201354_retain(&t44);
     hero_str_release_at(&h1_s0);
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -283,7 +282,7 @@ bb2:
     t37 = HERO_STR_LIT(hero_str_18be05c4); t38 = HERO_STR_LIT(hero_str_60); t39 = h0_letter; t40 = hero_str_concat(t38, t39); t60 = h10_own10; h10_own10 = t40; hero_str_decref(t60); t41 = HERO_STR_LIT(hero_str_6e17cc2a); t42 = hero_str_concat(t40, t41); t61 = h11_own11; h11_own11 = t42; hero_str_decref(t61); hero_str_incref(t37); hero_str_incref(t42); t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t37, .msg = t42}}; t62 = h12_own12; h12_own12 = t43; h_0opt_e201354_release(&t62);
 #line 56
     t63 = h2_r0; h_0opt_e201354_retain(&t43); h2_r0 = t43; h_0opt_e201354_release(&t63); goto bb1;
-#line 287 "main.c"
+#line 286 "main.c"
 }
 
 #line 68 "examples/roman/main.hero"
@@ -315,7 +314,7 @@ h_0opt_e201354 h_main_from_roman(HeroStr h0_text) { int64_t h1_total; int64_t h2
 #line 85
     t38 = h1_total; t39 = h6_here; if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("main.hero", "main.from_roman", 85, 21); h1_total = t40;
     t41 = h6_here; h2_previous = t41; goto bb9; bb12:
-#line 319 "main.c"
+#line 318 "main.c"
     t47 = h7_ret0;
     h_0opt_e201354_retain(&t47);
     hero_array_release_at(&h3_letters_here);
@@ -338,7 +337,7 @@ HeroArrayHeader * h_main_characters(HeroStr h0_text) { HeroArrayHeader * h1_out 
     t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.characters", 94, 9); h3_i0 = t17; goto bb1; bb4:
 #line 97
     t18 = h1_out;
-#line 342 "main.c"
+#line 341 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -358,7 +357,7 @@ void h_main_main(void) { HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h10_own10 
     t39 = HERO_STR_LIT(hero_str_d79caa); t40 = h_main_from_roman(t39); t93 = h14_own14; h14_own14 = t40; h_0opt_e201354_release(&t93); t94 = h4_f1; h_0opt_e201354_retain(&t40); h4_f1 = t40; h_0opt_e201354_release(&t94); t41 = h4_f1; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb7; else goto bb8; bb5:
 #line 101
     t33 = h3_f0; t34 = t33.as.ok; t35 = hero_str_concat(t24, t34); t95 = h15_own15; h15_own15 = t35; hero_str_decref(t95); hero_print_str(t35); hero_print_end(); goto bb3; bb6: t31 = h3_f0; t32 = t31.as.err;
-#line 362 "main.c"
+#line 361 "main.c"
     hero_panic_must_at(t32, "main.hero", "main.main", 101, 38);
     hero_unreachable();
 bb7:
@@ -367,7 +366,7 @@ bb7:
     t49 = HERO_STR_LIT(hero_str_7a4c6b76); t50 = h_main_from_roman(t49); t96 = h16_own16; h16_own16 = t50; h_0opt_e201354_release(&t96); t97 = h5_f2; h_0opt_e201354_retain(&t50); h5_f2 = t50; h_0opt_e201354_release(&t97); t51 = h5_f2; t52 = t51.tag; t53 = INT64_C(0); t54 = t52 == t53; if (t54) goto bb9; else goto bb10; bb8:
 #line 103
     t45 = h4_f1; t46 = t45.as.err;
-#line 371 "main.c"
+#line 370 "main.c"
     hero_panic_must_at(t46, "main.hero", "main.main", 103, 11);
     hero_unreachable();
 bb9:
@@ -376,7 +375,7 @@ bb9:
     t59 = HERO_STR_LIT(hero_str_2f6a3112); t60 = h_main_from_roman(t59); t98 = h17_own17; h17_own17 = t60; h_0opt_e201354_release(&t98); t99 = h6_f3; h_0opt_e201354_retain(&t60); h6_f3 = t60; h_0opt_e201354_release(&t99); t61 = h6_f3; t62 = t61.tag; t63 = INT64_C(0); t64 = t62 == t63; if (t64) goto bb11; else goto bb12; bb10:
 #line 104
     t55 = h5_f2; t56 = t55.as.err;
-#line 380 "main.c"
+#line 379 "main.c"
     hero_panic_must_at(t56, "main.hero", "main.main", 104, 11);
     hero_unreachable();
 bb11:
@@ -386,7 +385,7 @@ bb11:
     t69 = INT64_C(0); t70 = h_main_to_roman(t69); t100 = h18_own18; h18_own18 = t70; h_0opt_f87774a_release(&t100); t101 = h7_f4; h_0opt_f87774a_retain(&t70); h7_f4 = t70; h_0opt_f87774a_release(&t101); t71 = h7_f4; t72 = t71.tag; t73 = INT64_C(1); t74 = t72 == t73; hero_print_bool(t74); hero_print_end();
     t75 = INT64_C(4000); t76 = h_main_to_roman(t75); t102 = h19_own19; h19_own19 = t76; h_0opt_f87774a_release(&t102); t103 = h8_f5; h_0opt_f87774a_retain(&t76); h8_f5 = t76; h_0opt_f87774a_release(&t103); t77 = h8_f5; t78 = t77.tag; t79 = INT64_C(1); t80 = t78 == t79; hero_print_bool(t80); hero_print_end();
     t81 = HERO_STR_LIT(hero_str_a65ab1f); t82 = h_main_from_roman(t81); t104 = h20_own20; h20_own20 = t82; h_0opt_e201354_release(&t104); t105 = h9_f6; h_0opt_e201354_retain(&t82); h9_f6 = t82; h_0opt_e201354_release(&t105); t83 = h9_f6; t84 = t83.tag; t85 = INT64_C(1); t86 = t84 == t85; hero_print_bool(t86); hero_print_end();
-#line 390 "main.c"
+#line 389 "main.c"
     hero_array_release_at(&h0_xs0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_f1));
@@ -410,7 +409,7 @@ bb11:
 bb12:
 #line 105 "examples/roman/main.hero"
     t65 = h6_f3; t66 = t65.as.err;
-#line 414 "main.c"
+#line 413 "main.c"
     hero_panic_must_at(t66, "main.hero", "main.main", 105, 11);
     hero_unreachable();
 }
@@ -511,7 +510,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("79f4bf4d22c225d4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2361d5c817093ad7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

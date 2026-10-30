@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -59,11 +58,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 
 #line 16 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(((E *)0)->x) == 1 && sizeof(((E *)0)->x) == sizeof(int32_t) && (_Generic(((E *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field E x");
-#line 63 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 62 "fixedbugs168awholerecordbesideasamenamedheader.c"
 
 #line 15 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(*(E *)0) != 13 || sizeof(((E *)0)->x) == sizeof(E), "heroes-ffi-union-narrow E x");
-#line 67 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 66 "fixedbugs168awholerecordbesideasamenamedheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -153,9 +152,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 159 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 158 "fixedbugs168awholerecordbesideasamenamedheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_0E_eq(const E *a, const E *b);
@@ -189,7 +188,7 @@ void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) { E h0_p; E h1_
     t3 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-168-a-whole-record-beside-a-same-named-header.hero", "fixedbugs-168-a-whole-record-beside-a-same-named-header.main", 21, 9}; t4 = hero_168_make(t3); } h1_q = t4; hero_pad_fill(&h1_q, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = h0_p; t6 = h1_q; t7 = h_fixedbugs168awholerecordbesideasamenamedheader_0E_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
     t8 = h0_p.x; hero_print_int(t8); hero_print_end(); return;
-#line 193 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 192 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_0E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;
@@ -300,7 +299,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("70ca209b32c352a5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("72b436be342b2a6a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs168awholerecordbesideasamenamedheader\tfixedbugs-168-a-whole-record-beside-a-same-named-header\n");

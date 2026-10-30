@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -59,7 +58,7 @@
 #pragma pop_macro("b")
 #pragma pop_macro("type")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -86,7 +85,7 @@ _Static_assert(_Generic(&((Rectangle *)0)->height, float *: 1, default: 0) && si
 _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->frame) == 1 && sizeof(((AutomationEvent *)0)->frame) == sizeof(uint32_t) && (_Generic(((AutomationEvent *)0)->frame, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field AutomationEvent frame");
 _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && sizeof(((AutomationEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((AutomationEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field AutomationEvent type");
 _Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params"); _Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
-#line 90 "main.c"
+#line 89 "main.c"
 
 #line 62 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
@@ -96,7 +95,7 @@ _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union V
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
 #line 98
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 100 "main.c"
+#line 99 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -202,9 +201,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 208 "main.c"
+#line 207 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_0Color_eq(const Color *a, const Color *b);
@@ -273,7 +272,7 @@ void h_main_main(void) { Color h0_red; Vector2 h1_mid; AutomationEvent h2_event;
     t40 = 0x0p+0; t41 = 0x0p+0; t42 = 0x1.4p+3; t43 = 0x1.4p+3; t44 = (Rectangle){.x = t40, .y = t41, .width = t42, .height = t43}; h3_box = t44; hero_pad_fill(&h3_box, sizeof(Rectangle), 1, hero_pad_g_2, hero_pad_n_2);
     t45 = 0x1.4p+2; t46 = 0x1.4p+2; t47 = (Vector2){.x = t45, .y = t46}; t48 = h3_box; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 124, 11}; t49 = CheckCollisionPointRec(t47, t48); } hero_print_bool(t49); hero_print_end();
     t50 = 0x1.9p+5; t51 = 0x1.4p+2; t52 = (Vector2){.x = t50, .y = t51}; t53 = h3_box; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 125, 11}; t54 = CheckCollisionPointRec(t52, t53); } hero_print_bool(t54); hero_print_end(); return;
-#line 277 "main.c"
+#line 276 "main.c"
 }
 HERO_TU_LOCAL bool h_main_0Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
@@ -441,7 +440,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("72ee862f4a1c7204", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c5b9caa3e638707", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

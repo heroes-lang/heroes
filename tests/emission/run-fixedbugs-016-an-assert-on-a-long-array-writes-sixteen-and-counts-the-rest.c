@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_53247747, "range(from: 0, to: 20) == range(from: 0, to: 21)");
 
-#line 56 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
+#line 55 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
+#line 93 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,7 +114,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 #line 6 "tests/golden/run/fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.hero"
 void h_fixedbugs016anassertonalongarraywritessixteenandcountstherest_main(void) { HERO_NODEBUG HeroArrayHeader *h0_assert0 = {0}, *h1_assert1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t7, *t9, *t10, *t11, *t12, *t13, *t14; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t5, t6; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_53247747); t2 = INT64_C(0); t3 = INT64_C(20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.hero", "fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.main", 7, 12}; t4 = h_library_range(t2, t3, &hero_here); } t11 = h2_own2; h2_own2 = t4; hero_array_decref(t11); t5 = INT64_C(0); t6 = INT64_C(21); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.hero", "fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.main", 7, 38}; t7 = h_library_range(t5, t6, &hero_here); } t12 = h3_own3; h3_own3 = t7; hero_array_decref(t12); t8 = hero_array_eq(t4, t7); t13 = h0_assert0; hero_array_incref(t4); h0_assert0 = t4; hero_array_decref(t13); t14 = h1_assert1; hero_array_incref(t7); h1_assert1 = t7; hero_array_decref(t14); if (t8) goto bb1; else goto bb2; bb1:
-#line 119 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
+#line 118 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
     hero_array_release_at(&h0_assert0);
     hero_array_release_at(&h1_assert1);
     hero_array_release_at(&h2_own2);
@@ -124,7 +123,7 @@ void h_fixedbugs016anassertonalongarraywritessixteenandcountstherest_main(void) 
 bb2:
 #line 7 "tests/golden/run/fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.hero"
     t9 = h0_assert0; t10 = h1_assert1;
-#line 128 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
+#line 127 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
     hero_panic_assert_shown_at(t1, h_0show_4b7fe249, &t9, &t10, 1, "fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.hero", "fixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest.main", 7, 12);
     hero_unreachable();
 }
@@ -137,7 +136,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 141 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
+#line 140 "fixedbugs016anassertonalongarraywritessixteenandcountstherest.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -248,7 +247,7 @@ HERO_TU_LOCAL void h_0show_4b7fe249(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("677bc28709d51d75", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4bc6ea1a7756366e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonalongarraywritessixteenandcountstherest\tfixedbugs-016-an-assert-on-a-long-array-writes-sixteen-and-counts-the-rest\n");

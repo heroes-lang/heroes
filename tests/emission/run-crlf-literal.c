@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,7 +56,7 @@ HERO_STR_STATIC(hero_str_692ea516, "Host: ");
 HERO_STR_STATIC(hero_str_71c6be1f, "example.com");
 HERO_STR_STATIC(hero_str_2f, "/");
 
-#line 61 "crlfliteral.c"
+#line 60 "crlfliteral.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -93,9 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "crlfliteral.c"
+#line 98 "crlfliteral.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -118,7 +117,7 @@ void h_crlfliteral_main(void);
 #line 8 "tests/golden/run/crlf-literal.hero"
 HeroStr h_crlfliteral_crlf(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6b1);
-#line 122 "crlfliteral.c"
+#line 121 "crlfliteral.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -127,7 +126,7 @@ HeroStr h_crlfliteral_crlf(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
 HeroStr h_crlfliteral_request(HeroStr h0_host, HeroStr h1_path) { HeroStr h2_line = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_995c286); t2 = h1_path; t3 = hero_str_concat(t1, t2); t17 = h3_own3; h3_own3 = t3; hero_str_decref(t17); t4 = HERO_STR_LIT(hero_str_59caaa51); t5 = hero_str_concat(t3, t4); t18 = h4_own4; h4_own4 = t5; hero_str_decref(t18); t6 = h_crlfliteral_crlf(); t19 = h5_own5; h5_own5 = t6; hero_str_decref(t19); t7 = hero_str_concat(t5, t6); t20 = h6_own6; h6_own6 = t7; hero_str_decref(t20); t21 = h2_line; hero_str_incref(t7); h2_line = t7; hero_str_decref(t21);
     t8 = h2_line; t9 = HERO_STR_LIT(hero_str_692ea516); t10 = hero_str_concat(t8, t9); t22 = h7_own7; h7_own7 = t10; hero_str_decref(t22); t11 = h0_host; t12 = hero_str_concat(t10, t11); t23 = h8_own8; h8_own8 = t12; hero_str_decref(t23); t13 = h_crlfliteral_crlf(); t24 = h9_own9; h9_own9 = t13; hero_str_decref(t24); t14 = hero_str_concat(t12, t13); t25 = h10_own10; h10_own10 = t14; hero_str_decref(t25); t15 = h_crlfliteral_crlf(); t26 = h11_own11; h11_own11 = t15; hero_str_decref(t26); t16 = hero_str_concat(t14, t15); t27 = h12_own12; h12_own12 = t16; hero_str_decref(t27);
-#line 131 "crlfliteral.c"
+#line 130 "crlfliteral.c"
     hero_str_incref(t16);
     hero_str_release_at(&h2_line);
     hero_str_release_at(&h3_own3);
@@ -159,7 +158,7 @@ void h_crlfliteral_main(void) { HeroStr h0_e = {0}; HeroStr h1_r = {0}; HERO_NOD
     t22 = h1_r; t23 = h1_r; t24 = hero_str_len(t23); t25 = INT64_C(3); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow_at("crlf-literal.hero", "crlf-literal.main", 29, 13); t27 = ((void)((t22.ptr == NULL || t26 < 0 || t26 >= t22.len) ? hero_panic_byte_at(t22, t26, "crlf-literal.hero", "crlf-literal.main", 29, 11) : (void)0), (int64_t)(unsigned char)t22.ptr[t26]); hero_print_int(t27); hero_print_end();
     t28 = h1_r; t29 = h1_r; t30 = hero_str_len(t29); t31 = INT64_C(2); if (__builtin_sub_overflow(t30, t31, &t32)) hero_panic_overflow_at("crlf-literal.hero", "crlf-literal.main", 30, 13); t33 = ((void)((t28.ptr == NULL || t32 < 0 || t32 >= t28.len) ? hero_panic_byte_at(t28, t32, "crlf-literal.hero", "crlf-literal.main", 30, 11) : (void)0), (int64_t)(unsigned char)t28.ptr[t32]); hero_print_int(t33); hero_print_end();
     t34 = h1_r; t35 = h1_r; t36 = hero_str_len(t35); t37 = INT64_C(1); if (__builtin_sub_overflow(t36, t37, &t38)) hero_panic_overflow_at("crlf-literal.hero", "crlf-literal.main", 31, 13); t39 = ((void)((t34.ptr == NULL || t38 < 0 || t38 >= t34.len) ? hero_panic_byte_at(t34, t38, "crlf-literal.hero", "crlf-literal.main", 31, 11) : (void)0), (int64_t)(unsigned char)t34.ptr[t38]); hero_print_int(t39); hero_print_end();
-#line 163 "crlfliteral.c"
+#line 162 "crlfliteral.c"
     hero_str_release_at(&h0_e);
     hero_str_release_at(&h1_r);
     hero_str_release_at(&h2_own2);
@@ -263,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("755393540643f7b1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7cd053320d8c9935", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("crlfliteral\tcrlf-literal\n");

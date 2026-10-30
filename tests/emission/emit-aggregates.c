@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 58 "aggregates.c"
+#line 57 "aggregates.c"
 typedef struct h_aggregates_Inner {
     HeroStr f_name;
 } h_aggregates_Inner;
@@ -116,9 +115,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "aggregates.c"
+#line 121 "aggregates.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_aggregates_0Inner_retain(const h_aggregates_Inner *v);
@@ -156,7 +155,7 @@ void h_aggregates_main(void);
 #line 37 "tests/golden/emit/aggregates.hero"
 int64_t h_aggregates_width(h_aggregates_Shape h0_s) { HERO_NODEBUG h_aggregates_Shape h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t8; h_aggregates_0Shape_c_line h3_l = {0}; HERO_NODEBUG h_aggregates_0Shape_c_line t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t9 = h1_s0; h_aggregates_0Shape_retain(&t1); h1_s0 = t1; h_aggregates_0Shape_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 160 "aggregates.c"
+#line 159 "aggregates.c"
     h_aggregates_0Shape_release(hero_slot_escape(&h1_s0));
     h_aggregates_0Shape_c_line_release(hero_slot_escape(&h3_l));
     return t8;
@@ -169,7 +168,7 @@ bb2:
     t5 = h1_s0; t6 = t5.as.c_line; t10 = h3_l; h_aggregates_0Shape_c_line_retain(&t6); h3_l = t6; h_aggregates_0Shape_c_line_release(&t10); t7 = h3_l.f_len;
 #line 38
     h2_r0 = t7; goto bb1;
-#line 173 "aggregates.c"
+#line 172 "aggregates.c"
 }
 
 #line 42 "tests/golden/emit/aggregates.hero"
@@ -179,7 +178,7 @@ void h_aggregates_main(void) { h_aggregates_Outer h0_o = {0}; HERO_NODEBUG HeroS
     t8 = h0_o; t9 = HERO_STR_LIT(hero_str_3205); hero_str_incref(t9); t10 = (h_aggregates_Inner){.f_name = t9}; t24 = h4_own4; h4_own4 = t10; h_aggregates_0Inner_release(&t24); t11 = INT64_C(2); h_aggregates_0Inner_retain(&t10); t12 = (h_aggregates_Outer){.f_inner = t10, .f_n = t11}; t25 = h5_own5; h5_own5 = t12; h_aggregates_0Outer_release(&t25); t13 = h_aggregates_0Outer_eq(&t8, &t12); hero_print_bool(t13); hero_print_end();
     t14 = h0_o.f_inner; t15 = INT64_C(5); h_aggregates_0Inner_retain(&t14); t16 = (h_aggregates_Shape){.tag = h_aggregates_0Shape_tag_line, .as.c_line = {.f_from = t14, .f_len = t15}}; t26 = h6_own6; h6_own6 = t16; h_aggregates_0Shape_release(&t26); t17 = h_aggregates_width(t16); hero_print_int(t17); hero_print_end();
     t18 = (h_aggregates_Shape){.tag = h_aggregates_0Shape_tag_dot}; t27 = h7_own7; h7_own7 = t18; h_aggregates_0Shape_release(&t27); t19 = h_aggregates_width(t18); hero_print_int(t19); hero_print_end();
-#line 183 "aggregates.c"
+#line 182 "aggregates.c"
     h_aggregates_0Outer_release(hero_slot_escape(&h0_o));
     hero_str_release_at(&h1_own1);
     h_aggregates_0Inner_release(hero_slot_escape(&h2_own2));
@@ -385,7 +384,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f07e82b14bdb31e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("61f238fe6d2d25f1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_aggregates_main();

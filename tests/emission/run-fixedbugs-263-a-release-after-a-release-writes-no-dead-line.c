@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 
-#line 58 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 57 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 95 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -117,7 +116,7 @@ HeroStr h_fixedbugs263areleaseafterareleasewritesnodeadline_joined(int64_t h0_n)
     t5 = HERO_STR_LIT(hero_str_62); t6 = h0_n; t7 = hero_int_to_str(t6); t21 = h6_own6; h6_own6 = t7; hero_str_decref(t21); t8 = hero_str_concat(t5, t7); t22 = h7_own7; h7_own7 = t8; hero_str_decref(t22); t23 = h2_b; hero_str_incref(t8); h2_b = t8; hero_str_decref(t23);
     t9 = HERO_STR_LIT(hero_str_63); t10 = h0_n; t11 = hero_int_to_str(t10); t24 = h8_own8; h8_own8 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h9_own9; h9_own9 = t12; hero_str_decref(t25); t26 = h3_c; hero_str_incref(t12); h3_c = t12; hero_str_decref(t26);
     t13 = h1_a; t14 = h2_b; t15 = hero_str_concat(t13, t14); t27 = h10_own10; h10_own10 = t15; hero_str_decref(t27); t16 = h3_c; t17 = hero_str_concat(t15, t16); t28 = h11_own11; h11_own11 = t17; hero_str_decref(t28);
-#line 121 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 120 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_incref(t17);
     hero_str_release_at(&h1_a);
     hero_str_release_at(&h2_b);
@@ -136,7 +135,7 @@ HeroStr h_fixedbugs263areleaseafterareleasewritesnodeadline_joined(int64_t h0_n)
 #line 17 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
 void h_fixedbugs263areleaseafterareleasewritesnodeadline_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t2, t3; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = h_fixedbugs263areleaseafterareleasewritesnodeadline_joined(t1); t3 = h0_own0; h0_own0 = t2; hero_str_decref(t3); hero_print_str(t2); hero_print_end();
-#line 140 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 139 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -237,7 +236,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4807de5e7916e87c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("700d530631f937eb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs263areleaseafterareleasewritesnodeadline\tfixedbugs-263-a-release-after-a-release-writes-no-dead-line\n");

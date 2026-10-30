@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_5199505, "a\n  right: a");
 HERO_STR_STATIC(hero_str_36613ec7, "s == t");
 
-#line 58 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
+#line 57 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
+#line 95 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,7 +114,7 @@ void h_fixedbugs2225astrsideholdingalinefeediswrittenquoted_main(void) { HeroStr
     t1 = HERO_STR_LIT(hero_str_61); t9 = h0_s; hero_str_incref(t1); h0_s = t1; hero_str_decref(t9);
     t2 = HERO_STR_LIT(hero_str_5199505); t10 = h1_t; hero_str_incref(t2); h1_t = t2; hero_str_decref(t10);
     t3 = HERO_STR_LIT(hero_str_36613ec7); t4 = h0_s; t5 = h1_t; t6 = hero_str_eq(t4, t5); t11 = h2_assert0; hero_str_incref(t4); h2_assert0 = t4; hero_str_decref(t11); t12 = h3_assert1; hero_str_incref(t5); h3_assert1 = t5; hero_str_decref(t12); if (t6) goto bb1; else goto bb2; bb1:
-#line 119 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
+#line 118 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h2_assert0);
@@ -124,7 +123,7 @@ void h_fixedbugs2225astrsideholdingalinefeediswrittenquoted_main(void) { HeroStr
 bb2:
 #line 11 "tests/golden/run/fixedbugs-2225-a-str-side-holding-a-line-feed-is-written-quoted.hero"
     t7 = h2_assert0; t8 = h3_assert1;
-#line 128 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
+#line 127 "fixedbugs2225astrsideholdingalinefeediswrittenquoted.c"
     hero_panic_assert_shown_at(t3, hero_show_str, &t7, &t8, 1, "fixedbugs-2225-a-str-side-holding-a-line-feed-is-written-quoted.hero", "fixedbugs-2225-a-str-side-holding-a-line-feed-is-written-quoted.main", 11, 12);
     hero_unreachable();
 }
@@ -225,7 +224,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("11421150595381ae", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("269dcf0845ba5eda", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2225astrsideholdingalinefeediswrittenquoted\tfixedbugs-2225-a-str-side-holding-a-line-feed-is-written-quoted\n");

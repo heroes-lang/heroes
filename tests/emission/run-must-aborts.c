@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d4477, "odd");
 HERO_STR_STATIC(hero_str_7fc615fd, "not divisible by two");
 
-#line 57 "mustaborts.c"
+#line 56 "mustaborts.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "mustaborts.c"
+#line 94 "mustaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -117,7 +116,7 @@ h_0opt_e201354 h_mustaborts_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_
     t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "must-aborts.hero", "must-aborts.half", 21, 15); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("must-aborts.hero", "must-aborts.half", 21, 15); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 20
     t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_7fc615fd); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
-#line 121 "mustaborts.c"
+#line 120 "mustaborts.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -131,13 +130,13 @@ void h_mustaborts_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = 
     t11 = INT64_C(7); t12 = h_mustaborts_half(t11); t23 = h3_own3; h3_own3 = t12; h_0opt_e201354_release(&t23); t24 = h1_f1; h_0opt_e201354_retain(&t12); h1_f1 = t12; h_0opt_e201354_release(&t24); t13 = h1_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb3; else goto bb4; bb2:
 #line 24
     t7 = h0_f0; t8 = t7.as.err;
-#line 135 "mustaborts.c"
+#line 134 "mustaborts.c"
     hero_panic_must_at(t8, "must-aborts.hero", "must-aborts.main", 24, 11);
     hero_unreachable();
 bb3:
 #line 25 "tests/golden/run/must-aborts.hero"
     t19 = h1_f1; t20 = t19.as.ok; hero_print_int(t20); hero_print_end();
-#line 141 "mustaborts.c"
+#line 140 "mustaborts.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_f1));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -146,7 +145,7 @@ bb3:
 bb4:
 #line 25 "tests/golden/run/must-aborts.hero"
     t17 = h1_f1; t18 = t17.as.err;
-#line 150 "mustaborts.c"
+#line 149 "mustaborts.c"
     hero_panic_must_at(t18, "must-aborts.hero", "must-aborts.main", 25, 11);
     hero_unreachable();
 }
@@ -247,7 +246,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c93234a222ed6f3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("46eb2b4252256d5c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("mustaborts\tmust-aborts\n");

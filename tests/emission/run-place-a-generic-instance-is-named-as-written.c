@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placeagenericinstanceisnamedaswritten.c"
+#line 53 "placeagenericinstanceisnamedaswritten.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "placeagenericinstanceisnamedaswritten.c"
+#line 91 "placeagenericinstanceisnamedaswritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,7 +112,7 @@ void h_placeagenericinstanceisnamedaswritten_main(void) { HeroArrayHeader * h0_e
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t8 = h1_own1; h1_own1 = t3; hero_array_decref(t8); t4 = h_placeagenericinstanceisnamedaswritten_0first_1b9a87(t3); hero_print_int(t4); hero_print_end();
     t5 = hero_array_new(&hero_desc_str, 1); t9 = h2_own2; h2_own2 = t5; hero_array_decref(t9); t10 = h0_empty; hero_array_incref(t5); h0_empty = t5; hero_array_decref(t10);
     t6 = h0_empty; t7 = h_placeagenericinstanceisnamedaswritten_0first_1e58d9(t6); t11 = h3_own3; h3_own3 = t7; hero_str_decref(t11); hero_print_str(t7); hero_print_end();
-#line 117 "placeagenericinstanceisnamedaswritten.c"
+#line 116 "placeagenericinstanceisnamedaswritten.c"
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -124,13 +123,13 @@ void h_placeagenericinstanceisnamedaswritten_main(void) { HeroArrayHeader * h0_e
 #line 4 "tests/golden/run/place-a-generic-instance-is-named-as-written.hero"
 /* first<i64> */ HERO_TU_LOCAL int64_t h_placeagenericinstanceisnamedaswritten_0first_1b9a87(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "place-a-generic-instance-is-named-as-written.hero", "place-a-generic-instance-is-named-as-written.first", 5, 12) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]); return t3;
-#line 128 "placeagenericinstanceisnamedaswritten.c"
+#line 127 "placeagenericinstanceisnamedaswritten.c"
 }
 
 #line 4 "tests/golden/run/place-a-generic-instance-is-named-as-written.hero"
 /* first<str> */ HERO_TU_LOCAL HeroStr h_placeagenericinstanceisnamedaswritten_0first_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_xs; t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "place-a-generic-instance-is-named-as-written.hero", "place-a-generic-instance-is-named-as-written.first", 5, 12) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
-#line 134 "placeagenericinstanceisnamedaswritten.c"
+#line 133 "placeagenericinstanceisnamedaswritten.c"
     hero_str_incref(t3);
     return t3;
 }
@@ -231,7 +230,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f4a57f23de72d3d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("52c845bc6709199d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeagenericinstanceisnamedaswritten\tplace-a-generic-instance-is-named-as-written\n");

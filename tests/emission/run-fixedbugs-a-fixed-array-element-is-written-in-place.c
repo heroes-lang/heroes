@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 
 #line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a"); _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
-#line 67 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 66 "fixedbugsafixedarrayelementiswritteninplace.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -152,9 +151,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 157 "fixedbugsafixedarrayelementiswritteninplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_0Nums_eq(const struct nums *a, const struct nums *b);
@@ -187,7 +186,7 @@ void h_fixedbugsafixedarrayelementiswritteninplace_main(void) { struct nums h0_n
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = INT64_C(4); t6 = (struct nums){.a = {t1, t2, t3, t4}}; h0_n = t6; hero_pad_fill(&h0_n, sizeof(struct nums), 1, hero_pad_g_0, hero_pad_n_0);
     t7 = INT64_C(0); t8 = INT64_C(9); h0_n.a[((uint64_t)(t7) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-a-fixed-array-element-is-written-in-place.hero", "fixedbugs-a-fixed-array-element-is-written-in-place.main", 28, 5), (int64_t)0) : (t7))] = t8;
     t9 = HERO_STR_LIT(hero_str_727306ec); t10 = h0_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-fixed-array-element-is-written-in-place.hero", "fixedbugs-a-fixed-array-element-is-written-in-place.main", 29, 20}; t11 = nums_sum(t10); } hero_print_str(t9); hero_print_int(t11); hero_print_end(); return;
-#line 191 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 190 "fixedbugsafixedarrayelementiswritteninplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_0Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;
@@ -301,7 +300,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("321ca55c3d33dcde", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("231174fe4f7c8849", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafixedarrayelementiswritteninplace\tfixedbugs-a-fixed-array-element-is-written-in-place\n");

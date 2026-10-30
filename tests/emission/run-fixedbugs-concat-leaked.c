@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 60 "fixedbugsconcatleaked.c"
+#line 59 "fixedbugsconcatleaked.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -92,9 +91,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugsconcatleaked.c"
+#line 97 "fixedbugsconcatleaked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,7 +115,7 @@ void h_fixedbugsconcatleaked_main(void);
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183); t2 = h0_name; t3 = hero_str_concat(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4);
-#line 120 "fixedbugsconcatleaked.c"
+#line 119 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -135,7 +134,7 @@ void h_fixedbugsconcatleaked_main(void) { HeroStr h0_s = {0}; HeroStr h1_out = {
     t15 = h2_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-concat-leaked.hero", "fixedbugs-concat-leaked.main", 29, 13); h2_i = t17; goto bb1; bb3:
 #line 31
     t18 = h1_out; t19 = hero_str_len(t18); hero_print_int(t19); hero_print_end();
-#line 139 "fixedbugsconcatleaked.c"
+#line 138 "fixedbugsconcatleaked.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h3_own3);
@@ -240,7 +239,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c30f0e37b59c289", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("76e56a34048cece2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsconcatleaked\tfixedbugs-concat-leaked\n");

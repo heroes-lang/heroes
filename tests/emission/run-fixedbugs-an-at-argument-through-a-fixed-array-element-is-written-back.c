@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("a")
 #pragma pop_macro("v")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -71,13 +70,13 @@ _Static_assert(__builtin_classify_type(((struct cell *)0)->w) == 1 && sizeof(((s
 #line 21
 _Static_assert(sizeof(struct holder) - __builtin_offsetof(struct holder, xs) != 0, "heroes-ffi-flex Holder xs"); _Static_assert(_Generic(&((struct holder *)0)->xs, struct cell (*)[3]: 1, default: 0) && sizeof(struct holder) - __builtin_offsetof(struct holder, xs) >= sizeof(struct cell[3]), "heroes-ffi-field Holder xs");
 _Static_assert(sizeof(struct holder) - __builtin_offsetof(struct holder, a) != 0, "heroes-ffi-flex Holder a"); _Static_assert(_Generic(&((struct holder *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Holder a");
-#line 75 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 74 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 
 #line 17 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell v w");
 #line 20
 _Static_assert(__builtin_classify_type(*(struct holder *)0) != 13, "heroes-ffi-union Holder xs a");
-#line 81 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 80 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -168,9 +167,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 174 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 173 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_0Cell_eq(const struct cell *a, const struct cell *b);
@@ -209,13 +208,13 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_x); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.inc", 26, 9); (*ph0_x) = t3; return;
-#line 213 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 212 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_c).w; t2 = INT64_C(10); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.widen", 29, 11); (*ph0_c).w = t3; return;
-#line 219 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 218 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -226,7 +225,7 @@ void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void) { 
     t19 = INT64_C(2); h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(&h0_h.xs[((uint64_t)(t19) >= UINT64_C(3) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 35, 5), (int64_t)0) : (t19))]);
     t20 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 36, 5}; (void)put_seven((void *)&h0_h.a[((uint64_t)(t20) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 36, 5), (int64_t)0) : (t20))]); }
     t21 = h0_h; t23 = INT64_C(0); t24 = t21.a[((uint64_t)(t23) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 37, 11), (int64_t)0) : (t23))]; t25 = HERO_STR_LIT(hero_str_20); t26 = h0_h; t28 = INT64_C(1); t29 = t26.a[((uint64_t)(t28) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 37, 24), (int64_t)0) : (t28))]; t30 = HERO_STR_LIT(hero_str_20); t31 = h0_h; t33 = INT64_C(2); t34 = t31.a[((uint64_t)(t33) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 37, 37), (int64_t)0) : (t33))]; t35 = HERO_STR_LIT(hero_str_20); t36 = h0_h; t38 = INT64_C(1); t39 = t36.xs[((uint64_t)(t38) >= UINT64_C(3) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 37, 50), (int64_t)0) : (t38))]; t40 = t39.v; t41 = HERO_STR_LIT(hero_str_20); t42 = h0_h; t44 = INT64_C(2); t45 = t42.xs[((uint64_t)(t44) >= UINT64_C(3) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 37, 66), (int64_t)0) : (t44))]; t46 = t45.v; t47 = HERO_STR_LIT(hero_str_20); t48 = h0_h; t50 = INT64_C(2); t51 = t48.xs[((uint64_t)(t50) >= UINT64_C(3) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero", "fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.main", 37, 82), (int64_t)0) : (t50))]; t52 = t51.w; hero_print_int(t24); hero_print_str(t25); hero_print_int(t29); hero_print_str(t30); hero_print_int(t34); hero_print_str(t35); hero_print_int(t40); hero_print_str(t41); hero_print_int(t46); hero_print_str(t47); hero_print_int(t52); hero_print_end(); return;
-#line 230 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 229 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_0Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->v == b->v)) return false;
@@ -358,7 +357,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("652c440b63ac68e5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("709fcbfe3592a973", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsanatargumentthroughafixedarrayelementiswrittenback\tfixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back\n");

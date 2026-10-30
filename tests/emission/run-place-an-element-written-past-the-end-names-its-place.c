@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_45197abb, "unreached");
 
-#line 56 "placeanelementwrittenpasttheendnamesitsplace.c"
+#line 55 "placeanelementwrittenpasttheendnamesitsplace.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,9 +87,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "placeanelementwrittenpasttheendnamesitsplace.c"
+#line 93 "placeanelementwrittenpasttheendnamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -117,7 +116,7 @@ void h_placeanelementwrittenpasttheendnamesitsplace_main(void) { HeroArrayHeader
     t11 = h1_at; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("place-an-element-written-past-the-end-names-its-place.hero", "place-an-element-written-past-the-end-names-its-place.main", 10, 10); h1_at = t13;
     t14 = h1_at; t15 = INT64_C(8); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h0_xs); if (*hero_slot == NULL || t14 < 0 || t14 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t14, "place-an-element-written-past-the-end-names-its-place.hero", "place-an-element-written-past-the-end-names-its-place.main", 11, 5); hero_array_set(hero_slot, t14, &t15); }
     t16 = HERO_STR_LIT(hero_str_45197abb); hero_print_str(t16); hero_print_end();
-#line 121 "placeanelementwrittenpasttheendnamesitsplace.c"
+#line 120 "placeanelementwrittenpasttheendnamesitsplace.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;
@@ -219,7 +218,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("29712c0d2fcabe41", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e7c8d2b75f177ae", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanelementwrittenpasttheendnamesitsplace\tplace-an-element-written-past-the-end-names-its-place\n");

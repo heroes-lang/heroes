@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -65,13 +64,13 @@ _Static_assert(_Generic(&((struct tp *)0)->d, double *: 1, default: 0) && sizeof
 _Static_assert(__builtin_classify_type(((struct tp *)0)->c) == 1 && sizeof(((struct tp *)0)->c) == sizeof(int8_t) && (_Generic(((struct tp *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tp c");
 #line 23
 _Static_assert(_Generic(&((struct ocd *)0)->inner, struct cd *: 1, default: 0) && sizeof(((struct ocd *)0)->inner) == sizeof(struct cd), "heroes-ffi-field Ocd inner");
-#line 69 "ffithepaddingcreadsiszero.c"
+#line 68 "ffithepaddingcreadsiszero.c"
 
 #line 16 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 _Static_assert(__builtin_classify_type(*(struct cd *)0) != 13, "heroes-ffi-union Cd c d"); _Static_assert(__builtin_classify_type(*(struct cd *)0) != 13 || sizeof(((struct cd *)0)->c) == sizeof(struct cd), "heroes-ffi-union-narrow Cd c"); _Static_assert(__builtin_classify_type(*(struct cd *)0) != 13, "heroes-ffi-union-kind Cd d");
 #line 19
 _Static_assert(__builtin_classify_type(*(struct tp *)0) != 13, "heroes-ffi-union Tp d c");
-#line 75 "ffithepaddingcreadsiszero.c"
+#line 74 "ffithepaddingcreadsiszero.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -177,9 +176,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 183 "ffithepaddingcreadsiszero.c"
+#line 182 "ffithepaddingcreadsiszero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Cd_eq(const struct cd *a, const struct cd *b);
@@ -246,25 +245,25 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 36 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 struct cd h_ffithepaddingcreadsiszero_cd_through(struct cd h0_x) { HERO_NODEBUG struct cd t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 250 "ffithepaddingcreadsiszero.c"
+#line 249 "ffithepaddingcreadsiszero.c"
 }
 
 #line 39 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 struct tp h_ffithepaddingcreadsiszero_tp_through(struct tp h0_x) { HERO_NODEBUG struct tp t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 256 "ffithepaddingcreadsiszero.c"
+#line 255 "ffithepaddingcreadsiszero.c"
 }
 
 #line 42 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 struct ocd h_ffithepaddingcreadsiszero_ocd_through(struct ocd h0_x) { HERO_NODEBUG struct ocd t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; return t1;
-#line 262 "ffithepaddingcreadsiszero.c"
+#line 261 "ffithepaddingcreadsiszero.c"
 }
 
 #line 45 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 int32_t h_ffithepaddingcreadsiszero_handed_on(struct cd *ph0_p) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.handed_on", 46, 12}; hero_lend_local_name(ph0_p, "cd_pad", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t1 = cd_pad(&(*ph0_p)); } return t1;
-#line 268 "ffithepaddingcreadsiszero.c"
+#line 267 "ffithepaddingcreadsiszero.c"
 }
 
 #line 48 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -302,7 +301,7 @@ void h_ffithepaddingcreadsiszero_work(void) {
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.work", 71, 9}; hero_lend_local_name(hero_lend_h3_made, "cd_pad", "p"); hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0); t38 = cd_pad(&h3_made); }
 #line 58
     hero_print_bool(t26); hero_print_str(t27); hero_print_int(t28); hero_print_str(t29); hero_print_int(t30); hero_print_str(t31); hero_print_int(t32); hero_print_str(t33); hero_print_int(t34); hero_print_str(t35); hero_print_int(t36); hero_print_str(t37); hero_print_int(t38); hero_print_end();
-#line 306 "ffithepaddingcreadsiszero.c"
+#line 305 "ffithepaddingcreadsiszero.c"
     hero_array_release_at(&h2_pairs);
     hero_array_release_at(&h5_own5);
     hero_lend_local_give(hero_lend_h4_handed);
@@ -316,7 +315,7 @@ void h_ffithepaddingcreadsiszero_work(void) {
 void h_ffithepaddingcreadsiszero_main(void) { HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-padding-c-reads-is-zero.hero", "ffi-the-padding-c-reads-is-zero.main", 75, 5}; (void)dirty(); }
     h_ffithepaddingcreadsiszero_work(); return;
-#line 320 "ffithepaddingcreadsiszero.c"
+#line 319 "ffithepaddingcreadsiszero.c"
 }
 HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_0Cd_eq(const struct cd *a, const struct cd *b) {
     if (!(a->c == b->c)) return false;
@@ -471,7 +470,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4bcc60a1111ed3c1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a6a85bc493bcd2c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffithepaddingcreadsiszero\tffi-the-padding-c-reads-is-zero\n");

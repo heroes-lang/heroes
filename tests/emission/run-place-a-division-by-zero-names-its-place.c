@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placeadivisionbyzeronamesitsplace.c"
+#line 53 "placeadivisionbyzeronamesitsplace.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "placeadivisionbyzeronamesitsplace.c"
+#line 91 "placeadivisionbyzeronamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -110,14 +109,14 @@ void h_placeadivisionbyzeronamesitsplace_main(void);
 #line 4 "tests/golden/run/place-a-division-by-zero-names-its-place.hero"
 int64_t h_placeadivisionbyzeronamesitsplace_mean(int64_t h0_total, int64_t h1_count) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_total; t2 = h1_count; if (t2 == 0) hero_panic_at("division by zero", "place-a-division-by-zero-names-its-place.hero", "place-a-division-by-zero-names-its-place.mean", 5, 12); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow_at("place-a-division-by-zero-names-its-place.hero", "place-a-division-by-zero-names-its-place.mean", 5, 12); t3 = t1 / t2; return t3;
-#line 114 "placeadivisionbyzeronamesitsplace.c"
+#line 113 "placeadivisionbyzeronamesitsplace.c"
 }
 
 #line 7 "tests/golden/run/place-a-division-by-zero-names-its-place.hero"
 void h_placeadivisionbyzeronamesitsplace_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(10); t2 = INT64_C(2); t3 = h_placeadivisionbyzeronamesitsplace_mean(t1, t2); hero_print_int(t3); hero_print_end();
     t4 = INT64_C(10); t5 = INT64_C(0); t6 = h_placeadivisionbyzeronamesitsplace_mean(t4, t5); hero_print_int(t6); hero_print_end(); return;
-#line 121 "placeadivisionbyzeronamesitsplace.c"
+#line 120 "placeadivisionbyzeronamesitsplace.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -216,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("357faf3b0d68d201", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7768af587d323782", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeadivisionbyzeronamesitsplace\tplace-a-division-by-zero-names-its-place\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_2080896b, "Sunday");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_30, "0");
 
-#line 66 "main.c"
+#line 65 "main.c"
 typedef struct h_main_Date {
     int64_t f_year;
     int64_t f_month;
@@ -104,9 +103,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 110 "main.c"
+#line 109 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_0Date_eq(const h_main_Date *a, const h_main_Date *b);
@@ -148,7 +147,7 @@ bool h_main_is_leap(int64_t h0_year) { HERO_NODEBUG bool h1_ret0, t5, t6, t11, t
     t13 = h0_year; t14 = INT64_C(4); if (t14 == 0) hero_panic_at("division by zero", "main.hero", "main.is_leap", 39, 12); if (t13 == INT64_MIN && t14 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.is_leap", 39, 12); t15 = t13 % t14; t16 = INT64_C(0); t17 = t15 == t16; h1_ret0 = t17; goto bb7; bb5:
 #line 37
     t12 = false; h1_ret0 = t12; goto bb7; bb6: goto bb4; bb7:
-#line 152 "main.c"
+#line 151 "main.c"
     t18 = h1_ret0;
     return t18;
 }
@@ -217,7 +216,7 @@ int64_t h_main_days_in_month(int64_t h0_year, int64_t h1_month) { HERO_NODEBUG i
     t45 = INT64_C(0);
 #line 48
     h4_r1 = t45; goto bb7; bb22:
-#line 221 "main.c"
+#line 220 "main.c"
     t47 = h5_ret0;
     return t47;
 }
@@ -232,7 +231,7 @@ int64_t h_main_days_in_year(int64_t h0_year) { HERO_NODEBUG int64_t h1_r0, t1, t
     t4 = INT64_C(365);
 #line 54
     h1_r0 = t4; goto bb1;
-#line 236 "main.c"
+#line 235 "main.c"
 }
 
 #line 59 "examples/dates/main.hero"
@@ -247,7 +246,7 @@ bool h_main_valid(h_main_Date h0_d) { HERO_NODEBUG bool h1_b0, h2_ret0, t3, t6, 
     t13 = h0_d.f_day; t14 = h0_d.f_year; t15 = h0_d.f_month; t16 = h_main_days_in_month(t14, t15); t17 = t13 <= t16; h2_ret0 = t17; goto bb9; bb7:
 #line 64
     t12 = false; h2_ret0 = t12; goto bb9; bb8: goto bb6; bb9:
-#line 251 "main.c"
+#line 250 "main.c"
     t18 = h2_ret0;
     return t18;
 }
@@ -266,7 +265,7 @@ h_0opt_e201354 h_main_day_of_year(h_main_Date h0_d) { int64_t h1_total; int64_t 
     t17 = h2_month; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("main.hero", "main.day_of_year", 78, 17); h2_month = t19; goto bb4; bb6:
 #line 80
     t20 = h1_total; t21 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t20}; t24 = h5_own5; h5_own5 = t21; h_0opt_e201354_release(&t24); h3_ret0 = t21; goto bb7; bb7:
-#line 270 "main.c"
+#line 269 "main.c"
     t22 = h3_ret0;
     h_0opt_e201354_retain(&t22);
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -283,7 +282,7 @@ h_0opt_e201354 h_main_days_before(h_main_Date h0_d) { HERO_NODEBUG h_0opt_e20135
     t26 = h3_years; t27 = INT64_C(365); if (__builtin_mul_overflow(t26, t27, &t28)) hero_panic_overflow_at("main.hero", "main.days_before", 94, 15); t29 = h4_leaps; if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.days_before", 94, 15); t31 = h2_inside; if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("main.hero", "main.days_before", 94, 15); t33 = INT64_C(1); if (__builtin_sub_overflow(t32, t33, &t34)) hero_panic_overflow_at("main.hero", "main.days_before", 94, 15); t35 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t34}; t39 = h7_own7; h7_own7 = t35; h_0opt_e201354_release(&t39); h5_ret0 = t35; goto bb3; bb2:
 #line 87
     t7 = h1_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t40 = h8_own8; h8_own8 = t9; h_0opt_e201354_release(&t40); h5_ret0 = t9; goto bb3; bb3:
-#line 287 "main.c"
+#line 286 "main.c"
     t36 = h5_ret0;
     h_0opt_e201354_retain(&t36);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -303,7 +302,7 @@ h_0opt_e201354 h_main_between(h_main_Date h0_from, h_main_Date h1_to) { HERO_NOD
     t23 = h5_second; t24 = h3_first; if (__builtin_sub_overflow(t23, t24, &t25)) hero_panic_overflow_at("main.hero", "main.between", 99, 15); t26 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t25}; t33 = h10_own10; h10_own10 = t26; h_0opt_e201354_release(&t33); h6_ret0 = t26; goto bb5; bb4:
 #line 98
     t18 = h4_f1; t19 = t18.as.err; hero_failure_retain(&t19); t20 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t19}; t34 = h11_own11; h11_own11 = t20; h_0opt_e201354_release(&t34); h6_ret0 = t20; goto bb5; bb5:
-#line 307 "main.c"
+#line 306 "main.c"
     t27 = h6_ret0;
     h_0opt_e201354_retain(&t27);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -319,7 +318,7 @@ h_0opt_e201354 h_main_between(h_main_Date h0_from, h_main_Date h1_to) { HERO_NOD
 #line 104 "examples/dates/main.hero"
 h_0opt_e201354 h_main_weekday(h_main_Date h0_d) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t2, t3, t7, t9, t10, t14, t15, t16, t17, t18, t19; HERO_NODEBUG h_main_Date t1; HERO_NODEBUG int64_t t4, t5, t11, t12, t13; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_d; t2 = h_main_days_before(t1); t16 = h3_own3; h3_own3 = t2; h_0opt_e201354_release(&t16); t17 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t17); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t10 = h1_f0; t11 = t10.as.ok; t12 = INT64_C(7); if (t12 == 0) hero_panic_at("division by zero", "main.hero", "main.weekday", 105, 15); if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "main.hero", "main.weekday", 105, 15); t13 = t11 % t12; t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t13}; t18 = h4_own4; h4_own4 = t14; h_0opt_e201354_release(&t18); h2_ret0 = t14; goto bb3; bb2: t7 = h1_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t19 = h5_own5; h5_own5 = t9; h_0opt_e201354_release(&t19); h2_ret0 = t9; goto bb3; bb3:
-#line 323 "main.c"
+#line 322 "main.c"
     t15 = h2_ret0;
     h_0opt_e201354_retain(&t15);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -392,7 +391,7 @@ h_0opt_f87774a h_main_weekday_name(h_main_Date h0_d) { HERO_NODEBUG h_0opt_e2013
     t37 = HERO_STR_LIT(hero_str_2080896b);
 #line 114
     t53 = h4_r0; hero_str_incref(t37); h4_r0 = t37; hero_str_decref(t53); goto bb3; bb17:
-#line 396 "main.c"
+#line 395 "main.c"
     t41 = h6_ret0;
     h_0opt_f87774a_retain(&t41);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -407,7 +406,7 @@ h_0opt_f87774a h_main_weekday_name(h_main_Date h0_d) { HERO_NODEBUG h_0opt_e2013
 #line 125 "examples/dates/main.hero"
 HeroStr h_main_shown(h_main_Date h0_d) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t4, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16, t17, t18, t19; HERO_NODEBUG int64_t t1, t5, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_d.f_year; t2 = hero_int_to_str(t1); t13 = h1_own1; h1_own1 = t2; hero_str_decref(t13); t3 = HERO_STR_LIT(hero_str_2d); t4 = hero_str_concat(t2, t3); t14 = h2_own2; h2_own2 = t4; hero_str_decref(t14); t5 = h0_d.f_month; t6 = h_main_padded(t5); t15 = h3_own3; h3_own3 = t6; hero_str_decref(t15); t7 = hero_str_concat(t4, t6); t16 = h4_own4; h4_own4 = t7; hero_str_decref(t16); t8 = HERO_STR_LIT(hero_str_2d); t9 = hero_str_concat(t7, t8); t17 = h5_own5; h5_own5 = t9; hero_str_decref(t17); t10 = h0_d.f_day; t11 = h_main_padded(t10); t18 = h6_own6; h6_own6 = t11; hero_str_decref(t18); t12 = hero_str_concat(t9, t11); t19 = h7_own7; h7_own7 = t12; hero_str_decref(t19);
-#line 411 "main.c"
+#line 410 "main.c"
     hero_str_incref(t12);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -422,7 +421,7 @@ HeroStr h_main_shown(h_main_Date h0_d) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_
 #line 128 "examples/dates/main.hero"
 HeroStr h_main_padded(int64_t h0_n) { HERO_NODEBUG HeroStr h1_r0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t7, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t5, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(10); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1: t10 = h1_r0;
-#line 426 "main.c"
+#line 425 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -438,7 +437,7 @@ bb2:
     t8 = h0_n; t9 = hero_int_to_str(t8); t14 = h4_own4; h4_own4 = t9; hero_str_decref(t14);
 #line 129
     t15 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t15); goto bb1;
-#line 442 "main.c"
+#line 441 "main.c"
 }
 
 #line 134 "examples/dates/main.hero"
@@ -460,7 +459,7 @@ void h_main_main(void) { h_main_Date h0_landing; HERO_NODEBUG h_0opt_e201354 h1_
     t35 = h0_landing; t36 = h_main_weekday_name(t35); t115 = h11_own11; h11_own11 = t36; h_0opt_f87774a_release(&t115); t116 = h2_f1; h_0opt_f87774a_retain(&t36); h2_f1 = t36; h_0opt_f87774a_release(&t116); t37 = h2_f1; t38 = t37.tag; t39 = INT64_C(0); t40 = t38 == t39; if (t40) goto bb3; else goto bb4; bb2:
 #line 148
     t31 = h1_f0; t32 = t31.as.err;
-#line 464 "main.c"
+#line 463 "main.c"
     hero_panic_must_at(t32, "main.hero", "main.main", 148, 11);
     hero_unreachable();
 bb3:
@@ -471,7 +470,7 @@ bb3:
     t49 = h0_landing; t50 = h3_millennium; t51 = h_main_between(t49, t50); t117 = h12_own12; h12_own12 = t51; h_0opt_e201354_release(&t117); t118 = h4_f2; h_0opt_e201354_retain(&t51); h4_f2 = t51; h_0opt_e201354_release(&t118); t52 = h4_f2; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb5; else goto bb6; bb4:
 #line 149
     t41 = h2_f1; t42 = t41.as.err;
-#line 475 "main.c"
+#line 474 "main.c"
     hero_panic_must_at(t42, "main.hero", "main.main", 149, 11);
     hero_unreachable();
 bb5:
@@ -481,7 +480,7 @@ bb5:
     t60 = INT64_C(2024); t61 = INT64_C(2); t62 = INT64_C(28); t63 = (h_main_Date){.f_year = t60, .f_month = t61, .f_day = t62}; t64 = INT64_C(2024); t65 = INT64_C(3); t66 = INT64_C(1); t67 = (h_main_Date){.f_year = t64, .f_month = t65, .f_day = t66}; t68 = h_main_between(t63, t67); t119 = h13_own13; h13_own13 = t68; h_0opt_e201354_release(&t119); t120 = h5_f3; h_0opt_e201354_retain(&t68); h5_f3 = t68; h_0opt_e201354_release(&t120); t69 = h5_f3; t70 = t69.tag; t71 = INT64_C(0); t72 = t70 == t71; if (t72) goto bb7; else goto bb8; bb6:
 #line 153
     t56 = h4_f2; t57 = t56.as.err;
-#line 485 "main.c"
+#line 484 "main.c"
     hero_panic_must_at(t57, "main.hero", "main.main", 153, 11);
     hero_unreachable();
 bb7:
@@ -490,7 +489,7 @@ bb7:
     t77 = INT64_C(2023); t78 = INT64_C(2); t79 = INT64_C(28); t80 = (h_main_Date){.f_year = t77, .f_month = t78, .f_day = t79}; t81 = INT64_C(2023); t82 = INT64_C(3); t83 = INT64_C(1); t84 = (h_main_Date){.f_year = t81, .f_month = t82, .f_day = t83}; t85 = h_main_between(t80, t84); t121 = h14_own14; h14_own14 = t85; h_0opt_e201354_release(&t121); t122 = h6_f4; h_0opt_e201354_retain(&t85); h6_f4 = t85; h_0opt_e201354_release(&t122); t86 = h6_f4; t87 = t86.tag; t88 = INT64_C(0); t89 = t87 == t88; if (t89) goto bb9; else goto bb10; bb8:
 #line 156
     t73 = h5_f3; t74 = t73.as.err;
-#line 494 "main.c"
+#line 493 "main.c"
     hero_panic_must_at(t74, "main.hero", "main.main", 156, 11);
     hero_unreachable();
 bb9:
@@ -499,7 +498,7 @@ bb9:
 #line 160
     t94 = INT64_C(2023); t95 = INT64_C(2); t96 = INT64_C(29); t97 = (h_main_Date){.f_year = t94, .f_month = t95, .f_day = t96}; t98 = h_main_day_of_year(t97); t123 = h15_own15; h15_own15 = t98; h_0opt_e201354_release(&t123); t124 = h7_f5; h_0opt_e201354_retain(&t98); h7_f5 = t98; h_0opt_e201354_release(&t124); t99 = h7_f5; t100 = t99.tag; t101 = INT64_C(1); t102 = t100 == t101; hero_print_bool(t102); hero_print_end();
     t103 = INT64_C(2024); t104 = INT64_C(2); t105 = INT64_C(29); t106 = (h_main_Date){.f_year = t103, .f_month = t104, .f_day = t105}; t107 = h_main_day_of_year(t106); t125 = h16_own16; h16_own16 = t107; h_0opt_e201354_release(&t125); t126 = h8_f6; h_0opt_e201354_retain(&t107); h8_f6 = t107; h_0opt_e201354_release(&t126); t108 = h8_f6; t109 = t108.tag; t110 = INT64_C(1); t111 = t109 == t110; hero_print_bool(t111); hero_print_end();
-#line 503 "main.c"
+#line 502 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_f2));
@@ -519,7 +518,7 @@ bb9:
 bb10:
 #line 157 "examples/dates/main.hero"
     t90 = h6_f4; t91 = t90.as.err;
-#line 523 "main.c"
+#line 522 "main.c"
     hero_panic_must_at(t91, "main.hero", "main.main", 157, 11);
     hero_unreachable();
 }
@@ -636,7 +635,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("25a5adf87ced3d3f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f12c47271345242", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

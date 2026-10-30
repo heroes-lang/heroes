@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -98,7 +97,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1b811794, "read through the stale copy: ");
 
-#line 102 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 101 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,9 +148,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 154 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_0Node_eq(node * const *a, node * const *b);
@@ -179,7 +178,7 @@ void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) { node * h0_a;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-read-after-c-reused-its-address-is-not-caught.main", 28, 9}; t4 = node_new(); hero_handle_acquired_at(t4, "node_free", &hero_here); } h2_b = t4;
     t5 = HERO_STR_LIT(hero_str_1b811794); t6 = h1_keep; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-read-after-c-reused-its-address-is-not-caught.main", 29, 44}; hero_handle_alive_at(t6, "the argument `n` of `node_value`", &hero_here); t7 = node_value(t6); } hero_print_str(t5); hero_print_int(t7); hero_print_end();
     t8 = h2_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero", "limit-a-copy-read-after-c-reused-its-address-is-not-caught.main", 30, 5}; { hero_handle_alive_at(t8, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "node_free", NULL, &hero_here); (void)node_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h2_b == t8) h2_b = hero_handle_dead(); } } return;
-#line 183 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 182 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
@@ -289,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38d8bc7a7bebdbbf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("61f923a014e39154", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("limitacopyreadaftercreuseditsaddressisnotcaught\tlimit-a-copy-read-after-c-reused-its-address-is-not-caught\n");

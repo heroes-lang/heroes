@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_64ba1395, "epsilons across ");
 HERO_STR_STATIC(hero_str_7f3b381d, " bands: ");
 
-#line 66 "main.c"
+#line 65 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -102,9 +101,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "main.c"
+#line 107 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -139,13 +138,13 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 27 "examples/wordbands/main.hero"
 int64_t h_main_BANDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(8); return t1;
-#line 143 "main.c"
+#line 142 "main.c"
 }
 
 #line 30 "examples/wordbands/main.hero"
 int64_t h_main_LINES(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(300); return t1;
-#line 149 "main.c"
+#line 148 "main.c"
 }
 
 #line 35 "examples/wordbands/main.hero"
@@ -162,7 +161,7 @@ HeroStr h_main_text_of(int64_t h0_index) { HeroArrayHeader * h1_pieces = {0}; in
     t16 = t14 == t15; if (t16) goto bb5; else goto bb6; bb3:
 #line 52
     t38 = h1_pieces; t39 = HERO_STR_LIT(hero_str_20); t40 = hero_str_join(t38, t39); t43 = h8_own8; h8_own8 = t40; hero_str_decref(t43);
-#line 166 "main.c"
+#line 165 "main.c"
     hero_str_incref(t40);
     hero_array_release_at(&h1_pieces);
     hero_str_release_at(&h5_r0);
@@ -208,7 +207,7 @@ bb4:
     t30 = HERO_STR_LIT(hero_str_45336354);
 #line 42
     t49 = h5_r0; hero_str_incref(t30); h5_r0 = t30; hero_str_decref(t49); goto bb4;
-#line 212 "main.c"
+#line 211 "main.c"
 }
 
 #line 56 "examples/wordbands/main.hero"
@@ -233,7 +232,7 @@ int64_t h_main_longest_word_count(int64_t h0_index) { hero_thread_guard("main.lo
     t60 = h10_i1; t61 = INT64_C(1); if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow_at("main.hero", "main.longest_word_count", 65, 9); h10_i1 = t62; goto bb8; bb11:
 #line 70
     t63 = h8_seen;
-#line 237 "main.c"
+#line 236 "main.c"
     hero_map_release_at(&h1_counts);
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_word);
@@ -256,7 +255,7 @@ bb13:
 #line 67 "examples/wordbands/main.hero"
     t48 = h11_key; t77 = h7_best; hero_str_incref(t48); h7_best = t48; hero_str_decref(t77);
     t49 = h1_counts; t50 = h11_key; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.longest_word_count", 68, 20}; HERO_NODEBUG const void *found = hero_map_find_at(t49, &t50, &hero_here); if (found == NULL) { t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t51 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t51.as.ok, found); } } t78 = h20_own20; h20_own20 = t51; h_0opt_e201354_release(&t78); t79 = h12_f1; h_0opt_e201354_retain(&t51); h12_f1 = t51; h_0opt_e201354_release(&t79); t52 = h12_f1; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb15; else goto bb16; bb14: goto bb12; bb15: t56 = h12_f1; t57 = t56.as.ok; h13_r1 = t57; goto bb17; bb16: t58 = INT64_C(0); h13_r1 = t58; goto bb17; bb17: t59 = h13_r1; h8_seen = t59; goto bb12;
-#line 260 "main.c"
+#line 259 "main.c"
 }
 
 int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
@@ -284,7 +283,7 @@ HeroArrayHeader * h_main_split_words(HeroStr h0_text) { HeroArrayHeader * h1_out
     t25 = hero_array_new(&hero_desc_str, 1); t50 = h10_own10; h10_own10 = t25; hero_array_decref(t50); t51 = h2_current; hero_array_incref(t25); h2_current = t25; hero_array_decref(t51); goto bb8; bb10: goto bb8; bb11:
 #line 89
     t41 = h1_out;
-#line 288 "main.c"
+#line 287 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_current);
@@ -300,7 +299,7 @@ HeroArrayHeader * h_main_split_words(HeroStr h0_text) { HeroArrayHeader * h1_out
 bb12:
 #line 87 "examples/wordbands/main.hero"
     t37 = h2_current; t38 = HERO_STR_LIT(hero_str_0); t39 = hero_str_join(t37, t38); t52 = h11_own11; h11_own11 = t39; hero_str_decref(t52); hero_array_push_owned(&h1_out, &t39); goto bb11; bb13: goto bb11;
-#line 304 "main.c"
+#line 303 "main.c"
 }
 
 #line 91 "examples/wordbands/main.hero"
@@ -320,7 +319,7 @@ int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i
     t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.together", 101, 9); h4_i0 = t30; goto bb4; bb7:
 #line 104
     t31 = h2_total;
-#line 324 "main.c"
+#line 323 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -337,13 +336,13 @@ int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_i; HERO_NODEBUG int64_
     t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.alone", 112, 13); h1_i = t12; goto bb1; bb3:
 #line 114
     t13 = h0_total; return t13;
-#line 341 "main.c"
+#line 340 "main.c"
 }
 
 #line 116 "examples/wordbands/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_64ba1395); t2 = h_main_BANDS(); t3 = HERO_STR_LIT(hero_str_7f3b381d); t4 = h_main_together(); hero_print_str(t1); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); return;
-#line 347 "main.c"
+#line 346 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
@@ -442,7 +441,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("143b6d224c08a6af", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3da8839c404fbbb2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -54,7 +53,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_6b, "k");
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 58 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 57 "fixedbugsequalitywasdecidedbyanaddress.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,9 +89,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 95 "fixedbugsequalitywasdecidedbyanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -135,7 +134,7 @@ void h_fixedbugsequalitywasdecidedbyanaddress_main(void) { double h0_n; HeroArra
     t53 = h10_ns; t54 = h11_os; t55 = hero_map_eq(t53, t54); t56 = HERO_STR_LIT(hero_str_20); t57 = h10_ns; t58 = h12_ps; t59 = hero_map_eq(t57, t58); hero_print_bool(t55); hero_print_str(t56); hero_print_bool(t59); hero_print_end();
 #line 79
     t60 = 0x1p+0; t61 = hero_array_new(&hero_desc_f64, 1); hero_array_push_owned(&t61, &t60); t86 = h21_own21; h21_own21 = t61; hero_array_decref(t86); t62 = 0x1p+0; t63 = 0x1p+1; t64 = hero_array_new(&hero_desc_f64, 2); hero_array_push_owned(&t64, &t62); hero_array_push_owned(&t64, &t63); t87 = h22_own22; h22_own22 = t64; hero_array_decref(t87); t65 = hero_array_eq(t61, t64); hero_print_bool(t65); hero_print_end();
-#line 139 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 138 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_release_at(&h1_a);
     hero_array_release_at(&h2_b);
     hero_array_release_at(&h3_c);
@@ -257,7 +256,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ef3b18e37520f36", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("52719f586073fb96", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsequalitywasdecidedbyanaddress\tfixedbugs-equality-was-decided-by-an-address\n");

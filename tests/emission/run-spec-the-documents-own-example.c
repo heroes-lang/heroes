@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "specthedocumentsownexample.c"
+#line 53 "specthedocumentsownexample.c"
 typedef struct h_specthedocumentsownexample_Point {
     int64_t f_x;
     int64_t f_y;
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "specthedocumentsownexample.c"
+#line 96 "specthedocumentsownexample.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_specthedocumentsownexample_0Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b);
@@ -119,13 +118,13 @@ int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0
     t1 = h1_b.f_x; t2 = h0_a.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 30, 10); h2_dx = t3;
     t4 = h1_b.f_y; t5 = h0_a.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 31, 10); h3_dy = t6;
     t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 32, 12); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 32, 22); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow_at("spec-the-documents-own-example.hero", "spec-the-documents-own-example.dist2", 32, 12); return t13;
-#line 123 "specthedocumentsownexample.c"
+#line 122 "specthedocumentsownexample.c"
 }
 
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
 void h_specthedocumentsownexample_main(void) { HERO_NODEBUG int64_t t1, t2, t4, t5, t7; HERO_NODEBUG h_specthedocumentsownexample_Point t3, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = (h_specthedocumentsownexample_Point){.f_x = t1, .f_y = t2}; t4 = INT64_C(3); t5 = INT64_C(4); t6 = (h_specthedocumentsownexample_Point){.f_x = t4, .f_y = t5}; t7 = h_specthedocumentsownexample_dist2(t3, t6); hero_print_int(t7); hero_print_end(); return;
-#line 129 "specthedocumentsownexample.c"
+#line 128 "specthedocumentsownexample.c"
 }
 HERO_TU_LOCAL bool h_specthedocumentsownexample_0Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
@@ -238,7 +237,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("07202d661a2e59cb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f535568501b46cd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("specthedocumentsownexample\tspec-the-documents-own-example\n");

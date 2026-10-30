@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "adversarialcowperstep.c"
+#line 53 "adversarialcowperstep.c"
 typedef struct h_adversarialcowperstep_Row {
     HeroArrayHeader * f_cells;
 } h_adversarialcowperstep_Row;
@@ -99,9 +98,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "adversarialcowperstep.c"
+#line 104 "adversarialcowperstep.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_adversarialcowperstep_0Row_retain(const h_adversarialcowperstep_Row *v);
@@ -194,7 +193,7 @@ void h_adversarialcowperstep_main(void) { h_adversarialcowperstep_Grid h0_g = {0
     t100 = h4_xs; t129 = h5_ys; hero_array_incref(t100); h5_ys = t100; hero_array_decref(t129);
     t101 = INT64_C(1); t102 = INT64_C(9); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h4_xs); if (*hero_slot == NULL || t101 < 0 || t101 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t101, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 79, 5); hero_array_set(hero_slot, t101, &t102); }
     t103 = h4_xs; t104 = INT64_C(1); t105 = ((void)((t103 == NULL || t104 < 0 || t104 >= t103->len) ? hero_panic_index_at(t103, t104, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 80, 11) : (void)0), (void)(t103->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t103 + 1))[t104]); t106 = h5_ys; t107 = INT64_C(1); t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? hero_panic_index_at(t106, t107, "adversarial-cow-per-step.hero", "adversarial-cow-per-step.main", 80, 18) : (void)0), (void)(t106->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t106 + 1))[t107]); hero_print_int(t105); hero_print_int(t108); hero_print_end();
-#line 198 "adversarialcowperstep.c"
+#line 197 "adversarialcowperstep.c"
     h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h0_g));
     h_adversarialcowperstep_0Grid_release(hero_slot_escape(&h1_h));
     h_adversarialcowperstep_0Node_release(hero_slot_escape(&h2_n));
@@ -377,7 +376,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("60817470628b99b9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("174c355d2b3f65fb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialcowperstep\tadversarial-cow-per-step\n");

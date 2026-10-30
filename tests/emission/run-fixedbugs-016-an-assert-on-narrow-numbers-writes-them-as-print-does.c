@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1ff6b865, "x == y");
 
-#line 56 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
+#line 55 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
 typedef struct h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow {
     int8_t f_a;
     uint16_t f_b;
@@ -95,9 +94,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
+#line 100 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *a, const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *b);
@@ -124,7 +123,7 @@ void h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_main(void) { h_f
     t1 = INT64_C(-3); t2 = UINT64_C(65535); t3 = 0x1p-2; t4 = UINT64_C(7); t5 = (h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow){.f_a = t1, .f_b = t2, .f_c = t3, .f_d = t4}; h0_x = t5;
     t6 = INT64_C(-3); t7 = UINT64_C(65535); t8 = 0x1p-1; t9 = UINT64_C(7); t10 = (h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow){.f_a = t6, .f_b = t7, .f_c = t8, .f_d = t9}; h1_y = t10;
     t11 = HERO_STR_LIT(hero_str_1ff6b865); t12 = h0_x; t13 = h1_y; t14 = h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(&t12, &t13); if (t14) goto bb1; else goto bb2; bb1: return; bb2:
-#line 128 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
+#line 127 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
     hero_panic_assert_shown_at(t11, h_0show_706673d, &t12, &t13, 1, "fixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does.hero", "fixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does.main", 15, 12);
     hero_unreachable();
 }
@@ -259,7 +258,7 @@ HERO_TU_LOCAL void h_0show_706673d(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("30c2dd390aa4e95d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("019de52d2ea5c00e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonnarrownumberswritesthemasprintdoes\tfixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does\n");

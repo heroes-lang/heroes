@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -99,7 +98,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_2cb37c54, "cannot_open");
 HERO_STR_STATIC(hero_str_38b9, "no");
 
-#line 103 "deadaddresscopyinsideafalliblevalue.c"
+#line 102 "deadaddresscopyinsideafalliblevalue.c"
 typedef struct h_deadaddresscopyinsideafalliblevalue_Db {
     cdb * f_handle;
 } h_deadaddresscopyinsideafalliblevalue_Db;
@@ -163,9 +162,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "deadaddresscopyinsideafalliblevalue.c"
+#line 168 "deadaddresscopyinsideafalliblevalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscopyinsideafalliblevalue_0CDb_eq(cdb * const *a, cdb * const *b);
@@ -223,7 +222,7 @@ h_0opt_77d4f5ff h_deadaddresscopyinsideafalliblevalue_opened(void) {
     t10 = h0_db; t11 = (h_deadaddresscopyinsideafalliblevalue_Db){.f_handle = t10}; t12 = (h_0opt_77d4f5ff){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_77d4f5ff_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 20
     t7 = HERO_STR_LIT(hero_str_2cb37c54); t8 = HERO_STR_LIT(hero_str_38b9); hero_str_incref(t7); hero_str_incref(t8); t9 = (h_0opt_77d4f5ff){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}}; t15 = h3_own3; h3_own3 = t9; h_0opt_77d4f5ff_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 227 "deadaddresscopyinsideafalliblevalue.c"
+#line 226 "deadaddresscopyinsideafalliblevalue.c"
     t13 = h1_ret0;
     h_0opt_77d4f5ff_retain(&t13);
     h_0opt_77d4f5ff_release(hero_slot_escape(&h2_own2));
@@ -236,7 +235,7 @@ h_0opt_77d4f5ff h_deadaddresscopyinsideafalliblevalue_opened(void) {
 #line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 int64_t h_deadaddresscopyinsideafalliblevalue_closed(h_deadaddresscopyinsideafalliblevalue_Db *ph0_db) { HERO_NODEBUG cdb *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_db).f_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-inside-a-fallible-value.hero", "dead-address-copy-inside-a-fallible-value.closed", 24, 12}; { hero_handle_alive_at(t1, "the argument `db` of `db_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "db_close", NULL, &hero_here); t2 = db_close(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_db).f_handle == t1) (*ph0_db).f_handle = hero_handle_dead(); } } return t2;
-#line 240 "deadaddresscopyinsideafalliblevalue.c"
+#line 239 "deadaddresscopyinsideafalliblevalue.c"
 }
 
 #line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
@@ -247,13 +246,13 @@ void h_deadaddresscopyinsideafalliblevalue_main(void) { h_0opt_77d4f5ff h0_resul
     t12 = h0_result; t26 = h3_f1; h_0opt_77d4f5ff_retain(&t12); h3_f1 = t12; h_0opt_77d4f5ff_release(&t26); t13 = h3_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb3; else goto bb4; bb2:
 #line 28
     t7 = h1_f0; t8 = t7.as.err;
-#line 251 "deadaddresscopyinsideafalliblevalue.c"
+#line 250 "deadaddresscopyinsideafalliblevalue.c"
     hero_panic_must_at(t8, "dead-address-copy-inside-a-fallible-value.hero", "dead-address-copy-inside-a-fallible-value.main", 28, 15);
     hero_unreachable();
 bb3:
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t19 = h3_f1; t20 = t19.as.ok; t21 = t20.f_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-copy-inside-a-fallible-value.hero", "dead-address-copy-inside-a-fallible-value.main", 30, 11}; hero_handle_alive_at(t21, "the argument `db` of `db_changes`", &hero_here); t22 = db_changes(t21); } hero_print_int(t22); hero_print_end();
-#line 257 "deadaddresscopyinsideafalliblevalue.c"
+#line 256 "deadaddresscopyinsideafalliblevalue.c"
     h_0opt_77d4f5ff_release(hero_slot_escape(&h0_result));
     h_0opt_77d4f5ff_release(hero_slot_escape(&h1_f0));
     h_0opt_77d4f5ff_release(hero_slot_escape(&h3_f1));
@@ -262,7 +261,7 @@ bb3:
 bb4:
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t17 = h3_f1; t18 = t17.as.err;
-#line 266 "deadaddresscopyinsideafalliblevalue.c"
+#line 265 "deadaddresscopyinsideafalliblevalue.c"
     hero_panic_must_at(t18, "dead-address-copy-inside-a-fallible-value.hero", "dead-address-copy-inside-a-fallible-value.main", 30, 26);
     hero_unreachable();
 }
@@ -418,7 +417,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("00fe51e9206de993", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57aa0d0f4f875f33", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadaddresscopyinsideafalliblevalue\tdead-address-copy-inside-a-fallible-value\n");

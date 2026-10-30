@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 57 "fixedbugsmapstorealiased.c"
+#line 56 "fixedbugsmapstorealiased.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugsmapstorealiased.c"
+#line 94 "fixedbugsmapstorealiased.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -118,7 +117,7 @@ void h_fixedbugsmapstorealiased_main(void) { HeroMapHeader * h0_m = {0}; HeroMap
     t7 = h1_n; t8 = hero_map_len(t7); hero_print_int(t8); hero_print_end();
     t9 = h0_m; t10 = hero_map_len(t9); hero_print_int(t10); hero_print_end();
     t11 = h1_n; t12 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-map-store-aliased.hero", "fixedbugs-map-store-aliased.main", 38, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t11, &t12, &hero_here); if (found == NULL) { t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t13 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t13.as.ok, found); } } t25 = h5_own5; h5_own5 = t13; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t13); h2_f0 = t13; h_0opt_e201354_release(&t26); t14 = h2_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb1; else goto bb2; bb1: t18 = h2_f0; t19 = t18.as.ok; h3_r0 = t19; goto bb3; bb2: t20 = INT64_C(-1); h3_r0 = t20; goto bb3; bb3: t21 = h3_r0; hero_print_int(t21); hero_print_end();
-#line 122 "fixedbugsmapstorealiased.c"
+#line 121 "fixedbugsmapstorealiased.c"
     hero_map_release_at(&h0_m);
     hero_map_release_at(&h1_n);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -223,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("70e512e35e012189", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("602b82794ca7c0fb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsmapstorealiased\tfixedbugs-map-store-aliased\n");

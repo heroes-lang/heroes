@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -56,7 +55,7 @@ HERO_STR_STATIC(hero_str_188c0f4b, "never");
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 60 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 59 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 typedef enum h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_0Color_tag {
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_0Color_tag_red = 0,
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_0Color_tag_blue = 1,
@@ -101,9 +100,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 106 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_0Color_eq(const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *a, const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *b);
@@ -147,7 +146,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_checked(int
     t5 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.checked", 22, 5}; h_library_exit(t5, &hero_here); } hero_unreachable(); hero_unreachable(); bb2:
 #line 21
     t4 = h0_n; return t4; bb3: goto bb1;
-#line 151 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 150 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -157,7 +156,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_by_position
     t5 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.by_position", 27, 5}; h_library_exit(t5, &hero_here); } hero_unreachable(); hero_unreachable(); bb2:
 #line 26
     t4 = h0_n; return t4; bb3: goto bb1;
-#line 161 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 160 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -167,7 +166,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_asserted(in
     t5 = HERO_STR_LIT(hero_str_b928f19); t6 = false; if (t6) goto bb4; else goto bb5; bb2:
 #line 34
     t4 = h0_n; return t4; bb3: goto bb1; bb4: hero_unreachable(); bb5:
-#line 171 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 170 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert_at(t5, "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.asserted", 35, 12);
     hero_unreachable();
 }
@@ -182,7 +181,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_until_found
     t9 = h1_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.until_found", 46, 13); h1_i = t11; goto bb1; bb5:
 #line 45
     t8 = h1_i; return t8; bb6: goto bb4;
-#line 186 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 185 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -200,7 +199,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_inner_fo
     t24 = h1_m; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.an_inner_for_breaks", 58, 13); h1_m = t26; goto bb1; bb12:
 #line 57
     t23 = h1_m;
-#line 204 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 203 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t23;
@@ -220,7 +219,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_inner_wh
     t8 = h1_m; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.an_inner_while_breaks", 69, 13); h1_m = t10; goto bb1; bb8:
 #line 68
     t7 = h1_m; return t7; bb9: goto bb7;
-#line 224 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 223 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 71 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -233,7 +232,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_continues(i
     t6 = h1_m; t7 = INT64_C(5); t8 = t6 < t7; if (t8) goto bb5; else goto bb6; bb3: hero_unreachable(); bb4:
 #line 79
     t9 = h1_m; return t9; bb5: goto bb1; bb6: goto bb4;
-#line 237 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 236 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 82 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -244,7 +243,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_every_branc
     t8 = h0_n; return t8; bb5:
 #line 88
     t9 = HERO_STR_LIT(hero_str_b928f19); t10 = false; if (t10) goto bb6; else goto bb7; bb6: goto bb1; bb7:
-#line 248 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 247 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert_at(t9, "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.every_branch_ends", 88, 16);
     hero_unreachable();
 }
@@ -254,7 +253,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_arm_exit
     t1 = h0_c; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: hero_unreachable(); bb2:
     t4 = INT64_C(1); return t4; bb3:
     t5 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.an_arm_exits", 93, 18}; h_library_exit(t5, &hero_here); } hero_unreachable(); goto bb1;
-#line 258 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 257 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -265,7 +264,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_defensive(i
     t6 = INT64_C(0); h1_ret0 = t6; goto bb4; bb2:
 #line 98
     t4 = h0_n; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 269 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 268 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     t7 = h1_ret0;
     return t7;
 }
@@ -279,7 +278,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_asser
     t4 = h0_n; h1_ret0 = t4; goto bb6; bb3: goto bb1; bb4:
 #line 106
     t7 = INT64_C(0); h1_ret0 = t7; goto bb6; bb5:
-#line 283 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 282 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert_at(t5, "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.after_assert", 105, 12);
     hero_unreachable();
 bb6:
@@ -300,7 +299,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_loo
     t7 = h1_i; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.after_a_loop", 114, 13); h1_i = t9; goto bb1; bb5:
 #line 113
     t6 = h1_i; h2_ret0 = t6; goto bb7; bb6: goto bb4; bb7:
-#line 304 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 303 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     t12 = h2_ret0;
     return t12;
 }
@@ -311,7 +310,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_lea
     t4 = INT64_C(1); h1_ret0 = t4; goto bb4; bb3:
 #line 125
     t5 = INT64_C(2); h1_ret0 = t5; goto bb4; bb4:
-#line 315 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 314 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     t6 = h1_ret0;
     return t6;
 }
@@ -324,7 +323,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_lea
     t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb2:
     t5 = INT64_C(1); h2_ret0 = t5; goto bb5; bb3: goto bb4; bb4:
     t6 = INT64_C(2); h2_ret0 = t6; goto bb5; bb5:
-#line 328 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 327 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     t7 = h2_ret0;
     return t7;
 }
@@ -334,7 +333,7 @@ void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish(void) {
     t1 = HERO_STR_LIT(hero_str_d839a22); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero", "fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.finish", 142, 5}; h_library_exit(t2, &hero_here); } hero_unreachable();
     t3 = HERO_STR_LIT(hero_str_188c0f4b); hero_print_str(t3); hero_print_end(); return;
-#line 338 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 337 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 145 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -354,15 +353,15 @@ void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_main(void) { H
     t25 = INT64_C(1); t26 = h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_if(t25); hero_print_int(t26); hero_print_end();
     t27 = INT64_C(0); t28 = h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_match(t27); hero_print_int(t28); hero_print_end();
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish(); return;
-#line 358 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 357 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
-#line 232 "<heroes library>"
+#line 231 "<heroes library>"
 void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
-#line 236
+#line 235
     t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 366 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 365 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
@@ -370,16 +369,16 @@ void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBU
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
 bb2:
-#line 233 "<heroes library>"
+#line 232 "<heroes library>"
     t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
     t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 378 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
-    hero_panic_must_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
+#line 377 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+    hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
 __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 232, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 231, 1};
     h_library_exit(h0_code, &hero_here);
 }
 HERO_TU_LOCAL bool h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_0Color_eq(const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *a, const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *b) {
@@ -499,7 +498,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d9a73187a772a72", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1629b0892b01d95f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks\tfixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks\n");

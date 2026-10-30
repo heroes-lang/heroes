@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -63,7 +62,7 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 
 #line 23 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(sizeof(struct four) - __builtin_offsetof(struct four, a) != 0, "heroes-ffi-flex Four a"); _Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
-#line 67 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 66 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -159,9 +158,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 164 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(ob * const *a, ob * const *b);
@@ -212,7 +211,7 @@ void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) { struct fou
     t46 = h6_i1; t47 = INT64_C(1); if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 9); h6_i1 = t48; goto bb5; bb8:
 #line 42
     t49 = HERO_STR_LIT(hero_str_3294dee); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 42, 25}; t50 = ob_freed(); } hero_print_str(t49); hero_print_int(t50); hero_print_end();
-#line 216 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 215 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_xs1);
     hero_array_release_at(&h8_own8);
@@ -228,7 +227,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 232 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 231 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -361,7 +360,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ec801b52ea185f1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("17e868dc47993b85", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsanacquiredhandleiswrittenintoafixedarray\tfixedbugs-an-acquired-handle-is-written-into-a-fixed-array\n");

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -56,7 +55,7 @@
 #pragma pop_macro("fabs")
 #pragma pop_macro("sqrt")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -103,7 +102,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 107 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+#line 106 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -155,9 +154,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+#line 160 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -179,7 +178,7 @@ void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void);
 void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.8p+1; t2 = -t1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero", "fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.main", 17, 11}; t3 = fabs(t2); } hero_print_f64(t3); hero_print_end();
     t4 = 0x1p+2; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero", "fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.main", 18, 11}; t5 = sqrt(t4); } hero_print_f64(t5); hero_print_end(); return;
-#line 183 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+#line 182 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -278,7 +277,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("568d66c742685a9d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("565f43f20ef0ea1a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2056aheadersownmacroofanameitbindsstands\tfixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "indirectcall.c"
+#line 53 "indirectcall.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -87,9 +86,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "indirectcall.c"
+#line 92 "indirectcall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,19 +111,19 @@ void h_indirectcall_main(void);
 #line 6 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_double(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("indirect-call.hero", "indirect-call.double", 7, 12); return t3;
-#line 116 "indirectcall.c"
+#line 115 "indirectcall.c"
 }
 
 #line 9 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f) { HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_f; t2 = h1_f; t3 = h0_n; t4 = t2(t3); t5 = t1(t4); return t5;
-#line 122 "indirectcall.c"
+#line 121 "indirectcall.c"
 }
 
 #line 12 "tests/golden/ir/indirect-call.hero"
 void h_indirectcall_main(void) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = h_indirectcall_double; t3 = h_indirectcall_apply_twice(t1, t2); hero_print_int(t3); hero_print_end(); return;
-#line 128 "indirectcall.c"
+#line 127 "indirectcall.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -223,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("18f19f3275d5415b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0a3879e03805d427", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("indirectcall\tindirect-call\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -65,7 +64,7 @@ HERO_STR_STATIC(hero_str_451c6397, "a\342\200\213b");
 HERO_STR_STATIC(hero_str_22cdf42d, "a no-break space:");
 HERO_STR_STATIC(hero_str_d3286cf, "a\302\240b");
 
-#line 69 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 68 "fixedbugs283textastringspellswithisheldasitself.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -101,9 +100,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 106 "fixedbugs283textastringspellswithisheldasitself.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -134,7 +133,7 @@ HeroStr h_fixedbugs283textastringspellswithisheldasitself_bytes_of(HeroStr h0_s)
     t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero", "fixedbugs-283-text-a-string-spells-with-is-held-as-itself.bytes_of", 13, 9); h3_i0 = t24; goto bb1; bb4:
 #line 16
     t25 = h1_out;
-#line 138 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 137 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -153,7 +152,7 @@ void h_fixedbugs283textastringspellswithisheldasitself_main(void) { HERO_NODEBUG
     t10 = HERO_STR_LIT(hero_str_9506771); t11 = HERO_STR_LIT(hero_str_2ca7000d); t12 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t11); t22 = h3_own3; h3_own3 = t12; hero_str_decref(t22); hero_print_str(t10); hero_print_str(t12); hero_print_end();
     t13 = HERO_STR_LIT(hero_str_24829e4a); t14 = HERO_STR_LIT(hero_str_451c6397); t15 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t14); t23 = h4_own4; h4_own4 = t15; hero_str_decref(t23); hero_print_str(t13); hero_print_str(t15); hero_print_end();
     t16 = HERO_STR_LIT(hero_str_22cdf42d); t17 = HERO_STR_LIT(hero_str_d3286cf); t18 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t17); t24 = h5_own5; h5_own5 = t18; hero_str_decref(t24); hero_print_str(t16); hero_print_str(t18); hero_print_end();
-#line 157 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 156 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -171,7 +170,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 175 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 174 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -278,7 +277,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6597155767aa5ae5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("64b5bce03a53bd22", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs283textastringspellswithisheldasitself\tfixedbugs-283-text-a-string-spells-with-is-held-as-itself\n");

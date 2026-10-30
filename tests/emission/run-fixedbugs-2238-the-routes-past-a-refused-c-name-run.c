@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -68,11 +67,11 @@ _Static_assert(__builtin_classify_type(((L *)0)->x) == 1 && sizeof(((L *)0)->x) 
 #line 20
 _Static_assert(__builtin_classify_type(((struct pair *)0)->kw_in) == 1 && sizeof(((struct pair *)0)->kw_in) == sizeof(int32_t) && (_Generic(((struct pair *)0)->kw_in, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair kw_in");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->c_def) == 1 && sizeof(((struct pair *)0)->c_def) == sizeof(int32_t) && (_Generic(((struct pair *)0)->c_def, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair c_def");
-#line 72 "fixedbugs2238theroutespastarefusedcnamerun.c"
+#line 71 "fixedbugs2238theroutespastarefusedcnamerun.c"
 
 #line 19 "tests/golden/run/fixedbugs-2238-the-routes-past-a-refused-c-name-run.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair kw_in c_def");
-#line 76 "fixedbugs2238theroutespastarefusedcnamerun.c"
+#line 75 "fixedbugs2238theroutespastarefusedcnamerun.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -161,9 +160,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "fixedbugs2238theroutespastarefusedcnamerun.c"
+#line 166 "fixedbugs2238theroutespastarefusedcnamerun.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2238theroutespastarefusedcnamerun_0kw_match_eq(const kw_match *a, const kw_match *b);
@@ -218,7 +217,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 23 "tests/golden/run/fixedbugs-2238-the-routes-past-a-refused-c-name-run.hero"
 int64_t h_fixedbugs2238theroutespastarefusedcnamerun_c_nil(void) {
-#line 222 "fixedbugs2238theroutespastarefusedcnamerun.c"
+#line 221 "fixedbugs2238theroutespastarefusedcnamerun.c"
     _Static_assert(HERO_RET_INT(c_nil), "heroes-ffi-return c_nil i64");
     _Static_assert(__builtin_constant_p(c_nil), "heroes-ffi-const c_nil");
 #pragma clang diagnostic push
@@ -230,7 +229,7 @@ int64_t h_fixedbugs2238theroutespastarefusedcnamerun_c_nil(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 23 "tests/golden/run/fixedbugs-2238-the-routes-past-a-refused-c-name-run.hero"
     return c_nil;
-#line 234 "fixedbugs2238theroutespastarefusedcnamerun.c"
+#line 233 "fixedbugs2238theroutespastarefusedcnamerun.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -262,7 +261,7 @@ void h_fixedbugs2238theroutespastarefusedcnamerun_main(void) { kw_match h0_m; c_
     t20 = h4_p.c_def; hero_print_int(t20); hero_print_end();
     t21 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2238-the-routes-past-a-refused-c-name-run.hero", "fixedbugs-2238-the-routes-past-a-refused-c-name-run.main", 38, 11}; t22 = c_func(t21); } hero_print_int(t22); hero_print_end();
     t23 = h_fixedbugs2238theroutespastarefusedcnamerun_c_nil(); hero_print_int(t23); hero_print_end(); return;
-#line 266 "fixedbugs2238theroutespastarefusedcnamerun.c"
+#line 265 "fixedbugs2238theroutespastarefusedcnamerun.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2238theroutespastarefusedcnamerun_0kw_match_eq(const kw_match *a, const kw_match *b) {
     if (!(a->x == b->x)) return false;
@@ -423,7 +422,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("45fab36439924ce7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36ef83064bdaf852", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2238theroutespastarefusedcnamerun\tfixedbugs-2238-the-routes-past-a-refused-c-name-run\n");

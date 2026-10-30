@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -73,7 +72,7 @@ _Static_assert(__builtin_classify_type(((struct outer *)0)->z) == 1 && sizeof(((
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->fd) == 1 && sizeof(((struct pfd *)0)->fd) == sizeof(int32_t) && (_Generic(((struct pfd *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd fd");
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->events) == 1 && sizeof(((struct pfd *)0)->events) == sizeof(int16_t) && (_Generic(((struct pfd *)0)->events, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd events");
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->revents) == 1 && sizeof(((struct pfd *)0)->revents) == sizeof(int16_t) && (_Generic(((struct pfd *)0)->revents, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd revents");
-#line 77 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 76 "fixedbugs092arecordlentwholewithitscountruns.c"
 
 #line 14 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct pad *)0) != 13, "heroes-ffi-union Pad c d");
@@ -81,7 +80,7 @@ _Static_assert(__builtin_classify_type(*(struct pad *)0) != 13, "heroes-ffi-unio
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer inner z");
 #line 20
 _Static_assert(__builtin_classify_type(*(struct pfd *)0) != 13, "heroes-ffi-union Pfd fd events revents");
-#line 85 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 84 "fixedbugs092arecordlentwholewithitscountruns.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -184,9 +183,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 190 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 189 "fixedbugs092arecordlentwholewithitscountruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092arecordlentwholewithitscountruns_0One_eq(const struct one *a, const struct one *b);
@@ -236,7 +235,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 33 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 uint64_t h_fixedbugs092arecordlentwholewithitscountruns_at_run_time(uint64_t h0_k) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_k; return t1;
-#line 240 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 239 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -271,7 +270,7 @@ void h_fixedbugs092arecordlentwholewithitscountruns_main(void) {
     t34 = UINT64_C(1); t35 = h_fixedbugs092arecordlentwholewithitscountruns_at_run_time(t34); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero", "fixedbugs-092-a-record-lent-whole-with-its-count-runs.main", 54, 11}; if ((uint64_t)(t35) > (uint64_t)(sizeof(h3_q) / sizeof(*(LPPFD)0))) hero_panic_at(sizeof(*(LPPFD)0) == 1 ? "`poll_typedef` was given a count past the record lent whole to `fds`, read from `nfds` at run time and counted in bytes" : "`poll_typedef` was given a count past the record lent whole to `fds`, read from `nfds` at run time and counted in what the header's `LPPFD` points at", "fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero", "fixedbugs-092-a-record-lent-whole-with-its-count-runs.main", 54, 11); hero_lend_local_name(hero_lend_h3_q, "poll_typedef", "fds"); hero_pad_fill(&h3_q, sizeof(struct pfd), 1, hero_pad_g_3, hero_pad_n_3); t36 = poll_typedef(&h3_q, t35); } hero_print_int(t36); hero_print_end();
     t37 = h3_q.revents; hero_print_int(t37); hero_print_end();
     t38 = UINT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero", "fixedbugs-092-a-record-lent-whole-with-its-count-runs.main", 56, 11}; _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h1_p)), "heroes-ffi-extent-record copy_n dst n 2226 2227 bytes void *"); _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h1_p) / sizeof(*(void *)0))), "heroes-ffi-extent-record copy_n dst n 2226 2227 unit void *"); _Static_assert(sizeof(*(const void *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_o)), "heroes-ffi-extent-record copy_n src n 2226 2227 bytes const void *"); _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_o) / sizeof(*(const void *)0))), "heroes-ffi-extent-record copy_n src n 2226 2227 unit const void *"); hero_lend_local_name(hero_lend_h1_p, "copy_n", "dst"); hero_lend_local_name(hero_lend_h0_o, "copy_n", "src"); hero_pad_fill(&h1_p, sizeof(struct pad), 1, hero_pad_g_1, hero_pad_n_1); hero_pad_fill(&h0_o, sizeof(struct one), 1, hero_pad_g_0, hero_pad_n_0); t39 = copy_n(&h1_p, &h0_o, t38); } hero_print_int(t39); hero_print_end(); hero_lend_local_give(hero_lend_h4_n); hero_lend_local_give(hero_lend_h3_q); hero_lend_local_give(hero_lend_h1_p); hero_lend_local_give(hero_lend_h0_o); return;
-#line 275 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 274 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 #undef h0_o
 #undef h1_p
@@ -430,7 +429,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d4d559d7e68a678", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6258b6bb448f5fe6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs092arecordlentwholewithitscountruns\tfixedbugs-092-a-record-lent-whole-with-its-count-runs\n");

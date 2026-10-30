@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -55,7 +54,7 @@ HERO_STR_STATIC(hero_str_2c, ",");
 HERO_STR_STATIC(hero_str_7c, "|");
 HERO_STR_STATIC(hero_str_eb4ac31, "mars");
 
-#line 59 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 58 "fixedbugs382anemptyconstantisaheaderalone.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 96 "fixedbugs382anemptyconstantisaheaderalone.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -117,14 +116,14 @@ void h_fixedbugs382anemptyconstantisaheaderalone_main(void);
 #if HERO_STATIC_CONSTANTS
 #line 7 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NONE_1, &hero_desc_int); HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NONE(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NONE_1);
-#line 121 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 120 "fixedbugs382anemptyconstantisaheaderalone.c"
 }
 #else
 
 #line 7 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NONE(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t1, *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t2 = h0_own0; h0_own0 = t1; hero_array_decref(t2);
-#line 128 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 127 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -134,14 +133,14 @@ HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NONE(void) { HERO_
 #if HERO_STATIC_CONSTANTS
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS_1, &hero_desc_str); HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS_1);
-#line 138 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 137 "fixedbugs382anemptyconstantisaheaderalone.c"
 }
 #else
 
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t1, *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t2 = h0_own0; h0_own0 = t1; hero_array_decref(t2);
-#line 145 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 144 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -151,14 +150,14 @@ HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) { H
 #if HERO_STATIC_CONSTANTS
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_1, &hero_desc_int); HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_2, HeroArrayHeader *, &hero_desc_array, 1, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_1)); HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_2);
-#line 155 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 154 "fixedbugs382anemptyconstantisaheaderalone.c"
 }
 #else
 
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *t1, *t2, *t3, *t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t3 = h0_own0; h0_own0 = t1; hero_array_decref(t3); t2 = hero_array_new(&hero_desc_array, 1); hero_array_push_owned(&t2, &t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4);
-#line 162 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 161 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t2);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -184,7 +183,7 @@ void h_fixedbugs382anemptyconstantisaheaderalone_main(void) { int64_t h0_walked;
     t53 = h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(); t99 = h20_own20; h20_own20 = t53; hero_array_decref(t99); t100 = h6_deep; hero_array_incref(t53); h6_deep = t53; hero_array_decref(t100);
     t54 = INT64_C(0); t55 = h6_deep; t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? hero_panic_index_at(t55, t56, "fixedbugs-382-an-empty-constant-is-a-header-alone.hero", "fixedbugs-382-an-empty-constant-is-a-header-alone.main", 29, 15) : (void)0), (void)(t55->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t55 + 1))[t56]); t58 = INT64_C(9); t59 = hero_array_push(t57, &t58); t101 = h21_own21; h21_own21 = t59; hero_array_decref(t101); hero_array_incref(t59); { HERO_NODEBUG HeroArrayHeader **hero_slot = &(h6_deep); if (*hero_slot == NULL || t54 < 0 || t54 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t54, "fixedbugs-382-an-empty-constant-is-a-header-alone.hero", "fixedbugs-382-an-empty-constant-is-a-header-alone.main", 29, 5); hero_array_set(hero_slot, t54, &t59); }
     t60 = h4_xs; t61 = ((void)(t60 == NULL ? ((void)hero_array_len(t60), hero_unreachable()) : (void)0), t60->len); t62 = HERO_STR_LIT(hero_str_20); t63 = h5_words; t64 = INT64_C(0); t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? hero_panic_index_at(t63, t64, "fixedbugs-382-an-empty-constant-is-a-header-alone.hero", "fixedbugs-382-an-empty-constant-is-a-header-alone.main", 30, 26) : (void)0), (void)(t63->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t63 + 1))[t64]); t66 = HERO_STR_LIT(hero_str_20); t67 = h6_deep; t68 = INT64_C(0); t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? hero_panic_index_at(t67, t68, "fixedbugs-382-an-empty-constant-is-a-header-alone.hero", "fixedbugs-382-an-empty-constant-is-a-header-alone.main", 30, 41) : (void)0), (void)(t67->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t67 + 1))[t68]); t70 = INT64_C(0); t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? hero_panic_index_at(t69, t70, "fixedbugs-382-an-empty-constant-is-a-header-alone.hero", "fixedbugs-382-an-empty-constant-is-a-header-alone.main", 30, 41) : (void)0), (void)(t69->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t69 + 1))[t70]); t72 = HERO_STR_LIT(hero_str_20); t73 = h_fixedbugs382anemptyconstantisaheaderalone_NONE(); t102 = h22_own22; h22_own22 = t73; hero_array_decref(t102); t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len); t75 = HERO_STR_LIT(hero_str_20); t76 = h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(); t103 = h23_own23; h23_own23 = t76; hero_array_decref(t103); t77 = ((void)(t76 == NULL ? ((void)hero_array_len(t76), hero_unreachable()) : (void)0), t76->len); t78 = HERO_STR_LIT(hero_str_20); t79 = h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(); t104 = h24_own24; h24_own24 = t79; hero_array_decref(t104); t80 = INT64_C(0); t81 = ((void)((t79 == NULL || t80 < 0 || t80 >= t79->len) ? hero_panic_index_at(t79, t80, "fixedbugs-382-an-empty-constant-is-a-header-alone.hero", "fixedbugs-382-an-empty-constant-is-a-header-alone.main", 30, 96) : (void)0), (void)(t79->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t79 + 1))[t80]); t82 = ((void)(t81 == NULL ? ((void)hero_array_len(t81), hero_unreachable()) : (void)0), t81->len); hero_print_int(t61); hero_print_str(t62); hero_print_str(t65); hero_print_str(t66); hero_print_int(t71); hero_print_str(t72); hero_print_int(t74); hero_print_str(t75); hero_print_int(t77); hero_print_str(t78); hero_print_int(t82); hero_print_end();
-#line 188 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 187 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_xs);
     hero_array_release_at(&h5_words);
@@ -306,7 +305,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6afdf76a0bdf7505", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("32253a3446ec27d4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382anemptyconstantisaheaderalone\tfixedbugs-382-an-empty-constant-is-a-header-alone\n");

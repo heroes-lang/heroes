@@ -481,3 +481,34 @@ Recorded as a reading (CLAUDE.md § 4).
 **Moved the same night** by the author's instruction, meant as: *it should be done before the
 publication gate, since developing the packages' core without it would be a problem; let us do it
 now*: feature 2274 is M-compatibility-promise's, and § 10's sentence lands with the others.
+
+## The predictions scored at the milestone's close, 2026-10-30
+
+The rows of § Predictions to score still reading a moment rather than a result, each scored
+against the command that settles it:
+
+- **The coordinator's 10,497 real for the synthesis's set** (from the spec-warden's parts): **hit**.
+  Step 9 (641b43017) priced the landing on `--refresh` at 10,343 to 10,514 real: the sitting's ten
+  at +154, the spec-warden's sum exact to the token, so 10,497 before § 10's map order, which the
+  author's turn of R12 added after the prediction and which cost +17 (the ledger's row 8019).
+- **The spec-warden's blind re-run of W under E1 with M10a, and of `xs.any(f)` under T and B4r**:
+  **lapsed**, not run by the author's instruction of 2026-10-29 to aggregate and finish in hours
+  (§ What the seats could not run). It bought no clause: row 8019 pays B4r and the order of
+  evaluation with the promise (decision 2217's *A*) and E1's neighbours with sentences false
+  today, so nothing returns to a decision.
+- **The spec-warden's `k2` exits 139 with nothing on stderr on Darwin arm64 until the window is
+  repaired**: **hit**, on its after half. `k2_two_mb_frame.hero`, taken from the sitting's evidence
+  archive and built with the batch's stage 2 on this Mac on 2026-10-30, exits 134 saying
+  `panic: stack exhausted in k2_two_mb_frame.make`; its before half is the seat's own run.
+- **The compiler-engineer's `bigframe18b`, 139 and an empty stderr until `stack.c` changes, then
+  134 `stack exhausted in bigframe18b.go`**: **hit** on Darwin arm64, the same build that day
+  exiting 134 with exactly that line. **Its Linux half, *the CI's Linux legs stay red with the
+  Darwin witness alone***, met no run: the Linux route (`-fstack-clash-protection`) landed in the
+  same commit as the Darwin witness (0c2a2f96a), whose body records the Linux arm64 image at 139
+  in 8 of 10 thread stacks before that route and 10 of 10 panics after; the CI's legs read
+  defect 2253's cases after the push.
+- **The ffi-pragmatist's route (b) changes no emission and no golden**: **hit** for route (b) as
+  the seat stated it, the clause narrowed. The landing was (b) **with C4's compile-time half**,
+  which the synthesis added (§ Disagreements, stated plainly, item 5), and that half, defect 2255's repair
+  (ea7eacada), moves the emission of every program whose `extern` call hands it a handle without
+  a mark, as its body says: a cost the prediction did not cover, not a miss of it.

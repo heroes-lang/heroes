@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -62,7 +61,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 66 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 65 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -102,9 +101,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 107 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -129,7 +128,7 @@ __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_
 
 #line 14 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 int64_t h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(void) {
-#line 133 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 132 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
     _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
@@ -141,7 +140,7 @@ int64_t h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(voi
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     return HERO_DIR_FILES;
-#line 145 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 144 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 #pragma clang diagnostic pop
 }
 
@@ -155,7 +154,7 @@ void h_fixedbugs573alistingleftstandingistoldastheprograms_main(void) { HeroStr 
     t18 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero", "fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.main", 22, 31}; t19 = hero_str_lend_at(t18, &hero_here); } t20 = h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(); t21 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero", "fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.main", 22, 11}; t22 = hero_dir_scan(hero_cstr_nonnull_at(t19, &hero_here), t20, t21); } hero_print_int(t22); hero_print_end();
     t23 = h0_dir; t24 = HERO_STR_LIT(hero_str_669890b); t25 = hero_str_concat(t23, t24); t37 = h6_own6; h6_own6 = t25; hero_str_decref(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero", "fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.main", 23, 30}; t26 = hero_str_lend_at(t25, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero", "fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.main", 23, 9}; (void)hero_fs_remove(hero_cstr_nonnull_at(t26, &hero_here)); }
     t28 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero", "fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.main", 24, 30}; t29 = hero_str_lend_at(t28, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero", "fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.main", 24, 9}; (void)hero_fs_remove(hero_cstr_nonnull_at(t29, &hero_here)); }
-#line 159 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 158 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     hero_str_release_at(&h0_dir);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
@@ -167,32 +166,32 @@ void h_fixedbugs573alistingleftstandingistoldastheprograms_main(void) { HeroStr 
 bb2:
 #line 21 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     t17 = HERO_STR_LIT(hero_str_24540112); hero_print_str(t17); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 171 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 170 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 176 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 175 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 181 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 180 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
-#line 186 "<heroes library>"
+#line 185 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
     t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 190
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
 #line 189
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 188
     t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
-#line 192
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 191
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+#line 190
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 196 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 195 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -202,7 +201,7 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     return t19;
 }
 __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 186, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
@@ -302,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b0d47823dda5d4a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0fe2208f0f414a18", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs573alistingleftstandingistoldastheprograms\tfixedbugs-573-a-listing-left-standing-is-told-as-the-program-s\n");

@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -96,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 100 "cfreesaleaseonalatercall.c"
+#line 99 "cfreesaleaseonalatercall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,9 +145,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "cfreesaleaseonalatercall.c"
+#line 151 "cfreesaleaseonalatercall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -174,7 +173,7 @@ void h_cfreesaleaseonalatercall_main(void) { HeroStr h0_x = {0}; const char * h1
     t5 = INT64_C(3); hero_print_int(t5); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-on-a-later-call.hero", "c-frees-a-lease-on-a-later-call.main", 16, 5}; (void)later_free(); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"c-frees-a-lease-on-a-later-call.hero", "c-frees-a-lease-on-a-later-call.main", 17, 5}; hero_held_release_at(&h1_c, &hero_here); }
-#line 178 "cfreesaleaseonalatercall.c"
+#line 177 "cfreesaleaseonalatercall.c"
     hero_str_release_at(&h0_x);
     return;
 }
@@ -275,7 +274,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4995e4852340c005", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("183409a05b5db970", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("cfreesaleaseonalatercall\tc-frees-a-lease-on-a-later-call\n");

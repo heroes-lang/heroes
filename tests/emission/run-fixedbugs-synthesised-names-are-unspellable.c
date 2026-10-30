@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d4477, "odd");
 HERO_STR_STATIC(hero_str_60844662, "not even");
 
-#line 57 "fixedbugssynthesisednamesareunspellable.c"
+#line 56 "fixedbugssynthesisednamesareunspellable.c"
 typedef struct h_fixedbugssynthesisednamesareunspellable_opt0 {
     int64_t f_x;
 } h_fixedbugssynthesisednamesareunspellable_opt0;
@@ -98,9 +97,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 104 "fixedbugssynthesisednamesareunspellable.c"
+#line 103 "fixedbugssynthesisednamesareunspellable.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugssynthesisednamesareunspellable_0opt0_eq(const h_fixedbugssynthesisednamesareunspellable_opt0 *a, const h_fixedbugssynthesisednamesareunspellable_opt0 *b);
@@ -128,13 +127,13 @@ void h_fixedbugssynthesisednamesareunspellable_main(void);
 #line 22 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 int64_t h_fixedbugssynthesisednamesareunspellable_bump(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-synthesised-names-are-unspellable.hero", "fixedbugs-synthesised-names-are-unspellable.bump", 23, 12); return t3;
-#line 132 "fixedbugssynthesisednamesareunspellable.c"
+#line 131 "fixedbugssynthesisednamesareunspellable.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 int64_t h_fixedbugssynthesisednamesareunspellable_call(h_0fn_48ac9712 h0_f) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = INT64_C(41); t3 = t1(t2); return t3;
-#line 138 "fixedbugssynthesisednamesareunspellable.c"
+#line 137 "fixedbugssynthesisednamesareunspellable.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
@@ -144,7 +143,7 @@ h_0opt_e201354 h_fixedbugssynthesisednamesareunspellable_half(int64_t h0_n) { HE
     t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_60844662); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
 #line 30
     t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-synthesised-names-are-unspellable.hero", "fixedbugs-synthesised-names-are-unspellable.half", 30, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-synthesised-names-are-unspellable.hero", "fixedbugs-synthesised-names-are-unspellable.half", 30, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 148 "fixedbugssynthesisednamesareunspellable.c"
+#line 147 "fixedbugssynthesisednamesareunspellable.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -158,7 +157,7 @@ void h_fixedbugssynthesisednamesareunspellable_main(void) { HERO_NODEBUG h_0opt_
     t4 = INT64_C(8); t5 = (h_fixedbugssynthesisednamesareunspellable_fn0){.f_y = t4}; t6 = t5.f_y; hero_print_int(t6); hero_print_end();
     t7 = h_fixedbugssynthesisednamesareunspellable_bump; t8 = h_fixedbugssynthesisednamesareunspellable_call(t7); hero_print_int(t8); hero_print_end();
     t9 = INT64_C(10); t10 = h_fixedbugssynthesisednamesareunspellable_half(t9); t19 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t19); t20 = h0_f0; h_0opt_e201354_retain(&t10); h0_f0 = t10; h_0opt_e201354_release(&t20); t11 = h0_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t15 = h0_f0; t16 = t15.as.ok; h1_r0 = t16; goto bb3; bb2: t17 = INT64_C(0); h1_r0 = t17; goto bb3; bb3: t18 = h1_r0; hero_print_int(t18); hero_print_end();
-#line 162 "fixedbugssynthesisednamesareunspellable.c"
+#line 161 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
@@ -284,7 +283,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d0d080f50c06509", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("452a72163ea046bd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugssynthesisednamesareunspellable\tfixedbugs-synthesised-names-are-unspellable\n");

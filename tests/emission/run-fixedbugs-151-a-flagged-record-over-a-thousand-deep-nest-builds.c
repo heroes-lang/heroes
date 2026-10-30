@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("i")
 #pragma pop_macro("v")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -2068,7 +2067,7 @@ _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((
 #line 2027
 _Static_assert(_Generic(&((TOP *)0)->inner, G999 *: 1, default: 0) && sizeof(((TOP *)0)->inner) == sizeof(G999), "heroes-ffi-field TOP inner");
 _Static_assert(__builtin_classify_type(((TOP *)0)->i) == 1 && sizeof(((TOP *)0)->i) == sizeof(int32_t) && (_Generic(((TOP *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field TOP i");
-#line 2072 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 2071 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -2154,9 +2153,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2160 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 2159 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_0G0_eq(const G0 *a, const G0 *b);
@@ -4179,7 +4178,7 @@ void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void);
 #line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void) { HERO_NODEBUG TOP t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero", "fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.main", 2032, 11}; t1 = make_top(); } t2 = t1.i; hero_print_int(t2); hero_print_end(); return;
-#line 4183 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 4182 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_0G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;
@@ -16292,7 +16291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2af25ba352b3e380", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("404e195b3f1ac0ac", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151aflaggedrecordoverathousanddeepnestbuilds\tfixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds\n");

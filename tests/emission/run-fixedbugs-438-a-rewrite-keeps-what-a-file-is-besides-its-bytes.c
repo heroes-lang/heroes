@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -109,7 +108,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 113 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 112 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -157,9 +156,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 162 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -199,7 +198,7 @@ __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_
 
 #line 36 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_DIR_FILES(void) {
-#line 203 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 202 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
     _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
@@ -211,13 +210,13 @@ int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_DIR_FILES(voi
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 36 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     return HERO_DIR_FILES;
-#line 215 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 214 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 #pragma clang diagnostic pop
 }
 
 #line 37 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_FS_OTHER(void) {
-#line 221 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 220 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     _Static_assert(HERO_RET_INT(HERO_FS_OTHER), "heroes-ffi-return HERO_FS_OTHER i64");
     _Static_assert(__builtin_constant_p(HERO_FS_OTHER), "heroes-ffi-const HERO_FS_OTHER");
 #pragma clang diagnostic push
@@ -229,14 +228,14 @@ int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_FS_OTHER(void
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 37 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     return HERO_FS_OTHER;
-#line 233 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 232 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 #pragma clang diagnostic pop
 }
 
 #line 39 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 HeroStr h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 240 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 239 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -246,13 +245,13 @@ int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_files_in(HeroStr h
     t1 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.files_in", 44, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.files_in", 44, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.files_in", 45, 5}; (void)hero_dir_release(); }
     t6 = h1_count; return t6;
-#line 250 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 249 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(HeroStr h0_path) { HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t1, t8, t9, t10, t11, t15, t16, t17; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.holds", 49, 12}; t2 = h_library_read_file(t1, &hero_here); } t13 = h3_own3; h3_own3 = t2; h_0opt_f87774a_release(&t13); t14 = h1_f0; h_0opt_f87774a_retain(&t2); h1_f0 = t2; h_0opt_f87774a_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; t15 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t15); goto bb3; bb2: t9 = HERO_STR_LIT(hero_str_c328310); t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto bb3; bb3: t10 = h2_r0; t11 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_TEXT(); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); t12 = hero_str_eq(t10, t11);
-#line 256 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 255 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -263,7 +262,7 @@ bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(HeroStr h0_path
 #line 51 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(HeroStr h0_path) { HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t10, t11; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t9; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_path; t2 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_TEXT(); t9 = h2_own2; h2_own2 = t2; hero_str_decref(t9); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.wrote", 52, 13}; t3 = h_library_write_file(t1, t2, &hero_here); } t10 = h3_own3; h3_own3 = t3; h_0opt_a8ea2_release(&t10); t11 = h1_f0; h_0opt_a8ea2_retain(&t3); h1_f0 = t3; h_0opt_a8ea2_release(&t11); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
-#line 267 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 266 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_own3));
@@ -274,7 +273,7 @@ bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(HeroStr h0_path
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_absent(HeroStr h0_dir) { HeroStr h1_path = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4, t5, t7, t8, t10, t11, t13, t14; HERO_NODEBUG bool t6, t9; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_dir; t2 = HERO_STR_LIT(hero_str_e32d513); t3 = hero_str_concat(t1, t2); t13 = h2_own2; h2_own2 = t3; hero_str_decref(t13); t14 = h1_path; hero_str_incref(t3); h1_path = t3; hero_str_decref(t14);
     t4 = HERO_STR_LIT(hero_str_71d4b748); t5 = h1_path; t6 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(t5); t7 = HERO_STR_LIT(hero_str_70a8b09f); t8 = h1_path; t9 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(t8); t10 = HERO_STR_LIT(hero_str_322b620b); t11 = h0_dir; t12 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_files_in(t11); hero_print_str(t4); hero_print_bool(t6); hero_print_str(t7); hero_print_bool(t9); hero_print_str(t10); hero_print_int(t12); hero_print_end();
-#line 278 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 277 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h2_own2);
     return;
@@ -301,7 +300,7 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_own_mode(HeroStr h0_d
 #line 61
     t7 = h1_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.own_mode", 61, 47}; t8 = hero_str_lend_at(t7, &hero_here); } t9 = INT64_C(416); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.own_mode", 61, 24}; t10 = hero_fs_set_mode(hero_cstr_nonnull_at(t8, &hero_here), t9); } t11 = INT64_C(0); t12 = t10 != t11; h2_b0 = t12; goto bb3; bb3: t13 = h2_b0; if (t13) goto bb4; else goto bb5; bb4:
     t14 = HERO_STR_LIT(hero_str_552d9e74); t15 = h1_path; hero_print_str(t14); hero_print_str(t15); hero_print_end(); goto bb6; bb5: goto bb1; bb6:
-#line 305 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 304 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h4_own4);
     return;
@@ -327,7 +326,7 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_two_names(HeroStr h0_
     t36 = h1_one; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.two_names", 89, 29}; t37 = hero_str_lend_at(t36, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.two_names", 89, 9}; t38 = hero_fs_links(hero_cstr_nonnull_at(t37, &hero_here)); } t39 = INT64_C(2); t40 = t38 == t39;
 #line 83
     hero_print_str(t26); hero_print_bool(t28); hero_print_str(t29); hero_print_bool(t34); hero_print_str(t35); hero_print_bool(t40); hero_print_end(); goto bb8; bb8:
-#line 331 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 330 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_one);
     hero_str_release_at(&h2_two);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_f0));
@@ -350,7 +349,7 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_no_new_name(HeroStr h
 #line 96
     t12 = h2_path; t13 = HERO_STR_LIT(hero_str_14d6ef); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.no_new_name", 96, 53}; t14 = h_library_write_file(t12, t13, &hero_here); } t44 = h9_own9; h9_own9 = t14; h_0opt_a8ea2_release(&t44); t45 = h5_f0; h_0opt_a8ea2_retain(&t14); h5_f0 = t14; h_0opt_a8ea2_release(&t45); t15 = h5_f0; t16 = t15.tag; t17 = INT64_C(1); t18 = t16 == t17; h4_b1 = t18; goto bb3; bb3: t19 = h4_b1; h3_b0 = t19; if (t19) goto bb5; else goto bb4; bb4: t20 = h1_shut; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.no_new_name", 96, 124}; t21 = hero_str_lend_at(t20, &hero_here); } t22 = INT64_C(365); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.no_new_name", 96, 101}; t23 = hero_fs_set_mode(hero_cstr_nonnull_at(t21, &hero_here), t22); } t24 = INT64_C(0); t25 = t23 != t24; h3_b0 = t25; goto bb5; bb5: t26 = h3_b0; if (t26) goto bb6; else goto bb7; bb6:
     t27 = HERO_STR_LIT(hero_str_552d9e74); t28 = h2_path; hero_print_str(t27); hero_print_str(t28); hero_print_end(); goto bb8; bb7: goto bb1; bb8:
-#line 354 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 353 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_shut);
     hero_str_release_at(&h2_path);
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
@@ -372,14 +371,14 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_device(void) { HeroSt
     t10 = h0_sink; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.device", 112, 28}; t11 = hero_str_lend_at(t10, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.device", 112, 9}; t12 = hero_fs_kind(hero_cstr_nonnull_at(t11, &hero_here)); } t13 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_FS_OTHER(); t14 = t12 == t13;
 #line 108
     hero_print_str(t6); hero_print_bool(t8); hero_print_str(t9); hero_print_bool(t14); hero_print_end();
-#line 376 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 375 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h0_sink);
     hero_str_release_at(&h1_own1);
     return;
 bb2:
 #line 107 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t5 = HERO_STR_LIT(hero_str_149889); t17 = h0_sink; hero_str_incref(t5); h0_sink = t5; hero_str_decref(t17); goto bb1; bb3: goto bb1;
-#line 383 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 382 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 115 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
@@ -393,7 +392,7 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_refused(HeroStr h0_di
     t17 = h1_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.refused", 122, 30}; t18 = hero_str_lend_at(t17, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.refused", 122, 9}; t19 = hero_fs_exists(hero_cstr_nonnull_at(t18, &hero_here)); } t20 = INT64_C(0); t21 = t19 == t20;
 #line 118
     hero_print_str(t13); hero_print_bool(t15); hero_print_str(t16); hero_print_bool(t21); hero_print_end();
-#line 397 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 396 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h2_own2);
     return;
@@ -418,7 +417,7 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_main(void) { HeroStr 
 #line 131
     t19 = h2_moded; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.main", 131, 77}; t20 = hero_str_lend_at(t19, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.main", 131, 53}; t21 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t20, &hero_here)); } t22 = INT64_C(0); t23 = t21 != t22; h5_b1 = t23; goto bb3; bb3: t24 = h5_b1; h4_b0 = t24; if (t24) goto bb5; else goto bb4; bb4: t25 = h3_linked; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.main", 131, 123}; t26 = hero_str_lend_at(t25, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero", "fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.main", 131, 99}; t27 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t26, &hero_here)); } t28 = INT64_C(0); t29 = t27 != t28; h4_b0 = t29; goto bb5; bb5: t30 = h4_b0; if (t30) goto bb6; else goto bb7; bb6:
     t31 = HERO_STR_LIT(hero_str_552d9e74); t32 = h0_root; hero_print_str(t31); hero_print_str(t32); hero_print_end(); goto bb8; bb7: goto bb1; bb8:
-#line 422 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 421 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h0_root);
     hero_str_release_at(&h1_lone);
     hero_str_release_at(&h2_moded);
@@ -433,50 +432,50 @@ void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_main(void) { HeroStr 
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 437 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 436 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 442 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 441 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 447 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 446 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 452 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 451 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
-#line 167 "<heroes library>"
+#line 166 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller) {
-#line 167
+#line 166
 #define h1_status (*hero_lend_h1_status)
-#line 167
+#line 166
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_status = t1;
     t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
     t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 174
+#line 173
     t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
-#line 171
+#line 170
     t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
-#line 176
-    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
 #line 175
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+#line 174
     t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
-#line 181
+#line 180
     t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
-#line 177
+#line 176
     t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
-#line 183
-    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 182
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+#line 181
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 480 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 479 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -495,23 +494,23 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
 }
 #undef h1_status
 __attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 167, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 166, 1};
     return h_library_read_file(h0_path, &hero_here);
 }
 
-#line 186 "<heroes library>"
+#line 185 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
     t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 190
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
 #line 189
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 188
     t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
-#line 192
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
 #line 191
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+#line 190
     t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 515 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 514 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -521,7 +520,7 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     return t19;
 }
 __attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 186, 1};
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
@@ -621,7 +620,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13a3810a32857ab1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("18785a1703ec677f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs438arewritekeepswhatafileisbesidesitsbytes\tfixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes\n");

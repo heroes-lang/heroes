@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_edaa230, "none");
 HERO_STR_STATIC(hero_str_6e, "n");
 
-#line 57 "fixedbugsoptionpayloaddescriptor.c"
+#line 56 "fixedbugsoptionpayloaddescriptor.c"
 typedef struct h_fixedbugsoptionpayloaddescriptor_Block {
     int64_t f_n;
 } h_fixedbugsoptionpayloaddescriptor_Block;
@@ -121,9 +120,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "fixedbugsoptionpayloaddescriptor.c"
+#line 126 "fixedbugsoptionpayloaddescriptor.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsoptionpayloaddescriptor_0Block_eq(const h_fixedbugsoptionpayloaddescriptor_Block *a, const h_fixedbugsoptionpayloaddescriptor_Block *b);
@@ -208,7 +207,7 @@ void h_fixedbugsoptionpayloaddescriptor_main(void) { h_fixedbugsoptionpayloaddes
     t21 = INT64_C(1); t22 = (h_fixedbugsoptionpayloaddescriptor_Block){.f_n = t21}; t23 = (h_0opt_4dbf93f0){.tag = INT64_C(0), .as.ok = t22}; t44 = h14_own14; h14_own14 = t23; h_0opt_4dbf93f0_release(&t44); h_0opt_4dbf93f0_retain(&t23); t24 = (h_fixedbugsoptionpayloaddescriptor_Node){.tag = h_fixedbugsoptionpayloaddescriptor_0Node_tag_branch, .as.c_branch = {.f_otherwise = t23}}; t45 = h15_own15; h15_own15 = t24; h_fixedbugsoptionpayloaddescriptor_0Node_release(&t45); t46 = h5_d; h_fixedbugsoptionpayloaddescriptor_0Node_retain(&t24); h5_d = t24; h_fixedbugsoptionpayloaddescriptor_0Node_release(&t46);
     t25 = h4_c; t26 = h5_d; t27 = h_fixedbugsoptionpayloaddescriptor_0Node_eq(&t25, &t26); hero_print_bool(t27); hero_print_end();
     t28 = h4_c; t29 = h0_a; t30 = h_fixedbugsoptionpayloaddescriptor_0Node_eq(&t28, &t29); hero_print_bool(t30); hero_print_end();
-#line 212 "fixedbugsoptionpayloaddescriptor.c"
+#line 211 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0Node_release(hero_slot_escape(&h0_a));
     h_fixedbugsoptionpayloaddescriptor_0Node_release(hero_slot_escape(&h1_b));
     h_fixedbugsoptionpayloaddescriptor_0Held_release(hero_slot_escape(&h2_h));
@@ -442,7 +441,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("78117ed56cad0f8e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("17431f3b23a894d1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsoptionpayloaddescriptor\tfixedbugs-option-payload-descriptor\n");

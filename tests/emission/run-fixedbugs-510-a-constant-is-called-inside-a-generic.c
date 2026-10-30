@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 56 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 55 "fixedbugs510aconstantiscalledinsideageneric.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 94 "fixedbugs510aconstantiscalledinsideageneric.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -118,20 +117,20 @@ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs510aconstantiscalledinsideageneric_0r
 #line 6 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
 int64_t h_fixedbugs510aconstantiscalledinsideageneric_twice(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-510-a-constant-is-called-inside-a-generic.hero", "fixedbugs-510-a-constant-is-called-inside-a-generic.twice", 7, 12); return t3;
-#line 122 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 121 "fixedbugs510aconstantiscalledinsideageneric.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
 h_0fn_48ac9712 h_fixedbugs510aconstantiscalledinsideageneric_DOUBLE(void) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs510aconstantiscalledinsideageneric_twice; return t1;
-#line 128 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 127 "fixedbugs510aconstantiscalledinsideageneric.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
 void h_fixedbugs510aconstantiscalledinsideageneric_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *t3, *t7, *t9, *t10; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t4, t6, t8; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_61); t2 = INT64_C(1); t3 = h_fixedbugs510aconstantiscalledinsideageneric_0repeated_1e58d9(t1, t2); t9 = h0_own0; h0_own0 = t3; hero_array_decref(t9); t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); hero_print_int(t4); hero_print_end();
     t5 = true; t6 = INT64_C(3); t7 = h_fixedbugs510aconstantiscalledinsideageneric_0repeated_d3eff76(t5, t6); t10 = h1_own1; h1_own1 = t7; hero_array_decref(t10); t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); hero_print_int(t8); hero_print_end();
-#line 135 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 134 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return;
@@ -145,7 +144,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 149 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 148 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -166,7 +165,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
     t15 = h4_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-510-a-constant-is-called-inside-a-generic.hero", "fixedbugs-510-a-constant-is-called-inside-a-generic.repeated", 15, 9); h4_i0 = t17; goto bb1; bb4:
 #line 18
     t18 = h2_out;
-#line 170 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 169 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t18);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -185,7 +184,7 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
     t15 = h4_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-510-a-constant-is-called-inside-a-generic.hero", "fixedbugs-510-a-constant-is-called-inside-a-generic.repeated", 15, 9); h4_i0 = t17; goto bb1; bb4:
 #line 18
     t18 = h2_out;
-#line 189 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 188 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t18);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -290,7 +289,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ecb16a041553ee0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6fbfe642539dea4b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantiscalledinsideageneric\tfixedbugs-510-a-constant-is-called-inside-a-generic\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
+#line 53 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
+#line 91 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,7 +111,7 @@ void h_fixedbugs567au64divisionattwotothe63byitsmaximumprints_main(void) { uint6
     t2 = UINT64_C(18446744073709551615); h1_m = t2;
     t3 = h0_k; t4 = h1_m; if (t4 == 0) hero_panic_at("division by zero", "fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero", "fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.main", 17, 11); t5 = t3 / t4; hero_print_uint(t5); hero_print_end();
     t6 = h0_k; t7 = h1_m; if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero", "fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.main", 18, 11); t8 = t6 % t7; hero_print_uint(t8); hero_print_end(); return;
-#line 116 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
+#line 115 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -211,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c3bdf1d03f63d6d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d16e71027f7141e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs567au64divisionattwotothe63byitsmaximumprints\tfixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints\n");

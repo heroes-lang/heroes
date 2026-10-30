@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_35d19427, "apple");
 HERO_STR_STATIC(hero_str_f1c9872, "pear");
 
-#line 57 "placeamustonanerrornameswhereitsreceiverbegins.c"
+#line 56 "placeamustonanerrornameswhereitsreceiverbegins.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -89,9 +88,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "placeamustonanerrornameswhereitsreceiverbegins.c"
+#line 94 "placeamustonanerrornameswhereitsreceiverbegins.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -113,14 +112,14 @@ void h_placeamustonanerrornameswhereitsreceiverbegins_main(void);
 #line 4 "tests/golden/run/place-a-must-on-an-error-names-where-its-receiver-begins.hero"
 int64_t h_placeamustonanerrornameswhereitsreceiverbegins_price(HeroMapHeader * h0_prices, HeroStr h1_item) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t10, t12, t13; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t5, t6, t11; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_prices; t2 = h1_item; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-must-on-an-error-names-where-its-receiver-begins.hero", "place-a-must-on-an-error-names-where-its-receiver-begins.price", 5, 12}; HERO_NODEBUG const void *found = hero_map_find_at(t1, &t2, &hero_here); if (found == NULL) { t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t3 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t3.as.ok, found); } } t12 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t12); t13 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t13); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h2_f0; t11 = t10.as.ok;
-#line 117 "placeamustonanerrornameswhereitsreceiverbegins.c"
+#line 116 "placeamustonanerrornameswhereitsreceiverbegins.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t11;
 bb2:
 #line 5 "tests/golden/run/place-a-must-on-an-error-names-where-its-receiver-begins.hero"
     t8 = h2_f0; t9 = t8.as.err;
-#line 124 "placeamustonanerrornameswhereitsreceiverbegins.c"
+#line 123 "placeamustonanerrornameswhereitsreceiverbegins.c"
     hero_panic_must_at(t9, "place-a-must-on-an-error-names-where-its-receiver-begins.hero", "place-a-must-on-an-error-names-where-its-receiver-begins.price", 5, 12);
     hero_unreachable();
 }
@@ -131,7 +130,7 @@ void h_placeamustonanerrornameswhereitsreceiverbegins_main(void) { HeroMapHeader
     t2 = HERO_STR_LIT(hero_str_35d19427); t3 = INT64_C(30); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-must-on-an-error-names-where-its-receiver-begins.hero", "place-a-must-on-an-error-names-where-its-receiver-begins.main", 9, 5}; hero_map_set_at(&(h0_prices), &t2, &t3, &hero_here); }
     t4 = h0_prices; t5 = HERO_STR_LIT(hero_str_35d19427); t6 = h_placeamustonanerrornameswhereitsreceiverbegins_price(t4, t5); hero_print_int(t6); hero_print_end();
     t7 = h0_prices; t8 = HERO_STR_LIT(hero_str_f1c9872); t9 = h_placeamustonanerrornameswhereitsreceiverbegins_price(t7, t8); hero_print_int(t9); hero_print_end();
-#line 135 "placeamustonanerrornameswhereitsreceiverbegins.c"
+#line 134 "placeamustonanerrornameswhereitsreceiverbegins.c"
     hero_map_release_at(&h0_prices);
     hero_map_release_at(&h1_own1);
     return;
@@ -233,7 +232,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("393d66284472e588", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5077661f61578116", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeamustonanerrornameswhereitsreceiverbegins\tplace-a-must-on-an-error-names-where-its-receiver-begins\n");

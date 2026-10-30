@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -53,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_fa6dc01, "tick");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 57 "functionvalues.c"
+#line 56 "functionvalues.c"
 typedef int64_t (*h_0fn_2e6a42a3)(int64_t, int64_t);
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_f87774a {
@@ -91,9 +90,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "functionvalues.c"
+#line 96 "functionvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -119,32 +118,32 @@ void h_functionvalues_main(void);
 #line 35 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("function-values.hero", "function-values.add", 36, 12); return t3;
-#line 123 "functionvalues.c"
+#line 122 "functionvalues.c"
 }
 
 #line 38 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("function-values.hero", "function-values.mul", 39, 12); return t3;
-#line 129 "functionvalues.c"
+#line 128 "functionvalues.c"
 }
 
 #line 41 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y) { HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t2 = h1_x; t3 = h2_y; t4 = t1(t2, t3); return t4;
-#line 135 "functionvalues.c"
+#line 134 "functionvalues.c"
 }
 
 #line 44 "tests/golden/run/function-values.hero"
 void h_functionvalues_tick(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fa6dc01); hero_print_str(t1); hero_print_end(); return;
-#line 141 "functionvalues.c"
+#line 140 "functionvalues.c"
 }
 
 #line 47 "tests/golden/run/function-values.hero"
 void h_functionvalues_twice(h_0fn_294870dd h0_f) { HERO_NODEBUG h_0fn_294870dd t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_f; t1();
     t2 = h0_f; t2(); return;
-#line 148 "functionvalues.c"
+#line 147 "functionvalues.c"
 }
 
 #line 51 "tests/golden/run/function-values.hero"
@@ -159,7 +158,7 @@ void h_functionvalues_main(void) { h_0fn_2e6a42a3 h0_g; HeroArrayHeader * h1_ops
 #line 63
     t36 = h_functionvalues_add; h2_h = t36;
     t37 = h0_g; t38 = h2_h; t39 = t37 == t38; t40 = HERO_STR_LIT(hero_str_20); t41 = h0_g; t42 = h_functionvalues_mul; t43 = t41 == t42; hero_print_bool(t39); hero_print_str(t40); hero_print_bool(t43); hero_print_end();
-#line 163 "functionvalues.c"
+#line 162 "functionvalues.c"
     hero_array_release_at(&h1_ops);
     hero_array_release_at(&h3_own3);
     return;
@@ -261,7 +260,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1a33f48536f1ae6c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b05dd3a467318aa", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("functionvalues\tfunction-values\n");

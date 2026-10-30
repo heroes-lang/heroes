@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("name")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -65,11 +64,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name"); _Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, raw) != 0, "heroes-ffi-flex Tag raw"); _Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 69 "ffiacharfieldbecomestext.c"
+#line 68 "ffiacharfieldbecomestext.c"
 
 #line 33 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name raw id");
-#line 73 "ffiacharfieldbecomestext.c"
+#line 72 "ffiacharfieldbecomestext.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -162,9 +161,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "ffiacharfieldbecomestext.c"
+#line 167 "ffiacharfieldbecomestext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_0Tag_eq(const Tag *a, const Tag *b);
@@ -206,7 +205,7 @@ void h_ffiacharfieldbecomestext_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_f8777
     t32 = h0_t; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t32.raw), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t34 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t34 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t132 = h12_own12; h12_own12 = t34; h_0opt_f87774a_release(&t132); t133 = h2_f1; h_0opt_f87774a_retain(&t34); h2_f1 = t34; h_0opt_f87774a_release(&t133); t35 = h2_f1; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb3; else goto bb4; bb2:
 #line 47
     t28 = h1_f0; t29 = t28.as.err;
-#line 210 "ffiacharfieldbecomestext.c"
+#line 209 "ffiacharfieldbecomestext.c"
     hero_panic_must_at(t29, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 47, 11);
     hero_unreachable();
 bb3:
@@ -217,7 +216,7 @@ bb3:
     t63 = h3_full; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t63.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t65 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t65 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t134 = h13_own13; h13_own13 = t65; h_0opt_f87774a_release(&t134); t135 = h4_f2; h_0opt_f87774a_retain(&t65); h4_f2 = t65; h_0opt_f87774a_release(&t135); t66 = h4_f2; t67 = t66.tag; t68 = INT64_C(0); t69 = t67 == t68; if (t69) goto bb5; else goto bb6; bb4:
 #line 51
     t39 = h2_f1; t40 = t39.as.err;
-#line 221 "ffiacharfieldbecomestext.c"
+#line 220 "ffiacharfieldbecomestext.c"
     hero_panic_must_at(t40, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 51, 11);
     hero_unreachable();
 bb5:
@@ -227,7 +226,7 @@ bb5:
     t74 = HERO_STR_LIT(hero_str_5b); t75 = h3_full; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t75.raw), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t77 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t77 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t136 = h14_own14; h14_own14 = t77; h_0opt_f87774a_release(&t136); t137 = h5_f3; h_0opt_f87774a_retain(&t77); h5_f3 = t77; h_0opt_f87774a_release(&t137); t78 = h5_f3; t79 = t78.tag; t80 = INT64_C(0); t81 = t79 == t80; if (t81) goto bb7; else goto bb8; bb6:
 #line 56
     t70 = h4_f2; t71 = t70.as.err;
-#line 231 "ffiacharfieldbecomestext.c"
+#line 230 "ffiacharfieldbecomestext.c"
     hero_panic_must_at(t71, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 56, 11);
     hero_unreachable();
 bb7:
@@ -239,7 +238,7 @@ bb7:
     t107 = h6_bad; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t107.raw), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t109 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t109 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t138 = h15_own15; h15_own15 = t109; h_0opt_f87774a_release(&t138); t139 = h7_s0; h_0opt_f87774a_retain(&t109); h7_s0 = t109; h_0opt_f87774a_release(&t139); t110 = h7_s0; t111 = t110.tag; switch (t111) { case 0: goto bb10; case 1: goto bb11; default: hero_unreachable(); } bb8:
 #line 59
     t82 = h5_f3; t83 = t82.as.err;
-#line 243 "ffiacharfieldbecomestext.c"
+#line 242 "ffiacharfieldbecomestext.c"
     hero_panic_must_at(t83, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 59, 16);
     hero_unreachable();
 bb9:
@@ -250,7 +249,7 @@ bb9:
     t116 = h7_s0; t117 = t116.as.err; t143 = h9_e; hero_failure_retain(&t117); h9_e = t117; hero_failure_release(&t143); t118 = h9_e.code; hero_print_str(t118); hero_print_end(); goto bb9; bb12:
 #line 75
     t128 = h10_f4; t129 = t128.as.ok; hero_print_int(t129); hero_print_end();
-#line 254 "ffiacharfieldbecomestext.c"
+#line 253 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
@@ -269,7 +268,7 @@ bb9:
 bb13:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t126 = h10_f4; t127 = t126.as.err;
-#line 273 "ffiacharfieldbecomestext.c"
+#line 272 "ffiacharfieldbecomestext.c"
     hero_panic_must_at(t127, "ffi-a-char-field-becomes-text.hero", "ffi-a-char-field-becomes-text.main", 75, 11);
     hero_unreachable();
 }
@@ -400,7 +399,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c81ed2701c7f881", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0f48c8f84c3ed2bc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiacharfieldbecomestext\tffi-a-char-field-becomes-text\n");

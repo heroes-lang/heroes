@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("a")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -64,11 +63,11 @@ _Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compile
 #line 19 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a"); _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
 _Static_assert(__builtin_classify_type(((struct nums *)0)->after) == 1 && sizeof(((struct nums *)0)->after) == sizeof(int64_t) && (_Generic(((struct nums *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nums after");
-#line 68 "abortafixedarrayelementwrittenpastitslength.c"
+#line 67 "abortafixedarrayelementwrittenpastitslength.c"
 
 #line 18 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(__builtin_classify_type(*(struct nums *)0) != 13, "heroes-ffi-union Nums a after");
-#line 72 "abortafixedarrayelementwrittenpastitslength.c"
+#line 71 "abortafixedarrayelementwrittenpastitslength.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -161,9 +160,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "abortafixedarrayelementwrittenpastitslength.c"
+#line 166 "abortafixedarrayelementwrittenpastitslength.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_0Nums_eq(const struct nums *a, const struct nums *b);
@@ -204,7 +203,7 @@ void h_abortafixedarrayelementwrittenpastitslength_main(void) { struct nums h0_n
     t28 = h2_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 26, 9); h2_i0 = t30; goto bb1; bb4:
 #line 30
     t31 = HERO_STR_LIT(hero_str_19048391); t32 = h0_n; t34 = INT64_C(3); t35 = t32.a[((uint64_t)(t34) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "abort-a-fixed-array-element-written-past-its-length.hero", "abort-a-fixed-array-element-written-past-its-length.main", 30, 26), (int64_t)0) : (t34))]; hero_print_str(t31); hero_print_int(t35); hero_print_end();
-#line 208 "abortafixedarrayelementwrittenpastitslength.c"
+#line 207 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return;
@@ -218,7 +217,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 222 "abortafixedarrayelementwrittenpastitslength.c"
+#line 221 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -342,7 +341,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0974bcef340dda3d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a698c90465685a8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortafixedarrayelementwrittenpastitslength\tabort-a-fixed-array-element-written-past-its-length\n");

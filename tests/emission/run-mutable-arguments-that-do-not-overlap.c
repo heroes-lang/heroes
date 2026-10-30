@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "mutableargumentsthatdonotoverlap.c"
+#line 53 "mutableargumentsthatdonotoverlap.c"
 typedef struct h_mutableargumentsthatdonotoverlap_P {
     int64_t f_x;
     int64_t f_y;
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "mutableargumentsthatdonotoverlap.c"
+#line 101 "mutableargumentsthatdonotoverlap.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_mutableargumentsthatdonotoverlap_0P_eq(const h_mutableargumentsthatdonotoverlap_P *a, const h_mutableargumentsthatdonotoverlap_P *b);
@@ -142,7 +141,7 @@ void h_mutableargumentsthatdonotoverlap_main(void);
 void h_mutableargumentsthatdonotoverlap_shift(int64_t *ph0_a, int64_t *ph1_b) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_a); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("mutable-arguments-that-do-not-overlap.hero", "mutable-arguments-that-do-not-overlap.shift", 21, 9); (*ph0_a) = t3;
     t4 = (*ph1_b); t5 = INT64_C(10); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("mutable-arguments-that-do-not-overlap.hero", "mutable-arguments-that-do-not-overlap.shift", 22, 9); (*ph1_b) = t6; return;
-#line 146 "mutableargumentsthatdonotoverlap.c"
+#line 145 "mutableargumentsthatdonotoverlap.c"
 }
 
 #line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
@@ -187,7 +186,7 @@ void h_mutableargumentsthatdonotoverlap_main(void) { h_mutableargumentsthatdonot
     h_mutableargumentsthatdonotoverlap_shift(&h6_u, &h7_v);
     t61 = h6_u; hero_print_int(t61); hero_print_end();
     t62 = h7_v; hero_print_int(t62); hero_print_end();
-#line 191 "mutableargumentsthatdonotoverlap.c"
+#line 190 "mutableargumentsthatdonotoverlap.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_ys);
     hero_array_release_at(&h5_ps);
@@ -320,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b5e90aa5cbd8a0a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b3069da3f999484", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("mutableargumentsthatdonotoverlap\tmutable-arguments-that-do-not-overlap\n");

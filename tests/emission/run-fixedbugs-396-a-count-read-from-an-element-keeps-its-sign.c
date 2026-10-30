@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -96,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 100 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 99 "fixedbugs396acountreadfromanelementkeepsitssign.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,9 +145,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 151 "fixedbugs396acountreadfromanelementkeepsitssign.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -173,7 +172,7 @@ void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void) { HeroArrayHea
     t5 = INT64_C(0); hero_array_unshare(&(h0_counts)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 14, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer fill_cell buf 568 571 u8 void *"); HERO_NODEBUG int64_t hero_lend_e2_0 = (int64_t)((*((void)((h0_counts == NULL || t5 < 0 || t5 >= h0_counts->len) ? hero_panic_index_at(h0_counts, t5, "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 14, 11) : (void)0), (void)(h0_counts->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), (int32_t *)(void *)(h0_counts + 1) + t5))); HERO_NODEBUG void *hero_lend_b2_0 = hero_lend_take_at(h1_buf, hero_lend_e2_0, "fill_cell", "buf", &hero_here); t6 = fill_cell((void *)hero_lend_b2_0, (void *)&(*((void)((h0_counts == NULL || t5 < 0 || t5 >= h0_counts->len) ? hero_panic_index_at(h0_counts, t5, "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 14, 11) : (void)0), (void)(h0_counts->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), (int32_t *)(void *)(h0_counts + 1) + t5))); h1_buf = hero_lend_give_at(h1_buf, hero_lend_b2_0, hero_lend_e2_0, &hero_here); } } t7 = HERO_STR_LIT(hero_str_20); t8 = h1_buf; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = HERO_STR_LIT(hero_str_20); t11 = h1_buf; t12 = INT64_C(2); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 14, 61) : (void)0), (void)(t11->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t11 + 1))[t12]); hero_print_int(t6); hero_print_str(t7); hero_print_int(t9); hero_print_str(t10); hero_print_int(t13); hero_print_end();
     t14 = INT64_C(1); hero_array_unshare(&(h0_counts)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 15, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer fill_cell buf 568 571 u8 void *"); HERO_NODEBUG int64_t hero_lend_e10_0 = (int64_t)((*((void)((h0_counts == NULL || t14 < 0 || t14 >= h0_counts->len) ? hero_panic_index_at(h0_counts, t14, "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 15, 11) : (void)0), (void)(h0_counts->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), (int32_t *)(void *)(h0_counts + 1) + t14))); HERO_NODEBUG void *hero_lend_b10_0 = hero_lend_take_at(h1_buf, hero_lend_e10_0, "fill_cell", "buf", &hero_here); t15 = fill_cell((void *)hero_lend_b10_0, (void *)&(*((void)((h0_counts == NULL || t14 < 0 || t14 >= h0_counts->len) ? hero_panic_index_at(h0_counts, t14, "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero", "fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.main", 15, 11) : (void)0), (void)(h0_counts->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), (int32_t *)(void *)(h0_counts + 1) + t14))); h1_buf = hero_lend_give_at(h1_buf, hero_lend_b10_0, hero_lend_e10_0, &hero_here); } } hero_print_int(t15); hero_print_end();
     t16 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t16); hero_print_end();
-#line 177 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 176 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_release_at(&h0_counts);
     hero_array_release_at(&h1_buf);
     hero_array_release_at(&h2_own2);
@@ -277,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("497b96412880b075", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("489a3dca7b2a12b1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396acountreadfromanelementkeepsitssign\tfixedbugs-396-a-count-read-from-an-element-keeps-its-sign\n");

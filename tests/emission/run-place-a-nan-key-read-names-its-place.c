@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placeanankeyreadnamesitsplace.c"
+#line 53 "placeanankeyreadnamesitsplace.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "placeanankeyreadnamesitsplace.c"
+#line 91 "placeanankeyreadnamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -112,14 +111,14 @@ void h_placeanankeyreadnamesitsplace_main(void) { double h0_zero; HERO_NODEBUG d
     t1 = 0x0p+0; h0_zero = t1;
     t2 = 0x1p+0; t3 = h_placeanankeyreadnamesitsplace_0seen_1ad16c(t2); hero_print_bool(t3); hero_print_end();
     t4 = h0_zero; t5 = h0_zero; t6 = t4 / t5; t7 = h_placeanankeyreadnamesitsplace_0seen_1ad16c(t6); hero_print_bool(t7); hero_print_end(); return;
-#line 116 "placeanankeyreadnamesitsplace.c"
+#line 115 "placeanankeyreadnamesitsplace.c"
 }
 
 #line 6 "tests/golden/run/place-a-nan-key-read-names-its-place.hero"
 /* seen<f64> */ HERO_TU_LOCAL bool h_placeanankeyreadnamesitsplace_0seen_1ad16c(double h0_k) { HeroMapHeader * h1_m = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_own4 = {0}, t4, t5, t12, t13; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t1, *t2, *t10, *t11; HERO_NODEBUG double t3; HERO_NODEBUG int64_t t6, t7; HERO_NODEBUG bool t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0); t10 = h3_own3; h3_own3 = t1; hero_map_decref(t10); t11 = h1_m; hero_map_incref(t1); h1_m = t1; hero_map_decref(t11);
     t2 = h1_m; t3 = h0_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-nan-key-read-names-its-place.hero", "place-a-nan-key-read-names-its-place.seen", 8, 13}; HERO_NODEBUG const void *found = hero_map_find_at(t2, &t3, &hero_here); if (found == NULL) { t4 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t4 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t4.as.ok, found); } } t12 = h4_own4; h4_own4 = t4; h_0opt_e201354_release(&t12); t13 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t13); t5 = h2_f0; t6 = t5.tag; t7 = INT64_C(1); t8 = t6 == t7; t9 = !t8;
-#line 123 "placeanankeyreadnamesitsplace.c"
+#line 122 "placeanankeyreadnamesitsplace.c"
     hero_map_release_at(&h1_m);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     hero_map_release_at(&h3_own3);
@@ -223,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("64527c681da104b6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77283c43668d7862", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanankeyreadnamesitsplace\tplace-a-nan-key-read-names-its-place\n");

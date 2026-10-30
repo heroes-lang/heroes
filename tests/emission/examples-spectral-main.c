@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -51,7 +50,7 @@
 #include "heroes_standard.h"
 #pragma pop_macro("sqrt")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -101,7 +100,7 @@ HERO_STR_STATIC(hero_str_2e, ".");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_30, "0");
 
-#line 105 "main.c"
+#line 104 "main.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -151,9 +150,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "main.c"
+#line 156 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -185,20 +184,20 @@ HeroStr h_main_padded(int64_t h0_rest);
 #line 45 "examples/spectral/main.hero"
 int64_t h_main_N(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(100); return t1;
-#line 189 "main.c"
+#line 188 "main.c"
 }
 
 #line 49 "examples/spectral/main.hero"
 int64_t h_main_ROUNDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(10); return t1;
-#line 195 "main.c"
+#line 194 "main.c"
 }
 
 #line 56 "examples/spectral/main.hero"
 double h_main_eval_a(int64_t h0_i, int64_t h1_j) { int64_t h2_span; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG double t4, t16, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_i; t2 = h1_j; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.eval_a", 57, 12); h2_span = t3;
     t4 = 0x1p+0; t5 = h2_span; t6 = h2_span; t7 = INT64_C(1); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("main.hero", "main.eval_a", 58, 33); if (__builtin_mul_overflow(t5, t8, &t9)) hero_panic_overflow_at("main.hero", "main.eval_a", 58, 25); t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "main.hero", "main.eval_a", 58, 25); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("main.hero", "main.eval_a", 58, 25); t11 = t9 / t10; t12 = h0_i; if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("main.hero", "main.eval_a", 58, 25); t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("main.hero", "main.eval_a", 58, 25); t16 = hero_int_to_f64(t15); t17 = t4 / t16; return t17;
-#line 202 "main.c"
+#line 201 "main.c"
 }
 
 #line 61 "examples/spectral/main.hero"
@@ -211,7 +210,7 @@ HeroArrayHeader * h_main_a_times(HeroArrayHeader * h0_u) { HeroArrayHeader * h1_
     t8 = INT64_C(0); h4_j = t8; goto bb4; bb3:
 #line 76
     t31 = h1_out;
-#line 215 "main.c"
+#line 214 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
@@ -224,7 +223,7 @@ bb4:
 #line 73
     t26 = h3_total; hero_array_push_owned(&h1_out, &t26);
     t28 = h2_i; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.a_times", 74, 13); h2_i = t30; goto bb1;
-#line 228 "main.c"
+#line 227 "main.c"
 }
 
 #line 80 "examples/spectral/main.hero"
@@ -237,7 +236,7 @@ HeroArrayHeader * h_main_at_times(HeroArrayHeader * h0_u) { HeroArrayHeader * h1
     t8 = INT64_C(0); h4_j = t8; goto bb4; bb3:
 #line 95
     t31 = h1_out;
-#line 241 "main.c"
+#line 240 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
@@ -250,13 +249,13 @@ bb4:
 #line 92
     t26 = h3_total; hero_array_push_owned(&h1_out, &t26);
     t28 = h2_i; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("main.hero", "main.at_times", 93, 13); h2_i = t30; goto bb1;
-#line 254 "main.c"
+#line 253 "main.c"
 }
 
 #line 98 "examples/spectral/main.hero"
 HeroArrayHeader * h_main_ata_times(HeroArrayHeader * h0_u) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t1, *t2, *t3, *t4, *t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_u; t2 = h_main_a_times(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = h_main_at_times(t2); t5 = h2_own2; h2_own2 = t3; hero_array_decref(t5);
-#line 260 "main.c"
+#line 259 "main.c"
     hero_array_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -273,7 +272,7 @@ HeroArrayHeader * h_main_ones(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; in
     t9 = h2_at; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("main.hero", "main.ones", 108, 14); h2_at = t11; goto bb1; bb3:
 #line 110
     t12 = h1_out;
-#line 277 "main.c"
+#line 276 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -301,7 +300,7 @@ double h_main_spectral_norm(int64_t h0_n) { HeroArrayHeader * h1_u = {0}; HeroAr
     t40 = h6_at; t41 = INT64_C(1); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow_at("main.hero", "main.spectral_norm", 133, 14); h6_at = t42; goto bb4; bb6:
 #line 135
     t43 = h4_vbv; t44 = h5_vv; t45 = t43 / t44; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.spectral_norm", 135, 12}; t46 = sqrt(t45); }
-#line 305 "main.c"
+#line 304 "main.c"
     hero_array_release_at(&h1_u);
     hero_array_release_at(&h2_v);
     hero_array_release_at(&h7_own7);
@@ -314,7 +313,7 @@ double h_main_spectral_norm(int64_t h0_n) { HeroArrayHeader * h1_u = {0}; HeroAr
 #line 137 "examples/spectral/main.hero"
 void h_main_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG double t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_main_N(); t2 = h_main_spectral_norm(t1); t3 = h_main_nine_places(t2); t4 = h0_own0; h0_own0 = t3; hero_str_decref(t4); hero_print_str(t3); hero_print_end();
-#line 318 "main.c"
+#line 317 "main.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -322,7 +321,7 @@ void h_main_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t3, t4; HERO_NODEBU
 #line 144 "examples/spectral/main.hero"
 double h_main_BILLION(void) { HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.dcd65p+29; return t1;
-#line 326 "main.c"
+#line 325 "main.c"
 }
 
 #line 147 "examples/spectral/main.hero"
@@ -343,7 +342,7 @@ HeroStr h_main_nine_places(double h0_v) { bool h1_negative; double h2_size; HERO
     t35 = h1_negative; if (t35) goto bb7; else goto bb8; bb5:
 #line 153
     t18 = h3_f0; t19 = t18.as.err;
-#line 347 "main.c"
+#line 346 "main.c"
     hero_panic_must_at(t19, "main.hero", "main.nine_places", 153, 14);
     hero_unreachable();
 bb6:
@@ -351,7 +350,7 @@ bb6:
     t39 = h7_text; h8_ret0 = t39; goto bb9; bb7:
 #line 159
     t36 = HERO_STR_LIT(hero_str_2d); t37 = h7_text; t38 = hero_str_concat(t36, t37); t48 = h14_own14; h14_own14 = t38; hero_str_decref(t48); h8_ret0 = t38; goto bb9; bb8: goto bb6; bb9:
-#line 355 "main.c"
+#line 354 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -373,7 +372,7 @@ HeroStr h_main_padded(int64_t h0_rest) { HeroStr h1_digits = {0}; HERO_NODEBUG H
     t7 = HERO_STR_LIT(hero_str_30); t8 = h1_digits; t9 = hero_str_concat(t7, t8); t13 = h3_own3; h3_own3 = t9; hero_str_decref(t13); t14 = h1_digits; hero_str_incref(t9); h1_digits = t9; hero_str_decref(t14); goto bb1; bb3:
 #line 169
     t10 = h1_digits;
-#line 377 "main.c"
+#line 376 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_own2);
@@ -477,7 +476,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("632ba9b14f5b433a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c98c02c43a2583d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

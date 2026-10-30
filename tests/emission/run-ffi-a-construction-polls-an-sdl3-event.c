@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -55,7 +54,7 @@
 #pragma pop_macro("code")
 #pragma pop_macro("type")
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -81,11 +80,11 @@ _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->data2) == 5 && _Gen
 _Static_assert(__builtin_classify_type(((SDL_Event *)0)->type) == 1 && sizeof(((SDL_Event *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_Event *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_Event type");
 _Static_assert(_Generic(&((SDL_Event *)0)->common, SDL_CommonEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->common) == sizeof(SDL_CommonEvent), "heroes-ffi-field SDL_Event common");
 _Static_assert(_Generic(&((SDL_Event *)0)->user, SDL_UserEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->user) == sizeof(SDL_UserEvent), "heroes-ffi-field SDL_Event user");
-#line 85 "ffiaconstructionpollsansdl3event.c"
+#line 84 "ffiaconstructionpollsansdl3event.c"
 
 #line 29 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(*(SDL_UserEvent *)0) != 13, "heroes-ffi-union SDL_UserEvent type reserved timestamp windowID code data1 data2");
-#line 89 "ffiaconstructionpollsansdl3event.c"
+#line 88 "ffiaconstructionpollsansdl3event.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -179,9 +178,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 185 "ffiaconstructionpollsansdl3event.c"
+#line 184 "ffiaconstructionpollsansdl3event.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
@@ -542,7 +541,7 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
     t30 = true; h1_found = t30;
     t31 = h6_got.user.code; h2_code = t31;
     t32 = h6_got.common.type; h3_keyed = t32; goto bb6; bb10: goto bb6;
-#line 546 "ffiaconstructionpollsansdl3event.c"
+#line 545 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got
@@ -699,7 +698,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d386e686d539930", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("020b3e463167577b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiaconstructionpollsansdl3event\tffi-a-construction-polls-an-sdl3-event\n");

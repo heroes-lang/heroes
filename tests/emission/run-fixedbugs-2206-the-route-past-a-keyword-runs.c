@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -93,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs2206theroutepastakeywordruns.c"
+#line 96 "fixedbugs2206theroutepastakeywordruns.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -143,9 +142,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs2206theroutepastakeywordruns.c"
+#line 148 "fixedbugs2206theroutepastakeywordruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -166,7 +165,7 @@ void h_fixedbugs2206theroutepastakeywordruns_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-2206-the-route-past-a-keyword-runs.hero"
 int64_t h_fixedbugs2206theroutepastakeywordruns_kw_test(void) {
-#line 170 "fixedbugs2206theroutepastakeywordruns.c"
+#line 169 "fixedbugs2206theroutepastakeywordruns.c"
     _Static_assert(HERO_RET_INT(kw_test), "heroes-ffi-return kw_test i64");
     _Static_assert(__builtin_constant_p(kw_test), "heroes-ffi-const kw_test");
 #pragma clang diagnostic push
@@ -178,7 +177,7 @@ int64_t h_fixedbugs2206theroutepastakeywordruns_kw_test(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-2206-the-route-past-a-keyword-runs.hero"
     return kw_test;
-#line 182 "fixedbugs2206theroutepastakeywordruns.c"
+#line 181 "fixedbugs2206theroutepastakeywordruns.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -198,7 +197,7 @@ int64_t h_fixedbugs2206theroutepastakeywordruns_kw_test(void) {
 void h_fixedbugs2206theroutepastakeywordruns_main(void) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(41); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2206-the-route-past-a-keyword-runs.hero", "fixedbugs-2206-the-route-past-a-keyword-runs.main", 13, 11}; t2 = kw_match(t1); } hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs2206theroutepastakeywordruns_kw_test(); hero_print_int(t3); hero_print_end(); return;
-#line 202 "fixedbugs2206theroutepastakeywordruns.c"
+#line 201 "fixedbugs2206theroutepastakeywordruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -297,7 +296,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("731464794f7da183", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("16925244789f8de3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2206theroutepastakeywordruns\tfixedbugs-2206-the-route-past-a-keyword-runs\n");

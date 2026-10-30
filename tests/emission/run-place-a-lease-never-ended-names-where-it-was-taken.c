@@ -2,7 +2,6 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -47,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -97,7 +96,7 @@ HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_1a200c, "cde");
 HERO_STR_STATIC(hero_str_dc61a02, "fghi");
 
-#line 101 "placealeaseneverendednameswhereitwastaken.c"
+#line 100 "placealeaseneverendednameswhereitwastaken.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -147,9 +146,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "placealeaseneverendednameswhereitwastaken.c"
+#line 152 "placealeaseneverendednameswhereitwastaken.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -172,7 +171,7 @@ void h_placealeaseneverendednameswhereitwastaken_main(void);
 uint64_t h_placealeaseneverendednameswhereitwastaken_keep(HeroStr h0_text) { const char * h1_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3; HERO_NODEBUG uint64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-lease-never-ended-names-where-it-was-taken.hero", "place-a-lease-never-ended-names-where-it-was-taken.keep", 12, 9}; t2 = hero_str_held_at(t1, &hero_here); } h1_c = t2;
     t3 = h1_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-lease-never-ended-names-where-it-was-taken.hero", "place-a-lease-never-ended-names-where-it-was-taken.keep", 13, 12}; t4 = strlen(hero_cstr_nonnull_at(t3, &hero_here)); } return t4;
-#line 176 "placealeaseneverendednameswhereitwastaken.c"
+#line 175 "placealeaseneverendednameswhereitwastaken.c"
 }
 
 #line 15 "tests/golden/run/place-a-lease-never-ended-names-where-it-was-taken.hero"
@@ -184,7 +183,7 @@ void h_placealeaseneverendednameswhereitwastaken_main(void) { HERO_NODEBUG HeroA
     t16 = h1_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("place-a-lease-never-ended-names-where-it-was-taken.hero", "place-a-lease-never-ended-names-where-it-was-taken.main", 16, 9); h1_i0 = t18; goto bb1; bb4:
 #line 20
     t19 = HERO_STR_LIT(hero_str_dc61a02); t20 = h_placealeaseneverendednameswhereitwastaken_keep(t19); hero_print_uint(t20); hero_print_end();
-#line 188 "placealeaseneverendednameswhereitwastaken.c"
+#line 187 "placealeaseneverendednameswhereitwastaken.c"
     hero_array_release_at(&h0_xs0);
     hero_str_release_at(&h2_word);
     hero_array_release_at(&h4_own4);
@@ -287,7 +286,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("602667f87ddd95d3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("65ae412873fb69f9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placealeaseneverendednameswhereitwastaken\tplace-a-lease-never-ended-names-where-it-was-taken\n");

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6be6e610, "double");
 
-#line 56 "fixedbugsfunctioninarecordfield.c"
+#line 55 "fixedbugsfunctioninarecordfield.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugsfunctioninarecordfield_Holder {
     h_0fn_48ac9712 f_f;
@@ -110,9 +109,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "fixedbugsfunctioninarecordfield.c"
+#line 115 "fixedbugsfunctioninarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsfunctioninarecordfield_0Holder_retain(const h_fixedbugsfunctioninarecordfield_Holder *v);
@@ -143,13 +142,13 @@ void h_fixedbugsfunctioninarecordfield_main(void);
 #line 29 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 int64_t h_fixedbugsfunctioninarecordfield_double(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-function-in-a-record-field.hero", "fixedbugs-function-in-a-record-field.double", 30, 12); return t3;
-#line 147 "fixedbugsfunctioninarecordfield.c"
+#line 146 "fixedbugsfunctioninarecordfield.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 int64_t h_fixedbugsfunctioninarecordfield_negate(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; if (__builtin_sub_overflow(INT64_C(0), t1, &t2)) hero_panic_overflow_at("fixedbugs-function-in-a-record-field.hero", "fixedbugs-function-in-a-record-field.negate", 33, 12); return t2;
-#line 153 "fixedbugsfunctioninarecordfield.c"
+#line 152 "fixedbugsfunctioninarecordfield.c"
 }
 
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
@@ -166,7 +165,7 @@ void h_fixedbugsfunctioninarecordfield_main(void) { h_fixedbugsfunctioninarecord
     t19 = h_fixedbugsfunctioninarecordfield_double; t20 = (h_fixedbugsfunctioninarecordfield_Step){.tag = h_fixedbugsfunctioninarecordfield_0Step_tag_apply, .as.c_apply = {.f_g = t19}}; h2_s = t20;
 #line 60
     t21 = h2_s; h3_s0 = t21; t22 = h3_s0; t23 = t22.tag; switch (t23) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 170 "fixedbugsfunctioninarecordfield.c"
+#line 169 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_0Holder_release(hero_slot_escape(&h0_h));
     h_fixedbugsfunctioninarecordfield_0Holder_release(hero_slot_escape(&h1_k));
     h_fixedbugsfunctioninarecordfield_0Holder_release(hero_slot_escape(&h6_own6));
@@ -177,7 +176,7 @@ bb2:
     t26 = h4_a.f_g; h5_call = t26;
     t27 = h5_call; t28 = INT64_C(50); t29 = t27(t28); hero_print_int(t29); hero_print_end(); goto bb1; bb3:
     t30 = INT64_C(0); hero_print_int(t30); hero_print_end(); goto bb1;
-#line 181 "fixedbugsfunctioninarecordfield.c"
+#line 180 "fixedbugsfunctioninarecordfield.c"
 }
 HERO_TU_LOCAL void h_fixedbugsfunctioninarecordfield_0Holder_retain(const h_fixedbugsfunctioninarecordfield_Holder *v) {
     hero_str_incref(v->f_label);
@@ -330,7 +329,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("730336ad4b99a09d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("05d8f6891486144a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsfunctioninarecordfield\tfixedbugs-function-in-a-record-field\n");

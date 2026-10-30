@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "copyout.c"
+#line 53 "copyout.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "copyout.c"
+#line 91 "copyout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -114,7 +113,7 @@ void h_copyout_count_down(int64_t *ph0_n, int64_t *ph1_seen) { HERO_NODEBUG int6
     t7 = (*ph0_n); t8 = INT64_C(1); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow_at("copy-out.hero", "copy-out.count_down", 13, 13); (*ph0_n) = t9;
 #line 15
     t10 = (*ph1_seen); t11 = INT64_C(2); t12 = t10 > t11; if (t12) goto bb5; else goto bb6; bb3: goto bb7; bb4: goto bb1; bb5: goto bb7; bb6: goto bb4; bb7: return;
-#line 118 "copyout.c"
+#line 117 "copyout.c"
 }
 
 #line 18 "tests/golden/emit/copy-out.hero"
@@ -124,7 +123,7 @@ void h_copyout_main(void) { int64_t h0_n; int64_t h1_seen; HERO_NODEBUG int64_t 
     h_copyout_count_down(&h0_n, &h1_seen);
     t3 = h0_n; hero_print_int(t3); hero_print_end();
     t4 = h1_seen; hero_print_int(t4); hero_print_end(); return;
-#line 128 "copyout.c"
+#line 127 "copyout.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -223,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4558c50b0555a736", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c6553dc3a29572e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("copyout\tcopy-out\n");

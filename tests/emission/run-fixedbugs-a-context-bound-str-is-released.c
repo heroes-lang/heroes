@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -57,7 +56,7 @@ HERO_STR_STATIC(hero_str_724db1e1, "start");
 HERO_STR_STATIC(hero_str_6e02d4d4, "more text");
 HERO_STR_STATIC(hero_str_3498eaad, "again");
 
-#line 61 "fixedbugsacontextboundstrisreleased.c"
+#line 60 "fixedbugsacontextboundstrisreleased.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -93,9 +92,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "fixedbugsacontextboundstrisreleased.c"
+#line 98 "fixedbugsacontextboundstrisreleased.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -126,13 +125,13 @@ void h_fixedbugsacontextboundstrisreleased_main(void) { h_0opt_f87774a h0_s = {0
     t28 = h2_cell; t48 = h5_f3; h_0opt_f87774a_retain(&t28); h5_f3 = t28; h_0opt_f87774a_release(&t48); t29 = h5_f3; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb3; else goto bb4; bb2:
 #line 16
     t15 = h3_f1; t16 = t15.as.err;
-#line 130 "fixedbugsacontextboundstrisreleased.c"
+#line 129 "fixedbugsacontextboundstrisreleased.c"
     hero_panic_must_at(t16, "fixedbugs-a-context-bound-str-is-released.hero", "fixedbugs-a-context-bound-str-is-released.main", 16, 11);
     hero_unreachable();
 bb3:
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     t35 = h5_f3; t36 = t35.as.ok; hero_print_str(t36); hero_print_end();
-#line 136 "fixedbugsacontextboundstrisreleased.c"
+#line 135 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_s));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_cell));
@@ -147,7 +146,7 @@ bb3:
 bb4:
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     t33 = h5_f3; t34 = t33.as.err;
-#line 151 "fixedbugsacontextboundstrisreleased.c"
+#line 150 "fixedbugsacontextboundstrisreleased.c"
     hero_panic_must_at(t34, "fixedbugs-a-context-bound-str-is-released.hero", "fixedbugs-a-context-bound-str-is-released.main", 20, 11);
     hero_unreachable();
 }
@@ -155,7 +154,7 @@ bb4:
 #line 9 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
 /* wanted<str> */ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_0wanted_1e58d9(HeroStr h0_what) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4, t6; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}, t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332); t2 = HERO_STR_LIT(hero_str_73a616c5); t3 = h0_what; t4 = hero_str_concat(t2, t3); t6 = h1_own1; h1_own1 = t4; hero_str_decref(t6); hero_str_incref(t1); hero_str_incref(t4); t5 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t4}}; t7 = h2_own2; h2_own2 = t5; h_0opt_f87774a_release(&t7);
-#line 159 "fixedbugsacontextboundstrisreleased.c"
+#line 158 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_retain(&t5);
     hero_str_release_at(&h1_own1);
     h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
@@ -258,7 +257,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("58cb8e4f02f9322e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f7749763212a7ce", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsacontextboundstrisreleased\tfixedbugs-a-context-bound-str-is-released\n");

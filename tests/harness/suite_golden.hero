@@ -235,7 +235,10 @@ constant NO_FLAGS: [str]
 # (`FLOOR full`, defect 536's rule): 459's, 525's, 532's and 548's whole
 # messages among the cases its lanes added. **37 on 2026-10-10**, raised by
 # M-inferred-cell's closing as its gate told it: the width class's note and
-# fix among the cases panel 209's landing added.
+# fix among the cases panel 209's landing added. **53 on 2026-10-30**,
+# raised by M-compatibility-promise's closing as its gate told it: defects
+# 2242's, 2251's and 2261's whole messages among the eight cases its batch
+# added.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -244,7 +247,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 37,
+        least: 53,
         watched: true,
         silent_stdout: false,
         library_skip: false

@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -52,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_e09250b, "half");
 
-#line 56 "f32thenarrowfloat.c"
+#line 55 "f32thenarrowfloat.c"
 typedef struct h_0opt_db86062 {
     int64_t tag;
     union {
@@ -96,9 +95,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "f32thenarrowfloat.c"
+#line 101 "f32thenarrowfloat.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *v);
@@ -126,10 +125,10 @@ void h_f32thenarrowfloat_main(void) { float h0_a; float h1_edge; float h2_tenth;
     t2 = h0_a; t3 = 0x1p-2; t4 = t2 + t3; h0_a = t4;
     t5 = h0_a; hero_print_f32(t5); hero_print_end();
 #line 22
-    t6 = 0x1.000001p+24; h1_edge = t6;
+    t6 = 0x1p+24; h1_edge = t6;
     t7 = h1_edge; hero_print_f32(t7); hero_print_end();
 #line 27
-    t8 = 0x1.999999999999ap-4; h2_tenth = t8;
+    t8 = 0x1.99999ap-4; h2_tenth = t8;
     t9 = h2_tenth; hero_print_f32(t9); hero_print_end();
     t10 = h2_tenth; t11 = hero_f32_to_f64(t10); hero_print_f64(t11); hero_print_end();
 #line 32
@@ -146,7 +145,7 @@ void h_f32thenarrowfloat_main(void) { float h0_a; float h1_edge; float h2_tenth;
     t31 = HERO_STR_LIT(hero_str_e09250b); t32 = 0x1p-1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"f32-the-narrow-float.hero", "f32-the-narrow-float.main", 44, 5}; hero_map_set_at(&(h7_m), &t31, &t32, &hero_here); }
     t33 = h7_m; t34 = HERO_STR_LIT(hero_str_e09250b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"f32-the-narrow-float.hero", "f32-the-narrow-float.main", 45, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t33, &t34, &hero_here); if (found == NULL) { t35 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t35 = (h_0opt_db86062){.tag = INT64_C(0)}; (&hero_desc_f32)->copy(&t35.as.ok, found); } } t55 = h12_own12; h12_own12 = t35; h_0opt_db86062_release(&t55); t56 = h8_f0; h_0opt_db86062_retain(&t35); h8_f0 = t35; h_0opt_db86062_release(&t56); t36 = h8_f0; t37 = t36.tag; t38 = INT64_C(0); t39 = t37 == t38; if (t39) goto bb1; else goto bb2; bb1: t42 = h8_f0; t43 = t42.as.ok; hero_print_f32(t43); hero_print_end();
     t44 = h5_xs; t45 = INT64_C(0); t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? hero_panic_index_at(t44, t45, "f32-the-narrow-float.hero", "f32-the-narrow-float.main", 46, 11) : (void)0), (void)(t44->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t44 + 1))[t45]); t47 = 0x1.4p+1; t48 = t46 == t47; hero_print_bool(t48); hero_print_end();
-#line 150 "f32thenarrowfloat.c"
+#line 149 "f32thenarrowfloat.c"
     hero_array_release_at(&h5_xs);
     hero_array_release_at(&h6_sorted);
     hero_map_release_at(&h7_m);
@@ -159,7 +158,7 @@ void h_f32thenarrowfloat_main(void) { float h0_a; float h1_edge; float h2_tenth;
 bb2:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t40 = h8_f0; t41 = t40.as.err;
-#line 163 "f32thenarrowfloat.c"
+#line 162 "f32thenarrowfloat.c"
     hero_panic_must_at(t41, "f32-the-narrow-float.hero", "f32-the-narrow-float.main", 45, 11);
     hero_unreachable();
 }
@@ -292,7 +291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6325cc7767b4f3fd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b25c3021f7e63c7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("f32thenarrowfloat\tf32-the-narrow-float\n");

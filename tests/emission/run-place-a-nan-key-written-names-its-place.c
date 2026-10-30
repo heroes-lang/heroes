@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "placeanankeywrittennamesitsplace.c"
+#line 53 "placeanankeywrittennamesitsplace.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "placeanankeywrittennamesitsplace.c"
+#line 91 "placeanankeywrittennamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -112,7 +111,7 @@ void h_placeanankeywrittennamesitsplace_main(void) { double h0_zero; HERO_NODEBU
     t1 = 0x0p+0; h0_zero = t1;
     t2 = 0x1p+0; t3 = h_placeanankeywrittennamesitsplace_0store_1ad16c(t2); t10 = h1_own1; h1_own1 = t3; hero_map_decref(t10); t4 = hero_map_len(t3); hero_print_int(t4); hero_print_end();
     t5 = h0_zero; t6 = h0_zero; t7 = t5 / t6; t8 = h_placeanankeywrittennamesitsplace_0store_1ad16c(t7); t11 = h2_own2; h2_own2 = t8; hero_map_decref(t11); t9 = hero_map_len(t8); hero_print_int(t9); hero_print_end();
-#line 116 "placeanankeywrittennamesitsplace.c"
+#line 115 "placeanankeywrittennamesitsplace.c"
     hero_map_release_at(&h1_own1);
     hero_map_release_at(&h2_own2);
     return;
@@ -123,7 +122,7 @@ void h_placeanankeywrittennamesitsplace_main(void) { double h0_zero; HERO_NODEBU
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0); t5 = h2_own2; h2_own2 = t1; hero_map_decref(t5); t6 = h1_m; hero_map_incref(t1); h1_m = t1; hero_map_decref(t6);
     t2 = h0_k; t3 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-a-nan-key-written-names-its-place.hero", "place-a-nan-key-written-names-its-place.store", 8, 5}; hero_map_set_at(&(h1_m), &t2, &t3, &hero_here); }
     t4 = h1_m;
-#line 127 "placeanankeywrittennamesitsplace.c"
+#line 126 "placeanankeywrittennamesitsplace.c"
     hero_map_incref(t4);
     hero_map_release_at(&h1_m);
     hero_map_release_at(&h2_own2);
@@ -226,7 +225,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bb2cf23172ea435", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0003d98d62119d37", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanankeywrittennamesitsplace\tplace-a-nan-key-written-names-its-place\n");

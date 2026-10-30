@@ -213,7 +213,7 @@ spec-warden's veto):
 
 **What lands in this milestone**, in one landing after the batch's repairs merge:
 
-- ten sentences of the specification, each with the repair that makes it true: E1, D1, M10c, B4r
+- ten sentences of the specification, each with the repair that makes it true: E1, D1, § 10's index of a place written with `@`, B4r
   and L2 for the order of evaluation; S6 for `<<` and `>>`; H3 for a handle given back, with defect
   2255; K1 for the stack, with defect 2253 on Darwin and on Linux; X4 and N1 for `exit` and
   `does_not_fit`; 10,343 to 10,497 real by the parts the spec-warden measured, measured again as
@@ -238,3 +238,13 @@ map's keys in the order they were first written, so the paragraph above no longe
 order among what the specification leaves open, and the runtime and § 10 owe it (feature 2274), **in this milestone**, by the
 author's instruction of the same night, meant as: *it should be done before the publication
 gate, since developing the packages' core without it would be a problem; let us do it now*.
+
+**Closed 2026-10-30**, [073](../../records/journal/073-compatibility-promise.md): panel 232's
+eleven sentences in the specification at 10,514 real, each with the repair that makes it true;
+the batch of nineteen defects, feature 2274 and task 2237 gated once, the full net 10,545 and 0 on
+34 suites; `heroes check` on the compiler 2.0% slower, owed by
+https://github.com/heroes-lang/heroes/issues/2279 on M-latency-ceiling. What it carried forward
+is the `adjacent` https://github.com/heroes-lang/heroes/issues/2275,
+https://github.com/heroes-lang/heroes/issues/2277 and
+https://github.com/heroes-lang/heroes/issues/2278, and the paragraph's publication in
+`README.md`, task 2268 on M-publication-gate.

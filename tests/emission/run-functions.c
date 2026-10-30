@@ -2,10 +2,9 @@
 #include "heroes_unit.h"
 #include <heroes_unit.h>
 #include <hero_os.h>
-#include <heroes_runtime.h>
 #include "heroes_standard.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 31, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
@@ -50,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 54 "functions.c"
+#line 53 "functions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,9 +85,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124
+#line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "functions.c"
+#line 91 "functions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -116,7 +115,7 @@ bool h_functions_is_even(int64_t h0_n) { HERO_NODEBUG bool h1_ret0, t3, t4, t8, 
     t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("functions.hero", "functions.is_even", 9, 19); t8 = h_functions_is_odd(t7); h1_ret0 = t8; goto bb4; bb2:
 #line 8
     t4 = true; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 120 "functions.c"
+#line 119 "functions.c"
     t9 = h1_ret0;
     return t9;
 }
@@ -128,7 +127,7 @@ bool h_functions_is_odd(int64_t h0_n) { HERO_NODEBUG bool h1_ret0, t3, t4, t8, t
     t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("functions.hero", "functions.is_odd", 14, 20); t8 = h_functions_is_even(t7); h1_ret0 = t8; goto bb4; bb2:
 #line 13
     t4 = false; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 132 "functions.c"
+#line 131 "functions.c"
     t9 = h1_ret0;
     return t9;
 }
@@ -138,7 +137,7 @@ void h_functions_main(void) { HERO_NODEBUG int64_t t1, t3, t5, t6; HERO_NODEBUG 
     t1 = INT64_C(10); t2 = h_functions_is_even(t1); hero_print_bool(t2); hero_print_end();
     t3 = INT64_C(10); t4 = h_functions_is_odd(t3); hero_print_bool(t4); hero_print_end();
     t5 = INT64_C(10); t6 = h_functions_fib(t5); hero_print_int(t6); hero_print_end(); return;
-#line 142 "functions.c"
+#line 141 "functions.c"
 }
 
 #line 21 "tests/golden/run/functions.hero"
@@ -148,7 +147,7 @@ int64_t h_functions_fib(int64_t h0_n) { HERO_NODEBUG int64_t h1_ret0, t1, t2, t4
     t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("functions.hero", "functions.fib", 24, 16); t8 = h_functions_fib(t7); t9 = h0_n; t10 = INT64_C(2); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("functions.hero", "functions.fib", 24, 29); t12 = h_functions_fib(t11); if (__builtin_add_overflow(t8, t12, &t13)) hero_panic_overflow_at("functions.hero", "functions.fib", 24, 12); h1_ret0 = t13; goto bb4; bb2:
 #line 23
     t4 = h0_n; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 152 "functions.c"
+#line 151 "functions.c"
     t14 = h1_ret0;
     return t14;
 }
@@ -249,7 +248,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ed2e82b35bedfae", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("46b0a8f0575a2ebe", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_functions_main();
