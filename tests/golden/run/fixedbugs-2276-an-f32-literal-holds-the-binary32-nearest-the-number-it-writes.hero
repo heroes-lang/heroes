@@ -1,0 +1,67 @@
+# Defect 2276, 2026-10-30. An `f32` literal holds the binary32 nearest the
+# number it writes, read once. The compiler read every float literal with C's
+# `atof`, a double, and C narrowed that double into the `float`: two
+# roundings, and where `atof` lands exactly on a binary32 midpoint the
+# narrowing's tie-to-even takes the far neighbour. `7.038531e-26` is 2.2e-42
+# below the midpoint of 0x15ae43fd and 0x15ae43fe, so it names 0x15ae43fd; the
+# literal held 0x15ae43fe, and the text 0x15ae43fd prints (defect 2271) did
+# not read back as itself. Every context that makes a literal an `f32` is
+# below, each held to 0x15ae43fd written as its exact decimal, which no
+# reader can round.
+
+constant NEAR: f32
+    0.00000000000000000000000007038531
+
+constant ROW: [f32]
+    [0.00000000000000000000000007038531, 41358803000000000000000000000000000.0]
+
+record Probe
+    value: f32
+
+function widened(x: f32) -> f64
+    return to_f64(x)
+
+function given() -> f32
+    return 0.00000000000000000000000007038531
+
+function main()
+    exact: f32 = 0.00000000000000000000000007038530691851209120859188017140306974105991300039164570989669300615787506103515625
+
+    # A binding, and the text the value prints, which reads back as itself.
+    bound: f32 = 0.00000000000000000000000007038531
+    print(bound == exact, " ", bound, " ", to_str(bound), " ", to_f64(bound))
+
+    # An argument, a field, a return, an assignment and a comparison.
+    print(widened(0.00000000000000000000000007038531) == to_f64(exact))
+    print(Probe(value: 0.00000000000000000000000007038531).value == exact)
+    print(given() == exact)
+    cell: f32 @= 0.0
+    cell @ 0.00000000000000000000000007038531
+    print(cell == exact, " ", exact == 0.00000000000000000000000007038531)
+
+    # An array, a map's value, a constant and a constant's element.
+    xs: [f32] = [0.00000000000000000000000007038531]
+    m: {str: f32} = {"k": 0.00000000000000000000000007038531}
+    print(xs[0] == exact, " ", m["k"].must() == exact, " ", NEAR == exact, " ", ROW[0] == exact)
+
+    # Another of the nine, at the top of the range: 0x78fee4af, not 0x78fee4b0.
+    big: f32 = 41358803000000000000000000000000000.0
+    print(to_f64(big), " ", ROW[1] == big)
+
+    # All nine decimals of at most eight digits that a double rounds onto a
+    # binary32 midpoint, each the binary32 `strtof` gives (2026-10-29, every such
+    # decimal in binary32's range checked).
+    nine: [f32] = [
+        41358803000000000000000000000000000.0
+        82717606000000000000000000000000000.0
+        0.00000000000000000000000014077062
+        0.00000000000000000000000028154124
+        0.00000000000000000000000056308248
+        0.000000000000000000000000035192655
+        0.000000000000000000000000070385310
+        0.00000000000000000000000000082381273
+        0.0000000000000000000000000000000093137999
+    ]
+
+    for x in nine
+        print(to_f64(x))

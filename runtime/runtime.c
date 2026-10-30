@@ -237,6 +237,11 @@
  * and `str.c`'s one judge of a sequence; nothing needs it. */
 #include "parts/key.c"
 
+/* What an `f32` literal holds, read once (defect 2276): the compiler's door,
+ * after `hero_compiler.h` declares it and after `f64.c`, whose locale window
+ * and `strtof` spelling it uses; nothing needs it. */
+#include "parts/f32-literal.c"
+
 /* The filesystem and the process, added at M-argv-execution. They are last
  * because they need `str`, `hero_alloc` and the panic path, and nothing needs
  * them. They are also the only two files here that are allowed to know what
