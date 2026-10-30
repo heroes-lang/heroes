@@ -1,0 +1,15 @@
+# Feature 2274, 2026-10-30. A key written again keeps the place of its first
+# writing, its value replaced: `m[k] @ v` on a key already there moves nothing
+# in the order, and a literal that names a key twice keeps it where it first
+# stands with the later value, as a Python dict does since 3.7.
+
+function main()
+    m: {str: i64} @= {"a": 1, "b": 2, "c": 3}
+    m["a"] @ 10
+    m["d"] @ 4
+    m["b"] @ 20
+    print(keys(m).join(" "))
+    print(m["a"].must(), " ", m["b"].must(), " ", m["c"].must(), " ", m["d"].must())
+
+    twice = {"x": 1, "y": 2, "x": 3}
+    print(keys(twice).join(" "), " ", twice["x"].must(), " ", len(twice))

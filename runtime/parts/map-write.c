@@ -54,25 +54,23 @@ static uint64_t hero_hash_map(const void *elem) {
 const HeroDesc hero_desc_map = {sizeof(HeroMapHeader *), hero_copy_map, hero_drop_map,
                                 hero_eq_map, hero_hash_map};
 
+/* The keys IN THE ORDER THEY WERE FIRST WRITTEN (feature 2274): a literal's
+ * from left to right, then each `m[k] @ v` that added one, a key written again
+ * keeping its place, through every growth and copy of the map. */
 HeroArrayHeader *hero_map_keys(const HeroMapHeader *m) {
     hero_map_require(m);
     HeroArrayHeader *out = hero_array_new(m->key, m->len > 0 ? m->len : 1);
-    const unsigned char *states = hero_map_states_const(m);
     unsigned char *data = (unsigned char *)(void *)(out + 1);
-    int64_t at = 0;
-    for (int64_t i = 0; i < m->cap; i++) {
-        if (states[i] == 0) continue;
-        /* The array was sized from `m->len` and this loop fills from `states`.
-         * They agree — every write to either goes through this file — but the
-         * agreement is a premise, and the failure it guards is a heap write past
-         * the end of a block in a build with no sanitiser. One comparison, at the
-         * place that would otherwise do the writing (2026-08-12, sweep 001 S10). */
+    for (int64_t at = 0; at < m->len; at++) {
+        /* The array was sized from `m->len` and so is this loop, and the order
+         * names a live bucket for each, which `hero_map_entry_bucket` asks: the
+         * failure these guard is a heap read or write past what is there, in a
+         * build with no sanitiser (2026-08-12, sweep 001 S10). */
         if (at >= out->cap) hero_panic("map length disagrees with its buckets — a compiler bug");
         /* Copied, not moved: the map keeps its own key and the array takes one. */
-        m->key->copy(data + (size_t)at * m->key->size, hero_map_key_at_const(m, i));
-        at += 1;
+        m->key->copy(data + (size_t)at * m->key->size, hero_map_key_at_const(m, hero_map_entry_bucket(m, at)));
     }
-    out->len = at;
+    out->len = m->len;
     return out;
 }
 
@@ -98,11 +96,12 @@ HeroArrayHeader *hero_map_keys(const HeroMapHeader *m) {
  * `hero_map_set` reads both again on the retry, after the growth; with the free
  * inside, `m["k"] @ m["k"].must()` at the load factor would read freed memory.
  * The caller releases, after the retry (2026-08-12, sweep 001 audit L5). */
+/* Re-inserted in the order the keys were first written, so the grown table's
+ * order region is the old one's, entry for entry (feature 2274). */
 static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
     HeroMapHeader *b = hero_map_new(m->key, m->val, m->len * 2 + 1);
-    const unsigned char *states = hero_map_states_const(m);
-    for (int64_t i = 0; i < m->cap; i++) {
-        if (states[i] == 0) continue;
+    for (int64_t at = 0; at < m->len; at++) {
+        int64_t i = hero_map_entry_bucket(m, at);
         hero_map_put_at(b, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i), NULL);
     }
     return b;
@@ -128,9 +127,10 @@ static void hero_map_unshare(HeroMapHeader **slot) {
     HeroMapHeader *m = *slot;
     if (m->refcount == 1) return;
     HeroMapHeader *copy = hero_map_new(m->key, m->val, m->len);
-    const unsigned char *states = hero_map_states_const(m);
-    for (int64_t i = 0; i < m->cap; i++) {
-        if (states[i] == 0) continue;
+    /* In the order the keys were first written, so the copy a write makes keeps
+     * it, as growth does (feature 2274). */
+    for (int64_t at = 0; at < m->len; at++) {
+        int64_t i = hero_map_entry_bucket(m, at);
         hero_map_put_at(copy, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i), NULL);
     }
     hero_map_decref(m);
@@ -168,6 +168,7 @@ void hero_map_set_at(HeroMapHeader **slot, const void *key, const void *value, c
             m->key->copy(hero_map_key_at(m, i), key);
             memcpy(hero_map_val_at(m, i), value, m->val->size);
             states[i] = 1;
+            hero_map_order_append(m, i);
             m->len += 1;
             return;
         }

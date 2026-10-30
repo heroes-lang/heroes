@@ -19,6 +19,13 @@
  * generated C byte for byte, and a seed that varied per run would make the
  * compiler produce two different correct outputs.
  *
+ * **And a FOURTH region since 2026-10-29: the order the keys were first
+ * written in** (feature 2274; panel 232's R12, which the author ratified with
+ * insertion order). `keys` reads the keys in that order, and growth and the
+ * copy-on-write rebuild re-insert in it, so no table built from another loses
+ * it; a key written again keeps its place, as a Python dict's does since 3.7.
+ * Lookups never read it, so a probe costs what it did.
+ *
  * Writing is `parts/map-write.c`. The split is by direction rather than by size:
  * everything here is safe on a shared map, and nothing there is.
  *
@@ -55,6 +62,39 @@ static const unsigned char *hero_map_val_at_const(const HeroMapHeader *m, int64_
     return (const unsigned char *)(const void *)m + m->vals + (size_t)at * m->val->size;
 }
 
+/* THE ORDER REGION: for each live entry, in the order it was first inserted,
+ * the bucket it sits in. A bucket never moves inside one table (there is no
+ * deletion, so no tombstone and no compaction), which is what lets a bucket's
+ * index stand for an entry. `cap / 2` slots, the most entries a table holds:
+ * `hero_map_set_at` grows before a write would pass half its buckets, and
+ * `hero_map_new` gives a literal of `entries` keys more than twice as many.
+ * Its offset is computed rather than stored, after the values' region rounded
+ * as every region is, so `HeroMapHeader` and the ABI keep their shape. */
+static size_t hero_map_order_offset(const HeroMapHeader *m) {
+    return m->vals + hero_map_round_up((size_t)m->cap * m->val->size);
+}
+static int64_t *hero_map_order(HeroMapHeader *m) {
+    return (int64_t *)(void *)((unsigned char *)(void *)m + hero_map_order_offset(m));
+}
+
+/* A new entry's place in the order, written before `len` counts it. */
+static void hero_map_order_append(HeroMapHeader *m, int64_t bucket) {
+    if (m->len >= m->cap / 2) hero_panic("map order is full — this is a compiler bug, please report it");
+    hero_map_order(m)[m->len] = bucket;
+}
+
+/* The bucket of the entry written `at`-th, `0 <= at < len`. Checked where it
+ * is read, as `keys` checks its count (2026-08-12, sweep 001 S10): an order
+ * naming an empty bucket would copy what is not there. */
+static int64_t hero_map_entry_bucket(const HeroMapHeader *m, int64_t at) {
+    const unsigned char *base = (const unsigned char *)(const void *)m;
+    int64_t i = ((const int64_t *)(const void *)(base + hero_map_order_offset(m)))[at];
+    if (i < 0 || i >= m->cap || hero_map_states_const(m)[i] == 0) {
+        hero_panic("map order disagrees with its buckets — this is a compiler bug, please report it");
+    }
+    return i;
+}
+
 /* Every reader goes through this: NULL is an unassigned slot. **And a map
  * whose block was given back** (defect 462's map, 2026-10-07): the key
  * descriptor, which a live map always has, is set to none before the block
@@ -74,8 +114,10 @@ __attribute__((always_inline)) static inline void hero_map_require(const HeroMap
 }
 
 /* THE FIXED SEED. Mixed into every probe so that the bucket a key lands in is a
- * function of the key alone — which is what makes iteration order, and therefore
- * generated C, reproducible across runs (panel 006). */
+ * function of the key alone — which made iteration order, and therefore
+ * generated C, reproducible across runs (panel 006). Since feature 2274 no
+ * reader shows the buckets' order, the keys coming in the order they were
+ * written; the seed still makes every run's probes, and so its work, the same. */
 #define HERO_MAP_SEED UINT64_C(0x9e3779b97f4a7c15)
 
 /* A KEY MUST EQUAL ITSELF, and it is checked here because every probe starts
@@ -120,8 +162,9 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     size_t head = hero_map_round_up(sizeof(HeroMapHeader));
     size_t states = hero_map_round_up((size_t)cap);
     size_t keys = hero_map_round_up((size_t)cap * key->size);
-    size_t vals = (size_t)cap * val->size;
-    HeroMapHeader *m = hero_alloc_block(head + states + keys + vals);
+    size_t vals = hero_map_round_up((size_t)cap * val->size);
+    size_t order = (size_t)(cap / 2) * sizeof(int64_t);
+    HeroMapHeader *m = hero_alloc_block(head + states + keys + vals + order);
     if (m == NULL) hero_panic("out of memory");
     /* Relaxed on a block no other thread can see yet — `str.c`'s reason. */
     atomic_store_explicit(&m->refcount, 1, memory_order_relaxed);
@@ -212,15 +255,16 @@ void hero_map_put_at(HeroMapHeader *m, const void *key, const void *value, const
             m->key->copy(hero_map_key_at(m, i), key);
             m->val->copy(hero_map_val_at(m, i), value);
             states[i] = 1;
+            hero_map_order_append(m, i);
             m->len += 1;
             return;
         }
         if (m->key->eq(hero_map_key_at_const(m, i), key)) {
             /* A duplicate key REPLACES: `{"a": 1, "a": 2}` has to mean something, and
-             * the later entry is what a reader of the literal expects. The key that
-             * later entry is what a reader of the literal expects. Only the VALUE is
+             * the later entry is what a reader of the literal expects. Only the VALUE is
              * replaced: the keys are equal, so which of the two copies the map keeps is
-             * unobservable, and keeping the first saves a write and a reference. */
+             * unobservable, and keeping the first saves a write and a reference. The
+             * key keeps the place of its first writing in the order. */
             m->val->drop(hero_map_val_at(m, i));
             m->val->copy(hero_map_val_at(m, i), value);
             return;

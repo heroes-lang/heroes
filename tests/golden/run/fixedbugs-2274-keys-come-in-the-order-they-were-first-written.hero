@@ -1,0 +1,21 @@
+# Feature 2274, 2026-10-30. A map gives its keys in the order they were first
+# written: a literal's from left to right, then each `m[k] @ v` that adds one,
+# and `keys` and a `for` over them read that order on every run. Until this
+# feature `keys` read the table's buckets, an order the hash and the table's
+# history made and the writing did not (panel 232's R12, ratified with
+# insertion order by the author on 2026-10-29).
+
+function main()
+    m: {str: i64} @= {"pear": 1, "apple": 2, "fig": 3}
+    m["kiwi"] @ 4
+    m["banana"] @ 5
+    print(keys(m).join(" "))
+
+    for k in keys(m)
+        print(k, " ", m[k].must())
+
+    # A number's order is the writing's too, not its value's.
+    numbers = {30: "thirty", 10: "ten", 20: "twenty"}
+
+    for n in keys(numbers)
+        print(n, " ", numbers[n].must())

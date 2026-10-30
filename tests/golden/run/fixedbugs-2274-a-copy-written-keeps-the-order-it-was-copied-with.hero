@@ -1,0 +1,23 @@
+# Feature 2274, 2026-10-30. A copy of a map keeps the order of the map it was
+# copied from, and a write to the copy, which makes the copy its own table
+# (copy on write, spec § 3), adds after it and leaves the original as it was;
+# through a record's field the same. Equality reads no order: two maps with
+# the same entries are equal whatever order each was written in.
+
+record Shelf
+    books: {str: i64}
+
+function main()
+    m: {str: i64} = {"pear": 1, "apple": 2, "fig": 3}
+    n @= m
+    n["kiwi"] @ 4
+    print(keys(m).join(" "))
+    print(keys(n).join(" "))
+
+    s = Shelf(books: n)
+    t @= s
+    t.books["banana"] @ 5
+    print(keys(s.books).join(" "))
+    print(keys(t.books).join(" "))
+
+    print(m == {"fig": 3, "pear": 1, "apple": 2}, " ", n == {"kiwi": 4, "apple": 2, "fig": 3, "pear": 1})

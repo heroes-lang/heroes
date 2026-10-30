@@ -1,0 +1,25 @@
+# Feature 2274, 2026-10-30. The order the keys were first written in survives
+# every growth of the table: a thousand keys take it through nine rehashes,
+# each re-inserting in the order written. `i * 7919 % 1000` visits every number
+# below a thousand once (7919 is prime to it), in an order neither sorted nor
+# the hash's, so an order kept by accident cannot pass.
+
+function main()
+    numbers: {i64: i64} @= {}
+    words: {str: i64} @= {}
+    written: [i64] @= []
+    spelled: [str] @= []
+    i @= 0
+
+    while i < 1000
+        k = i * 7919 % 1000
+        numbers[k] @ i
+        words["k" + to_str(k)] @ i
+        written @ written.push(k)
+        spelled @ spelled.push("k" + to_str(k))
+        i @ i + 1
+
+    ks = keys(numbers)
+    print(len(ks), " ", ks == written, " ", ks[0], " ", ks[1], " ", ks[2], " ", ks[999])
+    ws = keys(words)
+    print(len(ws), " ", ws == spelled, " ", ws[0], " ", ws[1], " ", ws[500], " ", ws[999])
