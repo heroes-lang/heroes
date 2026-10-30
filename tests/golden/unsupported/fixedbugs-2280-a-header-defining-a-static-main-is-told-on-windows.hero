@@ -1,0 +1,21 @@
+# fixedbugs, defect 2280, 2026-10-30, the twin of
+# `ffi-a-header-defining-a-static-main-is-told`, its words the Windows
+# target's: judged there alone (`tests/harness/platform_skips.hero`), and its
+# mark on every platform, as defect 2053's twins are.
+#
+# SYMPTOM: on the CI's Windows x86-64 leg (run 41045262788, 2026-10-30) that
+# case read 1 failed: since defect 2253 declares the runtime's `main` in
+# `heroes_runtime.h` before any group's header, a header's `static int main`
+# follows a non-static declaration, which the Windows target's clang reads as
+# Microsoft's extension, `-Wmicrosoft-redeclare-static`, an error in a
+# header's region, where this Mac's clang and Linux's say `static declaration
+# of 'main' follows non-static declaration`.
+#
+# FIX: each side's words a case judged where they are said, this one on the
+# Windows target and that one on every other.
+
+extern "fixedbugs-2280-a-header-defining-a-static-main-is-told-on-windows.h"  #~ ffi_header_refused
+    function y18_f() -> i32
+
+function main()
+    print(y18_f())

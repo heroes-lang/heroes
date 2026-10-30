@@ -16,6 +16,10 @@
 # after the runtime's declaration on every platform, in other words on the
 # Windows target than on this Mac and Linux, so each side's words are a case
 # judged where they are said, and the refusal's mark, `#~`, on all three.
+# **And a header's `static main` since defect 2253** (defect 2280,
+# 2026-10-30): the runtime's `main` declared before any group's header, a
+# header's `static` one follows it, and the Windows target tells it in the
+# same extension's words, which the CI's Windows leg read first.
 
 use shell
 use strings
@@ -49,6 +53,12 @@ constant STATIC_ON_WINDOWS: str
 constant STATIC_ELSEWHERE: str
     "its words are the Windows target's, Microsoft's extension refused in a header's region (clang 23.1.1 on the Windows box, 2026-10-13), where this Mac's clang and Linux's say `static declaration of 'hero_str_len' follows non-static declaration`, which defect 2045's case judges on them; its mark is judged on every platform (defect 2053)"
 
+constant STATIC_MAIN_ON_WINDOWS: str
+    "the Windows target reads a header's `static int main` after the runtime's own declaration of `main` as Microsoft's extension, refused in a header's region in clang's words for it, `redeclaring non-static 'main' as static is a Microsoft extension [-Werror,-Wmicrosoft-redeclare-static]` (the CI's Windows x86-64 leg, run 41045262788, 2026-10-30), where this Mac's clang and Linux's say `static declaration of 'main' follows non-static declaration`; the runtime's `main` is declared before any group's header since defect 2253, and defect 2280's case judges the Windows words there"
+
+constant STATIC_MAIN_ELSEWHERE: str
+    "its words are the Windows target's, Microsoft's extension refused in a header's region (the CI's Windows x86-64 leg, run 41045262788, 2026-10-30), where this Mac's clang and Linux's say `static declaration of 'main' follows non-static declaration`, which `ffi-a-header-defining-a-static-main-is-told` judges on them; its mark is judged on every platform (defect 2280)"
+
 constant LINKED_ON_WINDOWS: str
     "the probe of a header constant's value links on Windows with `/FORCE:UNRESOLVED`, the platform's word for leaving the program's libraries out, since neither link.exe nor lld drops a reference dead-stripping drops elsewhere (measured on the box, 2026-10-17); so a header constructor calling a function no library of the probe holds links there and ends the probe when it calls it, told as a probe that did not finish (measured on the box at bc978b09d: exception 3221225477 at the constructor's call), where Darwin's and Linux's links leave the symbol undefined and it is told by its name (panel 218's R2)"
 
@@ -59,6 +69,7 @@ function windows() -> [Skip]
         Skip(name: "a header-only C99 inline is refused by run as by build, told what C wants (defect 562)", why: INLINE_ON_WINDOWS)
         Skip(name: "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused", why: STATIC_ON_WINDOWS)
         Skip(name: "fixedbugs-2075-a-probe-that-does-not-link-is-told-as-such", why: LINKED_ON_WINDOWS)
+        Skip(name: "ffi-a-header-defining-a-static-main-is-told", why: STATIC_MAIN_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -67,6 +78,7 @@ function elsewhere() -> [Skip]
     return [
         Skip(name: "fixedbugs-2053-a-header-that-defines-a-called-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
         Skip(name: "fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
+        Skip(name: "fixedbugs-2280-a-header-defining-a-static-main-is-told-on-windows", why: STATIC_MAIN_ELSEWHERE)
     ]
 
 # **And an emission that names the platform's own C is compared where it was
@@ -138,14 +150,14 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 4
+    assert windows().len() == 5
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
-    for one in [windows()[2], windows()[3], elsewhere()[0], elsewhere()[1]]
+    for one in [windows()[2], windows()[3], windows()[4], elsewhere()[0], elsewhere()[1], elsewhere()[2]]
         assert shell.exists("tests/golden/unsupported/" + one.name + ".hero")
 
-    assert elsewhere().len() == 2
+    assert elsewhere().len() == 3
 
 # On a machine that is not Windows nothing is skipped by name but the cases
 # whose words are Windows' alone, and on Windows those are judged.
@@ -154,6 +166,8 @@ test "a name is judged where its platform's C holds its shape"
     assert reason("fixedbugs-562-a-header-only-inline-is-told-what-c-wants").is_err() == !on_windows
     assert reason("fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused").is_err() == !on_windows
     assert reason(elsewhere()[0].name).is_err() == on_windows
+    assert reason("ffi-a-header-defining-a-static-main-is-told").is_err() == !on_windows
+    assert reason(elsewhere()[2].name).is_err() == on_windows
     assert reason("fixedbugs-562-another-case").is_err()
 
 # Each emission compared on Darwin alone is a blessed file and a case that
