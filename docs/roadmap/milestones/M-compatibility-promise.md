@@ -248,3 +248,7 @@ is the `adjacent` https://github.com/heroes-lang/heroes/issues/2275,
 https://github.com/heroes-lang/heroes/issues/2277 and
 https://github.com/heroes-lang/heroes/issues/2278, and the paragraph's publication in
 `README.md`, task 2268 on M-publication-gate.
+
+**Tagged the same day**, `m-compatibility-promise` on the commit that writes this, after the
+milestone's defects, feature 2274 and its tasks were closed and the 34 features and tasks two tags
+had passed were re-checked, each with a dated comment.

@@ -136,3 +136,17 @@ CI's four legs on the close's push, Windows among them for 2253 and 2257, run on
 before it; the census and panel 187's R2 after the push, the batch having changed what the compiler
 refuses; task 2279 on M-latency-ceiling, the 2.0% `heroes check` lost; the paragraph's publication
 in `README.md` at M-publication-gate.
+
+## The tag, 2026-10-30
+
+The close (29715956f) went out with the author's standing yes of the night before: 62 commits, 48
+of them touching a path the site's build reads, the site built green over the trunk first. The
+push landed at 12:03, 77 minutes after that build ended; what held it is not known to this record.
+The nineteen defects, feature 2274 and tasks 2237, 2250, 2213, 2245 and 1066 were closed by 12:06,
+before the CI's net could read them open: `records` read 27 and 1 over the close commit, its
+`homes` finding row 74 done and six of its items standing, and 28 and 0 once they were closed. The
+34 open features and tasks two tags had passed were re-checked against the close commit and each
+given a dated comment by 12:10; one (810) had a premise overtaken by panel 232's paragraph, what it
+asks untouched, and none closed. The tag goes on the commit that says so, made after the closes,
+as M-generated-programs' went, over a list with no `blocking` or `systemic` defect (2275, 2277 and
+2278 `adjacent`, at their first tag) and no decision open.
