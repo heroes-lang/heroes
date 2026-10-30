@@ -187,11 +187,12 @@ function grouped(rows: [row.Row]) -> {plan.Group: plan.Summary}
     return out
 
 # A group's keys in a fixed order — team first, then active before
-# inactive. **The map has no order** (spec § Bindings: `keys(m)` gives the
-# keys in no order), so a report that walked the map as it came would print
-# a different table on a different day. This is the `# ORDER:` discipline
-# `examples/words/` teaches, applied to a key that is a record and so
-# cannot be handed to `sort` directly.
+# inactive. `keys(m)` gives the keys in the order they were first written
+# (spec § 10; in no order at all until 2026-10-30), which is the order the
+# rows happened to arrive in, so a report that walked the map as it came
+# would print a different table for the same rows given in another order.
+# This is the `# ORDER:` discipline `examples/words/` teaches, applied to a
+# key that is a record and so cannot be handed to `sort` directly.
 function group_order(m: {plan.Group: plan.Summary}) -> [plan.Group]
     labels: [str] @= []
 

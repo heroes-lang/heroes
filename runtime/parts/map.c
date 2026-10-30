@@ -68,10 +68,16 @@ static const unsigned char *hero_map_val_at_const(const HeroMapHeader *m, int64_
  * index stand for an entry. `cap / 2` slots, the most entries a table holds:
  * `hero_map_set_at` grows before a write would pass half its buckets, and
  * `hero_map_new` gives a literal of `entries` keys more than twice as many.
- * Its offset is computed rather than stored, after the values' region rounded
- * as every region is, so `HeroMapHeader` and the ABI keep their shape. */
+ * Its offset is computed rather than stored, so `HeroMapHeader` and the ABI
+ * keep their shape: the end of the values' region rounded up to the slot's own
+ * alignment, eight bytes on every platform, which is what lets the debugger's
+ * formatter (`editors/lldb/heroes_lldb.py`) find it from `vals`, `cap` and the
+ * value's size with no knowledge of the target's `max_align_t`. */
+#define HERO_MAP_ORDER_ALIGN (_Alignof(int64_t))
+_Static_assert(_Alignof(int64_t) == 8 && sizeof(int64_t) == 8, "the order region's slot, as the formatter reads it");
 static size_t hero_map_order_offset(const HeroMapHeader *m) {
-    return m->vals + hero_map_round_up((size_t)m->cap * m->val->size);
+    size_t end = m->vals + (size_t)m->cap * m->val->size;
+    return (end + HERO_MAP_ORDER_ALIGN - 1) / HERO_MAP_ORDER_ALIGN * HERO_MAP_ORDER_ALIGN;
 }
 static int64_t *hero_map_order(HeroMapHeader *m) {
     return (int64_t *)(void *)((unsigned char *)(void *)m + hero_map_order_offset(m));
@@ -162,9 +168,12 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     size_t head = hero_map_round_up(sizeof(HeroMapHeader));
     size_t states = hero_map_round_up((size_t)cap);
     size_t keys = hero_map_round_up((size_t)cap * key->size);
-    size_t vals = hero_map_round_up((size_t)cap * val->size);
+    size_t vals = (size_t)cap * val->size;
+    /* The order region after the values, at its slot's alignment
+     * (`hero_map_order_offset`, which reads the same arithmetic back). */
+    size_t ends = (head + states + keys + vals + HERO_MAP_ORDER_ALIGN - 1) / HERO_MAP_ORDER_ALIGN * HERO_MAP_ORDER_ALIGN;
     size_t order = (size_t)(cap / 2) * sizeof(int64_t);
-    HeroMapHeader *m = hero_alloc_block(head + states + keys + vals + order);
+    HeroMapHeader *m = hero_alloc_block(ends + order);
     if (m == NULL) hero_panic("out of memory");
     /* Relaxed on a block no other thread can see yet — `str.c`'s reason. */
     atomic_store_explicit(&m->refcount, 1, memory_order_relaxed);

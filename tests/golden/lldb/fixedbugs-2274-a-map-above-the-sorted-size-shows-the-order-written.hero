@@ -1,0 +1,16 @@
+# Feature 2274, 2026-10-30. The debugger's formatter shows a map of more than
+# `SORTED` entries (1,024) in the order its keys were first written, read from
+# the order region the runtime keeps after the values, and says so; until then
+# it showed the buckets' order, the hash's. Its children follow the same order.
+# A thousand and one hundred keys, `i * 7919 % 1100`, are written in an order
+# neither sorted nor the hash's, so an order kept by accident cannot pass.
+
+function main()
+    m: {i64: i64} @= {}
+    i @= 0
+
+    while i < 1100
+        m[i * 7919 % 1100] @ i
+        i @ i + 1
+
+    print(m.len())

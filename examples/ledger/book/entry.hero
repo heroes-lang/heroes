@@ -127,8 +127,9 @@ function balances(entries: [Entry]) -> [Balance]
 
     out: [Balance] @= []
 
-    # ORDER: by account name, because `keys(m)` gives no order (spec
-    # § Bindings) and this list is printed and compared line by line.
+    # ORDER: by account name, because `keys(m)` gives the order the accounts
+    # were first written (spec § 10), the book's and not the reader's, and
+    # this list is printed and compared line by line.
     for name in names.sort()
         out @ out.push(
             Balance(account: name, entries: counts[name].must(), total: Amount(cents: totals[name].must()))

@@ -28,8 +28,8 @@ WHAT IT SHOWS (spec § 2, § 3, § 6, § 9, § 10):
 - `[T]` as `[e0, e1, ...]` with children `[0]`, `[1]`, ...;
 - `{K: V}` as `{k: v, ...}`, its entries in the order of their whole text, as
   a failed `assert` writes a side (panel 230's R2), and its children named by
-  their keys, `["ada"]`, in bucket order, the order `keys(m)` gives (spec § 10:
-  no order);
+  their keys, `["ada"]`, in the order `keys(m)` gives, the order the keys were
+  first written (spec § 10), read from the map's order region (feature 2274);
 - `T?` as `ok(v)` or `fail(code: "...", msg: "...")`, the live arm alone;
 - a variant as `.case(field: v)`, or `.case` for a case with no fields, and a
   `match` arm's payload binding the same way;
@@ -115,8 +115,13 @@ SPAN = 1 << 40
 SCAN = 1 << 16
 
 # Entries of a map a summary orders by their text: each is written once to be
-# ranked, so past this many the summary keeps the buckets' order and says so.
+# ranked, so past this many the summary keeps the order the keys were first
+# written, `keys(m)`'s, and says so.
 SORTED = 1 << 10
+
+# A slot of a map's order region: the bucket of one entry, an `int64_t`, the
+# region aligned to it after the values (`runtime/parts/map.c`, feature 2274).
+ORDER_SLOT = 8
 
 # How state bytes are read when a map's children are asked for.
 CHUNK = 1 << 16
@@ -789,15 +794,16 @@ def render_map(proc, value, budget, depth):
     come first are kept and written again, in order, on the summary's budget,
     as `runtime/parts/show.c` writes an `assert`'s side. Two entries whose texts
     are equal are interchangeable, so which of them is kept moves no character.
-    A map of more than SORTED entries is written in bucket order and says so:
-    ordering it would read every entry, which a summary must not, and it is the
-    one place the two notations part."""
+    A map of more than SORTED entries is written in the order its keys were
+    first written, `keys(m)`'s, and says so: ordering it by text would read
+    every entry, which a summary must not, and it is the one place the two
+    notations part."""
     view = MapView(proc, value)
     if view.unassigned:
         return UNASSIGNED
     if view.length > SORTED:
         items = [entry_text(view, bucket, budget, depth) for bucket in view.buckets(SHOWN)]
-        items.append("... %d more, in bucket order" % (view.length - len(items)))
+        items.append("... %d more, in the order written" % (view.length - len(items)))
         return "{" + ", ".join(items) + "}"
     ranked = sorted((entry_text(view, bucket, Budget(), depth).encode("utf-8"), bucket) for bucket in view.buckets(view.length))
     items = [entry_text(view, bucket, budget, depth) for _, bucket in ranked[:SHOWN]]
@@ -906,7 +912,9 @@ class ArrayView(object):
 
 
 class MapView(object):
-    """A `{K: V}`: its header checked, its live buckets found by their state byte."""
+    """A `{K: V}`: its header checked, its live buckets found by their state
+    byte, and its entries in the order their keys were first written, read from
+    the order region after its values, each slot held to a live bucket."""
 
     def __init__(self, proc, value):
         self.proc = proc
@@ -917,6 +925,7 @@ class MapView(object):
         self.length = 0
         self.live = []
         self.scanned = 0
+        self.ordered = []
         if self.unassigned:
             return
         header = self.pointer.Dereference().GetNonSyntheticValue()
@@ -940,6 +949,8 @@ class MapView(object):
             raise Unread("regions")
         read(header, self.address + vals + self.cap * vsize - 1, 1)
         self.states, self.keys, self.vals = self.address + states, self.address + keys, self.address + vals
+        self.order = self.vals + (self.cap * vsize + ORDER_SLOT - 1) // ORDER_SLOT * ORDER_SLOT
+        read(header, self.order + (self.cap // 2) * ORDER_SLOT - 1, 1)
         if self.cap <= SCAN:
             self.scan(self.cap)
             if len(self.live) != self.length:
@@ -957,10 +968,33 @@ class MapView(object):
             self.scanned += n
 
     def buckets(self, count):
-        """The first `count` live buckets."""
-        while len(self.live) < min(count, self.length) and self.scanned < self.cap:
-            self.scan(self.scanned + CHUNK)
-        return self.live[:count]
+        """The buckets of the first `count` entries in the order their keys were
+        first written: the order region's slots, each held to a live bucket and
+        none twice, so a slot of garbage is Unread and never a wrong entry."""
+        want = min(count, self.length)
+        if len(self.ordered) < want:
+            start = len(self.ordered)
+            data = read(self.header, self.order + start * ORDER_SLOT, (want - start) * ORDER_SLOT)
+            byteorder = "little" if self.header.GetTarget().GetByteOrder() == lldb.eByteOrderLittle else "big"
+            seen = set(self.ordered)
+            for k in range(want - start):
+                bucket = int.from_bytes(data[k * ORDER_SLOT:(k + 1) * ORDER_SLOT], byteorder, signed=True)
+                if not 0 <= bucket < self.cap or bucket in seen or not self.is_live(bucket):
+                    raise Unread("order slot")
+                seen.add(bucket)
+                self.ordered.append(bucket)
+        return self.ordered[:count]
+
+    def is_live(self, bucket):
+        """Whether `bucket`'s state byte says it holds an entry."""
+        if bucket < self.scanned:
+            return bucket in self.live_set()
+        return bytearray(read(self.header, self.states + bucket, 1))[0] == 1
+
+    def live_set(self):
+        if len(getattr(self, "_live_set", ())) != len(self.live):
+            self._live_set = set(self.live)
+        return self._live_set
 
     def key(self, bucket):
         return made(self.pointer, "k", self.keys + bucket * self.key_type.GetByteSize(), self.key_type)
@@ -1083,7 +1117,7 @@ class Children(object):
 
     def child_name(self, j):
         view = self.view
-        return "[%s]" % show(view.key(view.live[j]), Budget(), DEPTH - 1)
+        return "[%s]" % show(view.key(view.ordered[j]), Budget(), DEPTH - 1)
 
     def get_child_at_index(self, j):
         try:
@@ -1092,7 +1126,7 @@ class Children(object):
             if isinstance(self.view, ArrayView):
                 return self.view.child(j)
             if isinstance(self.view, MapView):
-                return self.view.entry(self.view.live[j], self.child_name(j))
+                return self.view.entry(self.view.ordered[j], self.child_name(j))
             return self.kids[j]
         except Exception:
             return None

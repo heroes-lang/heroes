@@ -1,0 +1,13 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file fixedbugs-2274-a-map-above-the-sorted-size-shows-the-order-written.hero --line 16
+!resolved: fixedbugs-2274-a-map-above-the-sorted-size-shows-the-order-written.hero:16
+> run
+!stop: breakpoint at fixedbugs-2274-a-map-above-the-sorted-size-shows-the-order-written.hero:16
+> frame variable h0_m
+!shows: (HeroMapHeader *) h0_m = {0: 0, 219: 1, 438: 2, 657: 3, 876: 4, 1095: 5, 214: 6, 433: 7, 652: 8, 871: 9, 1090: 10, 209: 11, 428: 12, 647: 13, 866: 14, 1085: 15, ... 1084 more, in the order written}
+> frame variable -P 1 h0_m
+!shows: [0] = 0
+!shows: [219] = 1
+!shows: [438] = 2
+!shows: [657] = 3
+> continue

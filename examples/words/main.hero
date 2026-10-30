@@ -3,11 +3,12 @@
 #
 # Corpus and regression material (CLAUDE.md §9). What it adds to the corpus is
 # not a feature nobody had written but a DISCIPLINE nobody had demonstrated:
-# `spec:91` says `keys(m) -> [K]` gives the keys **in no order**, and
-# design.md §4.9 makes any walk whose order somebody can see owe an explicit
-# `sort` and a `# ORDER:` mark naming what observes it. `selfhost/` carries 23
-# of those marks. `examples/` carried none, because no corpus program printed
-# a map.
+# a walk whose order somebody can see owes the order it means, an explicit
+# `sort` and a `# ORDER:` mark naming what observes it (design.md §4.9).
+# `keys(m) -> [K]` gives the keys in the order they were first written (spec
+# § 10, since 2026-10-30; in no order at all until then), and this report
+# means another, most frequent first. `selfhost/` carries 23 of those marks.
+# `examples/` carried none, because no corpus program printed a map.
 #
 # So the interesting line in this file is not the counting. It is the walk.
 #
@@ -83,8 +84,9 @@ function counted(text: str) -> {str: i64}
 # ORDER: sort(keys(tally)) — the report is PRINTED, so the order is observed
 # by every reader of `main.expected` and by every diff over it. Without the
 # sort this function returns a different string on a map built in a different
-# order, which `spec:91` explicitly permits and `spec:78` confirms does not
-# affect equality: two `==`-equal maps may walk differently.
+# order: `keys` gives the order the words were first written (spec § 10), and
+# `==` reads no order at all (spec § 7), so two `==`-equal maps may walk
+# differently.
 function report(text: str) -> str
     tally = counted(text)
     rows: [str] @= []
