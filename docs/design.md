@@ -1599,8 +1599,12 @@ m = { "mario": 30, "anna": 25 }
   Python-3.7/ES2015 prior) and Go's randomization is the recorded disaster. That hazard needs a
   reader who iterates a map **directly**. There is no such form: iteration is `keys(m) -> [K]`
   composed with the `for` and `sort` that already exist (CLAUDE.md §10 — nothing, when two
-  invocations compose to it), so the only order a program can rely on is one it sorted. The
+  invocations compose to it), so the only order a program could rely on was one it sorted. The
   fixed seed stays, because determinism *across runs* is still a fixpoint requirement.
+  **Turned on 2026-10-30** by panel 232's R12, the author's choice inside its ratification, and
+  feature 2274: a map keeps its keys in the order they were first written, `keys(m)` gives that
+  order on every run and every release, and a program may rely on it; a key written again keeps
+  its place, and any other order is still one the program sorts.
   Port note, and it now cuts the other way: the bootstrap leans on `BTreeMap`'s sorted order
   wherever a walk reaches something a test or a reader can see. Every such walk carries
   `// ORDER:` at the write site — the marker names the sort key and what observes the order —

@@ -41,3 +41,8 @@ function main()
     big = range(from: 0, to: 40)
     counted = names.len() + empty.len() + grid.len() + points.len() + toks.len() + ages.len() + groups.len()
     print(counted + flags.len() + xs.len() + bytes.len() + fs.len() + primes.len() + big.len())
+
+# Corrected 2026-10-30 (feature 2274), at the end so no line above moves: a map's children
+# follow `keys(m)`, which gives the keys in the order they were first written, not bucket
+# order; its summary orders entries by their text up to SORTED (panel 230's R2, above) and
+# shows a larger map in the order written.
