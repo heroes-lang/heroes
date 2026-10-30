@@ -4,5 +4,5 @@ error[ffi_header_refused]: `ffi-a-header-s-call-of-the-runtime-over-two-lines-is
   12 | extern "ffi-a-header-s-call-of-the-runtime-over-two-lines-is-told.h"  #~ ffi_header_refused
      |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: `ffi-a-header-s-call-of-the-runtime-over-two-lines-is-told.h` line 3 reads `    5); }`
-  note: clang adds, at the Heroes runtime's `heroes_runtime.h` line 278, which every unit of this program reads: passing argument to parameter 's' here
+  note: clang adds, at the Heroes runtime's `heroes_runtime.h` line 277, which every unit of this program reads: passing argument to parameter 's' here
   note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
