@@ -14,8 +14,8 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | none open since M-compatibility-promise's close on 2026-10-30; the next row becomes `**OPEN**` when somebody opens it |
-| **Next** | M-latency-ceiling, row 75: a latency the compiler may not lose without a decision, `heroes check` and clang on the seed timed at every close, the incremental frontend its return condition |
+| **Current milestone** | **M-latency-ceiling**, row 75, **OPEN** since 2026-10-30 ([its page](docs/roadmap/milestones/M-latency-ceiling.md)): a latency the compiler may not lose without a decision, `heroes check` and clang on the seed timed at every close by an instrument of the harness, the incremental frontend its return condition; its page carries the opening's numbers, `heroes check` on the compiler 6.90 s, clang on the seed 8.29 s and the warm build 37.71 s, and the site's *under four seconds* expired, defect 2281; none was open from M-compatibility-promise's close earlier that day until then |
+| **Next** | M-core-packages, row 76: small packages that compose, organised as Go's tree, in Heroes or over C |
 | **Last closed** | **M-compatibility-promise**, 2026-10-30 ([073](docs/records/journal/073-compatibility-promise.md)): what `1.0.0` will promise, written before it binds: a `1.x` refuses no program `1.0.0` accepted and renames no diagnostic's code, and the `compat` suite judges every release from `v1.0.0`, telling before it; `exit` takes an `i64`; eleven sentences of the specification, the order of evaluation, the shifts, the stack, a handle given back, `exit`'s status and a map's keys in the order they were first written, each landing with the repair that makes it true; nineteen defects repaired in one batch; the runtime's ABI 32, its eight entry points without a place gone; panel 232 ratified by the author's reading · before it **M-generated-programs**, 2026-10-29 ([072](docs/records/journal/072-generated-programs.md)) · before it **M-panic-location**, 2026-10-26 ([071](docs/records/journal/071-panic-location.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **74** of 92 · **74** tags matching `m*`, the legacy `m0`-`m8` included; `m-compatibility-promise` placed 2026-10-30 over a clean list, no `blocking` or `systemic` defect (2275, 2277 and 2278 `adjacent`, filed at this milestone) and no decision open ([073](docs/records/journal/073-compatibility-promise.md)) |
 | The compiler | **181,690** lines of Heroes in **698** modules (`find selfhost -name '*.hero'`) · the seed **276,991** lines of C, 28,876,131 bytes, refreshed at M-compatibility-promise for `HERO_RUNTIME_ABI` 32 by `abi-put-back` (`cd47d9b85`, rebuilt by the seed before it, its fixpoint over two generations), at M-panic-location for 31 the same way (`80a888f39`), and before them by the release `v0.5.0` on 2026-10-25 at 271,387 lines and 27,000,911 bytes, in panel 219's s4 shape, refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
@@ -37,8 +37,8 @@ issue when it ends.
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–73
-are done, in the order they closed, row 74 is open, and rows 75–92 are what is
+One table, one row per milestone, **closed first and scheduled after**: rows 1–74
+are done, in the order they closed, row 75 is open, and rows 76–92 are what is
 next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -119,7 +119,10 @@ over it, 72 rows `done` and 20 `scheduled` before it opened at 73. Then 1–72 d
 until M-generated-programs closed on 2026-10-29, opening no row and restating this sentence; then
 1–73 done and 74–92 next until M-compatibility-promise opened at 74 the same day, the table 92 long
 by a count over it, 73 rows `done` and 19 `scheduled` before it opened. Then 1–73 done, 74 open and
-75–92 until M-compatibility-promise closed on 2026-10-30, opening no row and restating this sentence. `warrant` is why a milestone exists: **v1** (the self-hosting
+75–92 until M-compatibility-promise closed on 2026-10-30, opening no row and restating this sentence. **That clause
+restated this history and not the sentence above it, which still read *row 74 is open*, and the OPENING
+of M-latency-ceiling on 2026-10-30 found it**, the table 92 long by a count over it, 74 rows `done` and 18
+`scheduled` before it opened at 75. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -202,7 +205,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 72 | **M-panic-location** | done 2026-10-26 | `m-panic-location` | [071](docs/records/journal/071-panic-location.md) | an abort a program raises names its file, line, column and function, an `assert` on any value shows both sides, and no program's text forges a report · **§1.12** |
 | 73 | **M-generated-programs** | done 2026-10-29 | `m-generated-programs` | [072](docs/records/journal/072-generated-programs.md) | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked, five oracles over every program, a reducer, and the sample in the net · **§1.12** |
 | 74 | **M-compatibility-promise** | done 2026-10-30 | `m-compatibility-promise` | [073](docs/records/journal/073-compatibility-promise.md) | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 75 | **M-latency-ceiling** | scheduled | — | — | a latency the compiler may not lose without a decision: `heroes check` and clang on the seed timed at every close, the incremental frontend its return condition · CLAUDE.md § Verification |
+| 75 | **M-latency-ceiling** | **OPEN** | — | — | a latency the compiler may not lose without a decision: `heroes check` and clang on the seed timed at every close, the incremental frontend its return condition · CLAUDE.md § Verification |
 | 76 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 77 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 78 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
