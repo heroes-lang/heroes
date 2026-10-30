@@ -116,16 +116,18 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 # the checker recorded — the constant emitter cannot
                 # know it and must not guess.
                 kind: widths.IntKind? @= fail(code: "none", msg: "not an integer")
+                narrow: bool @= false
 
                 match table.get(c.types, inst.ty)
                     .int_ty ik                                                 => kind @ ok(ik.kind)
-                    .float_ty | .bool | .str | .ptr | .cstr | .unit            => kind @ kind
+                    .float_ty ft                                               => narrow @ widths.float_bits(ft.kind) == 32
+                    .bool | .str | .ptr | .cstr | .unit                        => kind @ kind
                     .array | .fixed | .map | .fallible | .function_ty | .named => kind @ kind
                     .case_ty | .failure | .generic | .error                    => kind @ kind
 
                 writer.line(
                     @w,
-                    text: "    " + target.must() + " = " + literal.constant_text(lt.value, kind: kind, strings: p.program.strings) + ";"
+                    text: "    " + target.must() + " = " + literal.constant_text(lt.value, kind: kind, narrow: narrow, strings: p.program.strings) + ";"
                 )
         .load ld =>
             if !target.is_err()

@@ -41,10 +41,16 @@ use emit/mangle
 extern "stdlib.h"
     function atof(text: cstr lent) -> f64
 
+# An `f32` literal's value, read once (defect 2276, `runtime/parts/f32-literal.c`).
+extern "hero_compiler.h"
+    function hero_f32_of_decimal(text: cstr lent) -> f32
+
 # A constant, in the C spelling its own width asks for. The width comes
 # from the caller (the instruction's own type, which the checker
-# recorded) — the constant emitter cannot know it and must not guess.
-function constant_text(value: ir.IntConst, kind: widths.IntKind?, strings: [str]) -> str
+# recorded) — the constant emitter cannot know it and must not guess:
+# `kind` an integer's, and `narrow` whether a float literal stands where an
+# `f32` is asked for.
+function constant_text(value: ir.IntConst, kind: widths.IntKind?, narrow: bool, strings: [str]) -> str
     match value
         .int_const ic =>
             # INT64_MIN by name: the macro route warns.
@@ -77,7 +83,10 @@ function constant_text(value: ir.IntConst, kind: widths.IntKind?, strings: [str]
         .null_ptr => return "((void *)0)"
         # Hex, per the header — never the spelled text.
 
-        .float_const fc => return hex_float(fc.text)
+        .float_const fc =>
+            if narrow
+                return hex_float32(fc.text)
+            return hex_float(fc.text)
         # A static block, laid out by clang: refcount -1 means "never
         # freed", so a literal costs no allocation and decrefing one is
         # a no-op. CONTENT-NAMED since panel 093 R6, like the synthetic
@@ -132,6 +141,18 @@ function without_trailing_zeros(digits: str) -> str
 
     return digits.slice(from: 0, to: last)
 
+# An `f64` literal: the double nearest its decimal, `atof`'s.
+function hex_float(text: str) -> str
+    return hex_of(atof(text: separatorless(text).cstr()))
+
+# An `f32` literal: the binary32 nearest its decimal, read once by `strtof`
+# (defect 2276), written as the double it is exactly, so C's narrowing into
+# the `float` it stands in has nothing left to round. `atof` and a narrowing
+# rounded twice, and at a decimal just off a binary32 midpoint the second took
+# the far neighbour.
+function hex_float32(text: str) -> str
+    return hex_of(to_f64(hero_f32_of_decimal(text: separatorless(text).cstr())))
+
 # A double as a C11 hexadecimal floating literal. Exact, warning-free,
 # and independent of every decimal-rendering question — the bootstrap's
 # own words for the same routine.
@@ -140,9 +161,7 @@ function without_trailing_zeros(digits: str) -> str
 # `nan` first, because `<` on one ABORTS (spec § 7 Operators), and `1.0 / x` for
 # the sign of a zero, because that is the only test this language has
 # for it — `+0.0` and `-0.0` are `==`.
-function hex_float(text: str) -> str
-    x = atof(text: separatorless(text).cstr())
-
+function hex_of(x: f64) -> str
     if x != x
         return "(0.0 / 0.0)"
 
@@ -223,12 +242,14 @@ test "the macro matches the width, and the minimum is spelled by name"
     plain = constant_text(
         .int_const(value: contextual.LitValue(negative: false, magnitude: 42)),
         kind: none,
+        narrow: false,
         strings: no_strings
     )
     assert plain == "INT64_C(42)"
     negative = constant_text(
         .int_const(value: contextual.LitValue(negative: true, magnitude: 5)),
         kind: none,
+        narrow: false,
         strings: no_strings
     )
     assert negative == "INT64_C(-5)"
@@ -236,6 +257,7 @@ test "the macro matches the width, and the minimum is spelled by name"
     lowest = constant_text(
         .int_const(value: contextual.LitValue(negative: true, magnitude: min_mag)),
         kind: none,
+        narrow: false,
         strings: no_strings
     )
     assert lowest == "INT64_MIN"
@@ -243,12 +265,13 @@ test "the macro matches the width, and the minimum is spelled by name"
     top = constant_text(
         .int_const(value: contextual.LitValue(negative: false, magnitude: big)),
         kind: ok(.u64),
+        narrow: false,
         strings: no_strings
     )
     assert top == "UINT64_C(18446744073709551615)"
-    assert constant_text(.bool_const(value: true), kind: none, strings: no_strings) == "true"
-    assert constant_text(.null_ptr, kind: none, strings: no_strings) == "((void *)0)"
-    assert constant_text(.str_const(at: 3), kind: none, strings: ziggy_strings) == "HERO_STR_LIT(hero_str_6bb5e50a)"
+    assert constant_text(.bool_const(value: true), kind: none, narrow: false, strings: no_strings) == "true"
+    assert constant_text(.null_ptr, kind: none, narrow: false, strings: no_strings) == "((void *)0)"
+    assert constant_text(.str_const(at: 3), kind: none, narrow: false, strings: ziggy_strings) == "HERO_STR_LIT(hero_str_6bb5e50a)"
 
 test "a float literal is hex, and the bootstrap's own rows are reproduced"
     # Every expectation here was read off the bootstrap's emitted C for
@@ -267,6 +290,33 @@ test "a float literal is hex, and the bootstrap's own rows are reproduced"
     assert hex_float("10.0") == "0x1.4p+3"
     assert hex_float("0.133793") == "0x1.1202107b78466p-3"
     assert hex_float("0.0669") == "0x1.1205bc01a36e3p-4"
+
+test "an f32 literal holds the binary32 nearest its decimal, read once (defect 2276)"
+    # `atof` lands 7.038531e-26 exactly on the midpoint of 0x15ae43fd and
+    # 0x15ae43fe, and C's narrowing took the even one, 0x15ae43fe; the
+    # decimal is 2.2e-42 below the midpoint, so 0x15ae43fd is the nearest.
+    assert hex_float("0.00000000000000000000000007038531") == "0x1.5c87fbp-84"
+    assert hex_float32("0.00000000000000000000000007038531") == "0x1.5c87fap-84"
+    assert hex_float32("41358803000000000000000000000000000.0") == "0x1.fdc95ep+114"
+
+    # A width's own value, and the one a double would round differently.
+    assert hex_float32("0.1") == "0x1.99999ap-4"
+    assert hex_float32("1.5") == "0x1.8p+0"
+    assert hex_float32("1_0.5") == hex_float32("10.5")
+
+    # Past the largest binary32 the literal is an infinity, as `to_f32` says.
+    assert hex_float32("1" + "0".repeat(39) + ".0") == "HUGE_VAL"
+
+    # And `constant_text` takes that route where the context asks for an `f32`.
+    none: widths.IntKind? = fail(code: "none", msg: "no width")
+    no_strings: [str] = []
+    written = constant_text(
+        .float_const(text: "0.00000000000000000000000007038531"),
+        kind: none,
+        narrow: true,
+        strings: no_strings
+    )
+    assert written == "0x1.5c87fap-84"
 
 test "the separator comes off, so the value is the number that was written"
     # The shape that printed 0.0 in the bootstrap for four days.

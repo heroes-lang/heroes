@@ -143,6 +143,7 @@ function laid_out(p: containers.Program, c: state.Checked, names: ctype.Names, s
                 texts[one.dest.must()] @ literal.constant_text(
                     lt.value,
                     kind: int_kind(c, ty: one.ty),
+                    narrow: is_f32(c, ty: one.ty),
                     strings: p.strings
                 )
             .construct k =>
@@ -255,6 +256,16 @@ function int_kind(c: state.Checked, ty: i64) -> widths.IntKind?
         .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not an integer")
 
     return fail(code: "none", msg: "unreached")
+
+# Whether an element is an `f32`, whose literal is read as one (defect 2276).
+function is_f32(c: state.Checked, ty: i64) -> bool
+    match table.get(c.types, ty)
+        .float_ty ft                                               => return widths.float_bits(ft.kind) == 32
+        .int_ty | .bool | .str | .ptr | .cstr | .unit              => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named => return false
+        .case_ty | .failure | .generic | .error                    => return false
+
+    return false
 
 ## Tests
 

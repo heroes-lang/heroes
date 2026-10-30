@@ -49,4 +49,11 @@ HeroStr hero_text_key(HeroStr text);
  * `selfhost/cli/flags.hero`). */
 int64_t hero_frame_probes_asked(void);
 
+/* The binary32 nearest a decimal's value, read once in the C locale
+ * (`parts/f32-literal.c`, bound by `selfhost/emit/literal.hero`, defect 2276): what an
+ * `f32` literal holds. A double narrowed to a float rounds twice, and at a
+ * decimal just off a binary32 midpoint the second rounding takes the far
+ * neighbour. */
+float hero_f32_of_decimal(const char *text);
+
 #endif

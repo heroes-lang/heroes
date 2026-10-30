@@ -205,7 +205,7 @@ function constant_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f:
                 .int_const =>
                     kind = int_kind(c, f, value: value)
                     none: [str] = []
-                    return ok(literal.constant_text(l.value, kind, none))
+                    return ok(literal.constant_text(l.value, kind, narrow: false, strings: none))
                 .float_const | .bool_const | .str_const | .null_ptr => return fail(code: "none", msg: "not an integer")
         .call cl =>
             match cl.callee
