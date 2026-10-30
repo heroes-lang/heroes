@@ -127,6 +127,9 @@
 #   this list, so every key moved once.
 use cli/process
 
+extern "hero_compiler.h"
+    function hero_frame_probes_asked() -> i64
+
 function flags() -> [str]
     return [
         "-std=gnu11"
@@ -171,17 +174,49 @@ function debug_words(level: str) -> [str]
         return ["-g"]
     return ["-gline-tables-only"]
 
+# **-fstack-clash-protection WHERE A FRAME IS PROBED ONLY WHEN ASKED** (defect
+# 2253, 2026-10-29). The stack guard (`runtime/parts/stack.c`) names a frame
+# too large for what is left of the stack only where the frame's first touch
+# lands in the guard page under the stack. On Linux clang touches nothing on
+# the way: the prologue moves `sp` past the guard in one instruction (`sub sp,
+# sp, #1024, lsl #12` for a 4 MiB array), and the frame's first store lands in
+# whatever lies below, which in the Linux arm64 image is the thread's own
+# alternate signal stack under a spawned thread's 64 KiB guard, and nothing
+# mapped for hundreds of mebibytes under `main`'s. Measured there: eight of ten
+# thread stacks sized around one frame died at 139 with nothing said, and two
+# panicked where the frame happened to end within a mebibyte of the guard.
+# Under the word every page of the frame is stored to as `sp` moves down to
+# it, so the fault is in the guard with `sp` beside it, and all ten, and every
+# shape of panel 232's spec-warden and compiler-engineer, ended `panic: stack
+# exhausted in <module.function>` at 134, `before` kept where it was printed,
+# with the runtime unchanged. Its price, the compiler built from the same
+# sources there: 32,330,136 bytes without it and 32,396,264 with, 0.20%.
+# Darwin's and Windows' prologues probe with no word (`___chkstk_darwin`,
+# `__chkstk`) and their clang warns the word unused on every compile, so it is
+# the machine's to ask, as `link_flags` asks for `-rdynamic`: a fact about its
+# C (`runtime/hero_compiler.h`), never a platform this file names.
+function frame_words() -> [str]
+    if hero_frame_probes_asked() == 1
+        return ["-fstack-clash-protection"]
+    none: [str] = []
+    return none
+
 # Every word a compile or a link at `level` takes from this file, in the order
-# each line takes them: the list, the level, its debug word, the sanitizers.
-# A unit's compile (`compiling.unit_words`), the runtime's
+# each line takes them: the list, the frame word, the level, its debug word,
+# the sanitizers. A unit's compile (`compiling.unit_words`), the runtime's
 # (`toolchain.runtime_object`) and the link (`link.link_line`) read this one
 # list, so no word reaches one of them and not the others, and each key that
 # names these words (`toolchain.build_words`, a unit's words) names the debug
-# word with them. The link carries it because clang's driver for Windows
-# writes the `.pdb` only when the link line carries a `-g` word (`clang -###`
-# on the box, panel 197).
+# word with them; the frame word, the level's to no level, reaches every key
+# through the compiler's, which `toolchain_at` asks under these words. The
+# link carries it because clang's driver for Windows writes the `.pdb` only
+# when the link line carries a `-g` word (`clang -###` on the box, panel 197).
 function level_words(level: str, sanitize: bool) -> [str]
     out: [str] @= flags()
+
+    for word in frame_words()
+        out @ out.push(word)
+
     out @ out.push(level)
 
     for word in debug_words(level)
@@ -240,12 +275,21 @@ test "the array is the fact: nineteen flags, gnu11 named first and panel 204's l
 
     assert debug_words("-O0") == ["-g"]
     assert debug_words("-O2") == ["-gline-tables-only"]
+
+    # The machine's frame word stands between the list and the level, where
+    # this machine has one (defect 2253).
+    framed = frame_words().len()
     o2 = level_words(level: "-O2", sanitize: true)
-    assert o2.len() == 22
-    assert o2[19] == "-O2"
-    assert o2[20] == "-gline-tables-only"
-    assert o2[21] == "-fsanitize=address,undefined"
-    assert level_words(level: "-O0", sanitize: false) == flags().push("-O0").push("-g")
+    assert o2.len() == 22 + framed
+    assert o2[19 + framed] == "-O2"
+    assert o2[20 + framed] == "-gline-tables-only"
+    assert o2[21 + framed] == "-fsanitize=address,undefined"
+    plain: [str] @= flags()
+
+    for word in frame_words()
+        plain @ plain.push(word)
+
+    assert level_words(level: "-O0", sanitize: false) == plain.push("-O0").push("-g")
 
     # A call stays a call at every level (panel 199's R2), the words each
     # level hands a unit, the runtime and the link.
@@ -289,6 +333,53 @@ test "the optimised build keeps a call in tail position a call (panel 199's R2)"
         counts @ counts.push(times(text: read_file(said).must(), needle: "heroes_sibling_probe"))
 
     assert counts[0] > counts[1]
+
+# **The frame word is the machine's answer, and never the list's** (defect
+# 2253): `-fstack-clash-protection` where this machine's clang probes a frame
+# only when a compile asks, nothing elsewhere.
+test "the frame word is the machine's to ask, and never the list's (defect 2253)"
+    asked = hero_frame_probes_asked()
+    assert asked == 0 || asked == 1
+    assert frame_words().len() == asked
+
+    for word in frame_words()
+        assert word == "-fstack-clash-protection"
+
+    for flag in flags()
+        assert flag != "-fstack-clash-protection"
+
+# **A frame larger than a page is probed under the words a unit compiles with,
+# asked of the platform's own clang** (defect 2253): a function holding 4 MiB,
+# compiled to assembly at both levels, names the platform's probe routine
+# (`___chkstk_darwin`, Windows' `__chkstk`) or stores a zero at the stack
+# pointer it has just moved down, `-fstack-clash-protection`'s loop (`str xzr,
+# [sp]` on AArch64, `movq $0, (%rsp)` on x86-64); the same function holding 64
+# bytes does neither on any platform, so the needles are not blind. Read for
+# all four legs' targets with this Mac's clang on 2026-10-29, where a Linux
+# target's 4 MiB without the word matched none of them either.
+test "a frame larger than a page is probed under a unit's words on every platform (defect 2253)"
+    assert !process.mkdir_all("build/selftest-frame-probe").is_err()
+    unit = "build/selftest-frame-probe/unit.c"
+    text = "void heroes_frame_sink(volatile char *held);\nlong long heroes_frame_probe(long long n);\nlong long heroes_frame_probe(long long n) {\n    volatile char held[HELD];\n    held[n] = 1;\n    heroes_frame_sink(held);\n    return held[0];\n}\n"
+    assert !write_file(path: unit, text: text).is_err()
+
+    for level in ["-O0", "-O2"]
+        for held in [4194304, 64]
+            said = "build/selftest-frame-probe/unit" + level + "-" + held.to_str() + ".s"
+            words: [str] @= ["clang"]
+
+            for word in level_words(level: level, sanitize: false)
+                words @ words.push(word)
+
+            for word in ["-DHELD=" + held.to_str(), "-S", unit, "-o", said]
+                words @ words.push(word)
+
+            assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
+            assembly = read_file(said).must()
+            routine = first_at(text: assembly, needle: "chkstk") >= 0
+            stored = first_at(text: assembly, needle: "xzr, [sp]") >= 0 || first_at(text: assembly, needle: "$0, (%rsp)") >= 0
+            probed = routine || stored
+            assert probed == (held > 4096)
 
 # **What clang says of a function that only calls itself, asked of the
 # platform's own clang** (panel 199's R3, defect 507): under the words a unit

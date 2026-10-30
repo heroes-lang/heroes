@@ -73,6 +73,19 @@
  * difference being only which function's frame straddled the guard. The
  * witness now has two shapes (see the handler); the wild store panel 104
  * rejected was re-run against both and still re-raises, exit 139.
+ *
+ * WHAT DEFECT 2253 ADDED (2026-10-29, panel 232's spec-warden). Defect 007's
+ * probe is claimed within the window below `sp`, and a frame larger than the
+ * window is probed from further up: when the frame does not fit,
+ * `___chkstk_darwin` loads the word under the stack's lowest address on
+ * purpose while `sp` is still megabytes above it, so a legal function holding
+ * a record of a few mebibytes died at 139 in silence at `-O0`, on `main` and on
+ * a spawned thread alike. The routine itself is now the witness's third shape
+ * (see the handler). Linux's clang probed nothing at all: the prologue moved
+ * `sp` past the guard page in one instruction and the frame's first store
+ * landed in whatever lay below. A Linux target now compiles with
+ * `-fstack-clash-protection` (`selfhost/cli/flags.hero`), whose probes move
+ * `sp` down a page at a time, the shape `sp_low` already reads.
  */
 
 #if defined(__has_feature)
@@ -276,8 +289,18 @@ __attribute__((unused)) static void hero_stack_hex(uintptr_t v, char buf[HERO_HE
 static _Thread_local uintptr_t hero_stack_lo = 0;
 static _Thread_local uintptr_t hero_stack_hi = 0;
 
-/* How far below `lo` a fault still counts as exhaustion: clang emits no stack
- * probes on Darwin, so a frame larger than the guard page can land past it. */
+/* How far below `lo` a fault still counts as exhaustion, beside a second
+ * witness. Until defect 2253 this said *clang emits no stack probes on Darwin,
+ * so a frame larger than the guard page can land past it*, against this file's
+ * own head and handler: Darwin's prologue calls `___chkstk_darwin` for a frame
+ * larger than a page, which lldb read in a Heroes function's prologue that day.
+ * Code compiled with probes touches the guard within a page of `lo`, Darwin's
+ * always and Linux's since a Linux target compiles with
+ * `-fstack-clash-protection` (defect 2253). What still moves `sp` past the
+ * guard page whole is code compiled with no probes, a C library built without
+ * them on Linux, whose first touch lands as far below `lo` as its frame is
+ * deep: within the window it is still read as the stack running out, and past
+ * it, or inside another mapping, nothing here can see it. */
 #define HERO_STACK_WINDOW ((uintptr_t)1 << 20)
 
 /* `write(2)` and nothing else: inside a signal handler, `fprintf` is not ours
@@ -658,18 +681,52 @@ static void hero_stack_say_recursion(uintptr_t pc, uintptr_t fp, uintptr_t lr, c
     }
 }
 
+/* WHETHER `pc` IS IN THE PLATFORM'S PROBE ROUTINE, the second witness's third
+ * shape (defect 2253, 2026-10-29). Darwin's prologue does not probe a frame
+ * larger than a page itself: it loads the frame's size into a register and
+ * calls `___chkstk_darwin` before it moves `sp`. Read on this Mac with lldb, in
+ * `libsystem_pthread.dylib`: the routine sets `sp` less that size against the
+ * stack's lowest address, which it reads from the thread's own record
+ * (`TPIDRRO_EL0`), and where the frame does not fit it loads the word just
+ * under that address on purpose, so the fault is in the guard with `sp` where
+ * the caller left it; where the record cannot tell, it probes every page from
+ * `sp` down. Either way each load and store it makes is under `sp` on the
+ * thread's own stack, so a fault in the guard whose `pc` is in it is the stack
+ * running out however far above `sp` stands, and the wild store panel 104
+ * rejected, a store of the program's own, never has its `pc` there.
+ *
+ * The routine is known by the name `dladdr` gives its `pc`, as
+ * `hero_stack_blame` knows a Heroes function by its symbol: a premise about
+ * the platform, written to fail loudly. Its falsifiers are
+ * `tests/golden/run/fixedbugs-2253-*`, which die at 139 again on Darwin the
+ * day the routine is renamed. The name is compared past its leading
+ * underscores, the C name's and Mach-O's alike. Where the routine's caller
+ * saved no frame record yet, `lr` names it (`hero_stack_blame`), which is
+ * AArch64's; on x86-64 Darwin the walk would name its caller instead, unrun,
+ * no leg and no machine of this project being one. */
+static int hero_stack_pc_is_probe(uintptr_t pc) {
+    Dl_info info;
+    if (dladdr((void *)pc, &info) == 0 || info.dli_sname == NULL) return 0;
+    const char *name = info.dli_sname;
+    while (*name == '_') name++;
+    return strcmp(name, "chkstk_darwin") == 0;
+}
+
 static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     uintptr_t addr = (uintptr_t)si->si_addr;
     uintptr_t pc, fp, sp, lr;
     hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
     int in_guard = addr >= hero_stack_lo - HERO_STACK_WINDOW && addr < hero_stack_lo;
     int sp_low = sp >= hero_stack_lo - HERO_STACK_WINDOW && sp < hero_stack_lo + 4096;
-    /* THE SECOND WITNESS HAS TWO SHAPES, and this file knew one of them until
-     * defect 007. A function whose frame is larger than a page does not
-     * touch it after moving `sp`: clang's prologue calls `___chkstk_darwin`
-     * (and `-fstack-clash-protection` emits the same loop inline), which
-     * PROBES every page of the frame-to-be while `sp` still stands where the
-     * caller left it. When a probe reaches the guard, `si_addr` is in the
+    /* THE SECOND WITNESS HAS THREE SHAPES, and this file knew one of them until
+     * defect 007 and two until defect 2253. A function whose frame is larger
+     * than a page does not touch it after moving `sp`: clang's prologue calls
+     * `___chkstk_darwin`, which PROBES the frame-to-be while `sp` still stands
+     * where the caller left it. (This said until defect 2253 that
+     * `-fstack-clash-protection` emits the same loop inline; the loop it emits
+     * moves `sp` a page at a time and stores at it, read in Linux's assembly
+     * that day, so its fault has `sp` in the guard too, which is `sp_low`.)
+     * When a probe reaches the guard, `si_addr` is in the
      * guard and `sp` is a whole frame above it — `heroes check` measured
      * 6,472 bytes, a frame of 8,576 in `grammarexpr.primary` — so `sp_low`
      * said no, the fault went to SIG_DFL, and the compiler died at 139 with
@@ -678,7 +735,11 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * store panel 104 rejected (8 KiB under the stack, from a shallow frame)
      * is megabytes below `sp`, so it still re-raises as before. */
     int probing = addr < sp && sp - addr < HERO_STACK_WINDOW;
-    if (in_guard && (sp_low || probing)) {
+    /* The third shape, a frame larger than the window whose probe the
+     * platform's routine made from a shallow `sp` (above the handler). Asked
+     * last, since it names the pc's symbol. */
+    int probed = in_guard && !sp_low && !probing && addr < sp && hero_stack_pc_is_probe(pc);
+    if (in_guard && (sp_low || probing || probed)) {
         const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: stack exhausted");
         if (who != NULL) {

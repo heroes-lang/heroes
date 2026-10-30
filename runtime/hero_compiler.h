@@ -43,4 +43,10 @@ HeroStr hero_file_key(const char *path, int64_t *status);
  * holds it, keyed where it is rather than read from the disk again. */
 HeroStr hero_text_key(HeroStr text);
 
+/* 1 where this machine's clang probes a frame larger than a page only when a
+ * compile asks it to, with `-fstack-clash-protection`, and 0 where its
+ * prologue probes unasked (defect 2253, `parts/run.c`, bound by
+ * `selfhost/cli/flags.hero`). */
+int64_t hero_frame_probes_asked(void);
+
 #endif

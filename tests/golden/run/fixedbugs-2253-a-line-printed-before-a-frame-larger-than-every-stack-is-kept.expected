@@ -1,0 +1,3 @@
+printed before the call
+!sanitizer: stack-overflow
+!panic: stack exhausted

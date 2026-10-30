@@ -1,0 +1,25 @@
+# fixedbugs, defect 2253, 2026-10-29: a function whose frame is larger than
+# what is left of the stack died at 139 with nothing on stderr. Where the
+# frame did not fit, Darwin's probe routine, `___chkstk_darwin`, faulted the
+# guard on purpose while `sp` stood megabytes above it, and the guard claimed
+# a fault only within a mebibyte of `sp`; Linux's clang probed nothing at all
+# and moved `sp` past the guard in one instruction; and at `-O2` the
+# program's `main` was inlined into C's, whose prologue probed the frame
+# before `hero_args_set` installed the guard. The routine is now a witness
+# (`runtime/parts/stack.c`), a Linux target compiles with
+# `-fstack-clash-protection` (`selfhost/cli/flags.hero`), and C's `main` is
+# compiled as written (`runtime/heroes_runtime.h`).
+#
+# The frame is `main`'s own, so nothing is printed before it fails. Its record
+# is the header's, 128 MiB, past every leg's stack (the header says why it is
+# C's struct and not records of records: those kept clang at `-O2` past ten
+# minutes). Darwin and Linux name `fixedbugs-2253-...-in-main.main`; Windows'
+# guard names no function and says the first sentence alone.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function main()
+    held = Held(first: 7, rest: zero)
+    print(heroes_held_first(h: held))
