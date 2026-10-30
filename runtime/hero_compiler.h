@@ -43,17 +43,17 @@ HeroStr hero_file_key(const char *path, int64_t *status);
  * holds it, keyed where it is rather than read from the disk again. */
 HeroStr hero_text_key(HeroStr text);
 
-/* The binary32 nearest a decimal's value, read once in the C locale
- * (`parts/f64.c`, bound by `selfhost/emit/literal.hero`, defect 2276): what an
- * `f32` literal holds. A double narrowed to a float rounds twice, and at a
- * decimal just off a binary32 midpoint the second rounding takes the far
- * neighbour. */
-float hero_f32_of_decimal(const char *text);
-
 /* 1 where this machine's clang probes a frame larger than a page only when a
  * compile asks it to, with `-fstack-clash-protection`, and 0 where its
  * prologue probes unasked (defect 2253, `parts/run.c`, bound by
  * `selfhost/cli/flags.hero`). */
 int64_t hero_frame_probes_asked(void);
+
+/* The binary32 nearest a decimal's value, read once in the C locale
+ * (`parts/f32-literal.c`, bound by `selfhost/emit/literal.hero`, defect 2276): what an
+ * `f32` literal holds. A double narrowed to a float rounds twice, and at a
+ * decimal just off a binary32 midpoint the second rounding takes the far
+ * neighbour. */
+float hero_f32_of_decimal(const char *text);
 
 #endif
