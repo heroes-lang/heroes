@@ -305,9 +305,15 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         source_dir: "src"
     )
     assert search_words(c) == ["-I", "inc", "-DHERO_PKG", "-Ipkg", "-I", "rt", "-I", "src"]
-    unit = strings.with_all(list: flags.flags(), more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
+
+    # The machine's frame word stands between the list and the level, where
+    # this machine has one (defect 2253): Linux arm64 read this test red until
+    # it was named here.
+    listed = strings.with_all(list: flags.flags(), more: flags.frame_words())
+    unit = strings.with_all(list: listed, more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
     assert unit_words(c) == strings.with_all(list: unit, more: search_words(c))
-    probed = strings.with_all(list: probe_flags(), more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
+    framed = strings.with_all(list: probe_flags(), more: flags.frame_words())
+    probed = strings.with_all(list: framed, more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
     assert probe_words(c) == strings.with_all(list: probed, more: search_words(c))
     none = Compiling(
         level: "-O0",
@@ -318,7 +324,7 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         source_dir: ""
     )
     assert search_words(none) == ["-I", "rt"]
-    assert probe_words(none) == strings.with_all(list: probe_flags(), more: ["-O0", "-g", "-I", "rt"])
+    assert probe_words(none) == strings.with_all(list: framed, more: ["-O0", "-g", "-I", "rt"])
 
 # **A probe reads a plain `char` as the program's compile does** (defect
 # 163). The leg where the sign differs is Linux arm64, and clang answers for

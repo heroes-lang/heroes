@@ -1,0 +1,25 @@
+# fixedbugs, defect 2253, 2026-10-29: the frame larger than what is left of
+# the stack, on a thread the runtime spawned, which died at 138 on this Mac
+# and 139 on Linux with nothing on stderr: the guard's window failed it as it
+# failed `main` (the case of `main` beside this one says how, and what
+# repaired it). The worker's own frame holds the header's record, 128 MiB, so
+# it passes the worker's stack on every leg, which is never smaller than
+# `main`'s (panel 115's floor) and on Windows is the 64 MiB every thread of a
+# program is linked with. Darwin and Linux name the worker; Windows' guard
+# names no function and says the first sentence alone.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function worker(n: i64) -> i64
+    held = Held(first: n, rest: zero)
+    return heroes_held_first(h: held)
+
+function main()
+    t = hero_thread_spawn(body: worker, arg: 7)
+    print(hero_thread_join(handle: t))

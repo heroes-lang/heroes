@@ -166,7 +166,7 @@ An abort ends the program at once, saying why; no `T?` carries one.
 | `match` on `.ok x` / `.err e` | destructure — the general way |
 | `expr?` | propagate the error to the caller (whose return type must be fallible) |
 | `.must()` | extract or abort |
-| `.default(v)` | extract or fall back |
+| `.default(v)` | extract or fall back; `v` is evaluated only for an error |
 | `.is_err()` | boolean test; refused where `T` is itself fallible — `match` names both levels |
 
 ```
@@ -196,8 +196,9 @@ insertion order does not affect it. A `ptr`, a `cstr` and a function value compa
 as an address and not as an identity — free one and the next allocation may reuse
 that address. `nan` equals nothing, itself included, so `x != x` asks whether it is one;
 ordering one aborts, in `< <= > >=` and in `sort`.
-Overflow aborts at every width. Integer division by zero aborts. `/` and `%` truncate
+Overflow aborts at every width; `<<` drops the bits it shifts out, and `>>` copies the sign. Integer division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
+An expression's parts are evaluated left to right as written.
 
     Expression = Or .
     Or         = And { "||" And } .
@@ -256,7 +257,8 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 
 ## 9. Functions and calls
 - Record construction is a call with field names, always mandatory:
-  `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`.
+  `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`. Labels keep the
+  declared order.
 - `Point::x` is the `str` `"x"`, the field's own name; a name the record does
   not declare is a compile error. Write a field name to anything outside this
   language with it.
@@ -285,7 +287,7 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
   a call that says none of these is an error. `xs.map(double)` takes both from
   `double`'s signature.
 - A source nested up to 2,000 deep compiles on every platform, and none is refused for
-  its depth; recursion too deep aborts.
+  its depth; running out of stack aborts.
 
     Args     = "(" [ Arg { "," Arg } ] ")" .
     Arg      = [ ident ":" ] [ "@" ] Expression .
@@ -309,17 +311,18 @@ for k in sort(keys(m))
 name; reached through a field or an index it copies the whole array, so lend the
 array itself to an `@` parameter or hoist it into a name.
 
-`m[k]` is a `V?` with code `missing_key`; `m[k] @ v` inserts or replaces;
-`keys(m) -> [K]` gives the keys in no order.
-An out-of-bounds index or slice aborts, and so does a slice that splits a character.
+`m[k]` is a `V?` with code `missing_key`; `m[k] @ v` inserts or replaces, a replaced key keeping its place;
+`keys(m) -> [K]` gives the keys in the order they were first inserted.
+An out-of-bounds index or slice aborts, the index of a place written with `@` only after its
+value or the call's other arguments, and so does a slice that splits a character.
 
 ## 11. Built-ins
 Built-ins: `print(...)` · `len` · `push` · `xs.slice(from:, to:)` ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` (`n` a `u64`) · `sort` (ascending: a number by value, a `str` by bytes, `false` before `true`; never a type parameter) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
-`to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
-the function accepts · `fold` (left, its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·
-`any` · `all` · `range`.
+`to_u32` `to_u64` — and, written in Heroes, calling the function in order: `map` · `filter`, keeping what
+the function accepts · `fold` (its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·
+`any` · `all` (with `find`, stopping at the first that decides) · `range`.
 `slice` and `range(from: a, to: b) -> [i64]` exclude `to`.
 `print` writes its values with no
 separator and exactly one trailing newline, and takes the types this language
@@ -328,14 +331,14 @@ exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`, and reads back as the same v
 `bool` prints `true` or `false`.
 Convert with `to_<type>`, and the name says whether it
 can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`
-… `to_u64` give a `T?`, because the number may not fit. `to_i64` takes a float
+… `to_u64` give a `T?`, because the number may not fit, failing `does_not_fit`. `to_i64` takes a float
 too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
 and `to_f32` rounds.
 Files and the process, also provided: `read_file(path: str) -> str?` (failing
 `file_not_found`, `not_text` or `read_failed`) · `write_file(path: str, text:
 str) -> ()?` (`write_failed`) · `args() -> [str]` (the arguments after the
 program name; one that is not UTF-8 aborts) · `args_checked() -> [str?]` (which
-does not) · `exit(code: i64)` (ends the program; a code outside 0 to 255 aborts).
+does not) · `exit(code: i64)` (ends the program; a code outside 0 to 255 aborts, one written as a number is refused).
 
 ## 12. Tests and holes
 ```
@@ -437,7 +440,7 @@ or `@` out-parameter reaching a handle says the call begins that handle's life a
 the one that ends it, which the program owes it. It may name several,
 `acquires sqlite3_close | sqlite3_close_v2`, and any one of them ends the life;
 giving the handle to a `consumes` call the mark did not name aborts before C
-runs. Giving one back ends it: handing it to C again aborts, `==` on it aborts, and so does a copy made before, unless C has since handed its address out again or a million other lives have ended. `borrows` says the call hands
+runs. Giving one back ends it: reading it where every path has ended it is a compile error; elsewhere handing it to C again or `==` on it aborts, and so does handing C a copy made before, unless C has since handed its address out again or a million other lives have ended. `borrows` says the call hands
 back one it keeps, and where any `extern` consumes a handle type every call handing
 one back says which it is. `transfers fclose` after a parameter hands the life into
 another value of the call that outlives it, a handle parameter the call keeps or

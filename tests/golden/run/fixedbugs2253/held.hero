@@ -1,0 +1,14 @@
+# fixedbugs, defect 2253: the callee whose frame passes every leg's stack, for
+# `fixedbugs-2253-a-line-printed-before-a-frame-larger-than-every-stack-is-kept`.
+# It is a module of its own so its unit is its own: in the caller's unit
+# clang at `-O2` could make it part of the caller's `main`, whose frame would
+# then fail before the line the case prints, and the case would read two ways
+# at two levels. Its record is the header's, 128 MiB.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function kept(n: i64) -> i64
+    held = Held(first: n, rest: zero)
+    return heroes_held_first(h: held)
