@@ -427,6 +427,22 @@ function paired(before: [Reading], after: [Reading]) -> Paired
         size @ 0 - median
     share = percent_text(part: size, whole: median_of(bases))
 
+    # Fewer pairs kept than the least is a machine that was not still, and no
+    # verdict; enough kept and most of them tied is two compilers reading the
+    # same to the hundredth, which is a verdict, and not a slower one (two
+    # sittings of task 2279's bisect read four ties in eight, 2026-10-31).
+    if kept < LEAST_PAIRS
+        return Paired(
+            kept: kept,
+            slower: slower,
+            faster: faster,
+            median_ms: median,
+            share: share,
+            tail: "n/a",
+            slower_verdict: false,
+            text: kept.to_str() + " pairs kept, fewer than " + LEAST_PAIRS.to_str() + ": no verdict, the machine was not still"
+        )
+
     if untied < LEAST_PAIRS
         return Paired(
             kept: kept,
@@ -436,7 +452,7 @@ function paired(before: [Reading], after: [Reading]) -> Paired
             share: share,
             tail: "n/a",
             slower_verdict: false,
-            text: kept.to_str() + " pairs kept, " + untied.to_str() + " of them untied, fewer than " + LEAST_PAIRS.to_str() + ": no verdict"
+            text: kept.to_str() + " pairs kept, " + (kept - untied).to_str() + " of them tied and " + untied.to_str() + " untied, fewer than " + LEAST_PAIRS.to_str() + ": the two read the same, no verdict of slower"
         )
     ways = tail_count(n: untied, k: slower)
     all_ways = power_of_two(untied)
@@ -522,7 +538,16 @@ test "mixed signs are no verdict, a faster after is none, and too few untied pai
     assert fast.text == "after slower in 0 of 5 untied pairs kept, the median faster by 0.18 s, 2.6 %; the sign test's tail 100.0 %, not under 5 %: no verdict of slower"
     short = paired(before: [base, base, base], after: [base, base, base])
     assert !short.slower_verdict
-    assert short.text == "2 pairs kept, 0 of them untied, fewer than 5: no verdict"
+    assert short.text == "2 pairs kept, fewer than 5: no verdict, the machine was not still"
+
+    # Eight pairs kept, four of them tied to the hundredth, as two sittings of
+    # 2026-10-31 read: the same, and not slower.
+    tied = paired(
+        before: [base, base, base, base, base, base, base, base, base],
+        after: [base, base, base, base, base, Reading(real_ms: 7010, user_ms: 6960, sys_ms: 30), Reading(real_ms: 6990, user_ms: 6940, sys_ms: 30), Reading(real_ms: 7010, user_ms: 6960, sys_ms: 30), Reading(real_ms: 6990, user_ms: 6940, sys_ms: 30)]
+    )
+    assert !tied.slower_verdict
+    assert tied.text == "8 pairs kept, 4 of them tied and 4 untied, fewer than 5: the two read the same, no verdict of slower"
 
 test "the tail is counted exactly: one way in 32 for five of five, seven in 64 for five of six"
     assert tail_count(n: 5, k: 5) == 1

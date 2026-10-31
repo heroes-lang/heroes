@@ -19,8 +19,9 @@
 #   inside a pair alternating too, the first pair discarded, and reads the
 #   pairs one by one (`latency_clock.paired`): `after` slower in so many of
 #   the untied pairs kept that the sign test's tail is under 5 %, over at
-#   least five, is a verdict, exit 1; anything else exit 0, and fewer than
-#   five untied pairs kept exit 2, the machine not still. The two bests are
+#   least five, is a verdict, exit 1; anything else exit 0, two compilers
+#   whose pairs are mostly tied reading the same, and fewer than five pairs
+#   kept exit 2, the machine not still. The two bests are
 #   printed beside it as information. This is the one comparison the rule
 #   admits, two compilers in one sitting; two rows of the ledger taken on
 #   two days are not one. The seed clock has no
@@ -248,7 +249,7 @@ function comparing(scratch: str, asked: Asked) -> i64
         if verdict.slower_verdict
             slower @ true
 
-        if verdict.slower + verdict.faster < latency_clock.LEAST_PAIRS
+        if verdict.kept < latency_clock.LEAST_PAIRS
             unjudged @ true
 
     print("latency: load " + latency_runs.load_now(scratch) + " after")
