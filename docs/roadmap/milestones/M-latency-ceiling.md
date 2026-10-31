@@ -118,3 +118,15 @@ then the close, the ledger's row taken at it. The incremental frontend is not
 built on this row: issue 715 stays its return condition, and the step that
 would build it is the one at which the interleaved comparison breaches the
 ceiling.
+
+## Closed 2026-11-01, the tag waiting
+
+What a later milestone owes this row is decision 2282 and the bullet of `/step`'s close checklist
+that carries it: at every close, `record` on a still machine, the ledger's newest row held under
+the level (7.50 s for `heroes check selfhost/main.hero`, 9.00 s for clang on the seed, 41.00 s for
+the warm build) by the `latency` suite, and `compare --clock all` against the previous tag's
+compiler, a loss past the floor of effect (0.5 %) paid before the tag. The level moves only by a
+decision issue that names its cause. The incremental frontend is built the day either layer gives
+way and not before (issue 715, settled at this close). The account is journal 074; the tag waits on
+defects 2275, 2277 and 2278, `adjacent` at their second tag, as that journal's last section says.
+

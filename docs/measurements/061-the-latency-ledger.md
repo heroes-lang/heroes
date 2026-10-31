@@ -41,3 +41,4 @@ exists (row 76 of the chain).
 | taken | tree | sources | check | check spread | check kept | seed | seed spread | seed kept | build | build spread | build kept | load | toolchain | note |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-30 | ccdf13f53 | 23825438285ee301 | 6.81 | 0.14 | 4/5 | 8.18 | 0.05 | 4/5 | 37.25 | 0.22 | 4/5 | 3.13 then 3.55 | Apple clang version 21.0.0 (clang-2100.3.34.2), macOS 27.0.1, Mac15,13 | the opening, by the instrument |
+| 2026-11-01 | fe6903aaf | 0939902c3b85306c | 6.91 | 0.06 | 6/7 | 8.18 | 0.21 | 6/7 | 37.20 | 0.14 | 6/7 | 3.91 then 2.09 | Apple clang version 21.0.0 (clang-2100.3.34.2), macOS 27.0.1, Mac15,13 | M-latency-ceiling's close |
