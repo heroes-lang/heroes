@@ -52,6 +52,7 @@ const SPEC_SUITE = 'tests/harness/suite_spec.hero';
 const MUTATION_RECORD = 'docs/measurements/024-the-corpus-at-one-hundred-and-twenty-files.md';
 const CHECK_JSON_FILE = 'selfhost/cli/check_json.hero';
 const SPEC_FILE = 'spec/heroes-spec.md';
+const LATENCY_LEDGER = 'docs/measurements/061-the-latency-ledger.md';
 
 /**
  * The repository's front page on GitHub, checked as a page is: it says facts
@@ -365,6 +366,34 @@ const WORDS: Record<'en' | 'it', string[]> = {
        'diciannove', 'venti'],
 };
 
+/**
+ * How long clang takes to build the compiler from the seed on the machine the
+ * site names, as the page's threshold: the next whole second above the best of
+ * the latency ledger's newest row, which `tests/harness/latency.hero record`
+ * appends at every milestone close (M-latency-ceiling). The start page and the
+ * home page said *under four seconds* from a reading of 3.4 s on the seed of
+ * August, and went on saying it while the seed grew past 28 MB and the build
+ * past eight seconds on the same MacBook Air (defect 2281): a threshold typed
+ * from one reading expires in silence, and one held to the ledger turns the
+ * build red the day a row crosses it. The ledger is a site path
+ * (`deploy-site.yml`), so a new row rebuilds the site that reads it.
+ */
+function seedSeconds(): number {
+  const rows = readText(LATENCY_LEDGER).split('\n').filter((line) => line.trim().startsWith('|'));
+  if (rows.length < 3) {
+    throw new Error(`${LATENCY_LEDGER}: no row under its table's header, which is what the start page's build time is read from.`);
+  }
+  const head = rows[0].split('|').map((cell) => cell.trim());
+  const at = head.indexOf('seed');
+  if (at < 0) throw new Error(`${LATENCY_LEDGER}: its header names no column \`seed\`.`);
+  const cells = rows[rows.length - 1].split('|').map((cell) => cell.trim());
+  const best = Number(cells[at]);
+  if (!Number.isFinite(best) || best <= 0) {
+    throw new Error(`${LATENCY_LEDGER}: the newest row's \`seed\` is \`${cells[at]}\`, not a number of seconds.`);
+  }
+  return Math.floor(best) + 1;
+}
+
 function word(n: number, lang: 'en' | 'it'): string {
   const table = WORDS[lang];
   if (n < 0) throw new Error(`no number word for ${n}`);
@@ -491,6 +520,17 @@ const CLAIMS: Claim[] = [
     fact: () => topLevelWords().size, shape: (n) => new RegExp(`${n} words that can start a\\s+top-level line`, 'i') },
   { page: 'site/src/html/it/docs/the-c-boundary.html', what: 'the words that can begin a line',
     fact: () => topLevelWords().size, shape: (n) => new RegExp(`${n} parole che possono aprire una\\s+riga`, 'i') },
+
+  // How long the third line of the quick start takes, the seed built by clang,
+  // as a threshold the latency ledger's newest row holds (defect 2281).
+  { page: 'site/src/html/start.html', what: 'the seconds the seed takes to build',
+    fact: seedSeconds, shape: (n) => new RegExp(`<b>under ${n} seconds</b> on a MacBook Air`, 'i') },
+  { page: 'site/src/html/it/start.html', what: 'the seconds the seed takes to build',
+    fact: seedSeconds, shape: (n) => new RegExp(`<b>meno di ${n} secondi</b> su un MacBook Air`, 'i') },
+  { page: 'site/src/html/index.html', what: 'the seconds the seed takes to build',
+    fact: seedSeconds, shape: (n) => new RegExp(`under\\s+${n}\\s+seconds\\s+on\\s+a\\s+MacBook\\s+Air`, 'i') },
+  { page: 'site/src/html/it/index.html', what: 'the seconds the seed takes to build',
+    fact: seedSeconds, shape: (n) => new RegExp(`meno\\s+di\\s+${n}\\s+secondi\\s+su\\s+un\\s+MacBook\\s+Air`, 'i') },
 
   // The verbs of the one command: the count in the heading.
   { page: 'site/src/html/start.html', what: 'the verbs of the command',

@@ -47,7 +47,11 @@ The flag is MSVC-linker spelling because that is what `clang` targets on Windows
 `selfhost/cli/flags.hero::link_flags()` puts on every binary the compiler links
 there. Measured on Apple clang 21.0.0, arm64-darwin: **3.4 s at no
 optimisation level** (2026-08-19, on the 22,025,792-byte seed this milestone
-regenerated; it was 3.7 s on the 21 MB one), 27 s at `-O2`. Any C11 compiler should do — the file was
+regenerated; it was 3.7 s on the 21 MB one), 27 s at `-O2`. **8.18 s on
+2026-10-30**, the best of four kept runs on the 28,876,131-byte seed of
+`m-compatibility-promise`: the build's time now has its own record, the `seed`
+column of `docs/measurements/061-the-latency-ledger.md`, taken at every
+milestone close, and this paragraph's numbers are history. Any C11 compiler should do — the file was
 compiled clean under `-std=c11`, `gnu11`, `c17`, `gnu17`, `c23`, `gnu23`, under
 `-pedantic-errors` and under `-Wall -Werror`, all on one clang, which is what
 "any C compiler" is currently worth here.
@@ -167,7 +171,7 @@ cannot see:
    clang error on the first command in CLAUDE.md § Commands, and that is what
    fired when the stamp moved 21 to 22 before the seed did.
 2. **`selfhost/` uses a form the committed seed cannot parse.** The cheap check
-   is the build above — it is 3.4 s and it runs in the test. The expensive one is
+   is the build above — seconds, the latency ledger's `seed` column, and it runs in the test. The expensive one is
    the full fixpoint (`heroes build selfhost/main.hero --emit-c` from the
    seed-built compiler, and the bytes must match), which belongs to a milestone
    close: **15m41s measured 2026-08-19**, when `measure` and `mutate` joined the
@@ -179,7 +183,7 @@ cannot see:
    different diagnostic, a different byte in the emitted C, a new library
    function. This is the condition the first two miss and the one that bites:
    the library's own text (`selfhost/library_source.hero`) moves neither the ABI
-   nor the grammar, so a stale seed passes condition 2's 3.4 s build **and the
+   nor the grammar, so a stale seed passes condition 2's build **and the
    compiler it makes carries yesterday's library**. Every job after it then tests
    something nobody wrote. Its instrument is CI's *The seed is what today's source
    emits* — the fixpoint of condition 2, a `cmp` on the Linux leg **of every
@@ -242,7 +246,7 @@ chain only ends at `m-selfhost-fixpoint`, which is where the seed begins.
 Then re-verify, in this order, because the cheap check catches almost everything:
 
 ```sh
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # seconds: the latency ledger's seed column
 ./heroes build selfhost/main.hero --emit-c -o /tmp/again.c    # 21.5 s (2026-09-05)
 cmp seed/heroes.c /tmp/again.c                                # must be silent
 ```
