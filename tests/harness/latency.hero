@@ -19,7 +19,8 @@
 #   inside a pair alternating too, the first pair discarded, and reads the
 #   pairs one by one (`latency_clock.paired`): `after` slower in so many of
 #   the untied pairs kept that the sign test's tail is under 5 %, over at
-#   least five, is a verdict, exit 1; anything else exit 0, two compilers
+#   least five, with the median past the floor of effect of 0.5 % (decision
+#   2282), is a verdict, exit 1; anything else exit 0, two compilers
 #   whose pairs are mostly tied reading the same, and fewer than five pairs
 #   kept exit 2, the machine not still. The two bests are
 #   printed beside it as information. This is the one comparison the rule

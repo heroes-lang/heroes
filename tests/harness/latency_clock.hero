@@ -358,6 +358,15 @@ record Paired
 constant LEAST_PAIRS: i64
     5
 
+# The floor of effect, in thousandths of the first compiler's median: a
+# difference the sign test sees and no larger than this is counted no loss
+# (decision 2282, 2026-10-31). The paired test resolves differences that small
+# between any two builds: that day it read the base of task 2279 0.03 s slower
+# than a build its bisect found free of the regression, and the repaired
+# compiler 0.03 s slower than the base, 0.4 % each.
+constant EFFECT_FLOOR_PERMILLE: i64
+    5
+
 # `--runs` is held under this, so 2 to the number of pairs fits an `i64` with
 # room for the tail's arithmetic.
 constant MOST_PAIRS: i64
@@ -457,17 +466,22 @@ function paired(before: [Reading], after: [Reading]) -> Paired
     ways = tail_count(n: untied, k: slower)
     all_ways = power_of_two(untied)
     tail = percent_text(part: ways, whole: all_ways)
-    verdict = ways * 20 < all_ways
+    seen = ways * 20 < all_ways
+    beyond = median > 0 && median * 1000 > EFFECT_FLOOR_PERMILLE * median_of(bases)
+    verdict = seen && beyond
     direction: str @= "by"
 
     if median < 0
         direction @ "faster by"
     else if median == 0
         direction @ "by"
+    floor = percent_text(part: EFFECT_FLOOR_PERMILLE, whole: 1000)
     ruling: str @= "not under 5 %: no verdict of slower"
 
     if verdict
-        ruling @ "under 5 %: slower"
+        ruling @ "under 5 %, and the median beyond the floor of effect of " + floor + ": slower"
+    else if seen
+        ruling @ "under 5 %, and the median within the floor of effect of " + floor + ": no loss counted"
     return Paired(
         kept: kept,
         slower: slower,
@@ -504,7 +518,7 @@ test "the pairs of 2026-10-31 are read one by one: five of five slower is a tail
     assert got.faster == 0
     assert got.median_ms == 150
     assert got.slower_verdict
-    assert got.text == "after slower in 5 of 5 untied pairs kept, the median by 0.15 s, 2.2 %; the sign test's tail 3.1 %, under 5 %: slower"
+    assert got.text == "after slower in 5 of 5 untied pairs kept, the median by 0.15 s, 2.2 %; the sign test's tail 3.1 %, under 5 %, and the median beyond the floor of effect of 0.5 %: slower"
 
     # The same sitting read by bests alone: what the first verdict said.
     assert compared(before: judged(before), after: judged(after)).text == "after slower by 0.06 s, 0.9 %, within the floor of 0.22 s"
@@ -559,3 +573,14 @@ test "the tail is counted exactly: one way in 32 for five of five, seven in 64 f
     assert median_of([250, 100, 140, 220, 150]) == 150
     assert median_of([1, 3]) == 2
     assert median_of([]) == 0
+
+test "a difference the sign test sees and no larger than the floor of effect is counted no loss (decision 2282)"
+    base = Reading(real_ms: 6850, user_ms: 6800, sys_ms: 30)
+    before = [base, base, base, base, base, base, base, base]
+    slightly = Reading(real_ms: 6880, user_ms: 6830, sys_ms: 30)
+    after = [base, slightly, slightly, slightly, slightly, slightly, slightly, slightly]
+    got = paired(before: before, after: after)
+    assert got.slower == 7
+    assert !got.slower_verdict
+    assert got.text == "after slower in 7 of 7 untied pairs kept, the median by 0.03 s, 0.4 %; the sign test's tail 0.8 %, under 5 %, and the median within the floor of effect of 0.5 %: no loss counted"
+    assert percent_text(part: EFFECT_FLOOR_PERMILLE, whole: 1000) == "0.5 %"

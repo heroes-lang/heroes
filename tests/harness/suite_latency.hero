@@ -13,8 +13,8 @@
 # that moved it; a ledger nothing holds a copy to is a file whose newest row
 # nobody is obliged to read, which is the shape `docs/measurements/010` took
 # for the spec's count (panel 086 R2). The ceiling itself, the number the
-# newest row may not pass without a decision, is M-latency-ceiling's third
-# step and enters here with it.
+# newest row may not pass without a decision, is the level below, set by
+# decision 2282.
 
 use report
 use strings
@@ -40,6 +40,23 @@ constant SEED_MS: i64
 constant BUILD_MS: i64
     37250
 
+# THE LEVEL, decision 2282 (2026-10-31): the first row's bests, 6.81, 8.18
+# and 37.25 s, plus 10 % rounded to a tenth, about seven times the spread that
+# day between two sittings of one compiler (1.2 to 1.3 %). The newest row past
+# any of the three is red, and the level moves only by a decision issue, as
+# the specification's ceiling does; it catches the creep that no comparison
+# of two neighbouring tags sees. The seed's is the threshold the site's start
+# page spells (`site/src/lib/claims.ts`, defect 2281), so the two ring
+# together.
+constant CHECK_CEILING_MS: i64
+    7500
+
+constant SEED_CEILING_MS: i64
+    9000
+
+constant BUILD_CEILING_MS: i64
+    41000
+
 constant WRITE_THEM: str
     "\n  write the newest row's values into tests/harness/suite_latency.hero in the commit that carries the row, so the number lands where a reader can audit it"
 
@@ -58,6 +75,7 @@ function run_all() -> report.Report?
     report.keep_pass(@r)
     counted(@r, rows: rows.must())
     pinned(@r, rows: rows.must())
+    under(@r, rows: rows.must())
     return ok(r)
 
 function shape_why(got: [latency_ledger.Row]?) -> str
@@ -105,6 +123,40 @@ function command_of(clock: latency_runs.Clock) -> str
         i @ i + 1
 
     return words.join(" ")
+
+# The newest row held to the level: each best at most its clock's ceiling.
+function under(@r: report.Report, rows: [latency_ledger.Row])
+    got = latency_ledger.newest(rows)
+
+    if got.is_err()
+        report.keep_failure(@r, label: "latency/level", detail: "  the ledger holds no row to hold to the level")
+        return
+    row = got.must()
+    over: [str] @= []
+
+    if row.check_ms > CHECK_CEILING_MS
+        over @ over.push(
+            "    check: " + latency_clock.seconds_text(row.check_ms) + " s, above its ceiling of " + latency_clock.seconds_text(CHECK_CEILING_MS) + " s"
+        )
+
+    if row.seed_ms > SEED_CEILING_MS
+        over @ over.push(
+            "    seed: " + latency_clock.seconds_text(row.seed_ms) + " s, above its ceiling of " + latency_clock.seconds_text(SEED_CEILING_MS) + " s"
+        )
+
+    if row.build_ms > BUILD_CEILING_MS
+        over @ over.push(
+            "    build: " + latency_clock.seconds_text(row.build_ms) + " s, above its ceiling of " + latency_clock.seconds_text(BUILD_CEILING_MS) + " s"
+        )
+
+    if over.len() == 0
+        report.keep_pass(@r)
+    else
+        report.keep_failure(
+            @r,
+            label: "latency/level",
+            detail: "  the ledger's newest row (" + row.taken + ", " + row.tree + ") passes the level decision 2282 set:\n" + over.join("\n") + "\n  give the time back, or raise the level by a decision issue that names the cause, as the specification's ceiling is raised; never a pin moved alone"
+        )
 
 function counted(@r: report.Report, rows: [latency_ledger.Row])
     if rows.len() == LEDGER_ROWS
@@ -223,3 +275,35 @@ test "the ledger's prose is held to the commands the instrument times, read acro
         text: told.failures[0],
         needle: "    seed: clang -I runtime seed/heroes.c runtime/runtime.c\n    build: heroes build selfhost/main.hero\n"
     )
+
+test "the newest row under the level passes, and one past it is named clock by clock (decision 2282)"
+    row = latency_ledger.example()
+    r: report.Report @= report.empty()
+    under(@r, rows: [row])
+    assert r.passed == 1
+    assert r.failed == 0
+    slow = latency_ledger.Row(
+        taken: row.taken,
+        tree: row.tree,
+        sources: row.sources,
+        check_ms: CHECK_CEILING_MS + 10,
+        check_spread_ms: row.check_spread_ms,
+        check_kept: row.check_kept,
+        seed_ms: SEED_CEILING_MS,
+        seed_spread_ms: row.seed_spread_ms,
+        seed_kept: row.seed_kept,
+        build_ms: BUILD_CEILING_MS + 1000,
+        build_spread_ms: row.build_spread_ms,
+        build_kept: row.build_kept,
+        load: row.load,
+        toolchain: row.toolchain,
+        note: row.note
+    )
+    told: report.Report @= report.empty()
+    under(@told, rows: [row, slow])
+    assert told.failed == 1
+    assert strings.contains(
+        text: told.failures[0],
+        needle: "    check: 7.51 s, above its ceiling of 7.50 s\n    build: 42.00 s, above its ceiling of 41.00 s\n"
+    )
+    assert !strings.contains(text: told.failures[0], needle: "seed:")

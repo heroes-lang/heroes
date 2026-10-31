@@ -1088,10 +1088,16 @@ benchmark notes (the milestone's page, read 2026-10-25) say why that is not a
 measurement. A task that asks which commit of a batch cost a latency (2279)
 is a bisect whose question at each step is `compare`.
 
-**When.** `record` at the opening of M-latency-ceiling and at every milestone
-close from its own on, the bullet `/step` § 5's checklist gains at the
-milestone's third step with the ceiling's number; `compare` at a close
-against the previous tag's compiler rebuilt, where the ledger's row moved
-beyond its own spread. Where `/usr/bin/time` is not on the machine the
+**When, and what a close owes** (decision 2282, 2026-10-31): `record` at
+every milestone close, the bullet of `/step` § 5's checklist, and the
+`latency` suite holds the newest row to **the level**, 7.50 s for `check`,
+9.00 s for the seed and 41.00 s for the warm build, which moves only by a
+decision issue; and `compare --clock all` at every close against the previous
+tag's compiler, built in two stages from that tag's seed, where a loss past
+**the floor of effect**, a median 0.5 % of the first compiler's, is paid
+before the tag, by a repair or by a decision naming its cause. The level
+catches the creep no comparison of two neighbouring tags sees; the floor keeps
+the paired test, which resolves 0.4 % between any two builds, from counting
+those as losses. Where `/usr/bin/time` is not on the machine the
 instrument exits 2 and says so: a reading is taken on a machine that has it,
 never inferred (CLAUDE.md § RUN IT).

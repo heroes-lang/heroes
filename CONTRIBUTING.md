@@ -90,7 +90,13 @@ claim down only after the command that settles it has run.
   condition that row names.
 - Speed as the reason for a change. A cost that stops a needed program from
   running at all is a defect; a faster compiler with nothing else to show is
-  not.
+  not. **Latency is the exception**: how long `heroes check` takes on the
+  compiler's own source, how long clang takes to build the seed and how long a
+  warm build takes are held under a ceiling, because a model writing Heroes pays
+  for one check on every turn it takes to reach a program that compiles. A
+  change that gives those three back time they lost is a reason on its own; one
+  that costs them time is measured, and past the ceiling it needs a decision
+  (`docs/measurements/061-the-latency-ledger.md`).
 
 ## How a change is merged
 

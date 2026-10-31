@@ -153,6 +153,17 @@ Milestone close — the checklist (this is its only copy):
   with `UPDATE_EMISSION=1`, read after; only the files of the cases this Mac
   skips (`SKIP emission/...` in the Mac's gate) copied back, a moved line of
   any other file being a platform divergence to file, not to bless;
+- **the latency ceiling** (M-latency-ceiling, decision 2282), on the still
+  machine and after the gate: `heroes run tests/harness/latency.hero -- record
+  <stage 2> --note <milestone>` appends the latency ledger's row and prints the
+  pins `tests/harness/suite_latency.hero` takes in the close's commit, the net
+  red where the row passes the level; and `compare <the previous tag's
+  compiler> <stage 2> --clock all`, the previous tag's compiler built in two
+  stages from that tag's seed in a worktree of its own, where a loss counted
+  past the floor of effect is paid before the tag, by a repair or by a decision
+  naming its cause. The milestone's page asked for it at every close, the row
+  scheduled by the author on 2026-10-14
+  (`docs/roadmap/milestones/M-latency-ceiling.md`);
 - journal `docs/records/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
   surprised** (impersonal — shapes and rules, never scores) · **what broke
   and why**;
