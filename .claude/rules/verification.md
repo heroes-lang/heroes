@@ -1075,10 +1075,15 @@ prints the constants `tests/harness/suite_latency.hero` pins, which the commit
 carrying the row writes there: the net's `latency` suite holds the newest row
 and the count to those pins on every run and times nothing, so it is free
 beside every other suite. `compare <before> <after>` alternates two compilers
-on each clock in one sitting, the first pair discarded, and reads the two
-bests against the noise floor, the larger of the two spreads: `after` slower
-beyond the floor is the verdict, exit 1, and **the only comparison the rule
-admits as a breach**; two rows of the ledger are two dates, and Goose's
+on each clock in one sitting, the order inside a pair alternating too, the
+first pair discarded, and reads the pairs one by one: `after` slower in so
+many of the untied pairs kept that the sign test's tail is under 5 %, over at
+least five, is the verdict, exit 1, and **the only comparison the rule admits
+as a breach**. Until 2026-10-31 it read the two bests against the larger of
+the two spreads, and on its first real use, task 2279's two compilers, it
+said *within the floor* of a sitting whose five clean pairs all put `after`
+behind, by 0.10 to 0.25 s (step 2 of the milestone); a best is one run of
+each side, and the pairs are what alternating bought; two rows of the ledger are two dates, and Goose's
 benchmark notes (the milestone's page, read 2026-10-25) say why that is not a
 measurement. A task that asks which commit of a batch cost a latency (2279)
 is a bisect whose question at each step is `compare`.

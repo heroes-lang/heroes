@@ -15,12 +15,15 @@
 #   discarded, a run waiting more than 0.1 s discarded, and prints every
 #   run, the best and the spread (`latency_clock.hero` is the rule). Exit 0
 #   where every clock kept a run, 2 where one did not or could not run.
-# - `compare` alternates two compilers on each clock, N pairs, the first
-#   pair discarded, and reads the two bests side by side: `after` slower
-#   than `before` by more than the noise floor, the larger of the two
-#   spreads, is a verdict, exit 1; within it, or faster, exit 0. This is
-#   the one comparison the rule admits, two compilers in one sitting; two
-#   rows of the ledger taken on two days are not one. The seed clock has no
+# - `compare` alternates two compilers on each clock, N pairs, the order
+#   inside a pair alternating too, the first pair discarded, and reads the
+#   pairs one by one (`latency_clock.paired`): `after` slower in so many of
+#   the untied pairs kept that the sign test's tail is under 5 %, over at
+#   least five, is a verdict, exit 1; anything else exit 0, and fewer than
+#   five untied pairs kept exit 2, the machine not still. The two bests are
+#   printed beside it as information. This is the one comparison the rule
+#   admits, two compilers in one sitting; two rows of the ledger taken on
+#   two days are not one. The seed clock has no
 #   compiler under it and is refused here, and `all` is `check` and `build`.
 # - `record` runs the three clocks as `time` does and appends one row to
 #   the ledger, `docs/measurements/061-the-latency-ledger.md`
@@ -88,8 +91,10 @@ function parsed(given: [str]) -> Asked
             if flag == "--runs"
                 count = strings.to_number(value)
 
-                if count.is_err() || count.must() < 3
-                    return refused("--runs takes a whole number of at least 3, not `" + value + "`")
+                if count.is_err() || count.must() < 3 || count.must() > latency_clock.MOST_PAIRS
+                    return refused(
+                        "--runs takes a whole number from 3 to " + latency_clock.MOST_PAIRS.to_str() + ", not `" + value + "`"
+                    )
                 runs @ count.must()
             else if flag == "--clock"
                 clock @ value
@@ -236,13 +241,14 @@ function comparing(scratch: str, asked: Asked) -> i64
         pair = got.must()
         print("  " + name + " before: " + latency_clock.summary(pair.before))
         print("  " + name + " after: " + latency_clock.summary(pair.after))
-        verdict = latency_clock.compared(before: pair.before, after: pair.after)
-        print("  " + name + ": " + verdict.text)
+        print("  " + name + ", the bests: " + latency_clock.compared(before: pair.before, after: pair.after).text)
+        verdict = latency_clock.paired(before: pair.before.runs, after: pair.after.runs)
+        print("  " + name + ", the pairs: " + verdict.text)
 
-        if verdict.slower
+        if verdict.slower_verdict
             slower @ true
 
-        if !latency_clock.has_best(pair.before) || !latency_clock.has_best(pair.after)
+        if verdict.slower + verdict.faster < latency_clock.LEAST_PAIRS
             unjudged @ true
 
     print("latency: load " + latency_runs.load_now(scratch) + " after")
@@ -353,8 +359,9 @@ test "the words are read as the usage says, and every other spelling is refused 
     assert parsed(["time"]).wrong == "time takes 1 compiler, given 0"
     assert parsed(["compare", "./a"]).wrong == "compare takes 2 compilers, given 1"
     assert parsed(["time", "./heroes", "--runs"]).wrong == "--runs needs a value"
-    assert parsed(["time", "./heroes", "--runs", "2"]).wrong == "--runs takes a whole number of at least 3, not `2`"
-    assert parsed(["time", "./heroes", "--runs", "many"]).wrong == "--runs takes a whole number of at least 3, not `many`"
+    assert parsed(["time", "./heroes", "--runs", "2"]).wrong == "--runs takes a whole number from 3 to 41, not `2`"
+    assert parsed(["time", "./heroes", "--runs", "42"]).wrong == "--runs takes a whole number from 3 to 41, not `42`"
+    assert parsed(["time", "./heroes", "--runs", "many"]).wrong == "--runs takes a whole number from 3 to 41, not `many`"
     assert parsed(["time", "./heroes", "--clock", "seeds"]).wrong == "no clock `seeds`: check, seed, build or all"
     assert parsed(["time", "./heroes", "--slow"]).wrong == "no flag `--slow`: --runs, --clock or --note"
     assert parsed(["compare", "./a", "./b", "--clock", "seed"]).wrong == "compare has no compiler under the seed clock: check, build or all"

@@ -93,9 +93,12 @@ function timed(scratch: str, clock: Clock, runs: i64) -> latency_clock.Judged?
     print("  " + clock.name + ": " + latency_clock.summary(j))
     return ok(j)
 
-# Two clocks alternated, `pairs` times: the first of each is the discarded
-# first, and the rest are read side by side in one sitting, which is the
-# only comparison the rule admits.
+# Two clocks alternated, `pairs` times, the order inside a pair alternating
+# too: before then after in the first, after then before in the second, and
+# so on, so an effect of order, the second run of two finding the machine
+# warmer, falls on both sides alike (M-latency-ceiling step 2). The first
+# pair is the discarded first, and the rest are read pair by pair
+# (`latency_clock.paired`), which is the only comparison the rule admits.
 record Pair
     before: latency_clock.Judged
     after: latency_clock.Judged
@@ -106,12 +109,20 @@ function alternated(scratch: str, before: Clock, after: Clock, pairs: i64) -> Pa
     i: i64 @= 0
 
     while i < pairs
-        one = timed_once(scratch: scratch, clock: before)?
-        print(run_line(clock: before.name + " before", index: i + 1, count: pairs, one: one))
-        firsts @ firsts.push(one)
-        two = timed_once(scratch: scratch, clock: after)?
-        print(run_line(clock: after.name + " after", index: i + 1, count: pairs, one: two))
-        seconds @ seconds.push(two)
+        if i % 2 == 0
+            one = timed_once(scratch: scratch, clock: before)?
+            print(run_line(clock: before.name + " before", index: i + 1, count: pairs, one: one))
+            two = timed_once(scratch: scratch, clock: after)?
+            print(run_line(clock: after.name + " after", index: i + 1, count: pairs, one: two))
+            firsts @ firsts.push(one)
+            seconds @ seconds.push(two)
+        else
+            two = timed_once(scratch: scratch, clock: after)?
+            print(run_line(clock: after.name + " after", index: i + 1, count: pairs, one: two))
+            one = timed_once(scratch: scratch, clock: before)?
+            print(run_line(clock: before.name + " before", index: i + 1, count: pairs, one: one))
+            firsts @ firsts.push(one)
+            seconds @ seconds.push(two)
         i @ i + 1
 
     return ok(Pair(before: latency_clock.judged(firsts), after: latency_clock.judged(seconds)))
