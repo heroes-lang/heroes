@@ -89,6 +89,9 @@
 #   probe         `heroes probe` over the formatter's fixtures under every
 #                 family and over the whole tree under `multi`, each row
 #                 pinning its floors (panel 179)
+#   latency       the latency ledger's newest row and its count held to the
+#                 pins `suite_latency.hero` carries, no clock run, the
+#                 instrument being `latency.hero` (M-latency-ceiling)
 #
 # Nothing is left in Rust that this cannot ask. The last one to arrive was
 # `emission`, and it is the only suite here whose ancestor could not be
@@ -112,6 +115,7 @@ use suite_fixes
 use suite_generated
 use suite_golden
 use suite_layout
+use suite_latency
 use suite_lines
 use suite_lldb
 use suite_order
@@ -589,6 +593,19 @@ function main()
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
+    # The latency ledger's newest row against the pins `suite_latency.hero`
+    # carries, and nothing timed: the clocks run by hand through
+    # `latency.hero`, exclusively, and this reads what they wrote.
+    if only == "" || only == "latency"
+        got = suite_latency.run_all()
+
+        if got.is_err()
+            print("harness: the latency ledger check could not run" + why(got))
+            exit(2)
+        print("  latency: " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
     if ran == 0
         print("harness: no suite named " + only)
         exit(2)
@@ -701,6 +718,14 @@ constant THESIS_PROGRAM: str
 # never saw). Tested the same way, one test for the root.
 constant GENERATOR_PROGRAM: str
     "tests/harness/generate.hero"
+
+# **AND THE FIFTH, the latency instrument** (M-latency-ceiling, 2026-10-30):
+# `latency.hero` and its word parser, which only it reaches; the modules it
+# shares with the `latency` suite (`latency_clock`, `latency_ledger`,
+# `latency_runs`) are reached from this root as well, so their tests run
+# twice and the parser's once. Tested the same way, one test for the root.
+constant LATENCY_PROGRAM: str
+    "tests/harness/latency.hero"
 
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each a file of `dir`, in the order they are found. A `use` of any
@@ -910,6 +935,32 @@ test "the generator's own tests run with the net's own, every block its modules 
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "generate").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "generate").must()
+    said: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the latency instrument's own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", LATENCY_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.starts_with(text: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    for line in skips_in(ran.out)
+        print(LATENCY_PROGRAM + ": " + line)
+
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "latency").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "latency").must()
     said: [str] @= []
 
     for line in strings.lines(ran.out)

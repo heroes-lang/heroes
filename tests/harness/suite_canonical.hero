@@ -97,8 +97,12 @@ constant SOURCE_DIRS: [str]
 # lanes' cases took the tree 27% past 844.
 # **1361 on 2026-10-10**, printed by `floors.check` at batch 19's gate: the
 # night's batches took the tree 27% past 1075.
+# **1704 on 2026-10-30**, told by `floors.check` at M-latency-ceiling step 1's
+# gate, the first `canonical` run of that milestone: the three milestones
+# since batch 19 took the tree 25% past 1361, and the six files of the
+# latency instrument arrived on a floor already outgrown.
 constant LEAST: i64
-    1361
+    1704
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
@@ -180,9 +184,10 @@ test "the walk names the directories that were swept, and the floor is under the
     # and the floor moved to it; 88% of 844 is 742. **844 until 2026-10-07**,
     # when the tree reached 1075 at batch 13's gate; 88% of 1075 is 946.
     # **1075 until 2026-10-10**, when the tree reached 1361 at batch 19's
-    # gate; 88% of 1361 is 1197.
-    assert LEAST <= 1361
-    assert LEAST > 1197
+    # gate; 88% of 1361 is 1197. **1361 until 2026-10-30**, when the tree
+    # reached 1704 at M-latency-ceiling step 1's gate; 88% of 1704 is 1499.
+    assert LEAST <= 1704
+    assert LEAST > 1499
 
 test "the exempt directories are named nowhere in the walk"
     # tests/golden/check, tests/golden/unsupported, tests/golden/permissive

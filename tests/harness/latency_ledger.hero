@@ -1,0 +1,266 @@
+# THE LATENCY LEDGER'S ROWS, WRITTEN AND READ (M-latency-ceiling, 2026-10-30).
+#
+# `docs/measurements/061-the-latency-ledger.md` keeps one row per reading of
+# the latencies CLAUDE.md § Verification says the compiler may not lose:
+# `heroes check` on the compiler, clang on the seed and the warm build of the
+# compiler, each the best of N runs on a still machine (`latency_clock.hero`
+# is the rule). The instrument (`latency.hero`, its word `record`) appends a
+# row; the net's `latency` suite reads the newest back and holds it to the
+# constants it pins, as `spec` holds the token count to its ledger, so a row
+# appended and not pinned, or a pin moved and no row, is red.
+#
+# A row is a line of a Markdown table and nothing else is parsed: the header
+# row names the columns, this module finds each by its name, and a column
+# added after the last moves nothing a reader already does. The ledger is a
+# record, append-only (`.claude/rules/records.md` § A record is never
+# rewritten), so a row is never rewritten; a reading since falsified is
+# answered by a later row.
+
+use strings
+use latency_clock
+
+constant LEDGER: str
+    "docs/measurements/061-the-latency-ledger.md"
+
+# The columns, in the order a row writes them.
+constant COLUMNS: [str]
+    [
+        "taken"
+        "tree"
+        "sources"
+        "check"
+        "check spread"
+        "check kept"
+        "seed"
+        "seed spread"
+        "seed kept"
+        "build"
+        "build spread"
+        "build kept"
+        "load"
+        "toolchain"
+        "note"
+    ]
+
+record Row
+    taken: str
+    tree: str
+    sources: str
+    check_ms: i64
+    check_spread_ms: i64
+    check_kept: str
+    seed_ms: i64
+    seed_spread_ms: i64
+    seed_kept: str
+    build_ms: i64
+    build_spread_ms: i64
+    build_kept: str
+    load: str
+    toolchain: str
+    note: str
+
+function header() -> str
+    return "| " + COLUMNS.join(" | ") + " |"
+
+function rule() -> str
+    dashes: [str] @= []
+    i: i64 @= 0
+
+    while i < COLUMNS.len()
+        dashes @ dashes.push("---")
+        i @ i + 1
+
+    return "|" + dashes.join("|") + "|"
+
+function rendered(row: Row) -> str
+    cells = [
+        row.taken
+        row.tree
+        row.sources
+        latency_clock.seconds_text(row.check_ms)
+        latency_clock.seconds_text(row.check_spread_ms)
+        row.check_kept
+        latency_clock.seconds_text(row.seed_ms)
+        latency_clock.seconds_text(row.seed_spread_ms)
+        row.seed_kept
+        latency_clock.seconds_text(row.build_ms)
+        latency_clock.seconds_text(row.build_spread_ms)
+        row.build_kept
+        row.load
+        row.toolchain
+        row.note
+    ]
+    return "| " + cells.join(" | ") + " |"
+
+# The cells of a table line, each trimmed, the empties the outer `|` leave
+# at the two ends dropped and an empty cell between two bars kept.
+function cells_of(line: str) -> [str]
+    pieces = strings.split_on(text: strings.trimmed(line), byte: 124)
+    out: [str] @= []
+    i: i64 @= 0
+
+    while i < pieces.len()
+        cell = strings.trimmed(pieces[i])
+
+        if (i == 0 || i == pieces.len() - 1) && cell.len() == 0
+            _ = 0
+        else
+            out @ out.push(cell)
+        i @ i + 1
+
+    return out
+
+function is_table_line(line: str) -> bool
+    return strings.starts_with(text: strings.trimmed(line), prefix: "|")
+
+# Where `name` stands among the header's cells.
+function column(cells: [str], name: str) -> i64?
+    i: i64 @= 0
+
+    while i < cells.len()
+        if cells[i] == name
+            return ok(i)
+        i @ i + 1
+
+    return fail(code: "no_column", msg: "the ledger's header names no column `" + name + "`")
+
+function is_day(text: str) -> bool
+    if text.len() != 10
+        return false
+    i: i64 @= 0
+
+    while i < 10
+        byte = text[i]
+
+        if i == 4 || i == 7
+            if byte != 45
+                return false
+        else if byte < 48 || byte > 57
+            return false
+        i @ i + 1
+
+    return true
+
+function cell_seconds(cells: [str], at: i64, line: i64) -> i64?
+    got = latency_clock.parse_seconds(cells[at])
+
+    return match got
+        .ok ms => ok(ms)
+        .err e => fail(code: "not_seconds", msg: "line " + line.to_str() + ": " + e.msg)
+
+# The rows of the ledger's table, in order: the first table line whose
+# cells open with every column above is the header, the line after it the
+# rule, and every table line after that a row, read until the first line
+# that is not one. A row with another count of cells than the header, a
+# `taken` that is not a day, or a time that is not seconds is refused by
+# its line number.
+function rows_in(text: str) -> [Row]?
+    lines = strings.lines(text)
+    at: i64 @= 0
+    found: bool @= false
+    head: [str] @= []
+
+    while at < lines.len() && !found
+        if is_table_line(lines[at])
+            cells = cells_of(lines[at])
+
+            if cells.len() >= COLUMNS.len() && cells.slice(from: 0, to: COLUMNS.len()) == COLUMNS
+                head @ cells
+                found @ true
+        at @ at + 1
+
+    if !found
+        return fail(code: "no_header", msg: "no table whose header names the columns " + COLUMNS.join(", "))
+
+    if at >= lines.len() || !strings.contains(text: lines[at], needle: "---")
+        return fail(
+            code: "no_rule",
+            msg: "line " + (at + 1).to_str() + ": the header is not followed by the table's rule line"
+        )
+    at @ at + 1
+    rows: [Row] @= []
+
+    while at < lines.len() && is_table_line(lines[at])
+        line = at + 1
+        cells = cells_of(lines[at])
+
+        if cells.len() != head.len()
+            return fail(
+                code: "wrong_width",
+                msg: "line " + line.to_str() + ": " + cells.len().to_str() + " cells where the header has " + head.len().to_str()
+            )
+        taken = cells[column(cells: head, name: "taken")?]
+
+        if !is_day(taken)
+            return fail(
+                code: "not_a_day",
+                msg: "line " + line.to_str() + ": `" + taken + "` is not a day written YYYY-MM-DD"
+            )
+        rows @ rows.push(
+            Row(taken: taken, tree: cells[column(cells: head, name: "tree")?], sources: cells[column(cells: head, name: "sources")?], check_ms: cell_seconds(cells: cells, at: column(cells: head, name: "check")?, line: line)?, check_spread_ms: cell_seconds(cells: cells, at: column(cells: head, name: "check spread")?, line: line)?, check_kept: cells[column(cells: head, name: "check kept")?], seed_ms: cell_seconds(cells: cells, at: column(cells: head, name: "seed")?, line: line)?, seed_spread_ms: cell_seconds(cells: cells, at: column(cells: head, name: "seed spread")?, line: line)?, seed_kept: cells[column(cells: head, name: "seed kept")?], build_ms: cell_seconds(cells: cells, at: column(cells: head, name: "build")?, line: line)?, build_spread_ms: cell_seconds(cells: cells, at: column(cells: head, name: "build spread")?, line: line)?, build_kept: cells[column(cells: head, name: "build kept")?], load: cells[column(cells: head, name: "load")?], toolchain: cells[column(cells: head, name: "toolchain")?], note: cells[column(cells: head, name: "note")?])
+        )
+        at @ at + 1
+
+    return ok(rows)
+
+function newest(rows: [Row]) -> Row?
+    if rows.len() == 0
+        return fail(code: "no_row", msg: "the ledger holds no row")
+    return ok(rows[rows.len() - 1])
+
+function example() -> Row
+    return Row(
+        taken: "2026-10-30",
+        tree: "ccdf13f53",
+        sources: "23825438285ee301",
+        check_ms: 6900,
+        check_spread_ms: 150,
+        check_kept: "6/7",
+        seed_ms: 8290,
+        seed_spread_ms: 60,
+        seed_kept: "5/7",
+        build_ms: 37710,
+        build_spread_ms: 80,
+        build_kept: "3/4",
+        load: "1.81 then 2.27",
+        toolchain: "Apple clang 21.0.0, macOS 27.0.1, Mac15,13",
+        note: "the opening"
+    )
+
+test "a row renders as one table line and reads back as itself, found by the header's names"
+    row = example()
+    text = "# a ledger\n\nprose above the table\n\n" + header() + "\n" + rule() + "\n" + rendered(row) + "\n\nprose below it\n"
+    rows = rows_in(text).must()
+    assert rows.len() == 1
+    assert rows[0] == row
+    assert newest(rows).must().taken == "2026-10-30"
+    assert rendered(row) == "| 2026-10-30 | ccdf13f53 | 23825438285ee301 | 6.90 | 0.15 | 6/7 | 8.29 | 0.06 | 5/7 | 37.71 | 0.08 | 3/4 | 1.81 then 2.27 | Apple clang 21.0.0, macOS 27.0.1, Mac15,13 | the opening |"
+
+test "a header with a column added after the last still reads, and the rows stop at the first line that is not one"
+    row = example()
+    text = header().slice(from: 0, to: header().len() - 1) + "| later |\n" + rule() + "---|\n" + rendered(row).slice(from: 0, to: rendered(row).len() - 1) + "| x |\n" + rendered(row).slice(from: 0, to: rendered(row).len() - 1) + "| y |\nnot a row\n" + rendered(row) + "\n"
+    rows = rows_in(text).must()
+    assert rows.len() == 2
+    assert rows[1].note == "the opening"
+    assert newest([]).is_err()
+
+test "a table with no header, a row too narrow, a day that is not one and a time that is not seconds are refused by their line"
+    row = example()
+    assert rows_in("| taken | tree |\n|---|---|\n| 2026-10-30 | x |\n").is_err()
+    narrow = header() + "\n" + rule() + "\n| 2026-10-30 | ccdf13f53 |\n"
+    assert rows_in(narrow).is_err()
+    bad_day = header() + "\n" + rule() + "\n" + rendered(row) + "\n| 30-10-2026 | t | s | 1.00 | 0.00 | 1/2 | 1.00 | 0.00 | 1/2 | 1.00 | 0.00 | 1/2 | l | c | n |\n"
+    refused = rows_in(bad_day)
+    assert refused.is_err()
+    bad_time = header() + "\n" + rule() + "\n| 2026-10-30 | t | s | six | 0.00 | 1/2 | 1.00 | 0.00 | 1/2 | 1.00 | 0.00 | 1/2 | l | c | n |\n"
+    assert rows_in(bad_time).is_err()
+    no_rule = header() + "\n" + rendered(row) + "\n"
+    assert rows_in(no_rule).is_err()
+
+test "an empty cell between two bars is a cell, and the outer bars leave none"
+    assert cells_of("| a |  | c |") == ["a", "", "c"]
+    assert cells_of("|a|b|") == ["a", "b"]
+    assert cells_of("  | a | b |  ") == ["a", "b"]
+    assert is_day("2026-10-30")
+    assert !is_day("2026-1-30")
+    assert !is_day("2026/10/30")

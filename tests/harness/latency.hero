@@ -1,0 +1,362 @@
+# THE LATENCY CEILING'S INSTRUMENT (M-latency-ceiling, 2026-10-30), a third
+# root of the harness beside `issues.hero` and `thesis.hero`:
+#
+#     heroes run tests/harness/latency.hero -- time <compiler> [--runs N] [--clock check|seed|build|all]
+#     heroes run tests/harness/latency.hero -- compare <before> <after> [--runs N] [--clock check|build|all]
+#     heroes run tests/harness/latency.hero -- record <compiler> [--runs N] [--note <text>]
+#
+# from the repository's root, with the machine still and nothing else
+# running while it does (CLAUDE.md § Verification: a clock is exclusive). A
+# program and not a verb of `heroes` for the reason `main.hero` is one:
+# `heroes run` and the compiler under the clock already compose to it, and
+# § 10's stopping rule refuses a verb two invocations compose to.
+#
+# - `time` runs each clock N times (7 unless `--runs` says), the first run
+#   discarded, a run waiting more than 0.1 s discarded, and prints every
+#   run, the best and the spread (`latency_clock.hero` is the rule). Exit 0
+#   where every clock kept a run, 2 where one did not or could not run.
+# - `compare` alternates two compilers on each clock, N pairs, the first
+#   pair discarded, and reads the two bests side by side: `after` slower
+#   than `before` by more than the noise floor, the larger of the two
+#   spreads, is a verdict, exit 1; within it, or faster, exit 0. This is
+#   the one comparison the rule admits, two compilers in one sitting; two
+#   rows of the ledger taken on two days are not one. The seed clock has no
+#   compiler under it and is refused here, and `all` is `check` and `build`.
+# - `record` runs the three clocks as `time` does and appends one row to
+#   the ledger, `docs/measurements/061-the-latency-ledger.md`
+#   (`latency_ledger.hero`), then prints the constants
+#   `tests/harness/suite_latency.hero` pins, which the commit that carries
+#   the row writes there; the net's `latency` suite is red until it does.
+#   Nothing is written where a clock kept no run, or where the ledger as it
+#   stands cannot be read.
+#
+# Exit 2 where `/usr/bin/time` is not on the machine: the clocks are its,
+# and a reading is taken on a machine that has it, macOS or Linux with GNU
+# time installed, never inferred.
+
+use shell
+use strings
+use latency_clock
+use latency_ledger
+use latency_runs
+
+constant DEFAULT_RUNS: i64
+    7
+
+constant USAGE: str
+    "usage: heroes run tests/harness/latency.hero -- time <compiler> [--runs N] [--clock check|seed|build|all]\n       heroes run tests/harness/latency.hero -- compare <before> <after> [--runs N] [--clock check|build|all]\n       heroes run tests/harness/latency.hero -- record <compiler> [--runs N] [--note <text>]"
+
+record Asked
+    word: str
+    names: [str]
+    runs: i64
+    clock: str
+    note: str
+    wrong: str
+
+function refused(why: str) -> Asked
+    return Asked(word: "", names: [], runs: 0, clock: "", note: "", wrong: why)
+
+function plural(n: i64) -> str
+    if n == 1
+        return ""
+    return "s"
+
+# The words after `--`, read as the usage above says; `wrong` holds the
+# refusal where they are not, and is empty where they are.
+function parsed(given: [str]) -> Asked
+    if given.len() == 0
+        return refused("a word is needed: time, compare or record")
+    word = given[0]
+
+    if word != "time" && word != "compare" && word != "record"
+        return refused("no word `" + word + "`: time, compare or record")
+    names: [str] @= []
+    runs: i64 @= DEFAULT_RUNS
+    clock: str @= "all"
+    note: str @= ""
+    i: i64 @= 1
+
+    while i < given.len()
+        flag = given[i]
+
+        if flag == "--runs" || flag == "--clock" || flag == "--note"
+            if i + 1 >= given.len()
+                return refused(flag + " needs a value")
+            value = given[i + 1]
+
+            if flag == "--runs"
+                count = strings.to_number(value)
+
+                if count.is_err() || count.must() < 3
+                    return refused("--runs takes a whole number of at least 3, not `" + value + "`")
+                runs @ count.must()
+            else if flag == "--clock"
+                clock @ value
+            else
+                if strings.contains(text: value, needle: "|")
+                    return refused("a note holds no `|`, which is the table's own")
+                note @ value
+            i @ i + 2
+        else if strings.starts_with(text: flag, prefix: "--")
+            return refused("no flag `" + flag + "`: --runs, --clock or --note")
+        else
+            names @ names.push(flag)
+            i @ i + 1
+
+    wanted: i64 @= 1
+
+    if word == "compare"
+        wanted @ 2
+
+    if names.len() != wanted
+        return refused(
+            word + " takes " + wanted.to_str() + " compiler" + plural(wanted) + ", given " + names.len().to_str()
+        )
+
+    if clock != "all" && clock != "check" && clock != "seed" && clock != "build"
+        return refused("no clock `" + clock + "`: check, seed, build or all")
+
+    if word == "compare" && clock == "seed"
+        return refused("compare has no compiler under the seed clock: check, build or all")
+
+    if word == "record" && clock != "all"
+        return refused("record takes every clock, since a row has a cell for each")
+    return Asked(word: word, names: names, runs: runs, clock: clock, note: note, wrong: "")
+
+function main()
+    asked = parsed(args())
+
+    if asked.wrong != ""
+        print("latency: " + asked.wrong)
+        print(USAGE)
+        exit(code: 2)
+
+    if !shell.exists(latency_runs.TIMER)
+        print(
+            "latency: " + latency_runs.TIMER + " is not on this machine, and the clocks are its: a reading is taken on a machine that has it, macOS or Linux with GNU time installed, never inferred"
+        )
+        exit(code: 2)
+    scratch = "build/harness-latency-" + shell.pid().to_str()
+    made = shell.mkdir_all(scratch)
+
+    if made.is_err()
+        print("latency: cannot make " + scratch)
+        exit(code: 2)
+    code: i64 @= 0
+
+    if asked.word == "time"
+        code @ timing(scratch: scratch, asked: asked)
+    else if asked.word == "compare"
+        code @ comparing(scratch: scratch, asked: asked)
+    else
+        code @ recording(scratch: scratch, asked: asked)
+    _ = shell.remove_tree(scratch).is_err()
+    exit(code: code)
+
+function rule_line(asked: Asked, scratch: str) -> str
+    return "latency: " + asked.runs.to_str() + " runs per clock, the first discarded, a run waiting more than " + latency_clock.seconds_text(latency_clock.WAITING_ALLOWANCE_MS) + " s above its own work discarded; load " + latency_runs.load_now(scratch) + " before"
+
+function clocks_why(got: [latency_runs.Clock]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function judged_why(got: latency_clock.Judged?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function pair_why(got: latency_runs.Pair?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function rows_why(got: [latency_ledger.Row]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# `time`: the clocks named, each run N times and judged.
+function timing(scratch: str, asked: Asked) -> i64
+    print(rule_line(asked: asked, scratch: scratch))
+    clocks = latency_runs.clocks_named(name: asked.clock, compiler: asked.names[0], scratch: scratch)
+
+    if clocks.is_err()
+        print("latency: " + clocks_why(clocks))
+        return 2
+    every: bool @= true
+
+    for clock in clocks.must()
+        got = latency_runs.timed(scratch: scratch, clock: clock, runs: asked.runs)
+
+        if got.is_err()
+            print("latency: " + judged_why(got))
+            return 2
+
+        if !latency_clock.has_best(got.must())
+            every @ false
+
+    print("latency: load " + latency_runs.load_now(scratch) + " after")
+
+    if !every
+        return 2
+    return 0
+
+# `compare`: two compilers alternated on each clock, and the verdict of
+# each clock printed; exit 1 where `after` is slower beyond the floor.
+function comparing(scratch: str, asked: Asked) -> i64
+    print(
+        "latency: " + asked.runs.to_str() + " pairs per clock, before and after alternated, the first pair discarded, a run waiting more than " + latency_clock.seconds_text(latency_clock.WAITING_ALLOWANCE_MS) + " s above its own work discarded; load " + latency_runs.load_now(scratch) + " before"
+    )
+    names: [str] @= [asked.clock]
+
+    if asked.clock == "all"
+        names @ ["check", "build"]
+    slower: bool @= false
+    unjudged: bool @= false
+
+    for name in names
+        before = latency_runs.clocks_named(name: name, compiler: asked.names[0], scratch: scratch)
+        after = latency_runs.clocks_named(name: name, compiler: asked.names[1], scratch: scratch)
+
+        if before.is_err() || after.is_err()
+            print("latency: " + clocks_why(before) + clocks_why(after))
+            return 2
+        got = latency_runs.alternated(
+            scratch: scratch,
+            before: before.must()[0],
+            after: after.must()[0],
+            pairs: asked.runs
+        )
+
+        if got.is_err()
+            print("latency: " + pair_why(got))
+            return 2
+        pair = got.must()
+        print("  " + name + " before: " + latency_clock.summary(pair.before))
+        print("  " + name + " after: " + latency_clock.summary(pair.after))
+        verdict = latency_clock.compared(before: pair.before, after: pair.after)
+        print("  " + name + ": " + verdict.text)
+
+        if verdict.slower
+            slower @ true
+
+        if !latency_clock.has_best(pair.before) || !latency_clock.has_best(pair.after)
+            unjudged @ true
+
+    print("latency: load " + latency_runs.load_now(scratch) + " after")
+
+    if unjudged
+        return 2
+
+    if slower
+        return 1
+    return 0
+
+# `record`: the three clocks, one row appended, the pins printed.
+function recording(scratch: str, asked: Asked) -> i64
+    compiler = asked.names[0]
+    existing = read_file(latency_ledger.LEDGER)
+
+    if existing.is_err()
+        print("latency: cannot read " + latency_ledger.LEDGER + ", so nothing is appended to it")
+        return 2
+    rows = latency_ledger.rows_in(existing.must())
+
+    if rows.is_err()
+        print(
+            "latency: " + latency_ledger.LEDGER + " cannot be read as it stands, so nothing is appended to it: " + rows_why(rows)
+        )
+        return 2
+    load_before = latency_runs.load_now(scratch)
+    print(
+        "latency: recording " + compiler + ", " + asked.runs.to_str() + " runs per clock, the first discarded, a run waiting more than " + latency_clock.seconds_text(latency_clock.WAITING_ALLOWANCE_MS) + " s above its own work discarded; load " + load_before + " before"
+    )
+    clocks = latency_runs.clocks_named(name: "all", compiler: compiler, scratch: scratch)
+
+    if clocks.is_err()
+        print("latency: " + clocks_why(clocks))
+        return 2
+    results: [latency_clock.Judged] @= []
+
+    for clock in clocks.must()
+        got = latency_runs.timed(scratch: scratch, clock: clock, runs: asked.runs)
+
+        if got.is_err()
+            print("latency: " + judged_why(got))
+            return 2
+
+        if !latency_clock.has_best(got.must())
+            print("latency: " + clock.name + " kept no run, so nothing is written")
+            return 2
+        results @ results.push(got.must())
+
+    load_after = latency_runs.load_now(scratch)
+    print("latency: load " + load_after + " after")
+    row = latency_ledger.Row(
+        taken: latency_runs.today(scratch),
+        tree: latency_runs.tree_now(scratch),
+        sources: latency_runs.sources_of(scratch: scratch, compiler: compiler),
+        check_ms: results[0].best_ms,
+        check_spread_ms: results[0].spread_ms,
+        check_kept: latency_clock.kept_cell(results[0]),
+        seed_ms: results[1].best_ms,
+        seed_spread_ms: results[1].spread_ms,
+        seed_kept: latency_clock.kept_cell(results[1]),
+        build_ms: results[2].best_ms,
+        build_spread_ms: results[2].spread_ms,
+        build_kept: latency_clock.kept_cell(results[2]),
+        load: load_before + " then " + load_after,
+        toolchain: latency_runs.toolchain(scratch),
+        note: asked.note
+    )
+    line = latency_ledger.rendered(row)
+    text = existing.must()
+    glue: str @= ""
+
+    if !strings.ends_with(text: text, suffix: "\n")
+        glue @ "\n"
+    written = write_file(path: latency_ledger.LEDGER, text: text + glue + line + "\n")
+
+    if written.is_err()
+        print("latency: cannot write " + latency_ledger.LEDGER)
+        return 2
+    print("latency: appended to " + latency_ledger.LEDGER + ":")
+    print(line)
+    print("latency: the pins for tests/harness/suite_latency.hero, written in the commit that carries the row:")
+    print("    LEDGER_ROWS " + (rows.must().len() + 1).to_str())
+    print("    NEWEST_TAKEN \"" + row.taken + "\"")
+    print("    NEWEST_SOURCES \"" + row.sources + "\"")
+    print("    CHECK_MS " + row.check_ms.to_str())
+    print("    SEED_MS " + row.seed_ms.to_str())
+    print("    BUILD_MS " + row.build_ms.to_str())
+    return 0
+
+test "the words are read as the usage says, and every other spelling is refused with its reason"
+    got = parsed(["time", "./heroes", "--runs", "5", "--clock", "check"])
+    assert got.wrong == ""
+    assert got.word == "time"
+    assert got.names == ["./heroes"]
+    assert got.runs == 5
+    assert got.clock == "check"
+    two = parsed(["compare", "./a", "./b"])
+    assert two.wrong == ""
+    assert two.names == ["./a", "./b"]
+    assert two.runs == DEFAULT_RUNS
+    assert two.clock == "all"
+    noted = parsed(["record", "./heroes", "--note", "the opening"])
+    assert noted.wrong == ""
+    assert noted.note == "the opening"
+    assert parsed([]).wrong == "a word is needed: time, compare or record"
+    assert parsed(["timing", "./heroes"]).wrong == "no word `timing`: time, compare or record"
+    assert parsed(["time"]).wrong == "time takes 1 compiler, given 0"
+    assert parsed(["compare", "./a"]).wrong == "compare takes 2 compilers, given 1"
+    assert parsed(["time", "./heroes", "--runs"]).wrong == "--runs needs a value"
+    assert parsed(["time", "./heroes", "--runs", "2"]).wrong == "--runs takes a whole number of at least 3, not `2`"
+    assert parsed(["time", "./heroes", "--runs", "many"]).wrong == "--runs takes a whole number of at least 3, not `many`"
+    assert parsed(["time", "./heroes", "--clock", "seeds"]).wrong == "no clock `seeds`: check, seed, build or all"
+    assert parsed(["time", "./heroes", "--slow"]).wrong == "no flag `--slow`: --runs, --clock or --note"
+    assert parsed(["compare", "./a", "./b", "--clock", "seed"]).wrong == "compare has no compiler under the seed clock: check, build or all"
+    assert parsed(["record", "./heroes", "--clock", "check"]).wrong == "record takes every clock, since a row has a cell for each"
+    assert parsed(["record", "./heroes", "--note", "a | b"]).wrong == "a note holds no `|`, which is the table's own"

@@ -115,9 +115,10 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `runtime/**` | **`runtime`**, plus the form that holds the change's cases (`run` for a program that runs) and the platforms (`.claude/rules/platforms.md`) |
 | `docs/**`, `.claude/**` | `records` `unseen` |
 | `CLAUDE.md`, `ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |
+| `docs/measurements/061-the-latency-ledger.md`, `tests/harness/suite_latency.hero` | **`latency`** (the newest row and the count held to the suite's pins, no clock run; § The latency ceiling's instrument), `records` `unseen` for the ledger, plus what `tests/harness/**` gets for the suite |
 | `editors/**` | `spec` (the editor's grammar, held to the language's words), and **the site's build** for the grammar's number and character rules, which the site reads since 2026-10-24 |
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets; their temporary folders, made and removed by the tests themselves in the system's temporary directory, are the author's one exception (2026-10-09) to CLAUDE.md § Hard stops' *no file outside this repository's root*, since two tests ask how a file outside every tree is judged |
-| `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, which runs the issue program's own, `tests/harness/issues.hero`'s, inside it since defect 2064, and the thesis instrument's own, `tests/harness/thesis.hero`'s, since M-thesis-harness (2026-10-20), and `canonical`, plus what `tests/**` gets |
+| `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, which runs the issue program's own, `tests/harness/issues.hero`'s, inside it since defect 2064, and the thesis instrument's own, `tests/harness/thesis.hero`'s, since M-thesis-harness (2026-10-20), the generator's own, `tests/harness/generate.hero`'s, since M-generated-programs (2026-10-28), and the latency instrument's own, `tests/harness/latency.hero`'s, since M-latency-ceiling (2026-10-30), and `canonical`, plus what `tests/**` gets |
 | `tests/thesis/**` (the assistant's task suite, `tests/harness/thesis.hero`'s input) | **the net's own tests** (the instrument's end-to-end tests read the suite), `-- dry tests/thesis` in the strict and the control arm (every reference passes every case and every hand mutant ends as its opening lines say), `records` for its `.md`, `unseen`, plus what `tests/**` gets; a held-out archive under it is text the instrument alone opens |
 | a file the site's build reads, every path in `.github/workflows/deploy-site.yml`'s `paths:` (the build holds that list to its reads since 2026-10-24, `site/src/lib/triggers.ts`; until then this cell named the files `claims.ts` lists at its top), the lexer's own files among them since the build holds the site's colouring to `heroes lex` (`site/src/lib/lexed.ts`), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push, and where `site/package*.json` moved, also under the deploy's own Node and npm (below the table, 2026-10-26); and `spec` for `site/README.md`, whose headings a `§` citation names |
 
@@ -1049,3 +1050,43 @@ So, until defect 425 is repaired and after:
   time and the bytes, as it names a paid run's budget;
 - **after a timeout the built binary is looked for** (`pgrep -f build/`) and
   stopped, before the run's verdict is written down.
+
+## The latency ceiling's instrument, and the one comparison that declares a breach
+
+Added 2026-10-30, M-latency-ceiling step 1. CLAUDE.md § Verification's *never
+slow the compiler down* has an instrument: `heroes run
+tests/harness/latency.hero -- time|compare|record ...`, a program of the
+harness (a verb of `heroes` would be one two invocations compose to, § 10's
+stopping rule), run from the repository's root with the machine still and
+nothing else running. It times three clocks under `/usr/bin/time -p`, `heroes
+check selfhost/main.hero`, clang on the seed and `heroes build
+selfhost/main.hero` with the cache warm, N runs each, the first discarded, a
+run whose `real` stands more than 0.1 s above `user` plus `sys` discarded as
+waiting, the best of the rest the number and its spread the noise
+(`tests/harness/latency_clock.hero`, every rule of it under a test that needs
+no still machine). Measured at the opening, 2026-10-30, by hand and then by
+the instrument: `heroes check` 6.90 s, clang on the seed 8.29 s, the warm
+build 37.71 s, the frontend 6.9 of the loop's 37.7 (the milestone's page).
+
+**Three words.** `time <compiler>` prints every run, each clock's best and
+spread. `record <compiler>` does the same over the three clocks and appends
+one row to `docs/measurements/061-the-latency-ledger.md`, a dated record, then
+prints the constants `tests/harness/suite_latency.hero` pins, which the commit
+carrying the row writes there: the net's `latency` suite holds the newest row
+and the count to those pins on every run and times nothing, so it is free
+beside every other suite. `compare <before> <after>` alternates two compilers
+on each clock in one sitting, the first pair discarded, and reads the two
+bests against the noise floor, the larger of the two spreads: `after` slower
+beyond the floor is the verdict, exit 1, and **the only comparison the rule
+admits as a breach**; two rows of the ledger are two dates, and Goose's
+benchmark notes (the milestone's page, read 2026-10-25) say why that is not a
+measurement. A task that asks which commit of a batch cost a latency (2279)
+is a bisect whose question at each step is `compare`.
+
+**When.** `record` at the opening of M-latency-ceiling and at every milestone
+close from its own on, the bullet `/step` § 5's checklist gains at the
+milestone's third step with the ceiling's number; `compare` at a close
+against the previous tag's compiler rebuilt, where the ledger's row moved
+beyond its own spread. Where `/usr/bin/time` is not on the machine the
+instrument exits 2 and says so: a reading is taken on a machine that has it,
+never inferred (CLAUDE.md § RUN IT).

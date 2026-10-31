@@ -1,0 +1,215 @@
+# THE CLOCKS, RUN (M-latency-ceiling, 2026-10-30).
+#
+# Three clocks CLAUDE.md § Verification names and one issue 715 is about,
+# each a command line under `/usr/bin/time -p`, spawned by `shell.run` from
+# the repository's root with the machine still: `check`, `heroes check
+# selfhost/main.hero`; `seed`, clang on `seed/heroes.c`; `build`, `heroes
+# build selfhost/main.hero` with the cache warm. What each run's three
+# lines come to is `latency_clock.hero`'s to say; this module spawns, prints
+# every run as it ends so that nothing is hidden behind a best, and reads
+# the machine for the ledger's other cells: the load, the tree, the
+# compiler's sources key, the toolchain and the day.
+#
+# Every reading of the machine is a spawn that may not start, on a platform
+# without the tool: `unread` or `unknown` is then the cell, never a guess.
+
+use shell
+use strings
+use latency_clock
+
+constant TIMER: str
+    "/usr/bin/time"
+
+record Clock
+    name: str
+    words: [str]
+
+function check_clock(compiler: str) -> Clock
+    return Clock(name: "check", words: [TIMER, "-p", compiler, "check", "selfhost/main.hero"])
+
+function seed_clock(scratch: str) -> Clock
+    return Clock(
+        name: "seed",
+        words: [TIMER, "-p", "clang", "-I", "runtime", "seed/heroes.c", "runtime/runtime.c", "-o", scratch + "/heroes-from-seed-timed"]
+    )
+
+function build_clock(compiler: str, scratch: str) -> Clock
+    return Clock(
+        name: "build",
+        words: [TIMER, "-p", compiler, "build", "selfhost/main.hero", "-o", scratch + "/heroes-timed"]
+    )
+
+# The clocks a name selects: one of the three, or `all`.
+function clocks_named(name: str, compiler: str, scratch: str) -> [Clock]?
+    if name == "check"
+        return ok([check_clock(compiler)])
+
+    if name == "seed"
+        return ok([seed_clock(scratch)])
+
+    if name == "build"
+        return ok([build_clock(compiler: compiler, scratch: scratch)])
+
+    if name == "all"
+        return ok([check_clock(compiler), seed_clock(scratch), build_clock(compiler: compiler, scratch: scratch)])
+    return fail(code: "no_such_clock", msg: "no clock named `" + name + "`: check, seed, build or all")
+
+# One run of a clock: the command under `time -p`, which must exit 0, and
+# the reading its stderr holds.
+function timed_once(scratch: str, clock: Clock) -> latency_clock.Reading?
+    ran = shell.run(scratch: scratch, program: TIMER, words: clock.words)?
+
+    if ran.code != 0
+        return fail(
+            code: "clock_failed",
+            msg: clock.name + ": " + clock.words.join(" ") + " exited " + ran.code.to_str() + shell.said_on_stderr(ran.err)
+        )
+    return latency_clock.reading_in(ran.err)
+
+function run_line(clock: str, index: i64, count: i64, one: latency_clock.Reading) -> str
+    return "  " + clock + " run " + index.to_str() + " of " + count.to_str() + ": real " + latency_clock.seconds_text(one.real_ms) + " user " + latency_clock.seconds_text(one.user_ms) + " sys " + latency_clock.seconds_text(one.sys_ms)
+
+# `runs` runs of one clock, each printed as it ends, then the rule applied
+# and its verdict printed: the reasons of the runs discarded, the best, the
+# kept and the spread.
+function timed(scratch: str, clock: Clock, runs: i64) -> latency_clock.Judged?
+    readings: [latency_clock.Reading] @= []
+    i: i64 @= 0
+
+    while i < runs
+        one = timed_once(scratch: scratch, clock: clock)?
+        print(run_line(clock: clock.name, index: i + 1, count: runs, one: one))
+        readings @ readings.push(one)
+        i @ i + 1
+
+    j = latency_clock.judged(readings)
+    k: i64 @= 0
+
+    while k < j.reasons.len()
+        if j.reasons[k] != "kept"
+            print("  " + clock.name + " run " + (k + 1).to_str() + " " + j.reasons[k])
+        k @ k + 1
+
+    print("  " + clock.name + ": " + latency_clock.summary(j))
+    return ok(j)
+
+# Two clocks alternated, `pairs` times: the first of each is the discarded
+# first, and the rest are read side by side in one sitting, which is the
+# only comparison the rule admits.
+record Pair
+    before: latency_clock.Judged
+    after: latency_clock.Judged
+
+function alternated(scratch: str, before: Clock, after: Clock, pairs: i64) -> Pair?
+    firsts: [latency_clock.Reading] @= []
+    seconds: [latency_clock.Reading] @= []
+    i: i64 @= 0
+
+    while i < pairs
+        one = timed_once(scratch: scratch, clock: before)?
+        print(run_line(clock: before.name + " before", index: i + 1, count: pairs, one: one))
+        firsts @ firsts.push(one)
+        two = timed_once(scratch: scratch, clock: after)?
+        print(run_line(clock: after.name + " after", index: i + 1, count: pairs, one: two))
+        seconds @ seconds.push(two)
+        i @ i + 1
+
+    return ok(Pair(before: latency_clock.judged(firsts), after: latency_clock.judged(seconds)))
+
+# What a program printed, trimmed, where it started and exited 0.
+function said(scratch: str, program: str, words: [str]) -> str?
+    ran = shell.attempted(scratch: scratch, program: program, words: words)?
+
+    if !ran.started || ran.code != 0
+        return fail(code: "unsaid", msg: program + " did not answer")
+    return ok(strings.trimmed(ran.out))
+
+# The first number of a load average line, the braces macOS writes around
+# the three left out, as words.
+function load_in(text: str) -> str
+    for word in strings.words(text)
+        bare = strings.without_prefix(text: word, prefix: "{")
+
+        if bare.len() > 0 && bare != "}"
+            return bare
+
+    return "unread"
+
+# The one-minute load average: `/proc/loadavg` where the kernel writes it,
+# else `sysctl -n vm.loadavg`, else `unread`.
+function load_now(scratch: str) -> str
+    linux = read_file("/proc/loadavg")
+
+    if !linux.is_err()
+        return load_in(linux.must())
+    mac = said(scratch: scratch, program: "sysctl", words: ["sysctl", "-n", "vm.loadavg"])
+
+    if mac.is_err()
+        return "unread"
+    return load_in(mac.must())
+
+function tree_now(scratch: str) -> str
+    return said(scratch: scratch, program: "git", words: ["git", "rev-parse", "--short=9", "HEAD"]).default("unknown")
+
+# The second line of the compiler's `--version`, `sources <key>`, the key
+# of what it was compiled from (panel 222), or `unknown`.
+function sources_of(scratch: str, compiler: str) -> str
+    got = said(scratch: scratch, program: compiler, words: [compiler, "--version"])
+
+    if got.is_err()
+        return "unknown"
+    lines = strings.lines(got.must())
+
+    if lines.len() < 2
+        return "unknown"
+    words = strings.words(lines[1])
+
+    if words.len() != 2 || words[0] != "sources"
+        return "unknown"
+    return words[1]
+
+# clang's first line, the operating system and the machine, as the ledger
+# names them.
+function toolchain(scratch: str) -> str
+    clang = said(scratch: scratch, program: "clang", words: ["clang", "--version"])
+    compiler: str @= "clang unknown"
+
+    if !clang.is_err()
+        first = strings.lines(clang.must())
+
+        if first.len() > 0
+            compiler @ strings.trimmed(first[0])
+    os: str @= "unknown"
+    mac = said(scratch: scratch, program: "sw_vers", words: ["sw_vers", "-productVersion"])
+
+    if !mac.is_err()
+        os @ "macOS " + mac.must()
+    else
+        os @ said(scratch: scratch, program: "uname", words: ["uname", "-sr"]).default("unknown")
+    model = said(scratch: scratch, program: "sysctl", words: ["sysctl", "-n", "hw.model"])
+    machine: str @= "unknown"
+
+    if !model.is_err()
+        machine @ model.must()
+    else
+        machine @ said(scratch: scratch, program: "uname", words: ["uname", "-m"]).default("unknown")
+    return compiler + ", " + os + ", " + machine
+
+function today(scratch: str) -> str
+    return said(scratch: scratch, program: "date", words: ["date", "+%Y-%m-%d"]).default("unknown")
+
+test "the three clocks run the commands the rule names, under time -p, from the root"
+    assert check_clock("./heroes").words == [TIMER, "-p", "./heroes", "check", "selfhost/main.hero"]
+    assert seed_clock("build/x").words == [TIMER, "-p", "clang", "-I", "runtime", "seed/heroes.c", "runtime/runtime.c", "-o", "build/x/heroes-from-seed-timed"]
+    assert build_clock(compiler: "./heroes", scratch: "build/x").words == [TIMER, "-p", "./heroes", "build", "selfhost/main.hero", "-o", "build/x/heroes-timed"]
+    assert clocks_named(name: "all", compiler: "./heroes", scratch: "build/x").must().len() == 3
+    assert clocks_named(name: "seed", compiler: "./heroes", scratch: "build/x").must()[0].name == "seed"
+    assert clocks_named(name: "seeds", compiler: "./heroes", scratch: "build/x").is_err()
+
+test "a load average is its first number, with or without the braces macOS writes"
+    assert load_in("{ 1.81 1.73 1.93 }\n") == "1.81"
+    assert load_in("0.52 0.58 0.59 1/612 12345\n") == "0.52"
+    assert load_in("") == "unread"
+
+test "a run's line says the clock, the index and the three numbers"
+    assert run_line(clock: "check", index: 2, count: 7, one: latency_clock.Reading(real_ms: 6900, user_ms: 6850, sys_ms: 30)) == "  check run 2 of 7: real 6.90 user 6.85 sys 0.03"

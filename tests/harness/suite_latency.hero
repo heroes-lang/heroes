@@ -1,0 +1,225 @@
+# THE LATENCY LEDGER, HELD TO ITS PINS (M-latency-ceiling, 2026-10-30).
+#
+# The newest row of `docs/measurements/061-the-latency-ledger.md`, and the
+# count of its rows, pinned here and compared on every run of the net: a
+# row the instrument appended and nobody pinned, a pin moved with no row,
+# or a table this reader cannot parse is red. Nothing here runs a clock, so
+# the suite is free beside every other (CLAUDE.md § Verification: a clock
+# is exclusive, a verdict is not), and it runs the same on a machine that
+# has no `/usr/bin/time`.
+#
+# WHY A PIN AND NOT THE FILE ALONE. The number lands in the commit that
+# appended the row, where a reader can audit it beside the diff of the tree
+# that moved it; a ledger nothing holds a copy to is a file whose newest row
+# nobody is obliged to read, which is the shape `docs/measurements/010` took
+# for the spec's count (panel 086 R2). The ceiling itself, the number the
+# newest row may not pass without a decision, is M-latency-ceiling's third
+# step and enters here with it.
+
+use report
+use strings
+use latency_clock
+use latency_ledger
+use latency_runs
+
+constant LEDGER_ROWS: i64
+    1
+
+constant NEWEST_TAKEN: str
+    "2026-10-30"
+
+constant NEWEST_SOURCES: str
+    "23825438285ee301"
+
+constant CHECK_MS: i64
+    6810
+
+constant SEED_MS: i64
+    8180
+
+constant BUILD_MS: i64
+    37250
+
+constant WRITE_THEM: str
+    "\n  write the newest row's values into tests/harness/suite_latency.hero in the commit that carries the row, so the number lands where a reader can audit it"
+
+function run_all() -> report.Report?
+    r: report.Report @= report.empty()
+    text = read_file(latency_ledger.LEDGER)
+
+    if text.is_err()
+        return fail(code: "unreadable", msg: "cannot read " + latency_ledger.LEDGER)
+    described(@r, text: text.must())
+    rows = latency_ledger.rows_in(text.must())
+
+    if rows.is_err()
+        report.keep_failure(@r, label: "latency/shape", detail: "  " + latency_ledger.LEDGER + ": " + shape_why(rows))
+        return ok(r)
+    report.keep_pass(@r)
+    counted(@r, rows: rows.must())
+    pinned(@r, rows: rows.must())
+    return ok(r)
+
+function shape_why(got: [latency_ledger.Row]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# The ledger's prose says what the clocks time, and the instrument's own
+# words are the truth of that: a clock reworded in `latency_runs.hero` with
+# the prose left behind is what this catches, a premise about the world
+# expiring in silence (`.claude/rules/module-shape.md`). The document is read
+# with its lines joined, since a command may wrap.
+function described(@r: report.Report, text: str)
+    clocks = latency_runs.clocks_named(name: "all", compiler: "heroes", scratch: "build/x")
+
+    if clocks.is_err()
+        report.keep_failure(@r, label: "latency/clocks", detail: "  the instrument names no clocks")
+        return
+    joined = strings.lines(text).join(" ")
+    missing: [str] @= []
+
+    for clock in clocks.must()
+        line = command_of(clock)
+
+        if !strings.contains(text: joined, needle: line)
+            missing @ missing.push("    " + clock.name + ": " + line)
+
+    if missing.len() == 0
+        report.keep_pass(@r)
+    else
+        report.keep_failure(
+            @r,
+            label: "latency/clocks",
+            detail: "  the ledger's prose does not name the command the instrument times:\n" + missing.join("\n") + "\n  write it in " + latency_ledger.LEDGER + " as tests/harness/latency_runs.hero spells it, or the instrument as the prose does"
+        )
+
+# The command under a clock as prose quotes it: the words after `time -p`,
+# up to an `-o` and its path, which is the run's own.
+function command_of(clock: latency_runs.Clock) -> str
+    words: [str] @= []
+    i: i64 @= 2
+
+    while i < clock.words.len() && clock.words[i] != "-o"
+        words @ words.push(clock.words[i])
+        i @ i + 1
+
+    return words.join(" ")
+
+function counted(@r: report.Report, rows: [latency_ledger.Row])
+    if rows.len() == LEDGER_ROWS
+        report.keep_pass(@r)
+    else
+        report.keep_failure(
+            @r,
+            label: "latency/rows",
+            detail: "  " + report.mismatch(what: "rows of " + latency_ledger.LEDGER, expected: LEDGER_ROWS.to_str(), actual: rows.len().to_str()) + WRITE_THEM
+        )
+
+function pinned(@r: report.Report, rows: [latency_ledger.Row])
+    got = latency_ledger.newest(rows)
+
+    if got.is_err()
+        report.keep_failure(
+            @r,
+            label: "latency/newest",
+            detail: "  the ledger holds no row to hold the pins to" + WRITE_THEM
+        )
+        return
+    row = got.must()
+    moved: [str] @= []
+
+    if row.taken != NEWEST_TAKEN
+        moved @ moved.push("    taken: pinned " + NEWEST_TAKEN + ", the newest row says " + row.taken)
+
+    if row.sources != NEWEST_SOURCES
+        moved @ moved.push("    sources: pinned " + NEWEST_SOURCES + ", the newest row says " + row.sources)
+
+    if row.check_ms != CHECK_MS
+        moved @ moved.push(
+            "    check: pinned " + latency_clock.seconds_text(CHECK_MS) + " s, the newest row says " + latency_clock.seconds_text(row.check_ms)
+        )
+
+    if row.seed_ms != SEED_MS
+        moved @ moved.push(
+            "    seed: pinned " + latency_clock.seconds_text(SEED_MS) + " s, the newest row says " + latency_clock.seconds_text(row.seed_ms)
+        )
+
+    if row.build_ms != BUILD_MS
+        moved @ moved.push(
+            "    build: pinned " + latency_clock.seconds_text(BUILD_MS) + " s, the newest row says " + latency_clock.seconds_text(row.build_ms)
+        )
+
+    if moved.len() == 0
+        report.keep_pass(@r)
+    else
+        report.keep_failure(@r, label: "latency/newest", detail: moved.join("\n") + WRITE_THEM)
+
+test "the pins match the newest row as a reader finds it, and a moved row is named field by field"
+    shape = latency_ledger.example()
+    row = latency_ledger.Row(
+        taken: NEWEST_TAKEN,
+        tree: shape.tree,
+        sources: NEWEST_SOURCES,
+        check_ms: CHECK_MS,
+        check_spread_ms: shape.check_spread_ms,
+        check_kept: shape.check_kept,
+        seed_ms: SEED_MS,
+        seed_spread_ms: shape.seed_spread_ms,
+        seed_kept: shape.seed_kept,
+        build_ms: BUILD_MS,
+        build_spread_ms: shape.build_spread_ms,
+        build_kept: shape.build_kept,
+        load: shape.load,
+        toolchain: shape.toolchain,
+        note: shape.note
+    )
+    r: report.Report @= report.empty()
+    pinned(@r, rows: [row])
+    assert r.passed == 1
+    assert r.failed == 0
+    moved = latency_ledger.Row(
+        taken: "2099-01-01",
+        tree: row.tree,
+        sources: row.sources,
+        check_ms: CHECK_MS + 200,
+        check_spread_ms: row.check_spread_ms,
+        check_kept: row.check_kept,
+        seed_ms: row.seed_ms,
+        seed_spread_ms: row.seed_spread_ms,
+        seed_kept: row.seed_kept,
+        build_ms: row.build_ms,
+        build_spread_ms: row.build_spread_ms,
+        build_kept: row.build_kept,
+        load: row.load,
+        toolchain: row.toolchain,
+        note: row.note
+    )
+    told: report.Report @= report.empty()
+    pinned(@told, rows: [row, moved])
+    assert told.failed == 1
+    assert told.failures[0] == "FAIL latency/newest\n    taken: pinned " + NEWEST_TAKEN + ", the newest row says 2099-01-01\n    check: pinned " + latency_clock.seconds_text(CHECK_MS) + " s, the newest row says " + latency_clock.seconds_text(CHECK_MS + 200) + WRITE_THEM
+    none: report.Report @= report.empty()
+    pinned(@none, rows: [])
+    assert none.failed == 1
+    counted(@none, rows: [])
+    assert none.failed == 2
+
+test "the ledger's prose is held to the commands the instrument times, read across a wrapped line"
+    assert command_of(latency_runs.check_clock("heroes")) == "heroes check selfhost/main.hero"
+    assert command_of(latency_runs.seed_clock("build/x")) == "clang -I runtime seed/heroes.c runtime/runtime.c"
+    assert command_of(latency_runs.build_clock(compiler: "heroes", scratch: "build/x")) == "heroes build selfhost/main.hero"
+    r: report.Report @= report.empty()
+    described(
+        @r,
+        text: "the best of `heroes check\nselfhost/main.hero`, of `clang -I runtime seed/heroes.c runtime/runtime.c` and of `heroes build selfhost/main.hero`"
+    )
+    assert r.passed == 1
+    assert r.failed == 0
+    told: report.Report @= report.empty()
+    described(@told, text: "the best of `heroes check selfhost/main.hero` alone")
+    assert told.failed == 1
+    assert strings.contains(
+        text: told.failures[0],
+        needle: "    seed: clang -I runtime seed/heroes.c runtime/runtime.c\n    build: heroes build selfhost/main.hero\n"
+    )
