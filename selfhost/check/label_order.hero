@@ -27,6 +27,7 @@ use check/state
 use check/labels
 use check/callee_text
 use check/order_fix
+use check/labels_in_place
 
 # The values of a call whose labels name one another's positions, by index in
 # the order written, and the position each one's label names.
@@ -184,6 +185,9 @@ function told_builtin(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [a
 # The reports the order explains leave the list and ride inside the one
 # message, which takes the first one's place.
 function told(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], marks: [bool], given: [ast.Arg], from: i64, said: i64)
+    # Asked first of the bytes (`check/labels_in_place.hero`, task 2279).
+    if !labels_in_place.any_elsewhere(s.text, given: given, names: names, from: from)
+        return
     order = order_of(written: labels_at(s, given), names: names, from: from)
 
     if order.moved.len() == 0
@@ -374,3 +378,17 @@ test "labels that name a position whose own value stands there are no order"
     assert open.moved.len() == 0
     assert order_of(written: ["a", "b"], names: ["a", "b"], from: 0).moved.len() == 0
     assert order_of(written: ["", ""], names: ["a", "b"], from: 0).moved.len() == 0
+
+test "the question asked first is order_of's own condition, so it agrees with what order_of finds (task 2279)"
+    s = source.new_source(name: "t.hero", text: "f(b: 1, a: 2)\n")
+    b = token.Span(start: 2, end: 3)
+    a_label = token.Span(start: 8, end: 9)
+    swapped = [ast.Arg(name: ok(b), mutable: false, value: 0), ast.Arg(name: ok(a_label), mutable: false, value: 1)]
+    right = [ast.Arg(name: ok(a_label), mutable: false, value: 0), ast.Arg(name: ok(b), mutable: false, value: 1)]
+    bare = [ast.Arg(name: fail(code: "unlabelled", msg: "no label"), mutable: false, value: 0)]
+    assert labels_in_place.any_elsewhere(s.text, given: swapped, names: ["a", "b"], from: 0)
+    assert order_of(written: labels_at(s, swapped), names: ["a", "b"], from: 0).moved == [0, 1]
+    assert !labels_in_place.any_elsewhere(s.text, given: right, names: ["a", "b"], from: 0)
+    assert order_of(written: labels_at(s, right), names: ["a", "b"], from: 0).moved.len() == 0
+    assert !labels_in_place.any_elsewhere(s.text, given: bare, names: ["a", "b"], from: 0)
+    assert order_of(written: labels_at(s, bare), names: ["a", "b"], from: 0).moved.len() == 0

@@ -1,0 +1,148 @@
+# What a call's written labels are asked before any rule about them pays
+# anything (M-latency-ceiling, task 2279, 2026-10-31): whether one stands
+# somewhere other than its name's position, whether all stand at theirs,
+# whether any is written at all. Each is asked of the bytes where the labels
+# and the names are written, and allocates nothing.
+#
+# WHY A MODULE OF ITS OWN. The label rules (`check/labels.hero`,
+# `check/label_order.hero`, `check/field_labels.hero`) run at every call and
+# every construction of a program, and on a program written right they find
+# nothing, which is nearly every call: defect 2261's order rule built each
+# call's names, its labels and a map of positions to learn that, and cost
+# `heroes check selfhost/main.hero` 0.15 s of 6.85, 2.2 % in nine alternated
+# pairs (bisected with `tests/harness/latency.hero`). The walk
+# (`check/walk.hero`) asks here first, with three small arguments, so a call
+# written right copies no tree into a rule that would say nothing; a rule
+# keeps its own question where it is reached otherwise. Labels are named
+# arguments, design.md §4.9 and spec § 9.
+#
+# `text` is the whole program's, every file joined (`source.Source`'s), so a
+# parameter's span and a label's index one text; it is handed alone rather
+# than the record that holds it, which the emitted C copies whole.
+
+use ast
+use token
+
+# Whether a written label differs from the name at its position: the one
+# shape in which `order_of` can find a value moved, asked of the bytes where
+# they stand. Every call of a program passes through the rule, and one whose
+# labels are right, or absent, is nearly every call: building its names, its
+# labels and a map of positions only to find nothing moved cost `heroes check
+# selfhost/main.hero` 0.15 s of 6.85, 2.2 %, in nine alternated pairs (task
+# 2279, bisected to this file's defect 2261 with `tests/harness/latency.hero`
+# on 2026-10-31). So the rule asks this first, and allocates nothing for a
+# call that answers no.
+function any_elsewhere(text: str, given: [ast.Arg], names: [str], from: i64) -> bool
+    i: i64 @= 0
+
+    for arg in given
+        if !arg.name.is_err() && i + from < names.len() && !written_as(text: text, label: arg.name.must(), name: names[i + from])
+            return true
+        i @ i + 1
+
+    return false
+
+# The same question over a declared function's parameters, each name read
+# where it is written rather than copied.
+function any_param_elsewhere(text: str, given: [ast.Arg], params: [ast.Param], from: i64) -> bool
+    i: i64 @= 0
+
+    for arg in given
+        if !arg.name.is_err() && i + from < params.len() && !same_text(text, one: arg.name.must(), two: params[i + from].name)
+            return true
+        i @ i + 1
+
+    return false
+
+function written_as(text: str, label: token.Span, name: str) -> bool
+    if label.end - label.start != name.len()
+        return false
+    i: i64 @= 0
+
+    while i < name.len()
+        if text[label.start + i] != name[i]
+            return false
+        i @ i + 1
+
+    return true
+
+function same_text(text: str, one: token.Span, two: token.Span) -> bool
+    if one.end - one.start != two.end - two.start
+        return false
+    i: i64 @= 0
+
+    while i < one.end - one.start
+        if text[one.start + i] != text[two.start + i]
+            return false
+        i @ i + 1
+
+    return true
+
+function none_written(given: [ast.Arg]) -> bool
+    for arg in given
+        if !arg.name.is_err()
+            return false
+
+    return true
+
+# Whether every value is labelled with the field at its position: the one
+# shape in which `field_labels.told_fields` tells nothing, no label missing,
+# none wrong and no order, so a construction written right pays no list of
+# labels, no copied label and no call that copies the tree.
+function all_in_place(text: str, given: [ast.Arg], names: [str]) -> bool
+    i: i64 @= 0
+
+    for arg in given
+        if arg.name.is_err() || i >= names.len() || !written_as(text: text, label: arg.name.must(), name: names[i])
+            return false
+        i @ i + 1
+
+    return true
+
+test "a label is read where it is written, against a name or against another span"
+    s = "f(b: 1, a: 2)\n"
+    b = token.Span(start: 2, end: 3)
+    a_label = token.Span(start: 8, end: 9)
+    assert written_as(text: s, label: b, name: "b")
+    assert !written_as(text: s, label: b, name: "bb")
+    assert !written_as(text: s, label: b, name: "a")
+    assert same_text(s, one: b, two: token.Span(start: 2, end: 3))
+    assert !same_text(s, one: b, two: a_label)
+    assert !same_text(s, one: b, two: token.Span(start: 2, end: 4))
+
+test "a call whose labels stand where their names are, or that writes none, is asked nothing more"
+    s = "f(b: 1, a: 2)\n"
+    b = token.Span(start: 2, end: 3)
+    a_label = token.Span(start: 8, end: 9)
+    swapped = [ast.Arg(name: ok(b), mutable: false, value: 0), ast.Arg(name: ok(a_label), mutable: false, value: 1)]
+    right = [ast.Arg(name: ok(a_label), mutable: false, value: 0), ast.Arg(name: ok(b), mutable: false, value: 1)]
+    bare = [ast.Arg(name: fail(code: "unlabelled", msg: "no label"), mutable: false, value: 0)]
+    assert any_elsewhere(s, given: swapped, names: ["a", "b"], from: 0)
+    assert !any_elsewhere(s, given: right, names: ["a", "b"], from: 0)
+    assert !any_elsewhere(s, given: bare, names: ["a", "b"], from: 0)
+    assert none_written(bare)
+    assert !none_written(right)
+
+    # Behind a receiver the labels start at the second position, and a label
+    # past the positions is no question of these rules.
+    assert !any_elsewhere(s, given: right, names: ["", "a", "b"], from: 1)
+    assert any_elsewhere(s, given: right, names: ["", "b", "a"], from: 1)
+    assert !any_elsewhere(s, given: right, names: ["a"], from: 0)
+
+test "a construction whose every label is its field's, at its place, is asked nothing more"
+    s = "P(x: 1, y: 2)\n"
+    x = token.Span(start: 2, end: 3)
+    y = token.Span(start: 8, end: 9)
+    right = [ast.Arg(name: ok(x), mutable: false, value: 0), ast.Arg(name: ok(y), mutable: false, value: 1)]
+    swapped = [ast.Arg(name: ok(y), mutable: false, value: 0), ast.Arg(name: ok(x), mutable: false, value: 1)]
+    bare = [
+        ast.Arg(name: fail(code: "unlabelled", msg: "no label"), mutable: false, value: 0)
+        ast.Arg(name: ok(y), mutable: false, value: 1)
+    ]
+    assert all_in_place(s, given: right, names: ["x", "y"])
+    assert !all_in_place(s, given: swapped, names: ["x", "y"])
+    assert !all_in_place(s, given: bare, names: ["x", "y"])
+    assert !all_in_place(s, given: right, names: ["x"])
+    none: [ast.Arg] = []
+    empty: [str] = []
+    assert all_in_place(s, given: none, names: empty)

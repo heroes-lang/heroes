@@ -58,6 +58,7 @@ use check/join
 use check/builtins
 use check/labels
 use check/label_order
+use check/labels_in_place
 use check/field_labels
 use check/builtin_args
 use check/group_fields
@@ -1268,7 +1269,9 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 
     if counted
         return state.error_ty_of(c)
-    label_order.told_builtin(@c, a, s, decls, name, collected, given, !receiver.is_err(), said: before)
+
+    if !labels_in_place.none_written(given)
+        label_order.told_builtin(@c, a, s, decls, name, collected, given, !receiver.is_err(), said: before)
 
     # ok and fail are not in the built-in table: they are ⇐-only and live
     # with the constructions, so reaching them here means they were
@@ -1374,7 +1377,8 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                     )
                 index @ index + 1
 
-            label_order.told_value(@c, a, s, decls, callee, names, params, given, from: offset, said: before)
+            if !labels_in_place.none_written(given) && labels_in_place.any_elsewhere(s.text, given: given, names: names, from: offset)
+                label_order.told_value(@c, a, s, decls, callee, names, params, given, from: offset, said: before)
             return f.result
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
             got = state.show(c, s, decls, callee_ty)
@@ -1703,7 +1707,22 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
             given_width.after_call(@c, a, s, decls, call: call, given: given, from: said)
             exit_code.after_call(@c, a, s, decls, call: call, given: given)
-            label_order.told_declared(@c, a, s, decls, name, fd.value.params, params, given, from: offset, said: said)
+
+            # The label rule asked first of the bytes, so a call written right
+            # pays no copy of the tree to learn it (task 2279).
+            if !labels_in_place.none_written(given) && labels_in_place.any_param_elsewhere(s.text, given: given, params: fd.value.params, from: offset)
+                label_order.told_declared(
+                    @c,
+                    a,
+                    s,
+                    decls,
+                    name,
+                    fd.value.params,
+                    params,
+                    given,
+                    from: offset,
+                    said: said
+                )
 
             if generics > 0 && !expected.is_err()
                 check_generics.bind_missing(c, @bindings, param: result, got: expected.must())
@@ -2035,7 +2054,8 @@ function construction(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
         check(@c, a, r, s, decls, id: arg.value, expected: str_id)
         at @ at + 1
 
-    label_order.told_builtin(@c, a, s, decls, "fail", [str_id, str_id], given, false, said: before)
+    if !labels_in_place.none_written(given)
+        label_order.told_builtin(@c, a, s, decls, "fail", [str_id, str_id], given, false, said: before)
     return expected
 
 # Named fields, for a record or a case: every one mandatory, none
@@ -2072,7 +2092,8 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
 
     # The labels are told once every argument is checked, since what else an
     # argument could fill asks its type (`check/field_labels.hero`).
-    field_labels.told_fields(@c, a, s, decls, label, spec_names, spec_types, given, said: before)
+    if !labels_in_place.all_in_place(s.text, given: given, names: spec_names)
+        field_labels.told_fields(@c, a, s, decls, label, spec_names, spec_types, given, said: before)
 
 ## Tests
 
