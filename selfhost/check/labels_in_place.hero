@@ -78,6 +78,19 @@ function same_text(text: str, one: token.Span, two: token.Span) -> bool
 
     return true
 
+# Where the name a label writes stands among `names`, or -1: a construction
+# short of a field checks each labelled value against its own field (defect
+# 2275), reading the label where it is written.
+function position_of(text: str, label: token.Span, names: [str]) -> i64
+    i: i64 @= 0
+
+    while i < names.len()
+        if written_as(text: text, label: label, name: names[i])
+            return i
+        i @ i + 1
+
+    return -1
+
 function none_written(given: [ast.Arg]) -> bool
     for arg in given
         if !arg.name.is_err()
@@ -146,3 +159,13 @@ test "a construction whose every label is its field's, at its place, is asked no
     none: [ast.Arg] = []
     empty: [str] = []
     assert all_in_place(s, given: none, names: empty)
+
+test "a label's position among names is read where the label is written, -1 where it names none"
+    s = "Box(kind: 1, tags: 2)\n"
+    kind = token.Span(start: 4, end: 8)
+    tags = token.Span(start: 13, end: 17)
+    assert position_of(s, label: kind, names: ["kind", "size", "tags"]) == 0
+    assert position_of(s, label: tags, names: ["kind", "size", "tags"]) == 2
+    assert position_of(s, label: tags, names: ["kind", "size"]) == -1
+    empty: [str] = []
+    assert position_of(s, label: kind, names: empty) == -1

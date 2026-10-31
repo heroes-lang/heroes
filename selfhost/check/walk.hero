@@ -2073,8 +2073,19 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             data_errors.missing_fields(holder: label, fields: names, declared_at: declared_at, span: span)
         )
 
+        # A value whose label names a field is checked against that field, so a
+        # case or an empty literal takes its type from it and the one mistake
+        # is the field missing (defect 2275); any other value is synthesised.
         for arg in given
-            _ = synth(@c, a, r, s, decls, arg.value)
+            at: i64 @= -1
+
+            if !arg.name.is_err()
+                at @ labels_in_place.position_of(s.text, label: arg.name.must(), names: names)
+
+            if at < 0
+                _ = synth(@c, a, r, s, decls, arg.value)
+            else
+                check(@c, a, r, s, decls, id: arg.value, expected: lower.lower_ty(@c, a, r, expected[at].ty))
 
         return
     index: i64 @= 0

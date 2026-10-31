@@ -1,0 +1,21 @@
+# Fixed 2026-11-01, defect 2275, M-latency-ceiling's tag: a construction one
+# field short was told `missing_fields` and, beside it, `cannot_infer` at each
+# value only its field could type, a case and an empty literal, one mistake
+# told three times. A value whose label names a field is checked against that
+# field now, so each construction below is told once, the field it leaves out.
+# Beside them, a value that fits no field it names is still told as itself.
+
+variant Kind
+    small
+    large
+
+record Box
+    kind: Kind
+    size: i64
+    tags: [str]
+
+function main()
+    b = Box(kind: .large, size: 3)  #~ missing_fields
+    c = Box(kind: .small, tags: [])  #~ missing_fields
+    d = Box(kind: 7, size: 1)  #~ missing_fields type_mismatch
+    print(b.size + c.size + d.size)

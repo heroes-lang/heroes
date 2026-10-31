@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-2275-a-construction-short-of-a-field-is-told-once.hero:18:9: error[missing_fields]: `Box` is built with every field, named: kind:, size:, tags: — all of them, always
+tests/golden/check/fixedbugs-2275-a-construction-short-of-a-field-is-told-once.hero:19:9: error[missing_fields]: `Box` is built with every field, named: kind:, size:, tags: — all of them, always
+tests/golden/check/fixedbugs-2275-a-construction-short-of-a-field-is-told-once.hero:20:9: error[missing_fields]: `Box` is built with every field, named: kind:, size:, tags: — all of them, always
+tests/golden/check/fixedbugs-2275-a-construction-short-of-a-field-is-told-once.hero:20:19: error[type_mismatch]: expected `Kind`, found `i64`
