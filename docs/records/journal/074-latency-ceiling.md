@@ -132,3 +132,14 @@ frame at `-O2` told under a module named `0cb`, are repairs of the checker and o
 that whether such a cost is the compiler's to pay is a sitting's question (CLAUDE.md § 13), and a
 panel's gate and its paid seats are the author's. So the close is made and the tag waits on the
 three, as `m-panic-location`'s waited on decision 2228: the row says done, and the tags stay 74.
+
+**Later the same day, 2026-11-01**, defects 2275 and 2277 were repaired in one round gated once:
+`e1b4d5b0d`, a construction short of a field checking each labelled value against its field, and
+`3cb9f7c90`, the runtime telling a callback thunk's marker without; the runtime's key moved every
+program's emission by its provenance line, re-blessed in `b80265fe6`, 709 files of one line each,
+the two this Mac skips in the Linux arm64 image. Gate A's fixpoint, the compiler's own tests 1,791,
+the net's own 505, the full net green once blessed, and the census of `check` over 2,572 roots moving
+one, 2275's own case. Both issues closed. The tag waits on 2278 alone, and on the sitting the author
+convened on it the same morning, answering decision 2283 *(A)*: the soundness lane, the
+compiler-engineer and the ffi-pragmatist, on a measured reproducer.
+
