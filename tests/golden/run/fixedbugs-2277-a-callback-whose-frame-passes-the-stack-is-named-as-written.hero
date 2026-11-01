@@ -1,0 +1,26 @@
+# fixedbugs, defect 2277, 2026-11-01: a function handed to C as a callback,
+# whose own frame passes what is left of the stack, was told at `-O2` in a
+# module named `0cb`: clang inlines it into its thunk, `h_0cb_<module>_<name>`,
+# so the frame that runs out is the thunk's, and the runtime read the thunk's
+# marker as the module. The runtime tells the marker without now, so every
+# level names the worker as `-O0` always did, as the file spells it. The
+# worker's frame holds the header's record, 128 MiB, as defect 2253's case on
+# a spawned thread does. Windows' guard names no function and says the first
+# sentence alone, so this case is judged where a name is said
+# (`tests/harness/platform_skips.hero`), and 2253's case judges Windows.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function worker(n: i64) -> i64
+    held = Held(first: n, rest: zero)
+    return heroes_held_first(h: held)
+
+function main()
+    t = hero_thread_spawn(body: worker, arg: 7)
+    print(hero_thread_join(handle: t))

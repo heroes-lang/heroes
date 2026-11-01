@@ -1,0 +1,2 @@
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.worker

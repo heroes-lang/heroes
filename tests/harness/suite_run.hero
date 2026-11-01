@@ -135,6 +135,15 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
 # the spot and stops this case, because the second configuration's
 # verdict on a program that did not build says nothing.
 function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, want: expectation.Expectation, @r: report.Report) -> bool
+    elsewhere = platform_skips.reason(item.name)
+
+    # A case whose words this platform's runtime does not say is skipped by
+    # name, as the golden forms skip theirs (`platform_skips.hero`, defect
+    # 2277), and apart from the missing libraries' ratio, so it answers false.
+    if !elsewhere.is_err()
+        report.keep_skip(@r, label: "run/" + item.name, detail: "  " + elsewhere.must())
+        return false
+
     # `.exe` where the machine wants one: clang writes exactly what `-o` says,
     # and Windows will not start a file without the extension (shell.exe_suffix).
     binary = binaries + "/" + item.name + shell.exe_suffix()

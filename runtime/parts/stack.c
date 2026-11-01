@@ -376,6 +376,17 @@ static void hero_stack_say_heroes_name(const char *sym) {
     }
     if (sym[0] == 'h' && sym[1] == '_' && sym[2] != '\0') {
         const char *rest = sym + 2;
+        /* A component that begins with a digit is the compiler's own marker,
+         * which no source file's component does (`emit/ctype.hero`'s
+         * `SYNTHETIC`): a callback's thunk is `h_0cb_<module>_<name>`
+         * (`emit/callback_thunk.hero`), and at `-O2` the function it calls is
+         * inlined into it, so the frame that runs out is the thunk's. The
+         * marker is told without, as `-O0` tells the function itself
+         * (defect 2277). */
+        if (rest[0] >= '0' && rest[0] <= '9') {
+            const char *marker = strchr(rest, '_');
+            if (marker != NULL && marker[1] != '\0') rest = marker + 1;
+        }
         const char *us = strchr(rest, '_');
         if (us != NULL && us[1] != '\0') {
             size_t n = (size_t)(us - rest);

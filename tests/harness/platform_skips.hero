@@ -62,6 +62,9 @@ constant STATIC_MAIN_ELSEWHERE: str
 constant LINKED_ON_WINDOWS: str
     "the probe of a header constant's value links on Windows with `/FORCE:UNRESOLVED`, the platform's word for leaving the program's libraries out, since neither link.exe nor lld drops a reference dead-stripping drops elsewhere (measured on the box, 2026-10-17); so a header constructor calling a function no library of the probe holds links there and ends the probe when it calls it, told as a probe that did not finish (measured on the box at bc978b09d: exception 3221225477 at the constructor's call), where Darwin's and Linux's links leave the symbol undefined and it is told by its name (panel 218's R2)"
 
+constant CALLBACK_NAMED_ON_WINDOWS: str
+    "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, so a case pinning the function a callback's frame ran out in is judged where a name is said, Darwin and Linux, and defect 2253's case on a spawned thread judges Windows (defect 2277)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
@@ -70,6 +73,7 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused", why: STATIC_ON_WINDOWS)
         Skip(name: "fixedbugs-2075-a-probe-that-does-not-link-is-told-as-such", why: LINKED_ON_WINDOWS)
         Skip(name: "ffi-a-header-defining-a-static-main-is-told", why: STATIC_MAIN_ON_WINDOWS)
+        Skip(name: "fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written", why: CALLBACK_NAMED_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -150,7 +154,8 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 5
+    assert windows().len() == 6
+    assert shell.exists("tests/golden/run/" + windows()[5].name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
@@ -167,6 +172,7 @@ test "a name is judged where its platform's C holds its shape"
     assert reason("fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused").is_err() == !on_windows
     assert reason(elsewhere()[0].name).is_err() == on_windows
     assert reason("ffi-a-header-defining-a-static-main-is-told").is_err() == !on_windows
+    assert reason("fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written").is_err() == !on_windows
     assert reason(elsewhere()[2].name).is_err() == on_windows
     assert reason("fixedbugs-562-another-case").is_err()
 
