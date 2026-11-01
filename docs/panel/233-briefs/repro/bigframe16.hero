@@ -1,0 +1,126 @@
+# Panel 232's deep record, written again from its compiler seat's words for defect 2278:
+# `R_k` holds two `R_(k-1)`, 2^k words of 16 bytes, and `make_k` builds it from `make_(k-1)`.
+
+record R0
+    a: i64
+    b: i64
+
+record R1
+    left: R0
+    right: R0
+
+record R2
+    left: R1
+    right: R1
+
+record R3
+    left: R2
+    right: R2
+
+record R4
+    left: R3
+    right: R3
+
+record R5
+    left: R4
+    right: R4
+
+record R6
+    left: R5
+    right: R5
+
+record R7
+    left: R6
+    right: R6
+
+record R8
+    left: R7
+    right: R7
+
+record R9
+    left: R8
+    right: R8
+
+record R10
+    left: R9
+    right: R9
+
+record R11
+    left: R10
+    right: R10
+
+record R12
+    left: R11
+    right: R11
+
+record R13
+    left: R12
+    right: R12
+
+record R14
+    left: R13
+    right: R13
+
+record R15
+    left: R14
+    right: R14
+
+record R16
+    left: R15
+    right: R15
+
+function make0(n: i64) -> R0
+    return R0(a: n, b: n + 1)
+
+function make1(n: i64) -> R1
+    return R1(left: make0(n), right: make0(n + 1))
+
+function make2(n: i64) -> R2
+    return R2(left: make1(n), right: make1(n + 1))
+
+function make3(n: i64) -> R3
+    return R3(left: make2(n), right: make2(n + 1))
+
+function make4(n: i64) -> R4
+    return R4(left: make3(n), right: make3(n + 1))
+
+function make5(n: i64) -> R5
+    return R5(left: make4(n), right: make4(n + 1))
+
+function make6(n: i64) -> R6
+    return R6(left: make5(n), right: make5(n + 1))
+
+function make7(n: i64) -> R7
+    return R7(left: make6(n), right: make6(n + 1))
+
+function make8(n: i64) -> R8
+    return R8(left: make7(n), right: make7(n + 1))
+
+function make9(n: i64) -> R9
+    return R9(left: make8(n), right: make8(n + 1))
+
+function make10(n: i64) -> R10
+    return R10(left: make9(n), right: make9(n + 1))
+
+function make11(n: i64) -> R11
+    return R11(left: make10(n), right: make10(n + 1))
+
+function make12(n: i64) -> R12
+    return R12(left: make11(n), right: make11(n + 1))
+
+function make13(n: i64) -> R13
+    return R13(left: make12(n), right: make12(n + 1))
+
+function make14(n: i64) -> R14
+    return R14(left: make13(n), right: make13(n + 1))
+
+function make15(n: i64) -> R15
+    return R15(left: make14(n), right: make14(n + 1))
+
+function make16(n: i64) -> R16
+    return R16(left: make15(n), right: make15(n + 1))
+
+function main()
+    print("before")
+    r = make16(1)
+    print(r.left.left.left.left.left.left.left.left.left.left.left.left.left.left.left.left.a)
