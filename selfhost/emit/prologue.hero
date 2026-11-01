@@ -75,12 +75,19 @@ use emit/field_lend
 use emit/unread
 use emit/lend_local
 use emit/nodebug
+use emit/large_value
 
 # A prologue's statements, written as one line, and the `#define`s of its
 # guarded locals, each a line of its own above it.
 record Prologue
     lines: [str]
     defines: [str]
+    # The large slots and temporaries taken off the frame, in the order taken,
+    # and every name this prologue defines for the body, a large parameter's
+    # included (`emit/large_value.hero`): the exit gives the first back in
+    # reverse, and the closing brace undefines the second.
+    off_frame: [str]
+    defined: [str]
 
 # What comes before a slot's declaration: nothing for a parameter or a
 # binding the author wrote, the debugger's word for a slot the lowering
@@ -125,6 +132,17 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
     for param in f.params
         params[param] @ true
 
+    off_frame: [str] @= []
+    defined: [str] @= []
+
+    # A large plain parameter arrives as a pointer to its caller's copy, and
+    # its name is that copy for the body.
+    for param in f.params
+        if large_value.in_pointer_param(f, names, slot_id: param)
+            name = mangle.slot(index: param, name: f.slots[param].name)
+            defines @ defines.push(large_value.defined(name: name, through: large_value.in_pointer(name)))
+            defined @ defined.push(name)
+
     for slot in f.slots
         if !params[index].is_err()
             index @ index + 1
@@ -139,6 +157,23 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             index @ index + 1
             continue
         spelled = ctype.c_type(names, c: c, ty: slot.ty)
+
+        # A large slot lives off the frame, zeroed where it holds a counted
+        # value, as a slot on the frame is below.
+        if !spelled.is_err() && large_value.off_frame(names, ty: slot.ty)
+            name = mangle.slot(index: index, name: slot.name)
+            nodebug.whole(@lines, text: hidden(slot.kind) + large_value.taken(spelled: spelled.must(), name: name))
+
+            if layout.is_refcounted(c, slot.ty)
+                nodebug.whole(
+                    @lines,
+                    text: "__builtin_memset(" + large_value.pointer(name) + ", 0, sizeof(" + spelled.must() + "));"
+                )
+            defines @ defines.push(large_value.defined(name: name, through: large_value.pointer(name)))
+            off_frame @ off_frame.push(name)
+            defined @ defined.push(name)
+            index @ index + 1
+            continue
 
         if !spelled.is_err()
             initialiser: str @= ""
@@ -245,8 +280,16 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                 if !lends[value_at].is_err()
                     spelling @ "const " + spelled.must()
 
-                # Every temporary is the lowering's, so every one is hidden.
-                nodebug.hidden(@lines, words: deliberate, spelling: spelling, declared: mangle.value(value_at))
+                # Every temporary is the lowering's, so every one is hidden; a
+                # large one lives off the frame.
+                if large_value.off_frame(names, ty: ty)
+                    name = mangle.value(value_at)
+                    nodebug.whole(@lines, text: nodebug.MARK + large_value.taken(spelled: spelling, name: name))
+                    defines @ defines.push(large_value.defined(name: name, through: large_value.pointer(name)))
+                    off_frame @ off_frame.push(name)
+                    defined @ defined.push(name)
+                else
+                    nodebug.hidden(@lines, words: deliberate, spelling: spelling, declared: mangle.value(value_at))
         value_at @ value_at + 1
 
-    return Prologue(lines: nodebug.statements(lines), defines: defines)
+    return Prologue(lines: nodebug.statements(lines), defines: defines, off_frame: off_frame, defined: defined)

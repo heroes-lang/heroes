@@ -323,7 +323,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ecaa28c723e2be4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e81cbf72d628934", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("acallbacknamedthelibraryway\ta-callback-named-the-library-way\n");

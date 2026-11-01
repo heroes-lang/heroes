@@ -472,6 +472,17 @@ static void *hero_malloc_raw(size_t size) {
     return p;
 }
 
+/* Its mate, and the only `free` the single point lends out. A large value's
+ * room (`parts/frame.c`) is neither a block the language owns nor scratch one
+ * runtime call borrows: it is a chunk a thread holds for as long as some
+ * function of its stack is inside one, so neither counter weighs it and both
+ * pairs below would read it wrong. What Part 7.13 asks of it is the same thing
+ * it asks of them — that the call live HERE — so the room takes its chunks
+ * through `hero_malloc_raw` and gives them back through this. */
+static void hero_free_raw(void *p) {
+    free(p);
+}
+
 /* Scratch memory, borrowed by one runtime call and given back before it returns.
  * Counted since 2026-08-30 — the header says why. */
 static void *hero_alloc(size_t size) {

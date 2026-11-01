@@ -224,14 +224,25 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) { BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1, t4; HERO_NODEBUG int32_t t2, t3, t5, t6, t7, t13, t15, t16; HERO_NODEBUG UNNAMED t8, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG ZEROW t14; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
+#line 22
+#define h0_built (*hero_big_h0_built)
+#line 22
+#define t1 (*hero_big_t1)
+#line 22
+#define t4 (*hero_big_t4)
+#line 22
+    BF *const hero_big_h0_built = (BF *)hero_frame_take(sizeof(BF)); UNNAMED h1_u; HERO_NODEBUG BF *const hero_big_t1 = (BF *)hero_frame_take(sizeof(BF)); HERO_NODEBUG int32_t t2, t3, t5, t6, t7, t13, t15, t16; HERO_NODEBUG BF *const hero_big_t4 = (BF *)hero_frame_take(sizeof(BF)); HERO_NODEBUG UNNAMED t8, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG ZEROW t14; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 23, 11}; t1 = make_bf(); } t2 = t1.kind; hero_print_int(t2); hero_print_end();
     t3 = INT64_C(9); t4 = (BF){.kind = t3}; h0_built = t4; hero_pad_fill(&h0_built, sizeof(BF), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_built, sizeof(BF), 1, hero_pad_m_0, hero_pad_mn_0);
     t5 = h0_built.kind; hero_print_int(t5); hero_print_end();
     t6 = INT64_C(1); t7 = INT64_C(2); t8 = (UNNAMED){.a = t6, .b = t7}; h1_u = t8; hero_pad_fill(&h1_u, sizeof(UNNAMED), 1, hero_pad_g_1, hero_pad_n_1);
-    t9 = h1_u; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 16}; t10 = make_unnamed(); } t11 = h_fixedbugs156recordsbesidebitfieldsbuild_0UNNAMED_eq(&t9, &t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h1_u.b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 43}; t14 = make_zerow(); } t15 = t14.b; if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow_at("fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 37); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t16); hero_print_end(); return;
-#line 234 "fixedbugs156recordsbesidebitfieldsbuild.c"
+    t9 = h1_u; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 16}; t10 = make_unnamed(); } t11 = h_fixedbugs156recordsbesidebitfieldsbuild_0UNNAMED_eq(&t9, &t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h1_u.b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 43}; t14 = make_zerow(); } t15 = t14.b; if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow_at("fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 37); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t16); hero_print_end(); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_built); return;
+#line 242 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
+#undef h0_built
+#undef t1
+#undef t4
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_0BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_0BF_eq: a partial record has no structural equality");
 }
@@ -365,7 +376,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0d5573fb145ed09c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d0c9d664f832deb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs156recordsbesidebitfieldsbuild\tfixedbugs-156-records-beside-bit-fields-build\n");

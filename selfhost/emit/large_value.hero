@@ -1,0 +1,324 @@
+# A value larger than `LARGE` bytes, kept off the frame and written in place
+# (defect 2278; panel 233, provisional, author ratification pending).
+#
+# **WHY.** clang's SROA splits every local struct it can see whole into one
+# scalar per leaf, and a copy of a split struct into one leaf store each, so a
+# record of records copied a few times in one body hands clang a copy for
+# every leaf of every copy: 314 billion instructions and 12.3 GB for a 4 MiB
+# record at `-O2` (panel 233's reproducer, depth 18), 1.9 trillion for a 2 MiB
+# one built by calls eight to a level, and a 2 MiB one handed by value did not
+# finish in 600 s. The same records at `-O0` held two and three copies in each
+# frame, past the 8 MiB stack. Only a struct clang cannot see whole escapes
+# the split, and only a value the frame does not hold escapes the stack.
+#
+# **WHAT, four parts and one threshold.** A slot or temporary of a type of the
+# program's own (`byte_copy.own_struct`: a record that is no group's, a
+# variant, a `T?`, a case's payload) larger than `LARGE`, or holding a group's
+# `partial` record by value, whose bytes the count cannot know, lives in a room
+# off the frame (`runtime/parts/frame.c`, a stack of its own on each thread,
+# bounded once for the whole process), taken in the prologue and given back at
+# the one exit, its name made the region's for the body, as
+# `emit/lend_local.hero` makes a guarded local's; a Heroes function whose
+# result is such a type returns it through its caller's slot, `OUT`; a plain
+# parameter of such a type is handed as a pointer to the copy its caller's IR
+# already made, which rule 1 of `ir/own.hero` (a plain parameter is borrowed)
+# makes the same value; and a construction of such a record is written field
+# by field into its destination. Each part was measured necessary on panel
+# 233's shapes: the region alone left the call's hidden temporary on the frame
+# and the run aborted at `-O2`. Below `LARGE` a program's C is what it was,
+# byte for byte.
+#
+# **A FUNCTION VALUE OF SUCH A TYPE TAKES THE SAME CONVENTION**, its typedef
+# spelled as a direct call's (`types.function_type`) and an indirect call passing
+# its arguments the same way, so a large result called through a value lands in
+# the caller's room too; until panel 233's critic's second pass it kept C's
+# convention through a twin, and a 16 MiB result returned through a value was a
+# 16 MiB object of the caller's frame. C never sees such a type: the checker
+# refuses a program record inside an `extern`'s callback type, which the first
+# test below holds, so a thunk (`emit/callback_thunk.hero`) and an `extern` keep
+# C's convention and the library's twin alone remains (panel 230).
+#
+# **HOW BIG A TYPE IS, AND WHICH ONES ARE LARGE, IS THE OTHER HALF'S**,
+# `emit/large_size.hero`, whose answer arrives here on `ctype.Names.large` and
+# is read through `is_large` and `off_frame` alone. This module never counts a
+# byte; that one never spells any C.
+
+use ast
+use ir
+use check/state
+use ir/containers
+use emit/aggregate
+use emit/byte_copy
+use emit/ctype
+use emit/mangle
+use emit/writer
+use ir/layout
+use parse
+use resolve
+use checker
+use source
+
+# The parameter a function returning a large value is handed first.
+constant OUT: str
+    "hero_out"
+
+# Whether a value of `ty` is kept off the frame and passed in place.
+function is_large(names: ctype.Names, ty: i64) -> bool
+    return names.large[ty].default(false)
+
+# Whether a value of `ty` is kept off the frame, passed in place or not.
+function off_frame(names: ctype.Names, ty: i64) -> bool
+    return !names.large[ty].is_err()
+
+# A plain parameter of a large type, handed as a pointer.
+function in_pointer_param(f: containers.Function, names: ctype.Names, slot_id: i64) -> bool
+    declared = f.slots[slot_id]
+
+    match declared.kind
+        .param_slot ps =>
+            if ps.mutable
+                return false
+        .local_slot | .synthetic_slot | .return_slot => return false
+
+    return is_large(names, ty: declared.ty)
+
+# The pointer a large slot or temporary is reached through, and the pointer a
+# large parameter arrives as.
+function pointer(name: str) -> str
+    return "hero_big_" + name
+
+function in_pointer(name: str) -> str
+    return "hero_in_" + name
+
+# The prologue's statement for a large slot or temporary: its region taken.
+function taken(spelled: str, name: str) -> str
+    return spelled + " *const " + pointer(name) + " = (" + spelled + " *)hero_frame_take(sizeof(" + spelled + "));"
+
+# The name made the region's, or the pointer's, for the rest of the body.
+function defined(name: str, through: str) -> str
+    return "#define " + name + " (*" + through + ")"
+
+function given_back(name: str) -> str
+    return "    hero_frame_give(" + pointer(name) + ");"
+
+# A call's arguments as its callee takes them. A Heroes function, called
+# directly or through a value, takes the destination first where the result is
+# large, `NULL` where the result is discarded, and the address of each large
+# value handed by value; a built-in and an `extern` take C's convention, and
+# their arguments as they are.
+function direct_arguments(f: containers.Function, names: ctype.Names, callee: ir.Callee, run: ir.Run, rendered: [str], result: i64, target: str?) -> [str]
+    match callee
+        .heroes_fn | .indirect   => _ = 0
+        .builtin_fn | .extern_fn => return rendered
+
+    out: [str] @= []
+
+    if is_large(names, ty: result)
+        if target.is_err()
+            out @ out.push("NULL")
+        else
+            out @ out.push("&" + target.must())
+    at: i64 @= 0
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg v =>
+                if is_large(names, ty: containers.value_type(f, v.value))
+                    out @ out.push("&" + rendered[at])
+                else
+                    out @ out.push(rendered[at])
+            .inout_arg => out @ out.push(rendered[at])
+
+        at @ at + 1
+
+    return out
+
+# The target a call assigns: none where a direct call writes a large result
+# into it as its first argument.
+function direct_target(names: ctype.Names, callee: ir.Callee, result: i64, target: str?) -> str?
+    match callee
+        .heroes_fn | .indirect   => _ = 0
+        .builtin_fn | .extern_fn => return target
+
+    if is_large(names, ty: result)
+        return fail(code: "none", msg: "written through the callee's first argument")
+    return target
+
+# A large record built in place: every byte of `target` zero, then each field
+# the construction names written into it in the order it names them, so no
+# compound literal of the whole is built on the frame. A fixed array arrives as
+# its braced list, which C cannot assign, and is copied from a literal of the
+# member's own type; past `typeorder`'s depth a struct field keeps its byte copy
+# (`emit/byte_copy.hero`, defect 522). `fixed` says which arguments are such
+# lists.
+#
+# **WHY THE ZERO COMES FIRST, AND WHY IT IS A MEMSET** (panel 182's rule, the
+# `wholes` suite; found by it on ten of this route's own emissions, 2026-11-01).
+# Since panel 182 a temporary gets no initialiser, so the bytes a field store
+# does not name are whatever was there; and what was there, for a value of this
+# room, is the value that stood in the same bytes before, the room being a stack
+# given back last-taken-first (`runtime/parts/frame.c`). The store of the whole
+# that follows a construction, `*hero_out = t`, copies `sizeof` bytes and
+# carries the padding with them, and a record holding a group's `partial` record
+# is lent to C, where panel 215's R1 promises the padding is zero. So the
+# construction writes the whole first. It is written as `t = *(T *)memset(&t,
+# ...)` rather than `t = (T){0}`, for `emit/zeroed.hero`'s reason at its own
+# in-room arm: a `(T){0}` of a 128 MiB record would be a 128 MiB object of the
+# frame, and clang reaches the literal's first scalar by a brace elision as deep
+# as the records held by value, which died at 1,000 (defects 549 and 2058). The
+# assignment's left side is what makes it a definition the `wholes` walk reads;
+# the memset is what writes the bytes.
+function in_place(w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], fixed: [bool], target: str) -> [str]?
+    fields: [ast.Field] @= []
+
+    match decls[decl].kind
+        .record_decl rec                                             => fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
+
+    if given.len() != arguments.len() || given.len() != fixed.len()
+        return fail(code: "none", msg: "a construction names a field for every argument, and this one does not")
+    out: [str] @= [zero_whole(name: ctype.of(names, decl: decl), target: target)]
+    at: i64 @= 0
+
+    for k in given
+        if k < 0 || k >= fields.len()
+            return fail(code: "none", msg: "a construction names a field the record does not have")
+        member = target + "." + mangle.field_of(foreign: false, name: source.span_text(s, fields[k].name))
+        out @ out.push(
+            one_field(w, c, decls, ty: fields[k].ty, member: member, argument: arguments[at], fixed: fixed[at])
+        )
+        at @ at + 1
+
+    return ok(out)
+
+# The one line that both DEFINES the value whole and writes every byte of it
+# zero, which the comment above `in_place` argues for at length.
+function zero_whole(name: str, target: str) -> str
+    return target + " = *(" + name + " *)__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
+
+# One field of a construction written into `member`. A fixed array is copied
+# from a literal of the member's own type, C having no array assignment; one of
+# the unit's own structs goes through its byte copy, which is what keeps clang
+# from splitting it (`emit/byte_copy.hero`, defect 522); anything else is
+# assigned, so clang still checks its type and its width.
+function one_field(w: writer.Writer, c: state.Checked, decls: [ast.Decl], ty: i64, member: str, argument: str, fixed: bool) -> str
+    if fixed
+        return "__builtin_memcpy(&" + member + ", &(__typeof__(" + member + "))" + argument + ", sizeof(" + member + "));"
+    written = state.written_type(c, ty)
+
+    if written.is_err()
+        return member + " = " + argument + ";"
+    owned = byte_copy.own_struct(c, decls, ty: written.must())
+    return byte_copy.copied(
+        w,
+        owned: owned,
+        held: layout.is_refcounted(c, written.must()),
+        target: member,
+        value: argument
+    )
+
+# A large variant case built in place, the tag then the payload's fields, for
+# `in_place`'s reasons and one more of its own: a case's payload shares its
+# bytes with every other case through the C union, so the bytes the widest case
+# holds and this one does not are no member's at all, and the zero is what
+# makes them something rather than whatever the room last held (panel 194's
+# reading of C11 §6.2.6.1p6 and p7, one level down).
+#
+# WHY IT IS HERE AT ALL. Panel 233's R1 counts a variant among the large types,
+# *the widest case plus its tag*, so its temporary already lives in the room;
+# R2 wrote only a record's construction in place, and the compound literal left
+# behind put the whole value back on the frame it had just left. Measured
+# 2026-11-01 on a 2 MiB case: `main`'s frame 4,194,624 bytes at `-O2`, and the
+# same recursion that runs at depth 5 holding a record aborted with `panic:
+# stack exhausted` holding a case.
+function case_in_place(w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64, arguments: [str], fixed: [bool], target: str) -> [str]?
+    both = aggregate.case_names(names, s, decls, decl: decl, at: at)
+
+    if both.is_err()
+        return fail(code: "none", msg: "not a case")
+
+    match decls[decl].kind
+        .variant_decl v =>
+            fields = v.cases[at].fields
+
+            if fields.len() > arguments.len() || fields.len() > fixed.len()
+                return fail(code: "none", msg: "fewer arguments than payload fields")
+            out: [str] @= [
+                zero_whole(name: both.must().holder, target: target)
+                target + ".tag = " + mangle.tag_of(ty: ctype.satellite(names, decl: decl), case_name: both.must().case_name) + ";"
+            ]
+            payload = target + ".as." + mangle.case_member(both.must().case_name)
+            index: i64 @= 0
+
+            # A variant is never a group member, so foreign is false for every
+            # case payload — stated rather than assumed, as `aggregate`'s own
+            # literal states it.
+            for one in fields
+                member = payload + "." + mangle.field_of(foreign: false, name: source.span_text(s, one.name))
+                out @ out.push(
+                    one_field(w, c, decls, ty: one.ty, member: member, argument: arguments[index], fixed: fixed[index])
+                )
+                index @ index + 1
+
+            return ok(out)
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "none", msg: "not a variant")
+
+    return fail(code: "none", msg: "unreached")
+
+# A large `T?` built in place, the same reasoning one type further: an option
+# is large when its payload is, its own C struct is a tag beside a union of the
+# payload and a failure, and the literal that filled it was an object of the
+# frame as wide as the payload. The payload of a large option is itself large,
+# so both sides of the store are already in the room.
+function option_in_place(names: ctype.Names, result: i64, shape: ir.Shape, arguments: [str], target: str) -> [str]?
+    out: [str] @= [zero_whole(name: ctype.option_of(names, ty: result), target: target)]
+
+    match shape
+        .ok_shape =>
+            out @ out.push(target + ".tag = INT64_C(0);")
+
+            # ok(()) — a unit payload has no member at all, so the tag is the
+            # whole value.
+            if arguments.len() > 0
+                out @ out.push(target + ".as.ok = " + arguments[0] + ";")
+
+            return ok(out)
+        .fail_shape =>
+            if arguments.len() < 2
+                return fail(code: "none", msg: "a fail without both sides")
+
+            return ok(
+                out.push(target + ".tag = INT64_C(1);").push(target + ".as.err.code = " + arguments[0] + ";").push(target + ".as.err.msg = " + arguments[1] + ";")
+            )
+        .err_shape =>
+            if arguments.len() < 1
+                return fail(code: "none", msg: "an err without its failure")
+
+            return ok(out.push(target + ".tag = INT64_C(1);").push(target + ".as.err = " + arguments[0] + ";"))
+        .record_shape | .case_shape | .array_shape | .map_shape => return fail(code: "none", msg: "not an option shape")
+
+    return fail(code: "none", msg: "unreached")
+
+## Tests
+
+# THE RULE THE CONVENTION OF A FUNCTION VALUE RESTS ON: a function type that
+# names a large value is spelled by a direct call's convention
+# (`types.function_type`), and a thunk keeps C's (`callback_thunk.header`); both
+# are right only while no such type reaches C. The checker refuses any program
+# record inside an `extern`'s callback type, large or small, which is what
+# keeps a function this module converts from ever standing where C calls it.
+# If this test fails, a converted function can be thunked and handed to C with
+# the wrong convention, silently, through the lookup table's casts.
+test "a program record cannot stand in an extern's callback type, so no converted function reaches C (panel 233)"
+    text = "extern \"cb.h\"\n    function apply(cb: (function(E0) -> i64), n: i64) -> i64\n\nrecord E0\n    x: i64\n\nfunction first(e: E0) -> i64\n    return e.x\n\nfunction main()\n    print(apply(cb: first, n: 1))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    refused: bool @= false
+
+    for d in c.diagnostics
+        if d.code == "ffi_type"
+            refused @ true
+
+    assert refused

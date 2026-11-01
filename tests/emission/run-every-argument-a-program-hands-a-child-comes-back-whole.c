@@ -390,7 +390,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("352f12e20bca8fdc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("74e63c4d46eeed2b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("everyargumentaprogramhandsachildcomesbackwhole\tevery-argument-a-program-hands-a-child-comes-back-whole\n");

@@ -191,43 +191,56 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-struct slot h_ffiafilledrecordisaskedfor_blank(void) { HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}}; return t10;
-#line 197 "ffiafilledrecordisaskedfor.c"
+struct slot h_ffiafilledrecordisaskedfor_blank(void) {
+#line 42
+#define t10 (*hero_big_t10)
+#line 42
+    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot *const hero_big_t10 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}}; hero_frame_give(hero_big_t10); return t10;
+#line 201 "ffiafilledrecordisaskedfor.c"
 }
+#undef t10
 
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 void h_ffiafilledrecordisaskedfor_main(void) {
 #line 45
 #define h0_s (*hero_lend_h0_s)
 #line 45
-    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot t1, t12; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
+#define t1 (*hero_big_t1)
+#line 45
+#define t12 (*hero_big_t12)
+#line 45
+    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot *const hero_big_t1 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG struct slot *const hero_big_t12 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_ffiafilledrecordisaskedfor_blank(); h0_s = t1; hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 47, 9}; hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s"); hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0); t2 = slot_fill(&h0_s); } t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2}; t23 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t23); t24 = h1_f0; h_0opt_e201354_retain(&t3); h1_f0 = t3; h_0opt_e201354_release(&t24); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
     t12 = h0_s; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t25 = h4_own4; h4_own4 = t14; h_0opt_f87774a_release(&t25); t26 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t26); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
 #line 47
     t8 = h1_f0; t9 = t8.as.err;
-#line 211 "ffiafilledrecordisaskedfor.c"
+#line 220 "ffiafilledrecordisaskedfor.c"
     hero_panic_must_at(t9, "ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 47, 9);
     hero_unreachable();
 bb3:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t21 = h2_f1; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
-#line 217 "ffiafilledrecordisaskedfor.c"
+#line 226 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
     hero_lend_local_give(hero_lend_h0_s);
+    hero_frame_give(hero_big_t12);
+    hero_frame_give(hero_big_t1);
     return;
 bb4:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t19 = h2_f1; t20 = t19.as.err;
-#line 227 "ffiafilledrecordisaskedfor.c"
+#line 238 "ffiafilledrecordisaskedfor.c"
     hero_panic_must_at(t20, "ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 48, 11);
     hero_unreachable();
 }
 #undef h0_s
+#undef t1
+#undef t12
 HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_0Slot_eq(const struct slot *a, const struct slot *b) {
     hero_panic("h_ffiafilledrecordisaskedfor_0Slot_eq: a partial record has no structural equality");
 }
@@ -333,7 +346,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4df5012c4670fe7c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dac2a9801955bcc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiafilledrecordisaskedfor\tffi-a-filled-record-is-asked-for\n");

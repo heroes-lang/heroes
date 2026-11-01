@@ -29,7 +29,10 @@ use emit/mangle
 use emit/ctype
 use emit/writer
 
-function emit(@w: writer.Writer, f: containers.Function, c: state.Checked, term: ir.Term, released: [str])
+# `out` is whether the function returns through its caller's slot, a large
+# result's (`emit/large_value.hero`): the value is written there before any
+# region goes back, since it may live in one.
+function emit(@w: writer.Writer, f: containers.Function, c: state.Checked, term: ir.Term, released: [str], out: bool)
     match term
         .jump j => writer.line(@w, text: "    goto " + mangle.block(j.to) + ";")
         .branch br => writer.line(
@@ -50,13 +53,16 @@ function emit(@w: writer.Writer, f: containers.Function, c: state.Checked, term:
             writer.line(@w, text: "        default: hero_unreachable();")
             writer.line(@w, text: "    }")
         .return_term ret =>
+            if out && !ret.value.is_err()
+                writer.line(@w, text: "    if (hero_out != NULL) *hero_out = " + mangle.value(ret.value.must()) + ";")
+
             # The guarded locals' regions go back before the function does
             # (panel 196's R7, `emit/lend_local.releases`): the one exit is
             # the last word of the body.
             for line in released
                 writer.line(@w, text: line)
 
-            if ret.value.is_err()
+            if ret.value.is_err() || out
                 writer.line(@w, text: "    return;")
             else
 
@@ -137,9 +143,9 @@ test "both branch edges are written, and a switch carries C's default"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: state.Checked = checker.check(p.tree, out, s, p.decls)
     w: writer.Writer @= writer.new_writer("t")
-    emit(@w, f, c, term: .branch(cond: 1, then_to: 2, else_to: 4), released: [])
-    emit(@w, f, c, term: .switch_term(tag: 1, cases: [3, 5]), released: [])
-    emit(@w, f, c, term: .return_term(value: fail(code: "none", msg: "bare")), released: [])
+    emit(@w, f, c, term: .branch(cond: 1, then_to: 2, else_to: 4), released: [], out: false)
+    emit(@w, f, c, term: .switch_term(tag: 1, cases: [3, 5]), released: [], out: false)
+    emit(@w, f, c, term: .return_term(value: fail(code: "none", msg: "bare")), released: [], out: false)
     got = writer.finish(w)
     assert got == "    if (t1) goto bb2; else goto bb4;\n    switch (t1) {\n        case 0: goto bb3;\n        case 1: goto bb5;\n        default: hero_unreachable();\n    }\n    return;\n"
 
@@ -168,7 +174,7 @@ test "returning the unit value is a bare return"
         span: token.Span(start: 0, end: 1)
     )
     w: writer.Writer @= writer.new_writer("t")
-    emit(@w, f, c, term: .return_term(value: ok(0)), released: [])
+    emit(@w, f, c, term: .return_term(value: ok(0)), released: [], out: false)
     assert writer.finish(w) == "    return;\n"
 
 test "only the retain of what a way out returns is the exit's, never a release inside a line (defect 540)"

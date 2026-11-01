@@ -189,3 +189,54 @@ conventions of the R7b shape; the Windows MSVC target's handling of the route's
 Pending, asked by decision 2285 (https://github.com/heroes-lang/heroes/issues/2285): ratify R1 to R6, and inside it
 repair 2 or the conservative resolution. A yes settles defect 2278's route; it does not settle the
 shapes filed apart, chains of group records and a `partial` record returned by value.
+
+## Scored at the landing, 2026-11-01
+
+The route landed on the trunk the day after the sitting. Two of the sitting's
+own resolutions were found short by the round's gate, by instruments the
+sitting did not run, and both are written here rather than only in the commit
+because the second changes what R1 and R2 mean together.
+
+**R2 was narrower than R1, and a correct program died of it.** R1 counts a
+variant among the large types, *the widest case plus its tag*, and puts every
+large local and temporary in the room; R2 wrote in place only *a construction
+of a large **record***. So a variant's temporary lived in the room while the
+compound literal that filled it was built on the frame, which put the whole
+value back exactly where R1 had moved it from, and the same held of a `T?`,
+large exactly when its payload is. Measured on this Mac with a 2 MiB payload,
+`clang -O2 -Wframe-larger-than=65536`: `main`'s frame **4,194,624 bytes**
+before, **no frame over 64 KiB** after. And one recursion run twice at the same
+depth over the same bytes, differing only in whether the value sits in a case:
+**`15`, exit 0 as a record; `panic: stack exhausted`, exit 134 as a case.** The
+landing added `case_in_place` and `option_in_place` beside `in_place`
+(`emit/large_value.hero`), which is R1 reaching the shapes R1 itself names, and
+the two cases
+`run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack`
+and `run/fixedbugs-2278-a-large-option-holds-its-payload-off-the-frame` hold
+it. **What the sitting would have had to run to see this**: not a reading of
+the route but `-Wframe-larger-than` on each of the shapes R1 names, which no
+seat was asked for, the predictions table having been written about records.
+
+**A construction in place wrote no value whole, which panel 182's rule
+refuses.** `wholes` read ten of the route's own emissions and refused them:
+field-by-field stores with nothing writing the value whole, so the bytes no
+field names kept what the room last held, and the room is given back
+last-taken-first, so *what it last held* is another value's bytes, not merely
+indeterminate ones. The store that follows a construction copies `sizeof`
+bytes and carries them into the caller, and panel 215's R1 promises those
+bytes are zero where the record is lent to C. Every construction now opens
+with `t = *(T *)__builtin_memset(&t, 0, sizeof t);`, the form `emit/zeroed.hero`
+already uses at its own in-room arm and for its reason: a `(T){0}` of a 128 MiB
+record would be a 128 MiB object of the frame.
+
+**And two rules of the runtime's own**, which `suite_runtime` told at the same
+gate: `parts/frame.c` called `free` where design.md Part 7.13 puts every such
+call in `parts/alloc.c` (`hero_free_raw` now joins `hero_malloc_raw` there, the
+pair neither leak counter weighs), and `hero_frame_told` is spelled `_Atomic
+int`.
+
+**What held exactly as adopted**: R3 (a function type naming a large program
+record takes the direct call's convention, no wrapper, and the checker's
+refusal keeps such a type away from C), R4, R5 and R6: every program with no
+large value emitted byte-identical C beyond its provenance key, which the
+Linux arm64 bless confirmed on the two cases this Mac cannot judge.

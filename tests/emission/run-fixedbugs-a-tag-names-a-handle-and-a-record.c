@@ -219,16 +219,19 @@ void h_fixedbugsatagnamesahandleandarecord_main(void) {
 #line 35
 #define h1_r (*hero_lend_h1_r)
 #line 35
-    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1, t2, t8, t9; HERO_NODEBUG struct addrinfo t3, *t4, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char *t6; HERO_NODEBUG void *t7; HERO_ENTRY_STOP; goto bb0; bb0:
+#define t3 (*hero_big_t3)
+#line 35
+    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1, t2, t8, t9; HERO_NODEBUG struct addrinfo *const hero_big_t3 = (struct addrinfo *)hero_frame_take(sizeof(struct addrinfo)); HERO_NODEBUG struct addrinfo *t4, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char *t6; HERO_NODEBUG void *t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(1); t3 = (struct addrinfo){.ai_family = t1, .ai_socktype = t2}; h0_h = t3; hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
     t4 = ((void *)0); h1_r = t4;
     t5 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 38, 28}; t6 = hero_str_lend_at(t5, &hero_here); } t7 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 38, 10}; hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints"); hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res"); hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1); t8 = getaddrinfo(hero_cstr_nonnull_at(t6, &hero_here), t7, &h0_h, &h1_r); hero_handle_acquired_at(h1_r, "freeaddrinfo", &hero_here); } h2_rc = t8;
     t9 = h2_rc; hero_print_int(t9); hero_print_end();
-    t10 = h1_r; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 40, 5}; { hero_handle_alive_at(t10, "the argument `ai` of `freeaddrinfo`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "freeaddrinfo", NULL, &hero_here); (void)freeaddrinfo(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead(); } } hero_lend_local_give(hero_lend_h1_r); hero_lend_local_give(hero_lend_h0_h); return;
-#line 229 "fixedbugsatagnamesahandleandarecord.c"
+    t10 = h1_r; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-tag-names-a-handle-and-a-record.hero", "fixedbugs-a-tag-names-a-handle-and-a-record.main", 40, 5}; { hero_handle_alive_at(t10, "the argument `ai` of `freeaddrinfo`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "freeaddrinfo", NULL, &hero_here); (void)freeaddrinfo(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead(); } } hero_lend_local_give(hero_lend_h1_r); hero_lend_local_give(hero_lend_h0_h); hero_frame_give(hero_big_t3); return;
+#line 231 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r
+#undef t3
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_0AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return hero_handle_eq(*a, *b);
 }
@@ -345,7 +348,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fa69bda3b0412dc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f5dc5457628702b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatagnamesahandleandarecord\tfixedbugs-a-tag-names-a-handle-and-a-record\n");

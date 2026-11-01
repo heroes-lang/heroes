@@ -92,6 +92,8 @@ record Names
     funcs: {i64: str}
     # A counted parameter's header type by `<C name> <position>` (`emit/lend_extent`), and `@<decl> <position>` where an `@` parameter reaches C (`emit/lend_local`).
     lend_units: {str: str}
+    # The types kept off the frame and written in place (`emit/large_value.hero`).
+    large: {i64: bool}
 
 # What separates a name the EMITTER invents from a name an author could
 # write: a leading digit.
@@ -183,6 +185,7 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
     empty_options: {i64: str} = {}
     empty_funcs: {i64: str} = {}
     no_units: {str: str} = {}
+    none_large: {i64: bool} = {}
     return Names(
         aggregates: aggregates,
         satellites: satellites,
@@ -192,7 +195,8 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
         options: empty_options,
         cases: cases,
         funcs: empty_funcs,
-        lend_units: no_units
+        lend_units: no_units,
+        large: none_large
     )
 
 # Assigns a C name to every T? the program interned. Walked over the

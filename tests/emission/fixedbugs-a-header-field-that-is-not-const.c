@@ -198,14 +198,28 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
-void h_aheaderfieldthatisnotconst_main(void) { struct passwd h0_empty; struct passwd h1_filled; HERO_NODEBUG const char *t1, *t2, *t4, *t5, *t7, *t8, *t10, *t11; HERO_NODEBUG struct passwd t3, t9; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_aheaderfieldthatisnotconst_main(void) {
+#line 46
+#define h0_empty (*hero_big_h0_empty)
+#line 46
+#define h1_filled (*hero_big_h1_filled)
+#line 46
+#define t3 (*hero_big_t3)
+#line 46
+#define t9 (*hero_big_t9)
+#line 46
+    struct passwd *const hero_big_h0_empty = (struct passwd *)hero_frame_take(sizeof(struct passwd)); struct passwd *const hero_big_h1_filled = (struct passwd *)hero_frame_take(sizeof(struct passwd)); HERO_NODEBUG const char *t1, *t2, *t4, *t5, *t7, *t8, *t10, *t11; HERO_NODEBUG struct passwd *const hero_big_t3 = (struct passwd *)hero_frame_take(sizeof(struct passwd)); HERO_NODEBUG bool t6, t12; HERO_NODEBUG struct passwd *const hero_big_t9 = (struct passwd *)hero_frame_take(sizeof(struct passwd)); HERO_ENTRY_STOP; goto bb0; bb0:
 #line 59
     t1 = ((void *)0); t2 = ((void *)0); t3 = (struct passwd){.pw_name = (__typeof__(((struct passwd *)0)->pw_name))t1, .pw_dir = (__typeof__(((struct passwd *)0)->pw_dir))t2}; h0_empty = t3; hero_pad_fill(&h0_empty, sizeof(struct passwd), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h0_empty.pw_name; t5 = ((void *)0); t6 = t4 == t5; hero_print_bool(t6); hero_print_end();
     t7 = ((void *)0); t8 = ((void *)0); t9 = (struct passwd){.pw_name = (__typeof__(((struct passwd *)0)->pw_name))t7, .pw_dir = (__typeof__(((struct passwd *)0)->pw_dir))t8}; h1_filled = t9; hero_pad_fill(&h1_filled, sizeof(struct passwd), 1, hero_pad_g_0, hero_pad_n_0);
-    t10 = h1_filled.pw_dir; t11 = ((void *)0); t12 = t10 == t11; hero_print_bool(t12); hero_print_end(); return;
-#line 208 "aheaderfieldthatisnotconst.c"
+    t10 = h1_filled.pw_dir; t11 = ((void *)0); t12 = t10 == t11; hero_print_bool(t12); hero_print_end(); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_h1_filled); hero_frame_give(hero_big_h0_empty); return;
+#line 218 "aheaderfieldthatisnotconst.c"
 }
+#undef h0_empty
+#undef h1_filled
+#undef t3
+#undef t9
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_0Passwd_eq(const struct passwd *a, const struct passwd *b) {
     hero_panic("h_aheaderfieldthatisnotconst_0Passwd_eq: a partial record has no structural equality");
 }
@@ -311,7 +325,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13a2def25cb7a16b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("535a085d17dbfebb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("aheaderfieldthatisnotconst\ta-header-field-that-is-not-const\n");

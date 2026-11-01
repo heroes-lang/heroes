@@ -276,7 +276,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2482e1e6369966d8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("643a0b5171bdc427", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lendinsidealoop\tlend-inside-a-loop\n");

@@ -1,0 +1,15 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: a record of 512 strings, past the line, goes
+# through every part of the route, off the frame, into its caller's slot, built in place, its strings
+# counted and released, and prints the same at both levels with nothing leaked.
+
+use fixedbugs2278/counted/held
+
+function main()
+    base = held.S0(s: "leaf", n: 7)
+    one = held.S1(a: base, b: base, c: base, d: base, e: base, f: base, g: base, h: base)
+    two = held.S2(a: one, b: one, c: one, d: one, e: one, f: one, g: one, h: one)
+    three = held.grow(v: two)
+    four = held.retag(x: three, tag: "new")
+    print(three.c.d.e.s)
+    print(four.c.d.e.s)
+    print(four.h.h.h.n + three.a.a.a.n)

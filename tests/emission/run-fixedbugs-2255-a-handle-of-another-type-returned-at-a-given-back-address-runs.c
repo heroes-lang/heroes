@@ -301,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("70a9e74b72ef26e2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("306110b72e138432", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2255ahandleofanothertypereturnedatagivenbackaddressruns\tfixedbugs-2255-a-handle-of-another-type-returned-at-a-given-back-address-runs\n");

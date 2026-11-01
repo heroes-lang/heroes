@@ -23,22 +23,22 @@ use latency_ledger
 use latency_runs
 
 constant LEDGER_ROWS: i64
-    2
+    3
 
 constant NEWEST_TAKEN: str
     "2026-11-01"
 
 constant NEWEST_SOURCES: str
-    "0939902c3b85306c"
+    "200a93d749fe1443"
 
 constant CHECK_MS: i64
-    6910
+    6980
 
 constant SEED_MS: i64
-    8180
+    8240
 
 constant BUILD_MS: i64
-    37200
+    37580
 
 # THE LEVEL, decision 2282 (2026-10-31): the first row's bests, 6.81, 8.18
 # and 37.25 s, plus 10 % rounded to a tenth, about seven times the spread that

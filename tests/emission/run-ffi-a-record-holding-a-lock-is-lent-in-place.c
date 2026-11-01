@@ -223,24 +223,39 @@ void h_ffiarecordholdingalockislentinplace_main(void) {
 #line 28
 #define h0_c (*hero_lend_h0_c)
 #line 28
+#define h1_h (*hero_big_h1_h)
+#line 28
 #define h2_m (*hero_lend_h2_m)
 #line 28
-    struct counter *const hero_lend_h0_c = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "c"); h_ffiarecordholdingalockislentinplace_Holder h1_h; struct counter *const hero_lend_h2_m = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "m"); HERO_NODEBUG int64_t t1, t4, t6, t9, t10, t11, t15, t17, t19, t21; HERO_NODEBUG struct counter t2, t5, t12; HERO_NODEBUG h_ffiarecordholdingalockislentinplace_Holder t7; HERO_NODEBUG HeroStr t16, t18, t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); t2 = (struct counter){0}; __builtin_memset(&t2, 0, sizeof t2); t2.n = t1; h0_c = t2; hero_pad_fill(&h0_c, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
+#define t2 (*hero_big_t2)
+#line 28
+#define t5 (*hero_big_t5)
+#line 28
+#define t7 (*hero_big_t7)
+#line 28
+#define t12 (*hero_big_t12)
+#line 28
+    struct counter *const hero_lend_h0_c = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "c"); h_ffiarecordholdingalockislentinplace_Holder *const hero_big_h1_h = (h_ffiarecordholdingalockislentinplace_Holder *)hero_frame_take(sizeof(h_ffiarecordholdingalockislentinplace_Holder)); struct counter *const hero_lend_h2_m = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "m"); HERO_NODEBUG int64_t t1, t4, t6, t9, t10, t11, t15, t17, t19, t21; HERO_NODEBUG struct counter *const hero_big_t2 = (struct counter *)hero_frame_take(sizeof(struct counter)); HERO_NODEBUG struct counter *const hero_big_t5 = (struct counter *)hero_frame_take(sizeof(struct counter)); HERO_NODEBUG h_ffiarecordholdingalockislentinplace_Holder *const hero_big_t7 = (h_ffiarecordholdingalockislentinplace_Holder *)hero_frame_take(sizeof(h_ffiarecordholdingalockislentinplace_Holder)); HERO_NODEBUG struct counter *const hero_big_t12 = (struct counter *)hero_frame_take(sizeof(struct counter)); HERO_NODEBUG HeroStr t16, t18, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = *(struct counter *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.n = t1; h0_c = t2; hero_pad_fill(&h0_c, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-record-holding-a-lock-is-lent-in-place.hero", "ffi-a-record-holding-a-lock-is-lent-in-place.main", 30, 9}; hero_lend_local_name(hero_lend_h0_c, "counter_init", "c"); hero_pad_fill(&h0_c, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0); (void)counter_init(&h0_c); }
     h_ffiarecordholdingalockislentinplace_twice(&h0_c);
-    t4 = INT64_C(5); t5 = (struct counter){0}; __builtin_memset(&t5, 0, sizeof t5); t5.n = t4; t6 = INT64_C(1); t7 = (h_ffiarecordholdingalockislentinplace_Holder){.f_c = t5, .f_k = t6}; h1_h = t7;
+    t4 = INT64_C(5); t5 = *(struct counter *)__builtin_memset(&t5, 0, sizeof t5); __builtin_memset(&t5, 0, sizeof t5); t5.n = t4; t6 = INT64_C(1); t7 = *(h_ffiarecordholdingalockislentinplace_Holder *)__builtin_memset(&t7, 0, sizeof t7); t7.f_c = t5; t7.f_k = t6; h1_h = t7;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-record-holding-a-lock-is-lent-in-place.hero", "ffi-a-record-holding-a-lock-is-lent-in-place.main", 33, 9}; hero_pad_fill(&h1_h.f_c, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0); (void)counter_init(&h1_h.f_c); }
     h_ffiarecordholdingalockislentinplace_twice(&h1_h.f_c);
     t9 = h1_h.f_c.n; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("ffi-a-record-holding-a-lock-is-lent-in-place.hero", "ffi-a-record-holding-a-lock-is-lent-in-place.main", 35, 13); h1_h.f_c.n = t11;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-record-holding-a-lock-is-lent-in-place.hero", "ffi-a-record-holding-a-lock-is-lent-in-place.main", 36, 19}; t12 = counter_made(); } h2_m = t12; hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-record-holding-a-lock-is-lent-in-place.hero", "ffi-a-record-holding-a-lock-is-lent-in-place.main", 37, 9}; hero_lend_local_name(hero_lend_h2_m, "counter_lock", "c"); hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0); (void)counter_lock(&h2_m); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-record-holding-a-lock-is-lent-in-place.hero", "ffi-a-record-holding-a-lock-is-lent-in-place.main", 38, 9}; hero_lend_local_name(hero_lend_h2_m, "counter_unlock", "c"); hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0); (void)counter_unlock(&h2_m); }
-    t15 = h0_c.n; t16 = HERO_STR_LIT(hero_str_20); t17 = h1_h.f_c.n; t18 = HERO_STR_LIT(hero_str_20); t19 = h1_h.f_k; t20 = HERO_STR_LIT(hero_str_20); t21 = h2_m.n; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); hero_lend_local_give(hero_lend_h2_m); hero_lend_local_give(hero_lend_h0_c); return;
-#line 241 "ffiarecordholdingalockislentinplace.c"
+    t15 = h0_c.n; t16 = HERO_STR_LIT(hero_str_20); t17 = h1_h.f_c.n; t18 = HERO_STR_LIT(hero_str_20); t19 = h1_h.f_k; t20 = HERO_STR_LIT(hero_str_20); t21 = h2_m.n; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); hero_lend_local_give(hero_lend_h2_m); hero_lend_local_give(hero_lend_h0_c); hero_frame_give(hero_big_t12); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return;
+#line 251 "ffiarecordholdingalockislentinplace.c"
 }
 #undef h0_c
 #undef h2_m
+#undef h1_h
+#undef t2
+#undef t5
+#undef t7
+#undef t12
 HERO_TU_LOCAL bool h_ffiarecordholdingalockislentinplace_0Counter_eq(const struct counter *a, const struct counter *b) {
     hero_panic("h_ffiarecordholdingalockislentinplace_0Counter_eq: a partial record has no structural equality");
 }
@@ -360,7 +375,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a327af437b732fa", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09e9a46072db9049", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiarecordholdingalockislentinplace\tffi-a-record-holding-a-lock-is-lent-in-place\n");

@@ -196,11 +196,22 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 20 "tests/golden/run/fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.hero"
-int64_t h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker(int64_t h0_n) { hero_thread_guard("fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten.worker"); struct heroes_held h1_held; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = (struct heroes_held){0}; __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_held = t2; hero_pad_fill(&h1_held, sizeof(struct heroes_held), 1, hero_pad_g_2, hero_pad_n_2);
-    t3 = h1_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.hero", "fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.worker", 22, 12}; t4 = heroes_held_first(t3); } return t4;
-#line 203 "fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten.c"
+int64_t h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker(int64_t h0_n) {
+#line 20
+#define h1_held (*hero_big_h1_held)
+#line 20
+#define t2 (*hero_big_t2)
+#line 20
+#define t3 (*hero_big_t3)
+#line 20
+    hero_thread_guard("fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten.worker"); struct heroes_held *const hero_big_h1_held = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_held = t2; hero_pad_fill(&h1_held, sizeof(struct heroes_held), 1, hero_pad_g_2, hero_pad_n_2);
+    t3 = h1_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.hero", "fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.worker", 22, 12}; t4 = heroes_held_first(t3); } hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_held); return t4;
+#line 211 "fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten.c"
 }
+#undef h1_held
+#undef t2
+#undef t3
 
 int64_t h_0cb_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker(int64_t h0_n) {
     int64_t hero_result = h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker(h0_n);
@@ -211,7 +222,7 @@ int64_t h_0cb_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_wor
 void h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_main(void) { int64_t h0_t; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker; t2 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.hero", "fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.main", 25, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_t = t3;
     t4 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.hero", "fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.main", 26, 11}; t5 = hero_thread_join(t4); } hero_print_int(t5); hero_print_end(); return;
-#line 215 "fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten.c"
+#line 226 "fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_0Held_eq: a partial record has no structural equality");
@@ -318,7 +329,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("19705c01081f3993", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5927856c434396e2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten\tfixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written\n");

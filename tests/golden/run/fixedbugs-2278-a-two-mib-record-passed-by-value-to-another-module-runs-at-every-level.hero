@@ -1,0 +1,16 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: the filing's third shape, the same record passed by
+# value to another module's function, at 2 MiB: past the 600 s bound at `-O2` before, a few billion
+# instructions since, a large plain parameter passed by `const T *`.
+
+use fixedbugs2278/byval/held
+
+function main()
+    print("before")
+    v0 = held.E0(x: 1)
+    v1 = held.E1(a: v0, b: v0, c: v0, d: v0, e: v0, f: v0, g: v0, h: v0)
+    v2 = held.E2(a: v1, b: v1, c: v1, d: v1, e: v1, f: v1, g: v1, h: v1)
+    v3 = held.E3(a: v2, b: v2, c: v2, d: v2, e: v2, f: v2, g: v2, h: v2)
+    v4 = held.E4(a: v3, b: v3, c: v3, d: v3, e: v3, f: v3, g: v3, h: v3)
+    v5 = held.E5(a: v4, b: v4, c: v4, d: v4, e: v4, f: v4, g: v4, h: v4)
+    v6 = held.E6(a: v5, b: v5, c: v5, d: v5, e: v5, f: v5, g: v5, h: v5)
+    print(held.first(e: v6))

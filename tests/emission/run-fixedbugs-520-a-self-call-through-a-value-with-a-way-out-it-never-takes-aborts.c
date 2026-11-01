@@ -222,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("06a64f2829fc7e94", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("465d78936520dbe3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts\tfixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts\n");

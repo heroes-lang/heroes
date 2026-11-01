@@ -71,6 +71,7 @@ constant NAMES: [str]
         "hero_failure_not_text hero_failure_release hero_failure_retain"
         "hero_file_read hero_file_read_shown hero_file_read_str hero_file_stage"
         "hero_file_unstage hero_file_write hero_file_write_str"
+        "hero_frame_give hero_frame_give_at hero_frame_take"
         "hero_fs_deny_delete hero_fs_exists hero_fs_flagged hero_fs_flush"
         "hero_fs_is_directory hero_fs_kind hero_fs_landing hero_fs_link"
         "hero_fs_links hero_fs_mkdir_all hero_fs_mode hero_fs_newer_than"

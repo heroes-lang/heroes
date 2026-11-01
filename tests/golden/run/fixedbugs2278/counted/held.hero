@@ -1,0 +1,43 @@
+# A module of defect 2278's run case (panel 233), not a case of its own.
+
+record S0
+    s: str
+    n: i64
+
+record S1
+    a: S0
+    b: S0
+    c: S0
+    d: S0
+    e: S0
+    f: S0
+    g: S0
+    h: S0
+
+record S2
+    a: S1
+    b: S1
+    c: S1
+    d: S1
+    e: S1
+    f: S1
+    g: S1
+    h: S1
+
+record S3
+    a: S2
+    b: S2
+    c: S2
+    d: S2
+    e: S2
+    f: S2
+    g: S2
+    h: S2
+
+function grow(v: S2) -> S3
+    return S3(a: v, b: v, c: v, d: v, e: v, f: v, g: v, h: v)
+
+function retag(x: S3, tag: str) -> S3
+    y: S3 @= x
+    y.c.d.e.s @ tag + "!"
+    return y

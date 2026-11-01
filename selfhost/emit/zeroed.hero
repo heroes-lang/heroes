@@ -52,8 +52,21 @@ function asked(c: state.Checked, end: i64) -> bool
 
 # The construction's statements into `target`, or the compiler's own loud
 # failure where the lowering handed it something no record holds.
-function write(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str)
-    written = lines(c, names, s, decls, decl: decl, given: given, arguments: arguments, target: target)
+# `in_room` is whether the target lives off the frame (`emit/large_value.hero`),
+# where it is written whole by the memset alone, as past the depth: a `{0}`
+# literal of a 128 MiB record would be a 128 MiB object of the frame.
+function write(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str, in_room: bool)
+    written = lines(
+        c,
+        names,
+        s,
+        decls,
+        decl: decl,
+        given: given,
+        arguments: arguments,
+        target: target,
+        in_room: in_room
+    )
 
     if written.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not a group record */")
@@ -62,7 +75,7 @@ function write(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sourc
     for line in written.must()
         writer.line(@w, text: "    " + line)
 
-function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str) -> [str]?
+function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str, in_room: bool) -> [str]?
     name = ctype.of(names, decl: decl)
     fields: [ast.Field] @= []
 
@@ -90,7 +103,7 @@ function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
     first: str @= target + " = (" + name + "){0};"
     known: {i64: i64} @= {}
 
-    if depth_of(c, decls, decl: decl, cap: typeorder.IN_ORDER_FROM + 1, @known) > typeorder.IN_ORDER_FROM
+    if in_room || depth_of(c, decls, decl: decl, cap: typeorder.IN_ORDER_FROM + 1, @known) > typeorder.IN_ORDER_FROM
         first @ target + " = *(" + name + " *)__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
     out: [str] @= [
         first
@@ -184,16 +197,46 @@ test "every byte zero first, then the fields named, an array through its own typ
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    got = lines(c, names, s, parsed.decls, decl: 0, given: [0, 1], arguments: ["t1", "{t2, t3, t4, t5}"], target: "t6")
+    got = lines(
+        c,
+        names,
+        s,
+        parsed.decls,
+        decl: 0,
+        given: [0, 1],
+        arguments: ["t1", "{t2, t3, t4, t5}"],
+        target: "t6",
+        in_room: false
+    )
     assert got.must() == ["t6 = (struct pair){0};", "__builtin_memset(&t6, 0, sizeof t6);", "t6.n = t1;", "__builtin_memcpy(t6.name, (__typeof__(t6.name)){t2, t3, t4, t5}, sizeof t6.name);"]
 
     # Naming nothing is the whole record at zero, two lines and no store.
-    assert lines(c, names, s, parsed.decls, decl: 0, given: [], arguments: [], target: "t7").must().len() == 2
+    assert lines(c, names, s, parsed.decls, decl: 0, given: [], arguments: [], target: "t7", in_room: false).must().len() == 2
 
     # A field the record does not have, or an argument short, is the
     # lowering's fault and refused rather than written as another program.
-    assert lines(c, names, s, parsed.decls, decl: 0, given: [5], arguments: ["t1"], target: "t8").is_err()
-    assert lines(c, names, s, parsed.decls, decl: 0, given: [0, 1], arguments: ["t1"], target: "t8").is_err()
+    assert lines(
+        c,
+        names,
+        s,
+        parsed.decls,
+        decl: 0,
+        given: [5],
+        arguments: ["t1"],
+        target: "t8",
+        in_room: false
+    ).is_err()
+    assert lines(
+        c,
+        names,
+        s,
+        parsed.decls,
+        decl: 0,
+        given: [0, 1],
+        arguments: ["t1"],
+        target: "t8",
+        in_room: false
+    ).is_err()
 
     # The checker recorded the words at the construction's end, and nowhere else.
     assert c.rested.len() == 1

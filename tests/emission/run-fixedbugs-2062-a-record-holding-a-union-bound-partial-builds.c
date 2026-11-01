@@ -192,12 +192,15 @@ void h_fixedbugs2062arecordholdingaunionboundpartialbuilds_main(void) {
 #line 12
 #define h0_t (*hero_lend_h0_t)
 #line 12
-    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062arecordholdingaunionboundpartialbuilds.main", "t"); HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG struct tagged t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(2); t2 = (struct tagged){0}; __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; h0_t = t2; hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero", "fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.main", 14, 11}; hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); t3 = tg_kind(&h0_t); } hero_print_int(t3); hero_print_end(); hero_lend_local_give(hero_lend_h0_t); return;
-#line 199 "fixedbugs2062arecordholdingaunionboundpartialbuilds.c"
+#define t2 (*hero_big_t2)
+#line 12
+    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062arecordholdingaunionboundpartialbuilds.main", "t"); HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG struct tagged *const hero_big_t2 = (struct tagged *)hero_frame_take(sizeof(struct tagged)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(2); t2 = *(struct tagged *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; h0_t = t2; hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero", "fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.main", 14, 11}; hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); t3 = tg_kind(&h0_t); } hero_print_int(t3); hero_print_end(); hero_lend_local_give(hero_lend_h0_t); hero_frame_give(hero_big_t2); return;
+#line 201 "fixedbugs2062arecordholdingaunionboundpartialbuilds.c"
 }
 #undef h0_t
+#undef t2
 HERO_TU_LOCAL bool h_fixedbugs2062arecordholdingaunionboundpartialbuilds_0Tagged_eq(const struct tagged *a, const struct tagged *b) {
     hero_panic("h_fixedbugs2062arecordholdingaunionboundpartialbuilds_0Tagged_eq: a partial record has no structural equality");
 }
@@ -303,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("66f65601710410af", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("26ad7f6d2c286dff", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2062arecordholdingaunionboundpartialbuilds\tfixedbugs-2062-a-record-holding-a-union-bound-partial-builds\n");

@@ -111,8 +111,14 @@ constant ALLOCATORS: [str]
 # **29 at batch 14's gate, 2026-10-07**, measured by this suite on the merged
 # round, past a quarter above 23; the newest part is `parts/write.c`
 # (defect 438, lane b14-runtime).
+#
+# **29 -> 37 at M-latency-ceiling's gate, 2026-11-01**, told by this suite's own
+# `FLOOR` line as the round's emissions were blessed: 37 files, the newest
+# `parts/frame.c`, the room a large value takes off its frame (defect 2278,
+# panel 233). Eight parts had been added since 2026-10-07 and the floor would
+# have passed a sweep that missed them.
 constant LEAST_FILES: i64
-    29
+    37
 
 # **3 -> 7 on 2026-09-13.** Four allocation sites had been added to the single
 # point since the floor was written, which is the single point doing its job —

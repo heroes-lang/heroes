@@ -868,6 +868,12 @@ int64_t hero_lend_count_u64_at(uint64_t, const char *, const char *, const HeroP
 void *hero_lend_local(size_t, const char *, const char *);
 void hero_lend_local_name(void *, const char *, const char *);
 void hero_lend_local_give(void *);
+/* A large value's room, off its function's frame: taken in the prologue, given
+ * back at the function's one exit, the last taken first (defect 2278;
+ * `parts/frame.c`, `selfhost/emit/large_value.hero`). */
+void *hero_frame_take(size_t bytes);
+void hero_frame_give(void *p);
+void hero_frame_give_at(void *slot); /* the same, as a cleanup: `slot` holds the pointer */
 /* A padding table's gaps, found once, and written zero at each lend (panel 215's R1). */
 size_t hero_pad_gaps(size_t, const size_t *, size_t, size_t *);
 void hero_pad_fill(void *, size_t, size_t, const size_t *, size_t);

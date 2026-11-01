@@ -182,11 +182,22 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 23 "tests/golden/run/fixedbugs-2253-a-frame-larger-than-every-stack-aborts-in-main.hero"
-void h_fixedbugs2253aframelargerthaneverystackabortsinmain_main(void) { struct heroes_held h0_held; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); t2 = (struct heroes_held){0}; __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h0_held = t2; hero_pad_fill(&h0_held, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = h0_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2253-a-frame-larger-than-every-stack-aborts-in-main.hero", "fixedbugs-2253-a-frame-larger-than-every-stack-aborts-in-main.main", 25, 11}; t4 = heroes_held_first(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 189 "fixedbugs2253aframelargerthaneverystackabortsinmain.c"
+void h_fixedbugs2253aframelargerthaneverystackabortsinmain_main(void) {
+#line 23
+#define h0_held (*hero_big_h0_held)
+#line 23
+#define t2 (*hero_big_t2)
+#line 23
+#define t3 (*hero_big_t3)
+#line 23
+    struct heroes_held *const hero_big_h0_held = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h0_held = t2; hero_pad_fill(&h0_held, sizeof(struct heroes_held), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = h0_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2253-a-frame-larger-than-every-stack-aborts-in-main.hero", "fixedbugs-2253-a-frame-larger-than-every-stack-aborts-in-main.main", 25, 11}; t4 = heroes_held_first(t3); } hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_held); return;
+#line 197 "fixedbugs2253aframelargerthaneverystackabortsinmain.c"
 }
+#undef h0_held
+#undef t2
+#undef t3
 HERO_TU_LOCAL bool h_fixedbugs2253aframelargerthaneverystackabortsinmain_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2253aframelargerthaneverystackabortsinmain_0Held_eq: a partial record has no structural equality");
 }
@@ -292,7 +303,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b5eb1d80079860c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b15db443b9de35b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2253aframelargerthaneverystackabortsinmain\tfixedbugs-2253-a-frame-larger-than-every-stack-aborts-in-main\n");

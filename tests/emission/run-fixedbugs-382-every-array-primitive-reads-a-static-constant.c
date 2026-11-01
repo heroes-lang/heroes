@@ -619,7 +619,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b5c034b1af7a188", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b132cb7561bfed7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382everyarrayprimitivereadsastaticconstant\tfixedbugs-382-every-array-primitive-reads-a-static-constant\n");

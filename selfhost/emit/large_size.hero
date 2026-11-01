@@ -1,0 +1,203 @@
+# How many bytes a value of a type takes, and which of a program's types are
+# large enough to live off the frame (defect 2278; panel 233, provisional,
+# author ratification pending). `emit/large_value.hero` is the other half: what
+# the C of such a value looks like. The seam is the question each answers, and
+# it runs one way — this module knows nothing about how a large value is
+# spelled, and that one never counts a byte.
+#
+# **THE SIZE IS COUNTED, NOT ASKED OF CLANG**: a field's bytes summed, no
+# padding, a variant's widest case and its tag, the same number on every
+# target this compiler builds for, so a unit's C does not depend on the
+# machine. It is a lower bound of `sizeof`, which only moves which side of
+# `LARGE` a value falls on. Read in one pass over `c.type_order`, which the
+# checker builds with every record after what it holds by value
+# (`check/sized.hero`), so no recursion walks a chain of records.
+#
+# The answer is carried on `ctype.Names.large` for the whole build
+# (`emit.hero` and `emit/members.hero` fill it), never asked twice.
+
+use ast
+use check/state
+use check/table
+use emit/byte_copy
+use emit/ctype
+use emit/types
+use widths
+use parse
+use resolve
+use checker
+use source
+
+# The threshold, in bytes as `bytes_of` counts them. Panel 233 measured the
+# cost a value just under it leaves: a 2 MiB record built in one function cost
+# 73.5 billion instructions at 64 KiB, 5.4 billion at 4,096 and 0.86 billion at
+# 512, whatever the whole record's size.
+constant LARGE: i64
+    4096
+
+# No sum is let past this, so a fixed array of a fixed array cannot overflow
+# the count.
+constant CEILING: i64
+    1099511627776
+
+function plus(a: i64, b: i64) -> i64
+    if a > CEILING - b
+        return CEILING
+    return a + b
+
+function times(n: i64, each: i64) -> i64
+    if each > 0 && n > CEILING / each
+        return CEILING
+    return n * each
+
+# Each declared aggregate's bytes by declaration, and each case's payload by
+# `ctype.case_key`.
+record Sizes
+    decls: {i64: i64}
+    cases: {str: i64}
+    # The declarations, and the cases, that are or hold by value a group's
+    # `partial` record, whose bytes the count cannot know (its C struct is the
+    # header's, past the fields it names): defect 2253's `Held` names 8 bytes
+    # of 128 MiB.
+    opaque: {i64: bool}
+    opaque_cases: {str: bool}
+
+# The bytes of a value of type `ty`.
+function bytes_of(c: state.Checked, sizes: Sizes, ty: i64) -> i64
+    return match table.get(c.types, ty)
+        .int_ty ik => widths.int_bits(ik.kind) / 8
+        .float_ty fk => widths.float_bits(fk.kind) / 8
+        .bool => 1
+        .str => 16
+        .failure => 32
+        .ptr | .cstr | .array | .map | .function_ty => 8
+        .unit | .generic | .error => 0
+        .named n => sizes.decls[n.decl].default(0)
+        .case_ty vc => sizes.cases[ctype.case_key(decl: vc.decl, at: vc.at)].default(0)
+        .fixed fx => times(n: fx.length, each: bytes_of(c, sizes, ty: fx.element))
+        .fallible o => plus(a: 8, b: widest(a: bytes_of(c, sizes, ty: o.payload), b: 32))
+
+# Whether a value of `ty` holds a `partial` record by value, so that its bytes
+# are unknown to the count and may be any size: a program's type that does is
+# counted large, whatever its named fields sum to, a rule that asks the
+# program and never the target.
+function holds_partial(c: state.Checked, sizes: Sizes, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .named n => !sizes.opaque[n.decl].is_err()
+        .case_ty vc => !sizes.opaque_cases[ctype.case_key(decl: vc.decl, at: vc.at)].is_err()
+        .fixed fx => holds_partial(c, sizes, ty: fx.element)
+        .fallible o => holds_partial(c, sizes, ty: o.payload)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .map | .function_ty | .failure | .generic | .error => false
+
+function fields_partial(c: state.Checked, sizes: Sizes, fields: [ast.Field]) -> bool
+    for field in fields
+        written = state.written_type(c, field.ty)
+
+        if !written.is_err() && holds_partial(c, sizes, ty: written.must())
+            return true
+
+    return false
+
+function widest(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+function fields_bytes(c: state.Checked, sizes: Sizes, fields: [ast.Field]) -> i64
+    total: i64 @= 0
+
+    for field in fields
+        written = state.written_type(c, field.ty)
+
+        if !written.is_err()
+            total @ plus(a: total, b: bytes_of(c, sizes, ty: written.must()))
+
+    return total
+
+# Every declared aggregate's bytes and every case payload's, in the checker's
+# order, which puts every record after what it holds.
+function sizes_of(c: state.Checked, decls: [ast.Decl]) -> Sizes
+    sizes: Sizes @= Sizes(decls: {}, cases: {}, opaque: {}, opaque_cases: {})
+
+    for decl in types.aggregates(c, decls)
+        match decls[decl].kind
+            .record_decl rec =>
+                sizes.decls[decl] @ fields_bytes(c, sizes, fields: rec.fields)
+
+                if rec.partial && !rec.header.is_err() || fields_partial(c, sizes, fields: rec.fields)
+                    sizes.opaque[decl] @ true
+            .variant_decl v =>
+                most: i64 @= 0
+                at: i64 @= 0
+
+                for one_case in v.cases
+                    payload = fields_bytes(c, sizes, fields: one_case.fields)
+                    sizes.cases[ctype.case_key(decl: decl, at: at)] @ payload
+                    most @ widest(a: most, b: payload)
+
+                    if fields_partial(c, sizes, fields: one_case.fields)
+                        sizes.opaque_cases[ctype.case_key(decl: decl, at: at)] @ true
+                        sizes.opaque[decl] @ true
+                    at @ at + 1
+
+                sizes.decls[decl] @ plus(a: 8, b: most)
+            .constant_decl | .function_decl | .test_decl => continue
+
+    return sizes
+
+# The program's large types, found once per build and carried in
+# `ctype.Names.large`: `true` for each of its own whose bytes pass `LARGE` or
+# that holds a `partial` record, kept off the frame and passed in place;
+# `false` for a group's record that is or holds a `partial` one, kept off the
+# frame alone, since its C convention is the header's and an `extern` takes it
+# by value as C says. Defect 2253's 128 MiB `Held` built as a temporary for a
+# record that holds it is the case (panel 233's critic, `grpwrap`).
+function large_types(c: state.Checked, decls: [ast.Decl]) -> {i64: bool}
+    sizes = sizes_of(c, decls)
+    out: {i64: bool} @= {}
+    ty: i64 @= 0
+
+    while ty < table.len_of(c.types)
+        if byte_copy.own_struct(c, decls, ty: ty)
+            if bytes_of(c, sizes, ty: ty) > LARGE || holds_partial(c, sizes, ty: ty)
+                out[ty] @ true
+        else if group_named(c, ty: ty) && holds_partial(c, sizes, ty: ty)
+            out[ty] @ false
+        ty @ ty + 1
+
+    return out
+
+function group_named(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .named                                                    => !table.poisoned(c.types, ty)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .function_ty         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+## Tests
+
+test "a record past the threshold is large, one at it is not, and a chain is counted level by level"
+    text = "record E0\n    x: i64\n\nrecord E1\n    a: E0\n    b: E0\n    c: E0\n    d: E0\n    e: E0\n    f: E0\n    g: E0\n    h: E0\n\nrecord E2\n    a: E1\n    b: E1\n    c: E1\n    d: E1\n    e: E1\n    f: E1\n    g: E1\n    h: E1\n\nrecord E3\n    a: E2\n    b: E2\n    c: E2\n    d: E2\n    e: E2\n    f: E2\n    g: E2\n    h: E2\n\nrecord E4\n    a: E3\n    b: E3\n\nfunction first(e: E4) -> i64\n    return e.a.a.a.a.x\n\nfunction main()\n    v = E0(x: 1)\n    print(v.x)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    sizes = sizes_of(c, parsed.decls)
+    assert sizes.decls[0].default(0 - 1) == 8
+    assert sizes.decls[1].default(0 - 1) == 64
+    assert sizes.decls[2].default(0 - 1) == 512
+    assert sizes.decls[3].default(0 - 1) == LARGE
+    assert sizes.decls[4].default(0 - 1) == 2 * LARGE
+
+    # One type past the threshold, `E4`; `E3`, at it, is not.
+    found = large_types(c, parsed.decls)
+    assert found.len() == 1
+
+    for ty in keys(found)
+        assert found[ty].must()
+
+    assert plus(a: CEILING, b: 1) == CEILING
+    assert times(n: CEILING, each: 2) == CEILING
+    assert widest(a: 3, b: 32) == 32

@@ -210,15 +210,21 @@ void h_ffiatypedefthenotenamesbindsbyitsownname_main(void) {
 #line 21
 #define h1_p (*hero_lend_h1_p)
 #line 21
-    lock_t *const hero_lend_h0_m = (lock_t *)hero_lend_local(sizeof(lock_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "m"); pattern_t *const hero_lend_h1_p = (pattern_t *)hero_lend_local(sizeof(pattern_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "p"); HERO_NODEBUG lock_t t1; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7, t9; HERO_NODEBUG int64_t t4, t8; HERO_NODEBUG pattern_t t5; HERO_NODEBUG uint64_t t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (lock_t){0}; __builtin_memset(&t1, 0, sizeof t1); h0_m = t1; hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
+#define t1 (*hero_big_t1)
+#line 21
+#define t5 (*hero_big_t5)
+#line 21
+    lock_t *const hero_lend_h0_m = (lock_t *)hero_lend_local(sizeof(lock_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "m"); pattern_t *const hero_lend_h1_p = (pattern_t *)hero_lend_local(sizeof(pattern_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "p"); HERO_NODEBUG lock_t *const hero_big_t1 = (lock_t *)hero_frame_take(sizeof(lock_t)); HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7, t9; HERO_NODEBUG int64_t t4, t8; HERO_NODEBUG pattern_t *const hero_big_t5 = (pattern_t *)hero_frame_take(sizeof(pattern_t)); HERO_NODEBUG uint64_t t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = *(lock_t *)__builtin_memset(&t1, 0, sizeof t1); __builtin_memset(&t1, 0, sizeof t1); h0_m = t1; hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-typedef-the-note-names-binds-by-its-own-name.hero", "ffi-a-typedef-the-note-names-binds-by-its-own-name.main", 23, 11}; hero_lend_local_name(hero_lend_h0_m, "lock_init", "m"); hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0); t2 = lock_init(&h0_m); } t3 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-typedef-the-note-names-binds-by-its-own-name.hero", "ffi-a-typedef-the-note-names-binds-by-its-own-name.main", 23, 31}; hero_lend_local_name(hero_lend_h0_m, "lock_marked", "m"); hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0); t4 = lock_marked(&h0_m); } hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end();
-    t5 = (pattern_t){0}; __builtin_memset(&t5, 0, sizeof t5); h1_p = t5; hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-typedef-the-note-names-binds-by-its-own-name.hero", "ffi-a-typedef-the-note-names-binds-by-its-own-name.main", 25, 11}; hero_lend_local_name(hero_lend_h1_p, "pattern_init", "p"); hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1); t6 = pattern_init(&h1_p); } t7 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-typedef-the-note-names-binds-by-its-own-name.hero", "ffi-a-typedef-the-note-names-binds-by-its-own-name.main", 25, 34}; hero_lend_local_name(hero_lend_h1_p, "pattern_marked", "p"); hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1); t8 = pattern_marked(&h1_p); } t9 = HERO_STR_LIT(hero_str_20); t10 = h1_p.re_nsub; hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_uint(t10); hero_print_end(); hero_lend_local_give(hero_lend_h1_p); hero_lend_local_give(hero_lend_h0_m); return;
-#line 219 "ffiatypedefthenotenamesbindsbyitsownname.c"
+    t5 = *(pattern_t *)__builtin_memset(&t5, 0, sizeof t5); __builtin_memset(&t5, 0, sizeof t5); h1_p = t5; hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-typedef-the-note-names-binds-by-its-own-name.hero", "ffi-a-typedef-the-note-names-binds-by-its-own-name.main", 25, 11}; hero_lend_local_name(hero_lend_h1_p, "pattern_init", "p"); hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1); t6 = pattern_init(&h1_p); } t7 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-typedef-the-note-names-binds-by-its-own-name.hero", "ffi-a-typedef-the-note-names-binds-by-its-own-name.main", 25, 34}; hero_lend_local_name(hero_lend_h1_p, "pattern_marked", "p"); hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1); t8 = pattern_marked(&h1_p); } t9 = HERO_STR_LIT(hero_str_20); t10 = h1_p.re_nsub; hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_uint(t10); hero_print_end(); hero_lend_local_give(hero_lend_h1_p); hero_lend_local_give(hero_lend_h0_m); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t1); return;
+#line 223 "ffiatypedefthenotenamesbindsbyitsownname.c"
 }
 #undef h0_m
 #undef h1_p
+#undef t1
+#undef t5
 HERO_TU_LOCAL bool h_ffiatypedefthenotenamesbindsbyitsownname_0lock_t_eq(const lock_t *a, const lock_t *b) {
     hero_panic("h_ffiatypedefthenotenamesbindsbyitsownname_0lock_t_eq: a partial record has no structural equality");
 }
@@ -332,7 +338,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("034117183f58e8d2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("42f840837a7d4621", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiatypedefthenotenamesbindsbyitsownname\tffi-a-typedef-the-note-names-binds-by-its-own-name\n");

@@ -192,11 +192,22 @@ void h_fixedbugs2253alineprintedbeforeaframelargerthaneverystackiskept_main(void
 }
 
 #line 12 "tests/golden/run/fixedbugs2253/held.hero"
-int64_t h_fixedbugs2253held_kept(int64_t h0_n) { struct heroes_held h1_held; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = (struct heroes_held){0}; __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_held = t2; hero_pad_fill(&h1_held, sizeof(struct heroes_held), 1, hero_pad_g_1, hero_pad_n_1);
-    t3 = h1_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2253/held.hero", "held.kept", 14, 12}; t4 = heroes_held_first(t3); } return t4;
-#line 199 "fixedbugs2253alineprintedbeforeaframelargerthaneverystackiskept.c"
+int64_t h_fixedbugs2253held_kept(int64_t h0_n) {
+#line 12
+#define h1_held (*hero_big_h1_held)
+#line 12
+#define t2 (*hero_big_t2)
+#line 12
+#define t3 (*hero_big_t3)
+#line 12
+    struct heroes_held *const hero_big_h1_held = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct heroes_held *const hero_big_t2 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_NODEBUG struct heroes_held *const hero_big_t3 = (struct heroes_held *)hero_frame_take(sizeof(struct heroes_held)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = *(struct heroes_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_held = t2; hero_pad_fill(&h1_held, sizeof(struct heroes_held), 1, hero_pad_g_1, hero_pad_n_1);
+    t3 = h1_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs2253/held.hero", "held.kept", 14, 12}; t4 = heroes_held_first(t3); } hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_held); return t4;
+#line 207 "fixedbugs2253alineprintedbeforeaframelargerthaneverystackiskept.c"
 }
+#undef h1_held
+#undef t2
+#undef t3
 HERO_TU_LOCAL bool h_fixedbugs2253held_0Held_eq(const struct heroes_held *a, const struct heroes_held *b) {
     hero_panic("h_fixedbugs2253held_0Held_eq: a partial record has no structural equality");
 }
@@ -302,7 +313,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c5132cf12fe34e6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c085c3a4e229235", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2253alineprintedbeforeaframelargerthaneverystackiskept\tfixedbugs-2253-a-line-printed-before-a-frame-larger-than-every-stack-is-kept\nfixedbugs2253held\theld\n");

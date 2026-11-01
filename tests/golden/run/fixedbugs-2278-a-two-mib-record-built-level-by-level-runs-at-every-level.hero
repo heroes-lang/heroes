@@ -1,0 +1,10 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: the filing's fourth shape, the record built level by
+# level in a module of its own, eight calls a level, at 2 MiB: 1,908 billion instructions and 10.4 GB at
+# `-O2` before, about five billion since.
+
+use fixedbugs2278/levels
+
+function main()
+    print("before")
+    v = levels.make6(n: 1)
+    print(v.a.a.a.a.a.a.x)

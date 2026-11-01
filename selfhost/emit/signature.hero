@@ -22,6 +22,7 @@ use emit/ctype
 use emit/writer
 use emit/nodebug
 use emit/stop_place
+use emit/large_value
 use token
 use check/table
 use parse
@@ -72,14 +73,40 @@ function render_instance(c: state.Checked, s: source.Source, decls: [ast.Decl], 
 # callee cannot otherwise reach it.
 function signature(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
     name = instance_name(f, c, s, decls)
-    result = ctype.c_result(names, c: c, ty: f.result)
-    params: [str] @= plain_params(f, c, names)
+    result: str @= ctype.c_result(names, c: c, ty: f.result)
+    params: [str] @= []
+
+    # A large result is written into the caller's slot, handed first
+    # (`emit/large_value.hero`, defect 2278).
+    if large_value.is_large(names, ty: f.result)
+        params @ params.push(result + " *" + large_value.OUT)
+        result @ "void"
+
+    for one in direct_params(f, c, names)
+        params @ params.push(one)
 
     # A function of the library's own Heroes is handed its caller's place last
     # (panel 230's R1, `emit/stop_place.hero`'s `CALLER`).
     if stop_place.in_library(s, f)
         params @ params.push("const HeroPlace *" + stop_place.CALLER)
     return local_of(f) + result + " " + name + "(" + listed(params) + ")"
+
+# The parameters as a direct call hands them: a large plain one as a pointer to
+# its caller's copy, which the body names through `large_value.defined`.
+function direct_params(f: containers.Function, c: state.Checked, names: ctype.Names) -> [str]
+    params: [str] @= []
+
+    for slot_id in f.params
+        if large_value.in_pointer_param(f, names, slot_id: slot_id)
+            spelled = ctype.c_type(names, c: c, ty: f.slots[slot_id].ty)
+            name = mangle.slot(index: slot_id, name: f.slots[slot_id].name)
+
+            if !spelled.is_err()
+                params @ params.push("const " + spelled.must() + " *" + large_value.in_pointer(name))
+        else
+            params @ params.push(one_param(f, c, names, slot_id: slot_id))
+
+    return params
 
 function plain_params(f: containers.Function, c: state.Checked, names: ctype.Names) -> [str]
     params: [str] @= []
@@ -123,9 +150,22 @@ function as_value(f: containers.Function, c: state.Checked, s: source.Source, de
         return value_name(f, c, s, decls)
     return instance_name(f, c, s, decls)
 
+# The twin's signature: the function's own convention, a large result through
+# the caller's slot and a large parameter as a pointer, which is also what the
+# typedef of its function type spells (`emit/types.hero`), so its address
+# assigns to a value of that type.
 function value_header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
-    result = ctype.c_result(names, c: c, ty: f.result)
-    return local_of(f) + "__attribute__((unused)) " + result + " " + value_name(f, c, s, decls) + "(" + listed(plain_params(f, c, names)) + ")"
+    result: str @= ctype.c_result(names, c: c, ty: f.result)
+    params: [str] @= []
+
+    if large_value.is_large(names, ty: f.result)
+        params @ params.push(result + " *" + large_value.OUT)
+        result @ "void"
+
+    for one in direct_params(f, c, names)
+        params @ params.push(one)
+
+    return local_of(f) + "__attribute__((unused)) " + result + " " + value_name(f, c, s, decls) + "(" + listed(params) + ")"
 
 function value_prototype(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
     writer.at_generated(@w)
@@ -139,13 +179,22 @@ function value_twin(@w: writer.Writer, f: containers.Function, c: state.Checked,
         text: "    " + nodebug.MARK + "static const HeroPlace " + stop_place.HERE + " = {" + stop_place.literals(s, f, offset: f.span.start) + "};"
     )
     forwarded: [str] @= []
+    large = large_value.is_large(names, ty: f.result)
+
+    # Handed on as they arrived: the caller's slot first, a large parameter's
+    # pointer, an `@` one's pointer, the rest by value (`emit/large_value.hero`).
+    if large
+        forwarded @ forwarded.push(large_value.OUT)
 
     for slot_id in f.params
-        forwarded @ forwarded.push(argument_of(f, slot_id: slot_id))
+        if large_value.in_pointer_param(f, names, slot_id: slot_id)
+            forwarded @ forwarded.push(large_value.in_pointer(mangle.slot(index: slot_id, name: f.slots[slot_id].name)))
+        else
+            forwarded @ forwarded.push(argument_of(f, slot_id: slot_id))
 
     call = instance_name(f, c, s, decls) + "(" + forwarded.push("&" + stop_place.HERE).join(", ") + ")"
 
-    if ctype.c_result(names, c: c, ty: f.result) == "void"
+    if large || ctype.c_result(names, c: c, ty: f.result) == "void"
         writer.line(@w, text: "    " + call + ";")
     else
         writer.line(@w, text: "    return " + call + ";")

@@ -143,3 +143,108 @@ one, 2275's own case. Both issues closed. The tag waits on 2278 alone, and on th
 convened on it the same morning, answering decision 2283 *(A)*: the soundness lane, the
 compiler-engineer and the ffi-pragmatist, on a measured reproducer.
 
+
+## The tag, 2026-11-01: panel 233's route landed and defect 2278 closed
+
+The sitting the author convened sat the same day and found the cause where no
+guess had put it: not the stack, which defect 2253's guard already watched, but
+**clang's SROA**, which splits what a frame holds into its leaves and takes
+96.3 % of the `-O2` time doing it. A record of records 18 deep, four mebibytes
+of it, cost **314.40 billion instructions and 12.31 GB** of clang; off the
+frame it costs **0.398 billion and about 12 MB**, and the same program now runs
+at `-O0`, where its frame had aborted.
+
+So a type whose named fields pass 4,096 bytes, or that holds a header's
+`partial` record by value, no longer lives on the frame: it takes its room from
+a per-thread last-in-first-out room of the runtime, bounded at a gibibyte for
+the whole process (`runtime/parts/frame.c`); a large result is written into its
+caller's slot, a large plain parameter arrives as `const T *`, and a
+construction is written in place where it is going
+(`selfhost/emit/large_value.hero`). Every `extern` call and every callback keeps
+C's ABI byte for byte.
+
+**The gate rewrote the route, and that is the story of the landing.** The
+sitting's resolutions were sound and two of them were short, and neither was
+found by reading them.
+
+*The first came from `wholes`*, panel 182's instrument, which refused ten of the
+route's own emissions. A construction wrote field by field with nothing writing
+the value whole, so the bytes no field names kept what the room last held, and
+because the room is given back last-taken-first, *what it last held* is another
+value's bytes, not merely indeterminate ones. The store that follows a
+construction copies `sizeof` bytes and carries them into the caller, and where
+the record is lent to C, panel 215's R1 promises exactly those bytes are zero.
+Every construction now opens by writing the whole value zero.
+
+*The second came from asking clang a question nobody had asked it.* Panel 233's
+R1 counts a **variant** among the large types, the widest case plus its tag, so
+a variant's temporary already lived in the room; R2 wrote in place only a
+**record**'s construction, and the compound literal left behind put the whole
+value straight back on the frame R1 had moved it off. The same held of a `T?`.
+`clang -O2 -Wframe-larger-than=65536` on a 2 MiB payload: **`main`'s frame
+4,194,624 bytes**. And then the measurement that settles what kind of thing this
+is: one recursion run twice, same depth, same bytes, differing only in whether
+the value sits in a case:
+
+```
+as a record:          15          exit 0
+as a variant case:    panic: stack exhausted      exit 134
+```
+
+A correct program died because its large value was in a variant instead of a
+record, and nothing in the language says those are different. So the landing
+added the two writers R1 had always implied, and after them clang reports no
+frame over 64 KiB in that program at all.
+
+Doing it took `emit/large_value.hero` past §11's 300 lines, so it is two
+modules now, on a seam that names a concern rather than a line count:
+`emit/large_size.hero` answers **how big a type is and which are large**,
+`emit/large_value.hero` answers **how a large value is spelled in C**. Neither
+knows the other's trade, and the dependency runs one way.
+
+**And the runtime's own two rules, told at the same gate.** `parts/frame.c`
+called `free` where design.md Part 7.13 puts every such call in `parts/alloc.c`;
+`hero_free_raw` now joins `hero_malloc_raw` there, the pair neither leak counter
+weighs, which is what the room needs and what the two counted pairs would get
+wrong. `hero_frame_told` is spelled `_Atomic int`. And the runtime's file floor
+went 29 to 37 on purpose: eight parts had been added since 2026-10-07 and a
+sweep could have missed them.
+
+**What the landing had to read rather than assume.** The runtime moved, so every
+program's provenance line moved with it and every emission wanted blessing; the
+question was which of them changed for a reason other than that line. Read file
+by file at the first bless: **26**, exactly the number the compiler-engineer had
+predicted, and inside them **290** changed lines of which **212** are `#line`
+directives renumbered and 78 the route's own forms.
+
+**What it costs, said plainly.** A binding the author wrote, if its type lives
+in the room, is read in the debugger through the name the room gives it:
+`hero_big_h5_holder->vfs.f_bsize` where it was `h5_holder.vfs.f_bsize`
+(`tests/golden/lldb/formatter-steps-aside.expected`). The pointer is left
+visible on purpose, unlike every temporary the lowering invents, because
+otherwise the value could not be seen at all.
+
+**The gate.** Gate A on the seed of M-compatibility-promise, not refreshed:
+clang built stage 1, stage 1 built stage 2, stage 2 built stage 3, and the two
+emitted identical bytes, **29,043,650**, stage 2 keyed `200a93d749fe1443`.
+Gate B, the full net on stage 2, **35 suites, 10,644 passed and 0 failed**, no
+floor outgrown and its 16 skips this Mac's own; the compiler's own tests
+**1,793** and the net's own **505**; the site's build green over 192 pages.
+The emissions were blessed here, 710 files moved and 9 new, and the twelve
+`tests/golden/emit/` goldens written by the form's own command, `build
+--emit-c`, a second register of the same emissions that `UPDATE_EMISSION=1`
+does not touch: **24 changed lines and every one of them the provenance
+line**, which is R6 read a second way. On Linux arm64 the whole corpus read
+2,203 and 2 before its bless and **2,205 and 0** after, the two failures being
+the cases this Mac skips, and a `cmp` of every blessed file there against this
+Mac's named those same two and no other, each differing by its provenance line
+alone.
+
+**What the route does not close**, filed apart: defect 2286, a chain of group
+records nested by copy and a `partial` group record returned by value; defect
+2287, two threads exhausting their stacks at once writing into each other's
+message; defect 2288, the compiler's own work growing toward the square of a
+construction's fields; and defect 2284, a bound `partial` header naming many
+members at depth. Decision 2285 carries the sitting for the author to ratify or
+turn, and an open `panel NNN` ratification is the one decision a tag may stand
+over.

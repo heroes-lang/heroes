@@ -290,7 +290,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0fedbd191eade2bc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4fa4e68459d2400b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handleacopymadebeforetheendistheruntimes\thandle-a-copy-made-before-the-end-is-the-runtime-s\n");

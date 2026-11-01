@@ -29,6 +29,7 @@ use emit/literal
 use emit/operator
 use emit/handle_eq
 use emit/ops
+use emit/large_value
 use emit/access
 use emit/func_ref
 use emit/abort
@@ -250,8 +251,8 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 decls,
                 callee: cl.callee,
                 run: cl.arguments,
-                arguments: rendered,
-                target: target,
+                arguments: large_value.direct_arguments(f, names, callee: cl.callee, run: cl.arguments, rendered: rendered, result: inst.ty, target: target),
+                target: large_value.direct_target(names, callee: cl.callee, result: inst.ty, target: target),
                 instance: instances.named_at(f, c, at: inst.span.end),
                 site: site
             )

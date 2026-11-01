@@ -454,6 +454,14 @@ constant CEILING: i64
 # constructor starts it from; the rest is in files with room
 # (`cli/header_types.hero`, `emit/lend_extent.hero`, `emit/lend_count.hero`).
 #
+# **One moved on 2026-11-01, panel 233 (provisional), for defect 2278.**
+# `emit/ctype.hero` 400 -> **404** (measured 404): the program's large types are
+# handed to every emitter the way panel 194's lend facts were, on `Names`, the
+# one table every emitter already holds. One field, its comment line, the
+# empty map the constructor starts it from and the argument that passes it;
+# the size, the threshold and the question `is_large` are in
+# `emit/large_value.hero`, a file with room.
+#
 # **One moved down on 2026-10-07, for defect 259.** `check/table.hero` 389 ->
 # **370**, what it measures in this suite's unit once lane b14-check split
 # defect 259's memo out into `check/type_fit.hero` (`3909ac43`): a ceiling
@@ -506,7 +514,7 @@ constant DECIDED: [str]
         "selfhost/check/table.hero 353"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"
-        "selfhost/emit/ctype.hero 400"
+        "selfhost/emit/ctype.hero 404"
         "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"

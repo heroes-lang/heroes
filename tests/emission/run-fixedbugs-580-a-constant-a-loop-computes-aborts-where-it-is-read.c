@@ -222,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("020b5d3071e476c1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("41c2869b2d08d411", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs580aconstantaloopcomputesabortswhereitisread\tfixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read\n");

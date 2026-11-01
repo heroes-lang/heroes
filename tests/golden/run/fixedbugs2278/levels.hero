@@ -1,0 +1,139 @@
+# A module of defect 2278's run case (panel 233), not a case of its own.
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+record E6
+    a: E5
+    b: E5
+    c: E5
+    d: E5
+    e: E5
+    f: E5
+    g: E5
+    h: E5
+
+function make0(n: i64) -> E0
+    return E0(x: n)
+
+function make1(n: i64) -> E1
+    return E1(
+        a: make0(n: n),
+        b: make0(n: n),
+        c: make0(n: n),
+        d: make0(n: n),
+        e: make0(n: n),
+        f: make0(n: n),
+        g: make0(n: n),
+        h: make0(n: n)
+    )
+
+function make2(n: i64) -> E2
+    return E2(
+        a: make1(n: n),
+        b: make1(n: n),
+        c: make1(n: n),
+        d: make1(n: n),
+        e: make1(n: n),
+        f: make1(n: n),
+        g: make1(n: n),
+        h: make1(n: n)
+    )
+
+function make3(n: i64) -> E3
+    return E3(
+        a: make2(n: n),
+        b: make2(n: n),
+        c: make2(n: n),
+        d: make2(n: n),
+        e: make2(n: n),
+        f: make2(n: n),
+        g: make2(n: n),
+        h: make2(n: n)
+    )
+
+function make4(n: i64) -> E4
+    return E4(
+        a: make3(n: n),
+        b: make3(n: n),
+        c: make3(n: n),
+        d: make3(n: n),
+        e: make3(n: n),
+        f: make3(n: n),
+        g: make3(n: n),
+        h: make3(n: n)
+    )
+
+function make5(n: i64) -> E5
+    return E5(
+        a: make4(n: n),
+        b: make4(n: n),
+        c: make4(n: n),
+        d: make4(n: n),
+        e: make4(n: n),
+        f: make4(n: n),
+        g: make4(n: n),
+        h: make4(n: n)
+    )
+
+function make6(n: i64) -> E6
+    return E6(
+        a: make5(n: n),
+        b: make5(n: n),
+        c: make5(n: n),
+        d: make5(n: n),
+        e: make5(n: n),
+        f: make5(n: n),
+        g: make5(n: n),
+        h: make5(n: n)
+    )

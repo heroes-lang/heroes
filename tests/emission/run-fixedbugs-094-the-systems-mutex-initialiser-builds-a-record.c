@@ -226,14 +226,17 @@ void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
 #line 16
 #define h0_m (*hero_lend_h0_m)
 #line 16
-    hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m"); HERO_NODEBUG hero_mutex t1; HERO_NODEBUG int32_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+#define t1 (*hero_big_t1)
+#line 16
+    hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m"); HERO_NODEBUG hero_mutex *const hero_big_t1 = (hero_mutex *)hero_frame_take(sizeof(hero_mutex)); HERO_NODEBUG int32_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(); h0_m = t1; hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_m.id; hero_print_int(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero", "fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.main", 19, 11}; hero_lend_local_name(hero_lend_h0_m, "hero_lock", "h"); hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0); t3 = hero_lock(&h0_m); } hero_print_int(t3); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero", "fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.main", 20, 11}; hero_lend_local_name(hero_lend_h0_m, "hero_unlock", "h"); hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0); t4 = hero_unlock(&h0_m); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_m); return;
-#line 235 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero", "fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.main", 20, 11}; hero_lend_local_name(hero_lend_h0_m, "hero_unlock", "h"); hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0); t4 = hero_unlock(&h0_m); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_m); hero_frame_give(hero_big_t1); return;
+#line 237 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 }
 #undef h0_m
+#undef t1
 HERO_TU_LOCAL bool h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_0hero_mutex_eq(const hero_mutex *a, const hero_mutex *b) {
     hero_panic("h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_0hero_mutex_eq: a partial record has no structural equality");
 }
@@ -339,7 +342,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("05d3961a0161255a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("458abf853c8582a9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094thesystemsmutexinitialiserbuildsarecord\tfixedbugs-094-the-systems-mutex-initialiser-builds-a-record\n");

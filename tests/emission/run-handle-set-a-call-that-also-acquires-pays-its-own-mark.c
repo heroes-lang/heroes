@@ -290,7 +290,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("35ea4f297bfd038b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("75a17894372160db", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlesetacallthatalsoacquirespaysitsownmark\thandle-set-a-call-that-also-acquires-pays-its-own-mark\n");

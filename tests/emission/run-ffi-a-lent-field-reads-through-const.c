@@ -320,7 +320,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5510b87419e25f3a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14c7e1e05506bc89", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffialentfieldreadsthroughconst\tffi-a-lent-field-reads-through-const\n");

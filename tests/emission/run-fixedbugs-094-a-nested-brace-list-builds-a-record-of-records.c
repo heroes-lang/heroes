@@ -390,7 +390,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("389313e70bcd70f1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("784a3d5246f1ce40", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094anestedbracelistbuildsarecordofrecords\tfixedbugs-094-a-nested-brace-list-builds-a-record-of-records\n");

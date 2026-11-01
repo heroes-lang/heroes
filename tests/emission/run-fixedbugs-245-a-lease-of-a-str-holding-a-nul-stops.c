@@ -467,7 +467,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3dec22d76acc3ce9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7da34c4225f09a39", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs245aleaseofastrholdinganulstops\tfixedbugs-245-a-lease-of-a-str-holding-a-nul-stops\n");

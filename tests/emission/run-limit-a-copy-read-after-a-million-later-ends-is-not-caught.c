@@ -295,7 +295,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("30a8036a4f111002", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("705f2cd50a356d52", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("limitacopyreadafteramillionlaterendsisnotcaught\tlimit-a-copy-read-after-a-million-later-ends-is-not-caught\n");

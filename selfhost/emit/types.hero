@@ -146,8 +146,19 @@ function declared(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: so
 # means "unspecified", which turns a wrong-arity call through the
 # pointer from a compile error into undefined behaviour — the one
 # thing "clang type-checks every call" exists to prevent.
+#
+# A type that names a large value of the program's own takes a direct call's
+# convention, the result through the caller's slot and a parameter as a
+# pointer (`emit/large_value.hero`): such a type never reaches C, since the
+# checker refuses a program record inside an `extern`'s callback type, which
+# `large_value`'s test holds.
 function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: str, params: table.Params, result: i64)
     spelled: [str] @= []
+    returned: str @= ctype.c_result(names, c: c, ty: result)
+
+    if names.large[result].default(false)
+        spelled @ spelled.push(returned + " *")
+        returned @ "void"
 
     for p in table.params_of(c.types, params)
         one: str @= "void"
@@ -155,6 +166,9 @@ function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
 
         if !found.is_err()
             one @ found.must()
+
+            if names.large[p].default(false)
+                one @ "const " + found.must() + " *"
         spelled @ spelled.push(one)
 
     list: str @= "void"
@@ -162,10 +176,7 @@ function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     if spelled.len() > 0
         list @ spelled.join(", ")
     writer.at_generated(@w)
-    writer.line(
-        @w,
-        text: "typedef " + ctype.c_result(names, c: c, ty: result) + " (*" + name + ")(" + list + ");"
-    )
+    writer.line(@w, text: "typedef " + returned + " (*" + name + ")(" + list + ");")
 
 # One T?, as a by-value tagged union — exactly like a variant with two
 # cases, but generated from a TYPE rather than a declaration. The tag

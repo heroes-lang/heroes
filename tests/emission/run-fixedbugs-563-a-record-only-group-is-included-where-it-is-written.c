@@ -286,7 +286,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("097050a23285fa72", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("49277a0d6daa57c1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs563arecordonlygroupisincludedwhereitiswritten\tfixedbugs-563-a-record-only-group-is-included-where-it-is-written\n");

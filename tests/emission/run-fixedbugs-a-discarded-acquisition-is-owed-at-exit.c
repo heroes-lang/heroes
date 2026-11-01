@@ -282,7 +282,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("52a5b0ef6d44c703", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("125cda5b28692453", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadiscardedacquisitionisowedatexit\tfixedbugs-a-discarded-acquisition-is-owed-at-exit\n");

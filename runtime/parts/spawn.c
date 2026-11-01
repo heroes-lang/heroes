@@ -217,8 +217,10 @@ static pthread_mutex_t hero_spawn_lock = PTHREAD_MUTEX_INITIALIZER;
  * must let a Heroes function run on it. Claiming before the body and not inside
  * it is deliberate — the body is the author's Heroes function and it must not
  * have to know that any of this exists. */
-/* `parts/lend.c`, later in this translation unit: the thread's lend regions. */
+/* `parts/lend.c`, later in this translation unit: the thread's lend regions;
+ * `parts/frame.c`: its large values' room (defect 2278). */
 static void hero_lend_thread_leave(void);
+static void hero_frame_thread_leave(void);
 
 static void hero_spawn_enter(HeroSpawnSlot *slot) {
     hero_thread_claim();
@@ -274,6 +276,7 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
      * reason and under the sanitizer too, where the guard's two doors are
      * empty and these mappings are still the thread's. */
     hero_lend_thread_leave();
+    hero_frame_thread_leave();
     hero_stack_guard_leave();
 }
 

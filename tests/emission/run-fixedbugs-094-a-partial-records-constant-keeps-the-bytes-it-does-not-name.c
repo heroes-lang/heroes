@@ -214,12 +214,23 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
-void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) { struct big h0_b; HERO_NODEBUG struct big t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) {
+#line 14
+#define h0_b (*hero_big_h0_b)
+#line 14
+#define t1 (*hero_big_t1)
+#line 14
+#define t3 (*hero_big_t3)
+#line 14
+    struct big *const hero_big_h0_b = (struct big *)hero_frame_take(sizeof(struct big)); HERO_NODEBUG struct big *const hero_big_t1 = (struct big *)hero_frame_take(sizeof(struct big)); HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG struct big *const hero_big_t3 = (struct big *)hero_frame_take(sizeof(struct big)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT(); h0_b = t1; hero_pad_fill(&h0_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_b.sig; hero_print_int(t2); hero_print_end();
-    t3 = h0_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero", "fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.main", 17, 11}; t4 = big_rest(t3); } hero_print_int(t4); hero_print_end(); return;
-#line 222 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+    t3 = h0_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero", "fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.main", 17, 11}; t4 = big_rest(t3); } hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_b); return;
+#line 230 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 }
+#undef h0_b
+#undef t1
+#undef t3
 HERO_TU_LOCAL bool h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_0Big_eq(const struct big *a, const struct big *b) {
     hero_panic("h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_0Big_eq: a partial record has no structural equality");
 }
@@ -325,7 +336,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a5bf45100e6b5ff", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a131dbd3c0b134e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname\tfixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name\n");

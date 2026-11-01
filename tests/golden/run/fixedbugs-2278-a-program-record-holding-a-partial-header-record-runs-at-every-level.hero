@@ -1,0 +1,24 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: a program record holding defect 2253's 128 MiB
+# `partial` header record was counted by its named fields, 16 bytes, stayed on the frame and aborted
+# `stack exhausted` at `-O0` (panel 233's critic); a type holding a `partial` record counts as large, and
+# the header record's own storage leaves the frame, its C convention unchanged.
+
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+record Wrap
+    tag: i64
+    inner: Held
+
+function make_wrap(n: i64) -> Wrap
+    return Wrap(tag: n, inner: Held(first: n + 1, rest: zero))
+
+function go()
+    w = make_wrap(n: 6)
+    print(w.tag + w.inner.first)
+
+function main()
+    print("before")
+    go()

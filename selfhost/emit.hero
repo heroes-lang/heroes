@@ -1,3 +1,4 @@
+use emit/large_size
 # The backend's front door: the IR becomes one C11 translation unit
 # (design.md §3.1; panels 020, 023). Port of the driver half of
 # heroes/src/emit/mod.rs in the Rust bootstrap at `m-bootstrap-archive` — the file that says the ORDER the
@@ -11,7 +12,6 @@
 # (exit 1) rather than as a second channel, and the C never mentions
 # the output path — which is what makes the double-emit determinism
 # diff a property of the emitter rather than of the invocation.
-
 use ast
 use source
 use module/names as module_names
@@ -204,6 +204,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_local.with_flows(lend_units, p, c)
+    names.large @ large_size.large_types(c, decls)
 
     # Every type's flags, found once for the loops over the arena below
     # (defect 229): a type is no longer walked again for each of them.

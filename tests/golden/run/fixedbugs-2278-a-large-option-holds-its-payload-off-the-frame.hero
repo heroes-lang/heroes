@@ -1,0 +1,101 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: a large value held in a `T?`, the third shape of a
+# construction the route left on the frame. An option is large exactly when its payload is, its C
+# struct being a tag beside a union of the payload and a failure, so the literal that filled it was an
+# object of the frame as wide as the payload. Both arms are built here, the `ok` and the `fail`, since
+# each writes a different member of that union and the bytes the other would hold are no member's.
+
+record O0
+    x: i64
+
+record O1
+    a: O0
+    b: O0
+    c: O0
+    d: O0
+    e: O0
+    f: O0
+    g: O0
+    h: O0
+
+record O2
+    a: O1
+    b: O1
+    c: O1
+    d: O1
+    e: O1
+    f: O1
+    g: O1
+    h: O1
+
+record O3
+    a: O2
+    b: O2
+    c: O2
+    d: O2
+    e: O2
+    f: O2
+    g: O2
+    h: O2
+
+record O4
+    a: O3
+    b: O3
+    c: O3
+    d: O3
+    e: O3
+    f: O3
+    g: O3
+    h: O3
+
+record O5
+    a: O4
+    b: O4
+    c: O4
+    d: O4
+    e: O4
+    f: O4
+    g: O4
+    h: O4
+
+record O6
+    a: O5
+    b: O5
+    c: O5
+    d: O5
+    e: O5
+    f: O5
+    g: O5
+    h: O5
+
+function make0(n: i64) -> O0
+    return O0(x: n)
+
+function make1(n: i64) -> O1
+    return O1(a: make0(n), b: make0(n), c: make0(n), d: make0(n), e: make0(n), f: make0(n), g: make0(n), h: make0(n))
+
+function make2(n: i64) -> O2
+    return O2(a: make1(n), b: make1(n), c: make1(n), d: make1(n), e: make1(n), f: make1(n), g: make1(n), h: make1(n))
+
+function make3(n: i64) -> O3
+    return O3(a: make2(n), b: make2(n), c: make2(n), d: make2(n), e: make2(n), f: make2(n), g: make2(n), h: make2(n))
+
+function make4(n: i64) -> O4
+    return O4(a: make3(n), b: make3(n), c: make3(n), d: make3(n), e: make3(n), f: make3(n), g: make3(n), h: make3(n))
+
+function make5(n: i64) -> O5
+    return O5(a: make4(n), b: make4(n), c: make4(n), d: make4(n), e: make4(n), f: make4(n), g: make4(n), h: make4(n))
+
+function make6(n: i64) -> O6
+    return O6(a: make5(n), b: make5(n), c: make5(n), d: make5(n), e: make5(n), f: make5(n), g: make5(n), h: make5(n))
+
+function boxed(n: i64) -> O6?
+    if n < 0
+        return fail(code: "negative", msg: "n below zero")
+
+    return ok(make6(n))
+
+function main()
+    print("before")
+    print(boxed(1).must().a.a.a.a.a.a.x)
+    bad = boxed(0 - 1)
+    print(bad.is_err())

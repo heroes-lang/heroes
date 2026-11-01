@@ -118,8 +118,13 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
         writer.line(@w, text: "    return hero_result;")
     writer.line(@w, text: "}")
 
-# The thunk's signature: the function's own result and parameter list, spelled
-# by the same printer the function's signature uses, under the thunk's name.
+# The thunk's signature: C's convention for the function's result and
+# parameters, each by value but an `@` one, spelled by `signature.one_param`
+# and `ctype.c_result` under the thunk's name. That is the function's own
+# signature for every function C can be handed: one whose direct signature
+# takes a large value in place (`emit/large_value.hero`) names a program record,
+# which the checker refuses inside an `extern`'s callback type, so it is never
+# thunked (`large_value`'s test holds that rule, panel 233).
 function header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
     real = signature.as_value(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)

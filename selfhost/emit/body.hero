@@ -36,6 +36,7 @@ use emit/lend_local
 use emit/prologue
 use emit/nodebug
 use emit/entry_stop
+use emit/large_value
 use parse
 use resolve
 use checker
@@ -129,7 +130,17 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     statements @ statements.push(entry_stop.WORD)
     statements @ statements.push("goto " + mangle.block(0) + ";")
     writer.line(@w, text: "    " + statements.join(" "))
-    released = lend_local.releases(c, names, f)
+    released: [str] @= lend_local.releases(c, names, f)
+
+    # The large values' regions go back after the lent locals', the last taken
+    # first (`emit/large_value.hero`).
+    back: i64 @= entry.off_frame.len() - 1
+
+    while back >= 0
+        released @ released.push(large_value.given_back(entry.off_frame[back]))
+        back @ back - 1
+
+    out = large_value.is_large(names, ty: f.result)
     index: i64 @= 0
 
     for blk in f.blocks
@@ -139,15 +150,18 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
             for one in blk.insts
                 inst.emit(@w, p, c, names, s, decls, f, inst: one, live_values: read, ends: blk.term)
 
-            term.emit(@w, f, c, term: blk.term, released: released)
+            term.emit(@w, f, c, term: blk.term, released: released, out: out)
         index @ index + 1
 
     writer.at_generated(@w)
     writer.line(@w, text: "}")
 
     # A local lent in place has its name defined for this body alone (panel
-    # 196's R7, `emit/lend_local.hero`).
+    # 196's R7, `emit/lend_local.hero`), and so has a large value.
     lend_local.undefine(@w, c, names, f)
+
+    for name in entry.defined
+        writer.line(@w, text: "#undef " + name)
 
     # The thunk C is handed instead of this function's own address (panel
     # 177's item 2), beside the definition it wraps, so the two are one

@@ -185,6 +185,11 @@
  * declarations they carry, this being one translation unit. */
 #include "parts/lend.c"
 
+/* The room of a large value, off its function's frame (defect 2278). After
+ * `alloc.c`, whose `hero_malloc_raw` it takes its chunks from; `spawn.c`'s
+ * thread end calls into it through the declaration it carries. */
+#include "parts/frame.c"
+
 /* `sort`, which needs the array's layout helpers and the scalar descriptors it
  * dispatches on by pointer identity. */
 #include "parts/sort.c"

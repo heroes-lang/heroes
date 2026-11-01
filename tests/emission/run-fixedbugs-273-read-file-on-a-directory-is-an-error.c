@@ -315,7 +315,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bcf3c2e3a2cdaa1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b866599755137f0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs273readfileonadirectoryisanerror\tfixedbugs-273-read-file-on-a-directory-is-an-error\n");

@@ -247,7 +247,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c461ffd3790e4c7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3bfd496972b54216", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortexitcodeoutsideabyte\tabort-exit-code-outside-a-byte\n");

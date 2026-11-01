@@ -9,9 +9,9 @@
 !shows: (HeroStr) h2_name = "ada"
 !shows: (h_0opt_e201354) h3_good = ok(4)
 !shows: (h_formatterstepsaside_Token) h4_t = .num(v: 42)
-> frame variable h5_holder.vfs.f_bsize h5_holder.label
-!shows: (unsigned long) h5_holder.vfs.f_bsize = 7
-!shows: (HeroStr) h5_holder.label = "disk"
+> frame variable hero_big_h5_holder->vfs.f_bsize hero_big_h5_holder->label
+!shows: (unsigned long) hero_big_h5_holder->vfs.f_bsize = 7
+!shows: (HeroStr) hero_big_h5_holder->label = "disk"
 > expression -- h0_names->len = 3
 > frame variable -P 1 h0_names
 !shows: len = 3

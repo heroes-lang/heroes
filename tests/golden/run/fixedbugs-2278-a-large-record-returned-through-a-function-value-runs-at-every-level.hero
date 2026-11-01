@@ -1,0 +1,102 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: a 16 MiB record returned through a function value
+# aborted `stack exhausted` at both levels under the route's first build (panel 233's critic); a function
+# type that names a large record of the program's own takes the direct call's convention, and it runs.
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+record E6
+    a: E5
+    b: E5
+    c: E5
+    d: E5
+    e: E5
+    f: E5
+    g: E5
+    h: E5
+
+record E7
+    a: E6
+    b: E6
+    c: E6
+    d: E6
+    e: E6
+    f: E6
+    g: E6
+    h: E6
+
+function give(n: i64) -> E7
+    u0 = E0(x: n)
+    u1 = E1(a: u0, b: u0, c: u0, d: u0, e: u0, f: u0, g: u0, h: u0)
+    u2 = E2(a: u1, b: u1, c: u1, d: u1, e: u1, f: u1, g: u1, h: u1)
+    u3 = E3(a: u2, b: u2, c: u2, d: u2, e: u2, f: u2, g: u2, h: u2)
+    u4 = E4(a: u3, b: u3, c: u3, d: u3, e: u3, f: u3, g: u3, h: u3)
+    u5 = E5(a: u4, b: u4, c: u4, d: u4, e: u4, f: u4, g: u4, h: u4)
+    u6 = E6(a: u5, b: u5, c: u5, d: u5, e: u5, f: u5, g: u5, h: u5)
+    u7 = E7(a: u6, b: u6, c: u6, d: u6, e: u6, f: u6, g: u6, h: u6)
+    return u7
+
+function first(e: E7) -> i64
+    return e.h.h.h.h.h.h.h.x
+
+function pick() -> (function(i64) -> E7)
+    return give
+
+function go()
+    f = pick()
+    a = f(5)
+    print(first(e: a))
+
+function main()
+    print("before")
+    go()

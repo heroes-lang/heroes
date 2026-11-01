@@ -1,0 +1,114 @@
+# fixedbugs, defect 2278, 2026-11-01, panel 233: a large value held in a VARIANT CASE, which R1 counts
+# large by its widest case and its tag, so its temporary lives in the room; R2 wrote only a record's
+# construction in place, and the compound literal left behind put the whole 2 MiB back on the frame it
+# had just left. Measured before this case was written: `main`'s frame 4,194,624 bytes at `-O2` by
+# `-Wframe-larger-than`, and this very recursion, which runs holding a record, died at depth 5 with
+# `panic: stack exhausted`. The record twin beside it is the control: the same depth and the same
+# bytes, differing only in whether the value sits in a case.
+
+record V0
+    x: i64
+
+record V1
+    a: V0
+    b: V0
+    c: V0
+    d: V0
+    e: V0
+    f: V0
+    g: V0
+    h: V0
+
+record V2
+    a: V1
+    b: V1
+    c: V1
+    d: V1
+    e: V1
+    f: V1
+    g: V1
+    h: V1
+
+record V3
+    a: V2
+    b: V2
+    c: V2
+    d: V2
+    e: V2
+    f: V2
+    g: V2
+    h: V2
+
+record V4
+    a: V3
+    b: V3
+    c: V3
+    d: V3
+    e: V3
+    f: V3
+    g: V3
+    h: V3
+
+record V5
+    a: V4
+    b: V4
+    c: V4
+    d: V4
+    e: V4
+    f: V4
+    g: V4
+    h: V4
+
+record V6
+    a: V5
+    b: V5
+    c: V5
+    d: V5
+    e: V5
+    f: V5
+    g: V5
+    h: V5
+
+variant Held
+    one
+        r: V6
+    none
+
+function make0(n: i64) -> V0
+    return V0(x: n)
+
+function make1(n: i64) -> V1
+    return V1(a: make0(n), b: make0(n), c: make0(n), d: make0(n), e: make0(n), f: make0(n), g: make0(n), h: make0(n))
+
+function make2(n: i64) -> V2
+    return V2(a: make1(n), b: make1(n), c: make1(n), d: make1(n), e: make1(n), f: make1(n), g: make1(n), h: make1(n))
+
+function make3(n: i64) -> V3
+    return V3(a: make2(n), b: make2(n), c: make2(n), d: make2(n), e: make2(n), f: make2(n), g: make2(n), h: make2(n))
+
+function make4(n: i64) -> V4
+    return V4(a: make3(n), b: make3(n), c: make3(n), d: make3(n), e: make3(n), f: make3(n), g: make3(n), h: make3(n))
+
+function make5(n: i64) -> V5
+    return V5(a: make4(n), b: make4(n), c: make4(n), d: make4(n), e: make4(n), f: make4(n), g: make4(n), h: make4(n))
+
+function make6(n: i64) -> V6
+    return V6(a: make5(n), b: make5(n), c: make5(n), d: make5(n), e: make5(n), f: make5(n), g: make5(n), h: make5(n))
+
+function deep(n: i64) -> i64
+    big = make6(n)
+    held: Held = .one(r: big)
+    sum: i64 @= 0
+
+    match held
+        .one o => sum @ o.r.a.a.a.a.a.a.x
+        .none  => sum @ 0
+
+    if n > 0
+        sum @ sum + deep(n - 1)
+
+    return sum
+
+function main()
+    print("before")
+    print(deep(5))

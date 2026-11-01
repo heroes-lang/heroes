@@ -1,3 +1,4 @@
+use emit/large_size
 # WHO is in a translation unit, and WHAT it must declare — the
 # selection half of the per-module path (panel 093; split out of
 # emit_unit at M-separate-compilation step 6, when the two answers it
@@ -13,7 +14,6 @@
 # The split is the one §11 asks for: a reader who wants to know why a
 # TU contains what it contains reads this file, and a reader who wants
 # to know what a TU looks like reads unit.
-
 use ast
 use source
 use check/table
@@ -73,6 +73,7 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_units
+    names.large @ large_size.large_types(c, decls)
     by_decl: {i64: i64} @= {}
     index: i64 @= 0
 
@@ -103,6 +104,7 @@ function retold(built: Whole, p: containers.Program, c: state.Checked, s: source
         names @ ctype.with_options(names, c: c, s: s, decls: decls)
         out.names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     out.names.lend_units @ lend_units
+    out.names.large @ built.names.large
     out.kept @ kept
     return out
 

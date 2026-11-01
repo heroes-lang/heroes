@@ -340,7 +340,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0db3c08053e8f34f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d6ae9eb0f0d509f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lentarecordisreadbycthroughconst\tlent-a-record-is-read-by-c-through-const\n");

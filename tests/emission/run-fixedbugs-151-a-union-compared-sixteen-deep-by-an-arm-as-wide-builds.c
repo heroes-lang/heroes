@@ -604,7 +604,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e04d9db455a6411", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3dbc0347007ec161", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds\tfixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds\n");
