@@ -130,3 +130,14 @@ decision issue that names its cause. The incremental frontend is built the day e
 way and not before (issue 715, settled at this close). The account is journal 074; the tag waits on
 defects 2275, 2277 and 2278, `adjacent` at their second tag, as that journal's last section says.
 
+## The tag, placed 2026-11-01
+
+Defect 2278 closed with panel 233's route, and the route landed wider than the sitting adopted it:
+the round's gate found R2 narrower than R1, so a large value in a variant case or in a `T?` went
+back on the frame its room had taken it off, measured at `main`'s frame of 4,194,624 bytes at `-O2`
+and at one recursion that printed its answer holding a record and aborted holding a case; and panel
+182's `wholes` refused ten of the route's own emissions for writing a value in pieces nobody had
+written whole. Both are in the sitting's file under § Scored at the landing and in journal 074. The
+ledger's third row was taken at the tag, `check` 6.98 s, the seed 8.24 s and the warm build 37.58 s,
+all under decision 2282's level, and the paired comparison against M-compatibility-promise's
+compiler counted no loss, so nothing was owed before the tag.

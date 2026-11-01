@@ -248,3 +248,22 @@ construction's fields; and defect 2284, a bound `partial` header naming many
 members at depth. Decision 2285 carries the sitting for the author to ratify or
 turn, and an open `panel NNN` ratification is the one decision a tag may stand
 over.
+
+## The tag, placed 2026-11-01
+
+`82a9dc6306bed5723c1e21d02c8f6e1086a174b6` was pushed with the author's standing
+yes, given as they left, one commit travelling and that one publishing the site;
+then defect 2278 was closed with the route's account. **The list read from GitHub
+at the tag**: no `blocking` and no `systemic` defect open, four `adjacent` ones,
+2284, 2286, 2287 and 2288, every one filed on 2026-11-01 beside this route and so
+standing at its first tag; and one decision open, 2285, panel 233's ratification,
+which `records/tagged` lets a tag stand over because the author reads every
+sitting and a route already landed cannot wait on that reading. `records`
+28 and 0 and `unseen` 3 and 0 over this tree.
+
+So the row that said *done, the tag waiting* on 2026-11-01 says *done* with its
+tag, and the tags go 74 to 75. What M-latency-ceiling leaves behind is not the
+route but the instrument: the ledger's three rows, decision 2282's level over
+the newest of them, and the comparison of alternated pairs that a close owes the
+previous tag's compiler. Defect 2278's closing is the first change that
+instrument judged which moved the whole emission corpus.
