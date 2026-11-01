@@ -331,7 +331,7 @@ HERO_TU_LOCAL void h_0show_610c13af(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38cf733727f477ad", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7215140a773a7557", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonrecordswritesbothconstructions\tfixedbugs-016-an-assert-on-records-writes-both-constructions\n");

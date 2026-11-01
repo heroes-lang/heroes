@@ -332,7 +332,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49fb76447012eb27", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("034117183f58e8d2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiatypedefthenotenamesbindsbyitsownname\tffi-a-typedef-the-note-names-binds-by-its-own-name\n");

@@ -801,7 +801,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("13ab040f1c0e8097", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4cf0a4e26b547e41", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs415amapliteraltakesthetypesitscontextasksfor\tfixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for\n");

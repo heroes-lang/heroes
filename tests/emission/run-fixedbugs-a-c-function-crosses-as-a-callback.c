@@ -280,7 +280,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7bb19d296ae5d40c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("34f73dfd3a2bd1b7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsacfunctioncrossesasacallback\tfixedbugs-a-c-function-crosses-as-a-callback\n");

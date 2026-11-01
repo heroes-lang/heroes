@@ -212,7 +212,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("32e488f55a5cccd4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c2a29c829a2ca7f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs389areadofanemptyarrayabortsintheruntimeswords\tfixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words\n");

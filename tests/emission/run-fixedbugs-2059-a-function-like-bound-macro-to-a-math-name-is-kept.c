@@ -268,7 +268,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("07e9fe5b3cb837bd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("412f9f2e0bfe3568", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2059afunctionlikeboundmacrotoamathnameiskept\tfixedbugs-2059-a-function-like-bound-macro-to-a-math-name-is-kept\n");

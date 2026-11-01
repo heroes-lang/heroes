@@ -698,7 +698,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("020b3e463167577b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b50df1900ad5526", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiaconstructionpollsansdl3event\tffi-a-construction-polls-an-sdl3-event\n");

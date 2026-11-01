@@ -258,7 +258,7 @@ HERO_TU_LOCAL void h_0show_706673d(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("019de52d2ea5c00e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3ae386007debbdb8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonnarrownumberswritesthemasprintdoes\tfixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does\n");

@@ -441,7 +441,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("17431f3b23a894d1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5088c00e72ee927b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsoptionpayloaddescriptor\tfixedbugs-option-payload-descriptor\n");

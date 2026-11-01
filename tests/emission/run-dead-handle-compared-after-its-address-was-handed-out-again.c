@@ -293,7 +293,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("37950f8b4e29bac4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("70dab05e1d6fb86f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandlecomparedafteritsaddresswashandedoutagain\tdead-handle-compared-after-its-address-was-handed-out-again\n");

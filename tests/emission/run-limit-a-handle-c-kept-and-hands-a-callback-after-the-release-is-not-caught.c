@@ -313,7 +313,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c9072e1427241a5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("05d613b511b83f50", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught\tlimit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught\n");

@@ -266,7 +266,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bc8863736bbb39b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("550e270a0601b146", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffilentemitsnothing\tffi-lent-emits-nothing\n");

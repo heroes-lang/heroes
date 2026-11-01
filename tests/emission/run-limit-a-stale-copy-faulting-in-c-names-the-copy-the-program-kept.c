@@ -297,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0136b7b740960ad0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a7c588a0fdc087b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("limitastalecopyfaultingincnamesthecopytheprogramkept\tlimit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept\n");

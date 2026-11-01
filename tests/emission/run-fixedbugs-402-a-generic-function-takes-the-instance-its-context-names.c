@@ -541,7 +541,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d1f670c1aee2fe7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("766507df6a342d91", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs402agenericfunctiontakestheinstanceitscontextnames\tfixedbugs-402-a-generic-function-takes-the-instance-its-context-names\n");

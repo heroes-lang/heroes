@@ -314,7 +314,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f6e1a7b44fc7b3e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("78b3bb4e144278e9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroapartialrecord\tffi-rest-zero-a-partial-record\n");

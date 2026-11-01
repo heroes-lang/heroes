@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5dd5a94d4f9335e3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("171b4a211ed9338e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs571adeprecatedconstantreadprintsnoclangwords\tfixedbugs-571-a-deprecated-constant-read-prints-no-clang-words\n");

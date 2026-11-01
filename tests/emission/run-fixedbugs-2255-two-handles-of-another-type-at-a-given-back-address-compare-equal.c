@@ -303,7 +303,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3786531c36b2673b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("70cbf3ef05f864e6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2255twohandlesofanothertypeatagivenbackaddresscompareequal\tfixedbugs-2255-two-handles-of-another-type-at-a-given-back-address-compare-equal\n");

@@ -272,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4cf7577c5b96f69f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("063cf8502adcf44a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsadiscardedtemporarywarnsinc\tfixedbugs-a-discarded-temporary-warns-in-c\n");

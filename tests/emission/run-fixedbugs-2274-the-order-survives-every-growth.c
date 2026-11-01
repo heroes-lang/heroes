@@ -244,7 +244,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("57dea9c83c48ba2e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11244a9c0b8eb7d9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2274theordersurviveseverygrowth\tfixedbugs-2274-the-order-survives-every-growth\n");

@@ -321,7 +321,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7491ce233bacf593", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2dd76ef70af2f33e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs506acommentonamapkeysparenthesis\tfixedbugs-506-a-comment-on-a-map-key-s-parenthesis\n");

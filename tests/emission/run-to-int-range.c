@@ -255,7 +255,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("725329210dc4c66a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b98c9f55d0ac414", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("tointrange\tto-int-range\n");

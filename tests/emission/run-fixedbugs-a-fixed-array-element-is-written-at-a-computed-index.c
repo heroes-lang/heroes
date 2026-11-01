@@ -451,7 +451,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f10396e5aeefaeb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1855da422a34f896", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafixedarrayelementiswrittenatacomputedindex\tfixedbugs-a-fixed-array-element-is-written-at-a-computed-index\n");

@@ -230,7 +230,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("200f9f0406a78942", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("59553fd755ed86ec", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs169chains2000longbuildandrun\tfixedbugs-169-chains-2000-long-build-and-run\n");

@@ -359,7 +359,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e38f25d58466e9e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("277e9331278c6c49", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("arraysmutated\tarrays-mutated\n");
