@@ -190,6 +190,18 @@ Pending, asked by decision 2285 (https://github.com/heroes-lang/heroes/issues/22
 repair 2 or the conservative resolution. A yes settles defect 2278's route; it does not settle the
 shapes filed apart, chains of group records and a `partial` record returned by value.
 
+**RATIFIED, 2026-11-01**, R1 to R6 with repair 2, as the landing extended them. The author
+answered `Approve` in conversation that evening, on the coordinator's report of the tag, which
+put the two points the round's gate found and the sitting had not: R2 widened past a record to a
+variant case and to a `T?` (`case_in_place` and `option_in_place`), and every construction of a
+large value opening by writing the whole value zero, which `wholes` had refused ten of the
+route's own emissions for lacking. So **the question to the author is answered: R1 to R6 stand,
+with repair 2**, which keeps the `partial` rule and a group record off the frame; the
+conservative resolution of § What the conservative resolution would have been is not taken, and
+`grpwrap`'s abort at `-O0` does not stand. Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it, and the shapes filed apart, defects 2284, 2286, 2287 and 2288, are not settled by
+it.
+
 ## Scored at the landing, 2026-11-01
 
 The route landed on the trunk the day after the sitting. Two of the sitting's
