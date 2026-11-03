@@ -25,8 +25,23 @@
 // paragraph of Italian here would be the first outside the edition, and the
 // check would be right to refuse it. The copyright line is in neither language
 // and sits here.
+//
+// **The copyright line opens with the release**, `heroes X.Y.Z`, on every page
+// of both editions (author instruction 2026-11-03, meant as: *I want the
+// released version number to appear on the site too*; the footer was the
+// author's choice over the nav, whose row is measured to the pixel). It is
+// `version()`, read from `VERSION` in `selfhost/main.hero`, which moves only
+// in the commit that carries the tag `vX.Y.Z`, so the number is the newest
+// release's and cannot disagree with `heroes --version`; it is in neither
+// language, like the rest of the line. It links to the tag's page on GitHub,
+// which answers as soon as the tag is pushed, before the CI has written the
+// release's notes into it (measured that day: a tag with no release answers
+// 200, a tag that does not exist 404), so the push that carries the commit
+// carries the tag with it. `target` and `rel` are written by hand for the
+// reason `SiteNav.astro` gives: a component never passes through `page()`.
 import bylineEn from '../html/_byline.html?raw';
 import bylineIt from '../html/it/_byline.html?raw';
+import { version } from '../lib/tables.ts';
 
 interface Props {
   /** The URL this page answers at, absolute, ending in `/`. */
@@ -37,9 +52,10 @@ const { url } = Astro.props;
 
 const lang = url.startsWith('/it/') || url === '/it/' ? 'it' : 'en';
 const byline = (lang === 'it' ? bylineIt : bylineEn).trim();
+const release = version();
 ---
 <footer>
   <slot />
   <Fragment set:html={byline} />
-  <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  <p><a target="_blank" rel="noopener" href={`https://github.com/heroes-lang/heroes/releases/tag/v${release}`}>heroes {release}</a> &middot; &copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
 </footer>

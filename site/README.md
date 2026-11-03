@@ -327,6 +327,21 @@ people's work like every other page does; both used to leave that out because
 the reader was already there, a courtesy two pages paid and the other 178 could
 not.
 
+**The copyright line opens with the release since 2026-11-03**, `heroes
+X.Y.Z` linked to the tag's page on GitHub, on every page of both editions
+(author instruction that day, meant as: *I want the released version number to
+appear on the site too*). Until then the number stood on three pages per
+edition, the home and start pages' beta notes and the project page's `git
+checkout`, and nowhere a reader of any other page would meet it. The footer was
+the author's choice over the nav, the more visible place, because the nav's row
+is measured to the pixel above and a version beside the mark would widen it in
+both editions, unmeasured. The number is `version()` in `src/lib/tables.ts`, the one
+reader of `VERSION`, so it is the newest release's and moves with the commit
+that carries the tag; the line is in neither language, so it stays in the
+component. The tag's page answers as soon as the tag is pushed, before the CI
+has written the release's notes into it, so the push that carries a release's
+commit carries its tag.
+
 **This paragraph used to end differently**, and the sentence it ended with is
 worth keeping as a record of how the decision was actually made: *"Adding a page
 means editing that block everywhere; if that ever gets painful, the answer is a
