@@ -228,3 +228,115 @@ stages, flushes and renames (`runtime/parts/replace.c`), so whether spec
 offers a second function. The same library shows what a missing convention
 costs a reader: a trailing `bool`, an optional, `-1`, a sticky error read once
 and a throw, five conventions in one library, where spec § 6 has one.
+
+## Opened 2026-11-05
+
+**Opened by the author's answer of 2026-11-05**, given in the session's
+question widget on a recommendation, meant as: *yes, open the row and convene
+the opening sitting*; on the trunk and in no lane yet, the opening writing
+records alone, every other session of this Mac offline (the six peers
+`ListAgents` named). Step 0, as rows 74 and 75 opened. It is CLAUDE.md § 4's
+yes once per milestone, so a sitting this milestone convenes after the
+opening one is convened without asking again.
+
+**What it starts from**, each number its command's at this opening: the tree
+at 265e11e7f, the release `v0.6.0`'s commit; the compiler `0.6.0`, `sources
+1a1e340778db789a`, the tree's own by `.claude/hooks/provenance.py`'s mirror;
+701 modules and 182,687 lines of Heroes (`find selfhost -name '*.hero'`); the
+seed 278,527 lines and 29,043,650 bytes; `examples/` 55 programs, 120 `.hero`
+files and 18,840 lines, 21 of the files holding an `extern` group (`grep -l
+'^extern '`). No decision issue open (`open --kind decision`), and sixteen open
+issues on the GitHub milestone (`open --milestone M-core-packages`): 1, 803,
+805, 893, 925, 927, 970, 1067, 1069, 1072, 1073, 1103, 1154, 2081, 2082 and
+2209.
+
+- **The copies the first package takes out**, by issue 805's own command,
+  `grep -rl '^function <name>(' examples`: `split_lines` 9 files, `is_space`
+  9, `trimmed` 7, `index_of` 4, the counts of 2026-09-10 unchanged; and
+  `tests/harness/strings.hero` holds 15 functions (`grep -c '^function '`),
+  14 on 2026-09-10.
+- **The programs the first packages are extracted from**, by `wc -l`:
+  `examples/json/` 674 lines in three modules (the table above says 671 on
+  2026-09-03), `examples/template/main.hero` 235, `examples/curl/main.hero`
+  99, `examples/sqlite/main.hero` 119.
+- **The repository's hooks, issue 2082's acceptance**: thirteen modules and
+  their test file under `.claude/hooks/`, 4,414 lines and 2,562; the issue
+  said twelve on 2026-10-14.
+- **The platform layer as it stands**, for the author's fourth instruction
+  below: `runtime/hero_os.h` declares 60 functions, every one distinct;
+  `runtime/runtime.c` includes 29 parts, one per file of `runtime/parts/`;
+  and 132 lines in 16 files of `runtime/` name a platform macro (`grep -c -E`
+  over `defined(_WIN32)`, `defined(__APPLE__)`, `defined(__linux__)` and the
+  `#ifdef`/`#ifndef` of the three), the most in `parts/replace.c` 36,
+  `parts/run.c` 19, `parts/fs.c` 14, `parts/stack.c` 11 and `parts/spawn.c` 10.
+- **The latency clock this row owes**: M-latency-ceiling's page stands a
+  fourth clock, `heroes check` on a program with packages, empty until this
+  row; it takes its first number the day the first program over a package
+  exists.
+
+**The author's three answers of 2026-11-05**, each put with a recommendation
+and each answered with it:
+
+1. **The row opens and the opening sitting is convened**, full five seats,
+   before any step (issue 803).
+2. **The rule for names**, meant as: *a Go name is kept only where the
+   contract is the same; where Heroes' contract differs, the name differs
+   too*. Go's `strings.Index` answers `-1` where nothing is found, and a
+   Heroes function's natural answer is a `T?` failing `not_found`, so that
+   function is not called `index`. It goes to the sitting as the author's
+   position with its reason, and the sitting measures it (questions (xi) and
+   (xiii)).
+3. **Both paid runs are authorised**: the paid reader test that settles
+   question (xii), thin or thick, and the thesis harness's tasks run before
+   and after the packages for question (xiii). The sitting's brief writes
+   their budget; no seat starts another run of its own initiative.
+
+**The author's four instructions of 2026-11-05**, given after the first plan
+and before the opening, each written as what the author meant:
+
+1. **The rhythm of testing**: *do not run many tests along the way, or this
+   step could never end; go ahead, develop, then test in groups, in batches;
+   the net does not run for every small change*. The words ended *run the net
+   every time for every single small change*, and the sentence they close says
+   the opposite; the plan read it so and the author approved that plan. It is
+   `.claude/rules/verification.md` § The batch, restated for this milestone: a
+   lane develops several packages in sequence, each judged by its own cases
+   and by `heroes test` on the package, the full net once per batch of
+   packages and before each push, and a defect found beside a package is
+   filed by its class and does not stop the lane (§ Bounded discovery).
+2. **Look at how the libraries of Odin, Zig, Hylo and the languages like
+   Heroes are made** (the words said *ILO*, read as Hylo, the value-semantics
+   language design.md cites). The historian's task at the opening sitting,
+   with web search and no precedent unsourced: each library's tree, its
+   names, its convention for failure, how it treats the platform, and what it
+   refuses to hold.
+3. **Coherence first**: *the core packages must be thought through,
+   coherent, clean and idiomatic, as much as can be; they are the code people
+   will go and read to learn the language, and they must be organised
+   extremely well*. Four consequences: (a) **a page of the packages'
+   conventions**, their names, spec § 6's failure codes, the shape of a raw
+   module and its wrapper, and where each thing stands in the tree, written
+   **before the first package**, a deliverable of the opening sitting; (b)
+   **every package re-read before its batch's gate** as a stranger opening
+   `examples/` to learn Heroes would read it, the re-reading a step of the
+   lane; (c) `.claude/rules/module-shape.md` binds a package as it binds the
+   compiler; (d) **no copy by hand survives** a package's arrival.
+4. **A platform layer beside the runtime**: *where platforms differ, the
+   difference goes not in a C library outside the runtime but in something
+   pulled in beside it, a `platform`, with the `#ifdef`s underneath; look at
+   whether something like it already exists, as Qt and GTK do it*. The
+   layer exists today and is the runtime (the counts above), the route panel
+   097 chose and spec § 13 names, *threads, processes and files from the
+   language's `hero_os.h`*. The question it puts to the sitting is question
+   (iv) widened: **one runtime, as today, or the language's runtime (the
+   allocator, `str`, the array, the map, copy-on-write, the abort) apart from
+   a platform layer (the process, files, directories, spawning, threads,
+   sockets, time) linked only where a group names it**, and behind one header
+   or a family of them. What already binds the answer: no form of conditional
+   compilation enters the language (panel 114's R1), the platform axis was
+   refused with a veto (panel 049), the C a package adds lives in the runtime
+   while `compile "shim.c"` waits for a witness (issue 927), and the CI
+   compares the seed byte for byte on every leg. The precedents the historian
+   verifies rather than recalls: GLib under GTK, Qt's platform plugins,
+   libuv under Node, the Apache Portable Runtime, SDL's backends, Go's files
+   per system and its `syscall`, Zig's `std.os`, Odin's `core:os`.

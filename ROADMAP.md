@@ -14,8 +14,8 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | none open since M-latency-ceiling's close on 2026-11-01; the next row becomes `**OPEN**` when somebody opens it |
-| **Next** | M-core-packages, row 76: small packages that compose, organised as Go's tree, in Heroes or over C |
+| **Current milestone** | **M-core-packages**, row 76, **OPEN** since 2026-11-05 ([its page](docs/roadmap/milestones/M-core-packages.md)): small packages that compose, organised as Go's tree, in Heroes or over C, with no language form and no built-in; its opening sitting, full five seats, sits before any step (issue 803), and its page carries the opening day's numbers and the author's three answers and four instructions: a Go name only where the contract is Go's, the net once per batch of packages, coherence first, and a platform layer beside the runtime put to the sitting; none was open from M-latency-ceiling's close on 2026-11-01 until then |
+| **Next** | M-package-manager, row 77: `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | **Last closed** | **M-latency-ceiling**, 2026-11-01 ([074](docs/records/journal/074-latency-ceiling.md)): a latency the compiler may not lose without a decision: `tests/harness/latency.hero` times `heroes check` on the compiler, clang on the seed and the warm build on a still machine, its ledger keeps a row per close, decision 2282's level (7.50, 9.00 and 41.00 s) holds the newest row and its floor of effect (0.5 %) what a close's comparison of alternated pairs counts as a loss; that comparison found task 2279's 2.0 % in defect 2261's label rule, given back (0.11 s); the site's *under four seconds* for an eight-second build corrected and held to the ledger (defect 2281); the incremental frontend left the ceiling's return condition; defect 2278 closed by panel 233's route, a value past 4,096 bytes living off the frame, and the tag placed on 2026-11-01 (below) · before it **M-compatibility-promise**, 2026-10-30 ([073](docs/records/journal/073-compatibility-promise.md)) · before it **M-generated-programs**, 2026-10-29 ([072](docs/records/journal/072-generated-programs.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **75** of 92 · **75** tags matching `m*`, the legacy `m0`-`m8` included; `m-latency-ceiling` placed on 2026-11-01 over a clean list, defect 2278 closed by panel 233's route, whose ratification (decision 2285) was open at the tag, the one kind of decision a tag may stand over, and was given the same evening: R1 to R6 with repair 2, as the landing extended them. `records/tagged` had refused the tag twice that day: first over defects 2275, 2277 and 2278, `adjacent` beside M-compatibility-promise's batch and `blocking` at their second tag, then over 2278 alone once 2275 and 2277 were repaired in one round (`b80265fe6`); on 2278 the author convened the soundness lane, answering decision 2283 ([074](docs/records/journal/074-latency-ceiling.md)) |
 | The compiler | **182,687** lines of Heroes in **701** modules (`find selfhost -name '*.hero'`) · the seed **278,527** lines of C, 29,043,650 bytes, refreshed by the release `v0.6.0` on 2026-11-03 in one stage from the seed before it, its fixpoint over two generations; before it 276,991 lines and 28,876,131 bytes, not refreshed at M-latency-ceiling, its two-stage build green, refreshed at M-compatibility-promise for `HERO_RUNTIME_ABI` 32 by `abi-put-back` (`cd47d9b85`, rebuilt by the seed before it, its fixpoint over two generations), at M-panic-location for 31 the same way (`80a888f39`), and before them by the release `v0.5.0` on 2026-10-25 at 271,387 lines and 27,000,911 bytes, in panel 219's s4 shape, refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
@@ -38,8 +38,8 @@ issue when it ends.
 ## The chain
 
 One table, one row per milestone, **closed first and scheduled after**: rows 1–75
-are done, in the order they closed, and rows 76–92 are what is next, in the
-order they will be taken. **This sentence said 1–37 and 38–59
+are done, in the order they closed, row 76 is open, and rows 77–92 are what is
+next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
 scheduled block, then 1–53 and 54–76 later that same day, when
@@ -123,7 +123,9 @@ by a count over it, 73 rows `done` and 19 `scheduled` before it opened. Then 1�
 restated this history and not the sentence above it, which still read *row 74 is open*, and the OPENING
 of M-latency-ceiling on 2026-10-30 found it**, the table 92 long by a count over it, 74 rows `done` and 18
 `scheduled` before it opened at 75. Then 1–74 done, 75 open and 76–92 until M-latency-ceiling closed on
-2026-11-01, opening no row and restating this sentence. `warrant` is why a milestone exists: **v1** (the self-hosting
+2026-11-01, opening no row and restating this sentence. Then 1–75 done and 76–92 next until
+M-core-packages opened at 76 on 2026-11-05, the table 92 long by a count over it, 75 rows `done` and
+17 `scheduled` before it opened. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -207,7 +209,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 73 | **M-generated-programs** | done 2026-10-29 | `m-generated-programs` | [072](docs/records/journal/072-generated-programs.md) | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked, five oracles over every program, a reducer, and the sample in the net · **§1.12** |
 | 74 | **M-compatibility-promise** | done 2026-10-30 | `m-compatibility-promise` | [073](docs/records/journal/073-compatibility-promise.md) | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
 | 75 | **M-latency-ceiling** | done 2026-11-01 | `m-latency-ceiling` | [074](docs/records/journal/074-latency-ceiling.md) | a latency the compiler may not lose without a decision: three clocks timed on a still machine at every close by `tests/harness/latency.hero`, a ledger row per close, decision 2282's level and floor of effect; task 2279's 2.0 % found and given back; the incremental frontend its return condition · CLAUDE.md § Verification |
-| 76 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 76 | **M-core-packages** | **OPEN** | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 77 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 78 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
 | 79 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
