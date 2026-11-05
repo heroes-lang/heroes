@@ -178,7 +178,11 @@ arm's `core/` tree and built with the trunk's compiler, `heroes build main.hero
 `sandbox-exec`, with the thesis harness's Darwin profile
 (`tests/harness/thesis_sandbox.hero`, `profile`: nothing allowed by default, no
 read under `/Users` or the temporary folders but its own folder, no network),
-bounded at 10 seconds and 1 MiB of output; its standard output is compared
+bounded at 10 seconds and 1 MiB of output; **a case is right only where the
+program exits 0** (so a thin program that forgets a `finalize`, prints the
+right lines and exits 134 is wrong, the spec-warden's request registered
+before the first session, which the grader already kept: `right = output
+equal and exit 0`, `blind234.py`), and its standard output is compared
 byte for byte with the case's truth, written by hand by the coordinator and
 confirmed by the reference programs (S: both variants' references give every
 truth, 18 of 18, run on 2026-11-05; Q: the ffi-pragmatist's references in both
