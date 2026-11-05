@@ -1,0 +1,7 @@
+use core/strings
+
+function main()
+    given = args()
+    text = read_file(path: given[0]).must()
+    print(strings.fields(s: text).len())
+    print(strings.count(s: text, substr: given[1]))

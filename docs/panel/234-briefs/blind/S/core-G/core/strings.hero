@@ -1,0 +1,253 @@
+# Text, searched, trimmed and split: Go's `strings`, written in Heroes.
+#
+# Offsets are bytes, as `s[i]` and `slice` count them. A search compares bytes
+# and slices only where a match starts or ends, so it never splits a
+# character of valid UTF-8.
+
+## Types
+
+# The text before a separator and the text after it.
+record Halves
+    before: str
+    after: str
+
+## Searching
+
+# Whether `substr` occurs at byte `i` of `s`, all of it inside `s`.
+function matches_at(s: str, i: i64, substr: str) -> bool
+    m = substr.len()
+
+    if i < 0 || i + m > s.len()
+        return false
+    k @= 0
+
+    while k < m
+        if s[i + k] != substr[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# Whether `substr` occurs anywhere in `s`; the empty text occurs in every text.
+function contains(s: str, substr: str) -> bool
+    return !index(s: s, substr: substr).is_err()
+
+# Whether `s` begins with `prefix`.
+function has_prefix(s: str, prefix: str) -> bool
+    return matches_at(s: s, i: 0, substr: prefix)
+
+# Whether `s` ends with `suffix`.
+function has_suffix(s: str, suffix: str) -> bool
+    return matches_at(s: s, i: s.len() - suffix.len(), substr: suffix)
+
+# The byte offset where `substr` first occurs in `s`; fails `not_found`.
+function index(s: str, substr: str) -> i64?
+    i @= 0
+
+    while i + substr.len() <= s.len()
+        if matches_at(s: s, i: i, substr: substr)
+            return ok(i)
+        i @ i + 1
+
+    return fail(code: "not_found", msg: "\"" + substr + "\" does not occur in the text")
+
+# The byte offset where `substr` last occurs in `s`; fails `not_found`.
+function last_index(s: str, substr: str) -> i64?
+    i @= s.len() - substr.len()
+
+    while i >= 0
+        if matches_at(s: s, i: i, substr: substr)
+            return ok(i)
+        i @ i - 1
+
+    return fail(code: "not_found", msg: "\"" + substr + "\" does not occur in the text")
+
+# How many times `substr` occurs in `s`, not overlapping; for the empty
+# `substr`, the number of characters plus one.
+function count(s: str, substr: str) -> i64
+    if substr.len() == 0
+        return s.chars().len() + 1
+    n @= 0
+    i @= 0
+
+    while i + substr.len() <= s.len()
+        if matches_at(s: s, i: i, substr: substr)
+            n @ n + 1
+            i @ i + substr.len()
+        else
+            i @ i + 1
+
+    return n
+
+## Trimming
+
+# Whether a byte is a space, a tab, a line end, a vertical tab or a form feed.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 11 || b == 12
+
+# `s` without the spaces, tabs and line ends at either end.
+function trim_space(s: str) -> str
+    start @= 0
+
+    while start < s.len() && is_space(s[start])
+        start @ start + 1
+
+    end @= s.len()
+
+    while end > start && is_space(s[end - 1])
+        end @ end - 1
+
+    return s.slice(from: start, to: end)
+
+# `s` without `prefix` where it begins with it; otherwise `s` unchanged.
+function trim_prefix(s: str, prefix: str) -> str
+    if has_prefix(s: s, prefix: prefix)
+        return s.slice(from: prefix.len(), to: s.len())
+    return s
+
+# `s` without `suffix` where it ends with it; otherwise `s` unchanged.
+function trim_suffix(s: str, suffix: str) -> str
+    if has_suffix(s: s, suffix: suffix)
+        return s.slice(from: 0, to: s.len() - suffix.len())
+    return s
+
+## Splitting
+
+# The parts of `s` between the occurrences of `sep`, empty ones kept; for the
+# empty `sep`, each character.
+function split(s: str, sep: str) -> [str]
+    if sep.len() == 0
+        return s.chars()
+    out: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i + sep.len() <= s.len()
+        if matches_at(s: s, i: i, substr: sep)
+            out @ out.push(s.slice(from: start, to: i))
+            i @ i + sep.len()
+            start @ i
+        else
+            i @ i + 1
+
+    out @ out.push(s.slice(from: start, to: s.len()))
+    return out
+
+# The text before the first `sep` and the text after it; fails `not_found`.
+function cut(s: str, sep: str) -> Halves?
+    at = index(s: s, substr: sep)?
+    return ok(Halves(before: s.slice(from: 0, to: at), after: s.slice(from: at + sep.len(), to: s.len())))
+
+# The runs of `s` between spaces, tabs and line ends, never an empty one.
+function fields(s: str) -> [str]
+    out: [str] @= []
+    i @= 0
+
+    while i < s.len()
+        while i < s.len() && is_space(s[i])
+            i @ i + 1
+
+        start = i
+
+        while i < s.len() && !is_space(s[i])
+            i @ i + 1
+
+        if i > start
+            out @ out.push(s.slice(from: start, to: i))
+
+    return out
+
+# The lines of `s`, each without its `\n` or `\r\n`; a last line with no end
+# is a line, and a text ending in a line end has no empty line after it.
+function lines(s: str) -> [str]
+    out: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i < s.len()
+        if s[i] == '\n'
+            end @= i
+
+            if end > start && s[end - 1] == '\r'
+                end @ end - 1
+            out @ out.push(s.slice(from: start, to: end))
+            start @ i + 1
+        i @ i + 1
+
+    if start < s.len()
+        out @ out.push(s.slice(from: start, to: s.len()))
+    return out
+
+## Replacing
+
+# `s` with every occurrence of `old` replaced by `new`, not overlapping; for
+# the empty `old`, `new` before every character and at the end.
+function replace_all(s: str, old: str, new: str) -> str
+    if old.len() == 0
+        out: [str] @= [new]
+
+        for c in s.chars()
+            out @ out.push(c)
+            out @ out.push(new)
+
+        return join(out, "")
+    return join(split(s: s, sep: old), new)
+
+## Tests
+
+test "a search finds the first and the last, and says not_found"
+    assert index(s: "abcabc", substr: "bc").must() == 1
+    assert last_index(s: "abcabc", substr: "bc").must() == 4
+    assert index(s: "abc", substr: "").must() == 0
+    assert last_index(s: "abc", substr: "").must() == 3
+    assert index(s: "abc", substr: "x").default(-1) == -1
+
+    match index(s: "", substr: "x")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "a search past a character of two bytes never splits it"
+    assert index(s: "é b", substr: "b").must() == 3
+    assert contains(s: "naïve", substr: "ve")
+    assert count(s: "é", substr: "") == 2
+
+test "a prefix and a suffix, present and absent"
+    assert has_prefix(s: "ERROR x", prefix: "ERROR ")
+    assert !has_prefix(s: "ERR", prefix: "ERROR ")
+    assert has_suffix(s: "a.hero", suffix: ".hero")
+    assert !has_suffix(s: "o", suffix: ".hero")
+    assert trim_prefix(s: "ERROR x", prefix: "ERROR ") == "x"
+    assert trim_prefix(s: "x", prefix: "ERROR ") == "x"
+    assert trim_suffix(s: "a.hero", suffix: ".hero") == "a"
+
+test "trimming white space at both ends, and an all-space text"
+    assert trim_space(s: "  a b \t\n") == "a b"
+    assert trim_space(s: " \t ") == ""
+    assert trim_space(s: "") == ""
+
+test "split keeps empty parts, fields never does"
+    assert split(s: "a,,b", sep: ",") == ["a", "", "b"]
+    assert split(s: "", sep: ",") == [""]
+    assert split(s: "ab", sep: "") == ["a", "b"]
+    assert fields(s: "  a \t b\n") == ["a", "b"]
+    empty: [str] = []
+    assert fields(s: " \n ") == empty
+
+test "cut, found and not"
+    halves = cut(s: "k = v = w", sep: "=").must()
+    assert halves.before == "k "
+    assert halves.after == " v = w"
+    assert cut(s: "kv", sep: "=").is_err()
+
+test "lines without their ends, a missing last end, a CR LF"
+    assert lines(s: "a\nb\n") == ["a", "b"]
+    assert lines(s: "a\r\nb") == ["a", "b"]
+    assert lines(s: "\n") == [""]
+    empty: [str] = []
+    assert lines(s: "") == empty
+
+test "count and replace_all, not overlapping"
+    assert count(s: "aaaa", substr: "aa") == 2
+    assert count(s: "abc", substr: "x") == 0
+    assert replace_all(s: "a.b.c", old: ".", new: "/") == "a/b/c"
+    assert replace_all(s: "ab", old: "", new: "-") == "-a-b-"

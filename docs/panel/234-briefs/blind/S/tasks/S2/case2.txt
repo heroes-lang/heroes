@@ -1,0 +1,6 @@
+a=1
+   
+b = 
+=c
+# x = y
+d = 4 # not a comment

@@ -1,0 +1,7 @@
+# settings
+name = heroes
+
+ # indented comment
+version=0.6
+broken line
+path = /usr/local = x

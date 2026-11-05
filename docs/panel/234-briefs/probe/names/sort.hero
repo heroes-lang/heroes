@@ -1,0 +1,5 @@
+# The elements in the caller's order; the probe keeps the first two.
+function by<A>(xs: [A], lt: (function(a: A, b: A) -> bool)) -> [A]
+    if lt(a: xs[1], b: xs[0])
+        return [xs[1], xs[0]]
+    return xs

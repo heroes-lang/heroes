@@ -1,0 +1,21 @@
+use core/strings
+
+function main()
+    text = read_file(path: args()[0]).must()
+    found @= 0
+    number @= 0
+
+    for line in strings.lines(s: text)
+        number @ number + 1
+        bare = strings.trim_space(s: line)
+
+        if bare == "" || strings.has_prefix(s: bare, prefix: "#")
+            continue
+
+        match strings.cut(s: line, sep: "=")
+            .ok halves =>
+                print(strings.trim_space(s: halves.before) + "|" + strings.trim_space(s: halves.after))
+                found @ found + 1
+            .err _ => print("bad: " + to_str(number))
+
+    print("keys: " + to_str(found))

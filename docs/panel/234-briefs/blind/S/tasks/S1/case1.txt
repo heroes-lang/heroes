@@ -1,0 +1,5 @@
+INFO start: ok
+ERROR disk: full
+ERROR no colon here
+WARN x: y
+ERROR net: timeout: retry

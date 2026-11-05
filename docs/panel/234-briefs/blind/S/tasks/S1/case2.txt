@@ -1,0 +1,5 @@
+ERRORS many: no
+ ERROR indented: no
+ERROR : empty
+ERROR a:b
+ERROR last: line

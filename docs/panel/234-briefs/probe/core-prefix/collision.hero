@@ -1,0 +1,5 @@
+use core/strings
+use strings
+
+function main()
+    print(strings.contains(s: "abc", part: "c"))

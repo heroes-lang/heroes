@@ -1,0 +1,6 @@
+use core/net/http
+use core/strings
+
+function main()
+    print(http.is_get("GET / HTTP/1.1"))
+    print(strings.contains(s: "abc", part: "c"))

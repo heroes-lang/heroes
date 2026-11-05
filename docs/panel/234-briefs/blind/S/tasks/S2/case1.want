@@ -1,0 +1,5 @@
+name|heroes
+version|0.6
+bad: 6
+path|/usr/local = x
+keys: 3

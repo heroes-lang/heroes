@@ -1,0 +1,44 @@
+# Experiment S: the two variants differ in four names and nothing else
+
+Run 2026-11-05 with `bash`, from `docs/panel/234-briefs/blind/` (critic F22).
+
+```
+$ diff <(tr -cs 'A-Za-z_' '\n' < S/core-H/core/strings.hero | sort | uniq -c) <(tr -cs 'A-Za-z_' '\n' < S/core-G/core/strings.hero | sort | uniq -c)
+56a57
+>    4 cut
+88a90
+>    8 index
+101c103
+<    3 last_position
+---
+>    3 last_index
+104c106
+<    2 lines
+---
+>    7 lines
+140d141
+<    8 position
+162,163d162
+<    5 split_lines
+<    4 split_once
+$ diff <(tr -cs 'A-Za-z_' '\n' < S/card-H.md | sort | uniq -c) <(tr -cs 'A-Za-z_' '\n' < S/card-G.md | sort | uniq -c)
+24a25
+>    1 cut
+42a44
+>    1 index
+47c49
+<    1 last_position
+---
+>    1 last_index
+49c51
+<    1 lines
+---
+>    2 lines
+71d72
+<    1 position
+84,85d84
+<    1 split_lines
+<    1 split_once
+```
+
+In the modules, `lines` reads 2 in H (two words of comments) and 7 in G (those two and the five `split_lines` renamed); in the cards, the same shape, 1 and 2. No other word's count differs.

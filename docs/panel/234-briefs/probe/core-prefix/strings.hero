@@ -1,0 +1,15 @@
+# Whether `s` holds `part` anywhere.
+function contains(s: str, part: str) -> bool
+    n = s.len()
+    m = part.len()
+    i @= 0
+
+    while i + m <= n
+        if s.slice(from: i, to: i + m) == part
+            return true
+        i @ i + 1
+
+    return false
+
+test "contains"
+    assert contains(s: "hello", part: "ell")

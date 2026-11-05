@@ -1,0 +1,8 @@
+use sort
+
+function main()
+    print(sort([3, 1])[0])
+    print(sort.by([3, 1], less)[0])
+
+function less(a: i64, b: i64) -> bool
+    return a < b

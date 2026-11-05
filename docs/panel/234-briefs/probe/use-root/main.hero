@@ -1,0 +1,4 @@
+use net/http
+
+function main()
+    print(http.is_get("GET / HTTP/1.1"))

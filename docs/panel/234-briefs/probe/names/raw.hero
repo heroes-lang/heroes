@@ -1,0 +1,2 @@
+extern "stdlib.h"
+    function abs(n: i32) -> i32

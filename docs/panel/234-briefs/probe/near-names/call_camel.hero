@@ -1,0 +1,4 @@
+use core/strings
+
+function main()
+    print(strings.indexOf(s: "abc", part: "b").must())

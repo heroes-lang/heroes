@@ -1,0 +1,4 @@
+use raw
+
+function main()
+    print(raw.abs(-3))

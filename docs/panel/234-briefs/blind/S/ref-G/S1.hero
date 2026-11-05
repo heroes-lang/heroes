@@ -1,0 +1,10 @@
+use core/strings
+
+function main()
+    text = read_file(path: args()[0]).must()
+
+    for line in strings.lines(s: text)
+        if strings.has_prefix(s: line, prefix: "ERROR ")
+            match strings.cut(s: line, sep: ": ")
+                .ok halves => print(halves.after)
+                .err _     => print("?")

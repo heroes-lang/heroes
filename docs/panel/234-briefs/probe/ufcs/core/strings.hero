@@ -1,0 +1,3 @@
+# Whether `s` begins with `prefix`.
+function has_prefix(s: str, prefix: str) -> bool
+    return s.len() >= prefix.len() && s.slice(from: 0, to: prefix.len()) == prefix

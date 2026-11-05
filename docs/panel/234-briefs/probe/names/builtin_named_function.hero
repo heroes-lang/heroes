@@ -1,0 +1,4 @@
+use strings
+
+function main()
+    print(strings.find(s: "abc", part: "b").must())

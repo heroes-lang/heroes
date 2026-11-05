@@ -1,0 +1,5 @@
+use core/strings
+
+function main()
+    line = "GET / HTTP/1.1"
+    print(strings.has_prefix(line, prefix: "GET "))

@@ -1,0 +1,8 @@
+use core/strings
+
+# Whether a request line asks for GET.
+function is_get(line: str) -> bool
+    return strings.contains(s: line, part: "GET ")
+
+test "is_get"
+    assert is_get("GET / HTTP/1.1")

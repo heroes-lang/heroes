@@ -1,0 +1,4 @@
+use core/strings
+
+function main()
+    print(strings.index_of(s: "abc", part: "b") < 0)

@@ -1,0 +1,12 @@
+# Where `part` first starts in `s`, failing `not_found`.
+function index_of(s: str, part: str) -> i64?
+    n = s.len()
+    m = part.len()
+    i @= 0
+
+    while i + m <= n
+        if s.slice(from: i, to: i + m) == part
+            return ok(i)
+        i @ i + 1
+
+    return fail(code: "not_found", msg: "no " + part + " in " + s)
