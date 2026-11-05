@@ -1,0 +1,180 @@
+## core/database/sql/sqlite3: the C module under the thick `sql` package
+#
+# The floor of `core/database/sql` (conventions-draft.md §1.4): the `extern`
+# group and, beside each member, the one Heroes function the package calls,
+# since an `extern` is never callable from another module (panel 033 R5). No
+# program `use`s this module; `core/database/sql` is the face, and no status
+# code, statement or `cstr` crosses it.
+#
+# Each function is the C function of the same name without its `sqlite3_`
+# prefix, its parameters in C's order, answering SQLite's own integer, as the
+# thin shape's are. What a function adds to C: a `str` lent as `cstr`; a text
+# copied back and validated into a `str?`; and the parameters C asks only
+# what a Heroes `str` already says, or SQLite's documented *none*: a string's
+# length (always `-1`), bound text's destructor (always `SQLITE_TRANSIENT`,
+# SQLite's own copy), and a statement's tail (`nullptr`).
+
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    constant SQLITE_ROW: i64
+    constant SQLITE_DONE: i64
+    # Column types, as `sqlite3_column_type` answers them.
+    constant SQLITE_INTEGER: i64
+    constant SQLITE_FLOAT: i64
+    constant SQLITE_TEXT: i64
+    constant SQLITE_NULL: i64
+    # Extended result codes, as `sqlite3_extended_errcode` answers them: the
+    # two refusals the face tells apart from every other, as `unique`.
+    constant SQLITE_CONSTRAINT_UNIQUE: i64
+    constant SQLITE_CONSTRAINT_PRIMARYKEY: i64
+    constant SQLITE_TRANSIENT: ptr
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    # A failed open still hands back a connection, owed its close.
+    function sqlite3_open(filename: cstr lent, @db: Db acquires sqlite3_close) -> i64
+    # `when 0`: with a statement not finalized SQLite answers `SQLITE_BUSY`
+    # and closes nothing, so the life ends only on `SQLITE_OK`.
+    function sqlite3_close(db: Db consumes) -> i64 when 0
+    # SQLite owns the message, valid until the connection's next call; the
+    # wrapper copies it at once.
+    function sqlite3_errmsg(db: Db) -> cstr
+    function sqlite3_extended_errcode(db: Db) -> i64
+    function sqlite3_total_changes64(db: Db) -> i64
+    function sqlite3_last_insert_rowid(db: Db) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, tail: ptr) -> i64
+    function sqlite3_bind_parameter_count(statement: Stmt) -> i64
+    # No `lent` on the text: SQLite keeps the pointer under `SQLITE_STATIC`,
+    # so the bytes cross as a lease (panel 171).
+    function sqlite3_bind_text(statement: Stmt, index: i32, text: cstr, length: i32, destructor: ptr) -> i64
+    function sqlite3_step(statement: Stmt) -> i64
+    # SQLite destroys the statement whatever it answers.
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+    function sqlite3_column_count(statement: Stmt) -> i64
+    function sqlite3_column_type(statement: Stmt, column: i32) -> i64
+    function sqlite3_column_int64(statement: Stmt, column: i32) -> i64
+    function sqlite3_column_double(statement: Stmt, column: i32) -> f64
+    function sqlite3_column_text(statement: Stmt, column: i32) -> cstr
+
+# Opens the database `filename` names into `db`; answers `SQLITE_OK` or an
+# error code, `db` owed one `close` either way.
+function open(filename: str, @db: Db) -> i64
+    return sqlite3_open(filename.cstr(), @db)
+
+# Closes `db`; answers `SQLITE_OK`, or an error code and closes nothing.
+function close(@db: Db) -> i64
+    return sqlite3_close(db)
+
+# SQLite's English for the connection's last failure; fails `null_cstr` or
+# `not_text` where SQLite hands back no text.
+function errmsg(db: Db) -> str?
+    return sqlite3_errmsg(db).validated()
+
+# The extended result code of the connection's last failure.
+function extended_errcode(db: Db) -> i64
+    return sqlite3_extended_errcode(db)
+
+# The rows inserted, changed or deleted since the connection opened.
+function total_changes64(db: Db) -> i64
+    return sqlite3_total_changes64(db)
+
+# The row id of the last row the connection inserted.
+function last_insert_rowid(db: Db) -> i64
+    return sqlite3_last_insert_rowid(db)
+
+# Compiles the first statement in `sql` into `statement`; answers `SQLITE_OK`
+# or an error code, `statement` then `nullptr`. Owed one `finalize`.
+function prepare_v2(db: Db, sql: str, @statement: Stmt) -> i64
+    return sqlite3_prepare_v2(db: db, sql: sql.cstr(), length: -1, statement: @statement, tail: nullptr)
+
+# How many parameters `?` the statement holds.
+function bind_parameter_count(statement: Stmt) -> i64
+    return sqlite3_bind_parameter_count(statement)
+
+# Binds `text` to the `index`th parameter, from 1; SQLite keeps its own copy.
+function bind_text(statement: Stmt, index: i32, text: str) -> i64
+    held: cstr @= text.lease()
+    rc = sqlite3_bind_text(
+        statement: statement,
+        index: index,
+        text: held,
+        length: -1,
+        destructor: SQLITE_TRANSIENT
+    )
+    end_lease(@held)
+    return rc
+
+# Runs the statement to its next row: `SQLITE_ROW`, `SQLITE_DONE` or an
+# error code.
+function step(statement: Stmt) -> i64
+    return sqlite3_step(statement)
+
+# Ends the statement; answers `SQLITE_OK` or its last step's error code.
+function finalize(@statement: Stmt) -> i64
+    return sqlite3_finalize(statement)
+
+# How many columns the statement's rows have.
+function column_count(statement: Stmt) -> i64
+    return sqlite3_column_count(statement)
+
+# The type of a column of the current row, one of the `SQLITE_` types above
+# or `SQLITE_BLOB`.
+function column_type(statement: Stmt, column: i32) -> i64
+    return sqlite3_column_type(statement, column)
+
+# A column of the current row as an integer, as SQLite converts it.
+function column_int64(statement: Stmt, column: i32) -> i64
+    return sqlite3_column_int64(statement, column)
+
+# A column of the current row as a float, as SQLite converts it.
+function column_double(statement: Stmt, column: i32) -> f64
+    return sqlite3_column_double(statement, column)
+
+# A column of the current row as text; fails `null_cstr` on a NULL and
+# `not_text` on bytes that are not UTF-8.
+function column_text(statement: Stmt, column: i32) -> str?
+    return sqlite3_column_text(statement, column).validated()
+
+test "a row's columns are read at their types"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select 42, 2.5, 'd''arc', null", @query) == SQLITE_OK
+    assert column_count(query) == 4
+    assert step(query) == SQLITE_ROW
+    assert column_type(query, 0) == SQLITE_INTEGER
+    assert column_int64(query, 0) == 42
+    assert column_type(query, 1) == SQLITE_FLOAT
+    assert column_double(query, 1) == 2.5
+    assert column_type(query, 2) == SQLITE_TEXT
+    assert column_text(query, 2).must() == "d'arc"
+    assert column_type(query, 3) == SQLITE_NULL
+    assert column_text(query, 3).is_err()
+    assert step(query) == SQLITE_DONE
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "a UNIQUE refusal is told by its extended code, with SQLite's message"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    create: Stmt @= nullptr
+    assert prepare_v2(db, "create table u(name text unique)", @create) == SQLITE_OK
+    assert step(create) == SQLITE_DONE
+    assert finalize(@create) == SQLITE_OK
+    insert: Stmt @= nullptr
+    assert prepare_v2(db, "insert into u(name) values (?), (?)", @insert) == SQLITE_OK
+    assert bind_parameter_count(insert) == 2
+    assert bind_text(insert, 1, "a") == SQLITE_OK
+    assert bind_text(insert, 2, "a") == SQLITE_OK
+    assert step(insert) != SQLITE_DONE
+    assert extended_errcode(db) == SQLITE_CONSTRAINT_UNIQUE
+    assert errmsg(db).must() == "UNIQUE constraint failed: u.name"
+    assert total_changes64(db) == 0
+    _ = finalize(@insert)
+    assert close(@db) == SQLITE_OK
+
+test "a failed open still hands back a connection to close"
+    db: Db @= nullptr
+    assert open("/no-such-directory-here/x.db", @db) != SQLITE_OK
+    assert db != nullptr
+    assert errmsg(db).must() == "unable to open database file"
+    assert close(@db) == SQLITE_OK

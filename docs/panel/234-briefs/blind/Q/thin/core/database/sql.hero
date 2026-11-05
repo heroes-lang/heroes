@@ -1,0 +1,275 @@
+## core/database/sql, thin: SQLite's C interface, one Heroes function beside each member
+#
+# The package's face is the C module itself (panel 234, item D, the thin
+# shape). Each function a program calls is the C function of the same name
+# without its `sqlite3_` prefix, `sqlite3_open` being `sql.open`, with C's
+# parameters in C's order, and it answers the integer result code SQLite
+# answers, which the program compares with this group's constants
+# (`sql.SQLITE_OK`, `sql.SQLITE_ROW`, `sql.SQLITE_DONE`,
+# `sql.SQLITE_CONSTRAINT`). The two handles are the group's records, with the
+# marks that make one never given back an abort when `main` returns.
+#
+# **What a function adds to C, and nothing else**: a `str` lent to C as its
+# `cstr`; a text column copied back and validated into a `str?`; and a C
+# parameter the wrapper gives itself where C asks only what a Heroes `str`
+# already says, or where the value is SQLite's documented *none*:
+#
+# - a string's length (`nByte`, `n`): always `-1`, read to the zero byte,
+#   since `.cstr()` aborts on a `str` holding one and so a `str` cannot be
+#   shorter than its bytes, and a length the program gave could send SQLite
+#   past them;
+# - how long SQLite may keep bound text (the destructor): always
+#   `SQLITE_TRANSIENT`, SQLite's own copy taken before `bind_text` returns,
+#   since the bytes handed over are a lease this function ends;
+# - the tail of a statement (`pzTail`), the callback of `sqlite3_exec` with
+#   its context, and the message it would allocate: `nullptr`, which SQLite
+#   documents as *none*.
+#
+# The parameters keep C's names from `sqlite3.h` where the header names them,
+# without their Hungarian prefixes (`zSql` is `sql`, `iCol` is `column`, `ppDb`
+# is `db`), and SQLite's documented name where it does not (`index`).
+
+extern "sqlite3.h" link "sqlite3"
+    # Result codes, read from the header: a typo is refused here, and a
+    # wrong value cannot be written, since no value is written.
+    constant SQLITE_OK: i64
+    constant SQLITE_ROW: i64
+    constant SQLITE_DONE: i64
+    constant SQLITE_CONSTRAINT: i64
+    # `((sqlite3_destructor_type)-1)`: SQLite copies the bytes before the
+    # call returns. Only `bind_text` reads it.
+    constant SQLITE_TRANSIENT: ptr
+    # The two handles: `Db` is C's `sqlite3 *` and `Stmt` is
+    # `sqlite3_stmt *`, each `nullptr` until a call writes it.
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    # A failed open still hands back a connection, which is owed its
+    # `sqlite3_close` too (measured: `"/no-such-directory-here/x.db"` answers
+    # 14 with a non-null handle, and closing it answers 0).
+    function sqlite3_open(filename: cstr lent, @db: Db acquires sqlite3_close) -> i64
+    # `when 0`: SQLite closes nothing and answers `SQLITE_BUSY` while a
+    # statement of the connection is not finalized, so the connection's life
+    # ends only on `SQLITE_OK`. Without it a close before a finalize ran at
+    # exit 0 with the connection never closed (panel 234's run, `p1` against
+    # `p2`).
+    function sqlite3_close(db: Db consumes) -> i64 when 0
+    function sqlite3_exec(db: Db, sql: cstr lent, callback: ptr, context: ptr, errmsg: ptr) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, tail: ptr) -> i64
+    # The text carries no `lent`: with `SQLITE_STATIC` SQLite keeps the
+    # pointer, so no word is true of the parameter whatever the fifth
+    # argument says, and the bytes cross as a lease (panel 171).
+    function sqlite3_bind_text(statement: Stmt, index: i32, text: cstr, length: i32, destructor: ptr) -> i64
+    function sqlite3_step(statement: Stmt) -> i64
+    function sqlite3_reset(statement: Stmt) -> i64
+    # SQLite destroys the statement whatever it answers, so no `when`.
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+    function sqlite3_column_int64(statement: Stmt, column: i32) -> i64
+    function sqlite3_column_text(statement: Stmt, column: i32) -> cstr
+
+# Opens the database `filename` names, `":memory:"` for one held in memory,
+# writing the connection into `db`; answers `SQLITE_OK` or an error code. The
+# connection is owed one `close` even when this fails.
+function open(filename: str, @db: Db) -> i64
+    return sqlite3_open(filename.cstr(), @db)
+
+# Closes `db`; answers `SQLITE_OK`, or an error code (`SQLITE_BUSY` while a
+# statement of it is not finalized) and then closes nothing, `db` still owed
+# its close.
+function close(@db: Db) -> i64
+    return sqlite3_close(db)
+
+# Runs every statement in `sql`, discarding any rows; answers `SQLITE_OK` or
+# the error code of the first statement that fails.
+function exec(db: Db, sql: str) -> i64
+    return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, errmsg: nullptr)
+
+# Compiles the first statement in `sql` into `statement`; answers `SQLITE_OK`
+# or an error code, `statement` then staying `nullptr`. Text after the first
+# statement is not compiled. The statement is owed one `finalize`.
+function prepare_v2(db: Db, sql: str, @statement: Stmt) -> i64
+    return sqlite3_prepare_v2(db: db, sql: sql.cstr(), length: -1, statement: @statement, tail: nullptr)
+
+# Binds `text` to the `index`th parameter `?` of `statement`, counted from 1;
+# answers `SQLITE_OK` or an error code. SQLite keeps its own copy. A column
+# declared `INTEGER` stores a text that reads as an integer as that integer.
+function bind_text(statement: Stmt, index: i32, text: str) -> i64
+    held: cstr @= text.lease()
+    rc = sqlite3_bind_text(
+        statement: statement,
+        index: index,
+        text: held,
+        length: -1,
+        destructor: SQLITE_TRANSIENT
+    )
+    end_lease(@held)
+    return rc
+
+# Runs `statement` to its next row; answers `SQLITE_ROW` when a row is ready,
+# `SQLITE_DONE` when the statement has finished, `SQLITE_CONSTRAINT` when a
+# constraint (`UNIQUE`, `NOT NULL`, ...) refused it, or another error code.
+# After anything but `SQLITE_ROW`, `reset` it before stepping it again.
+function step(statement: Stmt) -> i64
+    return sqlite3_step(statement)
+
+# Makes `statement` ready to step again from its start, keeping its
+# bindings; answers `SQLITE_OK`, or the error code of its last `step` where
+# that step failed.
+function reset(statement: Stmt) -> i64
+    return sqlite3_reset(statement)
+
+# Ends `statement`; answers `SQLITE_OK`, or the error code of its last
+# `step` where that step failed and was not `reset` since.
+function finalize(@statement: Stmt) -> i64
+    return sqlite3_finalize(statement)
+
+# The integer in column `column`, counted from 0, of the row `step` made
+# ready; a NULL reads 0, and a text is read as SQLite converts it.
+function column_int64(statement: Stmt, column: i32) -> i64
+    return sqlite3_column_int64(statement, column)
+
+# The text in column `column`, counted from 0, of the row `step` made ready;
+# fails `null_cstr` where the column is NULL and `not_text` where its bytes
+# are not UTF-8.
+function column_text(statement: Stmt, column: i32) -> str?
+    return sqlite3_column_text(statement, column).validated()
+
+test "a row is read back at its columns, an apostrophe and all"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select 42, 'o''neil'", @query) == SQLITE_OK
+    assert step(query) == SQLITE_ROW
+    assert column_int64(query, 0) == 42
+    assert column_text(query, 1).must() == "o'neil"
+    assert step(query) == SQLITE_DONE
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "a NULL reads 0 through column_int64 and fails null_cstr through column_text"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "create table t(n integer)") == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select count(*), sum(n) from t", @query) == SQLITE_OK
+    assert step(query) == SQLITE_ROW
+    assert column_int64(query, 0) == 0
+    assert column_int64(query, 1) == 0
+
+    match column_text(query, 1)
+        .ok _  => assert false
+        .err e => assert e.code == "null_cstr"
+
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "text bound into an INTEGER column is stored as the integer it reads as"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "create table t(n integer)") == SQLITE_OK
+    insert: Stmt @= nullptr
+    assert prepare_v2(db, "insert into t(n) values (?)", @insert) == SQLITE_OK
+
+    for number in ["9000000000", "-1"]
+        assert bind_text(insert, 1, number) == SQLITE_OK
+        assert step(insert) == SQLITE_DONE
+        assert reset(insert) == SQLITE_OK
+
+    assert finalize(@insert) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select sum(n), typeof(min(n)) from t", @query) == SQLITE_OK
+    assert step(query) == SQLITE_ROW
+    assert column_int64(query, 0) == 8999999999
+    assert column_text(query, 1).must() == "integer"
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "a repeated value in a UNIQUE column steps SQLITE_CONSTRAINT, and reset answers it too"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "create table u(name text unique)") == SQLITE_OK
+    insert: Stmt @= nullptr
+    assert prepare_v2(db, "insert into u(name) values (?)", @insert) == SQLITE_OK
+    assert bind_text(insert, 1, "d'arc") == SQLITE_OK
+    assert step(insert) == SQLITE_DONE
+    assert reset(insert) == SQLITE_OK
+    assert bind_text(insert, 1, "d'arc") == SQLITE_OK
+    assert step(insert) == SQLITE_CONSTRAINT
+    assert reset(insert) == SQLITE_CONSTRAINT
+    assert finalize(@insert) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "a statement SQLite cannot compile answers an error and leaves the statement nullptr"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "insert into nowhere values ('o'neil')") != SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "selec 1", @query) != SQLITE_OK
+    assert query == nullptr
+    assert close(@db) == SQLITE_OK
+
+test "close answers an error and closes nothing while a statement is not finalized"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select 1", @query) == SQLITE_OK
+    assert close(@db) != SQLITE_OK
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "exec runs every statement in its text, and prepare_v2 compiles only the first"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "create table a(x); create table b(y)") == SQLITE_OK
+    insert: Stmt @= nullptr
+    assert prepare_v2(db, "insert into a values (1); insert into b values (2)", @insert) == SQLITE_OK
+    assert step(insert) == SQLITE_DONE
+    assert finalize(@insert) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select (select count(*) from a), (select count(*) from b)", @query) == SQLITE_OK
+    assert step(query) == SQLITE_ROW
+    assert column_int64(query, 0) == 1
+    assert column_int64(query, 1) == 0
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "a text column whose bytes are not UTF-8 fails not_text"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select cast(x'ff' as text)", @query) == SQLITE_OK
+    assert step(query) == SQLITE_ROW
+
+    match column_text(query, 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK
+
+test "finalize answers a refused step's code where no reset came after it"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "create table u(name text unique)") == SQLITE_OK
+    insert: Stmt @= nullptr
+    assert prepare_v2(db, "insert into u(name) values ('a'), ('a')", @insert) == SQLITE_OK
+    assert step(insert) == SQLITE_CONSTRAINT
+    assert finalize(@insert) == SQLITE_CONSTRAINT
+    assert close(@db) == SQLITE_OK
+
+test "reset keeps the statement's bindings"
+    db: Db @= nullptr
+    assert open(":memory:", @db) == SQLITE_OK
+    assert exec(db, "create table t(name text)") == SQLITE_OK
+    insert: Stmt @= nullptr
+    assert prepare_v2(db, "insert into t(name) values (?)", @insert) == SQLITE_OK
+    assert bind_text(insert, 1, "o'neil") == SQLITE_OK
+    assert step(insert) == SQLITE_DONE
+    assert reset(insert) == SQLITE_OK
+    assert step(insert) == SQLITE_DONE
+    assert finalize(@insert) == SQLITE_OK
+    query: Stmt @= nullptr
+    assert prepare_v2(db, "select count(*) from t where name = 'o''neil'", @query) == SQLITE_OK
+    assert step(query) == SQLITE_ROW
+    assert column_int64(query, 0) == 2
+    assert finalize(@query) == SQLITE_OK
+    assert close(@db) == SQLITE_OK

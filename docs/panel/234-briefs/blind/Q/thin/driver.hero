@@ -1,0 +1,9 @@
+use core/database/sql
+
+# The root driver: `heroes test driver.hero` runs every `test` block of the
+# package, and running it opens and closes a database in memory.
+function main()
+    db: sql.Db @= nullptr
+    assert sql.open(":memory:", @db) == sql.SQLITE_OK
+    assert sql.close(@db) == sql.SQLITE_OK
+    print("ok")
