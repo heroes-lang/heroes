@@ -182,7 +182,9 @@ bounded at 10 seconds and 1 MiB of output; its standard output is compared
 byte for byte with the case's truth, written by hand by the coordinator and
 confirmed by the reference programs (S: both variants' references give every
 truth, 18 of 18, run on 2026-11-05; Q: the ffi-pragmatist's references in both
-shapes). The grader was tried on the S references, on a G answer graded
+shapes, delivered 2026-11-05 at 23:25, which the seat ran 18 of 18 on this Mac
+and in the Linux arm64 container and this grader graded 18 of 18 in its
+sandbox the same evening). The grader was tried on the S references, on a G answer graded
 against the H tree (`unknown_in_module`, its path cut from the message), and
 on a session that read outside its folder (void).
 
