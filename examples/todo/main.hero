@@ -17,6 +17,7 @@
 # touching the disk, and it is what value semantics makes free: `complete`
 # returns a new list, because there is nothing else it could return.
 
+use core/strconv
 use list
 
 ## Error codes
@@ -94,14 +95,10 @@ function rest_of(given: [str], at: i64) -> str
 function number_of(word: str) -> i64?
     if word.len() == 0
         return fail(code: ERR_NO_NUMBER, msg: "`done` needs the number of a task")
-    v: i64 @= 0
 
-    for i in range(from: 0, to: word.len())
-        if word[i] < '0' || word[i] > '9'
-            return fail(code: ERR_NO_NUMBER, msg: "`" + word + "` is not a number")
-        v @ v * 10 + to_i64(word[i] - '0').must()
-
-    return ok(v)
+    match strconv.atoi(word)
+        .ok n  => return ok(n)
+        .err e => return fail(code: ERR_NO_NUMBER, msg: e.msg)
 
 test "the sample lists the way the file reads"
     tasks = list.read(read_file("examples/todo/sample.todo").must()).must()
