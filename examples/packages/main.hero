@@ -4,6 +4,7 @@
 # A program that uses a package carries a copy of it under its own `core/`,
 # byte for byte this tree's (`README.md` beside this file).
 
+use core/strconv
 use core/strings
 
 function main()
@@ -17,5 +18,10 @@ function main()
     for line in strings.split_lines("one\r\ntwo\n")
         print(line)
 
+    match strconv.atoi("-17")
+        .ok n  => print(n)
+        .err e => print(e.msg)
+
 test "the driver reaches every package"
     assert strings.has_prefix(s: "core/strings", prefix: "core/")
+    assert strconv.atoi("7").must() == 7

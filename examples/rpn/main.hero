@@ -15,6 +15,7 @@
 # easy to leave out, and leaving it out is invisible until somebody types a
 # zero. The check is here and it has its own case.
 
+use core/strconv
 use core/strings
 
 variant Token
@@ -46,47 +47,7 @@ function token_of(word: str) -> Token?
 
     if word == "/"
         return ok(.divide)
-    return ok(.number(value: number_of(word)?))
-
-# A number, read by hand because the language ships no `str` to `i64`: the
-# conversions in `spec:62-68` all go the other way. Nine lines, and the sign
-# is the half a first draft forgets.
-function number_of(word: str) -> i64?
-    if word.len() == 0
-        return fail(code: "empty", msg: "an empty word is not a number")
-    negative: bool @= false
-    total: i64 @= 0
-    digits: i64 @= 0
-    first: bool @= true
-
-    for ch in word.chars()
-        if first && ch == "-"
-            negative @ true
-            first @ false
-            continue
-        first @ false
-        d = digit_of(ch)?
-        total @ total * 10 + d
-        digits @ digits + 1
-
-    if digits == 0
-        return fail(code: "not_a_number", msg: "`" + word + "` has no digits in it")
-
-    return if negative
-        ok(0 - total)
-    else
-        ok(total)
-
-function digit_of(ch: str) -> i64?
-    digits = "0123456789"
-    i: i64 @= 0
-
-    while i < 10
-        if digits.slice(from: i, to: i + 1) == ch
-            return ok(i)
-        i @ i + 1
-
-    return fail(code: "not_a_digit", msg: "`" + ch + "` is not a digit")
+    return ok(.number(value: strconv.atoi(word)?))
 
 function evaluate(text: str) -> i64?
     stack: [i64] @= []
@@ -188,14 +149,5 @@ test "a negative number is a number and a minus is an operator"
     assert evaluate("-3").must() == 0 - 3
     assert evaluate("-3 -4 +").must() == 0 - 7
     assert evaluate("3 -4 -").must() == 7
-    assert number_of("-42").must() == 0 - 42
-    assert number_of("42").must() == 42
-    assert number_of("-").is_err()
-
-test "reading a number by hand agrees with itself on the boundaries"
-    assert number_of("0").must() == 0
-    assert number_of("-0").must() == 0
-    assert number_of("1000000").must() == 1000000
-    assert number_of("").is_err()
-    assert number_of("1a").is_err()
-    assert number_of("a1").is_err()
+    assert strconv.atoi("-42").must() == 0 - 42
+    assert strconv.atoi("-").is_err()

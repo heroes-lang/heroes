@@ -16,6 +16,7 @@
 # and every one of them is propagated with `?` (spec § Failure), so the
 # first bad byte in a five-thousand-line file stops the read and says where.
 
+use core/strconv
 use core/strings
 use data/row
 
@@ -82,28 +83,10 @@ function bool_of(text: str, line: i64) -> bool?
 function int_of(text: str, line: i64) -> i64?
     if text.len() == 0
         return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": a number field is empty")
-    negative = text[0] == '-'
-    start: i64 @= 0
 
-    if negative
-        start @ 1
-
-        if text.len() == 1
-            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `-` is not a number")
-    total: i64 @= 0
-    at: i64 @= start
-
-    while at < text.len()
-        digit = text[at]
-
-        if digit < '0' || digit > '9'
-            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` is not a whole number")
-        total @ total * 10 + to_i64(digit - '0').must()
-        at @ at + 1
-
-    if negative
-        return ok(-total)
-    return ok(total)
+    match strconv.atoi(text)
+        .ok n  => return ok(n)
+        .err e => return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": " + e.msg)
 
 # An `f64`, read as ONE integer divided ONCE — which is not a style but a
 # repair, and the round trip is what forced it.
