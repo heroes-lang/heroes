@@ -41,7 +41,7 @@ function name_after(text: str, start: i64) -> str
 
 # The value of the `str` constant declared at row `at`, `constant NAME: str`
 # with a plain literal alone on the row below, or none for any other constant:
-# a code a package adds is such a constant (the conventions' § 3.3). A literal
+# a code a package adds is such a constant (`examples/packages/README.md` § 3.3). A literal
 # holding an escape or a brace is not plain, and is none.
 function str_constant(rows: [str], at: i64) -> str?
     if !strings.ends_with(text: rows[at], suffix: ": str") || at + 1 >= rows.len()

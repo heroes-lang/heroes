@@ -1,7 +1,7 @@
 # The codes a core package writes, and what its face says of each, for its
 # card's `## Codes` (task 2294): each literal a `fail` of the package's modules
 # writes outside their tests, and each code written through a `str` constant of
-# the face (the conventions' § 3.3), with what it means, read from the face and
+# the face (`examples/packages/README.md` § 3.3), with what it means, read from the face and
 # never written by hand: the constant's own doc where it has one, else the
 # clause the face's functions' docs give the code where they fail with it,
 # `fails `not_found` where `s` holds no `sep``. A code no doc explains has no

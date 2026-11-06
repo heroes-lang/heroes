@@ -163,8 +163,11 @@ constant ENTRIES: [str]
 # floored below a third. **467 on 2026-10-07**: `ls tests/emission/*.c | wc
 # -l`, every one claimed (the suite's `orphans`), and the suite's own count.
 # **589 on 2026-10-10**, at batch 19's gate, the suite's own count.
+# **737 on 2026-11-06**, at M-core-packages' first batch gate, the suite's own
+# count: the batch's one new program, `examples/packages/`, took the trunk's 736
+# past 589 by more than a quarter.
 constant LEAST: i64
-    589
+    737
 
 # **The refusals, counted apart** (defect 341): the programs with nothing
 # blessed, each of which passes only as a refusal, exit 1 and no C. Floored so

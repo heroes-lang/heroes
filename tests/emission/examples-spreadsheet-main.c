@@ -85,9 +85,17 @@ HERO_STR_STATIC(hero_str_e72c1af, "no_assignment");
 HERO_STR_STATIC(hero_str_15cf97f9, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 HERO_STR_STATIC(hero_str_30d275f8, "` is not a cell: one letter then digits");
 HERO_STR_STATIC(hero_str_3a8f3948, "` has no row: rows start at 1");
+HERO_STR_STATIC(hero_str_3a, ":");
 HERO_STR_STATIC(hero_str_3e1d2a75, "` is not a range: two cells joined by `:`");
+HERO_STR_STATIC(hero_str_3d, "=");
 HERO_STR_STATIC(hero_str_4c698ffa, "` is not `NAME = formula`");
 HERO_STR_STATIC(hero_str_59af7519, "` is not a cell name");
+HERO_STR_STATIC(hero_str_59e06249, "not_found");
+HERO_STR_STATIC(hero_str_eda7a03, "no \"");
+HERO_STR_STATIC(hero_str_2cee3aa3, "\" in a text of ");
+HERO_STR_STATIC(hero_str_391e7e27, " bytes");
+HERO_STR_STATIC(hero_str_277784c0, "\" in \"");
+HERO_STR_STATIC(hero_str_22, "\"");
 HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
 HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
@@ -104,7 +112,7 @@ HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every a
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 108 "main.c"
+#line 116 "main.c"
 typedef struct h_formula_Parse {
     HeroStr f_text;
     int64_t f_pos;
@@ -118,6 +126,11 @@ typedef struct h_sheet_Cell {
 typedef struct h_sheet_Sheet {
     HeroMapHeader * f_cells;
 } h_sheet_Sheet;
+
+typedef struct h_corestrings_Halves {
+    HeroStr f_before;
+    HeroStr f_after;
+} h_corestrings_Halves;
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -167,6 +180,14 @@ typedef struct h_0opt_605417d4 {
     } as;
 } h_0opt_605417d4;
 
+typedef struct h_0opt_6524ffa0 {
+    int64_t tag;
+    union {
+        h_corestrings_Halves ok;
+        HeroFailure err;
+    } as;
+} h_0opt_6524ffa0;
+
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -188,7 +209,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 192 "main.c"
+#line 213 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_formula_0Parse_retain(const h_formula_Parse *v);
@@ -201,6 +222,10 @@ HERO_TU_LOCAL void h_sheet_0Sheet_retain(const h_sheet_Sheet *v);
 HERO_TU_LOCAL void h_sheet_0Sheet_release(h_sheet_Sheet *v);
 HERO_TU_LOCAL bool h_sheet_0Sheet_eq(const h_sheet_Sheet *a, const h_sheet_Sheet *b);
 HERO_TU_LOCAL uint64_t h_sheet_0Sheet_hash(const void *elem);
+HERO_TU_LOCAL void h_corestrings_0Halves_retain(const h_corestrings_Halves *v);
+HERO_TU_LOCAL void h_corestrings_0Halves_release(h_corestrings_Halves *v);
+HERO_TU_LOCAL bool h_corestrings_0Halves_eq(const h_corestrings_Halves *a, const h_corestrings_Halves *b);
+HERO_TU_LOCAL uint64_t h_corestrings_0Halves_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
 HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
@@ -225,6 +250,10 @@ HERO_TU_LOCAL void h_0opt_605417d4_retain(const h_0opt_605417d4 *v);
 HERO_TU_LOCAL void h_0opt_605417d4_release(h_0opt_605417d4 *v);
 HERO_TU_LOCAL bool h_0opt_605417d4_eq(const h_0opt_605417d4 *a, const h_0opt_605417d4 *b);
 HERO_TU_LOCAL uint64_t h_0opt_605417d4_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_6524ffa0_retain(const h_0opt_6524ffa0 *v);
+HERO_TU_LOCAL void h_0opt_6524ffa0_release(h_0opt_6524ffa0 *v);
+HERO_TU_LOCAL bool h_0opt_6524ffa0_eq(const h_0opt_6524ffa0 *a, const h_0opt_6524ffa0 *b);
+HERO_TU_LOCAL uint64_t h_0opt_6524ffa0_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
@@ -265,6 +294,24 @@ HERO_TU_QUIET static const HeroDesc h_sheet_0Cell_desc = {
     h_sheet_0Cell_hash,
 };
 
+static void h_corestrings_0Halves_desc_copy(void *dst, const void *src) {
+    __builtin_memmove(dst, src, sizeof(h_corestrings_Halves));
+    h_corestrings_0Halves_retain((const h_corestrings_Halves *)dst);
+}
+static void h_corestrings_0Halves_desc_drop(void *elem) {
+    h_corestrings_0Halves_release((h_corestrings_Halves *)elem);
+}
+static bool h_corestrings_0Halves_desc_eq(const void *a, const void *b) {
+    return h_corestrings_0Halves_eq((const h_corestrings_Halves *)a, (const h_corestrings_Halves *)b);
+}
+HERO_TU_QUIET static const HeroDesc h_corestrings_0Halves_desc = {
+    sizeof(h_corestrings_Halves),
+    h_corestrings_0Halves_desc_copy,
+    h_corestrings_0Halves_desc_drop,
+    h_corestrings_0Halves_desc_eq,
+    h_corestrings_0Halves_hash,
+};
+
 void h_main_main(void);
 void h_main_stop(HeroStr h0_message);
 void h_main_evaluate(HeroStr h0_text);
@@ -298,18 +345,24 @@ HeroStr h_sheet_ERR_NO_ASSIGNMENT(void);
 HeroStr h_sheet_LETTERS(void);
 bool h_sheet_is_letter(uint8_t h0_c);
 bool h_sheet_is_digit(uint8_t h0_c);
-bool h_sheet_is_space(uint8_t h0_c);
-HeroStr h_sheet_trimmed(HeroStr h0_line);
-HeroArrayHeader * h_sheet_split_lines(HeroStr h0_text);
 h_0opt_605417d4 h_sheet_cell_of(HeroStr h0_name);
 HeroStr h_sheet_name_of(h_sheet_Cell h0_c);
 bool h_sheet_is_name(HeroStr h0_word);
 h_0opt_5a58f2ca h_sheet_expand(HeroStr h0_text);
-int64_t h_sheet_index_of(HeroStr h0_text, uint8_t h1_c);
 h_0opt_2bbbbbdd h_sheet_read(HeroStr h0_text);
 HeroArrayHeader * h_sheet_names(h_sheet_Sheet h0_s);
 int64_t h_sheet_highest_row(HeroArrayHeader * h0_known);
 int64_t h_sheet_larger(int64_t h0_a, int64_t h1_b);
+bool h_corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix);
+bool h_corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix);
+bool h_corestrings_contains(HeroStr h0_s, HeroStr h1_substr);
+HeroStr h_corestrings_trim_space(HeroStr h0_s);
+HeroArrayHeader * h_corestrings_fields(HeroStr h0_s);
+HeroArrayHeader * h_corestrings_split_lines(HeroStr h0_s);
+h_0opt_6524ffa0 h_corestrings_split_once(HeroStr h0_s, HeroStr h1_sep);
+int64_t h_corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at);
+int64_t h_corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end);
+h_0opt_e201354 h_corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 int64_t h_library_HERO_OS_OK(void);
@@ -336,7 +389,7 @@ void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f
 #line 26
     t6 = HERO_STR_LIT(hero_str_733425e1); hero_print_str(t6); hero_print_end();
     t7 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 27, 9}; h_library_exit(t7, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1; bb4:
-#line 340 "main.c"
+#line 393 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -351,20 +404,20 @@ bb5:
 #line 30 "examples/spreadsheet/main.hero"
     t14 = h1_s0; t15 = t14.as.err; t32 = h2_e; hero_failure_retain(&t15); h2_e = t15; hero_failure_release(&t32); t16 = HERO_STR_LIT(hero_str_2d78c599); t17 = h0_given; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "main.hero", "main.main", 30, 43) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t33 = h6_own6; h6_own6 = t20; hero_str_decref(t33); t21 = HERO_STR_LIT(hero_str_1dce); t22 = hero_str_concat(t20, t21); t34 = h7_own7; h7_own7 = t22; hero_str_decref(t34); t23 = h2_e.code; t24 = hero_str_concat(t22, t23); t35 = h8_own8; h8_own8 = t24; hero_str_decref(t35); h_main_stop(t24); goto bb4; bb6:
     t25 = h1_s0; t26 = t25.as.ok; t36 = h3_text; hero_str_incref(t26); h3_text = t26; hero_str_decref(t36); t27 = h3_text; h_main_evaluate(t27); goto bb4;
-#line 355 "main.c"
+#line 408 "main.c"
 }
 
 #line 33 "examples/spreadsheet/main.hero"
 void h_main_stop(HeroStr h0_message) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_message; hero_print_str(t1); hero_print_end();
     t2 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.stop", 35, 5}; h_library_exit(t2, &hero_here); } hero_unreachable(); return;
-#line 362 "main.c"
+#line 415 "main.c"
 }
 
 #line 37 "examples/spreadsheet/main.hero"
 void h_main_evaluate(HeroStr h0_text) { HERO_NODEBUG h_0opt_2bbbbbdd h1_s0 = {0}, h4_own4 = {0}, t2, t3, t5, t12, t15, t16; HeroFailure h2_e = {0}; h_sheet_Sheet h3_s = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t1, t7, t8, t9, t10, t11, t18, t19; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t6, t17; HERO_NODEBUG h_sheet_Sheet t13, t14, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_text; t2 = h_sheet_read(t1); t15 = h4_own4; h4_own4 = t2; h_0opt_2bbbbbdd_release(&t15); t16 = h1_s0; h_0opt_2bbbbbdd_retain(&t2); h1_s0 = t2; h_0opt_2bbbbbdd_release(&t16); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 368 "main.c"
+#line 421 "main.c"
     h_0opt_2bbbbbdd_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
     h_sheet_0Sheet_release(hero_slot_escape(&h3_s));
@@ -376,7 +429,7 @@ bb2:
 #line 39 "examples/spreadsheet/main.hero"
     t5 = h1_s0; t6 = t5.as.err; t17 = h2_e; hero_failure_retain(&t6); h2_e = t6; hero_failure_release(&t17); t7 = h2_e.code; t8 = HERO_STR_LIT(hero_str_1dce); t9 = hero_str_concat(t7, t8); t18 = h5_own5; h5_own5 = t9; hero_str_decref(t18); t10 = h2_e.msg; t11 = hero_str_concat(t9, t10); t19 = h6_own6; h6_own6 = t11; hero_str_decref(t19); h_main_stop(t11); goto bb1; bb3:
     t12 = h1_s0; t13 = t12.as.ok; t20 = h3_s; h_sheet_0Sheet_retain(&t13); h3_s = t13; h_sheet_0Sheet_release(&t20); t14 = h3_s; h_main_report(t14); goto bb1;
-#line 380 "main.c"
+#line 433 "main.c"
 }
 
 #line 42 "examples/spreadsheet/main.hero"
@@ -397,7 +450,7 @@ void h_main_report(h_sheet_Sheet h0_s) { int64_t h1_broken; HERO_NODEBUG HeroArr
     t25 = h5_s0; t26 = t25.as.err; t60 = h7_e; hero_failure_retain(&t26); h7_e = t26; hero_failure_release(&t60);
     t27 = h1_broken; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("main.hero", "main.report", 50, 26); h1_broken = t29;
     t30 = h4_name; t31 = h_main_padded(t30); t61 = h16_own16; h16_own16 = t31; hero_str_decref(t61); t32 = HERO_STR_LIT(hero_str_87223); t33 = h7_e.code; hero_print_str(t31); hero_print_str(t32); hero_print_str(t33); hero_print_end(); goto bb5; bb8:
-#line 401 "main.c"
+#line 454 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_name);
     h_0opt_db92a83_release(hero_slot_escape(&h5_s0));
@@ -415,7 +468,7 @@ void h_main_report(h_sheet_Sheet h0_s) { int64_t h1_broken; HERO_NODEBUG HeroArr
 bb9:
 #line 56 "examples/spreadsheet/main.hero"
     t48 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.report", 56, 9}; h_library_exit(t48, &hero_here); } hero_unreachable(); goto bb8; bb10: goto bb8;
-#line 419 "main.c"
+#line 472 "main.c"
 }
 
 #line 61 "examples/spreadsheet/main.hero"
@@ -426,7 +479,7 @@ HeroStr h_main_padded(HeroStr h0_name) { HeroStr h1_out = {0}; HERO_NODEBUG Hero
     t6 = h1_out; t7 = HERO_STR_LIT(hero_str_20); t8 = hero_str_concat(t6, t7); t11 = h2_own2; h2_own2 = t8; hero_str_decref(t11); t12 = h1_out; hero_str_incref(t8); h1_out = t8; hero_str_decref(t12); goto bb1; bb3:
 #line 67
     t9 = h1_out;
-#line 430 "main.c"
+#line 483 "main.c"
     hero_str_incref(t9);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h2_own2);
@@ -436,7 +489,7 @@ HeroStr h_main_padded(HeroStr h0_name) { HeroStr h1_out = {0}; HERO_NODEBUG Hero
 #line 22 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_CIRCULAR_REFERENCE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3253dd13);
-#line 440 "main.c"
+#line 493 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -444,7 +497,7 @@ HeroStr h_formula_ERR_CIRCULAR_REFERENCE(void) { HERO_NODEBUG HeroStr t1; HERO_E
 #line 25 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_DIVISION_BY_ZERO(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3dbf07bc);
-#line 448 "main.c"
+#line 501 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -452,7 +505,7 @@ HeroStr h_formula_ERR_DIVISION_BY_ZERO(void) { HERO_NODEBUG HeroStr t1; HERO_ENT
 #line 28 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_EXPECTED_PAREN(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3f28650a);
-#line 456 "main.c"
+#line 509 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -460,7 +513,7 @@ HeroStr h_formula_ERR_EXPECTED_PAREN(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY
 #line 31 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_TRAILING_INPUT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1ab4f50e);
-#line 464 "main.c"
+#line 517 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -468,7 +521,7 @@ HeroStr h_formula_ERR_TRAILING_INPUT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY
 #line 34 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNCLOSED_PAREN(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7b0b513f);
-#line 472 "main.c"
+#line 525 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -476,7 +529,7 @@ HeroStr h_formula_ERR_UNCLOSED_PAREN(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY
 #line 37 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNEXPECTED_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_70ef3fbe);
-#line 480 "main.c"
+#line 533 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -484,7 +537,7 @@ HeroStr h_formula_ERR_UNEXPECTED_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO
 #line 40 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNEXPECTED_END(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7423baed);
-#line 488 "main.c"
+#line 541 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -492,7 +545,7 @@ HeroStr h_formula_ERR_UNEXPECTED_END(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY
 #line 43 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNKNOWN_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 496 "main.c"
+#line 549 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -500,19 +553,19 @@ HeroStr h_formula_ERR_UNKNOWN_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_S
 #line 50 "examples/spreadsheet/formula.hero"
 bool h_formula_at_end(h_formula_Parse h0_p) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p.f_pos; t2 = h0_p.f_text; t3 = hero_str_len(t2); t4 = t1 >= t3; return t4;
-#line 504 "main.c"
+#line 557 "main.c"
 }
 
 #line 53 "examples/spreadsheet/formula.hero"
 uint8_t h_formula_here(h_formula_Parse h0_p) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_p.f_text; t2 = h0_p.f_pos; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "formula.hero", "formula.here", 54, 12) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); return t3;
-#line 510 "main.c"
+#line 563 "main.c"
 }
 
 #line 56 "examples/spreadsheet/formula.hero"
 void h_formula_advance(h_formula_Parse *ph0_p) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_p).f_pos; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("formula.hero", "formula.advance", 57, 13); (*ph0_p).f_pos = t3; return;
-#line 516 "main.c"
+#line 569 "main.c"
 }
 
 #line 59 "examples/spreadsheet/formula.hero"
@@ -521,7 +574,7 @@ void h_formula_skip_space(h_formula_Parse *ph0_p) { HERO_NODEBUG bool h1_b0, h2_
     h_formula_advance(&(*ph0_p)); goto bb1; bb3: return; bb4:
 #line 60
     t4 = (*ph0_p); t5 = h_formula_here(t4); t6 = UINT64_C(32); t7 = t5 == t6; h2_b1 = t7; if (t7) goto bb7; else goto bb6; bb5: t13 = h1_b0; if (t13) goto bb2; else goto bb3; bb6: t8 = (*ph0_p); t9 = h_formula_here(t8); t10 = UINT64_C(9); t11 = t9 == t10; h2_b1 = t11; goto bb7; bb7: t12 = h2_b1; h1_b0 = t12; goto bb5;
-#line 525 "main.c"
+#line 578 "main.c"
 }
 
 #line 63 "examples/spreadsheet/formula.hero"
@@ -534,7 +587,7 @@ bool h_formula_contains(HeroArrayHeader * h0_known, HeroStr h1_name) { HERO_NODE
     t17 = false; h5_ret0 = t17; goto bb8; bb5: goto bb3; bb6:
 #line 66
     t13 = true; h5_ret0 = t13; goto bb8; bb7: goto bb5; bb8:
-#line 538 "main.c"
+#line 591 "main.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_one);
@@ -567,7 +620,7 @@ h_0opt_db92a83 h_formula_value_of(h_sheet_Sheet h0_s, HeroStr h1_name, HeroArray
     t55 = h8_v; t56 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t55}; t74 = h20_own20; h20_own20 = t56; h_0opt_db92a83_release(&t74); h9_ret0 = t56; goto bb15; bb13:
 #line 86
     t47 = h_formula_ERR_TRAILING_INPUT(); t75 = h21_own21; h21_own21 = t47; hero_str_decref(t75); t48 = h1_name; t49 = HERO_STR_LIT(hero_str_733db619); t50 = hero_str_concat(t48, t49); t76 = h22_own22; h22_own22 = t50; hero_str_decref(t76); t51 = h6_p.f_pos; t52 = hero_int_to_str(t51); t77 = h23_own23; h23_own23 = t52; hero_str_decref(t77); t53 = hero_str_concat(t50, t52); t78 = h24_own24; h24_own24 = t53; hero_str_decref(t78); hero_str_incref(t47); hero_str_incref(t53); t54 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t47, .msg = t53}}; t79 = h25_own25; h25_own25 = t54; h_0opt_db92a83_release(&t79); h9_ret0 = t54; goto bb15; bb14: goto bb12; bb15:
-#line 571 "main.c"
+#line 624 "main.c"
     t57 = h9_ret0;
     h_0opt_db92a83_retain(&t57);
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -621,7 +674,7 @@ h_0opt_db92a83 h_formula_expression(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, 
     t59 = false; h5_more = t59; goto bb6; bb17:
 #line 103
     t56 = h9_f2; t57 = t56.as.ok; t58 = t45 - t57; h4_total = t58; goto bb6; bb18: t53 = h9_f2; t54 = t53.as.err; hero_failure_retain(&t54); t55 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t54}; t72 = h17_own17; h17_own17 = t55; h_0opt_db92a83_release(&t72); h10_ret0 = t55; goto bb19; bb19:
-#line 625 "main.c"
+#line 678 "main.c"
     t62 = h10_ret0;
     h_0opt_db92a83_retain(&t62);
     h_0opt_db92a83_release(hero_slot_escape(&h3_f0));
@@ -672,7 +725,7 @@ h_0opt_db92a83 h_formula_term(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroAr
     t63 = h4_total; t64 = h10_divisor; t65 = t63 / t64; h4_total = t65; goto bb6; bb20:
 #line 124
     t60 = h_formula_ERR_DIVISION_BY_ZERO(); t80 = h19_own19; h19_own19 = t60; hero_str_decref(t80); t61 = HERO_STR_LIT(hero_str_6a75581a); hero_str_incref(t60); hero_str_incref(t61); t62 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t60, .msg = t61}}; t81 = h20_own20; h20_own20 = t62; h_0opt_db92a83_release(&t81); h11_ret0 = t62; goto bb22; bb21: goto bb19; bb22:
-#line 676 "main.c"
+#line 729 "main.c"
     t69 = h11_ret0;
     h_0opt_db92a83_retain(&t69);
     h_0opt_db92a83_release(hero_slot_escape(&h3_f0));
@@ -730,7 +783,7 @@ h_0opt_db92a83 h_formula_factor(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, Hero
     t64 = h_formula_ERR_UNEXPECTED_CHARACTER(); t86 = h22_own22; h22_own22 = t64; hero_str_decref(t86); t65 = HERO_STR_LIT(hero_str_2611b207); t66 = (*ph0_p).f_pos; t67 = hero_int_to_str(t66); t87 = h23_own23; h23_own23 = t67; hero_str_decref(t87); t68 = hero_str_concat(t65, t67); t88 = h24_own24; h24_own24 = t68; hero_str_decref(t88); hero_str_incref(t64); hero_str_incref(t68); t69 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t64, .msg = t68}}; t89 = h25_own25; h25_own25 = t69; h_0opt_db92a83_release(&t89); h8_ret0 = t69; goto bb25; bb23:
 #line 156
     t61 = h1_s; t62 = h2_visiting; t63 = h_formula_named(&(*ph0_p), t61, t62); t90 = h26_own26; h26_own26 = t63; h_0opt_db92a83_release(&t90); h8_ret0 = t63; goto bb25; bb24: goto bb22; bb25:
-#line 734 "main.c"
+#line 787 "main.c"
     t70 = h8_ret0;
     h_0opt_db92a83_retain(&t70);
     h_0opt_db92a83_release(hero_slot_escape(&h4_f0));
@@ -770,13 +823,13 @@ double h_formula_number(h_formula_Parse *ph0_p) { double h1_whole; HERO_NODEBUG 
     h_formula_advance(&(*ph0_p)); goto bb1; bb7:
 #line 165
     t21 = h3_f0; t22 = t21.as.err;
-#line 774 "main.c"
+#line 827 "main.c"
     hero_panic_must_at(t22, "formula.hero", "formula.number", 165, 39);
     hero_unreachable();
 bb8:
 #line 176 "examples/spreadsheet/formula.hero"
     t64 = h1_whole;
-#line 780 "main.c"
+#line 833 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h7_f1));
     h_0opt_e201354_release(hero_slot_escape(&h8_own8));
@@ -798,7 +851,7 @@ bb9:
     h_formula_advance(&(*ph0_p)); goto bb13; bb19:
 #line 174
     t56 = h7_f1; t57 = t56.as.err;
-#line 802 "main.c"
+#line 855 "main.c"
     hero_panic_must_at(t57, "formula.hero", "formula.number", 174, 36);
     hero_unreachable();
 }
@@ -816,7 +869,7 @@ h_0opt_db92a83 h_formula_named(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroA
     t18 = h1_s; t19 = h3_word; t20 = h2_visiting; t21 = h_formula_value_of(t18, t19, t20); t26 = h7_own7; h7_own7 = t21; h_0opt_db92a83_release(&t26); h4_ret0 = t21; goto bb7; bb5:
 #line 186
     t11 = h_formula_ERR_UNKNOWN_NAME(); t27 = h8_own8; h8_own8 = t11; hero_str_decref(t27); t12 = HERO_STR_LIT(hero_str_60); t13 = h3_word; t14 = hero_str_concat(t12, t13); t28 = h9_own9; h9_own9 = t14; hero_str_decref(t28); t15 = HERO_STR_LIT(hero_str_f59f0be); t16 = hero_str_concat(t14, t15); t29 = h10_own10; h10_own10 = t16; hero_str_decref(t29); hero_str_incref(t11); hero_str_incref(t16); t17 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t16}}; t30 = h11_own11; h11_own11 = t17; h_0opt_db92a83_release(&t30); h4_ret0 = t17; goto bb7; bb6: goto bb4; bb7:
-#line 820 "main.c"
+#line 873 "main.c"
     t22 = h4_ret0;
     h_0opt_db92a83_retain(&t22);
     hero_str_release_at(&h3_word);
@@ -838,14 +891,14 @@ HeroStr h_formula_word_at(h_formula_Parse *ph0_p) { int64_t h1_start; HERO_NODEB
     h_formula_advance(&(*ph0_p)); goto bb1; bb3:
 #line 195
     t13 = (*ph0_p).f_text; t14 = h1_start; t15 = (*ph0_p).f_pos; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"formula.hero", "formula.word_at", 195, 12}; t16 = hero_str_slice_at(t13, t14, t15, &hero_here); } t17 = h4_own4; h4_own4 = t16; hero_str_decref(t17);
-#line 842 "main.c"
+#line 895 "main.c"
     hero_str_incref(t16);
     hero_str_release_at(&h4_own4);
     return t16;
 bb4:
 #line 192 "examples/spreadsheet/formula.hero"
     t5 = (*ph0_p); t6 = h_formula_here(t5); t7 = h_sheet_is_letter(t6); h3_b1 = t7; if (t7) goto bb7; else goto bb6; bb5: t12 = h2_b0; if (t12) goto bb2; else goto bb3; bb6: t8 = (*ph0_p); t9 = h_formula_here(t8); t10 = h_sheet_is_digit(t9); h3_b1 = t10; goto bb7; bb7: t11 = h3_b1; h2_b0 = t11; goto bb5;
-#line 849 "main.c"
+#line 902 "main.c"
 }
 
 #line 199 "examples/spreadsheet/formula.hero"
@@ -883,7 +936,7 @@ h_0opt_db92a83 h_formula_sum_of(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, Hero
     t67 = h7_total; t68 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t67}; t83 = h22_own22; h22_own22 = t68; h_0opt_db92a83_release(&t83); h13_ret0 = t68; goto bb22; bb20:
 #line 217
     t61 = h12_f1; t62 = t61.as.ok; t63 = t49 + t62; h7_total = t63; goto bb18; bb21: t58 = h12_f1; t59 = t58.as.err; hero_failure_retain(&t59); t60 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t59}; t84 = h23_own23; h23_own23 = t60; h_0opt_db92a83_release(&t84); h13_ret0 = t60; goto bb22; bb22:
-#line 887 "main.c"
+#line 940 "main.c"
     t69 = h13_ret0;
     h_0opt_db92a83_retain(&t69);
     hero_str_release_at(&h6_inside);
@@ -907,7 +960,7 @@ h_0opt_db92a83 h_formula_sum_of(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, Hero
 #line 268 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_code_of(h_sheet_Sheet h0_s, HeroStr h1_name) { HERO_NODEBUG h_0opt_db92a83 h2_s0 = {0}, h6_own6 = {0}, t4, t5, t8, t13, t14; HERO_NODEBUG HeroStr h3_r0 = {0}, t2, t7, t10, t11, t15, t17; HeroFailure h4_e = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t3, *t12; HERO_NODEBUG h_sheet_Sheet t1; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroFailure t9, t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_name; t3 = hero_array_new(&hero_desc_str, 1); t12 = h5_own5; h5_own5 = t3; hero_array_decref(t12); t4 = h_formula_value_of(t1, t2, t3); t13 = h6_own6; h6_own6 = t4; h_0opt_db92a83_release(&t13); t14 = h2_s0; h_0opt_db92a83_retain(&t4); h2_s0 = t4; h_0opt_db92a83_release(&t14); t5 = h2_s0; t6 = t5.tag; switch (t6) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t11 = h3_r0;
-#line 911 "main.c"
+#line 964 "main.c"
     hero_str_incref(t11);
     h_0opt_db92a83_release(hero_slot_escape(&h2_s0));
     hero_str_release_at(&h3_r0);
@@ -924,147 +977,86 @@ bb2:
     t8 = h2_s0; t9 = t8.as.err; t16 = h4_e; hero_failure_retain(&t9); h4_e = t9; hero_failure_release(&t16); t10 = h4_e.code;
 #line 269
     t17 = h3_r0; hero_str_incref(t10); h3_r0 = t10; hero_str_decref(t17); goto bb1;
-#line 928 "main.c"
+#line 981 "main.c"
 }
 
-#line 17 "examples/spreadsheet/sheet.hero"
+#line 19 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_BAD_CELL_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_267d64cc);
-#line 934 "main.c"
+#line 987 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 20 "examples/spreadsheet/sheet.hero"
+#line 22 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_BAD_RANGE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_df3d626);
-#line 942 "main.c"
+#line 995 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 23 "examples/spreadsheet/sheet.hero"
+#line 25 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_NO_ASSIGNMENT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_e72c1af);
-#line 950 "main.c"
+#line 1003 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 26 "examples/spreadsheet/sheet.hero"
+#line 28 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_LETTERS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_15cf97f9);
-#line 958 "main.c"
+#line 1011 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 36 "examples/spreadsheet/sheet.hero"
+#line 38 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_letter(uint8_t h0_c) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = UINT64_C(65); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_c; t5 = UINT64_C(90); t6 = t4 <= t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
-#line 966 "main.c"
+#line 1019 "main.c"
 }
 
-#line 39 "examples/spreadsheet/sheet.hero"
+#line 41 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_digit(uint8_t h0_c) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG uint8_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_c; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_c; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
-#line 972 "main.c"
+#line 1025 "main.c"
 }
 
-#line 42 "examples/spreadsheet/sheet.hero"
-bool h_sheet_is_space(uint8_t h0_c) { HERO_NODEBUG bool h1_b0, h2_b1, t3, t6, t7, t10, t11; HERO_NODEBUG uint8_t t1, t2, t4, t5, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = UINT64_C(32); t3 = t1 == t2; h2_b1 = t3; if (t3) goto bb2; else goto bb1; bb1: t4 = h0_c; t5 = UINT64_C(9); t6 = t4 == t5; h2_b1 = t6; goto bb2; bb2: t7 = h2_b1; h1_b0 = t7; if (t7) goto bb4; else goto bb3; bb3: t8 = h0_c; t9 = UINT64_C(13); t10 = t8 == t9; h1_b0 = t10; goto bb4; bb4: t11 = h1_b0; return t11;
-#line 978 "main.c"
-}
-
-#line 45 "examples/spreadsheet/sheet.hero"
-HeroStr h_sheet_trimmed(HeroStr h0_line) { int64_t h1_from; HERO_NODEBUG bool h2_b0, h4_b1, t5, t9, t10, t18, t24, t25; int64_t h3_to; HERO_NODEBUG HeroStr h5_own5 = {0}, t3, t6, t14, t19, t29, t32, t33; HERO_NODEBUG int64_t t1, t2, t4, t7, t11, t12, t13, t15, t16, t17, t20, t21, t22, t26, t27, t28, t30, t31; HERO_NODEBUG uint8_t t8, t23; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); h1_from = t1; goto bb1; bb1:
-#line 48
-    t2 = h1_from; t3 = h0_line; t4 = hero_str_len(t3); t5 = t2 < t4; h2_b0 = t5; if (t5) goto bb4; else goto bb5; bb2:
-    t11 = h1_from; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("sheet.hero", "sheet.trimmed", 49, 16); h1_from = t13; goto bb1; bb3:
-#line 51
-    t14 = h0_line; t15 = hero_str_len(t14); h3_to = t15; goto bb6; bb4:
-#line 48
-    t6 = h0_line; t7 = h1_from; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "sheet.hero", "sheet.trimmed", 48, 41) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = h_sheet_is_space(t8); h2_b0 = t9; goto bb5; bb5: t10 = h2_b0; if (t10) goto bb2; else goto bb3; bb6:
-#line 53
-    t16 = h3_to; t17 = h1_from; t18 = t16 > t17; h4_b1 = t18; if (t18) goto bb9; else goto bb10; bb7:
-    t26 = h3_to; t27 = INT64_C(1); if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("sheet.hero", "sheet.trimmed", 54, 14); h3_to = t28; goto bb6; bb8:
-#line 56
-    t29 = h0_line; t30 = h1_from; t31 = h3_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.trimmed", 56, 12}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t33 = h5_own5; h5_own5 = t32; hero_str_decref(t33);
-#line 996 "main.c"
-    hero_str_incref(t32);
-    hero_str_release_at(&h5_own5);
-    return t32;
-bb9:
-#line 53 "examples/spreadsheet/sheet.hero"
-    t19 = h0_line; t20 = h3_to; t21 = INT64_C(1); if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow_at("sheet.hero", "sheet.trimmed", 53, 38); t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? hero_panic_byte_at(t19, t22, "sheet.hero", "sheet.trimmed", 53, 33) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]); t24 = h_sheet_is_space(t23); h4_b1 = t24; goto bb10; bb10: t25 = h4_b1; if (t25) goto bb7; else goto bb8;
-#line 1003 "main.c"
-}
-
-#line 58 "examples/spreadsheet/sheet.hero"
-HeroArrayHeader * h_sheet_split_lines(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t36, *t37, *t38; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t5, t8, t14, t17, t26, t30, t32, t34, t39, t40; HERO_NODEBUG int64_t t2, t3, t4, t6, t9, t15, t16, t19, t20, t21, t22, t23, t24, t25, t27, t31, t33; HERO_NODEBUG bool t7, t12, t28; HERO_NODEBUG uint8_t t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = hero_array_new(&hero_desc_str, 1); t37 = h4_own4; h4_own4 = t1; hero_array_decref(t37); t38 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t38);
-    t2 = INT64_C(0); h2_start = t2;
-    t3 = INT64_C(0); h3_i = t3; goto bb1; bb1:
-#line 63
-    t4 = h3_i; t5 = h0_text; t6 = hero_str_len(t5); t7 = t4 < t6; if (t7) goto bb2; else goto bb3; bb2:
-    t8 = h0_text; t9 = h3_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "sheet.hero", "sheet.split_lines", 64, 12) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(10); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb3:
-#line 69
-    t25 = h2_start; t26 = h0_text; t27 = hero_str_len(t26); t28 = t25 < t27; if (t28) goto bb8; else goto bb9; bb4:
-#line 67
-    t22 = h3_i; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("sheet.hero", "sheet.split_lines", 67, 13); h3_i = t24; goto bb1; bb5:
-#line 65
-    t14 = h0_text; t15 = h2_start; t16 = h3_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.split_lines", 65, 28}; t17 = hero_str_slice_at(t14, t15, t16, &hero_here); } t39 = h5_own5; h5_own5 = t17; hero_str_decref(t39); hero_array_push_owned(&h1_out, &t17);
-    t19 = h3_i; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("sheet.hero", "sheet.split_lines", 66, 21); h2_start = t21; goto bb4; bb6: goto bb4; bb7:
-#line 71
-    t36 = h1_out;
-#line 1023 "main.c"
-    hero_array_incref(t36);
-    hero_array_release_at(&h1_out);
-    hero_array_release_at(&h4_own4);
-    hero_str_release_at(&h5_own5);
-    hero_str_release_at(&h6_own6);
-    return t36;
-bb8:
-#line 70 "examples/spreadsheet/sheet.hero"
-    t30 = h0_text; t31 = h2_start; t32 = h0_text; t33 = hero_str_len(t32); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.split_lines", 70, 24}; t34 = hero_str_slice_at(t30, t31, t33, &hero_here); } t40 = h6_own6; h6_own6 = t34; hero_str_decref(t40); hero_array_push_owned(&h1_out, &t34); goto bb7; bb9: goto bb7;
-#line 1033 "main.c"
-}
-
-#line 76 "examples/spreadsheet/sheet.hero"
+#line 47 "examples/spreadsheet/sheet.hero"
 h_0opt_605417d4 h_sheet_cell_of(HeroStr h0_name) { HERO_NODEBUG bool h1_b0, t4, t8, t9, t10, t23, t27, t28, t48, t59, t76; int64_t h2_row; int64_t h3_i; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h5_f1 = {0}, h11_own11 = {0}, h16_own16 = {0}, t44, t45, t49, t51, t72, t73, t77, t79, t89, t90, t95, t96; HERO_NODEBUG h_0opt_605417d4 h6_ret0 = {0}, h10_own10 = {0}, h15_own15 = {0}, h20_own20 = {0}, h21_own21 = {0}, t17, t35, t66, t83, t84, t88, t94, t100, t101; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t1, t5, t11, t12, t13, t14, t15, t16, t21, t24, t29, t30, t31, t32, t33, t34, t39, t60, t61, t62, t63, t64, t65, t67, t85, t86, t87, t91, t92, t93, t97, t98, t99; HERO_NODEBUG int64_t t2, t3, t6, t18, t19, t20, t22, t25, t36, t37, t38, t40, t46, t47, t52, t53, t54, t55, t56, t57, t58, t68, t74, t75, t80, t81; HERO_NODEBUG uint8_t t7, t26, t41, t42, t43, t69, t70, t71; HERO_NODEBUG HeroFailure t50, t78; HERO_NODEBUG h_sheet_Cell t82; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_name; t2 = hero_str_len(t1); t3 = INT64_C(2); t4 = t2 < t3; h1_b0 = t4; if (t4) goto bb3; else goto bb2; bb1:
-#line 79
+#line 50
     t18 = INT64_C(0); h2_row = t18;
     t19 = INT64_C(1); h3_i = t19; goto bb6; bb2:
-#line 77
-    t5 = h0_name; t6 = INT64_C(0); t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "sheet.hero", "sheet.cell_of", 77, 37) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); t8 = h_sheet_is_letter(t7); t9 = !t8; h1_b0 = t9; goto bb3; bb3: t10 = h1_b0; if (t10) goto bb4; else goto bb5; bb4:
+#line 48
+    t5 = h0_name; t6 = INT64_C(0); t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "sheet.hero", "sheet.cell_of", 48, 37) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); t8 = h_sheet_is_letter(t7); t9 = !t8; h1_b0 = t9; goto bb3; bb3: t10 = h1_b0; if (t10) goto bb4; else goto bb5; bb4:
     t11 = h_sheet_ERR_BAD_CELL_NAME(); t85 = h7_own7; h7_own7 = t11; hero_str_decref(t85); t12 = HERO_STR_LIT(hero_str_60); t13 = h0_name; t14 = hero_str_concat(t12, t13); t86 = h8_own8; h8_own8 = t14; hero_str_decref(t86); t15 = HERO_STR_LIT(hero_str_30d275f8); t16 = hero_str_concat(t14, t15); t87 = h9_own9; h9_own9 = t16; hero_str_decref(t87); hero_str_incref(t11); hero_str_incref(t16); t17 = (h_0opt_605417d4){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t16}}; t88 = h10_own10; h10_own10 = t17; h_0opt_605417d4_release(&t88); h6_ret0 = t17; goto bb19; bb5: goto bb1; bb6:
-#line 82
+#line 53
     t20 = h3_i; t21 = h0_name; t22 = hero_str_len(t21); t23 = t20 < t22; if (t23) goto bb7; else goto bb8; bb7:
-    t24 = h0_name; t25 = h3_i; t26 = ((void)((t24.ptr == NULL || t25 < 0 || t25 >= t24.len) ? hero_panic_byte_at(t24, t25, "sheet.hero", "sheet.cell_of", 83, 22) : (void)0), (int64_t)(unsigned char)t24.ptr[t25]); t27 = h_sheet_is_digit(t26); t28 = !t27; if (t28) goto bb10; else goto bb11; bb8:
-#line 88
+    t24 = h0_name; t25 = h3_i; t26 = ((void)((t24.ptr == NULL || t25 < 0 || t25 >= t24.len) ? hero_panic_byte_at(t24, t25, "sheet.hero", "sheet.cell_of", 54, 22) : (void)0), (int64_t)(unsigned char)t24.ptr[t25]); t27 = h_sheet_is_digit(t26); t28 = !t27; if (t28) goto bb10; else goto bb11; bb8:
+#line 59
     t57 = h2_row; t58 = INT64_C(0); t59 = t57 == t58; if (t59) goto bb15; else goto bb16; bb9:
-#line 85
-    t36 = h2_row; t37 = INT64_C(10); if (__builtin_mul_overflow(t36, t37, &t38)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 85, 15); t39 = h0_name; t40 = h3_i; t41 = ((void)((t39.ptr == NULL || t40 < 0 || t40 >= t39.len) ? hero_panic_byte_at(t39, t40, "sheet.hero", "sheet.cell_of", 85, 33) : (void)0), (int64_t)(unsigned char)t39.ptr[t40]); t42 = UINT64_C(48); if (__builtin_sub_overflow(t41, t42, &t43)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 85, 33); t44 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t43}; t89 = h11_own11; h11_own11 = t44; h_0opt_e201354_release(&t89); t90 = h4_f0; h_0opt_e201354_retain(&t44); h4_f0 = t44; h_0opt_e201354_release(&t90); t45 = h4_f0; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb12; else goto bb13; bb10:
-#line 84
+#line 56
+    t36 = h2_row; t37 = INT64_C(10); if (__builtin_mul_overflow(t36, t37, &t38)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 56, 15); t39 = h0_name; t40 = h3_i; t41 = ((void)((t39.ptr == NULL || t40 < 0 || t40 >= t39.len) ? hero_panic_byte_at(t39, t40, "sheet.hero", "sheet.cell_of", 56, 33) : (void)0), (int64_t)(unsigned char)t39.ptr[t40]); t42 = UINT64_C(48); if (__builtin_sub_overflow(t41, t42, &t43)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 56, 33); t44 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t43}; t89 = h11_own11; h11_own11 = t44; h_0opt_e201354_release(&t89); t90 = h4_f0; h_0opt_e201354_retain(&t44); h4_f0 = t44; h_0opt_e201354_release(&t90); t45 = h4_f0; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb12; else goto bb13; bb10:
+#line 55
     t29 = h_sheet_ERR_BAD_CELL_NAME(); t91 = h12_own12; h12_own12 = t29; hero_str_decref(t91); t30 = HERO_STR_LIT(hero_str_60); t31 = h0_name; t32 = hero_str_concat(t30, t31); t92 = h13_own13; h13_own13 = t32; hero_str_decref(t92); t33 = HERO_STR_LIT(hero_str_30d275f8); t34 = hero_str_concat(t32, t33); t93 = h14_own14; h14_own14 = t34; hero_str_decref(t93); hero_str_incref(t29); hero_str_incref(t34); t35 = (h_0opt_605417d4){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t34}}; t94 = h15_own15; h15_own15 = t35; h_0opt_605417d4_release(&t94); h6_ret0 = t35; goto bb19; bb11: goto bb9; bb12:
-    t51 = h4_f0; t52 = t51.as.ok; if (__builtin_add_overflow(t38, t52, &t53)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 85, 15); h2_row = t53;
-    t54 = h3_i; t55 = INT64_C(1); if (__builtin_add_overflow(t54, t55, &t56)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 86, 13); h3_i = t56; goto bb6; bb13:
-#line 85
+    t51 = h4_f0; t52 = t51.as.ok; if (__builtin_add_overflow(t38, t52, &t53)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 56, 15); h2_row = t53;
+    t54 = h3_i; t55 = INT64_C(1); if (__builtin_add_overflow(t54, t55, &t56)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 57, 13); h3_i = t56; goto bb6; bb13:
+#line 56
     t49 = h4_f0; t50 = t49.as.err;
-#line 1058 "main.c"
-    hero_panic_must_at(t50, "sheet.hero", "sheet.cell_of", 85, 26);
+#line 1050 "main.c"
+    hero_panic_must_at(t50, "sheet.hero", "sheet.cell_of", 56, 26);
     hero_unreachable();
 bb14:
-#line 90 "examples/spreadsheet/sheet.hero"
-    t67 = h0_name; t68 = INT64_C(0); t69 = ((void)((t67.ptr == NULL || t68 < 0 || t68 >= t67.len) ? hero_panic_byte_at(t67, t68, "sheet.hero", "sheet.cell_of", 90, 35) : (void)0), (int64_t)(unsigned char)t67.ptr[t68]); t70 = UINT64_C(65); if (__builtin_sub_overflow(t69, t70, &t71)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 90, 35); t72 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t71}; t95 = h16_own16; h16_own16 = t72; h_0opt_e201354_release(&t95); t96 = h5_f1; h_0opt_e201354_retain(&t72); h5_f1 = t72; h_0opt_e201354_release(&t96); t73 = h5_f1; t74 = t73.tag; t75 = INT64_C(0); t76 = t74 == t75; if (t76) goto bb17; else goto bb18; bb15:
-#line 89
+#line 61 "examples/spreadsheet/sheet.hero"
+    t67 = h0_name; t68 = INT64_C(0); t69 = ((void)((t67.ptr == NULL || t68 < 0 || t68 >= t67.len) ? hero_panic_byte_at(t67, t68, "sheet.hero", "sheet.cell_of", 61, 35) : (void)0), (int64_t)(unsigned char)t67.ptr[t68]); t70 = UINT64_C(65); if (__builtin_sub_overflow(t69, t70, &t71)) hero_panic_overflow_at("sheet.hero", "sheet.cell_of", 61, 35); t72 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t71}; t95 = h16_own16; h16_own16 = t72; h_0opt_e201354_release(&t95); t96 = h5_f1; h_0opt_e201354_retain(&t72); h5_f1 = t72; h_0opt_e201354_release(&t96); t73 = h5_f1; t74 = t73.tag; t75 = INT64_C(0); t76 = t74 == t75; if (t76) goto bb17; else goto bb18; bb15:
+#line 60
     t60 = h_sheet_ERR_BAD_CELL_NAME(); t97 = h17_own17; h17_own17 = t60; hero_str_decref(t97); t61 = HERO_STR_LIT(hero_str_60); t62 = h0_name; t63 = hero_str_concat(t61, t62); t98 = h18_own18; h18_own18 = t63; hero_str_decref(t98); t64 = HERO_STR_LIT(hero_str_3a8f3948); t65 = hero_str_concat(t63, t64); t99 = h19_own19; h19_own19 = t65; hero_str_decref(t99); hero_str_incref(t60); hero_str_incref(t65); t66 = (h_0opt_605417d4){.tag = INT64_C(1), .as.err = {.code = t60, .msg = t65}}; t100 = h20_own20; h20_own20 = t66; h_0opt_605417d4_release(&t100); h6_ret0 = t66; goto bb19; bb16: goto bb14; bb17:
     t79 = h5_f1; t80 = t79.as.ok; t81 = h2_row; t82 = (h_sheet_Cell){.f_column = t80, .f_row = t81}; t83 = (h_0opt_605417d4){.tag = INT64_C(0), .as.ok = t82}; t101 = h21_own21; h21_own21 = t83; h_0opt_605417d4_release(&t101); h6_ret0 = t83; goto bb19; bb18: t77 = h5_f1; t78 = t77.as.err;
-#line 1067 "main.c"
-    hero_panic_must_at(t78, "sheet.hero", "sheet.cell_of", 90, 28);
+#line 1059 "main.c"
+    hero_panic_must_at(t78, "sheet.hero", "sheet.cell_of", 61, 28);
     hero_unreachable();
 bb19:
     t84 = h6_ret0;
@@ -1089,10 +1081,10 @@ bb19:
     return t84;
 }
 
-#line 94 "examples/spreadsheet/sheet.hero"
+#line 65 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_name_of(h_sheet_Cell h0_c) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t1, t6, t8, t9, t10, t11, t12, t13; HERO_NODEBUG int64_t t2, t3, t4, t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_sheet_LETTERS(); t10 = h1_own1; h1_own1 = t1; hero_str_decref(t10); t2 = h0_c.f_column; t3 = h0_c.f_column; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("sheet.hero", "sheet.name_of", 95, 46); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.name_of", 95, 12}; t6 = hero_str_slice_at(t1, t2, t5, &hero_here); } t11 = h2_own2; h2_own2 = t6; hero_str_decref(t11); t7 = h0_c.f_row; t8 = hero_int_to_str(t7); t12 = h3_own3; h3_own3 = t8; hero_str_decref(t12); t9 = hero_str_concat(t6, t8); t13 = h4_own4; h4_own4 = t9; hero_str_decref(t13);
-#line 1096 "main.c"
+    t1 = h_sheet_LETTERS(); t10 = h1_own1; h1_own1 = t1; hero_str_decref(t10); t2 = h0_c.f_column; t3 = h0_c.f_column; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("sheet.hero", "sheet.name_of", 66, 46); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.name_of", 66, 12}; t6 = hero_str_slice_at(t1, t2, t5, &hero_here); } t11 = h2_own2; h2_own2 = t6; hero_str_decref(t11); t7 = h0_c.f_row; t8 = hero_int_to_str(t7); t12 = h3_own3; h3_own3 = t8; hero_str_decref(t12); t9 = hero_str_concat(t6, t8); t13 = h4_own4; h4_own4 = t9; hero_str_decref(t13);
+#line 1088 "main.c"
     hero_str_incref(t9);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -1101,159 +1093,155 @@ HeroStr h_sheet_name_of(h_sheet_Cell h0_c) { HERO_NODEBUG HeroStr h1_own1 = {0},
     return t9;
 }
 
-#line 97 "examples/spreadsheet/sheet.hero"
+#line 68 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_name(HeroStr h0_word) { HERO_NODEBUG h_0opt_605417d4 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t8, t9; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_word; t2 = h_sheet_cell_of(t1); t8 = h2_own2; h2_own2 = t2; h_0opt_605417d4_release(&t8); t9 = h1_f0; h_0opt_605417d4_retain(&t2); h1_f0 = t2; h_0opt_605417d4_release(&t9); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(1); t6 = t4 == t5; t7 = !t6;
-#line 1108 "main.c"
+#line 1100 "main.c"
     h_0opt_605417d4_release(hero_slot_escape(&h1_f0));
     h_0opt_605417d4_release(hero_slot_escape(&h2_own2));
     return t7;
 }
 
-#line 105 "examples/spreadsheet/sheet.hero"
-h_0opt_5a58f2ca h_sheet_expand(HeroStr h0_text) { int64_t h1_at; HERO_NODEBUG h_0opt_605417d4 h2_f0 = {0}, h4_f1 = {0}, h16_own16 = {0}, h23_own23 = {0}, t19, t20, t24, t27, t37, t38, t42, t45, t91, t92, t99, t100; h_sheet_Cell h3_from; h_sheet_Cell h5_to; HeroArrayHeader * h6_out = {0}; HERO_NODEBUG HeroArrayHeader *h7_xs0 = {0}, *h10_xs1 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h28_own28 = {0}, *t47, *t52, *t55, *t58, *t65, *t68, *t71, *t86, *t102, *t103, *t104, *t105, *t107, *t108; HERO_NODEBUG int64_t h8_i0, h11_i1, t3, t4, t5, t15, t16, t21, t22, t30, t31, t32, t34, t39, t40, t48, t49, t50, t51, t53, t54, t56, t59, t60, t61, t62, t63, t64, t66, t67, t69, t72, t73, t75, t76, t80, t81, t82, t83, t84, t85; int64_t h9_row; int64_t h12_column; HERO_NODEBUG h_0opt_5a58f2ca h13_ret0 = {0}, h20_own20 = {0}, h24_own24 = {0}, h27_own27 = {0}, h29_own29 = {0}, t13, t26, t44, t87, t88, t96, t101, t106, t109; HERO_NODEBUG HeroStr h14_own14 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h30_own30 = {0}, t1, t7, t8, t9, t10, t11, t12, t14, t17, t18, t29, t33, t35, t36, t78, t89, t90, t93, t94, t95, t97, t98, t110; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t6, t23, t41, t57, t70; HERO_NODEBUG HeroFailure t25, t43; HERO_NODEBUG h_sheet_Cell t28, t46, t77; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_text; t2 = UINT64_C(58); t3 = h_sheet_index_of(t1, t2); h1_at = t3;
-#line 108
-    t4 = h1_at; t5 = INT64_C(0); t6 = t4 < t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 110
-    t14 = h0_text; t15 = INT64_C(0); t16 = h1_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.expand", 110, 28}; t17 = hero_str_slice_at(t14, t15, t16, &hero_here); } t89 = h14_own14; h14_own14 = t17; hero_str_decref(t89); t18 = h_sheet_trimmed(t17); t90 = h15_own15; h15_own15 = t18; hero_str_decref(t90); t19 = h_sheet_cell_of(t18); t91 = h16_own16; h16_own16 = t19; h_0opt_605417d4_release(&t91); t92 = h2_f0; h_0opt_605417d4_retain(&t19); h2_f0 = t19; h_0opt_605417d4_release(&t92); t20 = h2_f0; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb4; else goto bb5; bb2:
-#line 109
-    t7 = h_sheet_ERR_BAD_RANGE(); t93 = h17_own17; h17_own17 = t7; hero_str_decref(t93); t8 = HERO_STR_LIT(hero_str_60); t9 = h0_text; t10 = hero_str_concat(t8, t9); t94 = h18_own18; h18_own18 = t10; hero_str_decref(t94); t11 = HERO_STR_LIT(hero_str_3e1d2a75); t12 = hero_str_concat(t10, t11); t95 = h19_own19; h19_own19 = t12; hero_str_decref(t95); hero_str_incref(t7); hero_str_incref(t12); t13 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t12}}; t96 = h20_own20; h20_own20 = t13; h_0opt_5a58f2ca_release(&t96); h13_ret0 = t13; goto bb16; bb3: goto bb1; bb4:
-    t27 = h2_f0; t28 = t27.as.ok; h3_from = t28;
-    t29 = h0_text; t30 = h1_at; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 111, 43); t33 = h0_text; t34 = hero_str_len(t33); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.expand", 111, 26}; t35 = hero_str_slice_at(t29, t32, t34, &hero_here); } t97 = h21_own21; h21_own21 = t35; hero_str_decref(t97); t36 = h_sheet_trimmed(t35); t98 = h22_own22; h22_own22 = t36; hero_str_decref(t98); t37 = h_sheet_cell_of(t36); t99 = h23_own23; h23_own23 = t37; h_0opt_605417d4_release(&t99); t100 = h4_f1; h_0opt_605417d4_retain(&t37); h4_f1 = t37; h_0opt_605417d4_release(&t100); t38 = h4_f1; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb6; else goto bb7; bb5:
-#line 110
-    t24 = h2_f0; t25 = t24.as.err; hero_failure_retain(&t25); t26 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t25}; t101 = h24_own24; h24_own24 = t26; h_0opt_5a58f2ca_release(&t101); h13_ret0 = t26; goto bb16; bb6:
-    t45 = h4_f1; t46 = t45.as.ok; h5_to = t46;
-    t47 = hero_array_new(&hero_desc_str, 1); t102 = h25_own25; h25_own25 = t47; hero_array_decref(t102); t103 = h6_out; hero_array_incref(t47); h6_out = t47; hero_array_decref(t103);
-#line 114
-    t48 = h3_from.f_row; t49 = h5_to.f_row; t50 = INT64_C(1); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 114, 42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.expand", 114, 16}; t52 = h_library_range(t48, t51, &hero_here); } t104 = h26_own26; h26_own26 = t52; hero_array_decref(t104); t105 = h7_xs0; hero_array_incref(t52); h7_xs0 = t52; hero_array_decref(t105); t53 = INT64_C(0); h8_i0 = t53; goto bb8; bb7:
-#line 111
-    t42 = h4_f1; t43 = t42.as.err; hero_failure_retain(&t43); t44 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t43}; t106 = h27_own27; h27_own27 = t44; h_0opt_5a58f2ca_release(&t106); h13_ret0 = t44; goto bb16; bb8:
-#line 114
-    t54 = h8_i0; t55 = h7_xs0; t56 = ((void)(t55 == NULL ? ((void)hero_array_len(t55), hero_unreachable()) : (void)0), t55->len); t57 = t54 < t56; if (t57) goto bb9; else goto bb11; bb9: t58 = h7_xs0; t59 = h8_i0; t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? hero_panic_index_at(t58, t59, "sheet.hero", "sheet.expand", 114, 9) : (void)0), (void)(t58->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t58 + 1))[t59]); h9_row = t60;
-    t61 = h3_from.f_column; t62 = h5_to.f_column; t63 = INT64_C(1); if (__builtin_add_overflow(t62, t63, &t64)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 115, 52); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.expand", 115, 23}; t65 = h_library_range(t61, t64, &hero_here); } t107 = h28_own28; h28_own28 = t65; hero_array_decref(t107); t108 = h10_xs1; hero_array_incref(t65); h10_xs1 = t65; hero_array_decref(t108); t66 = INT64_C(0); h11_i1 = t66; goto bb12; bb10:
-#line 114
-    t83 = h8_i0; t84 = INT64_C(1); if (__builtin_add_overflow(t83, t84, &t85)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 114, 9); h8_i0 = t85; goto bb8; bb11:
-#line 118
-    t86 = h6_out; hero_array_incref(t86); t87 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t86}; t109 = h29_own29; h29_own29 = t87; h_0opt_5a58f2ca_release(&t109); h13_ret0 = t87; goto bb16; bb12:
-#line 115
-    t67 = h11_i1; t68 = h10_xs1; t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len); t70 = t67 < t69; if (t70) goto bb13; else goto bb15; bb13: t71 = h10_xs1; t72 = h11_i1; t73 = ((void)((t71 == NULL || t72 < 0 || t72 >= t71->len) ? hero_panic_index_at(t71, t72, "sheet.hero", "sheet.expand", 115, 13) : (void)0), (void)(t71->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t71 + 1))[t72]); h12_column = t73;
-    t75 = h12_column; t76 = h9_row; t77 = (h_sheet_Cell){.f_column = t75, .f_row = t76}; t78 = h_sheet_name_of(t77); t110 = h30_own30; h30_own30 = t78; hero_str_decref(t110); hero_array_push_owned(&h6_out, &t78); goto bb14; bb14:
-#line 115
-    t80 = h11_i1; t81 = INT64_C(1); if (__builtin_add_overflow(t80, t81, &t82)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 115, 13); h11_i1 = t82; goto bb12; bb15: goto bb10; bb16:
-#line 1145 "main.c"
-    t88 = h13_ret0;
-    h_0opt_5a58f2ca_retain(&t88);
-    h_0opt_605417d4_release(hero_slot_escape(&h2_f0));
-    h_0opt_605417d4_release(hero_slot_escape(&h4_f1));
-    hero_array_release_at(&h6_out);
-    hero_array_release_at(&h7_xs0);
-    hero_array_release_at(&h10_xs1);
-    hero_str_release_at(&h14_own14);
-    hero_str_release_at(&h15_own15);
-    h_0opt_605417d4_release(hero_slot_escape(&h16_own16));
-    hero_str_release_at(&h17_own17);
+#line 76 "examples/spreadsheet/sheet.hero"
+h_0opt_5a58f2ca h_sheet_expand(HeroStr h0_text) { HERO_NODEBUG h_0opt_6524ffa0 h1_s0 = {0}, h17_own17 = {0}, t3, t4, t6, t83, t84; HERO_NODEBUG h_corestrings_Halves h2_r0 = {0}, t7, t8, t16, t85, t89, t90; h_corestrings_Halves h3_halves = {0}; h_corestrings_Halves h4_corners = {0}; HERO_NODEBUG h_0opt_605417d4 h5_f0 = {0}, h7_f1 = {0}, h19_own19 = {0}, h25_own25 = {0}, t19, t20, t24, t27, t31, t32, t36, t39, t87, t88, t96, t97; h_sheet_Cell h6_from; h_sheet_Cell h8_to; HeroArrayHeader * h9_out = {0}; HERO_NODEBUG HeroArrayHeader *h10_xs0 = {0}, *h13_xs1 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h30_own30 = {0}, *t41, *t46, *t49, *t52, *t59, *t62, *t65, *t80, *t99, *t100, *t101, *t102, *t104, *t105; HERO_NODEBUG int64_t h11_i0, h14_i1, t5, t21, t22, t33, t34, t42, t43, t44, t45, t47, t48, t50, t53, t54, t55, t56, t57, t58, t60, t61, t63, t66, t67, t69, t70, t74, t75, t76, t77, t78, t79; int64_t h12_row; int64_t h15_column; HERO_NODEBUG h_0opt_5a58f2ca h16_ret0 = {0}, h23_own23 = {0}, h26_own26 = {0}, h29_own29 = {0}, h31_own31 = {0}, t15, t26, t38, t81, t82, t94, t98, t103, t106; HERO_NODEBUG HeroStr h18_own18 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h32_own32 = {0}, t1, t2, t9, t10, t11, t12, t13, t14, t17, t18, t29, t30, t72, t86, t91, t92, t93, t95, t107; HERO_NODEBUG bool t23, t35, t51, t64; HERO_NODEBUG HeroFailure t25, t37; HERO_NODEBUG h_sheet_Cell t28, t40, t71; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = HERO_STR_LIT(hero_str_3a); t3 = h_corestrings_split_once(t1, t2); t83 = h17_own17; h17_own17 = t3; h_0opt_6524ffa0_release(&t83); t84 = h1_s0; h_0opt_6524ffa0_retain(&t3); h1_s0 = t3; h_0opt_6524ffa0_release(&t84); t4 = h1_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t16 = h2_r0; t85 = h4_corners; h_corestrings_0Halves_retain(&t16); h4_corners = t16; h_corestrings_0Halves_release(&t85);
+#line 81
+    t17 = h4_corners.f_before; t18 = h_corestrings_trim_space(t17); t86 = h18_own18; h18_own18 = t18; hero_str_decref(t86); t19 = h_sheet_cell_of(t18); t87 = h19_own19; h19_own19 = t19; h_0opt_605417d4_release(&t87); t88 = h5_f0; h_0opt_605417d4_retain(&t19); h5_f0 = t19; h_0opt_605417d4_release(&t88); t20 = h5_f0; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb4; else goto bb5; bb2:
+#line 78
+    t6 = h1_s0; t7 = t6.as.ok; t89 = h3_halves; h_corestrings_0Halves_retain(&t7); h3_halves = t7; h_corestrings_0Halves_release(&t89); t8 = h3_halves;
+#line 77
+    t90 = h2_r0; h_corestrings_0Halves_retain(&t8); h2_r0 = t8; h_corestrings_0Halves_release(&t90); goto bb1; bb3:
+#line 79
+    t9 = h_sheet_ERR_BAD_RANGE(); t91 = h20_own20; h20_own20 = t9; hero_str_decref(t91); t10 = HERO_STR_LIT(hero_str_60); t11 = h0_text; t12 = hero_str_concat(t10, t11); t92 = h21_own21; h21_own21 = t12; hero_str_decref(t92); t13 = HERO_STR_LIT(hero_str_3e1d2a75); t14 = hero_str_concat(t12, t13); t93 = h22_own22; h22_own22 = t14; hero_str_decref(t93); hero_str_incref(t9); hero_str_incref(t14); t15 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t14}}; t94 = h23_own23; h23_own23 = t15; h_0opt_5a58f2ca_release(&t94); h16_ret0 = t15; goto bb16; bb4:
+#line 81
+    t27 = h5_f0; t28 = t27.as.ok; h6_from = t28;
+    t29 = h4_corners.f_after; t30 = h_corestrings_trim_space(t29); t95 = h24_own24; h24_own24 = t30; hero_str_decref(t95); t31 = h_sheet_cell_of(t30); t96 = h25_own25; h25_own25 = t31; h_0opt_605417d4_release(&t96); t97 = h7_f1; h_0opt_605417d4_retain(&t31); h7_f1 = t31; h_0opt_605417d4_release(&t97); t32 = h7_f1; t33 = t32.tag; t34 = INT64_C(0); t35 = t33 == t34; if (t35) goto bb6; else goto bb7; bb5:
+#line 81
+    t24 = h5_f0; t25 = t24.as.err; hero_failure_retain(&t25); t26 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t25}; t98 = h26_own26; h26_own26 = t26; h_0opt_5a58f2ca_release(&t98); h16_ret0 = t26; goto bb16; bb6:
+    t39 = h7_f1; t40 = t39.as.ok; h8_to = t40;
+    t41 = hero_array_new(&hero_desc_str, 1); t99 = h27_own27; h27_own27 = t41; hero_array_decref(t99); t100 = h9_out; hero_array_incref(t41); h9_out = t41; hero_array_decref(t100);
+#line 85
+    t42 = h6_from.f_row; t43 = h8_to.f_row; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 85, 42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.expand", 85, 16}; t46 = h_library_range(t42, t45, &hero_here); } t101 = h28_own28; h28_own28 = t46; hero_array_decref(t101); t102 = h10_xs0; hero_array_incref(t46); h10_xs0 = t46; hero_array_decref(t102); t47 = INT64_C(0); h11_i0 = t47; goto bb8; bb7:
+#line 82
+    t36 = h7_f1; t37 = t36.as.err; hero_failure_retain(&t37); t38 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t37}; t103 = h29_own29; h29_own29 = t38; h_0opt_5a58f2ca_release(&t103); h16_ret0 = t38; goto bb16; bb8:
+#line 85
+    t48 = h11_i0; t49 = h10_xs0; t50 = ((void)(t49 == NULL ? ((void)hero_array_len(t49), hero_unreachable()) : (void)0), t49->len); t51 = t48 < t50; if (t51) goto bb9; else goto bb11; bb9: t52 = h10_xs0; t53 = h11_i0; t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? hero_panic_index_at(t52, t53, "sheet.hero", "sheet.expand", 85, 9) : (void)0), (void)(t52->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t52 + 1))[t53]); h12_row = t54;
+    t55 = h6_from.f_column; t56 = h8_to.f_column; t57 = INT64_C(1); if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 86, 52); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.expand", 86, 23}; t59 = h_library_range(t55, t58, &hero_here); } t104 = h30_own30; h30_own30 = t59; hero_array_decref(t104); t105 = h13_xs1; hero_array_incref(t59); h13_xs1 = t59; hero_array_decref(t105); t60 = INT64_C(0); h14_i1 = t60; goto bb12; bb10:
+#line 85
+    t77 = h11_i0; t78 = INT64_C(1); if (__builtin_add_overflow(t77, t78, &t79)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 85, 9); h11_i0 = t79; goto bb8; bb11:
+#line 89
+    t80 = h9_out; hero_array_incref(t80); t81 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t80}; t106 = h31_own31; h31_own31 = t81; h_0opt_5a58f2ca_release(&t106); h16_ret0 = t81; goto bb16; bb12:
+#line 86
+    t61 = h14_i1; t62 = h13_xs1; t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len); t64 = t61 < t63; if (t64) goto bb13; else goto bb15; bb13: t65 = h13_xs1; t66 = h14_i1; t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? hero_panic_index_at(t65, t66, "sheet.hero", "sheet.expand", 86, 13) : (void)0), (void)(t65->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t65 + 1))[t66]); h15_column = t67;
+    t69 = h15_column; t70 = h12_row; t71 = (h_sheet_Cell){.f_column = t69, .f_row = t70}; t72 = h_sheet_name_of(t71); t107 = h32_own32; h32_own32 = t72; hero_str_decref(t107); hero_array_push_owned(&h9_out, &t72); goto bb14; bb14:
+#line 86
+    t74 = h14_i1; t75 = INT64_C(1); if (__builtin_add_overflow(t74, t75, &t76)) hero_panic_overflow_at("sheet.hero", "sheet.expand", 86, 13); h14_i1 = t76; goto bb12; bb15: goto bb10; bb16:
+#line 1140 "main.c"
+    t82 = h16_ret0;
+    h_0opt_5a58f2ca_retain(&t82);
+    h_0opt_6524ffa0_release(hero_slot_escape(&h1_s0));
+    h_corestrings_0Halves_release(hero_slot_escape(&h2_r0));
+    h_corestrings_0Halves_release(hero_slot_escape(&h3_halves));
+    h_corestrings_0Halves_release(hero_slot_escape(&h4_corners));
+    h_0opt_605417d4_release(hero_slot_escape(&h5_f0));
+    h_0opt_605417d4_release(hero_slot_escape(&h7_f1));
+    hero_array_release_at(&h9_out);
+    hero_array_release_at(&h10_xs0);
+    hero_array_release_at(&h13_xs1);
+    h_0opt_6524ffa0_release(hero_slot_escape(&h17_own17));
     hero_str_release_at(&h18_own18);
-    hero_str_release_at(&h19_own19);
-    h_0opt_5a58f2ca_release(hero_slot_escape(&h20_own20));
+    h_0opt_605417d4_release(hero_slot_escape(&h19_own19));
+    hero_str_release_at(&h20_own20);
     hero_str_release_at(&h21_own21);
     hero_str_release_at(&h22_own22);
-    h_0opt_605417d4_release(hero_slot_escape(&h23_own23));
-    h_0opt_5a58f2ca_release(hero_slot_escape(&h24_own24));
-    hero_array_release_at(&h25_own25);
-    hero_array_release_at(&h26_own26);
-    h_0opt_5a58f2ca_release(hero_slot_escape(&h27_own27));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h23_own23));
+    hero_str_release_at(&h24_own24);
+    h_0opt_605417d4_release(hero_slot_escape(&h25_own25));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h26_own26));
+    hero_array_release_at(&h27_own27);
     hero_array_release_at(&h28_own28);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h29_own29));
-    hero_str_release_at(&h30_own30);
-    return t88;
+    hero_array_release_at(&h30_own30);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h31_own31));
+    hero_str_release_at(&h32_own32);
+    return t82;
 }
 
-#line 120 "examples/spreadsheet/sheet.hero"
-int64_t h_sheet_index_of(HeroStr h0_text, uint8_t h1_c) { int64_t h2_i; HERO_NODEBUG int64_t h3_ret0, t1, t2, t4, t7, t11, t12, t13, t14, t15, t16, t17, t18; HERO_NODEBUG HeroStr t3, t6; HERO_NODEBUG bool t5, t10; HERO_NODEBUG uint8_t t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); h2_i = t1; goto bb1; bb1:
-#line 123
-    t2 = h2_i; t3 = h0_text; t4 = hero_str_len(t3); t5 = t2 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h0_text; t7 = h2_i; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "sheet.hero", "sheet.index_of", 124, 12) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = h1_c; t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb3:
-#line 128
-    t15 = INT64_C(0); t16 = INT64_C(1); if (__builtin_sub_overflow(t15, t16, &t17)) hero_panic_overflow_at("sheet.hero", "sheet.index_of", 128, 12); h3_ret0 = t17; goto bb7; bb4:
-#line 126
-    t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("sheet.hero", "sheet.index_of", 126, 13); h2_i = t14; goto bb1; bb5:
-#line 125
-    t11 = h2_i; h3_ret0 = t11; goto bb7; bb6: goto bb4; bb7:
-#line 1185 "main.c"
-    t18 = h3_ret0;
-    return t18;
-}
-
-#line 133 "examples/spreadsheet/sheet.hero"
-h_0opt_2bbbbbdd h_sheet_read(HeroStr h0_text) { HeroMapHeader * h1_cells = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h11_own11 = {0}, *t3, *t6, *t9, *t69, *t70; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t18, t25, t26, t27, t37, t38, t53, t54, t55, t57, t60, t61, t62; HeroStr h4_line = {0}; HeroStr h5_head = {0}; HERO_NODEBUG bool h6_b0, t8, t16, t21, t22, t28, t42, t43; int64_t h7_at; HeroStr h8_name = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h9_ret0 = {0}, h14_own14 = {0}, h20_own20 = {0}, h26_own26 = {0}, t35, t50, t65, t66, t75, t82, t88; HERO_NODEBUG HeroMapHeader *h10_own10 = {0}, *t1, *t63, *t67, *t68; HERO_NODEBUG HeroStr h12_own12 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, t2, t11, t12, t13, t14, t15, t17, t23, t29, t30, t31, t32, t33, t34, t36, t39, t40, t41, t44, t45, t46, t47, t48, t49, t51, t52, t56, t58, t59, t71, t72, t73, t76, t77, t78, t79, t80, t81, t83, t84, t85, t86, t87; HERO_NODEBUG h_sheet_Sheet h13_own13 = {0}, t64, t74; HERO_NODEBUG uint8_t t19, t20, t24; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0); t67 = h10_own10; h10_own10 = t1; hero_map_decref(t67); t68 = h1_cells; hero_map_incref(t1); h1_cells = t1; hero_map_decref(t68);
-#line 136
-    t2 = h0_text; t3 = h_sheet_split_lines(t2); t69 = h11_own11; h11_own11 = t3; hero_array_decref(t69); t70 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t70); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "sheet.hero", "sheet.read", 136, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t71 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t71);
-    t12 = h4_line; t13 = h_sheet_trimmed(t12); t72 = h12_own12; h12_own12 = t13; hero_str_decref(t72); t73 = h5_head; hero_str_incref(t13); h5_head = t13; hero_str_decref(t73);
-#line 139
+#line 94 "examples/spreadsheet/sheet.hero"
+h_0opt_2bbbbbdd h_sheet_read(HeroStr h0_text) { HeroMapHeader * h1_cells = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h14_own14 = {0}, *t3, *t6, *t9, *t63, *t64; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t18, t27, t54, t55, t56; HeroStr h4_line = {0}; HeroStr h5_head = {0}; HERO_NODEBUG bool h6_b0, t8, t16, t21, t22, t42, t43; HERO_NODEBUG h_0opt_6524ffa0 h7_s0 = {0}, h18_own18 = {0}, t25, t26, t28, t70, t71; HERO_NODEBUG h_corestrings_Halves h8_r0 = {0}, t29, t30, t38, t72, t75, t76; h_corestrings_Halves h9_halves = {0}; h_corestrings_Halves h10_assignment = {0}; HeroStr h11_name = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h12_ret0 = {0}, h17_own17 = {0}, h23_own23 = {0}, h28_own28 = {0}, t37, t50, t59, t60, t69, t80, t85; HERO_NODEBUG HeroMapHeader *h13_own13 = {0}, *t1, *t57, *t61, *t62; HERO_NODEBUG HeroStr h15_own15 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, t2, t11, t12, t13, t14, t15, t17, t23, t24, t31, t32, t33, t34, t35, t36, t39, t40, t41, t44, t45, t46, t47, t48, t49, t51, t52, t53, t65, t66, t67, t73, t74, t77, t78, t79, t81, t82, t83, t84; HERO_NODEBUG h_sheet_Sheet h16_own16 = {0}, t58, t68; HERO_NODEBUG uint8_t t19, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0); t61 = h13_own13; h13_own13 = t1; hero_map_decref(t61); t62 = h1_cells; hero_map_incref(t1); h1_cells = t1; hero_map_decref(t62);
+#line 97
+    t2 = h0_text; t3 = h_corestrings_split_lines(t2); t63 = h14_own14; h14_own14 = t3; hero_array_decref(t63); t64 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t64); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "sheet.hero", "sheet.read", 97, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t65 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t65);
+    t12 = h4_line; t13 = h_corestrings_trim_space(t12); t66 = h15_own15; h15_own15 = t13; hero_str_decref(t66); t67 = h5_head; hero_str_incref(t13); h5_head = t13; hero_str_decref(t67);
+#line 100
     t14 = h5_head; t15 = HERO_STR_LIT(hero_str_0); t16 = hero_str_eq(t14, t15); h6_b0 = t16; if (t16) goto bb7; else goto bb6; bb3:
-#line 136
-    t60 = h3_i0; t61 = INT64_C(1); if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow_at("sheet.hero", "sheet.read", 136, 9); h3_i0 = t62; goto bb1; bb4:
-#line 151
-    t63 = h1_cells; hero_map_incref(t63); t64 = (h_sheet_Sheet){.f_cells = t63}; t74 = h13_own13; h13_own13 = t64; h_sheet_0Sheet_release(&t74); h_sheet_0Sheet_retain(&t64); t65 = (h_0opt_2bbbbbdd){.tag = INT64_C(0), .as.ok = t64}; t75 = h14_own14; h14_own14 = t65; h_0opt_2bbbbbdd_release(&t75); h9_ret0 = t65; goto bb16; bb5:
-#line 141
-    t23 = h5_head; t24 = UINT64_C(61); t25 = h_sheet_index_of(t23, t24); h7_at = t25;
-#line 143
-    t26 = h7_at; t27 = INT64_C(0); t28 = t26 < t27; if (t28) goto bb11; else goto bb12; bb6:
-#line 139
-    t17 = h5_head; t18 = INT64_C(0); t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "sheet.hero", "sheet.read", 139, 26) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = UINT64_C(35); t21 = t19 == t20; h6_b0 = t21; goto bb7; bb7: t22 = h6_b0; if (t22) goto bb8; else goto bb9; bb8: goto bb3; bb9: goto bb5; bb10:
-#line 145
-    t36 = h5_head; t37 = INT64_C(0); t38 = h7_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.read", 145, 24}; t39 = hero_str_slice_at(t36, t37, t38, &hero_here); } t76 = h15_own15; h15_own15 = t39; hero_str_decref(t76); t40 = h_sheet_trimmed(t39); t77 = h16_own16; h16_own16 = t40; hero_str_decref(t77); t78 = h8_name; hero_str_incref(t40); h8_name = t40; hero_str_decref(t78);
-#line 147
-    t41 = h8_name; t42 = h_sheet_is_name(t41); t43 = !t42; if (t43) goto bb14; else goto bb15; bb11:
-#line 144
-    t29 = h_sheet_ERR_NO_ASSIGNMENT(); t79 = h17_own17; h17_own17 = t29; hero_str_decref(t79); t30 = HERO_STR_LIT(hero_str_60); t31 = h5_head; t32 = hero_str_concat(t30, t31); t80 = h18_own18; h18_own18 = t32; hero_str_decref(t80); t33 = HERO_STR_LIT(hero_str_4c698ffa); t34 = hero_str_concat(t32, t33); t81 = h19_own19; h19_own19 = t34; hero_str_decref(t81); hero_str_incref(t29); hero_str_incref(t34); t35 = (h_0opt_2bbbbbdd){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t34}}; t82 = h20_own20; h20_own20 = t35; h_0opt_2bbbbbdd_release(&t82); h9_ret0 = t35; goto bb16; bb12: goto bb10; bb13:
-#line 149
-    t51 = h8_name; t52 = h5_head; t53 = h7_at; t54 = INT64_C(1); if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow_at("sheet.hero", "sheet.read", 149, 48); t56 = h5_head; t57 = hero_str_len(t56); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.read", 149, 31}; t58 = hero_str_slice_at(t52, t55, t57, &hero_here); } t83 = h21_own21; h21_own21 = t58; hero_str_decref(t83); t59 = h_sheet_trimmed(t58); t84 = h22_own22; h22_own22 = t59; hero_str_decref(t84); hero_str_incref(t59); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.read", 149, 9}; hero_map_set_at(&(h1_cells), &t51, &t59, &hero_here); } goto bb3; bb14:
-#line 148
-    t44 = h_sheet_ERR_BAD_CELL_NAME(); t85 = h23_own23; h23_own23 = t44; hero_str_decref(t85); t45 = HERO_STR_LIT(hero_str_60); t46 = h8_name; t47 = hero_str_concat(t45, t46); t86 = h24_own24; h24_own24 = t47; hero_str_decref(t86); t48 = HERO_STR_LIT(hero_str_59af7519); t49 = hero_str_concat(t47, t48); t87 = h25_own25; h25_own25 = t49; hero_str_decref(t87); hero_str_incref(t44); hero_str_incref(t49); t50 = (h_0opt_2bbbbbdd){.tag = INT64_C(1), .as.err = {.code = t44, .msg = t49}}; t88 = h26_own26; h26_own26 = t50; h_0opt_2bbbbbdd_release(&t88); h9_ret0 = t50; goto bb16; bb15: goto bb13; bb16:
-#line 1218 "main.c"
-    t66 = h9_ret0;
-    h_0opt_2bbbbbdd_retain(&t66);
+#line 97
+    t54 = h3_i0; t55 = INT64_C(1); if (__builtin_add_overflow(t54, t55, &t56)) hero_panic_overflow_at("sheet.hero", "sheet.read", 97, 9); h3_i0 = t56; goto bb1; bb4:
+#line 113
+    t57 = h1_cells; hero_map_incref(t57); t58 = (h_sheet_Sheet){.f_cells = t57}; t68 = h16_own16; h16_own16 = t58; h_sheet_0Sheet_release(&t68); h_sheet_0Sheet_retain(&t58); t59 = (h_0opt_2bbbbbdd){.tag = INT64_C(0), .as.ok = t58}; t69 = h17_own17; h17_own17 = t59; h_0opt_2bbbbbdd_release(&t69); h12_ret0 = t59; goto bb16; bb5:
+#line 103
+    t23 = h5_head; t24 = HERO_STR_LIT(hero_str_3d); t25 = h_corestrings_split_once(t23, t24); t70 = h18_own18; h18_own18 = t25; h_0opt_6524ffa0_release(&t70); t71 = h7_s0; h_0opt_6524ffa0_retain(&t25); h7_s0 = t25; h_0opt_6524ffa0_release(&t71); t26 = h7_s0; t27 = t26.tag; switch (t27) { case 0: goto bb11; case 1: goto bb12; default: hero_unreachable(); } bb6:
+#line 100
+    t17 = h5_head; t18 = INT64_C(0); t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "sheet.hero", "sheet.read", 100, 26) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = UINT64_C(35); t21 = t19 == t20; h6_b0 = t21; goto bb7; bb7: t22 = h6_b0; if (t22) goto bb8; else goto bb9; bb8: goto bb3; bb9: goto bb5; bb10:
+#line 103
+    t38 = h8_r0; t72 = h10_assignment; h_corestrings_0Halves_retain(&t38); h10_assignment = t38; h_corestrings_0Halves_release(&t72);
+#line 107
+    t39 = h10_assignment.f_before; t40 = h_corestrings_trim_space(t39); t73 = h19_own19; h19_own19 = t40; hero_str_decref(t73); t74 = h11_name; hero_str_incref(t40); h11_name = t40; hero_str_decref(t74);
+#line 109
+    t41 = h11_name; t42 = h_sheet_is_name(t41); t43 = !t42; if (t43) goto bb14; else goto bb15; bb11:
+#line 104
+    t28 = h7_s0; t29 = t28.as.ok; t75 = h9_halves; h_corestrings_0Halves_retain(&t29); h9_halves = t29; h_corestrings_0Halves_release(&t75); t30 = h9_halves;
+#line 103
+    t76 = h8_r0; h_corestrings_0Halves_retain(&t30); h8_r0 = t30; h_corestrings_0Halves_release(&t76); goto bb10; bb12:
+#line 105
+    t31 = h_sheet_ERR_NO_ASSIGNMENT(); t77 = h20_own20; h20_own20 = t31; hero_str_decref(t77); t32 = HERO_STR_LIT(hero_str_60); t33 = h5_head; t34 = hero_str_concat(t32, t33); t78 = h21_own21; h21_own21 = t34; hero_str_decref(t78); t35 = HERO_STR_LIT(hero_str_4c698ffa); t36 = hero_str_concat(t34, t35); t79 = h22_own22; h22_own22 = t36; hero_str_decref(t79); hero_str_incref(t31); hero_str_incref(t36); t37 = (h_0opt_2bbbbbdd){.tag = INT64_C(1), .as.err = {.code = t31, .msg = t36}}; t80 = h23_own23; h23_own23 = t37; h_0opt_2bbbbbdd_release(&t80); h12_ret0 = t37; goto bb16; bb13:
+#line 111
+    t51 = h11_name; t52 = h10_assignment.f_after; t53 = h_corestrings_trim_space(t52); t81 = h24_own24; h24_own24 = t53; hero_str_decref(t81); hero_str_incref(t53); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.read", 111, 9}; hero_map_set_at(&(h1_cells), &t51, &t53, &hero_here); } goto bb3; bb14:
+#line 110
+    t44 = h_sheet_ERR_BAD_CELL_NAME(); t82 = h25_own25; h25_own25 = t44; hero_str_decref(t82); t45 = HERO_STR_LIT(hero_str_60); t46 = h11_name; t47 = hero_str_concat(t45, t46); t83 = h26_own26; h26_own26 = t47; hero_str_decref(t83); t48 = HERO_STR_LIT(hero_str_59af7519); t49 = hero_str_concat(t47, t48); t84 = h27_own27; h27_own27 = t49; hero_str_decref(t84); hero_str_incref(t44); hero_str_incref(t49); t50 = (h_0opt_2bbbbbdd){.tag = INT64_C(1), .as.err = {.code = t44, .msg = t49}}; t85 = h28_own28; h28_own28 = t50; h_0opt_2bbbbbdd_release(&t85); h12_ret0 = t50; goto bb16; bb15: goto bb13; bb16:
+#line 1203 "main.c"
+    t60 = h12_ret0;
+    h_0opt_2bbbbbdd_retain(&t60);
     hero_map_release_at(&h1_cells);
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_line);
     hero_str_release_at(&h5_head);
-    hero_str_release_at(&h8_name);
-    hero_map_release_at(&h10_own10);
-    hero_array_release_at(&h11_own11);
-    hero_str_release_at(&h12_own12);
-    h_sheet_0Sheet_release(hero_slot_escape(&h13_own13));
-    h_0opt_2bbbbbdd_release(hero_slot_escape(&h14_own14));
+    h_0opt_6524ffa0_release(hero_slot_escape(&h7_s0));
+    h_corestrings_0Halves_release(hero_slot_escape(&h8_r0));
+    h_corestrings_0Halves_release(hero_slot_escape(&h9_halves));
+    h_corestrings_0Halves_release(hero_slot_escape(&h10_assignment));
+    hero_str_release_at(&h11_name);
+    hero_map_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
     hero_str_release_at(&h15_own15);
-    hero_str_release_at(&h16_own16);
-    hero_str_release_at(&h17_own17);
-    hero_str_release_at(&h18_own18);
+    h_sheet_0Sheet_release(hero_slot_escape(&h16_own16));
+    h_0opt_2bbbbbdd_release(hero_slot_escape(&h17_own17));
+    h_0opt_6524ffa0_release(hero_slot_escape(&h18_own18));
     hero_str_release_at(&h19_own19);
-    h_0opt_2bbbbbdd_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h20_own20);
     hero_str_release_at(&h21_own21);
     hero_str_release_at(&h22_own22);
-    hero_str_release_at(&h23_own23);
+    h_0opt_2bbbbbdd_release(hero_slot_escape(&h23_own23));
     hero_str_release_at(&h24_own24);
     hero_str_release_at(&h25_own25);
-    h_0opt_2bbbbbdd_release(hero_slot_escape(&h26_own26));
-    return t66;
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    h_0opt_2bbbbbdd_release(hero_slot_escape(&h28_own28));
+    return t60;
 }
 
-#line 156 "examples/spreadsheet/sheet.hero"
+#line 118 "examples/spreadsheet/sheet.hero"
 HeroArrayHeader * h_sheet_names(h_sheet_Sheet h0_s) { HeroArrayHeader * h1_known = {0}; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_xs1 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t2, *t3, *t4, *t6, *t10, *t13, *t16, *t21, *t24, *t27, *t51, *t52, *t53, *t54, *t55, *t56, *t57, *t58, *t59, *t60; HERO_NODEBUG int64_t h4_i0, h7_i1, t5, t7, t8, t9, t11, t12, t14, t17, t18, t19, t20, t22, t23, t25, t28, t29, t30, t31, t38, t39, t45, t46, t47, t48, t49, t50; int64_t h5_row; int64_t h8_column; HeroStr h9_name = {0}; HERO_NODEBUG h_0opt_f87774a h10_f0 = {0}, h17_own17 = {0}, t36, t37, t63, t64; HERO_NODEBUG HeroStr h16_own16 = {0}, t33, t35, t43, t61, t62; HERO_NODEBUG HeroMapHeader *t1, *t34; HERO_NODEBUG bool t15, t26, t40, t41; HERO_NODEBUG h_sheet_Cell t32; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_s.f_cells; t2 = hero_map_keys(t1); t52 = h11_own11; h11_own11 = t2; hero_array_decref(t52); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 157, 13}; t3 = hero_array_sort_at(t2, &hero_here); } t53 = h12_own12; h12_own12 = t3; hero_array_decref(t53); t54 = h1_known; hero_array_incref(t3); h1_known = t3; hero_array_decref(t54);
+    t1 = h0_s.f_cells; t2 = hero_map_keys(t1); t52 = h11_own11; h11_own11 = t2; hero_array_decref(t52); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 119, 13}; t3 = hero_array_sort_at(t2, &hero_here); } t53 = h12_own12; h12_own12 = t3; hero_array_decref(t53); t54 = h1_known; hero_array_incref(t3); h1_known = t3; hero_array_decref(t54);
     t4 = hero_array_new(&hero_desc_str, 1); t55 = h13_own13; h13_own13 = t4; hero_array_decref(t55); t56 = h2_out; hero_array_incref(t4); h2_out = t4; hero_array_decref(t56);
-#line 160
-    t5 = INT64_C(1); t6 = h1_known; t7 = h_sheet_highest_row(t6); t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("sheet.hero", "sheet.names", 160, 35); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 160, 16}; t10 = h_library_range(t5, t9, &hero_here); } t57 = h14_own14; h14_own14 = t10; hero_array_decref(t57); t58 = h3_xs0; hero_array_incref(t10); h3_xs0 = t10; hero_array_decref(t58); t11 = INT64_C(0); h4_i0 = t11; goto bb1; bb1: t12 = h4_i0; t13 = h3_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb2; else goto bb4; bb2: t16 = h3_xs0; t17 = h4_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "sheet.hero", "sheet.names", 160, 9) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h5_row = t18;
-    t19 = INT64_C(0); t20 = INT64_C(26); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 161, 23}; t21 = h_library_range(t19, t20, &hero_here); } t59 = h15_own15; h15_own15 = t21; hero_array_decref(t59); t60 = h6_xs1; hero_array_incref(t21); h6_xs1 = t21; hero_array_decref(t60); t22 = INT64_C(0); h7_i1 = t22; goto bb5; bb3:
-#line 160
-    t48 = h4_i0; t49 = INT64_C(1); if (__builtin_add_overflow(t48, t49, &t50)) hero_panic_overflow_at("sheet.hero", "sheet.names", 160, 9); h4_i0 = t50; goto bb1; bb4:
-#line 167
+#line 122
+    t5 = INT64_C(1); t6 = h1_known; t7 = h_sheet_highest_row(t6); t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("sheet.hero", "sheet.names", 122, 35); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 122, 16}; t10 = h_library_range(t5, t9, &hero_here); } t57 = h14_own14; h14_own14 = t10; hero_array_decref(t57); t58 = h3_xs0; hero_array_incref(t10); h3_xs0 = t10; hero_array_decref(t58); t11 = INT64_C(0); h4_i0 = t11; goto bb1; bb1: t12 = h4_i0; t13 = h3_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb2; else goto bb4; bb2: t16 = h3_xs0; t17 = h4_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "sheet.hero", "sheet.names", 122, 9) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h5_row = t18;
+    t19 = INT64_C(0); t20 = INT64_C(26); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 123, 23}; t21 = h_library_range(t19, t20, &hero_here); } t59 = h15_own15; h15_own15 = t21; hero_array_decref(t59); t60 = h6_xs1; hero_array_incref(t21); h6_xs1 = t21; hero_array_decref(t60); t22 = INT64_C(0); h7_i1 = t22; goto bb5; bb3:
+#line 122
+    t48 = h4_i0; t49 = INT64_C(1); if (__builtin_add_overflow(t48, t49, &t50)) hero_panic_overflow_at("sheet.hero", "sheet.names", 122, 9); h4_i0 = t50; goto bb1; bb4:
+#line 129
     t51 = h2_out;
-#line 1257 "main.c"
+#line 1245 "main.c"
     hero_array_incref(t51);
     hero_array_release_at(&h1_known);
     hero_array_release_at(&h2_out);
@@ -1270,29 +1258,29 @@ HeroArrayHeader * h_sheet_names(h_sheet_Sheet h0_s) { HeroArrayHeader * h1_known
     h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
     return t51;
 bb5:
-#line 161 "examples/spreadsheet/sheet.hero"
-    t23 = h7_i1; t24 = h6_xs1; t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len); t26 = t23 < t25; if (t26) goto bb6; else goto bb8; bb6: t27 = h6_xs1; t28 = h7_i1; t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "sheet.hero", "sheet.names", 161, 13) : (void)0), (void)(t27->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t27 + 1))[t28]); h8_column = t29;
+#line 123 "examples/spreadsheet/sheet.hero"
+    t23 = h7_i1; t24 = h6_xs1; t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len); t26 = t23 < t25; if (t26) goto bb6; else goto bb8; bb6: t27 = h6_xs1; t28 = h7_i1; t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "sheet.hero", "sheet.names", 123, 13) : (void)0), (void)(t27->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t27 + 1))[t28]); h8_column = t29;
     t30 = h8_column; t31 = h5_row; t32 = (h_sheet_Cell){.f_column = t30, .f_row = t31}; t33 = h_sheet_name_of(t32); t61 = h16_own16; h16_own16 = t33; hero_str_decref(t61); t62 = h9_name; hero_str_incref(t33); h9_name = t33; hero_str_decref(t62);
-#line 164
-    t34 = h0_s.f_cells; t35 = h9_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 164, 17}; HERO_NODEBUG const void *found = hero_map_find_at(t34, &t35, &hero_here); if (found == NULL) { t36 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t36 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t36.as.ok, found); } } t63 = h17_own17; h17_own17 = t36; h_0opt_f87774a_release(&t63); t64 = h10_f0; h_0opt_f87774a_retain(&t36); h10_f0 = t36; h_0opt_f87774a_release(&t64); t37 = h10_f0; t38 = t37.tag; t39 = INT64_C(1); t40 = t38 == t39; t41 = !t40; if (t41) goto bb10; else goto bb11; bb7:
-#line 161
-    t45 = h7_i1; t46 = INT64_C(1); if (__builtin_add_overflow(t45, t46, &t47)) hero_panic_overflow_at("sheet.hero", "sheet.names", 161, 13); h7_i1 = t47; goto bb5; bb8: goto bb3; bb9: goto bb7; bb10:
-#line 165
+#line 126
+    t34 = h0_s.f_cells; t35 = h9_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"sheet.hero", "sheet.names", 126, 17}; HERO_NODEBUG const void *found = hero_map_find_at(t34, &t35, &hero_here); if (found == NULL) { t36 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t36 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t36.as.ok, found); } } t63 = h17_own17; h17_own17 = t36; h_0opt_f87774a_release(&t63); t64 = h10_f0; h_0opt_f87774a_retain(&t36); h10_f0 = t36; h_0opt_f87774a_release(&t64); t37 = h10_f0; t38 = t37.tag; t39 = INT64_C(1); t40 = t38 == t39; t41 = !t40; if (t41) goto bb10; else goto bb11; bb7:
+#line 123
+    t45 = h7_i1; t46 = INT64_C(1); if (__builtin_add_overflow(t45, t46, &t47)) hero_panic_overflow_at("sheet.hero", "sheet.names", 123, 13); h7_i1 = t47; goto bb5; bb8: goto bb3; bb9: goto bb7; bb10:
+#line 127
     t43 = h9_name; hero_array_push_owned(&h2_out, &t43); goto bb9; bb11: goto bb9;
-#line 1283 "main.c"
+#line 1271 "main.c"
 }
 
-#line 169 "examples/spreadsheet/sheet.hero"
+#line 131 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_highest_row(HeroArrayHeader * h0_known) { int64_t h1_best; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t24; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t14, t17, t18, t19, t20, t21, t22, t23; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_605417d4 h5_s0 = {0}, h7_own7 = {0}, t12, t13, t15, t26, t27; h_sheet_Cell h6_c; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t10, t11, t25; HERO_NODEBUG h_sheet_Cell t16; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_best = t1;
-#line 172
-    t2 = h0_known; t24 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t24); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "sheet.hero", "sheet.highest_row", 172, 9) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); t25 = h4_name; hero_str_incref(t10); h4_name = t10; hero_str_decref(t25);
+#line 134
+    t2 = h0_known; t24 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t24); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "sheet.hero", "sheet.highest_row", 134, 9) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); t25 = h4_name; hero_str_incref(t10); h4_name = t10; hero_str_decref(t25);
     t11 = h4_name; t12 = h_sheet_cell_of(t11); t26 = h7_own7; h7_own7 = t12; h_0opt_605417d4_release(&t26); t27 = h5_s0; h_0opt_605417d4_retain(&t12); h5_s0 = t12; h_0opt_605417d4_release(&t27); t13 = h5_s0; t14 = t13.tag; switch (t14) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb3:
-#line 172
-    t20 = h3_i0; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("sheet.hero", "sheet.highest_row", 172, 9); h3_i0 = t22; goto bb1; bb4:
-#line 177
+#line 134
+    t20 = h3_i0; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("sheet.hero", "sheet.highest_row", 134, 9); h3_i0 = t22; goto bb1; bb4:
+#line 139
     t23 = h1_best;
-#line 1296 "main.c"
+#line 1284 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_name);
     h_0opt_605417d4_release(hero_slot_escape(&h5_s0));
@@ -1301,21 +1289,315 @@ int64_t h_sheet_highest_row(HeroArrayHeader * h0_known) { int64_t h1_best; HERO_
 bb5:
     goto bb3;
 bb6:
-#line 174 "examples/spreadsheet/sheet.hero"
+#line 136 "examples/spreadsheet/sheet.hero"
     t15 = h5_s0; t16 = t15.as.ok; h6_c = t16; t17 = h1_best; t18 = h6_c.f_row; t19 = h_sheet_larger(t17, t18); h1_best = t19; goto bb5; bb7: goto bb3;
-#line 1307 "main.c"
+#line 1295 "main.c"
 }
 
-#line 179 "examples/spreadsheet/sheet.hero"
+#line 141 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_larger(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_a; t2 = h1_b; t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 182
+#line 144
     t5 = h1_b; h2_ret0 = t5; goto bb4; bb2:
-#line 181
+#line 143
     t4 = h0_a; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 1317 "main.c"
+#line 1305 "main.c"
     t6 = h2_ret0;
     return t6;
+}
+
+#line 17 "examples/spreadsheet/core/strings.hero"
+bool h_corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at; HERO_NODEBUG bool h3_ret0, t5, t6, t11, t18, t19, t23, t24; HERO_NODEBUG HeroStr t1, t3, t9, t12, t15; HERO_NODEBUG int64_t t2, t4, t7, t8, t10, t13, t16, t20, t21, t22; HERO_NODEBUG uint8_t t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_prefix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 20
+    t7 = INT64_C(0); h2_at = t7; goto bb4; bb2:
+#line 19
+    t6 = false; h3_ret0 = t6; goto bb10; bb3: goto bb1; bb4:
+#line 22
+    t8 = h2_at; t9 = h1_prefix; t10 = hero_str_len(t9); t11 = t8 < t10; if (t11) goto bb5; else goto bb6; bb5:
+    t12 = h0_s; t13 = h2_at; t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "core/strings.hero", "strings.has_prefix", 23, 12) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); t15 = h1_prefix; t16 = h2_at; t17 = ((void)((t15.ptr == NULL || t16 < 0 || t16 >= t15.len) ? hero_panic_byte_at(t15, t16, "core/strings.hero", "strings.has_prefix", 23, 21) : (void)0), (int64_t)(unsigned char)t15.ptr[t16]); t18 = t14 != t17; if (t18) goto bb8; else goto bb9; bb6:
+#line 27
+    t23 = true; h3_ret0 = t23; goto bb10; bb7:
+#line 25
+    t20 = h2_at; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("core/strings.hero", "strings.has_prefix", 25, 14); h2_at = t22; goto bb4; bb8:
+#line 24
+    t19 = false; h3_ret0 = t19; goto bb10; bb9: goto bb7; bb10:
+#line 1326 "main.c"
+    t24 = h3_ret0;
+    return t24;
+}
+
+#line 30 "examples/spreadsheet/core/strings.hero"
+bool h_corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_offset; int64_t h3_at; HERO_NODEBUG bool h4_ret0, t5, t6, t16, t25, t26, t30, t31; HERO_NODEBUG HeroStr t1, t3, t7, t9, t14, t17, t22; HERO_NODEBUG int64_t t2, t4, t8, t10, t11, t12, t13, t15, t18, t19, t20, t23, t27, t28, t29; HERO_NODEBUG uint8_t t21, t24; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_suffix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 33
+    t7 = h0_s; t8 = hero_str_len(t7); t9 = h1_suffix; t10 = hero_str_len(t9); if (__builtin_sub_overflow(t8, t10, &t11)) hero_panic_overflow_at("core/strings.hero", "strings.has_suffix", 33, 14); h2_offset = t11;
+    t12 = INT64_C(0); h3_at = t12; goto bb4; bb2:
+#line 32
+    t6 = false; h4_ret0 = t6; goto bb10; bb3: goto bb1; bb4:
+#line 36
+    t13 = h3_at; t14 = h1_suffix; t15 = hero_str_len(t14); t16 = t13 < t15; if (t16) goto bb5; else goto bb6; bb5:
+    t17 = h0_s; t18 = h2_offset; t19 = h3_at; if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("core/strings.hero", "strings.has_suffix", 37, 14); t21 = ((void)((t17.ptr == NULL || t20 < 0 || t20 >= t17.len) ? hero_panic_byte_at(t17, t20, "core/strings.hero", "strings.has_suffix", 37, 12) : (void)0), (int64_t)(unsigned char)t17.ptr[t20]); t22 = h1_suffix; t23 = h3_at; t24 = ((void)((t22.ptr == NULL || t23 < 0 || t23 >= t22.len) ? hero_panic_byte_at(t22, t23, "core/strings.hero", "strings.has_suffix", 37, 30) : (void)0), (int64_t)(unsigned char)t22.ptr[t23]); t25 = t21 != t24; if (t25) goto bb8; else goto bb9; bb6:
+#line 41
+    t30 = true; h4_ret0 = t30; goto bb10; bb7:
+#line 39
+    t27 = h3_at; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("core/strings.hero", "strings.has_suffix", 39, 14); h3_at = t29; goto bb4; bb8:
+#line 38
+    t26 = false; h4_ret0 = t26; goto bb10; bb9: goto bb7; bb10:
+#line 1348 "main.c"
+    t31 = h4_ret0;
+    return t31;
+}
+
+#line 44 "examples/spreadsheet/core/strings.hero"
+bool h_corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = h1_substr; t3 = h_corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
+#line 1356 "main.c"
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return t8;
+}
+
+#line 50 "examples/spreadsheet/core/strings.hero"
+HeroStr h_corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_width; int64_t h3_to; int64_t h4_width; HERO_NODEBUG HeroStr h5_own5 = {0}, t3, t6, t15, t20, t29, t32, t33; HERO_NODEBUG int64_t t1, t2, t4, t7, t8, t9, t10, t12, t13, t14, t16, t17, t18, t21, t22, t23, t24, t26, t27, t28, t30, t31; HERO_NODEBUG bool t5, t11, t19, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_from = t1; goto bb1; bb1:
+#line 53
+    t2 = h1_from; t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h0_s; t7 = h1_from; t8 = h_corestringsinternalscan_space_width_at(t6, t7); h2_width = t8;
+#line 56
+    t9 = h2_width; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb3:
+#line 60
+    t15 = h0_s; t16 = hero_str_len(t15); h3_to = t16; goto bb7; bb4:
+#line 58
+    t12 = h1_from; t13 = h2_width; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("core/strings.hero", "strings.trim_space", 58, 16); h1_from = t14; goto bb1; bb5: goto bb3; bb6: goto bb4; bb7:
+#line 62
+    t17 = h3_to; t18 = h1_from; t19 = t17 > t18; if (t19) goto bb8; else goto bb9; bb8:
+    t20 = h0_s; t21 = h3_to; t22 = h_corestringsinternalscan_space_width_before(t20, t21); h4_width = t22;
+#line 65
+    t23 = h4_width; t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb9:
+#line 69
+    t29 = h0_s; t30 = h1_from; t31 = h3_to; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.trim_space", 69, 12}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t33 = h5_own5; h5_own5 = t32; hero_str_decref(t33);
+#line 1381 "main.c"
+    hero_str_incref(t32);
+    hero_str_release_at(&h5_own5);
+    return t32;
+bb10:
+#line 67 "examples/spreadsheet/core/strings.hero"
+    t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("core/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
+#line 1388 "main.c"
+}
+
+#line 74 "examples/spreadsheet/core/strings.hero"
+HeroArrayHeader * h_corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; bool h3_inside; int64_t h4_at; int64_t h5_width; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t41, *t42, *t43; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t6, t9, t17, t20, t35, t37, t39, t44, t45; HERO_NODEBUG int64_t t2, t4, t5, t7, t10, t11, t12, t13, t18, t19, t23, t24, t25, t28, t30, t31, t32, t36, t38; HERO_NODEBUG bool t3, t8, t14, t15, t22, t26, t27, t29, t33; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t42 = h6_own6; h6_own6 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
+    t2 = INT64_C(0); h2_start = t2;
+    t3 = false; h3_inside = t3;
+    t4 = INT64_C(0); h4_at = t4; goto bb1; bb1:
+#line 80
+    t5 = h4_at; t6 = h0_s; t7 = hero_str_len(t6); t8 = t5 < t7; if (t8) goto bb2; else goto bb3; bb2:
+    t9 = h0_s; t10 = h4_at; t11 = h_corestringsinternalscan_space_width_at(t9, t10); h5_width = t11;
+#line 83
+    t12 = h5_width; t13 = INT64_C(0); t14 = t12 > t13; if (t14) goto bb5; else goto bb6; bb3:
+#line 94
+    t33 = h3_inside; if (t33) goto bb14; else goto bb15; bb4: goto bb1; bb5:
+#line 84
+    t15 = h3_inside; if (t15) goto bb8; else goto bb9; bb6:
+#line 89
+    t26 = h3_inside; t27 = !t26; if (t27) goto bb11; else goto bb12; bb7:
+#line 87
+    t23 = h4_at; t24 = h5_width; if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow_at("core/strings.hero", "strings.fields", 87, 18); h4_at = t25; goto bb4; bb8:
+#line 85
+    t17 = h0_s; t18 = h2_start; t19 = h4_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.fields", 85, 32}; t20 = hero_str_slice_at(t17, t18, t19, &hero_here); } t44 = h7_own7; h7_own7 = t20; hero_str_decref(t44); hero_array_push_owned(&h1_out, &t20);
+    t22 = false; h3_inside = t22; goto bb7; bb9: goto bb7; bb10:
+#line 92
+    t30 = h4_at; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("core/strings.hero", "strings.fields", 92, 18); h4_at = t32; goto bb4; bb11:
+#line 90
+    t28 = h4_at; h2_start = t28;
+    t29 = true; h3_inside = t29; goto bb10; bb12: goto bb10; bb13:
+#line 96
+    t41 = h1_out;
+#line 1420 "main.c"
+    hero_array_incref(t41);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    return t41;
+bb14:
+#line 95 "examples/spreadsheet/core/strings.hero"
+    t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
+#line 1430 "main.c"
+}
+
+#line 101 "examples/spreadsheet/core/strings.hero"
+HeroArrayHeader * h_corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; int64_t h4_end; HERO_NODEBUG bool h5_b0, t7, t12, t16, t23, t24, t43; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t51, *t52, *t53; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t5, t8, t17, t29, t32, t41, t45, t47, t49, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t9, t13, t14, t15, t18, t19, t20, t25, t26, t27, t30, t31, t34, t35, t36, t37, t38, t39, t40, t42, t46, t48; HERO_NODEBUG uint8_t t10, t11, t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t52 = h6_own6; h6_own6 = t1; hero_array_decref(t52); t53 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t53);
+    t2 = INT64_C(0); h2_start = t2;
+    t3 = INT64_C(0); h3_at = t3; goto bb1; bb1:
+#line 106
+    t4 = h3_at; t5 = h0_s; t6 = hero_str_len(t5); t7 = t4 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h0_s; t9 = h3_at; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "core/strings.hero", "strings.split_lines", 107, 12) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); t11 = UINT64_C(10); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb3:
+#line 116
+    t40 = h2_start; t41 = h0_s; t42 = hero_str_len(t41); t43 = t40 < t42; if (t43) goto bb13; else goto bb14; bb4:
+#line 114
+    t37 = h3_at; t38 = INT64_C(1); if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow_at("core/strings.hero", "strings.split_lines", 114, 14); h3_at = t39; goto bb1; bb5:
+#line 108
+    t13 = h3_at; h4_end = t13;
+#line 110
+    t14 = h4_end; t15 = h2_start; t16 = t14 > t15; h5_b0 = t16; if (t16) goto bb8; else goto bb9; bb6: goto bb4; bb7:
+#line 112
+    t29 = h0_s; t30 = h2_start; t31 = h4_end; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.split_lines", 112, 28}; t32 = hero_str_slice_at(t29, t30, t31, &hero_here); } t54 = h7_own7; h7_own7 = t32; hero_str_decref(t54); hero_array_push_owned(&h1_out, &t32);
+    t34 = h3_at; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("core/strings.hero", "strings.split_lines", 113, 21); h2_start = t36; goto bb4; bb8:
+#line 110
+    t17 = h0_s; t18 = h4_end; t19 = INT64_C(1); if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow_at("core/strings.hero", "strings.split_lines", 110, 33); t21 = ((void)((t17.ptr == NULL || t20 < 0 || t20 >= t17.len) ? hero_panic_byte_at(t17, t20, "core/strings.hero", "strings.split_lines", 110, 31) : (void)0), (int64_t)(unsigned char)t17.ptr[t20]); t22 = UINT64_C(13); t23 = t21 == t22; h5_b0 = t23; goto bb9; bb9: t24 = h5_b0; if (t24) goto bb10; else goto bb11; bb10:
+    t25 = h4_end; t26 = INT64_C(1); if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow_at("core/strings.hero", "strings.split_lines", 111, 23); h4_end = t27; goto bb7; bb11: goto bb7; bb12:
+#line 118
+    t51 = h1_out;
+#line 1457 "main.c"
+    hero_array_incref(t51);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    return t51;
+bb13:
+#line 117 "examples/spreadsheet/core/strings.hero"
+    t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
+#line 1467 "main.c"
+}
+
+#line 124 "examples/spreadsheet/core/strings.hero"
+h_0opt_6524ffa0 h_corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t11, t30, t31; int64_t h3_at; HeroStr h4_before = {0}; HeroStr h5_after = {0}; HERO_NODEBUG h_0opt_6524ffa0 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t10, t28, t29, t37, t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t2, t13, t16, t17, t19, t22, t24, t25, t26, t32, t33, t34, t35; HERO_NODEBUG h_corestrings_Halves h10_own10 = {0}, t27, t36; HERO_NODEBUG int64_t t5, t6, t12, t14, t15, t18, t20, t21, t23; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = h1_sep; t3 = h_corestringsinternalscan_first_at(t1, t2); t30 = h7_own7; h7_own7 = t3; h_0opt_e201354_release(&t30); t31 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t31); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_at = t12;
+    t13 = h0_s; t14 = INT64_C(0); t15 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.split_once", 126, 14}; t16 = hero_str_slice_at(t13, t14, t15, &hero_here); } t32 = h8_own8; h8_own8 = t16; hero_str_decref(t32); t33 = h4_before; hero_str_incref(t16); h4_before = t16; hero_str_decref(t33);
+    t17 = h0_s; t18 = h3_at; t19 = h1_sep; t20 = hero_str_len(t19); if (__builtin_add_overflow(t18, t20, &t21)) hero_panic_overflow_at("core/strings.hero", "strings.split_once", 127, 27); t22 = h0_s; t23 = hero_str_len(t22); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"core/strings.hero", "strings.split_once", 127, 13}; t24 = hero_str_slice_at(t17, t21, t23, &hero_here); } t34 = h9_own9; h9_own9 = t24; hero_str_decref(t34); t35 = h5_after; hero_str_incref(t24); h5_after = t24; hero_str_decref(t35);
+    t25 = h4_before; t26 = h5_after; hero_str_incref(t25); hero_str_incref(t26); t27 = (h_corestrings_Halves){.f_before = t25, .f_after = t26}; t36 = h10_own10; h10_own10 = t27; h_corestrings_0Halves_release(&t36); h_corestrings_0Halves_retain(&t27); t28 = (h_0opt_6524ffa0){.tag = INT64_C(0), .as.ok = t27}; t37 = h11_own11; h11_own11 = t28; h_0opt_6524ffa0_release(&t37); h6_ret0 = t28; goto bb3; bb2:
+#line 125
+    t8 = h2_f0; t9 = t8.as.err; hero_failure_retain(&t9); t10 = (h_0opt_6524ffa0){.tag = INT64_C(1), .as.err = t9}; t38 = h12_own12; h12_own12 = t10; h_0opt_6524ffa0_release(&t38); h6_ret0 = t10; goto bb3; bb3:
+#line 1478 "main.c"
+    t29 = h6_ret0;
+    h_0opt_6524ffa0_retain(&t29);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    hero_str_release_at(&h4_before);
+    hero_str_release_at(&h5_after);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    h_corestrings_0Halves_release(hero_slot_escape(&h10_own10));
+    h_0opt_6524ffa0_release(hero_slot_escape(&h11_own11));
+    h_0opt_6524ffa0_release(hero_slot_escape(&h12_own12));
+    return t29;
+}
+
+#line 17 "examples/spreadsheet/core/strings/internal/scan.hero"
+int64_t h_corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) { uint8_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, h10_b5, h11_b6, h12_b7, h13_b8, h14_b9, h15_b10, h16_b11, h17_b12, h18_b13, h19_b14, t6, t9, t12, t13, t14, t18, t24, t31, t38, t39, t40, t48, t62, t65, t66, t69, t70, t74, t77, t78, t81, t84, t85, t88, t89, t92, t93, t94, t98, t101, t102, t105, t106, t110, t113, t114, t117, t118; uint8_t h7_second; uint8_t h8_third; HERO_NODEBUG int64_t h20_ret0, t2, t15, t19, t20, t21, t23, t26, t27, t28, t33, t34, t35, t41, t42, t43, t44, t45, t47, t49, t51, t52, t53, t56, t57, t58, t71, t95, t107, t119, t120, t121; HERO_NODEBUG HeroStr t1, t22, t25, t32, t46, t50, t55; HERO_NODEBUG uint8_t t3, t4, t5, t7, t8, t10, t11, t16, t17, t29, t30, t36, t37, t54, t59, t60, t61, t63, t64, t67, t68, t72, t73, t75, t76, t79, t80, t82, t83, t86, t87, t90, t91, t96, t97, t99, t100, t103, t104, t108, t109, t111, t112, t115, t116; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = h1_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "core/strings/internal/scan.hero", "scan.space_width_at", 18, 13) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); h2_first = t3;
+#line 20
+    t4 = h2_first; t5 = UINT64_C(32); t6 = t4 == t5; h3_b0 = t6; if (t6) goto bb3; else goto bb2; bb1:
+#line 23
+    t16 = h2_first; t17 = UINT64_C(194); t18 = t16 == t17; if (t18) goto bb9; else goto bb10; bb2:
+#line 20
+    t7 = h2_first; t8 = UINT64_C(9); t9 = t7 >= t8; h4_b1 = t9; if (t9) goto bb4; else goto bb5; bb3: t14 = h3_b0; if (t14) goto bb6; else goto bb7; bb4: t10 = h2_first; t11 = UINT64_C(13); t12 = t10 <= t11; h4_b1 = t12; goto bb5; bb5: t13 = h4_b1; h3_b0 = t13; goto bb3; bb6:
+    t15 = INT64_C(1); h20_ret0 = t15; goto bb55; bb7: goto bb1; bb8:
+#line 28
+    t43 = h1_at; t44 = INT64_C(2); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_at", 28, 8); t46 = h0_s; t47 = hero_str_len(t46); t48 = t45 >= t47; if (t48) goto bb19; else goto bb20; bb9:
+#line 24
+    t19 = h1_at; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_at", 24, 12); t22 = h0_s; t23 = hero_str_len(t22); t24 = t21 < t23; h5_b2 = t24; if (t24) goto bb12; else goto bb13; bb10: goto bb8; bb11:
+#line 26
+    t42 = INT64_C(0); h20_ret0 = t42; goto bb55; bb12:
+#line 24
+    t25 = h0_s; t26 = h1_at; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_at", 24, 35); t29 = ((void)((t25.ptr == NULL || t28 < 0 || t28 >= t25.len) ? hero_panic_byte_at(t25, t28, "core/strings/internal/scan.hero", "scan.space_width_at", 24, 33) : (void)0), (int64_t)(unsigned char)t25.ptr[t28]); t30 = UINT64_C(133); t31 = t29 == t30; h6_b3 = t31; if (t31) goto bb15; else goto bb14; bb13: t40 = h5_b2; if (t40) goto bb16; else goto bb17; bb14: t32 = h0_s; t33 = h1_at; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_at", 24, 56); t36 = ((void)((t32.ptr == NULL || t35 < 0 || t35 >= t32.len) ? hero_panic_byte_at(t32, t35, "core/strings/internal/scan.hero", "scan.space_width_at", 24, 54) : (void)0), (int64_t)(unsigned char)t32.ptr[t35]); t37 = UINT64_C(160); t38 = t36 == t37; h6_b3 = t38; goto bb15; bb15: t39 = h6_b3; h5_b2 = t39; goto bb13; bb16:
+    t41 = INT64_C(2); h20_ret0 = t41; goto bb55; bb17: goto bb11; bb18:
+#line 30
+    t50 = h0_s; t51 = h1_at; t52 = INT64_C(1); if (__builtin_add_overflow(t51, t52, &t53)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_at", 30, 16); t54 = ((void)((t50.ptr == NULL || t53 < 0 || t53 >= t50.len) ? hero_panic_byte_at(t50, t53, "core/strings/internal/scan.hero", "scan.space_width_at", 30, 14) : (void)0), (int64_t)(unsigned char)t50.ptr[t53]); h7_second = t54;
+    t55 = h0_s; t56 = h1_at; t57 = INT64_C(2); if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_at", 31, 15); t59 = ((void)((t55.ptr == NULL || t58 < 0 || t58 >= t55.len) ? hero_panic_byte_at(t55, t58, "core/strings/internal/scan.hero", "scan.space_width_at", 31, 13) : (void)0), (int64_t)(unsigned char)t55.ptr[t58]); h8_third = t59;
+#line 33
+    t60 = h2_first; t61 = UINT64_C(225); t62 = t60 == t61; h10_b5 = t62; if (t62) goto bb22; else goto bb23; bb19:
+#line 29
+    t49 = INT64_C(0); h20_ret0 = t49; goto bb55; bb20: goto bb18; bb21:
+#line 36
+    t72 = h2_first; t73 = UINT64_C(226); t74 = t72 == t73; h12_b7 = t74; if (t74) goto bb29; else goto bb30; bb22:
+#line 33
+    t63 = h7_second; t64 = UINT64_C(154); t65 = t63 == t64; h10_b5 = t65; goto bb23; bb23: t66 = h10_b5; h9_b4 = t66; if (t66) goto bb24; else goto bb25; bb24: t67 = h8_third; t68 = UINT64_C(128); t69 = t67 == t68; h9_b4 = t69; goto bb25; bb25: t70 = h9_b4; if (t70) goto bb26; else goto bb27; bb26:
+    t71 = INT64_C(3); h20_ret0 = t71; goto bb55; bb27: goto bb21; bb28:
+#line 39
+    t96 = h2_first; t97 = UINT64_C(226); t98 = t96 == t97; h17_b12 = t98; if (t98) goto bb42; else goto bb43; bb29:
+#line 36
+    t75 = h7_second; t76 = UINT64_C(128); t77 = t75 == t76; h12_b7 = t77; goto bb30; bb30: t78 = h12_b7; h11_b6 = t78; if (t78) goto bb31; else goto bb32; bb31: t79 = h8_third; t80 = UINT64_C(138); t81 = t79 <= t80; h15_b10 = t81; if (t81) goto bb34; else goto bb33; bb32: t94 = h11_b6; if (t94) goto bb39; else goto bb40; bb33: t82 = h8_third; t83 = UINT64_C(168); t84 = t82 == t83; h15_b10 = t84; goto bb34; bb34: t85 = h15_b10; h14_b9 = t85; if (t85) goto bb36; else goto bb35; bb35: t86 = h8_third; t87 = UINT64_C(169); t88 = t86 == t87; h14_b9 = t88; goto bb36; bb36: t89 = h14_b9; h13_b8 = t89; if (t89) goto bb38; else goto bb37; bb37: t90 = h8_third; t91 = UINT64_C(175); t92 = t90 == t91; h13_b8 = t92; goto bb38; bb38: t93 = h13_b8; h11_b6 = t93; goto bb32; bb39:
+    t95 = INT64_C(3); h20_ret0 = t95; goto bb55; bb40: goto bb28; bb41:
+#line 42
+    t108 = h2_first; t109 = UINT64_C(227); t110 = t108 == t109; h19_b14 = t110; if (t110) goto bb49; else goto bb50; bb42:
+#line 39
+    t99 = h7_second; t100 = UINT64_C(129); t101 = t99 == t100; h17_b12 = t101; goto bb43; bb43: t102 = h17_b12; h16_b11 = t102; if (t102) goto bb44; else goto bb45; bb44: t103 = h8_third; t104 = UINT64_C(159); t105 = t103 == t104; h16_b11 = t105; goto bb45; bb45: t106 = h16_b11; if (t106) goto bb46; else goto bb47; bb46:
+    t107 = INT64_C(3); h20_ret0 = t107; goto bb55; bb47: goto bb41; bb48:
+#line 44
+    t120 = INT64_C(0); h20_ret0 = t120; goto bb55; bb49:
+#line 42
+    t111 = h7_second; t112 = UINT64_C(128); t113 = t111 == t112; h19_b14 = t113; goto bb50; bb50: t114 = h19_b14; h18_b13 = t114; if (t114) goto bb51; else goto bb52; bb51: t115 = h8_third; t116 = UINT64_C(128); t117 = t115 == t116; h18_b13 = t117; goto bb52; bb52: t118 = h18_b13; if (t118) goto bb53; else goto bb54; bb53:
+    t119 = INT64_C(3); h20_ret0 = t119; goto bb55; bb54: goto bb48; bb55:
+#line 1539 "main.c"
+    t121 = h20_ret0;
+    return t121;
+}
+
+#line 48 "examples/spreadsheet/core/strings/internal/scan.hero"
+int64_t h_corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t4, *t7, *t10, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_ret0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t14, t15, t16, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30, t31; int64_t h4_width; HERO_NODEBUG bool h5_b0, t9, t17, t24, t25; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t32 = h7_own7; h7_own7 = t4; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t33); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "core/strings/internal/scan.hero", "scan.space_width_before", 49, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_width = t12;
+    t13 = h1_end; t14 = h4_width; if (__builtin_sub_overflow(t13, t14, &t15)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_before", 50, 12); t16 = INT64_C(0); t17 = t15 >= t16; h5_b0 = t17; if (t17) goto bb6; else goto bb7; bb3:
+#line 49
+    t27 = h3_i0; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_before", 49, 9); h3_i0 = t29; goto bb1; bb4:
+#line 53
+    t30 = INT64_C(0); h6_ret0 = t30; goto bb10; bb5: goto bb3; bb6:
+#line 50
+    t18 = h0_s; t19 = h1_end; t20 = h4_width; if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.space_width_before", 50, 50); t22 = h_corestringsinternalscan_space_width_at(t18, t21); t23 = h4_width; t24 = t22 == t23; h5_b0 = t24; goto bb7; bb7: t25 = h5_b0; if (t25) goto bb8; else goto bb9; bb8:
+    t26 = h4_width; h6_ret0 = t26; goto bb10; bb9: goto bb5; bb10:
+#line 1555 "main.c"
+    t31 = h6_ret0;
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h7_own7);
+    return t31;
+}
+
+#line 57 "examples/spreadsheet/core/strings/internal/scan.hero"
+h_0opt_e201354 h_corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep) { int64_t h2_last; int64_t h3_at; int64_t h4_matched; HERO_NODEBUG bool h5_b0, t9, t14, t23, t24, t31, t40; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h18_own18 = {0}, t33, t53, t64, t65, t66, t71, t77; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t1, t3, t12, t15, t20, t29, t37, t41, t42, t43, t45, t46, t47, t48, t49, t50, t51, t52, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t67, t68, t69, t70, t72, t73, t74, t75, t76; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t11, t13, t16, t17, t18, t21, t25, t26, t27, t28, t30, t32, t34, t35, t36, t38, t39, t44; HERO_NODEBUG uint8_t t19, t22; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = hero_str_len(t1); t3 = h1_sep; t4 = hero_str_len(t3); if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.first_at", 58, 12); h2_last = t5;
+    t6 = INT64_C(0); h3_at = t6; goto bb1; bb1:
+#line 61
+    t7 = h3_at; t8 = h2_last; t9 = t7 <= t8; if (t9) goto bb2; else goto bb3; bb2:
+    t10 = INT64_C(0); h4_matched = t10; goto bb4; bb3:
+#line 71
+    t37 = h0_s; t38 = hero_str_len(t37); t39 = INT64_C(40); t40 = t38 > t39; if (t40) goto bb13; else goto bb14; bb4:
+#line 64
+    t11 = h4_matched; t12 = h1_sep; t13 = hero_str_len(t12); t14 = t11 < t13; h5_b0 = t14; if (t14) goto bb7; else goto bb8; bb5:
+    t25 = h4_matched; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.first_at", 65, 23); h4_matched = t27; goto bb4; bb6:
+#line 67
+    t28 = h4_matched; t29 = h1_sep; t30 = hero_str_len(t29); t31 = t28 == t30; if (t31) goto bb10; else goto bb11; bb7:
+#line 64
+    t15 = h0_s; t16 = h3_at; t17 = h4_matched; if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.first_at", 64, 40); t19 = ((void)((t15.ptr == NULL || t18 < 0 || t18 >= t15.len) ? hero_panic_byte_at(t15, t18, "core/strings/internal/scan.hero", "scan.first_at", 64, 38) : (void)0), (int64_t)(unsigned char)t15.ptr[t18]); t20 = h1_sep; t21 = h4_matched; t22 = ((void)((t20.ptr == NULL || t21 < 0 || t21 >= t20.len) ? hero_panic_byte_at(t20, t21, "core/strings/internal/scan.hero", "scan.first_at", 64, 57) : (void)0), (int64_t)(unsigned char)t20.ptr[t21]); t23 = t19 == t22; h5_b0 = t23; goto bb8; bb8: t24 = h5_b0; if (t24) goto bb5; else goto bb6; bb9:
+#line 69
+    t34 = h3_at; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("core/strings/internal/scan.hero", "scan.first_at", 69, 14); h3_at = t36; goto bb1; bb10:
+#line 68
+    t32 = h3_at; t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t32}; t66 = h7_own7; h7_own7 = t33; h_0opt_e201354_release(&t66); h6_ret0 = t33; goto bb15; bb11: goto bb9; bb12:
+#line 73
+    t54 = HERO_STR_LIT(hero_str_59e06249); t55 = h1_sep; t56 = h0_s; t57 = HERO_STR_LIT(hero_str_eda7a03); t58 = HERO_STR_LIT(hero_str_277784c0); t59 = HERO_STR_LIT(hero_str_22); t60 = hero_str_concat(t57, t55); t67 = h8_own8; h8_own8 = t60; hero_str_decref(t67); t61 = hero_str_concat(t60, t58); t68 = h9_own9; h9_own9 = t61; hero_str_decref(t68); t62 = hero_str_concat(t61, t56); t69 = h10_own10; h10_own10 = t62; hero_str_decref(t69); t63 = hero_str_concat(t62, t59); t70 = h11_own11; h11_own11 = t63; hero_str_decref(t70); hero_str_incref(t54); hero_str_incref(t63); t64 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t63}}; t71 = h12_own12; h12_own12 = t64; h_0opt_e201354_release(&t71); h6_ret0 = t64; goto bb15; bb13:
+#line 72
+    t41 = HERO_STR_LIT(hero_str_59e06249); t42 = h1_sep; t43 = h0_s; t44 = hero_str_len(t43); t45 = HERO_STR_LIT(hero_str_eda7a03); t46 = HERO_STR_LIT(hero_str_2cee3aa3); t47 = hero_int_to_str(t44); t72 = h13_own13; h13_own13 = t47; hero_str_decref(t72); t48 = HERO_STR_LIT(hero_str_391e7e27); t49 = hero_str_concat(t45, t42); t73 = h14_own14; h14_own14 = t49; hero_str_decref(t73); t50 = hero_str_concat(t49, t46); t74 = h15_own15; h15_own15 = t50; hero_str_decref(t74); t51 = hero_str_concat(t50, t47); t75 = h16_own16; h16_own16 = t51; hero_str_decref(t75); t52 = hero_str_concat(t51, t48); t76 = h17_own17; h17_own17 = t52; hero_str_decref(t76); hero_str_incref(t41); hero_str_incref(t52); t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t41, .msg = t52}}; t77 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t77); h6_ret0 = t53; goto bb15; bb14: goto bb12; bb15:
+#line 1586 "main.c"
+    t65 = h6_ret0;
+    h_0opt_e201354_retain(&t65);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    return t65;
 }
 
 #line 26 "<heroes library>"
@@ -1326,7 +1608,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 1330 "main.c"
+#line 1612 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -1339,27 +1621,27 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 1343 "main.c"
+#line 1625 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 1348 "main.c"
+#line 1630 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 1353 "main.c"
+#line 1635 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 1358 "main.c"
+#line 1640 "main.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 1363 "main.c"
+#line 1645 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -1379,7 +1661,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 1383 "main.c"
+#line 1665 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -1421,7 +1703,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
 #line 181
     t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 1425 "main.c"
+#line 1707 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1453,7 +1735,7 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
 #line 207
     t47 = h0_out;
-#line 1457 "main.c"
+#line 1739 "main.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -1478,13 +1760,13 @@ bb4:
     t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
 #line 203
     t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 1482 "main.c"
+#line 1764 "main.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 bb9:
 #line 205 "<heroes library>"
     t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 1488 "main.c"
+#line 1770 "main.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -1498,7 +1780,7 @@ void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBU
     t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
 #line 235
     t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 1502 "main.c"
+#line 1784 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
@@ -1510,7 +1792,7 @@ bb2:
     t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
     t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
     t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 1514 "main.c"
+#line 1796 "main.c"
     hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
@@ -1571,6 +1853,30 @@ HERO_TU_LOCAL uint64_t h_sheet_0Sheet_hash(const void *elem) {
     const h_sheet_Sheet *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_map)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_corestrings_0Halves_retain(const h_corestrings_Halves *v) {
+    hero_str_incref(v->f_before);
+    hero_str_incref(v->f_after);
+}
+
+HERO_TU_LOCAL void h_corestrings_0Halves_release(h_corestrings_Halves *v) {
+    hero_str_decref(v->f_before);
+    hero_str_decref(v->f_after);
+}
+
+HERO_TU_LOCAL bool h_corestrings_0Halves_eq(const h_corestrings_Halves *a, const h_corestrings_Halves *b) {
+    if (!(hero_str_eq(a->f_before, b->f_before))) return false;
+    if (!(hero_str_eq(a->f_after, b->f_after))) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_corestrings_0Halves_hash(const void *elem) {
+    const h_corestrings_Halves *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_before)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_str)->hash(&v->f_after)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -1766,6 +2072,38 @@ HERO_TU_LOCAL uint64_t h_0opt_605417d4_hash(const void *elem) {
     return (h ^ (&h_sheet_0Cell_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
+HERO_TU_LOCAL void h_0opt_6524ffa0_retain(const h_0opt_6524ffa0 *v) {
+    if (v->tag == INT64_C(0)) {
+        h_corestrings_0Halves_retain(&v->as.ok);
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_6524ffa0_release(h_0opt_6524ffa0 *v) {
+    if (v->tag == INT64_C(0)) {
+        h_corestrings_0Halves_release(&v->as.ok);
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_6524ffa0_eq(const h_0opt_6524ffa0 *a, const h_0opt_6524ffa0 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&h_corestrings_0Halves_desc)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_6524ffa0_hash(const void *elem) {
+    const h_0opt_6524ffa0 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&h_corestrings_0Halves_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
@@ -1799,9 +2137,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("76cc0f4144026fcb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("790461563f509193", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
+    hero_stack_spell("corestrings\tstrings\ncorestringsinternalscan\tscan\n");
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

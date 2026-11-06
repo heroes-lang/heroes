@@ -10,7 +10,7 @@ use module_docs
 use module_text
 use strings
 
-# The canonical tree, whose files every copy repeats (the conventions' § 1.4).
+# The canonical tree, whose files every copy repeats (`examples/packages/README.md` § 1.4).
 constant CANONICAL: str
     "examples/packages/core"
 
@@ -64,7 +64,7 @@ function copy_said(copy: str, original: str?, at: str) -> str
 # The `use` lines of a module that name a package's private module from outside
 # that package. `use core/<pkg>/internal/<rest>` stands only in the package's
 # face, `core/<pkg>.hero`, and in the modules under `core/<pkg>/`: Go's rule for
-# `internal`, the conventions' § 1.3. `importer` is the module's path under its
+# `internal`, `examples/packages/README.md` § 1.3. `importer` is the module's path under its
 # tree's `core/`, or "" for a module in no tree, a program's own, which may name
 # none.
 function misplaced_uses(importer: str, text: str) -> [str]
@@ -111,7 +111,7 @@ function inside(importer: str, owner: str) -> bool
 
 # The parts of a path under a `core/` that are not lower case: each directory
 # `[a-z][a-z0-9_]*`, and the file's name the same before its one extension,
-# `[a-z0-9]+` (the conventions' § 1.5). On a volume that folds case, two
+# `[a-z0-9]+` (`examples/packages/README.md` § 1.5). On a volume that folds case, two
 # spellings are one file, and a module named in a capital compiles there and
 # nowhere else.
 function crooked_parts(rel: str) -> [str]
@@ -190,7 +190,7 @@ function folded(text: str) -> str
     return bytes.validated_bytes().must()
 
 # The records and variants not named in PascalCase, `[A-Z][A-Za-z0-9]*`, and the
-# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (the conventions' § 2.5):
+# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`examples/packages/README.md` § 2.5):
 # a declaration in column 0, or a member of an `extern` group indented under
 # one, since no statement opens with these words.
 function misnamed(text: str) -> [str]
@@ -233,7 +233,7 @@ function screaming(name: str) -> bool
     return true
 
 # The codes a module's `fail` calls write that are not snake_case,
-# `[a-z][a-z0-9_]*` (spec § 6, the conventions' § 3.2), tests included: each
+# `[a-z][a-z0-9_]*` (spec § 6, `examples/packages/README.md` § 3.2), tests included: each
 # literal, and each `str` constant of the module a code is written through (the
 # conventions' § 3.3), read for its value.
 function crooked_codes(text: str) -> [str]
