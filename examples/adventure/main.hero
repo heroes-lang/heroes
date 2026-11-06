@@ -19,6 +19,7 @@
 # a game a corpus program at all. `game.play_all` is the same call the tests
 # make, so what is tested is what runs.
 
+use core/strings
 use game
 use world
 
@@ -55,44 +56,13 @@ function ending_of(g: game.Game) -> str
 function commands(script: str) -> [str]
     out: [str] @= []
 
-    for line in split_lines(script)
-        head = trimmed(line)
+    for line in strings.split_lines(script)
+        head = strings.trim_space(line)
 
         if head == "" || head[0] == '#'
             continue
         out @ out.push(head)
 
-    return out
-
-function is_space(c: u8) -> bool
-    return c == ' ' || c == '\t' || c == 13
-
-function trimmed(line: str) -> str
-    from: i64 @= 0
-
-    while from < line.len() && is_space(line[from])
-        from @ from + 1
-
-    to: i64 @= line.len()
-
-    while to > from && is_space(line[to - 1])
-        to @ to - 1
-
-    return line.slice(from: from, to: to)
-
-function split_lines(text: str) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '\n'
-            out @ out.push(text.slice(from: start, to: i))
-            start @ i + 1
-        i @ i + 1
-
-    if start < text.len()
-        out @ out.push(text.slice(from: start, to: text.len()))
     return out
 
 test "the walkthrough on disk wins the game"

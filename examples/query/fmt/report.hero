@@ -15,6 +15,7 @@
 # somebody typed would need `chars()` and a different function, which is
 # `examples/widths/`'s subject and not this one.
 
+use core/strings
 use data/row
 use query/plan
 
@@ -183,7 +184,7 @@ test "the table's first line is its headings and it has one line per row"
     rows = row.generated(3)
     columns: [plan.Column] = [.id, .team, .score]
     text = table(columns, rows)
-    lines = split_lines(text)
+    lines = strings.split_lines(text)
     assert lines.len() == 4
     assert lines[0].slice(from: 0, to: 2) == "id"
 
@@ -201,31 +202,5 @@ test "a group line carries its key and its four numbers"
     s = plan.Summary(rows: 3, total: 30, best: 20, rate_sum: 6.0)
     line = group_line(plan.Group(team: "argo", active: true), s)
     assert line.slice(from: 0, to: 4) == "argo"
-    assert holds(text: line, needle: "2.00")
-    assert holds(text: group_line(plan.Group(team: "argo", active: false), s), needle: "idle")
-
-function split_lines(text: str) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-    at: i64 @= 0
-
-    while at < text.len()
-        if text[at] == '\n'
-            out @ out.push(text.slice(from: start, to: at))
-            start @ at + 1
-        at @ at + 1
-
-    out @ out.push(text.slice(from: start, to: text.len()))
-    return out
-
-function holds(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
+    assert strings.contains(s: line, substr: "2.00")
+    assert strings.contains(s: group_line(plan.Group(team: "argo", active: false), s), substr: "idle")

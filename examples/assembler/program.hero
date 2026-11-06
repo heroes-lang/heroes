@@ -21,6 +21,8 @@
 # A line is `[label:] [mnemonic [operand, operand]] [; comment]`, and any part
 # may be missing.
 
+use core/strings
+
 ## Error codes
 #
 # One `constant` per code, so a typo is `error[unknown_name]` here rather
@@ -70,47 +72,6 @@ record Line
 
 ## Text
 
-function is_space(c: u8) -> bool
-    return c == ' ' || c == '\t' || c == 13
-
-function trimmed(line: str) -> str
-    from: i64 @= 0
-
-    while from < line.len() && is_space(line[from])
-        from @ from + 1
-
-    to: i64 @= line.len()
-
-    while to > from && is_space(line[to - 1])
-        to @ to - 1
-
-    return line.slice(from: from, to: to)
-
-function split_lines(text: str) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '\n'
-            out @ out.push(text.slice(from: start, to: i))
-            start @ i + 1
-        i @ i + 1
-
-    if start < text.len()
-        out @ out.push(text.slice(from: start, to: text.len()))
-    return out
-
-function index_of(text: str, c: u8) -> i64
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == c
-            return i
-        i @ i + 1
-
-    return 0 - 1
-
 # Split at `c`, with the empty pieces dropped. `add r0, r1` and `add r0,r1` are
 # the same instruction: the separator is the comma and the spaces are noise.
 function split_on(text: str, c: u8) -> [str]
@@ -120,7 +81,7 @@ function split_on(text: str, c: u8) -> [str]
 
     while i <= text.len()
         if i == text.len() || text[i] == c
-            piece = trimmed(text.slice(from: start, to: i))
+            piece = strings.trim_space(text.slice(from: start, to: i))
 
             if piece != ""
                 out @ out.push(piece)
@@ -136,33 +97,32 @@ function split_on(text: str, c: u8) -> [str]
 # line it was on, which is why `number` travels with it.
 function read_line(text: str, number: i64) -> Line
     body: str @= text
-    at = index_of(body, ';')
 
-    if at >= 0
-        body @ body.slice(from: 0, to: at)
-    body @ trimmed(body)
+    match strings.split_once(s: body, sep: ";")
+        .ok comment => body @ comment.before
+        .err _      => _ = 0
+
+    body @ strings.trim_space(body)
     label: str @= ""
-    colon = index_of(body, ':')
 
-    if colon >= 0
-        label @ trimmed(body.slice(from: 0, to: colon))
-        body @ trimmed(body.slice(from: colon + 1, to: body.len()))
+    match strings.split_once(s: body, sep: ":")
+        .ok labelled =>
+            label @ strings.trim_space(labelled.before)
+            body @ strings.trim_space(labelled.after)
+        .err _ => _ = 0
 
     if body == ""
         return Line(label: label, mnemonic: "", operands: [], number: number)
-    space = index_of(body, ' ')
 
-    if space < 0
-        return Line(label: label, mnemonic: body, operands: [], number: number)
-    mnemonic = body.slice(from: 0, to: space)
-    rest = body.slice(from: space + 1, to: body.len())
-    return Line(label: label, mnemonic: mnemonic, operands: split_on(rest, ','), number: number)
+    return match strings.split_once(s: body, sep: " ")
+        .ok words => Line(label: label, mnemonic: words.before, operands: split_on(words.after, ','), number: number)
+        .err _    => Line(label: label, mnemonic: body, operands: [], number: number)
 
 function read(text: str) -> [Line]
     out: [Line] @= []
     number: i64 @= 0
 
-    for line in split_lines(text)
+    for line in strings.split_lines(text)
         number @ number + 1
         out @ out.push(read_line(line, number))
 

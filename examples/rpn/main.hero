@@ -15,6 +15,8 @@
 # easy to leave out, and leaving it out is invisible until somebody types a
 # zero. The check is here and it has its own case.
 
+use core/strings
+
 variant Token
     number
         value: i64
@@ -26,7 +28,7 @@ variant Token
 function tokens_of(text: str) -> [Token]?
     out: [Token] @= []
 
-    for word in split_words(text)
+    for word in strings.fields(text)
         one = token_of(word)?
         out @ out.push(one)
 
@@ -85,23 +87,6 @@ function digit_of(ch: str) -> i64?
         i @ i + 1
 
     return fail(code: "not_a_digit", msg: "`" + ch + "` is not a digit")
-
-function split_words(text: str) -> [str]
-    out: [str] @= []
-    piece: str @= ""
-
-    for ch in text.chars()
-        if ch == " "
-            if piece.len() > 0
-                out @ out.push(piece)
-            piece @ ""
-        else
-            piece @ piece + ch
-
-    if piece.len() > 0
-        out @ out.push(piece)
-
-    return out
 
 function evaluate(text: str) -> i64?
     stack: [i64] @= []

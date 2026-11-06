@@ -16,6 +16,7 @@
 # and every one of them is propagated with `?` (spec § Failure), so the
 # first bad byte in a five-thousand-line file stops the read and says where.
 
+use core/strings
 use data/row
 
 constant ERR_HEADER: str
@@ -225,7 +226,7 @@ test "a number that is not one stops the read and names its line"
     got = read(text)
     assert got.is_err()
     assert why(got).code == ERR_NUMBER
-    assert holds(text: why(got).msg, needle: "line 2")
+    assert strings.contains(s: why(got).msg, substr: "line 2")
 
 test "a third spelling of a boolean is refused rather than guessed"
     text = row.HEADER + "\n1,argo,p1,yes,10,1.5\n"
@@ -238,7 +239,7 @@ test "a header that moved is refused before a single row is read"
 test "a short row is refused with both counts in the message"
     text = row.HEADER + "\n1,argo,p1,true,10\n"
     assert why(read(text)).code == ERR_FIELDS
-    assert holds(text: why(read(text)).msg, needle: "5 fields where the header has 6")
+    assert strings.contains(s: why(read(text)).msg, substr: "5 fields where the header has 6")
 
 test "the pieces answer what they are asked, and refuse what they are not"
     assert int_of("0", 1).must() == 0
@@ -265,16 +266,3 @@ function why(got: [row.Row]?) -> Trouble
 record Trouble
     code: str
     msg: str
-
-# Whether `text` holds `needle`, for the message assertions above.
-function holds(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false

@@ -40,6 +40,10 @@ function has_suffix(s: str, suffix: str) -> bool
 
     return true
 
+# Whether `substr` occurs in `s`. The empty text occurs in every text.
+function contains(s: str, substr: str) -> bool
+    return !scan.first_at(s: s, sep: substr).is_err()
+
 # `s` without the white space at either end. White space is Unicode's, as Go's
 # `strings.TrimSpace` reads it: space, tab, line feed and carriage return among
 # others, and the non-breaking space U+00A0.
@@ -146,6 +150,21 @@ test "has_prefix and has_suffix never cut a character in two"
     assert !has_prefix(s: "épée", prefix: "a")
     assert has_prefix(s: "épée", prefix: "é")
 
+test "contains: the empty text, a longer one, at either end, and nowhere"
+    assert contains(s: "abc", substr: "")
+    assert contains(s: "", substr: "")
+    assert !contains(s: "ab", substr: "abc")
+    assert contains(s: "abc", substr: "a")
+    assert contains(s: "abc", substr: "bc")
+    assert !contains(s: "abc", substr: "d")
+
+# The copies named `holds` in `examples/query` and `examples/ledger` sliced the
+# text at every byte, and `holds(text: "caffè latte", needle: "latte")` aborted.
+test "contains reads a text holding characters of more than one byte"
+    assert contains(s: "caffè latte", substr: "latte")
+    assert contains(s: "caffè", substr: "è")
+    assert !contains(s: "caffè", substr: "e")
+
 test "trim_space: nothing to trim, white space alone, both ends"
     assert trim_space("") == ""
     assert trim_space(" \t\r\n ") == ""
@@ -206,24 +225,34 @@ test "split_once: the first separator, a missing one, an empty one"
 ## Admission
 #
 # Each function is here because the programs of `examples/` wrote it by hand,
-# counted on 2026-11-06 with the command beside it, in more than three lines
-# or wrongly (the conventions, `examples/packages/README.md` § 7):
+# counted on 2026-11-06, in more than three lines or wrongly (the conventions,
+# `examples/packages/README.md` § 7). The copies were found by what they do and
+# not by their names, so several were named otherwise:
 #
+# - `has_prefix`, `has_suffix`: `starts_with` and `ends_with` in `ini`, and
+#   `starts` in `markdown`, each slicing the text, so that `ends_with(text:
+#   "caffè", suffix: "e")` aborted, run on 2026-11-06.
+# - `contains`: `holds(text: str, needle: str) -> bool`, 3 copies, two in
+#   `query` and one in `ledger`, slicing the text at every byte, so that
+#   `holds(text: "caffè latte", needle: "latte")` aborted, run on 2026-11-06;
+#   and `logs`'s `index_of(...) < 0`, asking the same.
 # - `trim_space`: `trimmed`, 7 copies (`grep -rl '^function trimmed('
-#   examples`), each trimming space, tab and carriage return only.
-# - `split_lines`: 9 copies (`grep -rl '^function split_lines(' examples`) that
-#   disagreed: eight gave "a\n" one line and `query`'s gave it two, the second
-#   empty.
-# - `split_once`: `index_of(text: str, c: u8) -> i64`, 3 copies answering
-#   `0 - 1` where nothing was found (`grep -rl '^function index_of(text'
-#   examples`), and 6 calls that cut a line at what it found.
-# - `has_prefix`, `has_suffix`: `ini`'s `starts_with` and `ends_with`, which
-#   sliced the text and so aborted on "caffè", run on 2026-11-06.
+#   examples`) trimming space, tab and carriage return, and `ini`'s
+#   `without_spaces`, trimming spaces alone.
 # - `fields`: 4 copies splitting a text on runs of spaces, `split_words` in
 #   `rpn` and `wordbands`, `words_of` in `wrap` and `gallery`.
+# - `split_lines`: 9 copies (`grep -rl '^function split_lines(' examples`) that
+#   disagreed: eight gave "a\n" one line and `query`'s gave it two, the second
+#   empty, and `ini`'s built each line a character at a time, a quadratic loop.
+# - `split_once`: `index_of(text: str, c: u8) -> i64`, 3 copies answering `0 -
+#   1` where nothing was found (`grep -rl '^function index_of(text' examples`),
+#   with 6 calls that cut a line at what it found, and `ini`'s
+#   `index_of_equals`, which cut a line at its `=`.
 #
 # Not adopted, and what a program writes instead:
 #
-# - `is_space` on a byte, 9 copies of two lines in two contracts, seven without a
-#   line feed and two with one: a program reading words asks `fields`, and one
-#   that needs a byte's class writes the comparison, which names its own set.
+# - `is_space` on a byte, 9 copies of two lines in two contracts, seven without
+#   a line feed and two with one: a program reading words asks `fields`, and
+#   one that needs a byte's class writes the comparison, which names its own
+#   set. The `gallery`'s `words_of` stays too: the gallery teaches the language
+#   by writing that loop.

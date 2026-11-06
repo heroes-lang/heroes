@@ -27,6 +27,7 @@
 # same hour.
 
 use book/entry
+use core/strings
 use db/sqlite
 use report/lines
 
@@ -273,7 +274,7 @@ test "a statement the database refuses is a refusal here, with sqlite's own word
     db: sqlite.Db @= sqlite.opened().must()
     bad = sqlite.run(db, "select * from nothing_at_all")
     assert bad.is_err()
-    assert lines.holds(text: err_text_of(bad), needle: "no such table")
+    assert strings.contains(s: err_text_of(bad), substr: "no such table")
     _ = sqlite.closed(@db)
 
 test "a column read at the wrong type is a refusal and not a zero"

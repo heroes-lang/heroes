@@ -25,6 +25,8 @@
 # Choice 2 is the one worth arguing about, and it is deliberate: `last wins`
 # is convenient and it is how a value gets overridden by accident.
 
+use core/strings
+
 record Config
     sections: {str: {str: str}}
 
@@ -35,17 +37,17 @@ function parse(text: str) -> Config?
     sections[current] @ empty
     number: i64 @= 0
 
-    for line in split_lines(text)
+    for line in strings.split_lines(text)
         number @ number + 1
-        trimmed = without_spaces(line)
+        trimmed = strings.trim_space(line)
 
         if trimmed.len() == 0
             continue
 
-        if starts_with(text: trimmed, prefix: "#") || starts_with(text: trimmed, prefix: ";")
+        if strings.has_prefix(s: trimmed, prefix: "#") || strings.has_prefix(s: trimmed, prefix: ";")
             continue
 
-        if starts_with(text: trimmed, prefix: "[")
+        if strings.has_prefix(s: trimmed, prefix: "[")
             name = section_name(trimmed)?
             current @ name
 
@@ -55,15 +57,17 @@ function parse(text: str) -> Config?
                 fresh: {str: str} = {}
                 sections[current] @ fresh
             continue
-        at = index_of_equals(trimmed)
 
-        if at.is_err()
-            return fail(
-                code: "not_a_line",
-                msg: "line " + number.to_str() + " is neither a section, a comment, nor a key"
-            )
-        key = without_spaces(trimmed.slice(from: 0, to: at.must()))
-        value = without_spaces(trimmed.slice(from: at.must() + 1, to: trimmed.len()))
+        assignment = match strings.split_once(s: trimmed, sep: "=")
+            .ok halves => halves
+            .err _ =>
+                return fail(
+                    code: "not_a_line",
+                    msg: "line " + number.to_str() + " is neither a section, a comment, nor a key"
+                )
+
+        key = strings.trim_space(assignment.before)
+        value = strings.trim_space(assignment.after)
 
         if key.len() == 0
             return fail(code: "empty_key", msg: "line " + number.to_str() + " has a value and no key")
@@ -80,9 +84,9 @@ function parse(text: str) -> Config?
     return ok(Config(sections: sections))
 
 function section_name(line: str) -> str?
-    if !ends_with(text: line, suffix: "]")
+    if !strings.has_suffix(s: line, suffix: "]")
         return fail(code: "unclosed_section", msg: "a `[` with no `]`")
-    inner = without_spaces(line.slice(from: 1, to: line.len() - 1))
+    inner = strings.trim_space(line.slice(from: 1, to: line.len() - 1))
 
     if inner.len() == 0
         return fail(code: "empty_section", msg: "`[]` names nothing")
@@ -106,56 +110,6 @@ function section_names(c: Config) -> [str]
             out @ out.push(name)
 
     return out
-
-function split_lines(text: str) -> [str]
-    out: [str] @= []
-    piece: str @= ""
-
-    for ch in text.chars()
-        if ch == "\n"
-            out @ out.push(piece)
-            piece @ ""
-        else
-            piece @ piece + ch
-
-    if piece.len() > 0
-        out @ out.push(piece)
-
-    return out
-
-function without_spaces(text: str) -> str
-    first: i64 @= 0
-    last: i64 @= text.len()
-
-    while first < last && text[first] == ' '
-        first @ first + 1
-
-    while last > first && text[last - 1] == ' '
-        last @ last - 1
-
-    return text.slice(from: first, to: last)
-
-function starts_with(text: str, prefix: str) -> bool
-    if prefix.len() > text.len()
-        return false
-
-    return text.slice(from: 0, to: prefix.len()) == prefix
-
-function ends_with(text: str, suffix: str) -> bool
-    if suffix.len() > text.len()
-        return false
-
-    return text.slice(from: text.len() - suffix.len(), to: text.len()) == suffix
-
-function index_of_equals(text: str) -> i64?
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '='
-            return ok(i)
-        i @ i + 1
-
-    return fail(code: "no_equals", msg: "no `=` on the line")
 
 constant SAMPLE: str
     "verbose = true\n\n[server]\nhost = localhost\nport = 8080\n\n# a comment\n[client]\nretries = 3\n\n[server]\ntimeout = 30\n"
