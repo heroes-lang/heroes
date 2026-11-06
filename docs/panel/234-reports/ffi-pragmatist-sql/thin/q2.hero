@@ -1,0 +1,36 @@
+use core/database/sql
+
+# Q2: the first argument is the threshold, then pairs of a name and an age;
+# print the names older than the threshold, in `ORDER BY name`'s order. Every
+# value is bound, never written into the SQL text, so a name holding an
+# apostrophe is a name like any other.
+function main()
+    given = args()
+    db: sql.Db @= nullptr
+    assert sql.open(":memory:", @db) == sql.SQLITE_OK
+    assert sql.exec(db, "create table people(name text, age integer)") == sql.SQLITE_OK
+    insert: sql.Stmt @= nullptr
+    assert sql.prepare_v2(db, "insert into people(name, age) values (?, ?)", @insert) == sql.SQLITE_OK
+    at @= 1
+
+    while at + 1 < given.len()
+        assert sql.bind_text(insert, 1, given[at]) == sql.SQLITE_OK
+        assert sql.bind_text(insert, 2, given[at + 1]) == sql.SQLITE_OK
+        assert sql.step(insert) == sql.SQLITE_DONE
+        assert sql.reset(insert) == sql.SQLITE_OK
+        at @ at + 2
+
+    assert sql.finalize(@insert) == sql.SQLITE_OK
+    query: sql.Stmt @= nullptr
+    older = "select name from people where age > cast(? as integer) order by name"
+    assert sql.prepare_v2(db, older, @query) == sql.SQLITE_OK
+    assert sql.bind_text(query, 1, given[0]) == sql.SQLITE_OK
+    rc @= sql.step(query)
+
+    while rc == sql.SQLITE_ROW
+        print(sql.column_text(query, 0).must())
+        rc @ sql.step(query)
+
+    assert rc == sql.SQLITE_DONE
+    assert sql.finalize(@query) == sql.SQLITE_OK
+    assert sql.close(@db) == sql.SQLITE_OK

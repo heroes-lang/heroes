@@ -1,0 +1,18 @@
+use core/database/sql
+
+# Q1: every argument into an INTEGER column, then the count and the sum by one
+# query. The arguments are bound as text, which the INTEGER column stores as
+# the integers they read as.
+function main()
+    db @= sql.open(":memory:").must()
+    _ = sql.exec(db, "create table numbers(n integer)", []).must()
+
+    for number in args()
+        _ = sql.exec(db, "insert into numbers(n) values (?)", [number]).must()
+
+    rows = sql.query(db, "select count(*), sum(n) from numbers", []).must()
+    print(f"count: {sql.integer(rows[0], 0).must()}")
+
+    # `sum` over no rows is NULL, which `integer` hands back as `null_value`.
+    print(f"sum: {sql.integer(rows[0], 1).default(0)}")
+    sql.close(@db)

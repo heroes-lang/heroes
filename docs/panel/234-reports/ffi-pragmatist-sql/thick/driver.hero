@@ -1,0 +1,9 @@
+use core/database/sql
+
+# The root driver: `heroes test driver.hero` runs every `test` block of the
+# package and of the C module under it, and running it opens and closes a
+# database in memory.
+function main()
+    db @= sql.open(":memory:").must()
+    sql.close(@db)
+    print("ok")

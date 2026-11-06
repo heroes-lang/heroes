@@ -1,0 +1,23 @@
+use core/database/sql
+
+# Q2: the first argument is the threshold, then pairs of a name and an age;
+# print the names older than the threshold, in `ORDER BY name`'s order. Every
+# value is bound, never written into the SQL text, so a name holding an
+# apostrophe is a name like any other.
+function main()
+    given = args()
+    db @= sql.open(":memory:").must()
+    _ = sql.exec(db, "create table people(name text, age integer)", []).must()
+    at @= 1
+
+    while at + 1 < given.len()
+        insert = "insert into people(name, age) values (?, ?)"
+        _ = sql.exec(db, insert, [given[at], given[at + 1]]).must()
+        at @ at + 2
+
+    older = "select name from people where age > cast(? as integer) order by name"
+
+    for row in sql.query(db, older, [given[0]]).must()
+        print(sql.text(row, 0).must())
+
+    sql.close(@db)

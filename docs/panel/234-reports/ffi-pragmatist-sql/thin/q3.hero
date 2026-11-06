@@ -1,0 +1,31 @@
+use core/database/sql
+
+# Q3: every argument into a UNIQUE column; an insert the constraint refuses is
+# a duplicate, and the program goes on with the next argument.
+function main()
+    db: sql.Db @= nullptr
+    assert sql.open(":memory:", @db) == sql.SQLITE_OK
+    assert sql.exec(db, "create table names(name text unique)") == sql.SQLITE_OK
+    insert: sql.Stmt @= nullptr
+    assert sql.prepare_v2(db, "insert into names(name) values (?)", @insert) == sql.SQLITE_OK
+    added @= 0
+    duplicates @= 0
+
+    for name in args()
+        assert sql.bind_text(insert, 1, name) == sql.SQLITE_OK
+        rc = sql.step(insert)
+
+        if rc == sql.SQLITE_DONE
+            added @ added + 1
+        else
+            assert rc == sql.SQLITE_CONSTRAINT
+            duplicates @ duplicates + 1
+
+        # After a refused step `reset` answers that step's code again, which
+        # was read above.
+        _ = sql.reset(insert)
+
+    assert sql.finalize(@insert) == sql.SQLITE_OK
+    assert sql.close(@db) == sql.SQLITE_OK
+    print(f"added: {added}")
+    print(f"duplicates: {duplicates}")

@@ -1,0 +1,20 @@
+use core/database/sql
+
+# Q3: every argument into a UNIQUE column; an insert the constraint refuses is
+# a duplicate, and the program goes on with the next argument.
+function main()
+    db @= sql.open(":memory:").must()
+    _ = sql.exec(db, "create table names(name text unique)", []).must()
+    added @= 0
+    duplicates @= 0
+
+    for name in args()
+        match sql.exec(db, "insert into names(name) values (?)", [name])
+            .ok _ => added @ added + 1
+            .err e =>
+                assert e.code == "unique"
+                duplicates @ duplicates + 1
+
+    sql.close(@db)
+    print(f"added: {added}")
+    print(f"duplicates: {duplicates}")

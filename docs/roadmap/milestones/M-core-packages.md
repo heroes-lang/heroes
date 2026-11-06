@@ -340,3 +340,36 @@ and before the opening, each written as what the author meant:
    verifies rather than recalls: GLib under GTK, Qt's platform plugins,
    libuv under Node, the Apache Portable Runtime, SDL's backends, Go's files
    per system and its `syscall`, Zig's `std.os`, Odin's `core:os`.
+
+## The opening sitting, 2026-11-06
+
+Panel 234 sat on 2026-11-05 and 06, the full panel with a completeness critic before and after the
+seats and the reader test as the llm-ergonomist's seat (`docs/panel/234-the-core-packages-are-code-a-program-carries-in-gos-tree-under-core-a-thick-face-on-a-published-floor-a-card-that-shows-the-call-and-the-platforms-c-an-archive-beside-the-runtime.md`). Its resolution is **provisional,
+the author's ratification pending**, asked by decision 2304
+(https://github.com/heroes-lang/heroes/issues/2304), and the conventions page and the first batch
+wait for it. What it adopted, in one breath: a core package is code a program carries, under
+`core/` in Go's tree inside the program's own root, a copy per program held byte-identical to a
+canonical tree at `examples/packages/`, unwritten on 2026-11-06; a function enters on a count of the programs that already
+need it; a Go name only where the contract is Go's; every package over C a thick face over a thin
+floor published with its own card; a card per package showing each function's call; and the
+author's fourth instruction answered as an archive of per-capability C files beside the runtime,
+always on the link line so the linker takes only what a program calls, `hero_os.h` staying in the
+runtime. The historian's survey found the author's platform shape in libuv, APR, NSPR and QtCore,
+and every language surveyed keeping that layer inside its one library.
+
+Found beside it and filed: defects 2289, 2290 and 2291, `blocking`, so this milestone is not
+tagged before they close, and 2292, `adjacent`; the work the resolution owes is tasks and
+features 2293 to 2302, and task 2303 queues at M-publication-gate whether the packages enter the
+`1.0.0` promise.
+
+**Corrected 2026-11-06, of the table at the head of this page**: the `io`, `bufio` row
+names *bulk text through `hero_str_from_bytes(p: ptr, n: i64)`, exported by panel 035* as the
+route, and no program can bind that function, `error[ffi_runtime_header]` (the ffi-pragmatist on
+this Mac and Linux arm64, the coordinator again this day). The route is spec § 13's fill form, a
+`[u8] counted_by n lent` read by C and made text by `validated_bytes()` (panel 234's R7).
+
+**And the tension with design.md §1.11 this page left unsaid** (the sitting's critic, G15): the page
+plans JSON and an HTTP server in Heroes alone, while §1.11's rule lists JSON and HTTP among what
+*comes from C libraries* and its own table answers JSON with *write it in Heroes ... or bind cJSON*.
+Panel 234's R1 places the packages: they are modules a program carries in its own tree, so the
+language still ships nothing; §1.11's sentence saying so lands with the ratification (task 2301).

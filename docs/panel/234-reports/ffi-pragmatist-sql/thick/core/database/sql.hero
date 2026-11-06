@@ -1,0 +1,333 @@
+## core/database/sql, thick: SQLite with every failure a `T?`
+#
+# The package's face is an API over the C module beside it,
+# `core/database/sql/sqlite3` (panel 234, item D, the thick shape): every
+# operation that can fail answers a `T?` with a code, no integer status
+# reaches the program, and no statement either: `exec` and `query` prepare,
+# bind, step and finalize inside the call, so the one life a program manages
+# is its database's, which `open` begins and `close` ends.
+#
+# **Names, by the author's rule** (conventions-draft.md §2.2): Go's
+# `database/sql` answers `(T, error)` from `Open`, `Exec` and `Query`, which is
+# a Heroes `T?`, so `open`, `exec` and `query` keep Go's names, and `close`
+# keeps `Close`'s though it cannot fail here: every statement is finalized
+# before its call returns, so SQLite never refuses the close. Go reads a
+# row's columns through `Scan`, a variadic of pointers, which has no Heroes
+# contract, so the readers are named for what they answer, `integer` and
+# `text`. **Go's parameter names do not survive** (panel 234's run): `query`
+# is refused as a parameter of a module that declares `query`
+# (`shadowed_binding`) and `args` is a built-in (`builtin_name_taken`), so
+# the statement is `sql`, SQLite's own name in `sqlite3_exec`'s prototype, and
+# its values are `arguments`.
+#
+# **Every argument is bound as text**, which is all a program reading
+# `args()` holds: SQLite stores a text that reads as an integer as that
+# integer in a column declared `INTEGER`, and compares it with one as a
+# number.
+#
+# **A NULL reaches the program as a value**, `.null_value`, and the readers
+# fail `null_value` on it, where C's `sqlite3_column_int64` reads a NULL as 0.
+
+use core/database/sql/sqlite3
+
+# An open database, from `open`, ended by `close`. Its field is the
+# package's own.
+record Db
+    connection: sqlite3.Db
+
+# What `exec` changed: the rows its statement inserted, changed or deleted,
+# and the row id of the last row the database inserted.
+record Result
+    rows_affected: i64
+    last_insert_id: i64
+
+# One column's value in a row of a query's result.
+variant Value
+    integer
+        value: i64
+    real
+        value: f64
+    text
+        value: str
+    null_value
+
+# One row of a query's result, its columns in the query's order, from 0.
+record Row
+    values: [Value]
+
+# Opens the database `data_source_name` names, a file's path or `":memory:"`
+# for one held in memory; fails `cannot_open`.
+function open(data_source_name: str) -> Db?
+    connection: sqlite3.Db @= nullptr
+
+    if sqlite3.open(data_source_name, @connection) != sqlite3.SQLITE_OK
+        # A failed open still hands back a connection, which is closed here
+        # after SQLite's reason is read from it.
+        why = sqlite3.errmsg(connection).default("SQLite gave no reason")
+        _ = sqlite3.close(@connection)
+        return fail(code: "cannot_open", msg: f"cannot open {data_source_name}: {why}")
+    return ok(Db(connection: connection))
+
+# Closes `db`, which nothing may use afterwards.
+function close(@db: Db)
+    # SQLite refuses a close only while a statement of the connection is not
+    # finalized, and none outlives the call that prepared it.
+    assert sqlite3.close(@db.connection) == sqlite3.SQLITE_OK
+
+# Runs the first statement in `sql`, each `?` in it bound to the next of
+# `arguments` as text, and answers what it changed; fails `refused` or
+# `unique`. Text after the first statement is not run.
+function exec(db: Db, sql: str, arguments: [str]) -> Result?
+    before = sqlite3.total_changes64(db.connection)
+    _ = evaluated(db, sql, arguments, keep: false)?
+    changed = sqlite3.total_changes64(db.connection) - before
+    return ok(Result(rows_affected: changed, last_insert_id: sqlite3.last_insert_rowid(db.connection)))
+
+# Runs the first statement in `sql`, bound as `exec` binds it, and answers
+# every row it gives, in order; fails `refused`, `unique`, `not_text` or
+# `wrong_type` (a column holding a blob, which this package does not read).
+function query(db: Db, sql: str, arguments: [str]) -> [Row]?
+    return evaluated(db, sql, arguments, keep: true)
+
+# The integer in column `column` of `row`, from 0; fails `null_value` where
+# the column is NULL and `wrong_type` where it holds a real or text. A column
+# past the row's last aborts.
+function integer(row: Row, column: i64) -> i64?
+    return match row.values[column]
+        .integer number => ok(number.value)
+        .null_value     => fail(code: "null_value", msg: f"column {column} is NULL")
+        .real           => fail(code: "wrong_type", msg: f"column {column} holds a real, not an integer")
+        .text           => fail(code: "wrong_type", msg: f"column {column} holds text, not an integer")
+
+# The text in column `column` of `row`, from 0; fails `null_value` where the
+# column is NULL and `wrong_type` where it holds an integer or a real. A
+# column past the row's last aborts.
+function text(row: Row, column: i64) -> str?
+    return match row.values[column]
+        .text words => ok(words.value)
+        .null_value => fail(code: "null_value", msg: f"column {column} is NULL")
+        .integer    => fail(code: "wrong_type", msg: f"column {column} holds an integer, not text")
+        .real       => fail(code: "wrong_type", msg: f"column {column} holds a real, not text")
+
+## The work under `exec` and `query`
+
+# Prepares `sql`, binds it, steps it to its end and finalizes it on every
+# path; answers its rows where `keep` asks for them.
+function evaluated(db: Db, sql: str, arguments: [str], keep: bool) -> [Row]?
+    statement: sqlite3.Stmt @= nullptr
+
+    if sqlite3.prepare_v2(db.connection, sql, @statement) != sqlite3.SQLITE_OK
+        # SQLite leaves the statement `nullptr` and owed nothing.
+        return fail(code: "refused", msg: f"{sql}: {reason(db)}")
+
+    # Text holding no statement, only spaces or a comment, compiles to none.
+    if statement == nullptr
+        return ok([])
+    answer = stepped(db, statement, sql, arguments, keep)
+    _ = sqlite3.finalize(@statement)
+    return answer
+
+# Binds every argument, then steps the statement until SQLite says it is
+# done, reading each row where `keep` asks. The caller finalizes.
+function stepped(db: Db, statement: sqlite3.Stmt, sql: str, arguments: [str], keep: bool) -> [Row]?
+    wanted = sqlite3.bind_parameter_count(statement)
+
+    if wanted != arguments.len()
+        return fail(code: "refused", msg: f"{sql}: {wanted} parameters, and {arguments.len()} arguments given")
+
+    for at in range(from: 0, to: arguments.len())
+        if sqlite3.bind_text(statement, to_i32(at + 1).must(), arguments[at]) != sqlite3.SQLITE_OK
+            return fail(code: "refused", msg: f"{sql}: {reason(db)}")
+
+    rows: [Row] @= []
+    rc @= sqlite3.step(statement)
+
+    while rc == sqlite3.SQLITE_ROW
+        if keep
+            rows @ rows.push(row_at(statement, sql)?)
+        rc @ sqlite3.step(statement)
+
+    if rc != sqlite3.SQLITE_DONE
+        return fail(code: refusal(db), msg: f"{sql}: {reason(db)}")
+    return ok(rows)
+
+# The current row of `statement`, each column at its own type.
+function row_at(statement: sqlite3.Stmt, sql: str) -> Row?
+    values: [Value] @= []
+
+    for column in range(from: 0, to: sqlite3.column_count(statement))
+        at = to_i32(column).must()
+        kind = sqlite3.column_type(statement, at)
+
+        if kind == sqlite3.SQLITE_INTEGER
+            values @ values.push(.integer(value: sqlite3.column_int64(statement, at)))
+        else if kind == sqlite3.SQLITE_FLOAT
+            values @ values.push(.real(value: sqlite3.column_double(statement, at)))
+        else if kind == sqlite3.SQLITE_TEXT
+            words = sqlite3.column_text(statement, at)
+
+            if words.is_err()
+                return fail(code: "not_text", msg: f"{sql}: column {column} holds bytes that are not UTF-8")
+            values @ values.push(.text(value: words.must()))
+        else if kind == sqlite3.SQLITE_NULL
+            values @ values.push(.null_value)
+        else
+            return fail(
+                code: "wrong_type",
+                msg: f"{sql}: column {column} holds a blob, which this package does not read"
+            )
+
+    return ok(Row(values: values))
+
+# The code of the connection's last failure: `unique` for a `UNIQUE` or
+# primary-key refusal, `refused` for every other.
+function refusal(db: Db) -> str
+    extended = sqlite3.extended_errcode(db.connection)
+
+    if extended == sqlite3.SQLITE_CONSTRAINT_UNIQUE || extended == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY
+        return "unique"
+    return "refused"
+
+# SQLite's own words for the connection's last failure.
+function reason(db: Db) -> str
+    return sqlite3.errmsg(db.connection).default("SQLite gave no message")
+
+test "a row is read back at its columns, an apostrophe and all"
+    db @= open(":memory:").must()
+    rows = query(db, "select 42, 'o''neil', ?", ["d'arc"]).must()
+    assert rows.len() == 1
+    assert integer(rows[0], 0).must() == 42
+    assert text(rows[0], 1).must() == "o'neil"
+    assert text(rows[0], 2).must() == "d'arc"
+    close(@db)
+
+test "a NULL fails null_value, and a column of another type wrong_type"
+    db @= open(":memory:").must()
+    _ = exec(db, "create table t(n integer)", []).must()
+    rows = query(db, "select count(*), sum(n), 'x', 1.5 from t", []).must()
+    assert integer(rows[0], 0).must() == 0
+    assert integer(rows[0], 1).default(0) == 0
+
+    match integer(rows[0], 1)
+        .ok _  => assert false
+        .err e => assert e.code == "null_value"
+
+    match integer(rows[0], 2)
+        .ok _  => assert false
+        .err e => assert e.code == "wrong_type"
+
+    match text(rows[0], 3)
+        .ok _  => assert false
+        .err e => assert e.code == "wrong_type"
+
+    match rows[0].values[3]
+        .real number                   => assert number.value == 1.5
+        .integer | .text | .null_value => assert false
+
+    close(@db)
+
+test "text bound into an INTEGER column is stored and compared as the integer it reads as"
+    db @= open(":memory:").must()
+    _ = exec(db, "create table t(n integer)", []).must()
+
+    for number in ["9000000000", "-1", "5"]
+        _ = exec(db, "insert into t(n) values (?)", [number]).must()
+
+    rows = query(db, "select sum(n) from t where n > ?", ["2"]).must()
+    assert integer(rows[0], 0).must() == 9000000005
+    close(@db)
+
+test "exec answers the rows it wrote and the last row id"
+    db @= open(":memory:").must()
+    created = exec(db, "create table t(n integer)", []).must()
+    assert created.rows_affected == 0
+    inserted = exec(db, "insert into t(n) values (?), (?)", ["1", "2"]).must()
+    assert inserted.rows_affected == 2
+    assert inserted.last_insert_id == 2
+    nothing = exec(db, "  -- no statement", []).must()
+    assert nothing.rows_affected == 0
+    close(@db)
+
+test "a repeated value in a UNIQUE column fails unique, and writes nothing"
+    db @= open(":memory:").must()
+    _ = exec(db, "create table u(name text unique, note text not null)", []).must()
+    _ = exec(db, "insert into u(name, note) values (?, ?)", ["d'arc", "first"]).must()
+
+    match exec(db, "insert into u(name, note) values (?, ?)", ["d'arc", "second"])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "unique"
+            assert e.msg == "insert into u(name, note) values (?, ?): UNIQUE constraint failed: u.name"
+
+    match exec(db, "insert into u(name) values (?)", ["b"])
+        .ok _  => assert false
+        .err e => assert e.code == "refused"
+
+    rows = query(db, "select count(*) from u", []).must()
+    assert integer(rows[0], 0).must() == 1
+    close(@db)
+
+test "a statement SQLite refuses, or a count of arguments that does not match, fails refused"
+    db @= open(":memory:").must()
+
+    match exec(db, "insert into nowhere values ('o'neil')", [])
+        .ok _  => assert false
+        .err e => assert e.code == "refused"
+
+    match query(db, "select ? + ?", ["1"])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "refused"
+            assert e.msg == "select ? + ?: 2 parameters, and 1 arguments given"
+
+    close(@db)
+
+test "a database that cannot be opened fails cannot_open with SQLite's reason"
+    match open("/no-such-directory-here/x.db")
+        .ok db =>
+            other @= db
+            close(@other)
+            assert false
+        .err e =>
+            assert e.code == "cannot_open"
+            assert e.msg == "cannot open /no-such-directory-here/x.db: unable to open database file"
+
+test "exec runs the first statement in its text and no other"
+    db @= open(":memory:").must()
+    _ = exec(db, "create table a(x)", []).must()
+    _ = exec(db, "insert into a values (1); insert into a values (2)", []).must()
+    rows = query(db, "select count(*) from a", []).must()
+    assert integer(rows[0], 0).must() == 1
+    close(@db)
+
+test "a text column whose bytes are not UTF-8 fails not_text, and a blob wrong_type"
+    db @= open(":memory:").must()
+
+    match query(db, "select cast(x'ff' as text)", [])
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+    match query(db, "select x'00'", [])
+        .ok _  => assert false
+        .err e => assert e.code == "wrong_type"
+
+    close(@db)
+
+test "a repeated primary key fails unique, from exec and from query"
+    db @= open(":memory:").must()
+    _ = exec(db, "create table p(id text primary key, n integer)", []).must()
+    _ = exec(db, "insert into p(id, n) values (?, ?)", ["a", "1"]).must()
+
+    match exec(db, "insert into p(id, n) values (?, ?)", ["a", "2"])
+        .ok _  => assert false
+        .err e => assert e.code == "unique"
+
+    _ = query(db, "insert into p(id) values (?) returning id", ["b"]).must()
+
+    match query(db, "insert into p(id) values (?) returning id", ["b"])
+        .ok _  => assert false
+        .err e => assert e.code == "unique"
+
+    changed = exec(db, "update p set n = 7", []).must()
+    assert changed.rows_affected == 2
+    close(@db)
