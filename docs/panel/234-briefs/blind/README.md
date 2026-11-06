@@ -212,3 +212,24 @@ Each on `right@1`, `right@2` and `silent`, as a share of a cell's answers, by
 model and together, with the spec-warden's registered predictions scored on
 the rule it registers, **a floor as well as a ceiling named** where a cell can
 show nothing (F20).
+
+## Experiment E2: the card's form (added 2026-11-06, after the first run)
+
+Added on the critic's second pass (G8 of `docs/panel/234-reports/critic-reports.md`):
+the card's effect on the first turn split by model, Haiku +0.33 and +0.40,
+Sonnet −0.73 and −0.60, and Sonnet labelled 18 of its 22 calls with two
+parameters of one type without a card and 11 of 53 with one, so the variable
+the first run points at is the card's **form**, each function written as a
+declaration. **Two arms, the H package and the H rule in both**: `decl-H`, the
+first run's `S/card-H.md`; `call-H`, `S/card-H-call.md`, the same card with
+each function's line also showing the call a program writes, labels where the
+language requires them (`has_prefix(s: str, prefix: str) -> bool, called
+strings.has_prefix(s: line, prefix: "#")`), every one of its fourteen calls
+compiled and run against the H package before the run (805 vendored tokens
+against 585). The same three tasks, two models, five samples: 12 cells and 60
+first turns, the second turns as in the first run, drawn by
+`random.Random(2342)` and appended to the sealed key; **at most 0.20 USD a
+session**, inside what the run's 25 USD left (18.79). **The comparison**:
+`call-H` against `decl-H` on `right@1`, `right@2` and `silent`, by model and
+pooled, and the share of two-parameter calls written with labels, with the
+spec-warden's predictions registered before the first session.
