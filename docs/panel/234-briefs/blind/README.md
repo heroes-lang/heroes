@@ -233,3 +233,12 @@ session**, inside what the run's 25 USD left (18.79). **The comparison**:
 `call-H` against `decl-H` on `right@1`, `right@2` and `silent`, by model and
 pooled, and the share of two-parameter calls written with labels, with the
 spec-warden's predictions registered before the first session.
+
+**Amended before E2's first session, 2026-11-06**, on the spec-warden's note in
+its registration (`docs/panel/234-reports/spec-warden-e2.md`): five of the call
+card's example calls carried a task's own literal (`"#"`, `"="`, `": "`,
+`"ERROR "`, `"the"`), so E2 would have measured the form and a hint at each
+task's operation together. They, and `contains`'s `"x"` (a hidden case's
+argument), now read `"v1"`, `";"` and `"ab"`, no task's operation; every
+example call compiled and ran again against the H package, and the 30 call-H
+folders were given the corrected card before any session.
