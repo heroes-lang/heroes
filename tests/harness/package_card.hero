@@ -17,11 +17,12 @@
 # and `take` needed none). Whether each call compiles as written is asked of
 # the compiler, by building `proof_source`'s program (`package_judge.hero`).
 
+use package_codes
 use package_face
 use strings
 
 # The card of a face, every code with the meaning the face's docs give it.
-function card_text(face: package_face.Face, codes: [package_face.Code]) -> str
+function card_text(face: package_face.Face, codes: [package_codes.Code]) -> str
     out: [str] @= ["# " + face.binding + ": `use core/" + face.path + "`\n\n" + face.said + "\n"]
 
     if face.shapes.len() > 0
@@ -46,10 +47,21 @@ function card_text(face: package_face.Face, codes: [package_face.Code]) -> str
         lines: [str] @= []
 
         for code in codes
-            lines @ lines.push("- `" + code.code + "`: " + code.meaning + ".")
+            named: str @= "`" + code.code + "`"
+
+            if code.through.len() > 0
+                named @ named + ", `" + face.binding + "." + code.through + "`"
+            lines @ lines.push("- " + named + ": " + ended(code.meaning))
 
         out @ out.push("\n## Codes\n\n" + lines.join("\n") + "\n")
     return out.join("")
+
+# A meaning as a card ends it: a clause gains its period, and a doc's sentence
+# keeps the one it has.
+function ended(text: str) -> str
+    if strings.ends_with(text: text, suffix: ".")
+        return text
+    return text + "."
 
 # A record's line: `` `record Halves` with `before: str` and `after: str`: ``
 # and its doc's first sentence.
@@ -97,9 +109,10 @@ function call_of(binding: str, f: package_face.Callable) -> str
 # A program that calls every function as the card writes the call, built by the
 # check: one function per call, whose parameters are the face's own, so each
 # argument is a value of its parameter's type under the parameter's own name,
-# the face's records written through the binding. A `use` of the face that a
-# parameter's type needs is repeated, and no other. `card` is the card's path,
-# for the program's own doc.
+# the face's records written through the binding, and its `main` naming each
+# `str` constant as the card does. A `use` of the face that a parameter's type
+# needs is repeated, and no other. `card` is the card's path, for the program's
+# own doc.
 function proof_source(face: package_face.Face, card: str) -> str
     out: [str] @= [
         "# The calls " + card + " writes, each compiled as the card writes it.\n\nuse core/" + face.path + "\n"
@@ -120,7 +133,15 @@ function proof_source(face: package_face.Face, card: str) -> str
         if named != face.binding && !needed[named].is_err()
             out @ out.push(row + "\n")
 
-    out @ out.push("\nfunction main()\n    _ = 0\n")
+    # Each constant a code is written through is named as the card names it.
+    main: [str] @= ["\nfunction main()\n"]
+
+    for one in face.constants
+        main @ main.push("    _ = " + face.binding + "." + one.name + "\n")
+
+    if face.constants.len() == 0
+        main @ main.push("    _ = 0\n")
+    out @ out.push(main.join(""))
     local: [str] @= []
 
     for shape in face.shapes
@@ -249,12 +270,21 @@ test "the call labels exactly the parameters whose type another shares, and mark
 test "a card is written in E2's form, each section only where it has a line"
     text = "# Text, taken apart. More.\n\n# Two halves. More.\nrecord Halves\n    before: str\n    after: str\n\n# Whether it begins. More.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# The halves, failing `not_found` where `s` holds no `sep`.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s, after: sep))\n"
     face = package_face.face_of(path: "strings", text: text)
-    codes = [package_face.Code(code: "not_found", meaning: "where `s` holds no `sep` (`split_once`)")]
+    codes = [package_codes.Code(code: "not_found", through: "", meaning: "where `s` holds no `sep` (`split_once`)")]
     assert card_text(face: face, codes: codes) == "# strings: `use core/strings`\n\nText, taken apart.\n\n## Types\n\n`record Halves` with `before: str` and `after: str`: Two halves.\n\n## Functions\n\n- `has_prefix(s: str, prefix: str) -> bool`, called `strings.has_prefix(s: s, prefix: prefix)`: Whether it begins.\n- `split_once(s: str, sep: str) -> Halves?`, called `strings.split_once(s: s, sep: sep)`: The halves, failing `not_found` where `s` holds no `sep`.\n\n## Codes\n\n- `not_found`: where `s` holds no `sep` (`split_once`).\n"
-    nothing: [package_face.Code] = []
+    nothing: [package_codes.Code] = []
     bare = package_face.face_of(path: "net/http", text: "# Http.\n")
     assert card_text(face: bare, codes: nothing) == "# http: `use core/net/http`\n\nHttp.\n"
     assert listed(["`a`", "`b`", "`c`"]) == "`a`, `b` and `c`"
+
+    # A code written through a constant names the constant as a program writes it.
+    numbers = package_face.face_of(
+        path: "strconv",
+        text: "# Numbers.\n\n# What fails.\nconstant NOT_A_NUMBER: str\n    \"not_a_number\"\n"
+    )
+    through = [package_codes.Code(code: "not_a_number", through: "NOT_A_NUMBER", meaning: "What fails.")]
+    assert card_text(face: numbers, codes: through) == "# strconv: `use core/strconv`\n\nNumbers.\n\n## Codes\n\n- `not_a_number`, `strconv.NOT_A_NUMBER`: What fails.\n"
+    assert proof_source(face: numbers, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse core/strconv\n\nfunction main()\n    _ = strconv.NOT_A_NUMBER\n"
 
 test "the proof calls each function as the card does, its records through the binding"
     text = "# S.\n\nuse core/strings/internal/scan\nuse core/encoding/json\n\n# H.\nrecord Halves\n    before: str\n\n# One.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s + sep))\n\n# Two.\nfunction gather(xs: [Halves], v: json.Value)\n    _ = 0\n"

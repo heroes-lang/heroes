@@ -1,7 +1,8 @@
 # A core package's face read for its card (task 2294): the module doc's first
 # sentence, each record with its fields, each function with its signature, its
-# parameters and its doc, the codes the package's modules write and what the
-# face's docs say of each, and what the card's form has no line for.
+# parameters and its doc, each `str` constant, and what the card's form has no
+# line for. The codes the package writes, and what the face says of each, are
+# `package_codes.hero`'s.
 #
 # The face is read as text in canonical form, which the `canonical` suite holds
 # `examples/` to, and in which `heroes fmt` writes each declaration on one line
@@ -9,12 +10,13 @@
 # A signature that does not close on its line is refused rather than guessed.
 #
 # **What the form has no line for is refused, by name, never left out.** A
-# `variant`, a `constant` and an `extern` group are each a name a program
-# writes, so a card that left them out would be a card that lies by omission;
-# the refusal says what to teach this module first.
+# `variant`, an `extern` group and a constant that names no code are each a
+# name a program writes, so a card that left them out would be a card that lies
+# by omission; the refusal says what to teach this module first. A `str`
+# constant a `fail` writes its code through is a code the package adds (the
+# conventions' § 3.3), and the card lists it among the codes.
 
 use module_docs
-use module_text
 use strings
 
 # A record's field, or a function's parameter, as declared: its name, its type
@@ -44,23 +46,26 @@ record Callable
     doc: str
     said: str
 
+# A `str` constant of the face, `constant NAME: str` over a plain literal,
+# which may name a code the package writes: its name, its value and its doc's
+# first sentence.
+record Named
+    name: str
+    value: str
+    said: str
+
 # What a face is to its card: its path under `core/`, what `use core/<path>`
-# binds, its module doc's first sentence, its records and functions, its `use`
-# lines, and what the card's form cannot say of it.
+# binds, its module doc's first sentence, its records, functions and `str`
+# constants, its `use` lines, and what the card's form cannot say of it.
 record Face
     path: str
     binding: str
     said: str
     shapes: [Shape]
     callables: [Callable]
+    constants: [Named]
     uses: [str]
     refused: [str]
-
-# A code the package's modules write, and what the face's docs say of it, ""
-# where none does.
-record Code
-    code: str
-    meaning: str
 
 # The face at `path` under `core/`, read from its text.
 function face_of(path: str, text: str) -> Face
@@ -72,6 +77,7 @@ function face_of(path: str, text: str) -> Face
         refused @ refused.push("the module has no doc, whose first sentence a card opens with")
     shapes: [Shape] @= []
     callables: [Callable] @= []
+    constants: [Named] @= []
     uses: [str] @= []
     at: i64 @= 0
 
@@ -87,8 +93,19 @@ function face_of(path: str, text: str) -> Face
                 refused @ refused.push("line " + (at + 1).to_str() + ": " + why(got))
             else
                 callables @ callables.push(got.must())
+        else if strings.starts_with(text: row, prefix: "constant ")
+            value = module_docs.str_constant(rows: rows, at: at)
+
+            if value.is_err()
+                refused @ refused.push(
+                    "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has a line for a `str` constant naming a code alone: teach `package_face.hero` another before a face declares it"
+                )
+            else
+                constants @ constants.push(
+                    Named(name: module_docs.name_after(text: row, start: 9), value: value.must(), said: first_said(module_docs.doc_above(rows: rows, at: at)))
+                )
         else
-            for word in ["variant ", "constant ", "extern "]
+            for word in ["variant ", "extern "]
                 if strings.starts_with(text: row, prefix: word)
                     refused @ refused.push(
                         "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has no line for a " + strings.trimmed(word) + " yet: teach `package_face.hero` one before a face declares it"
@@ -109,6 +126,7 @@ function face_of(path: str, text: str) -> Face
         said: said,
         shapes: shapes,
         callables: callables,
+        constants: constants,
         uses: uses,
         refused: refused
     )
@@ -250,110 +268,6 @@ function split_top(text: str) -> [str]
 
     return out.push(strings.trimmed(text.slice(from: start, to: text.len())))
 
-# The codes the package's modules write as a literal, outside their tests, each
-# once and in order, with what the face's docs say of each (`meaning_of`).
-function codes_of(face: Face, modules: [str]) -> [Code]
-    seen: {str: bool} @= {}
-    found: [str] @= []
-
-    for text in modules
-        for code in module_text.literal_codes(module_text.without_tests(text))
-            if seen[code].is_err()
-                seen[code] @ true
-                found @ found.push(code)
-
-    out: [Code] @= []
-
-    for code in found.sort()
-        out @ out.push(Code(code: code, meaning: meaning_of(code: code, callables: face.callables)))
-
-    return out
-
-# What the face's docs say of a code: for each function whose doc writes
-# `failing `code`` or `fails `code``, the words after it to the clause's end,
-# with the function named, `where `s` holds no `sep` (`split_once`)`; "" where no
-# doc says it. A doc that names several, `failing `a` or `b` where ...`, says
-# the clause of each.
-function meaning_of(code: str, callables: [Callable]) -> str
-    said: [str] @= []
-
-    for f in callables
-        clause = clause_of(doc: f.doc, code: code)
-
-        if clause.len() > 0
-            said @ said.push(clause + " (`" + f.name + "`)")
-
-    return said.join("; ")
-
-# The clause a doc gives a code after `failing` or `fails`, or "".
-function clause_of(doc: str, code: str) -> str
-    for word in ["failing ", "fails "]
-        for at in module_text.places(text: doc, needle: word)
-            if at > 0 && module_text.word_byte(doc[at - 1])
-                continue
-            listed = codes_listed(text: doc, at: at + word.len())
-
-            if listed.codes.len() == 0
-                continue
-
-            for one in listed.codes
-                if one == code
-                    return clause_from(text: doc, at: listed.end)
-
-    return ""
-
-# The codes a doc lists from `at`, `` `a` ``, `` `a` or `b` ``, `` `a`, `b` and
-# `c` ``, `with` allowed before them, and where the list ends.
-record Listed
-    codes: [str]
-    end: i64
-
-function codes_listed(text: str, at: i64) -> Listed
-    codes: [str] @= []
-    i: i64 @= at
-
-    if strings.starts_with(text: text.slice(from: i, to: text.len()), prefix: "with ")
-        i @ i + 5
-
-    while i < text.len() && text[i] == '`'
-        close: i64 @= i + 1
-
-        while close < text.len() && text[close] != '`'
-            close @ close + 1
-
-        if close >= text.len()
-            return Listed(codes: codes, end: i)
-        codes @ codes.push(text.slice(from: i + 1, to: close))
-        i @ close + 1
-        joined: bool @= false
-
-        for joint in [", or `", ", and `", " or `", " and `", ", `"]
-            if !joined && strings.starts_with(text: text.slice(from: i, to: text.len()), prefix: joint)
-                i @ i + joint.len() - 1
-                joined @ true
-
-        if !joined
-            return Listed(codes: codes, end: i)
-
-    return Listed(codes: codes, end: i)
-
-# The clause from `at` to the first `:`, `;`, `.`, `,` or `)` outside a code
-# span, trimmed.
-function clause_from(text: str, at: i64) -> str
-    spanned: bool @= false
-    end: i64 @= at
-
-    while end < text.len()
-        byte = text[end]
-
-        if byte == '`'
-            spanned @ !spanned
-        else if !spanned && (byte == ':' || byte == ';' || byte == '.' || byte == ',' || byte == ')')
-            break
-        end @ end + 1
-
-    return strings.trimmed(text.slice(from: at, to: end))
-
 ## Tests
 
 test "a face is read: its doc, its records with their fields, its functions with their parameters"
@@ -388,30 +302,12 @@ test "what the form has no line for is refused by name, and so is what cannot be
         text: "# X.\n\nconstant MOST: i64\n    3\n\nvariant Shape\n    dot\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n"
     )
     assert face.refused.len() == 5
-    assert strings.contains(text: face.refused[0], needle: "line 3: `constant MOST: i64`")
+    assert strings.contains(
+        text: face.refused[0],
+        needle: "line 3: `constant MOST: i64`, and a card has a line for a `str` constant naming a code alone"
+    )
     assert strings.contains(text: face.refused[1], needle: "a card has no line for a variant yet")
     assert strings.contains(text: face.refused[2], needle: "do not close on its line")
     assert strings.contains(text: face.refused[3], needle: "no name a call can write")
     assert face.refused[4] == "`function h` has no doc, whose first sentence its card line writes"
     assert face_of(path: "y", text: "# Documents f.\nfunction f()\n    _ = 0\n").refused[0] == "the module has no doc, whose first sentence a card opens with"
-
-test "a code is each literal the modules write outside their tests, with what the face's docs say"
-    face = face_of(
-        path: "s",
-        text: "# S.\n\n# The halves, failing `not_found` where `s` holds no `sep`: so.\nfunction split_once(s: str, sep: str) -> str?\n    return ok(s + sep)\n\n# Reads, failing `not_text` or `not_found` where nothing is there.\nfunction read(s: str) -> str?\n    return ok(s)\n"
-    )
-    modules = [
-        "function first_at() -> i64?\n    return fail(code: \"not_found\", msg: \"m\")\n\ntest \"t\"\n    x: i64? = fail(code: \"in_a_test\", msg: \"m\")\n    assert x.is_err()\n"
-        "function other() -> i64?\n    return fail(\n        code: \"bare\",\n        msg: \"m\"\n    )\n"
-    ]
-    codes = codes_of(face: face, modules: modules)
-    assert codes.len() == 2
-    assert codes[0].code == "bare" && codes[0].meaning == ""
-    assert codes[1].code == "not_found"
-    assert codes[1].meaning == "where `s` holds no `sep` (`split_once`); where nothing is there (`read`)"
-
-test "a clause runs to its punctuation, outside code spans"
-    assert clause_of(doc: "It fails `x` where `a.b` is empty, else not.", code: "x") == "where `a.b` is empty"
-    assert clause_of(doc: "It fails with `x`, `y` and `z` when asked.", code: "y") == "when asked"
-    assert clause_of(doc: "It fails `x`.", code: "x") == ""
-    assert clause_of(doc: "It prefails `x` when asked.", code: "x") == ""

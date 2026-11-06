@@ -232,14 +232,32 @@ function screaming(name: str) -> bool
 
     return true
 
-# The literal codes a module's `fail` calls write that are not snake_case,
-# `[a-z][a-z0-9_]*` (spec § 6, the conventions' § 3.2), tests included.
+# The codes a module's `fail` calls write that are not snake_case,
+# `[a-z][a-z0-9_]*` (spec § 6, the conventions' § 3.2), tests included: each
+# literal, and each `str` constant of the module a code is written through (the
+# conventions' § 3.3), read for its value.
 function crooked_codes(text: str) -> [str]
     out: [str] @= []
 
     for code in module_text.literal_codes(text)
         if !lower_word(code)
             out @ out.push("`fail(code: \"" + code + "\"`")
+
+    rows = strings.lines(text)
+    values: {str: str} @= {}
+
+    for at in range(from: 0, to: rows.len())
+        if strings.starts_with(text: rows[at], prefix: "constant ")
+            value = module_docs.str_constant(rows: rows, at: at)
+
+            if !value.is_err()
+                values[module_docs.name_after(text: rows[at], start: 9)] @ value.must()
+
+    for named in module_text.named_codes(text)
+        value = values[named]
+
+        if !value.is_err() && !lower_word(value.must())
+            out @ out.push("`fail(code: " + named + "`, whose constant is \"" + value.must() + "\"")
 
     return out
 
@@ -363,6 +381,10 @@ test "a literal code is snake_case, and a code that is not a literal is not aske
     assert crooked_codes("return fail(code: \"NotFound\", msg: m)\n") == ["`fail(code: \"NotFound\"`"]
     assert crooked_codes("return fail(code: \"2bad\", msg: m)\n").len() == 1
     assert crooked_codes("return fail(code: UNIQUE, msg: m)\n").len() == 0
+
+    # A code written through a constant of the module is read for its value.
+    assert crooked_codes("constant UNIQUE: str\n    \"unique\"\n\nfunction f() -> i64?\n    return fail(code: UNIQUE, msg: m)\n").len() == 0
+    assert crooked_codes("constant BAD: str\n    \"NotSnake\"\n\nfunction f() -> i64?\n    return fail(code: BAD, msg: m)\n") == ["`fail(code: BAD`, whose constant is \"NotSnake\""]
 
 test "a package neither prints, exits nor reads its words, but `log` and `os`"
     text = "function f()\n    print(\"x\")  # print(y)\n    s = \"exit(1)\"\n    _ = s\n\ntest \"t\"\n    _ = args_checked()\n"

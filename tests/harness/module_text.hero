@@ -181,6 +181,50 @@ function literal_codes(text: str) -> [str]
 
     return out
 
+# The names `text`'s `fail` calls write a code through, in order:
+# `fail(code: NOT_A_NUMBER, msg: m)` answers `NOT_A_NUMBER`, and a qualified
+# name answers whole. A code written as a literal is `literal_codes`'s, and
+# neither reads a comment, a literal or another word's `fail(`.
+function named_codes(text: str) -> [str]
+    out: [str] @= []
+    code = bare(text)
+
+    for at in call_places(code: code, name: "fail")
+        start = past_space(text: code, at: at + 5)
+
+        if !stands_at(text: code, at: start, word: "code:")
+            continue
+        named = past_space(text: code, at: start + 5)
+        end: i64 @= named
+
+        while end < code.len() && (word_byte(code[end]) || code[end] == '.')
+            end @ end + 1
+
+        if end > named && !(code[named] >= '0' && code[named] <= '9')
+            out @ out.push(code.slice(from: named, to: end))
+
+    return out
+
+# Whether `word` stands in `text` from `at`, compared byte by byte.
+function stands_at(text: str, at: i64, word: str) -> bool
+    if at + word.len() > text.len()
+        return false
+
+    for i in range(from: 0, to: word.len())
+        if text[at + i] != word[i]
+            return false
+
+    return true
+
+# The index of the first byte at or after `at` that is not white space.
+function past_space(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && strings.is_space(byte: text[i])
+        i @ i + 1
+
+    return i
+
 # Whether a run of code ends where a `fail` call's code begins: `fail(`, then
 # `code:`, white space allowed around each, and no word character before
 # `fail`.
@@ -305,6 +349,11 @@ test "a code is the plain literal a `fail` writes, on one line or over several"
     assert literal_codes("return fail(\n    code: \"cannot_walk\",\n    msg: \"x\"\n)\n") == ["cannot_walk"]
     assert literal_codes("x = myfail(code: \"no\")\ny = fail(code: f\"{z}\")\n").len() == 0
     assert literal_codes("# fail(code: \"commented\")\ns = \"fail(code: \\\"quoted\\\")\"\n").len() == 0
+
+test "a code written through a name is the name, whole, and a literal or a comment is none"
+    assert named_codes("return fail(code: NOT_A_NUMBER, msg: m)\n") == ["NOT_A_NUMBER"]
+    assert named_codes("return fail(\n    code: sql.UNIQUE,\n    msg: m\n)\n") == ["sql.UNIQUE"]
+    assert named_codes("x = fail(code: \"literal\", msg: m)  # fail(code: NOPE)\ny = myfail(code: NO)\n").len() == 0
 
 test "test blocks are kept or emptied, and the lines stand where they stood"
     text = "function f()\n    _ = 0\n\ntest \"t\"\n    f()\n# next\nfunction g()\n    _ = 1\n"

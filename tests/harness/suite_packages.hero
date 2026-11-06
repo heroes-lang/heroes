@@ -63,9 +63,12 @@ constant DRIVER: str
 # The floor: the `.hero` files the walk judged in every core tree. **28 on
 # 2026-11-06**, the day the suite landed: the canonical tree's two modules and
 # thirteen programs' copies of them. A walk that stops reaching the copies finds
-# 2 and is red, which a floor of the canonical tree's own count would pass.
+# the canonical tree's own few and is red, which a floor of that count would
+# pass. **38 the same day**, raised on purpose when `core/strconv` arrived with
+# its private module and four programs' copies of both (step 6 of
+# M-core-packages, merged into the lane before its gate): 4 canonical, 34 copies.
 constant LEAST: i64
-    28
+    38
 
 # A file the walk read: where it stands, its core tree and its path under that
 # tree, or "" for both where it is a program's own module, and its text.
@@ -315,9 +318,10 @@ function cards(@r: report.Report, scratch: str, compiler: str) -> ()?
 ## Tests
 
 test "the floor is under the count the walk found on the day it landed"
-    # 28 on 2026-11-06: the canonical tree's two modules and thirteen copies.
-    assert LEAST <= 28
-    assert LEAST > 2
+    # 38 on 2026-11-06: the canonical tree's four modules and 34 copies; a walk
+    # reaching the canonical tree alone finds 4.
+    assert LEAST <= 38
+    assert LEAST > 4
 
 test "a label passes on nothing found, and fails once naming everything found"
     r: report.Report @= report.empty()

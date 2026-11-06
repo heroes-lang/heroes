@@ -17,6 +17,7 @@
 # by name, and never written around.
 
 use package_card
+use package_codes
 use package_face
 use shell
 use strings
@@ -119,13 +120,27 @@ function cards_of(root: str, rels: [str]) -> [Card]?
             modules @ modules.push(read(root + "/" + rel)?)
 
         read_face = package_face.face_of(path: face, text: modules[0])
-        codes = package_face.codes_of(face: read_face, modules: modules)
+        codes = package_codes.codes_of(face: read_face, modules: modules)
         refused: [str] @= read_face.refused
 
+        named: {str: bool} @= {}
+
         for code in codes
-            if code.meaning.len() == 0
+            named[code.through] @ true
+
+            if code.code.len() == 0
                 refused @ refused.push(
-                    "the package writes the code `" + code.code + "`, and no doc of its face says when: the doc of the face's function that fails with it writes `failing `" + code.code + "` where ...`"
+                    "a `fail` writes its code through `" + code.through + "`, which is no `str` constant of the face over a plain literal, so the card cannot say which code it is"
+                )
+            else if code.meaning.len() == 0
+                refused @ refused.push(
+                    "the package writes the code `" + code.code + "`, and no doc of its face says when: the doc of the face's function that fails with it writes `fails `" + code.code + "` where ...`, or its constant's doc says what it means"
+                )
+
+        for one in read_face.constants
+            if named[one.name].is_err()
+                refused @ refused.push(
+                    "`constant " + one.name + "` names no code a `fail` of the package writes, and a card has a line for a constant naming a code alone"
                 )
 
         at = root + "/" + face + ".md"

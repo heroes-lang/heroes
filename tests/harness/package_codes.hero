@@ -1,0 +1,210 @@
+# The codes a core package writes, and what its face says of each, for its
+# card's `## Codes` (task 2294): each literal a `fail` of the package's modules
+# writes outside their tests, and each code written through a `str` constant of
+# the face (the conventions' § 3.3), with what it means, read from the face and
+# never written by hand: the constant's own doc where it has one, else the
+# clause the face's functions' docs give the code where they fail with it,
+# `fails `not_found` where `s` holds no `sep``. A code no doc explains has no
+# meaning here, and its card is refused by `package_judge.hero`, never filled.
+
+use module_docs
+use module_text
+use package_face
+use strings
+
+# A code the package's modules write: the code, the face's constant a `fail`
+# writes it `through` ("" for a literal), and what the face's docs say of it,
+# "" where none does. A code written through a name that is no `str` constant
+# of the face is told by that name alone, its `code` "".
+record Code
+    code: str
+    through: str
+    meaning: str
+
+# The codes the package's modules write, outside their tests, each once and in
+# the order of the codes: each literal a `fail` writes, and each code written
+# through a `str` constant of the face, with that constant (the conventions'
+# § 3.3). What each means is its constant's doc where it has one, else what the
+# face's functions' docs say of it (`meaning_of`). A name a `fail` writes a code
+# through that is no `str` constant of the face follows, its `code` "".
+function codes_of(face: package_face.Face, modules: [str]) -> [Code]
+    via: {str: str} @= {}
+    values: [str] @= []
+    unknown: [str] @= []
+
+    for text in modules
+        scoped = module_text.without_tests(text)
+
+        for code in module_text.literal_codes(scoped)
+            if via[code].is_err()
+                via[code] @ ""
+                values @ values.push(code)
+
+        for named in module_text.named_codes(scoped)
+            found = constant_named(face: face, name: named)
+
+            if found.is_err()
+                unknown @ unknown.push(named)
+            else
+                if via[found.must().value].is_err()
+                    values @ values.push(found.must().value)
+                via[found.must().value] @ named
+
+    out: [Code] @= []
+
+    for code in values.sort()
+        name = via[code].must()
+        meaning: str @= meaning_of(code: code, callables: face.callables)
+
+        if name.len() > 0 && constant_named(face: face, name: name).must().said.len() > 0
+            meaning @ constant_named(face: face, name: name).must().said
+        out @ out.push(Code(code: code, through: name, meaning: meaning))
+
+    for named in unknown
+        out @ out.push(Code(code: "", through: named, meaning: ""))
+
+    return out
+
+function constant_named(face: package_face.Face, name: str) -> package_face.Named?
+    for one in face.constants
+        if one.name == name
+            return ok(one)
+
+    return fail(code: "not_found", msg: "no `str` constant `" + name + "` on the face")
+
+# What the face's docs say of a code: for each function whose doc names it in a
+# sentence where the function fails, the clause after it, with the function
+# named: `where `s` holds no `sep` (`split_once`)`; "" where no doc says it.
+function meaning_of(code: str, callables: [package_face.Callable]) -> str
+    said: [str] @= []
+
+    for f in callables
+        clause = clause_of(doc: f.doc, code: code)
+
+        if clause.len() > 0
+            said @ said.push(clause + " (`" + f.name + "`)")
+
+    return said.join("; ")
+
+# The clause a doc gives a code, or "": in a sentence where `fail`, `fails` or
+# `failing` stands before the code's span, the words after the span to the
+# clause's end, the further codes of a list it opens skipped, so `failing `a` or
+# `b` where X` gives both X, and `fails `a` where X, and `b` where Y` gives each
+# its own.
+function clause_of(doc: str, code: str) -> str
+    needle = "`" + code + "`"
+
+    for sentence in module_docs.sentences(doc)
+        verb = fail_verb(sentence)
+
+        if verb.is_err()
+            continue
+
+        for at in module_text.places(text: sentence, needle: needle)
+            if at > verb.must()
+                clause = clause_from(text: sentence, at: past_list(text: sentence, at: at + needle.len()))
+
+                if clause.len() > 0
+                    return clause
+
+    return ""
+
+# Where the first `fail`, `fails` or `failing` of a sentence stands, a word of
+# its own.
+function fail_verb(sentence: str) -> i64?
+    for at in module_text.places(text: sentence, needle: "fail")
+        before = at == 0 || !module_text.word_byte(sentence[at - 1])
+        rest = sentence.slice(from: at, to: sentence.len())
+
+        if before && (strings.starts_with(text: rest, prefix: "fail ") || strings.starts_with(text: rest, prefix: "fails ") || strings.starts_with(text: rest, prefix: "failing "))
+            return ok(at)
+
+    return fail(code: "not_found", msg: "no `fail` in the sentence")
+
+# The index past the codes a list continues with from `at`: `` or `b` ``,
+# `` , `b` ``, `` and `c` ``, so the clause after a list is read for each of
+# its codes.
+function past_list(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while true
+        joined: i64 @= 0
+
+        for joint in [", or `", ", and `", " or `", " and `", ", `"]
+            if joined == 0 && module_text.stands_at(text: text, at: i, word: joint)
+                joined @ joint.len()
+
+        if joined == 0
+            return i
+        close: i64 @= i + joined
+
+        while close < text.len() && text[close] != '`'
+            close @ close + 1
+
+        i @ close + 1
+
+    return i
+
+# The clause from `at` to the first `:`, `;`, `.`, `,` or `)` outside a code
+# span, trimmed.
+function clause_from(text: str, at: i64) -> str
+    spanned: bool @= false
+    end: i64 @= at
+
+    while end < text.len()
+        byte = text[end]
+
+        if byte == '`'
+            spanned @ !spanned
+        else if !spanned && (byte == ':' || byte == ';' || byte == '.' || byte == ',' || byte == ')')
+            break
+        end @ end + 1
+
+    return strings.trimmed(text.slice(from: at, to: end))
+
+## Tests
+
+test "a code is each literal the modules write outside their tests, with what the face's docs say"
+    face = package_face.face_of(
+        path: "s",
+        text: "# S.\n\n# The halves, failing `not_found` where `s` holds no `sep`: so.\nfunction split_once(s: str, sep: str) -> str?\n    return ok(s + sep)\n\n# Reads, failing `not_text` or `not_found` where nothing is there.\nfunction read(s: str) -> str?\n    return ok(s)\n"
+    )
+    modules = [
+        "function first_at() -> i64?\n    return fail(code: \"not_found\", msg: \"m\")\n\ntest \"t\"\n    x: i64? = fail(code: \"in_a_test\", msg: \"m\")\n    assert x.is_err()\n"
+        "function other() -> i64?\n    return fail(\n        code: \"bare\",\n        msg: \"m\"\n    )\n"
+    ]
+    codes = codes_of(face: face, modules: modules)
+    assert codes.len() == 2
+    assert codes[0].code == "bare" && codes[0].meaning == ""
+    assert codes[1].code == "not_found"
+    assert codes[1].meaning == "where `s` holds no `sep` (`split_once`); where nothing is there (`read`)"
+
+test "a clause runs to its punctuation, outside code spans"
+    assert clause_of(doc: "It fails `x` where `a.b` is empty, else not.", code: "x") == "where `a.b` is empty"
+    assert clause_of(doc: "It fails with `x`, `y` and `z` when asked.", code: "y") == "when asked"
+    assert clause_of(doc: "It fails `x`.", code: "x") == ""
+    assert clause_of(doc: "It prefails `x` when asked.", code: "x") == ""
+
+    # Each code of a sentence that coordinates two takes its own clause, and a
+    # code named in a sentence where nothing fails takes none.
+    atoi = "The integer `s` writes. It fails `not_a_number` where `s` holds anything else, an empty text included, and `does_not_fit` where the number lies beyond an `i64`."
+    assert clause_of(doc: atoi, code: "not_a_number") == "where `s` holds anything else"
+    assert clause_of(doc: atoi, code: "does_not_fit") == "where the number lies beyond an `i64`"
+    assert clause_of(doc: "It answers `x` where asked. It fails nothing.", code: "x") == ""
+
+test "a code a `str` constant of the face names is listed with it, meant by its doc"
+    face = package_face.face_of(
+        path: "strconv",
+        text: "# Numbers.\n\n# What `atoi` fails with where a text is no number.\nconstant NOT_A_NUMBER: str\n    \"not_a_number\"\n\n# The integer. It fails `not_a_number` where `s` is not one, and `does_not_fit` where it is too large.\nfunction atoi(s: str) -> i64?\n    return fail(code: NOT_A_NUMBER, msg: s)\n"
+    )
+    assert face.refused.len() == 0
+    assert face.constants.len() == 1 && face.constants[0].value == "not_a_number"
+    modules = [
+        "function atoi(s: str) -> i64?\n    if s == \"\"\n        return fail(code: NOT_A_NUMBER, msg: s)\n    return fail(code: \"does_not_fit\", msg: s)\n\nfunction other() -> i64?\n    return fail(code: elsewhere.CODE, msg: \"m\")\n"
+    ]
+    codes = codes_of(face: face, modules: modules)
+    assert codes.len() == 3
+    assert codes[0].code == "does_not_fit" && codes[0].through == "" && codes[0].meaning == "where it is too large (`atoi`)"
+    assert codes[1].code == "not_a_number" && codes[1].through == "NOT_A_NUMBER"
+    assert codes[1].meaning == "What `atoi` fails with where a text is no number."
+    assert codes[2].code == "" && codes[2].through == "elsewhere.CODE"

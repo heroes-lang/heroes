@@ -39,6 +39,25 @@ function name_after(text: str, start: i64) -> str
 
     return text.slice(from: start, to: end)
 
+# The value of the `str` constant declared at row `at`, `constant NAME: str`
+# with a plain literal alone on the row below, or none for any other constant:
+# a code a package adds is such a constant (the conventions' § 3.3). A literal
+# holding an escape or a brace is not plain, and is none.
+function str_constant(rows: [str], at: i64) -> str?
+    if !strings.ends_with(text: rows[at], suffix: ": str") || at + 1 >= rows.len()
+        return fail(code: "not_found", msg: "row " + (at + 1).to_str() + " declares no `str` constant")
+    body = strings.trimmed(rows[at + 1])
+
+    if body.len() < 2 || body[0] != '"' || body[body.len() - 1] != '"'
+        return fail(code: "not_found", msg: "row " + (at + 2).to_str() + " holds no plain literal")
+    inner = body.slice(from: 1, to: body.len() - 1)
+
+    for mark in ["\\", "\"", "{", "}"]
+        if strings.contains(text: inner, needle: mark)
+            return fail(code: "not_found", msg: "row " + (at + 2).to_str() + " holds no plain literal")
+
+    return ok(inner)
+
 # The comment directly above row `at`: the rows opening with `#` that stand
 # with no gap above it, a `##` heading ending them, each without its `#` and
 # the one space after it.
@@ -120,6 +139,18 @@ function first_sentence(paragraph: str) -> str
 
     return paragraph
 
+# The sentences of `paragraph`, in order, each as `first_sentence` ends one.
+function sentences(paragraph: str) -> [str]
+    out: [str] @= []
+    rest: str @= strings.trimmed(paragraph)
+
+    while rest.len() > 0
+        one = first_sentence(rest)
+        out @ out.push(one)
+        rest @ strings.trimmed(rest.slice(from: one.len(), to: rest.len()))
+
+    return out
+
 function ends_sentence(text: str, at: i64) -> bool
     if at + 1 == text.len()
         return true
@@ -152,6 +183,24 @@ test "functions are read in column 0, and a doc is the comment with no gap above
     assert module_doc(rows) == ["The module."]
     assert module_doc(["# Documents f.", "function f()"]).len() == 0
     assert name_after(text: "function pick<A>(x: A) -> A", start: 9) == "pick"
+
+test "a `str` constant's plain literal is its value, and any other constant has none"
+    rows = [
+        "constant NOT_A_NUMBER: str"
+        "    \"not_a_number\""
+        "constant MOST: i64"
+        "    3"
+        "constant SPLICED: str"
+        "    \"a{b}\""
+    ]
+    assert str_constant(rows: rows, at: 0).must() == "not_a_number"
+    assert str_constant(rows: rows, at: 2).is_err()
+    assert str_constant(rows: rows, at: 4).is_err()
+    assert str_constant(rows: ["constant LAST: str"], at: 0).is_err()
+
+test "a paragraph's sentences are read one after another"
+    assert sentences("It fails `a`. It answers `b.c` too. Then") == ["It fails `a`.", "It answers `b.c` too.", "Then"]
+    assert sentences("").len() == 0
 
 test "a first sentence ends at a `.` outside backticks that a capital or the end follows"
     assert first_sentence("Whether `s` begins with `prefix`. Every text begins with \"\".") == "Whether `s` begins with `prefix`."
