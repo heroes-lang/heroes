@@ -519,8 +519,10 @@ the hash map, copy-on-write checks, `panic`, `print`, numeric conversions, `join
 lines. See 4.20.
 
 *Tier 2 — written in Heroes itself*: `map`, `filter`, `fold`, `find`, `any`, `all`, `range`, the
-`T?` helpers, and — since panel 036 — **the program's three edges**: `read_file`, `write_file` and
-`args`, written over `extern`s against a `hero_os.h` this project ships. This is the payoff from
+`T?` helpers, and — since panel 036 — **the program's edges**: `read_file`, `write_file`, `args`,
+`args_checked` and `exit`, with `validated`, which copies a C string back as a `str?`, written over
+`extern`s against a `hero_os.h` this project ships (corrected 2026-11-06, panel 234's R11). This is
+the payoff from
 generics (4.12) — these are library code with `test` blocks, not compiler magic.
 
 **Why the edges are Tier 2 and not built-ins**, which is the decision panel 036 spent its session
@@ -531,10 +533,13 @@ needs zero backend lines. The precedent runs the same way and is unusually clean
 predeclared file I/O, command-line access and termination; Kernighan's 1981 paper itemises all
 three as defects; Oberon predefines none of them.** Nim, whose surface this project copies, reaches
 the same ergonomics from an auto-imported module rather than from the compiler, and Odin could
-redesign `core:os` in 2025 *because it was a package*. The one edge that cannot be Tier 2 is
-`exit(code)`, which needs `_Noreturn` to survive C's flow analysis — C itself took 22 years and
-WG14 N1453 to admit that. **The spec names all four and their signatures, and says nothing about
-which tier they live in**, because that is not something a reader of a program can observe.
+redesign `core:os` in 2025 *because it was a package*. `exit(code)` is Tier 2 as
+well: the `_Noreturn` C's flow analysis needs, which C itself took 22 years and WG14 N1453 to admit,
+is `hero_exit`'s, in `hero_os.h`, which the Heroes function calls once it has refused a code
+outside 0 to 255 (task 2250; corrected 2026-11-06, panel 234's R11, the sentence having been false
+since `0503df194`, 2026-08-12). **The spec names all five, and `validated`, with their signatures,
+and says nothing about which tier they live in**, because that is not something a reader of a program
+can observe.
 
 **That is the whole standard library.** Everything below is explicitly *not* provided, and is
 expected to arrive via FFI:
@@ -880,6 +885,13 @@ Dependencies, honestly: with no standard library (§1.11), a v1 "dependency" is 
 in the source next to the `extern` that needs it. No package manager exists before modules do; when
 it arrives it will be `heroes add`/`heroes fetch` — inside the same binary.
 
+***A per-project file is examined and deliberately unplaced*** (panel 056, ratified 2026-08-15):
+neither Part 6 nor Part 7. Three conditions, all met, return it to a panel, kept on
+M-package-manager's page: one key, not two, a `prefix <dir>` from which `-I` and `-L` are both
+derived; no string in the file also in a `.hero` file, so deleting the file never changes which
+symbols are linked; and one named binding that `package "<name>"` and one command line cannot
+build. (Written 2026-11-06, panel 234's R11; owed since panel 056.)
+
 One declared exception with an expiry date: `cargo build`/`cargo test` build *the compiler* until
 the fixpoint (as Zig's contributors use Zig's build system while users type only `zig`); after M-selfhost-fixpoint,
 `heroes` is the only command for compiler development too.
@@ -893,7 +905,8 @@ the fixpoint (as Zig's contributors use Zig's build system while users type only
 One file is one **module**, and the file you compile holds `main`. `use geom`
 binds `geom` to the declarations in `geom.hero` beside it, written qualified
 (`geom.dist2(a: p, b: q)`, `p: geom.Point`); every module you name needs its own
-`use`, there are no aliases and no wildcard, and modules may not form a cycle.
+`use`, which `as` may rename (`use syntax/decl as sd`), there is no wildcard, and modules may not
+form a cycle (corrected 2026-11-06, panel 234's R11).
 A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
 `build` and `run` compile one unit per module, prototypes across them and each
 unit cached, and each unit reads the headers of its own module's groups and of
@@ -3423,7 +3436,9 @@ are *on* the closure list.
    hands back the failure. **Noted 2026-09-17.**
 4. **Modules** — ~~`use "list"`~~ **landed at panel 031 as `use list`**, a bare identifier rather
    than a quoted path: one file per module, always-qualified references (`list.map`), no
-   `import *`, no aliases, no package hierarchy. Qualification costs tokens but **buys locality**:
+   `import *`; since M-package-layout (2026-09-02, panel 099) a `use` may be a path, `use net/http`
+   binding `http`, and `as` renames a binding (`use syntax/decl as sd`) (corrected 2026-11-06,
+   panel 234's R11). Qualification costs tokens but **buys locality**:
    seeing `list.map` tells you where it came from without searching. **Required for self-hosting** —
    a compiler is 5–8k lines and one file is masochism. Cut from v1 because self-hosting is not the
    v1 goal; this returned ~60 spec tokens that paid for other additions, and the return cost **+71
