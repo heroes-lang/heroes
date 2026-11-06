@@ -1,0 +1,318 @@
+# A Heroes module's code read as text, for the checks that judge the core
+# packages by their source (`package_rules.hero`): its code without its
+# comments, the same with every literal's contents dropped, the codes its `fail`
+# calls write, the calls it makes, and its `test` blocks. The comments
+# themselves, a declaration's doc and its first sentence, are
+# `module_docs.hero`'s.
+#
+# **Why a scan and not a line at a time.** A `#` inside a string is no comment,
+# a `"` inside a character literal is no quote, and an `f` literal's hole may
+# hold a literal of its own, `f"{m["k"]}"` (spec § 2), so where a comment
+# begins, where a call's name stands and what a code's literal says are each
+# asked of one scan that knows where every literal begins and ends. A literal
+# is one line (spec § 1), so the scan keeps every newline, and line `n` of what
+# it answers is line `n` of the source; a literal left open ends at its line,
+# which keeps that promise for a source the compiler would refuse.
+#
+# **A `fail` the formatter broke over lines is still one call.** `heroes fmt`
+# writes a long `fail(` with its arguments on the lines below it
+# (`shell.hero`'s `project_files` writes `return fail(`, then `code:
+# "cannot_walk",` on the next line), so a code is read from the scan's runs,
+# where the newline between `fail(` and `code:` is white space like any other.
+
+use strings
+
+# One run of a module's text: code, or the contents of one literal without its
+# quotes.
+record Piece
+    kind: i64
+    text: str
+
+# What a run is: code, a string literal, an `f` literal (its holes inside it),
+# or a character literal.
+constant CODE: i64
+    0
+
+constant PLAIN: i64
+    1
+
+constant SPLICED: i64
+    2
+
+constant CHARACTER: i64
+    3
+
+# The runs of `text` in order: code, with each comment dropped and the newline
+# that ends it kept, and between them each literal's contents.
+function pieces(text: str) -> [Piece]
+    out: [Piece] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        byte = text[at]
+
+        if byte == '#'
+            out @ out.push(Piece(kind: CODE, text: text.slice(from: start, to: at)))
+            start @ line_end(text: text, at: at)
+            at @ start
+        else if byte == '"' || byte == '\''
+            out @ out.push(Piece(kind: CODE, text: text.slice(from: start, to: at)))
+            kind = opened(text: text, at: at)
+            close = literal_close(text: text, at: at, kind: kind)
+            out @ out.push(Piece(kind: kind, text: text.slice(from: at + 1, to: close)))
+            start @ literal_after(text: text, at: at, kind: kind)
+            at @ start
+        else
+            at @ at + 1
+
+    return out.push(Piece(kind: CODE, text: text.slice(from: start, to: text.len())))
+
+# What the quote at `at` opens: a character literal at `'`, an `f` literal where
+# a lone `f` stands before the `"`, a string literal otherwise.
+function opened(text: str, at: i64) -> i64
+    if text[at] == '\''
+        return CHARACTER
+
+    if at > 0 && text[at - 1] == 'f' && (at < 2 || !word_byte(text[at - 2]))
+        return SPLICED
+    return PLAIN
+
+# The index of the quote that closes the literal opening at `at`, or of the end
+# of its line where nothing closes it. An `f` literal's holes are skipped whole,
+# with the literals inside them.
+function literal_close(text: str, at: i64, kind: i64) -> i64
+    quote = text[at]
+    i: i64 @= at + 1
+
+    while i < text.len()
+        byte = text[i]
+
+        if byte == '\n' || byte == quote
+            return i
+
+        if byte == '\\' && i + 1 < text.len() && text[i + 1] != '\n'
+            i @ i + 2
+        else if kind == SPLICED && byte == '{' && i + 1 < text.len() && text[i + 1] == '{'
+            i @ i + 2
+        else if kind == SPLICED && byte == '{'
+            i @ hole_end(text: text, at: i + 1)
+        else
+            i @ i + 1
+
+    return text.len()
+
+# The index just past the literal opening at `at`: past its closing quote, or
+# at the end of its line where nothing closes it.
+function literal_after(text: str, at: i64, kind: i64) -> i64
+    close = literal_close(text: text, at: at, kind: kind)
+
+    if close < text.len() && text[close] == text[at]
+        return close + 1
+    return close
+
+# Where the hole of an `f` literal that opens just before `at` ends: the index
+# past the `}` that closes it, the brackets and literals inside it skipped
+# (spec § 2), or the end of its line.
+function hole_end(text: str, at: i64) -> i64
+    depth: i64 @= 0
+    i: i64 @= at
+
+    while i < text.len()
+        byte = text[i]
+
+        if byte == '\n'
+            return i
+
+        if byte == '"' || byte == '\''
+            i @ literal_after(text: text, at: i, kind: opened(text: text, at: i))
+        else if byte == '(' || byte == '[' || byte == '{'
+            depth @ depth + 1
+            i @ i + 1
+        else if byte == ')' || byte == ']' || byte == '}'
+            if depth == 0
+                return i + 1
+            depth @ depth - 1
+            i @ i + 1
+        else
+            i @ i + 1
+
+    return text.len()
+
+# The index of the newline that ends the line holding `at`, or the text's end.
+function line_end(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    return i
+
+# `text` with every comment dropped and every literal's contents with it, a
+# literal standing as its two quotes: what a check reads for a call's name, so
+# that neither prose nor a string's words read as one. Its lines stand where
+# the source's stand.
+function bare(text: str) -> str
+    out: [str] @= []
+
+    for piece in pieces(text)
+        if piece.kind == CODE
+            out @ out.push(piece.text)
+        else if piece.kind == CHARACTER
+            out @ out.push("''")
+        else
+            out @ out.push("\"\"")
+
+    return out.join("")
+
+# The codes `text`'s `fail` calls write as a plain literal, in order:
+# `fail(code: "not_found", msg: m)` answers `not_found`, however the formatter
+# broke the call over lines. A code written any other way, a constant, an `f`
+# literal or another error's `e.code`, is no literal and is not here.
+function literal_codes(text: str) -> [str]
+    out: [str] @= []
+    runs = pieces(text)
+    at: i64 @= 1
+
+    while at < runs.len()
+        if runs[at].kind == PLAIN && runs[at - 1].kind == CODE && opens_code(runs[at - 1].text)
+            out @ out.push(runs[at].text)
+        at @ at + 1
+
+    return out
+
+# Whether a run of code ends where a `fail` call's code begins: `fail(`, then
+# `code:`, white space allowed around each, and no word character before
+# `fail`.
+function opens_code(code: str) -> bool
+    rest = right_trimmed(code)
+
+    if !strings.ends_with(text: rest, suffix: "code:")
+        return false
+    before = right_trimmed(strings.without_suffix(text: rest, suffix: "code:"))
+
+    if !strings.ends_with(text: before, suffix: "fail(")
+        return false
+    head = before.len() - 5
+    return head == 0 || !word_byte(before[head - 1])
+
+function right_trimmed(text: str) -> str
+    end: i64 @= text.len()
+
+    while end > 0 && strings.is_space(byte: text[end - 1])
+        end @ end - 1
+
+    return text.slice(from: 0, to: end)
+
+# Whether a byte may stand in a name: a letter, a digit or `_`.
+function word_byte(byte: u8) -> bool
+    letter = byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z'
+    return letter || byte >= '0' && byte <= '9' || byte == '_'
+
+# `text` with its `test` blocks' lines emptied and every other line kept, its
+# lines standing where the source's stand: what a module answers to a program.
+# A block opens at `test "` in column 0 and runs to the next line in column 0
+# that is neither blank nor a comment, the boundary `suite_layout.hero`'s
+# `code_lines` reads.
+function without_tests(text: str) -> str
+    return masked(text: text, keep_tests: false)
+
+# The lines of `text`'s `test` blocks, every other line emptied.
+function tests_only(text: str) -> str
+    return masked(text: text, keep_tests: true)
+
+function masked(text: str, keep_tests: bool) -> str
+    out: [str] @= []
+    inside: bool @= false
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "test \"")
+            inside @ true
+        else if inside && row.len() > 0 && row[0] != ' ' && row[0] != '\t' && row[0] != '#'
+            inside @ false
+
+        if inside == keep_tests
+            out @ out.push(row)
+        else
+            out @ out.push("")
+
+    return out.join("\n") + "\n"
+
+# Every index where `needle` begins in `text`, compared byte by byte, so that no
+# cut can split a character.
+function places(text: str, needle: str) -> [i64]
+    out: [i64] @= []
+
+    if needle.len() == 0
+        return out
+    start: i64 @= 0
+
+    while start + needle.len() <= text.len()
+        i: i64 @= 0
+
+        while i < needle.len() && text[start + i] == needle[i]
+            i @ i + 1
+
+        if i == needle.len()
+            out @ out.push(start)
+        start @ start + 1
+
+    return out
+
+# Where `code` calls `name`: each `name(` with no word character before it, so
+# `trim(` is not found in `strim(`, and `x.name(` is a call, qualified or not.
+function call_places(code: str, name: str) -> [i64]
+    out: [i64] @= []
+
+    for at in places(text: code, needle: name + "(")
+        if at == 0 || !word_byte(code[at - 1])
+            out @ out.push(at)
+
+    return out
+
+# The line, counted from 1, that holds index `at` of `text`.
+function line_of(text: str, at: i64) -> i64
+    line: i64 @= 1
+    i: i64 @= 0
+
+    while i < at && i < text.len()
+        if text[i] == '\n'
+            line @ line + 1
+        i @ i + 1
+
+    return line
+
+## Tests
+
+test "a comment is dropped where it begins, and a `#` inside a literal begins none"
+    assert bare("x = 1  # a note\ny = 2\n") == "x = 1  \ny = 2\n"
+    assert bare("s = \"a # b\"  # c\n") == "s = \"\"  \n"
+    assert bare("c = '#'\n") == "c = ''\n"
+    assert bare("q = '\"' + \"x\"\n") == "q = '' + \"\"\n"
+
+test "an escaped quote does not close a literal, and an open literal ends at its line"
+    assert bare("s = \"a\\\"b # c\" + t\n") == "s = \"\" + t\n"
+    assert bare("s = \"open # c\nnext\n") == "s = \"\"\nnext\n"
+    assert line_of(text: bare("a = \"x\"\nb = 'y'\nprint(z)\n"), at: 22) == 3
+
+test "an `f` literal's hole may hold a literal of its own, and `{{` opens none"
+    assert bare("m = f\"{v[\"k\"]} # {w}\"  # c\n") == "m = f\"\"  \n"
+    assert bare("m = f\"{{ \" + x\n") == "m = f\"\" + x\n"
+    assert bare("elf = \"x\"\n") == "elf = \"\"\n"
+
+test "a code is the plain literal a `fail` writes, on one line or over several"
+    assert literal_codes("return fail(code: \"not_found\", msg: \"x\")\n") == ["not_found"]
+    assert literal_codes("return fail(\n    code: \"cannot_walk\",\n    msg: \"x\"\n)\n") == ["cannot_walk"]
+    assert literal_codes("x = myfail(code: \"no\")\ny = fail(code: f\"{z}\")\n").len() == 0
+    assert literal_codes("# fail(code: \"commented\")\ns = \"fail(code: \\\"quoted\\\")\"\n").len() == 0
+
+test "test blocks are kept or emptied, and the lines stand where they stood"
+    text = "function f()\n    _ = 0\n\ntest \"t\"\n    f()\n# next\nfunction g()\n    _ = 1\n"
+    assert without_tests(text) == "function f()\n    _ = 0\n\n\n\n\nfunction g()\n    _ = 1\n"
+    assert tests_only(text) == "\n\n\ntest \"t\"\n    f()\n# next\n\n\n"
+
+test "a call is a name and its parenthesis with no word character before it"
+    assert call_places(code: "x = trim(a) + strim(b) + s.trim(c)\n", name: "trim") == [4, 27]
+    assert call_places(code: "args_checked()\n", name: "args").len() == 0
+    assert places(text: "aaa", needle: "aa") == [0, 1]
+    assert places(text: "a", needle: "").len() == 0

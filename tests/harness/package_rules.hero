@@ -1,0 +1,381 @@
+# The rules the `packages` suite holds every core tree to, each a function over
+# text so that a test can ask it of a literal: whose private modules a module
+# may name, how a path and a declared name are spelled, what a code looks like,
+# what a package may not do, what every function owes, whether a copy is the
+# canonical tree's, and what the driver reaches. `suite_packages.hero` walks the
+# trees and asks these; the rules themselves are `examples/packages/README.md`'s,
+# each marked there "(the `packages` suite)".
+
+use module_docs
+use module_text
+use strings
+
+# The canonical tree, whose files every copy repeats (the conventions' § 1.4).
+constant CANONICAL: str
+    "examples/packages/core"
+
+# The calls no package makes, but `log` and `os`, whose work they are (the
+# conventions' § 5.2). `args_checked` reads what `args` reads (spec § 11), so a
+# package reading its program's words through it is the same mistake.
+constant QUIET: [str]
+    [
+        "print"
+        "exit"
+        "args"
+        "args_checked"
+    ]
+
+constant LOUD: [str]
+    [
+        "log"
+        "os"
+    ]
+
+# The core tree a path under `examples/` stands in, `examples/<program>/core`,
+# or none: a program's own modules, and a `core` deeper in a program, belong to
+# no tree.
+function tree_of(path: str) -> str?
+    parts = strings.split_on(text: path, byte: '/')
+
+    if parts.len() < 4 || parts[0] != "examples" || parts[2] != "core"
+        return fail(code: "not_found", msg: "`" + path + "` is in no core tree")
+    return ok(parts.slice(from: 0, to: 3).join("/"))
+
+# A module's path under its tree's `core/`: `strings/internal/scan` for
+# `examples/ini/core/strings/internal/scan.hero`.
+function module_path(tree: str, path: str) -> str
+    return strings.without_suffix(text: strings.without_prefix(text: path, prefix: tree + "/"), suffix: ".hero")
+
+# Where a copy's original stands: `examples/ini/core/strings.hero` is
+# `examples/packages/core/strings.hero`'s copy.
+function original_of(tree: str, path: str) -> str
+    return CANONICAL + "/" + strings.without_prefix(text: path, prefix: tree + "/")
+
+# What is wrong with a copy, or "" where it is its original's bytes: `original`
+# is the text read at `at`, the path `original_of` names.
+function copy_said(copy: str, original: str?, at: str) -> str
+    if original.is_err()
+        return "has no original: " + at + " is not there, and every copy repeats " + CANONICAL
+
+    if original.must() != copy
+        return "differs from its original, " + at
+    return ""
+
+# The `use` lines of a module that name a package's private module from outside
+# that package. `use core/<pkg>/internal/<rest>` stands only in the package's
+# face, `core/<pkg>.hero`, and in the modules under `core/<pkg>/`: Go's rule for
+# `internal`, the conventions' § 1.3. `importer` is the module's path under its
+# tree's `core/`, or "" for a module in no tree, a program's own, which may name
+# none.
+function misplaced_uses(importer: str, text: str) -> [str]
+    out: [str] @= []
+    line: i64 @= 0
+
+    for row in strings.lines(text)
+        line @ line + 1
+
+        if !strings.starts_with(text: row, prefix: "use core/")
+            continue
+        owner = internal_owner(strings.words(row)[1])
+
+        if !owner.is_err() && !inside(importer: importer, owner: owner.must())
+            out @ out.push("line " + line.to_str() + ": `" + row + "`")
+
+    return out
+
+# The package a private module belongs to: `core/strings/internal/scan` is
+# `strings`'s, the part between `core/` and the LAST `internal`, so a package
+# kept inside another's private tree keeps its own; "" is the whole of `core/`.
+# A path with no `internal` part is nobody's private module.
+function internal_owner(named: str) -> str?
+    parts = strings.split_on(text: named, byte: '/')
+    last: i64 @= 0
+    found: bool @= false
+
+    for at in range(from: 0, to: parts.len())
+        if parts[at] == "internal"
+            last @ at
+            found @ true
+
+    if !found || parts[0] != "core"
+        return fail(code: "not_found", msg: "`" + named + "` is no private module")
+    return ok(parts.slice(from: 1, to: last).join("/"))
+
+function inside(importer: str, owner: str) -> bool
+    if importer.len() == 0
+        return false
+
+    if owner.len() == 0
+        return true
+    return importer == owner || strings.starts_with(text: importer, prefix: owner + "/")
+
+# The parts of a path under a `core/` that are not lower case: each directory
+# `[a-z][a-z0-9_]*`, and the file's name the same before its one extension,
+# `[a-z0-9]+` (the conventions' § 1.5). On a volume that folds case, two
+# spellings are one file, and a module named in a capital compiles there and
+# nowhere else.
+function crooked_parts(rel: str) -> [str]
+    out: [str] @= []
+    parts = strings.split_on(text: rel, byte: '/')
+
+    for part in parts.slice(from: 0, to: parts.len() - 1)
+        if !lower_word(part)
+            out @ out.push(part)
+
+    name = parts[parts.len() - 1]
+    halves = strings.split_on(text: name, byte: '.')
+
+    if halves.len() > 2 || !lower_word(halves[0]) || halves.len() == 2 && !extension(halves[1])
+        out @ out.push(name)
+    return out
+
+# Whether `word` is `[a-z][a-z0-9_]*`, the shape of a package's path and of a
+# code (spec § 6: codes are stable snake_case strings).
+function lower_word(word: str) -> bool
+    if word.len() == 0 || word[0] < 'a' || word[0] > 'z'
+        return false
+
+    for at in range(from: 1, to: word.len())
+        byte = word[at]
+
+        if !(byte >= 'a' && byte <= 'z' || byte >= '0' && byte <= '9' || byte == '_')
+            return false
+
+    return true
+
+function extension(word: str) -> bool
+    if word.len() == 0
+        return false
+
+    for at in range(from: 0, to: word.len())
+        byte = word[at]
+
+        if !(byte >= 'a' && byte <= 'z' || byte >= '0' && byte <= '9')
+            return false
+
+    return true
+
+# The paths that differ from an earlier one only in case, each named with the
+# one it repeats: one file on a volume that folds case, two on one that does
+# not. ASCII letters are folded, and only they, since a module's name is an
+# identifier and spec § 1 keeps identifiers ASCII.
+function case_twins(paths: [str]) -> [str]
+    seen: {str: str} @= {}
+    out: [str] @= []
+
+    for path in paths
+        low = folded(path)
+        first = seen[low]
+
+        if first.is_err()
+            seen[low] @ path
+        else
+            out @ out.push("`" + first.must() + "` and `" + path + "`")
+
+    return out
+
+function folded(text: str) -> str
+    bytes: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        byte = text[at]
+
+        if byte >= 'A' && byte <= 'Z'
+            bytes @ bytes.push(byte + 32)
+        else
+            bytes @ bytes.push(byte)
+
+    # Folding an ASCII capital leaves every other byte where it stood, so the
+    # bytes of a `str` folded are UTF-8 still.
+    return bytes.validated_bytes().must()
+
+# The records and variants not named in PascalCase, `[A-Z][A-Za-z0-9]*`, and the
+# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (the conventions' § 2.5):
+# a declaration in column 0, or a member of an `extern` group indented under
+# one, since no statement opens with these words.
+function misnamed(text: str) -> [str]
+    out: [str] @= []
+    line: i64 @= 0
+
+    for row in strings.lines(text)
+        line @ line + 1
+        content = strings.trimmed(row)
+
+        for word in ["record", "variant", "constant"]
+            if strings.starts_with(text: content, prefix: word + " ")
+                name = module_docs.name_after(text: content, start: word.len() + 1)
+
+                if word == "constant" && !screaming(name)
+                    out @ out.push("line " + line.to_str() + ": `constant " + name + "` is not SCREAMING_CASE")
+                else if word != "constant" && !pascal(name)
+                    out @ out.push("line " + line.to_str() + ": `" + word + " " + name + "` is not PascalCase")
+
+    return out
+
+function pascal(name: str) -> bool
+    if name.len() == 0 || name[0] < 'A' || name[0] > 'Z'
+        return false
+
+    for at in range(from: 1, to: name.len())
+        if name[at] == '_'
+            return false
+
+    return true
+
+function screaming(name: str) -> bool
+    if name.len() == 0 || name[0] < 'A' || name[0] > 'Z'
+        return false
+
+    for at in range(from: 1, to: name.len())
+        if name[at] >= 'a' && name[at] <= 'z'
+            return false
+
+    return true
+
+# The literal codes a module's `fail` calls write that are not snake_case,
+# `[a-z][a-z0-9_]*` (spec § 6, the conventions' § 3.2), tests included.
+function crooked_codes(text: str) -> [str]
+    out: [str] @= []
+
+    for code in module_text.literal_codes(text)
+        if !lower_word(code)
+            out @ out.push("`fail(code: \"" + code + "\"`")
+
+    return out
+
+# The calls of `QUIET` a module makes, in its code and its tests, never in a
+# comment or a literal; none for a module of `log` or `os`. `module` is its path
+# under its tree's `core/`.
+function noisy(module: str, text: str) -> [str]
+    out: [str] @= []
+
+    for loud in LOUD
+        if module == loud || strings.starts_with(text: module, prefix: loud + "/")
+            return out
+
+    code = module_text.bare(text)
+
+    for name in QUIET
+        for at in module_text.call_places(code: code, name: name)
+            out @ out.push("line " + module_text.line_of(text: code, at: at).to_str() + ": `" + name + "(`")
+
+    return out
+
+# The top-level functions with no comment directly above them (the
+# conventions' § 6.1), a `##` heading being none.
+function undocumented(text: str) -> [str]
+    out: [str] @= []
+    rows = strings.lines(text)
+
+    for f in module_docs.functions_of(rows)
+        if f.at == 0 || !module_docs.commented(rows[f.at - 1])
+            out @ out.push("line " + (f.at + 1).to_str() + ": `function " + f.name + "`")
+
+    return out
+
+# The top-level functions no `test` block of their own module calls (the
+# conventions' § 6.2): `name(` in a test's code, never in its title, a comment
+# or a literal.
+function untested(text: str) -> [str]
+    out: [str] @= []
+    tested = module_text.bare(module_text.tests_only(text))
+
+    for f in module_docs.functions_of(strings.lines(text))
+        if module_text.call_places(code: tested, name: f.name).len() == 0
+            out @ out.push("`" + f.name + "`")
+
+    return out
+
+# The paths a C emission's `#line` directives name, each once, in order: the
+# modules a program reaches, as the compiler names them.
+function line_paths(c: str) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for row in strings.lines(c)
+        if !strings.starts_with(text: row, prefix: "#line ")
+            continue
+        open = strings.index_of(text: row, needle: "\"")
+
+        if open.is_err() || !strings.ends_with(text: row, suffix: "\"") || row.len() - 1 <= open.must()
+            continue
+        path = row.slice(from: open.must() + 1, to: row.len() - 1)
+
+        if seen[path].is_err()
+            seen[path] @ true
+            out @ out.push(path)
+
+    return out
+
+## Tests
+
+test "a core tree is `examples/<program>/core`, and a module's path is read under it"
+    assert tree_of("examples/ini/core/strings.hero").must() == "examples/ini/core"
+    assert tree_of("examples/packages/core/strings/internal/scan.hero").must() == CANONICAL
+    assert tree_of("examples/ini/main.hero").is_err()
+    assert tree_of("examples/ini/lib/core/x.hero").is_err()
+    assert module_path(tree: "examples/ini/core", path: "examples/ini/core/strings/internal/scan.hero") == "strings/internal/scan"
+    assert original_of(tree: "examples/ini/core", path: "examples/ini/core/strings.hero") == "examples/packages/core/strings.hero"
+
+test "a copy is its original's bytes, and one with no original is told so"
+    at = "examples/packages/core/strings.hero"
+    assert copy_said(copy: "a\n", original: ok("a\n"), at: at) == ""
+    assert copy_said(copy: "a\n", original: ok("a\n\n"), at: at) == "differs from its original, examples/packages/core/strings.hero"
+    missing: str? = fail(code: "file_not_found", msg: "gone")
+    assert copy_said(copy: "a\n", original: missing, at: at) == "has no original: examples/packages/core/strings.hero is not there, and every copy repeats examples/packages/core"
+
+test "a private module is named from its own package alone"
+    face = "use core/strings/internal/scan\n"
+    assert misplaced_uses(importer: "strings", text: face).len() == 0
+    assert misplaced_uses(importer: "strings/internal/scan", text: face).len() == 0
+    assert misplaced_uses(importer: "stringsx", text: face) == ["line 1: `use core/strings/internal/scan`"]
+    assert misplaced_uses(importer: "", text: "use core/strings\n" + face) == ["line 2: `use core/strings/internal/scan`"]
+    assert misplaced_uses(importer: "net/http", text: "use core/net/internal/wire\n").len() == 0
+    assert misplaced_uses(importer: "a/internal/b", text: "use core/a/internal/b/internal/c\n").len() == 0
+    assert misplaced_uses(importer: "a", text: "use core/a/internal/b/internal/c\n").len() == 1
+    assert internal_owner("core/strings").is_err()
+    assert internal_owner("core/internal/x").must() == ""
+
+test "every part of a path under `core/` is lower case"
+    assert crooked_parts("strings/internal/scan.hero").len() == 0
+    assert crooked_parts("strings.md").len() == 0
+    assert crooked_parts("Strings.hero") == ["Strings.hero"]
+    assert crooked_parts("net/HTTP/client.hero") == ["HTTP"]
+    assert crooked_parts("a.b.hero") == ["a.b.hero"]
+    assert crooked_parts("x/1st.hero") == ["1st.hero"]
+    assert crooked_parts("x/a.Hero") == ["a.Hero"]
+
+test "two paths that differ only in case are named together"
+    assert case_twins(["a/Strings.hero", "a/strings.hero", "b/x.hero"]) == ["`a/Strings.hero` and `a/strings.hero`"]
+    assert case_twins(["a/x.hero", "b/x.hero"]).len() == 0
+    assert folded("Core/ÉtÉ.hero") == "core/ÉtÉ.hero"
+
+test "a record and a variant are PascalCase, a constant SCREAMING_CASE, indented ones too"
+    assert misnamed("record Halves\n    before: str\nconstant MAX_DEPTH: i64\n    3\n").len() == 0
+    assert misnamed("record halves\n") == ["line 1: `record halves` is not PascalCase"]
+    assert misnamed("variant Http_Verb\n") == ["line 1: `variant Http_Verb` is not PascalCase"]
+    assert misnamed("constant MaxDepth: i64\n") == ["line 1: `constant MaxDepth` is not SCREAMING_CASE"]
+    assert misnamed("extern \"x.h\"\n    record db tag sqlite3\n") == ["line 2: `record db` is not PascalCase"]
+    assert misnamed("# record lower, in prose\n").len() == 0
+
+test "a literal code is snake_case, and a code that is not a literal is not asked"
+    assert crooked_codes("return fail(code: \"not_found\", msg: m)\n").len() == 0
+    assert crooked_codes("return fail(code: \"NotFound\", msg: m)\n") == ["`fail(code: \"NotFound\"`"]
+    assert crooked_codes("return fail(code: \"2bad\", msg: m)\n").len() == 1
+    assert crooked_codes("return fail(code: UNIQUE, msg: m)\n").len() == 0
+
+test "a package neither prints, exits nor reads its words, but `log` and `os`"
+    text = "function f()\n    print(\"x\")  # print(y)\n    s = \"exit(1)\"\n    _ = s\n\ntest \"t\"\n    _ = args_checked()\n"
+    assert noisy(module: "strings", text: text) == ["line 2: `print(`", "line 7: `args_checked(`"]
+    assert noisy(module: "log", text: text).len() == 0
+    assert noisy(module: "os/internal/exec", text: text).len() == 0
+    assert noisy(module: "logs", text: text).len() == 2
+
+test "every top-level function has a doc and a test of its own module that calls it"
+    text = "# Doc.\nfunction f() -> i64\n    return 1\n\nfunction g() -> i64\n    return 2\n\n## Heading\nfunction h()\n    _ = 0\n\ntest \"f() and g\"\n    assert f() == 1\n    # g()\n    assert \"g()\" != \"\"\n"
+    assert undocumented(text) == ["line 5: `function g`", "line 9: `function h`"]
+    assert untested(text) == ["`g`", "`h`"]
+
+test "the `#line` paths of an emission are read once each, in order"
+    c = "#line 65 \"main.c\"\n#line 9 \"examples/packages/main.hero\"\n#line 13\n#line 17 \"examples/packages/core/strings.hero\"\n#line 20 \"examples/packages/core/strings.hero\"\n"
+    assert line_paths(c) == ["main.c", "examples/packages/main.hero", "examples/packages/core/strings.hero"]

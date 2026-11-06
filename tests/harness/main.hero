@@ -58,6 +58,10 @@
 #   compat        the promise `1.0.0` rests on: a release's examples/ checked
 #                 by today's compiler, red from v1.0.0 on, told before it
 #   corpus        examples/ — real programs, tests and output, three ways
+#   packages      the core packages' trees under examples/: each program's
+#                 copy the canonical tree's, every module reached by its
+#                 driver, named and spelled as the conventions say, quiet,
+#                 documented and tested (task 2293)
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
 #   surface       what a user types: exit codes, streams, flags, rendering
@@ -119,6 +123,7 @@ use suite_latency
 use suite_lines
 use suite_lldb
 use suite_order
+use suite_packages
 use suite_probe
 use suite_records
 use suite_runtime
@@ -538,6 +543,19 @@ function main()
             print("harness: the canonical check could not run" + why(got))
             exit(2)
         print("  canonical: " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The core packages' trees under examples/, every copy against the
+    # canonical tree and every module against the conventions (task 2293).
+    # Reads files, and runs the compiler once, for the driver's reach.
+    if only == "" || only == "packages"
+        got = suite_packages.run_all(scratch: scratch, compiler: compiler)
+
+        if got.is_err()
+            print("harness: the packages suite could not run" + why(got))
+            exit(2)
+        print("  packages: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
