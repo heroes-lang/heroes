@@ -67,9 +67,9 @@ it: the compiler, the net's `packages` suite, or a reader's review.
    like one either: the sort by a caller's order lives in `core/slices`, and
    there is no `core/sort` (the compiler's refusal of such a binding is owed by
    [feature 2299](https://github.com/heroes-lang/heroes/issues/2299)).
-4. **A parameter is named for the call that reads it.** A call to a function
-   with two parameters of one type names every argument (`needs_label`), so a
-   parameter's name is part of the package's surface: Go's names where the
+4. **A parameter is named for the call that reads it.** A call names the
+   argument of every parameter that shares its type with another
+   (`needs_label`), so a parameter's name is part of the package's surface: Go's names where the
    contract is Go's (`s`, `prefix`, `sep`), the subject first. A parameter may
    not shadow a name of its own module (`shadowed_binding`) nor take a
    built-in's, so where Go's would, it gives way: `sql` where Go writes `query`

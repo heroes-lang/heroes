@@ -1,6 +1,6 @@
 # strconv: `use core/strconv`
 
-Numbers read from text: the loop over the digits the programs of `examples/` wrote by hand before this package existed, admitted by a count of those copies (the admission notes at the end of this file).
+Numbers read from text, where a number too large for its type is a failure the caller answers and never an abort.
 
 ## Functions
 

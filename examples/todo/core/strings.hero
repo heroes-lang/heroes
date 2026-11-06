@@ -1,9 +1,9 @@
-# Text, read and taken apart: what the programs of `examples/` wrote by hand
-# before this package existed, each function admitted by a count of those
-# copies (the admission notes at the end of this file). A function keeps Go's
-# name where its contract is Go's and takes another where it is not, and none
-# aborts on a text a program reads from outside: every position it cuts at is
-# a character's first byte, so no slice here splits a character.
+# Text searched, trimmed and split, never cutting a character in two: every
+# position a function here cuts at is a character's first byte, so none aborts
+# on a text a program reads from outside. A function keeps Go's name where its
+# contract is Go's and takes another where it is not, and each is here because
+# the programs of `examples/` wrote it by hand (the admission notes at the end
+# of this file).
 
 use core/strings/internal/scan
 
@@ -13,7 +13,7 @@ record Halves
     before: str
     after: str
 
-# Whether `s` begins with `prefix`. Every text begins with "".
+# Whether `s` begins with `prefix`; every text begins with "".
 function has_prefix(s: str, prefix: str) -> bool
     if prefix.len() > s.len()
         return false
@@ -26,7 +26,7 @@ function has_prefix(s: str, prefix: str) -> bool
 
     return true
 
-# Whether `s` ends with `suffix`. Every text ends with "".
+# Whether `s` ends with `suffix`; every text ends with "".
 function has_suffix(s: str, suffix: str) -> bool
     if suffix.len() > s.len()
         return false
@@ -40,13 +40,13 @@ function has_suffix(s: str, suffix: str) -> bool
 
     return true
 
-# Whether `substr` occurs in `s`. The empty text occurs in every text.
+# Whether `substr` occurs in `s`; the empty text occurs in every text.
 function contains(s: str, substr: str) -> bool
     return !scan.first_at(s: s, sep: substr).is_err()
 
-# `s` without the white space at either end. White space is Unicode's, as Go's
-# `strings.TrimSpace` reads it: space, tab, line feed and carriage return among
-# others, and the non-breaking space U+00A0.
+# `s` without the white space at either end, white space being Unicode's, as
+# Go's `strings.TrimSpace` reads it: space, tab, line feed and carriage return
+# among others, and the non-breaking space U+00A0.
 function trim_space(s: str) -> str
     from: i64 @= 0
 
@@ -95,9 +95,9 @@ function fields(s: str) -> [str]
         out @ out.push(s.slice(from: start, to: s.len()))
     return out
 
-# The lines of `s`, each without its end. A line ends at "\n" or at "\r\n",
-# and the last one's end may be missing, so "a\nb" and "a\nb\n" both answer
-# ["a", "b"]; "" has no lines, and a "\r" with no "\n" after it ends nothing.
+# The lines of `s`, each without its end, "\n" or "\r\n", the last line's end
+# being optional, so "a\nb" and "a\nb\n" both answer ["a", "b"]; "" has no
+# lines, and a "\r" with no "\n" after it ends nothing.
 function split_lines(s: str) -> [str]
     out: [str] @= []
     start: i64 @= 0
