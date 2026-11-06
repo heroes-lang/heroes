@@ -1,8 +1,8 @@
 # A Heroes module's declarations read as text, with the comments that
 # document them: its top-level functions, the comment directly above a row, the
 # module's own doc, a doc's paragraphs and a paragraph's first sentence. The
-# `packages` suite asks whether every function has a doc (`package_rules.hero`);
-# a card is written from these docs (task 2294).
+# `packages` suite asks whether every function has a doc (`package_rules.hero`),
+# and a package's card is written from these docs (`package_face.hero`).
 #
 # **Kept apart from `module_text.hero`**, which reads a module's code, its
 # literals and its comments dropped: this reads the comments themselves, and the

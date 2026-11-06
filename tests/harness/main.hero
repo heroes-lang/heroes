@@ -745,6 +745,14 @@ constant GENERATOR_PROGRAM: str
 constant LATENCY_PROGRAM: str
     "tests/harness/latency.hero"
 
+# **AND THE SIXTH, the package cards' program** (M-core-packages, 2026-11-06,
+# task 2294): `package_cards.hero` and its word, which only it reaches; the
+# modules that write and judge a card are reached from this root as well,
+# through the `packages` suite, so their tests run twice and the word's once.
+# Tested the same way, one test for the root.
+constant CARDS_PROGRAM: str
+    "tests/harness/package_cards.hero"
+
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each a file of `dir`, in the order they are found. A `use` of any
 # other shape, or one naming no file there, is a failure rather than a module
@@ -979,6 +987,32 @@ test "the latency instrument's own tests run with the net's own, every block its
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "latency").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "latency").must()
+    said: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the package cards' program's own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", CARDS_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.starts_with(text: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    for line in skips_in(ran.out)
+        print(CARDS_PROGRAM + ": " + line)
+
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "package_cards").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "package_cards").must()
     said: [str] @= []
 
     for line in strings.lines(ran.out)

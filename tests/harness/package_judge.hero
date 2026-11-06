@@ -1,0 +1,283 @@
+# The package cards written and judged (task 2294): what the card program's two
+# words do, `write` and `check` (`package_cards.hero`), and what the `packages`
+# suite's `cards` label asks in-process. Each card stands beside its face,
+# `examples/packages/core/<path>.md` beside `<path>.hero`, and is held to three
+# things:
+#
+# - it is what `write` writes from the face, byte for byte, so a card is true
+#   by construction and never written by hand (the conventions' § 8.2);
+# - it spends at most `MOST` tokens by `heroes measure`'s `maximum`, and the
+#   face cards together no more than the specification's own `maximum` (panel
+#   234's R5, the conventions' § 8.3);
+# - every call it writes compiles as written: a program calling each function
+#   as the card does is built by the compiler under judgement.
+#
+# A face the form cannot say (`package_face.hero`'s refusals), a code no doc of
+# the face explains, and a stored `.md` that is no face's card are each told,
+# by name, and never written around.
+
+use package_card
+use package_face
+use shell
+use strings
+
+# The most a card may spend, in `heroes measure`'s `maximum` (panel 234's R5:
+# 1,024 vendored tokens, the call form of `strings`' fourteen functions having
+# measured 805).
+constant MOST: i64
+    1024
+
+# The document whose own `maximum` the face cards together may not pass.
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+# The word that writes the cards, as a person runs it.
+constant WRITE: str
+    "heroes run tests/harness/package_cards.hero -- write"
+
+# A card as `write` writes it: its face's path under `core/`, the card's own
+# path, its text, the program that proves its calls, and what stops it being
+# written.
+record Card
+    face: str
+    at: str
+    text: str
+    proof: str
+    refused: [str]
+
+# What `write` did: the cards it wrote, and what the tree as written still
+# holds wrong.
+record Wrote
+    paths: [str]
+    found: [str]
+
+# The faces of a tree, as their paths under `core/`: each `.hero` not under an
+# `internal/` directory (the conventions' § 1.2 and § 1.3). `rels` are the
+# tree's files, each as a path under it.
+function faces_in(rels: [str]) -> [str]
+    out: [str] @= []
+
+    for rel in rels
+        if strings.ends_with(text: rel, suffix: ".hero") && !private(rel)
+            out @ out.push(strings.without_suffix(text: rel, suffix: ".hero"))
+
+    return out
+
+function private(rel: str) -> bool
+    parts = strings.split_on(text: rel, byte: '/')
+
+    for part in parts.slice(from: 0, to: parts.len() - 1)
+        if part == "internal"
+            return true
+
+    return false
+
+# The modules of a face's package: the face, and every module under its own
+# `internal/`.
+function package_modules(face: str, rels: [str]) -> [str]
+    out: [str] @= [face + ".hero"]
+
+    for rel in rels
+        if strings.starts_with(text: rel, prefix: face + "/internal/") && strings.ends_with(text: rel, suffix: ".hero")
+            out @ out.push(rel)
+
+    return out
+
+# The `.md` files of a tree that are no face's card.
+function strays(rels: [str]) -> [str]
+    faces: {str: bool} @= {}
+
+    for face in faces_in(rels)
+        faces[face] @ true
+
+    out: [str] @= []
+
+    for rel in rels
+        if strings.ends_with(text: rel, suffix: ".md") && faces[strings.without_suffix(text: rel, suffix: ".md")].is_err()
+            out @ out.push(rel)
+
+    return out
+
+# Every file under `root`, as a path under it.
+function tree(scratch: str, root: str) -> [str]?
+    nothing: [str] = []
+    out: [str] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
+        out @ out.push(strings.without_prefix(text: path, prefix: root + "/"))
+
+    return ok(out)
+
+# Every card the tree at `root` writes, read from its faces and their modules.
+function cards_of(root: str, rels: [str]) -> [Card]?
+    out: [Card] @= []
+
+    for face in faces_in(rels)
+        modules: [str] @= []
+
+        for rel in package_modules(face: face, rels: rels)
+            modules @ modules.push(read(root + "/" + rel)?)
+
+        read_face = package_face.face_of(path: face, text: modules[0])
+        codes = package_face.codes_of(face: read_face, modules: modules)
+        refused: [str] @= read_face.refused
+
+        for code in codes
+            if code.meaning.len() == 0
+                refused @ refused.push(
+                    "the package writes the code `" + code.code + "`, and no doc of its face says when: the doc of the face's function that fails with it writes `failing `" + code.code + "` where ...`"
+                )
+
+        at = root + "/" + face + ".md"
+        out @ out.push(
+            Card(face: face, at: at, text: package_card.card_text(face: read_face, codes: codes), proof: package_card.proof_source(face: read_face, card: at), refused: refused)
+        )
+
+    return ok(out)
+
+function read(path: str) -> str?
+    text = read_file(path)
+
+    if text.is_err()
+        return fail(code: "unreadable", msg: "cannot read " + path + " as text, and a card is written from it")
+    return text
+
+# What is wrong with the cards of the tree at `root`, each a line naming the
+# card and its repair; none where every card holds.
+function judged(scratch: str, compiler: str, root: str) -> [str]?
+    rels = tree(scratch: scratch, root: root)?
+    proofs = proof_tree(scratch: scratch, root: root, rels: rels)?
+    found: [str] @= []
+    spent: i64 @= 0
+    counted: i64 @= 0
+
+    for card in cards_of(root: root, rels: rels)?
+        if card.refused.len() > 0
+            for why in card.refused
+                found @ found.push("    " + card.at + ": no card can be written: " + why)
+
+            continue
+        stored = read_file(card.at)
+
+        if stored.is_err()
+            found @ found.push("    " + card.at + " is missing: run `" + WRITE + "`")
+        else if stored.must() != card.text
+            found @ found.push(
+                "    " + card.at + " is not what `write` writes from " + root + "/" + card.face + ".hero: run `" + WRITE + "`, and commit the card with its face"
+            )
+        cost = measured(scratch: scratch, compiler: compiler, card: card)?
+        spent @ spent + cost
+        counted @ counted + 1
+
+        if cost > MOST
+            found @ found.push(
+                "    " + card.at + " spends " + cost.to_str() + " tokens by `heroes measure`'s `maximum`, over the " + MOST.to_str() + " a card may (panel 234's R5): the face says more than a card can carry"
+            )
+        broken = proved(scratch: scratch, compiler: compiler, dir: proofs, card: card)?
+
+        if broken.len() > 0
+            found @ found.push("    " + card.at + ": a call it writes does not compile as written, " + broken)
+
+    if counted > 0
+        whole = maximum_of(scratch: scratch, compiler: compiler, path: SPEC)?
+
+        if spent > whole
+            found @ found.push(
+                "    the face cards spend " + spent.to_str() + " tokens together, over the " + whole.to_str() + " of " + SPEC + " itself (panel 234's R5)"
+            )
+
+    for stray in strays(rels)
+        found @ found.push("    " + root + "/" + stray + " is the card of no face: remove it, or restore its face")
+
+    return ok(found)
+
+# Writes every card the tree at `root` can write, beside its face, then judges
+# the tree as written.
+function written(scratch: str, compiler: str, root: str) -> Wrote?
+    rels = tree(scratch: scratch, root: root)?
+    paths: [str] @= []
+
+    for card in cards_of(root: root, rels: rels)?
+        if card.refused.len() == 0
+            write_file(path: card.at, text: card.text)?
+            paths @ paths.push(card.at)
+
+    return ok(Wrote(paths: paths, found: judged(scratch: scratch, compiler: compiler, root: root)?))
+
+# A card's cost, measured on the text `write` writes, so a stale card is
+# priced as it should stand.
+function measured(scratch: str, compiler: str, card: Card) -> i64?
+    path = scratch + "/card-" + strings.split_on(text: card.face, byte: '/').join("-") + ".md"
+    write_file(path: path, text: card.text)?
+    return maximum_of(scratch: scratch, compiler: compiler, path: path)
+
+# `heroes measure <path>`'s `maximum`. Exit 1 is the verdict of a judged
+# document's ceiling, and the count is read either way, as `suite_spec.hero`'s
+# `maximum_of` reads it; this module does not reach that suite, whose own
+# modules a card program has no use for.
+function maximum_of(scratch: str, compiler: str, path: str) -> i64?
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", path])?
+
+    if said.code != 0 && said.code != 1
+        return fail(
+            code: "cannot_measure",
+            msg: "`heroes measure " + path + "` exited " + said.code.to_str() + ": " + strings.trimmed(said.err)
+        )
+    return package_card.maximum_in(said.out)
+
+# A copy of the tree's modules where each card's proof is built: a program's
+# `use core/...` starts at its own directory (spec § 1), so the proof stands
+# beside a `core/` of its own.
+function proof_tree(scratch: str, root: str, rels: [str]) -> str?
+    dir = scratch + "/cards-proof"
+
+    for rel in rels
+        if strings.ends_with(text: rel, suffix: ".hero")
+            target = dir + "/core/" + rel
+            shell.mkdir_all(parent(target))?
+            write_file(path: target, text: read(root + "/" + rel)?)?
+
+    return ok(dir)
+
+function parent(path: str) -> str
+    cut: i64 @= 0
+
+    for at in range(from: 0, to: path.len())
+        if path[at] == '/'
+            cut @ at
+
+    return path.slice(from: 0, to: cut)
+
+# Why the calls a card writes do not compile as written, or "" where they do:
+# its proof program, built in the copy of the tree.
+function proved(scratch: str, compiler: str, dir: str, card: Card) -> str?
+    name = dir + "/card_" + strings.split_on(text: card.face, byte: '/').join("_")
+    write_file(path: name + ".hero", text: card.proof)?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", name + ".hero", "-o", name])?
+
+    if ran.code == 0
+        return ok("")
+    said: [str] @= []
+
+    for line in strings.lines(strings.trimmed(ran.err))
+        said @ said.push("        " + line)
+
+    return ok("its proof " + name + ".hero exited " + ran.code.to_str() + ":\n" + said.join("\n"))
+
+## Tests
+
+test "a face is each module outside an `internal/`, and its package is it and its own private tree"
+    rels = [
+        "strings.hero"
+        "strings.md"
+        "strings/internal/scan.hero"
+        "net/http.hero"
+        "net/http/internal/wire.hero"
+        "internal/shared.hero"
+        "notes.md"
+    ]
+    assert faces_in(rels) == ["strings", "net/http"]
+    assert package_modules(face: "strings", rels: rels) == ["strings.hero", "strings/internal/scan.hero"]
+    assert package_modules(face: "net/http", rels: rels) == ["net/http.hero", "net/http/internal/wire.hero"]
+    assert strays(rels) == ["notes.md"]
+    assert parent("a/b/c.hero") == "a/b"

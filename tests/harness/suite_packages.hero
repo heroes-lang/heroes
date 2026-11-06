@@ -33,16 +33,20 @@
 #   packages/docs      every top-level function has a doc comment
 #   packages/tests     every top-level function is called by a `test` block of
 #                      its own module
+#   packages/cards     each face's card is what `package_cards.hero -- write`
+#                      writes, within its budget, every call it writes
+#                      compiling as written (task 2294, `package_judge.hero`)
 #
 # The rules are functions over text in `package_rules.hero`, each asked of
-# literal inputs by its tests, so a tree the coordinator has not written yet is
-# judged there before it exists.
+# literal inputs by its tests, so a tree nobody has written yet is judged there
+# before it exists.
 #
 # **What `reach` cannot see**, measured 2026-11-06: a module that declares only
 # records emits no `#line`, so the driver's emission does not name it though the
 # driver reaches it. Such a module is told as unreached, the loud direction, and
 # the failure says why.
 
+use package_judge
 use package_rules
 use report
 use floors
@@ -99,6 +103,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     internal(@r, files)
     spelled(@r, scratch: scratch, cored: cored)?
     each_module(@r, cored)
+    cards(@r, scratch: scratch, compiler: compiler)?
     return ok(r)
 
 # Every file of every core tree under `examples/`, and every module of the
@@ -295,6 +300,17 @@ function each_module(@r: report.Report, cored: [Held])
         found: tests,
         rule: "every top-level function of a package is called by a `test` block of its own module, the edges first (the conventions' § 6.2). Fix: add a `test` beside the module's others that calls it:"
     )
+
+# The cards of the canonical tree's faces, asked in-process as the card
+# program's `check` asks them (`package_judge.hero`).
+function cards(@r: report.Report, scratch: str, compiler: str) -> ()?
+    keep(
+        @r,
+        label: "packages/cards",
+        found: package_judge.judged(scratch: scratch, compiler: compiler, root: package_rules.CANONICAL)?,
+        rule: "every face of " + package_rules.CANONICAL + "/ has its card beside it, `<path>.md`, written from the face by `" + package_judge.WRITE + "` and never by hand (the conventions' § 8.2); a card spends at most " + package_judge.MOST.to_str() + " tokens by `heroes measure`'s `maximum`, the face cards together no more than the specification itself (§ 8.3, panel 234's R5), and every call it writes compiles as written. Fix: run `write` and commit each card with its face; a face the card cannot say is told by name, and so is a card over its budget:"
+    )
+    return ok()
 
 ## Tests
 
