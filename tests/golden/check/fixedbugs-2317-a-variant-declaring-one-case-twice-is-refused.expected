@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2317-a-variant-declaring-one-case-twice-is-refused.hero:10:5: error[case_declared_twice]: `one` is already a case of `Turn`, declared at line 8 — a case is named once, or `.one` could not say which; rename one or remove it

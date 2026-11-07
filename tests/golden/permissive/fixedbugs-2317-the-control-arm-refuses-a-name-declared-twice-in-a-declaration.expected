@@ -1,0 +1,2 @@
+tests/golden/permissive/fixedbugs-2317-the-control-arm-refuses-a-name-declared-twice-in-a-declaration.hero:10:5: error[field_declared_twice]: `a` is already a field of `Pair`, declared at line 9 — a field is named once, or a construction and a read could not say which; rename one or remove it
+tests/golden/permissive/fixedbugs-2317-the-control-arm-refuses-a-name-declared-twice-in-a-declaration.hero:14:5: error[case_declared_twice]: `on` is already a case of `Switch`, declared at line 13 — a case is named once, or `.on` could not say which; rename one or remove it

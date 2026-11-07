@@ -1,0 +1,21 @@
+# fixedbugs, defect 2317, 2026-11-07, Part 11's control arm: a field declared
+# twice in one record and a case declared twice in one variant are no thesis
+# rules (`selfhost/diag.hero`'s list), since neither declaration has a
+# meaning a language without the rule could give it, which field `p.a` reads
+# or which case `.on` builds being the question. So `--permissive` refuses
+# both as the strict build does, where it drops `declared_twice` at a
+# module's top and keeps the first declaration.
+record Pair
+    a: i64
+    a: i64  #~ field_declared_twice
+
+variant Switch
+    on
+    on  #~ case_declared_twice
+
+function main()
+    p = Pair(a: 1, a: 2)
+    s: Switch = .on
+
+    match s
+        .on => print(p.a)

@@ -1,0 +1,11 @@
+# fixedbugs, defect 2317, 2026-11-07, the shape beside it that the checker
+# already refused, pinned: a record whose fields are each declared once,
+# built naming one of them twice, is told at the second label that the field
+# in that position is another, as every out-of-order label is.
+record Pair
+    a: i64
+    b: i64
+
+function main()
+    p = Pair(a: 1, a: 2)  #~ wrong_label
+    print(p.a)
