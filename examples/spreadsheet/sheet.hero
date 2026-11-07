@@ -9,6 +9,7 @@
 # The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
 # are skipped, which is what makes the sample readable.
 
+use core/strconv
 use core/strings
 
 ## Error codes
@@ -44,17 +45,25 @@ function is_digit(c: u8) -> bool
 ## Names
 
 # `A1` as a `Cell`, or an error naming what was wrong with it.
+#
+# The row is read by `strconv.atoi` once every byte after the letter is known
+# to be a digit, since `atoi` would also take a sign. It asks before each step
+# whether the next one fits, so a row too long for an i64 is a failure this
+# function reports, where the loop it replaced multiplied first and aborted
+# the program on twenty nines (defect 2307).
 function cell_of(name: str) -> Cell?
     if name.len() < 2 || !is_letter(name[0])
         return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
-    row: i64 @= 0
     i: i64 @= 1
 
     while i < name.len()
         if !is_digit(name[i])
             return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
-        row @ row * 10 + to_i64(name[i] - '0').must()
         i @ i + 1
+
+    row = match strconv.atoi(name.slice(from: 1, to: name.len()))
+        .ok n  => n
+        .err _ => return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` has a row too long for an i64")
 
     if row == 0
         return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` has no row: rows start at 1")
@@ -150,6 +159,18 @@ test "a cell name is one letter and digits"
     assert cell_of("A").is_err()
     assert cell_of("A0").is_err()
     assert cell_of("AA1").is_err()
+    assert cell_of("A+1").is_err()
+
+test "a row too long for an i64 is a failure the program reports, never an abort"
+    assert cell_of("A9223372036854775807").must() == Cell(column: 0, row: 9223372036854775807)
+
+    match cell_of("A9223372036854775808")
+        .ok _  => assert false
+        .err e => assert e.code == ERR_BAD_CELL_NAME
+
+    match cell_of("A99999999999999999999")
+        .ok _  => assert false
+        .err e => assert e.code == ERR_BAD_CELL_NAME
 
 test "a name survives a round trip"
     assert name_of(cell_of("Z9").must()) == "Z9"

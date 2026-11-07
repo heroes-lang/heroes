@@ -57,17 +57,27 @@ function is_rule(head: str) -> bool
         return false
     return leading(head, c) == head.len()
 
+# The most digits a numbered item's marker may have: CommonMark's own bound,
+# "a sequence of 1–9 arabic digits" (CommonMark 0.31.2, § 5.2 List items), set
+# there because ten digits overflowed integers in some browsers. A longer run
+# of digits opens a paragraph, so `number_of` never reads more than nine and its
+# sum stays under 10^9 (defect 2307: twenty nines aborted the program).
+constant MOST_MARKER_DIGITS: i64
+    9
+
 # `12. ` — the width of the marker, or 0 for a line that is not a numbered item.
 function marker_width(head: str) -> i64
     n = digits_of(head)
 
-    if n == 0 || n + 1 >= head.len()
+    if n == 0 || n > MOST_MARKER_DIGITS || n + 1 >= head.len()
         return 0
 
     if head[n] != '.' || head[n + 1] != ' '
         return 0
     return n
 
+# The marker's number. `marker_width` gives at most `MOST_MARKER_DIGITS`
+# digits, so no step of the sum can pass an i64.
 function number_of(head: str, width: i64) -> i64
     v: i64 @= 0
 
@@ -169,6 +179,14 @@ test "a fence takes its lines exactly as they are"
 test "an unclosed fence takes the rest of the document"
     rest: [Block] = [.code(body: ["a", "b"])]
     assert read("```\na\nb\n") == rest
+
+test "a marker of nine digits numbers its item, and a longer one opens a paragraph"
+    nine: [Block] = [.numbered(n: 999999999, text: "nine")]
+    assert read("999999999. nine\n") == nine
+    ten: [Block] = [.paragraph(text: "1234567890. ten")]
+    assert read("1234567890. ten\n") == ten
+    twenty: [Block] = [.paragraph(text: "99999999999999999999. item")]
+    assert read("99999999999999999999. item\n") == twenty
 
 test "a heading counts its hashes"
     deep: [Block] = [.heading(level: 3, text: "Deep")]
