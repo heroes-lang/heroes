@@ -676,3 +676,15 @@ an index line. A yes settles where the packages live, what they hold and how the
 opens the conventions page and the first batch; it does not settle the four defects filed beside
 the sitting, which this milestone repairs whatever the answer, nor R16's route, which is priced and
 built at its step's own sitting.
+
+**RATIFIED, 2026-11-06**, R1 to R16 as adopted, and inside them the six choices as the sitting took
+them: F, the platform layer as an archive beside the runtime; I, the in-order check; C, the two
+compiler refusals; M, `core/slices`; N, the paired run at the close; E, the card in call form. The
+author answered in conversation that afternoon, meant as: *I ratify 2304*, on the coordinator's
+report, which recommended ratifying R1 to R16 as adopted and named N as the one place where the
+sitting parts from the author's own words, a run now and one at the close. So **the question to the
+author is answered: R1 to R16 stand, the conservative resolution of § What the conservative
+resolution would have been is taken in none of the six, and the paired run at the close stands in
+place of a run now and one at the close.** Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it; the four defects filed beside the sitting, 2289 to 2292, and R16's route, priced and
+built at its step's own sitting, are not settled by it.
