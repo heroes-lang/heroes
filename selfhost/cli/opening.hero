@@ -239,6 +239,31 @@ function path_of(row: str) -> str?
         return ok(row.slice(from: 17, to: row.len()))
     return fail(code: "shape", msg: "a row of no shape this file reads")
 
+# Whether one of `text`'s rows names `path`, the separators either way: on
+# Windows clang joins an `-I` directory and the header it finds there with
+# `\`, so its listing says `inc\x.h` where the words said `inc/`, and a
+# byte-for-byte search passes a positive check nowhere and a negative one
+# everywhere (defect 2328).
+function names(text: str, path: str) -> bool
+    for row in deps.lines(text)
+        got = path_of(row)
+
+        if !got.is_err() && got.must().len() == path.len() && deps.under(path: got.must(), prefix: path, either: true)
+            return true
+
+    return false
+
+# Whether one of `text`'s rows names a path under `prefix`, the separators
+# either way (defect 2328).
+function names_under(text: str, prefix: str) -> bool
+    for row in deps.lines(text)
+        got = path_of(row)
+
+        if !got.is_err() && deps.under(path: got.must(), prefix: prefix, either: true)
+            return true
+
+    return false
+
 ## Tests
 
 test "a unit's opening ends at its last line that opens or probes a file"
@@ -319,7 +344,7 @@ test "what an opening reaches moves when a header appears earlier in the search,
         keyed: none,
         @first
     ).must()
-    assert strings.holds(text: before, needle: root + "/inc/x.h")
+    assert names(text: before, path: root + "/inc/x.h")
 
     # A file only `__has_include` finds is a file the answer names.
     assert !write_file(path: root + "/inc/probe.h", text: "\n").is_err()
@@ -332,7 +357,7 @@ test "what an opening reaches moves when a header appears earlier in the search,
         keyed: none,
         @second
     ).must()
-    assert strings.holds(text: probed, needle: root + "/inc/probe.h")
+    assert names(text: probed, path: root + "/inc/probe.h")
     assert key_text(ok(probed)) != key_text(ok(before))
 
     # A header ahead of the one read is another answer.
@@ -346,8 +371,8 @@ test "what an opening reaches moves when a header appears earlier in the search,
         keyed: none,
         @third
     ).must()
-    assert strings.holds(text: ahead, needle: root + "/src/x.h")
-    assert !strings.holds(text: ahead, needle: root + "/at/")
+    assert names(text: ahead, path: root + "/src/x.h")
+    assert !names_under(text: ahead, prefix: root + "/at/")
 
     # One that does not preprocess is no answer, and its key is `UNREAD`.
     assert !write_file(path: root + "/src/x.h", text: "#error a decoy\n").is_err()
@@ -375,7 +400,10 @@ test "what an opening reaches moves when a header appears earlier in the search,
         keyed: [root + "/inc/x.h"],
         @fifth
     ).must()
-    assert !strings.holds(text: named, needle: root + "/inc/x.h")
-    assert strings.holds(text: named, needle: root + "/inc/probe.h")
+    assert !names(text: named, path: root + "/inc/x.h")
+    assert names(text: named, path: root + "/inc/probe.h")
+
+    # The memo is keyed by the path clang wrote, its separator either way.
     assert fifth[root + "/inc/x.h"].is_err()
+    assert fifth[root + "/inc\\x.h"].is_err()
     assert !process.remove_tree(root).is_err()
