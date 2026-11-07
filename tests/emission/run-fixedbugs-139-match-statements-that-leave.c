@@ -573,7 +573,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6adcf976380c8bf7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bbecc2e0f660f8e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs139matchstatementsthatleave\tfixedbugs-139-match-statements-that-leave\n");

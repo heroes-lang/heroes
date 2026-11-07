@@ -222,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bbc876a4b3751d0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c9e5a212290d567", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2225astrsideiswritteninthespecificationsescapes\tfixedbugs-2225-a-str-side-is-written-in-the-specifications-escapes\n");

@@ -339,7 +339,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dd6eb1764b9a20c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2eb8bdce3c1325a3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs570aconstantspragmaleavesacorrectprogramrunning\tfixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running\n");

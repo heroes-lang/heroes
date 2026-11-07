@@ -220,7 +220,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("08188def32e2cadc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28fa60a60a3c4e73", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel\tfixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level\n");

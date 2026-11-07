@@ -748,7 +748,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7cb005ea7599ea4d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d91d8a24cf36de4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aconstantofvariantcasesislaidout\tfixedbugs-382-a-constant-of-variant-cases-is-laid-out\n");

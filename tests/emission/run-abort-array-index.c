@@ -212,7 +212,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1980d09f1ac059bd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a62a3567219dd53", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortarrayindex\tabort-array-index\n");

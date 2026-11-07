@@ -195,8 +195,8 @@ struct slot h_ffiafilledrecordisaskedfor_blank(void) {
 #line 42
 #define t10 (*hero_big_t10)
 #line 42
-    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot *const hero_big_t10 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}}; hero_frame_give(hero_big_t10); return t10;
+    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot *hero_big_t10 __attribute__((__cleanup__(hero_frame_give_at))) = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}}; return t10;
 #line 201 "ffiafilledrecordisaskedfor.c"
 }
 #undef t10
@@ -346,7 +346,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0dac2a9801955bcc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ab5825409f1bcb3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiafilledrecordisaskedfor\tffi-a-filled-record-is-asked-for\n");

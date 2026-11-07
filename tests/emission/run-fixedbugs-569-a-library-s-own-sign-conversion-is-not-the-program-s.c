@@ -267,7 +267,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ca179124c4f7ef5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d834bc923a9028c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs569alibrarysownsignconversionisnottheprograms\tfixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s\n");

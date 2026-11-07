@@ -289,7 +289,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("54e435860f0b2296", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("75c6083d6664a62c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantiscalledinsideageneric\tfixedbugs-510-a-constant-is-called-inside-a-generic\n");

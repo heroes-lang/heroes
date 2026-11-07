@@ -262,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("01898ee437c5b737", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("226b619b0f1f3ace", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary\tfixedbugs-568-the-first-group-s-header-is-read-before-the-c-library\n");

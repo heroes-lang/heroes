@@ -266,7 +266,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6bafc62468e27854", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c9198dc403bfbeb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs571adeprecatedfunctionboundandnotcalledprintsnoclangwords\tfixedbugs-571-a-deprecated-function-bound-and-not-called-prints-no-clang-words\n");

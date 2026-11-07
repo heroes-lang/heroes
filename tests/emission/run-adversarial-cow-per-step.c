@@ -376,7 +376,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c7084a066ac9e45", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d5257583e0621dc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialcowperstep\tadversarial-cow-per-step\n");

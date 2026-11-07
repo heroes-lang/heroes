@@ -406,7 +406,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2dcbc7762911f693", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ead9a2d006b7a2a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersunclosedpackpushleavestwomodulesonerecordlayout\tfixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout\nfixedbugs582pair\tpair\n");

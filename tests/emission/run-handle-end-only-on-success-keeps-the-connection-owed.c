@@ -288,7 +288,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c7ee2e74236e554", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d60b59e199068eb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handleendonlyonsuccesskeepstheconnectionowed\thandle-end-only-on-success-keeps-the-connection-owed\n");

@@ -302,7 +302,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("479b20a03d167b5b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("687cf357146ffef2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandlereadbycatafieldpastthefirst\tdead-handle-read-by-c-at-a-field-past-the-first\n");

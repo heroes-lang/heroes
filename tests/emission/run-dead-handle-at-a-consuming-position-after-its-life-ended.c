@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("40f4f02673b5c882", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("61d6c2dd4b0f4c19", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("deadhandleataconsumingpositionafteritslifeended\tdead-handle-at-a-consuming-position-after-its-life-ended\n");

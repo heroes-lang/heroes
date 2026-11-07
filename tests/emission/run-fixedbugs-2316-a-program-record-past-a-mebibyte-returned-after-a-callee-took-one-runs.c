@@ -582,7 +582,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a15b0f81a0dbbb6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7af783af71673f4c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns\tfixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs\n");

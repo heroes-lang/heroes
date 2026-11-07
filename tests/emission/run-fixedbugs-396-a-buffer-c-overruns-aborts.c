@@ -273,7 +273,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b9aef9a1a5f9a67", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c7cc25171b91dfd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396abuffercoverrunsaborts\tfixedbugs-396-a-buffer-c-overruns-aborts\n");

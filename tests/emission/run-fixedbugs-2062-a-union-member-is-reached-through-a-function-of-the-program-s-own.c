@@ -312,7 +312,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1437e7d708e2816e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3519ba8e603c0504", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown\tfixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own\n");
