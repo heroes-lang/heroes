@@ -1,12 +1,12 @@
 # Panel 235, the reader test: the dry run
 
-lane: .claude/worktrees/pm-opening
-compiler: .claude/worktrees/pm-opening/heroes
+lane: .claude/worktrees/235-base
+compiler: .claude/worktrees/235-base/heroes
   heroes 0.6.0
   sources 1a1e340778db789a
 spec: sha256 0d88388a920f89d100c144b66a1f9b354d198039f6e0cbe4873dd704f24f923a
-runner: sha256 65e5b5fd711dfe5fad0aeb7f58af1f245eec8a660d3d3f955833f9b8a31f31c6
-manifest: no blind/manifest.sha256 yet; `manifest` prints its 144 lines
+runner: sha256 b6e3fbeb154f79db024adfc9ee4d49a7f0c8991e04adbea3fda5977876306587
+manifest: all 144 files match blind/manifest.sha256
 
 ## The world: each package's fingerprint recomputed, each task naming its own
 - index roman 2.1.0: packages/roman matches
@@ -1050,7 +1050,7 @@ error[use_spelling]: `git.example.org/cara/geom/polygon` writes an address in a 
   the most samples a cell whose worst case stays within 19.00: 5; run --jobs 6 --samples 5
   spent 0.0700 USD on readers, 0.0700 in all, of 22.00
   the worst case at five samples by hand, 0.07 + 0.01 x 239 + 0.06 x 239 = 16.8000: yes
-- run --jobs 4 --samples 3: the ledger holds 145 sessions, exactly samples 1 to 3 of every cell and the two first turns: yes; the cut written in key.log: yes; all 145 sessions given CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192: yes
+- run --jobs 4 --samples 3: the ledger holds 145 sessions, exactly samples 1 to 3 of every cell and the two first turns: yes; the cut written in key.log: yes; all 145 sessions given CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384: yes
 - a grader that raises on session 001: recorded as grader_error and said by grade, every one of 118 sessions graded, the score opening with GRADER ERROR and counting it in no share: yes
 - grade again, the grader repaired: session 001 graded pass: yes
 - repairs: 70 second turns for the 70 first turns refused with messages, none for a silent, crashed, void or empty one: yes
@@ -1165,11 +1165,11 @@ The A/A pair does not differ at 0.05: the comparisons below are read.
 - the habit count by ecosystem, Cargo 2, Go 5, Python 1, npm 1, against the expectations' column: as expected
 
 ## The hard stops, exercised on ledgers in the dry folder
-- readers at 17.20 USD: 4 may start, each reserving 0.40, 18.80 at most against the stop 19.00: yes
+- readers at 17.20 USD: 4 may start, each reserving 0.45, 19.00 at most against the stop 19.00: yes
 - the seat on that ledger: 1 may start, its stop 3.00 and the total 20.20 within 22.00: yes
 - readers at 19.00 and the cap probe at 0.05: the seat refused by the overall stop (22.05 past 22.00) though its own stop has room, a reader refused by its own, a second cap probe allowed: yes
-- a reader session that reports no cost is charged its reserve: 0.40 USD: yes
-- a reader's command: `claude -p 'Read brief.md in this directory and follow it exactly. Your inputs are the files in this directory only. Answer in English.' --bare --no-session-persistence --system-prompt 'You work in the directory sessions/007. You read its files with the Read tool, by absolute path.' --model claude-sonnet-5-5 --restricted --safe-mode --strict-mcp-config --tools Read --allowedTools Read --disallowedTools Bash,Write,WebFetch,WebSearch,Glob,Grep,Edit,Task,Agent,ListAgents,SendMessage --max-budget-usd 0.20 --output-format stream-json --verbose`; its environment adds GIT_CEILING_DIRECTORIES=sessions, CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192 and the key: yes
+- a reader session that reports no cost is charged its reserve: 0.45 USD: yes
+- a reader's command: `claude -p 'Read brief.md in this directory and follow it exactly. Your inputs are the files in this directory only. Answer in English.' --bare --no-session-persistence --system-prompt 'You work in the directory sessions/007. You read its files with the Read tool, by absolute path.' --model claude-sonnet-5-5 --restricted --safe-mode --strict-mcp-config --tools Read --allowedTools Read --disallowedTools Bash,Write,WebFetch,WebSearch,Glob,Grep,Edit,Task,Agent,ListAgents,SendMessage --max-budget-usd 0.20 --output-format stream-json --verbose`; its environment adds GIT_CEILING_DIRECTORIES=sessions, CLAUDE_CODE_MAX_OUTPUT_TOKENS=16384 and the key: yes
 - a second spending invocation while one holds the lock refuses: yes
 
 ## The cap probe, on a fake stream-json (no session runs)
