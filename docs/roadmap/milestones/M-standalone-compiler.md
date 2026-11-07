@@ -1,6 +1,6 @@
 # M-standalone-compiler — `heroes` needs nothing else installed
 
-**Scheduled 2026-10-26, at row 82, by the author's instruction**, immediately
+**Scheduled 2026-10-26, at row 82 (83 since 2026-11-07), by the author's instruction**, immediately
 before M-install-channels, meant as: *search for a C compiler to embed in the
 Heroes compiler, compatible with Windows, Mac and Linux, so that Heroes is a
 single executable; then we evaluate it and work out what we must do*. Asked

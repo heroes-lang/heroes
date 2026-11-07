@@ -116,4 +116,5 @@ seed is 1,400,548 lines at `612e686d8`, not 733,838. This row moves from 78 to
 
 **Renumbered 2026-10-26.** The sentence above did not follow M-readonly-lend's
 entry at row 68 on 2026-10-18, which made this row 83; M-standalone-compiler's
-entry at row 82 makes it 84.
+entry at row 82 makes it 84, and M-package-index's at row 78 on 2026-11-07
+makes it 85.

@@ -385,3 +385,19 @@ in §4.19, R10's condition (b') and item 10's falsifier, and R13's correction of
 caller's order a function of the package `core/slices`, Go's own later home for it, and no package
 is named `sort`, since a `use` binding a built-in's name is refused (R3, feature 2299); issue 1154's
 library route is withdrawn with it.
+
+**Paused after the first batch, 2026-11-07, by the author's instructions of
+2026-11-06.** The dependency system is decided and built before the core
+packages (M-package-manager, row 77, opened beside this row the same day):
+the first batch, built and gated in the lane `core-b1` at `9791d4787`, waits
+there unpushed until row 77's first version can distribute it, and the batches
+after it resume once it does. Two facts of the lane go with it: the site's
+build refuses it as it stands (run 2026-11-07 in `core-b1`: *packages is on no
+shelf*, and its English and Italian pages missing), and its copies under
+`core/` and its 41 `use core/` lines move where panel 235 decides.
+
+**A new acceptance condition**, of the same shape as the repository's hooks
+rewritten in Heroes over these packages (issue 2082): **the package manager
+rewritten over the core packages, every golden of its interface passing
+unchanged.** It is M-package-manager's third tempo, and this row closes with
+it.

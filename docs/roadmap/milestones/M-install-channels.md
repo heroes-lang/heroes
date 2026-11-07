@@ -45,6 +45,7 @@ holding a skill with the specification and a hook that runs
 `site/src/llms.txt`.
 
 **2026-10-26.** M-standalone-compiler entered the chain at row 82, immediately
-before this row, which is 83 since. Its delivery would make *a binary on its
+before this row, which is 83 since (84 since 2026-11-07, when
+M-package-index entered at row 78). Its delivery would make *a binary on its
 own would be a decoy* above stop being true, so the shape of the channels is
 read again when that row closes.
