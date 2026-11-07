@@ -1,8 +1,14 @@
 ## 14. Packages
+Section 1's *every `use` starts at the directory of the file you compile* now
+holds for the program's own modules; a `use` reaches a package by its entry's
+name alone, `json`.
+
 A program may use packages: modules that others publish, fetched for it. Its
 catalogue, the file `heroes.toml` beside the file you compile, has one entry
-per package; a program that uses none has none. The catalogue is TOML, each
-entry a table under `dependencies`, each value a string:
+per package; a program that uses none has none. The catalogue holds the
+program's dependencies and nothing else: no name, version or description of
+the program itself. The catalogue is TOML, each entry a table under
+`dependencies`, each value a string:
 ```
 [dependencies.json]
 version = "1.4.2"
@@ -24,4 +30,6 @@ sum = "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"
   `parse`; `as` renames it, as in section 1. A `use` whose first name is no
   entry's reaches the program's own module, as in section 1: `use text/lines`.
 - An entry named as a folder or module of the program's own, as `text`, is an
-  error: name the entry otherwise.
+  error: name the entry otherwise. `Use` stays as section 1 writes it:
+
+    Use = "use" ident { "/" ident } [ "as" ident ] NEWLINE .

@@ -1,7 +1,7 @@
 ## catalogue
 
 ```text
-require geom git https://git.example.org/cara/geom 3.0.2 sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214
+dependency geom git https://git.example.org/cara/geom 3.0.2 sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214
 ```
 
 ## program

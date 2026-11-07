@@ -1,4 +1,4 @@
-# The program's own module `geom/area` (panel 235's reader test, task T3).
+# The program's own module `geom/area`.
 
 # The area of a square whose side is `side`.
 function square(side: i64) -> i64

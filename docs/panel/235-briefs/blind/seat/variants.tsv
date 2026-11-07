@@ -1,0 +1,8 @@
+# The blind seat's variants, drawn by random.Random(235).shuffle(['angle', 'bare', 'pkg'])
+# on 2026-11-07, the coordinator's draw; the session sees the variant-N.md files only.
+variant-1.md	sections/pkg-toml.md
+variant-2.md	sections/angle-toml.md
+variant-3.md	sections/bare-toml.md
+task-1.md	tasks/T2/task.md
+task-2.md	tasks/T3/task.md
+geom/area.hero	tasks/T3/given/geom/area.hero

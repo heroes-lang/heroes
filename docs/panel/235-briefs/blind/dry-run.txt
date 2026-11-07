@@ -1,28 +1,34 @@
 # Panel 235, the reader test: the dry run
 
-compiler: .claude/worktrees/235-base/heroes
+lane: .claude/worktrees/pm-opening
+compiler: .claude/worktrees/pm-opening/heroes
   heroes 0.6.0
   sources 1a1e340778db789a
 spec: sha256 0d88388a920f89d100c144b66a1f9b354d198039f6e0cbe4873dd704f24f923a
+runner: sha256 65e5b5fd711dfe5fad0aeb7f58af1f245eec8a660d3d3f955833f9b8a31f31c6
+manifest: no blind/manifest.sha256 yet; `manifest` prints its 144 lines
 
 ## The world: each package's fingerprint recomputed, each task naming its own
 - index roman 2.1.0: packages/roman matches
 - git https://git.example.org/ada/csv v1.2.0: packages/ada_csv matches
-- git https://git.example.org/ben/csv v0.9.4: packages/ben_csv matches
+- git https://git.example.org/ben/csv 1.10: packages/ben_csv matches
 - git https://git.example.org/cara/geom v3.0.2: packages/cara_geom matches
 - T1 names 2.1.0 roman and its sum: yes
 - T2 names v1.2.0 https://git.example.org/ada/csv and its sum: yes
-- T2 names v0.9.4 https://git.example.org/ben/csv and its sum: yes
+- T2 names 1.10 https://git.example.org/ben/csv and its sum: yes
 - T3 names v3.0.2 https://git.example.org/cara/geom and its sum: yes
 
-## The sections: words (`wc -w`) and the folder each arm reads
-- U-angle: sections/angle-toml.md, 213 words, heroes.toml, spelling angle; heroes-spec.md is the spec and this section: yes
-- U-bare: sections/bare-toml.md, 216 words, heroes.toml, spelling bare; heroes-spec.md is the spec and this section: yes
-- U-pkg: sections/pkg-toml.md, 217 words, heroes.toml, spelling pkg; heroes-spec.md is the spec and this section: yes
-- F-yaml: sections/angle-yaml.md, 209 words, heroes.yaml, spelling angle; heroes-spec.md is the spec and this section: yes
-- F-toml: sections/angle-toml.md, 213 words, heroes.toml, spelling angle; heroes-spec.md is the spec and this section: yes
-- F-lines: sections/angle-lines.md, 221 words, heroes.mod, spelling angle; heroes-spec.md is the spec and this section: yes
-- F-hero: sections/angle-hero.md, 222 words, heroes.catalogue, spelling angle; heroes-spec.md is the spec and this section: yes
+## The sections: words (`wc -w`), the shared sentence, section 1 amended, the production
+- section 1's production, `Use = "use" ident { "/" ident } [ "as" ident ] NEWLINE .`, is the one U-bare states it keeps: yes
+- U-angle: sections/angle-toml.md, 264 words, heroes.toml, spelling angle; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- U-bare: sections/bare-toml.md, 286 words, heroes.toml, spelling bare; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- U-pkg: sections/pkg-toml.md, 289 words, heroes.toml, spelling pkg; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- F-yaml: sections/angle-yaml.md, 260 words, heroes.yaml, spelling angle; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- F-toml: sections/angle-toml.md, 264 words, heroes.toml, spelling angle; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- F-json: sections/angle-json.md, 268 words, heroes.json, spelling angle; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- F-lines: sections/angle-lines.md, 272 words, heroes.list, spelling angle; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- F-hero: sections/angle-hero.md, 273 words, heroes.catalogue, spelling angle; the spec and this section, the shared sentence, section 1 amended first, its production: yes
+- every arm of one spelling opens with the same sentence and states the same production (the F arms U-angle's, word for word): yes
 - arms sharing one section: U-angle and F-toml
 
 ## The session folders, one first turn per arm and task, under build/b235-dry/sessions
@@ -33,6 +39,7 @@ spec: sha256 0d88388a920f89d100c144b66a1f9b354d198039f6e0cbe4873dd704f24f923a
 - U-pkg T3: brief.md, geom/area.hero, heroes-spec.md, task.md
 - F-yaml T3: brief.md, geom/area.hero, heroes-spec.md, task.md
 - F-toml T3: brief.md, geom/area.hero, heroes-spec.md, task.md
+- F-json T3: brief.md, geom/area.hero, heroes-spec.md, task.md
 - F-lines T3: brief.md, geom/area.hero, heroes-spec.md, task.md
 - F-hero T3: brief.md, geom/area.hero, heroes-spec.md, task.md
 
@@ -63,24 +70,77 @@ error[use_spelling]: `pkg/roman/numeral` is not how a package's module is reache
   fix (certain): write `use <roman>/numeral`
 ```
 
+### U-angle T1 wrong-python-pin: fail catalogue_version, habit Python (expected fail catalogue_version, habit Python) ok
+Python's `==` written into the version
+```
+error[catalogue_version]: the version `==2.1.0` is not exact: a version is three numbers, as `1.4.2`
+  at heroes.toml:2:11
+    |
+  2 | version = "==2.1.0"
+    |           ^^^^^^^^^
+  fix (guess): write `version = "2.1.0"`
+```
+
+### U-angle T1 critic-angle-bold-filename: pass (expected pass) ok
+the critic's probe: the file named in bold above the block
+
+### U-angle T1 critic-angle-spaces-in-brackets: pass (expected pass) ok
+the critic's probe: spaces inside the brackets
+
+### U-angle T1 critic-angle-subheading-filename: pass (expected pass) ok
+the critic's probe: `### heroes.toml` under `## catalogue` stays in the part
+
+### U-angle T1 critic-angle-whole-path-in-brackets: fail use_spelling (expected fail use_spelling) ok
+the critic's probe: `use <roman/numeral>`, C's `#include <a/b>`, refused by the grader with the arm's spelling
+```
+error[use_spelling]: `<roman/numeral>`: the angle brackets hold the entry's name alone, and its module follows them after `/`
+  at main.hero:1:5
+    |
+  1 | use <roman/numeral>
+    |     ^^^^^^^^^^^^^^^
+  fix (certain): write `use <roman>/numeral`
+```
+
 ### U-angle T2 right: pass (expected pass) ok
 two names for two packages called csv
+
+### U-angle T2 right-program-first: pass (expected pass) ok
+no headings, the program first: the block holding `function main` is the program
 
 ### U-angle T2 wrong-entry-not-named: fail unknown_entry (expected fail unknown_entry) ok
 the use lines keep the authors' name, which no entry has
 ```
-error[unknown_entry]: heroes.toml has no entry `csv`
+error[unknown_entry]: heroes.toml has no entry `csv`; `fields` is a module of the entry `csv_ada`
   at main.hero:1:5
     |
   1 | use <csv>/fields
     |     ^^^^^^^^^^^^
   fix (guess): write `use <csv_ada>/fields`
   note: the entries of heroes.toml: `csv_ada`, `csv_ben`
-error[unknown_entry]: heroes.toml has no entry `csv`
+error[unknown_entry]: heroes.toml has no entry `csv`; `quote` is a module of the entry `csv_ben`
   at main.hero:2:5
     |
   2 | use <csv>/quote
     |     ^^^^^^^^^^^
+  fix (guess): write `use <csv_ben>/quote`
+  note: the entries of heroes.toml: `csv_ada`, `csv_ben`
+```
+
+### U-angle T2 wrong-no-brackets-not-named: fail use_spelling (expected fail use_spelling) ok
+no brackets and the authors' name: the module's holder found, as in every arm
+```
+error[use_spelling]: `csv/fields` reaches no module of the program's own; `fields` is a module of the entry `csv_ada`, which is not how a package's module is reached
+  at main.hero:1:5
+    |
+  1 | use csv/fields
+    |     ^^^^^^^^^^
+  fix (guess): write `use <csv_ada>/fields`
+  note: the entries of heroes.toml: `csv_ada`, `csv_ben`
+error[use_spelling]: `csv/quote` reaches no module of the program's own; `quote` is a module of the entry `csv_ben`, which is not how a package's module is reached
+  at main.hero:2:5
+    |
+  2 | use csv/quote
+    |     ^^^^^^^^^
   fix (guess): write `use <csv_ben>/quote`
   note: the entries of heroes.toml: `csv_ada`, `csv_ben`
 ```
@@ -94,6 +154,9 @@ error[catalogue_syntax]: heroes.toml is not TOML: the table `dependencies.csv` i
   6 | [dependencies.csv]
     |                  ^
 ```
+
+### U-angle T2 critic-angle-T2-entry-names-of-authors-in-use: pass (expected pass) ok
+the critic's probe: names of the program's choice, an address ending `.git`
 
 ### U-angle T3 right: pass (expected pass) ok
 the own module without brackets, the package with them
@@ -144,24 +207,40 @@ error[unknown_module]: there is no module `numeral` — `use numeral` reads `num
   note: heroes.toml's entries are reached as `roman/…`
 ```
 
+### U-bare T1 wrong-path-in-brackets: fail use_spelling (expected fail use_spelling) ok
+`use <roman/numeral>` in this arm: refused with this arm's spelling
+```
+error[use_spelling]: `<roman/numeral>`: a `use` is names joined by `/`, and `<` is not one
+  at main.hero:1:5
+    |
+  1 | use <roman/numeral>
+    |     ^^^^^^^^^^^^^^^
+  fix (certain): write `use roman/numeral`
+```
+
+### U-bare T1 critic-bare-index-entry-is-roman: pass (expected pass) ok
+the critic's probe: the right answer
+
 ### U-bare T2 right: pass (expected pass) ok
 two names for two packages called csv
 
-### U-bare T2 wrong-entry-not-named: fail unknown_module (expected fail unknown_module) ok
-the use lines keep the authors' name: with no entry of that name, the line reads as the program's own module
+### U-bare T2 wrong-entry-not-named: fail unknown_entry (expected fail unknown_entry) ok
+the use lines keep the authors' name, which no entry has and no own module either: the same lookup and guess as the other arms
 ```
-error[unknown_module]: there is no module `csv/fields` — `use csv/fields` reads `csv/fields.hero`, from the directory of `main.hero`, the file you compile, and that file is not there
+error[unknown_entry]: `csv/fields` names no entry of heroes.toml and no module of the program's own; `fields` is a module of the entry `csv_ada`
   at main.hero:1:5
     |
   1 | use csv/fields
     |     ^^^^^^^^^^
-
-error[unknown_module]: there is no module `csv/quote` — `use csv/quote` reads `csv/quote.hero`, from the directory of `main.hero`, the file you compile, and that file is not there
+  fix (guess): write `use csv_ada/fields`
+  note: the entries of heroes.toml: `csv_ada`, `csv_ben`
+error[unknown_entry]: `csv/quote` names no entry of heroes.toml and no module of the program's own; `quote` is a module of the entry `csv_ben`
   at main.hero:2:5
     |
   2 | use csv/quote
     |     ^^^^^^^^^
-  note: heroes.toml's entries are reached as `csv_ada/…`, `csv_ben/…`
+  fix (guess): write `use csv_ben/quote`
+  note: the entries of heroes.toml: `csv_ada`, `csv_ben`
 ```
 
 ### U-bare T2 wrong-tag-unquoted: fail catalogue_value (expected fail catalogue_value) ok
@@ -189,16 +268,20 @@ error[entry_collision]: the entry `geom` has the name of the program's own folde
   fix (guess): name the entry otherwise, as `geom_pkg`, and its `use` lines with it
 ```
 
-### U-bare T3 wrong-renamed-not-used: fail unknown_module (expected fail unknown_module) ok
-the entry renamed, its use line not
+### U-bare T3 wrong-renamed-not-used: fail unknown_entry (expected fail unknown_entry) ok
+the entry renamed, its use line not: no entry `geom` and no own module `geom/polygon`, the module held by `geom_cara`
 ```
-error[unknown_module]: there is no module `geom/polygon` — `use geom/polygon` reads `geom/polygon.hero`, from the directory of `main.hero`, the file you compile, and that file is not there
+error[unknown_entry]: `geom/polygon` names no entry of heroes.toml and no module of the program's own; `polygon` is a module of the entry `geom_cara`
   at main.hero:2:5
     |
   2 | use geom/polygon
     |     ^^^^^^^^^^^^
-  note: heroes.toml's entries are reached as `geom_cara/…`
+  fix (guess): write `use geom_cara/polygon`
+  note: the entries of heroes.toml: `geom_cara`
 ```
+
+### U-bare T3 critic-bare-use-without-catalogue-entry-but-folder: pass (expected pass) ok
+the critic's probe: the entry named otherwise than the folder
 
 ### U-pkg T1 right: pass (expected pass) ok
 the catalogue and the program as section 14 asks
@@ -225,20 +308,34 @@ error[use_spelling]: `roman/numeral` is not how a package's module is reached: `
   fix (certain): write `use pkg/roman/numeral`
 ```
 
+### U-pkg T1 wrong-path-in-brackets: fail use_spelling (expected fail use_spelling) ok
+`use <roman/numeral>` in this arm: refused with this arm's spelling
+```
+error[use_spelling]: `<roman/numeral>`: a `use` is names joined by `/`, and `<` is not one
+  at main.hero:1:5
+    |
+  1 | use <roman/numeral>
+    |     ^^^^^^^^^^^^^^^
+  fix (certain): write `use pkg/roman/numeral`
+```
+
+### U-pkg T1 critic-pkg-alias: pass (expected pass) ok
+the critic's probe: `as` renaming a package's module
+
 ### U-pkg T2 right: pass (expected pass) ok
 two names for two packages called csv
 
 ### U-pkg T2 wrong-entry-not-named: fail unknown_entry (expected fail unknown_entry) ok
 the use lines keep the authors' name, which no entry has
 ```
-error[unknown_entry]: heroes.toml has no entry `csv`
+error[unknown_entry]: heroes.toml has no entry `csv`; `fields` is a module of the entry `csv_ada`
   at main.hero:1:5
     |
   1 | use pkg/csv/fields
     |     ^^^^^^^^^^^^^^
   fix (guess): write `use pkg/csv_ada/fields`
   note: the entries of heroes.toml: `csv_ada`, `csv_ben`
-error[unknown_entry]: heroes.toml has no entry `csv`
+error[unknown_entry]: heroes.toml has no entry `csv`; `quote` is a module of the entry `csv_ben`
   at main.hero:2:5
     |
   2 | use pkg/csv/quote
@@ -260,6 +357,16 @@ error[unknown_package_module]: the package of the entry `csv_ada` (https://git.e
 ### U-pkg T3 right: pass (expected pass) ok
 the own module as today, the package under `pkg/`
 
+### U-pkg T3 wrong-index-source: fail fetch_failed (expected fail fetch_failed) ok
+a git package written as an entry of the index
+```
+error[fetch_failed]: the Heroes index has no package `geom`
+  at heroes.toml:1:15
+    |
+  1 | [dependencies.geom]
+    |               ^^^^
+```
+
 ### U-pkg T3 wrong-own-under-pkg: fail unknown_package_module (expected fail unknown_package_module) ok
 the program's own module written under `pkg/` too
 ```
@@ -269,16 +376,6 @@ error[unknown_package_module]: the package of the entry `geom` (https://git.exam
   1 | use pkg/geom/area
     |     ^^^^^^^^^^^^^
   fix (certain): write `use geom/area`, the program's own module
-```
-
-### U-pkg T3 wrong-index-source: fail fetch_failed (expected fail fetch_failed) ok
-a git package written as an entry of the index
-```
-error[fetch_failed]: the Heroes index has no package `geom`
-  at heroes.toml:1:15
-    |
-  1 | [dependencies.geom]
-    |               ^^^^
 ```
 
 ### F-yaml T1 right: pass (expected pass) ok
@@ -307,7 +404,7 @@ error[catalogue_field]: the entry `sum` is `sha256-79151d65cd1d4c2caf5095b19dd28
 ### F-yaml T1 wrong-version-as-number: fail catalogue_value (expected fail catalogue_value) ok
 a version YAML's core schema reads as a float (the trap of an unquoted two-number version)
 ```
-error[catalogue_value]: YAML reads `version: 2.1` as a number; every value of an entry is a string
+error[catalogue_value]: YAML reads `version: 2.1` as the number 2.1; every value of an entry is a string
   at heroes.yaml:3:14
     |
   3 |     version: 2.1
@@ -315,8 +412,25 @@ error[catalogue_value]: YAML reads `version: 2.1` as a number; every value of an
   fix (certain): write `version: "2.1"`
 ```
 
+### F-yaml T1 critic-yaml-flow-entry: pass (expected pass) ok
+the critic's probe: an entry as a flow mapping
+
+### F-yaml T1 critic-yaml-name-key: fail catalogue_field (expected fail catalogue_field) ok
+the critic's probe: `name: app`, refused citing the section's sentence
+```
+error[catalogue_field]: heroes.yaml holds `dependencies` and nothing else; `name` is not read
+  at heroes.yaml:1:1
+    |
+  1 | name: app
+    | ^^^^
+  note: the catalogue holds the program's dependencies and nothing else: no name, version or description of the program itself (section 14)
+```
+
+### F-yaml T1 critic-yaml-quoted: pass (expected pass) ok
+the critic's probe: every value quoted
+
 ### F-yaml T2 right: pass (expected pass) ok
-one value quoted, the rest plain: both are strings
+the tags plain and quoted as each needs: `v1.2.0` is a string plain, `"1.10"` only quoted
 
 ### F-yaml T2 wrong-no-space: fail catalogue_syntax (expected fail catalogue_syntax) ok
 no space after a colon
@@ -335,8 +449,19 @@ a tab in the indentation
 error[catalogue_syntax]: heroes.yaml is not YAML a catalogue reads: a tab in the indentation: YAML indents with spaces
   at heroes.yaml:8:1
     |
-  8 | 	tag: v0.9.4
+  8 | 	tag: "1.10"
     | ^
+```
+
+### F-yaml T2 wrong-tag-float: fail catalogue_value (expected fail catalogue_value) ok
+YAML's trap: `tag: 1.10` plain is the number 1.1 by the core schema
+```
+error[catalogue_value]: YAML reads `tag: 1.10` as the number 1.1; every value of an entry is a string
+  at heroes.yaml:8:10
+    |
+  8 |     tag: 1.10
+    |          ^^^^
+  fix (certain): write `tag: "1.10"`
 ```
 
 ### F-yaml T3 right: pass (expected pass) ok
@@ -367,6 +492,19 @@ error[catalogue_syntax]: heroes.yaml is not YAML a catalogue reads: the string o
 ### F-toml T1 right: pass (expected pass) ok
 the catalogue and the program as section 14 asks
 
+### F-toml T1 right-inline: pass (expected pass) ok
+an inline table under `[dependencies]`
+
+### F-toml T1 wrong-cargo-shorthand: fail catalogue_field, habit Cargo (expected fail catalogue_field, habit Cargo) ok
+Cargo's shorthand, a string for an entry, and no sum
+```
+error[catalogue_field]: the entry `roman` is "2.1.0", not a table: an entry is a table of `version` and `sum`, or of `git`, `tag` and `sum`
+  at heroes.toml:2:1
+    |
+  2 | roman = "2.1.0"
+    | ^^^^^
+```
+
 ### F-toml T1 wrong-version-unquoted: fail catalogue_value (expected fail catalogue_value) ok
 a version written without its quotes
 ```
@@ -378,15 +516,28 @@ error[catalogue_value]: the value of `version` is a string, written in quotes
   fix (certain): write `version = "2.1.0"`
 ```
 
-### F-toml T1 wrong-cargo-shorthand: fail catalogue_field (expected fail catalogue_field) ok
-Cargo's shorthand, a string for an entry, and no sum
+### F-toml T1 critic-toml-dotted-keys: pass (expected pass) ok
+the critic's probe: dotted keys, which crashed the grader before
+
+### F-toml T1 critic-toml-literal-strings: pass (expected pass) ok
+the critic's probe: TOML's literal strings
+
+### F-toml T1 critic-toml-no-headings-cat-first: pass (expected pass) ok
+the critic's probe: no headings, the catalogue first
+
+### F-toml T1 critic-toml-package-table: fail catalogue_field, habit Cargo (expected fail catalogue_field, habit Cargo) ok
+the critic's probe: Cargo's `[package]`, refused citing the section's sentence
 ```
-error[catalogue_field]: the entry `roman` is "2.1.0", not a table: an entry is a table of `version` and `sum`, or of `git`, `tag` and `sum`
-  at heroes.toml:2:1
+error[catalogue_field]: heroes.toml holds the table `dependencies` and nothing else; `package` is not read
+  at heroes.toml:1:2
     |
-  2 | roman = "2.1.0"
-    | ^^^^^
+  1 | [package]
+    |  ^^^^^^^
+  note: the catalogue holds the program's dependencies and nothing else: no name, version or description of the program itself (section 14)
 ```
+
+### F-toml T1 critic-toml-trailing-comment: pass (expected pass) ok
+the critic's probe: comments ending lines
 
 ### F-toml T2 right: pass (expected pass) ok
 inline tables, which TOML reads as the section's tables
@@ -409,6 +560,7 @@ error[catalogue_field]: heroes.toml holds the table `dependencies` and nothing e
     |
   1 | [dependency.csv_ada]
     |  ^^^^^^^^^^
+  note: the catalogue holds the program's dependencies and nothing else: no name, version or description of the program itself (section 14)
 error[unknown_entry]: heroes.toml has no entry `csv_ada`
   at main.hero:1:5
     |
@@ -423,8 +575,33 @@ error[unknown_entry]: heroes.toml has no entry `csv_ben`
   note: heroes.toml has no entry
 ```
 
+### F-toml T2 wrong-tag-float: fail catalogue_value (expected fail catalogue_value) ok
+`tag = 1.10` unquoted: TOML reads the number 1.1
+```
+error[catalogue_value]: TOML reads `tag = 1.10` as the number 1.1; every value of an entry is a string
+  at heroes.toml:8:7
+    |
+  8 | tag = 1.10
+    |       ^^^^
+  fix (certain): write `tag = "1.10"`
+```
+
 ### F-toml T3 right: pass (expected pass) ok
 the own module without brackets, the package with them
+
+### F-toml T3 right-dotted: pass (expected pass) ok
+a git entry in dotted keys
+
+### F-toml T3 wrong-dotted-unquoted: fail catalogue_value (expected fail catalogue_value) ok
+a dotted key's value without its quotes
+```
+error[catalogue_value]: the value of `tag` is a string, written in quotes
+  at heroes.toml:3:12
+    |
+  3 | geom.tag = v3.0.2
+    |            ^^^^^^
+  fix (certain): write `geom.tag = "v3.0.2"`
+```
 
 ### F-toml T3 wrong-field-typo: fail catalogue_field (expected fail catalogue_field) ok
 a field misspelled
@@ -451,81 +628,202 @@ error[catalogue_field]: the entry `geom` comes from git and has no `version`: it
     | ^^^^^^^
 ```
 
+### F-json T1 right: pass (expected pass) ok
+the catalogue and the program as section 14 asks
+
+### F-json T1 wrong-name-key: fail catalogue_field (expected fail catalogue_field) ok
+the program's own `name`, refused citing the section's sentence
+```
+error[catalogue_field]: heroes.json holds `dependencies` and nothing else; `name` is not read
+  at heroes.json:2:4
+    |
+  2 |   "name": "app",
+    |    ^^^^
+  note: the catalogue holds the program's dependencies and nothing else: no name, version or description of the program itself (section 14)
+```
+
+### F-json T1 wrong-npm-range: fail catalogue_field, habit npm (expected fail catalogue_field, habit npm) ok
+npm's habit: an entry written as a `^2.1.0` range
+```
+error[catalogue_field]: the entry `roman` is "^2.1.0", not an object: an entry is an object of `version` and `sum`, or of `git`, `tag` and `sum`
+  at heroes.json:3:6
+    |
+  3 |     "roman": "^2.1.0"
+    |      ^^^^^
+```
+
+### F-json T1 wrong-trailing-comma: fail catalogue_syntax (expected fail catalogue_syntax) ok
+a comma after the last member
+```
+error[catalogue_syntax]: heroes.json is not JSON: a comma after the last member, before `}`: JSON allows none there
+  at heroes.json:5:87
+    |
+  5 |       "sum": "sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9",
+    |                                                                                       ^
+  fix (certain): remove this comma
+```
+
+### F-json T2 right: pass (expected pass) ok
+two names for two packages called csv
+
+### F-json T2 wrong-comment: fail catalogue_syntax (expected fail catalogue_syntax) ok
+a `//` comment, which JSON has not
+```
+error[catalogue_syntax]: heroes.json is not JSON: JSON has no comments, and `//` begins one
+  at heroes.json:2:3
+    |
+  2 |   // the two packages their authors call csv
+    |   ^
+  fix (guess): remove the comment
+```
+
+### F-json T2 wrong-tag-number: fail catalogue_value (expected fail catalogue_value) ok
+`"tag": 1.10`, a number where a string is owed
+```
+error[catalogue_value]: JSON reads `"tag": 1.10` as the number 1.1; every value of an entry is a string
+  at heroes.json:10:14
+    |
+ 10 |       "tag": 1.10,
+    |              ^^^^
+  fix (certain): write `"tag": "1.10"`
+```
+
+### F-json T3 right: pass (expected pass) ok
+the own module without brackets, the package with them
+
+### F-json T3 wrong-bare-tag: fail catalogue_value (expected fail catalogue_value) ok
+a tag written without its quotes
+```
+error[catalogue_value]: the value of `tag` is a string, written in double quotes
+  at heroes.json:5:14
+    |
+  5 |       "tag": v3.0.2,
+    |              ^^^^^^
+  fix (certain): write `"tag": "v3.0.2"`
+```
+
+### F-json T3 wrong-single-quotes: fail catalogue_syntax (expected fail catalogue_syntax) ok
+keys and strings in single quotes
+```
+error[catalogue_syntax]: heroes.json is not JSON: JSON writes keys and strings in double quotes, and this one opens with a single quote
+  at heroes.json:2:3
+    |
+  2 |   'dependencies': {
+    |   ^
+  fix (guess): write every key and string in double quotes
+```
+
 ### F-lines T1 right: pass (expected pass) ok
 one line, after a comment
+
+### F-lines T1 wrong-go-block: fail catalogue_syntax, habit Go (expected fail catalogue_syntax, habit Go) ok
+Go's `require ( … )` block, refused by the one-line-per-entry rule
+```
+error[catalogue_syntax]: `require (` opens no block in heroes.list: each entry is one line of its own, `dependency <name> index <version> <sum>` or `dependency <name> git <address> <tag> <sum>`
+  at heroes.list:1:9
+    |
+  1 | require (
+    |         ^
+error[catalogue_syntax]: an entry inside a block: each entry of heroes.list is one line of its own, beginning with `dependency`
+  at heroes.list:2:5
+    |
+  2 |     roman index 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (certain): write `dependency roman index 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9`
+error[catalogue_syntax]: `)` closes the block a `(` opened, and heroes.list has no blocks
+  at heroes.list:3:1
+    |
+  3 | )
+    | ^
+  fix (certain): remove this line
+```
 
 ### F-lines T1 wrong-no-source-word: fail catalogue_syntax (expected fail catalogue_syntax) ok
 the word `index` left out
 ```
 error[catalogue_syntax]: the third word of an entry is `index` or `git`, and here it is `2.1.0`
-  at heroes.mod:1:15
+  at heroes.list:1:18
     |
-  1 | require roman 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9
-    |               ^^^^^
-  note: an entry is `require <name> index <version> <sum>` or `require <name> git <address> <tag> <sum>`
+  1 | dependency roman 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9
+    |                  ^^^^^
+  note: an entry is `dependency <name> index <version> <sum>` or `dependency <name> git <address> <tag> <sum>`
 ```
 
-### F-lines T1 wrong-go-block: fail catalogue_syntax (expected fail catalogue_syntax) ok
-Go's `require ( … )` block
+### F-lines T1 wrong-require-verb: fail catalogue_syntax, habit Go (expected fail catalogue_syntax, habit Go) ok
+Go's `require` for the entry's word
 ```
-error[catalogue_syntax]: `require (` opens no block in heroes.mod: each entry is one line of its own, `require <name> index <version> <sum>` or `require <name> git <address> <tag> <sum>`
-  at heroes.mod:1:9
+error[catalogue_syntax]: a line of heroes.list begins with `dependency`; this one begins with `require`
+  at heroes.list:1:1
     |
-  1 | require (
-    |         ^
-error[catalogue_syntax]: a line of heroes.mod begins with `require`; this one begins with `roman`
-  at heroes.mod:2:5
+  1 | require roman index 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9
+    | ^^^^^^^
+  fix (certain): write `dependency roman index 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9`
+```
+
+### F-lines T1 wrong-v-version: fail catalogue_version, habit Go (expected fail catalogue_version, habit Go) ok
+Go's `v` before an index version
+```
+error[catalogue_version]: the version `v2.1.0` is not exact: a version is three numbers, as `1.4.2`
+  at heroes.list:1:24
     |
-  2 |     roman index 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9
-    |     ^^^^^
-error[catalogue_syntax]: a line of heroes.mod begins with `require`; this one begins with `)`
-  at heroes.mod:3:1
+  1 | dependency roman index v2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9
+    |                        ^^^^^^
+  fix (guess): write `2.1.0`
+```
+
+### F-lines T1 critic-lines-module-line: fail catalogue_field, habit Go (expected fail catalogue_field, habit Go) ok
+the critic's probe: Go's `module app`, refused citing the section's sentence
+```
+error[catalogue_field]: heroes.list holds the program's dependencies and nothing else; `module app` is not read
+  at heroes.list:1:1
     |
-  3 | )
-    | ^
+  1 | module app
+    | ^^^^^^^^^^
+  note: the catalogue holds the program's dependencies and nothing else: no name, version or description of the program itself (section 14)
+```
+
+### F-lines T1 critic-lines-trailing-comment: fail catalogue_syntax (expected fail catalogue_syntax) ok
+the critic's probe: a comment after an entry, where the section says `#` begins a comment line
+```
+error[catalogue_syntax]: `#` begins a comment line, and a comment does not follow an entry on its line
+  at heroes.list:1:103
+    |
+  1 | dependency roman index 2.1.0 sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9  # numerals
+    |                                                                                                       ^^^^^^^^^^
+  fix (guess): write the comment on a line of its own
 ```
 
 ### F-lines T2 right: pass (expected pass) ok
 two names for two packages called csv
 
-### F-lines T2 wrong-swapped: fail fetch_failed (expected fail fetch_failed) ok
-the address and the tag in the other order
-```
-error[fetch_failed]: nothing can be fetched from `v1.2.0`: no repository answers there
-  at heroes.mod:1:21
-    |
-  1 | require csv_ada git v1.2.0 https://git.example.org/ada/csv sha256-34d7dc508706d83daba5e85482dc993822ee0fc41c9c33c00e62ee5d71a1c176
-    |                     ^^^^^^
-```
-
 ### F-lines T2 wrong-name-missing: fail catalogue_syntax (expected fail catalogue_syntax) ok
 the entry's name left out
 ```
 error[catalogue_syntax]: the third word of an entry is `index` or `git`, and here it is `https://git.example.org/ada/csv`
-  at heroes.mod:1:13
+  at heroes.list:1:16
     |
-  1 | require git https://git.example.org/ada/csv v1.2.0 sha256-34d7dc508706d83daba5e85482dc993822ee0fc41c9c33c00e62ee5d71a1c176
-    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an entry is `require <name> index <version> <sum>` or `require <name> git <address> <tag> <sum>`
+  1 | dependency git https://git.example.org/ada/csv v1.2.0 sha256-34d7dc508706d83daba5e85482dc993822ee0fc41c9c33c00e62ee5d71a1c176
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an entry is `dependency <name> index <version> <sum>` or `dependency <name> git <address> <tag> <sum>`
+```
+
+### F-lines T2 wrong-swapped: fail fetch_failed (expected fail fetch_failed) ok
+the address and the tag in the other order
+```
+error[fetch_failed]: nothing can be fetched from `v1.2.0`: no repository answers there
+  at heroes.list:1:24
+    |
+  1 | dependency csv_ada git v1.2.0 https://git.example.org/ada/csv sha256-34d7dc508706d83daba5e85482dc993822ee0fc41c9c33c00e62ee5d71a1c176
+    |                        ^^^^^^
 ```
 
 ### F-lines T3 right: pass (expected pass) ok
 the own module without brackets, the package with them
 
-### F-lines T3 wrong-tag-no-v: fail fetch_failed (expected fail fetch_failed) ok
-the tag written as the version, without its `v`
-```
-error[fetch_failed]: `https://git.example.org/cara/geom` has no tag `3.0.2`; its tags: v3.0.2
-  at heroes.mod:1:52
-    |
-  1 | require geom git https://git.example.org/cara/geom 3.0.2 sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214
-    |                                                    ^^^^^
-```
-
 ### F-lines T3 wrong-no-brackets: fail use_spelling (expected fail use_spelling) ok
 the package's module written as the program's own
 ```
-error[use_spelling]: `geom/polygon` is not how a package's module is reached: `geom` is an entry of heroes.mod
+error[use_spelling]: `geom/polygon` is not how a package's module is reached: `geom` is an entry of heroes.list
   at main.hero:2:5
     |
   2 | use geom/polygon
@@ -533,18 +831,39 @@ error[use_spelling]: `geom/polygon` is not how a package's module is reached: `g
   fix (certain): write `use <geom>/polygon`
 ```
 
+### F-lines T3 wrong-tag-no-v: fail fetch_failed (expected fail fetch_failed) ok
+the tag written as a version, without its `v`
+```
+error[fetch_failed]: `https://git.example.org/cara/geom` has no tag `3.0.2`; its tags: v3.0.2
+  at heroes.list:1:55
+    |
+  1 | dependency geom git https://git.example.org/cara/geom 3.0.2 sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214
+    |                                                       ^^^^^
+```
+
 ### F-hero T1 right: pass (expected pass) ok
 the catalogue fenced as `hero`, beside the program
 
-### F-hero T1 wrong-unquoted: fail catalogue_value (expected fail catalogue_value) ok
-a value written without its quotes
+### F-hero T1 wrong-name-field: fail catalogue_field (expected fail catalogue_field) ok
+the program's own `name`, refused citing the section's sentence
 ```
-error[catalogue_value]: the value of `version` is a string literal, in double quotes
-  at heroes.catalogue:2:14
+error[catalogue_field]: heroes.catalogue holds the program's dependencies and nothing else; `name: "app"` is not read
+  at heroes.catalogue:1:1
     |
-  2 |     version: 2.1.0
-    |              ^^^^^
-  fix (certain): write `version: "2.1.0"`
+  1 | name: "app"
+    | ^^^^^^^^^^^
+  note: the catalogue holds the program's dependencies and nothing else: no name, version or description of the program itself (section 14)
+```
+
+### F-hero T1 wrong-package-word: fail catalogue_syntax (expected fail catalogue_syntax) ok
+section 13's `package` for the declaration's word
+```
+error[catalogue_syntax]: every top-level line of heroes.catalogue starts with `dependency`; this one starts with `package`
+  at heroes.catalogue:1:1
+    |
+  1 | package roman
+    | ^^^^^^^
+  fix (guess): write `dependency roman`
 ```
 
 ### F-hero T1 wrong-two-spaces: fail catalogue_syntax (expected fail catalogue_syntax) ok
@@ -564,18 +883,28 @@ error[catalogue_syntax]: a field is indented exactly 4 spaces (section 1), and t
   fix (certain): write `    sum: "sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9"`
 ```
 
+### F-hero T1 wrong-unquoted: fail catalogue_value (expected fail catalogue_value) ok
+a value written without its quotes
+```
+error[catalogue_value]: the value of `version` is a string literal, in double quotes
+  at heroes.catalogue:2:14
+    |
+  2 |     version: 2.1.0
+    |              ^^^^^
+  fix (certain): write `version: "2.1.0"`
+```
+
+### F-hero T1 critic-hero-leading-comment-doc: pass (expected pass) ok
+the critic's probe: a comment line first
+
+### F-hero T1 critic-hero-no-headings-cat-first: pass (expected pass) ok
+the critic's probe: no headings, both blocks fenced `hero`, the catalogue first
+
+### F-hero T1 critic-hero-package-line-comment: pass (expected pass) ok
+the critic's probe, in this arm's word: a comment ending the declaration's line
+
 ### F-hero T2 right: pass (expected pass) ok
 two names for two packages called csv
-
-### F-hero T2 wrong-same-name: fail catalogue_name (expected fail catalogue_name) ok
-both declarations named csv, as their authors call them
-```
-error[catalogue_name]: a second `package csv`: every entry has its own name
-  at heroes.catalogue:6:9
-    |
-  6 | package csv
-    |         ^^^
-```
 
 ### F-hero T2 wrong-equals: fail catalogue_syntax (expected fail catalogue_syntax) ok
 TOML's `=` for a field
@@ -594,17 +923,38 @@ error[catalogue_syntax]: a field is written `name: "value"`, as a record's field
   fix (certain): write `git: "https://git.example.org/ben/csv"`
 ```
 
+### F-hero T2 wrong-same-name: fail catalogue_name (expected fail catalogue_name) ok
+both declarations named csv, as their authors call them
+```
+error[catalogue_name]: a second `dependency csv`: every entry has its own name
+  at heroes.catalogue:6:12
+    |
+  6 | dependency csv
+    |            ^^^
+```
+
+### F-hero T2 wrong-tag-unquoted: fail catalogue_value (expected fail catalogue_value) ok
+`tag: 1.10` unquoted, a number literal
+```
+error[catalogue_value]: `1.10` is a number literal (section 2); the value of `tag` is a string literal, in double quotes
+  at heroes.catalogue:8:10
+    |
+  8 |     tag: 1.10
+    |          ^^^^
+  fix (certain): write `tag: "1.10"`
+```
+
 ### F-hero T3 right: pass (expected pass) ok
 the own module without brackets, the package with them
 
 ### F-hero T3 wrong-record-literal: fail catalogue_syntax (expected fail catalogue_syntax) ok
 the entry written as a record construction on one line
 ```
-error[catalogue_syntax]: a declaration is `package` and the entry's name, alone on its line, its fields indented below it
+error[catalogue_syntax]: a declaration is `dependency` and the entry's name, alone on its line, its fields indented below it
   at heroes.catalogue:1:1
     |
-  1 | package geom(git: "https://git.example.org/cara/geom", tag: "v3.0.2", sum: "sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214")
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  1 | dependency geom(git: "https://git.example.org/cara/geom", tag: "v3.0.2", sum: "sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214")
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
 ### F-hero T3 wrong-unclosed-quote: fail catalogue_syntax (expected fail catalogue_syntax) ok
@@ -618,14 +968,6 @@ error[catalogue_syntax]: the string literal is not closed on its line (section 1
   fix (certain): write `tag: "v3.0.2"`
 ```
 
-### extra T1 silent: silent (expected silent) ok
-builds and runs, and prints `is` where the task shows ` = `
-stdout: '4 is IV\n1987 is MCMLXXXVII\n2026 is MMXXVI\n', exit 0
-
-### extra T1 crash: crash (expected crash) ok
-builds, and aborts on `.must()` of the numeral of 0
-stdout: '', exit -6
-
 ### extra T1 compile-error: fail unknown_in_module (expected fail unknown_in_module) ok
 a function the module does not declare: the compiler's own message, its path in the arm's spelling
 ```
@@ -636,8 +978,12 @@ error[unknown_in_module]: module `<roman>/numeral` declares nothing called `roma
     |                                ^^^^^
 ```
 
-### extra T1 void-read-outside: void (expected void) ok
-a right answer from a session that read a file outside its folder
+### extra T1 crash: crash (expected crash) ok
+builds, and aborts on `.must()` of the numeral of 0
+stdout: '', exit -6
+
+### extra T1 heading-in-fence: pass (expected pass) ok
+comments that read like the answer's headings, inside the fence
 
 ### extra T1 no-answer: none (expected none) ok
 an answer with no program
@@ -652,16 +998,20 @@ error[catalogue_missing]: there is no heroes.toml beside main.hero, so no `use` 
     |     ^^^^^^^^^^^^^^^
 ```
 
-### extra T1 heading-in-fence: pass (expected pass) ok
-comments that read like the answer's headings, inside the fence
+### extra T1 silent: silent (expected silent) ok
+builds and runs, and prints `is` where the task shows ` = `
+stdout: '4 is IV\n1987 is MCMLXXXVII\n2026 is MMXXVI\n', exit 0
+
+### extra T1 void-read-outside: void (expected void) ok
+a right answer from a session that read a file outside its folder
 
 ### extra T2 task-unmet: fail task_unmet (expected fail task_unmet) ok
 the right output with the second package not used, which the task asks for
 ```
-error[task_unmet]: no `use` of the program reaches the task's package https://git.example.org/ben/csv at v0.9.4, the entry `csv_ben`
+error[task_unmet]: no `use` of the program reaches the task's package https://git.example.org/ben/csv at 1.10, the entry `csv_ben`
 ```
 
-### extra T3 go-address: fail use_spelling (expected fail use_spelling) ok
+### extra T3 go-address: fail use_spelling, habit Go (expected fail use_spelling, habit Go) ok
 Go's habit, the address written in the `use`
 ```
 error[use_spelling]: `git.example.org/cara/geom/polygon` writes an address in a `use`; the address belongs in heroes.toml, and its entry `geom` is what the `use` names
@@ -676,33 +1026,173 @@ error[use_spelling]: `git.example.org/cara/geom/polygon` writes an address in a 
 - U-angle-T1-wrong-no-brackets: brief.md, diagnostics.txt, heroes-spec.md, previous/heroes.toml, previous/main.hero, task.md
 - diagnostics.txt is the first turn's messages, byte for byte: yes
 
+## The decision rule's statistics, against values computed by hand
+- one-sided Fisher, 30/30 against 25/30, the first above: p = 0.026093, by hand 0.026093: yes
+- one-sided Fisher, 25/30 against 30/30, the first below: p = 0.026093, by hand 0.026093: yes
+- one-sided Fisher, 3/3 against 0/3, the first above: p = 0.050000, by hand 0.050000: yes
+- one-sided Fisher, 2/4 against 0/4, the first above: p = 0.214286, by hand 0.214286: yes
+- one-sided Fisher, 1/2 against 1/2, the first above: p = 0.833333, by hand 0.833333: yes
+- one-sided Fisher, 0/3 against 3/3, the first above: p = 1.000000, by hand 1.000000: yes
+- Holm over 0.01, 0.04, 0.03, 0.005: 0.03, 0.06, 0.06, 0.02, by hand 0.03, 0.06, 0.06, 0.02 (two rejected at 0.05): yes
+- the decision rule, every arm at 20/30 and 25/30: A/A together; U: No control above U-angle: the author's form stands as measured.…; F: Left tied: F-yaml, F-toml, F-json, F-lines, F-hero; they go to the s…: yes
+- the decision rule, U-bare 30/30 at pass@1 against U-angle 15/30, F-lines 5/30 against the other formats at 25/30: A/A together; U: U-bare above U-angle on pass@1 (Holm p 0.0000): **a measured case ag…; F: F-lines is out: below F-yaml on pass@1 (Holm p 0.0000); below F-json…: yes
+- the decision rule, the A/A pair apart, U-angle 30/30 against F-toml 15/30: A/A apart; U: U-angle above U-bare on pass@1 (Holm p 0.0032) (UNREAD: the A/A pair…; F: Left tied: F-yaml, F-toml, F-json, F-lines, F-hero; they go to the s…: yes
+
 ## The run's own steps, on dry paths
-- prepare: 210 first turns, 42 cells of 5, 210 folders: yes; the first five drawn: 001 U-pkg T1 sonnet-5-5, 002 U-pkg T2 sonnet-5-5, 003 F-hero T1 haiku-5-5, 004 F-toml T1 sonnet-5-5, 005 U-angle T1 haiku-5-5
-- a second prepare refuses: the key exists, .claude/worktrees/235-base/build/b235-dry/prepare-probe/sealed/key.tsv: prepare runs once, and a sealed key is never redrawn
-- repairs: 46 second turns for the 46 first turns refused with messages, none for a silent, crashed, void or empty one: yes
-- score, each second turn answered with its arm's right answer; the rows over all three tasks:
+- prepare: 240 first turns, 48 cells of 5, 240 folders: yes; the first five drawn: 001 F-json T1 sonnet-5-5, 002 F-yaml T2 haiku-5-5, 003 F-toml T1 haiku-5-5, 004 F-toml T1 sonnet-5-5, 005 U-pkg T1 sonnet-5-5
+- a second prepare refuses: the key exists, build/b235-dry/prepare-probe/sealed/key.tsv: prepare runs once, and a sealed key is never redrawn
+- run --first, each model's first turn charged 0.01 and 0.06 USD by a fake `claude`; then project:
+  claude-haiku-5-5: 1 run, mean 0.0100 USD
+  claude-sonnet-5-5: 1 run, mean 0.0600 USD
+  samples 5 a cell: 238 open first turns (haiku-5-5 119, sonnet-5-5 119), 2 second turns owed by first turns already run; worst case 16.8000 USD: within 19.00
+  samples 4 a cell: 190 open first turns (haiku-5-5 95, sonnet-5-5 95), 2 second turns owed by first turns already run; worst case 13.4400 USD: within 19.00
+  samples 3 a cell: 143 open first turns (haiku-5-5 71, sonnet-5-5 72), 2 second turns owed by first turns already run; worst case 10.2000 USD: within 19.00
+  the most samples a cell whose worst case stays within 19.00: 5; run --jobs 6 --samples 5
+  spent 0.0700 USD on readers, 0.0700 in all, of 22.00
+  the worst case at five samples by hand, 0.07 + 0.01 x 239 + 0.06 x 239 = 16.8000: yes
+- run --jobs 4 --samples 3: the ledger holds 145 sessions, exactly samples 1 to 3 of every cell and the two first turns: yes; the cut written in key.log: yes; all 145 sessions given CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192: yes
+- a grader that raises on session 001: recorded as grader_error and said by grade, every one of 118 sessions graded, the score opening with GRADER ERROR and counting it in no share: yes
+- grade again, the grader repaired: session 001 graded pass: yes
+- repairs: 70 second turns for the 70 first turns refused with messages, none for a silent, crashed, void or empty one: yes
+- score, each second turn answered with its arm's right answer but one, 188, left unrun as a hard stop would leave it; the pooled rows, the decision rule on these answers and the habit count:
 
-| exp | arm | task | model | n | pass@1 | pass@2 | silent@1 | silent | crash | no answer | void | first errors |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| F | F-hero | all | claude-haiku-5-5 | 4 | 1 | 4 | 0 | 0 | 0 | 0 | 0 | catalogue_syntax 2, catalogue_value 1 |
-| F | F-hero | all | claude-sonnet-5-5 | 5 | 2 | 5 | 0 | 0 | 0 | 0 | 0 | catalogue_name 1, catalogue_syntax 2 |
-| F | F-lines | all | claude-haiku-5-5 | 5 | 2 | 5 | 0 | 0 | 0 | 0 | 0 | catalogue_syntax 1, fetch_failed 1, use_spelling 1 |
-| F | F-lines | all | claude-sonnet-5-5 | 4 | 1 | 4 | 0 | 0 | 0 | 0 | 0 | catalogue_syntax 2, fetch_failed 1 |
-| F | F-toml | all | claude-haiku-5-5 | 4 | 1 | 4 | 0 | 0 | 0 | 0 | 0 | catalogue_field 2, catalogue_value 1 |
-| F | F-toml | all | claude-sonnet-5-5 | 5 | 2 | 5 | 0 | 0 | 0 | 0 | 0 | catalogue_field 2, catalogue_syntax 1 |
-| F | F-yaml | all | claude-haiku-5-5 | 5 | 2 | 5 | 0 | 0 | 0 | 0 | 0 | catalogue_syntax 2, catalogue_value 1 |
-| F | F-yaml | all | claude-sonnet-5-5 | 4 | 1 | 4 | 0 | 0 | 0 | 0 | 0 | catalogue_field 2, catalogue_syntax 1 |
-| U | U-angle | all | claude-haiku-5-5 | 9 | 2 | 7 | 1 | 1 | 0 | 1 | 0 | catalogue_syntax 1, unknown_in_module 1, unknown_package_module 1, use_spelling 2 |
-| U | U-angle | all | claude-sonnet-5-5 | 8 | 2 | 7 | 0 | 0 | 1 | 0 | 1 | catalogue_missing 1, catalogue_sum 1, task_unmet 1, unknown_entry 1, use_spelling 1 |
-| U | U-bare | all | claude-haiku-5-5 | 5 | 2 | 5 | 0 | 0 | 0 | 0 | 0 | unknown_module 3 |
-| U | U-bare | all | claude-sonnet-5-5 | 4 | 1 | 4 | 0 | 0 | 0 | 0 | 0 | catalogue_value 1, entry_collision 1, use_spelling 1 |
-| U | U-pkg | all | claude-haiku-5-5 | 4 | 1 | 4 | 0 | 0 | 0 | 0 | 0 | unknown_package_module 2, use_spelling 1 |
-| U | U-pkg | all | claude-sonnet-5-5 | 5 | 2 | 5 | 0 | 0 | 0 | 0 | 0 | fetch_failed 1, unknown_entry 1, use_spelling 1 |
+## The decision rule (registered in the README before any session)
 
-- the totals: n 71, pass@1 22, pass@2 68, silent 1, crash 1, no answer 1, void 1: as expected
+Per arm, both models and the three tasks pooled:
 
-## The hard stop, exercised on a ledger in the dry folder
-- ledger at 21.50 USD: 2 sessions may start before the stop (21.90 USD at most)
-- a session that reported no cost is charged its cap: 0.20 USD
+| arm | n | pass@1 | pass@2 | absent@2 | void | grader error |
+|---|---|---|---|---|---|---|
+| U-angle | 25 | 9/25 | 21/24 | 1 | 1 | 0 |
+| U-bare | 12 | 5/12 | 12/12 | 0 | 0 | 0 |
+| U-pkg | 11 | 4/11 | 11/11 | 0 | 0 | 0 |
+| F-yaml | 13 | 5/13 | 13/13 | 0 | 0 | 0 |
+| F-toml | 18 | 9/18 | 18/18 | 0 | 0 | 0 |
+| F-json | 10 | 3/10 | 10/10 | 0 | 0 | 0 |
+| F-lines | 13 | 3/13 | 13/13 | 0 | 0 | 0 |
+| F-hero | 15 | 6/15 | 15/15 | 0 | 0 | 0 |
 
-## Summary: 72 answers graded as expected, 0 not; 0 problems
+### The A/A pair, U-angle against F-toml: one section run as two arms, uncorrected at 0.05
+
+| comparison | metric | first | second | direction | p | below 0.05 |
+|---|---|---|---|---|---|---|
+| U-angle vs F-toml | pass@1 | 9/25 | 9/18 | U-angle above | 0.8908 | no |
+| U-angle vs F-toml | pass@1 | 9/25 | 9/18 | U-angle below | 0.2724 | no |
+| U-angle vs F-toml | pass@2 | 21/24 | 18/18 | U-angle above | 1.0000 | no |
+| U-angle vs F-toml | pass@2 | 21/24 | 18/18 | U-angle below | 0.1763 | no |
+
+The A/A pair does not differ at 0.05: the comparisons below are read.
+
+### Question U: U-bare and U-pkg each against U-angle, Holm over the family of 8 p-values
+
+| comparison | metric | first | second | direction | p | Holm p | significant |
+|---|---|---|---|---|---|---|---|
+| U-bare vs U-angle | pass@1 | 5/12 | 9/25 | U-bare above | 0.5073 | 1.0000 | no |
+| U-bare vs U-angle | pass@1 | 5/12 | 9/25 | U-bare below | 0.7576 | 1.0000 | no |
+| U-bare vs U-angle | pass@2 | 12/12 | 21/24 | U-bare above | 0.2835 | 1.0000 | no |
+| U-bare vs U-angle | pass@2 | 12/12 | 21/24 | U-bare below | 1.0000 | 1.0000 | no |
+| U-pkg vs U-angle | pass@1 | 4/11 | 9/25 | U-pkg above | 0.6335 | 1.0000 | no |
+| U-pkg vs U-angle | pass@1 | 4/11 | 9/25 | U-pkg below | 0.6583 | 1.0000 | no |
+| U-pkg vs U-angle | pass@2 | 11/11 | 21/24 | U-pkg above | 0.3092 | 1.0000 | no |
+| U-pkg vs U-angle | pass@2 | 11/11 | 21/24 | U-pkg below | 1.0000 | 1.0000 | no |
+
+- No control above U-angle: the author's form stands as measured.
+
+### Question F: every pair of F-yaml, F-toml, F-json, F-lines, F-hero, Holm over the family of 40 p-values
+
+| comparison | metric | first | second | direction | p | Holm p | significant |
+|---|---|---|---|---|---|---|---|
+| F-yaml vs F-toml | pass@1 | 5/13 | 9/18 | F-yaml above | 0.8418 | 1.0000 | no |
+| F-yaml vs F-toml | pass@1 | 5/13 | 9/18 | F-yaml below | 0.3942 | 1.0000 | no |
+| F-yaml vs F-toml | pass@2 | 13/13 | 18/18 | F-yaml above | 1.0000 | 1.0000 | no |
+| F-yaml vs F-toml | pass@2 | 13/13 | 18/18 | F-yaml below | 1.0000 | 1.0000 | no |
+| F-yaml vs F-json | pass@1 | 5/13 | 3/10 | F-yaml above | 0.5101 | 1.0000 | no |
+| F-yaml vs F-json | pass@1 | 5/13 | 3/10 | F-yaml below | 0.8049 | 1.0000 | no |
+| F-yaml vs F-json | pass@2 | 13/13 | 10/10 | F-yaml above | 1.0000 | 1.0000 | no |
+| F-yaml vs F-json | pass@2 | 13/13 | 10/10 | F-yaml below | 1.0000 | 1.0000 | no |
+| F-yaml vs F-lines | pass@1 | 5/13 | 3/13 | F-yaml above | 0.3364 | 1.0000 | no |
+| F-yaml vs F-lines | pass@1 | 5/13 | 3/13 | F-yaml below | 0.8992 | 1.0000 | no |
+| F-yaml vs F-lines | pass@2 | 13/13 | 13/13 | F-yaml above | 1.0000 | 1.0000 | no |
+| F-yaml vs F-lines | pass@2 | 13/13 | 13/13 | F-yaml below | 1.0000 | 1.0000 | no |
+| F-yaml vs F-hero | pass@1 | 5/13 | 6/15 | F-yaml above | 0.6800 | 1.0000 | no |
+| F-yaml vs F-hero | pass@1 | 5/13 | 6/15 | F-yaml below | 0.6200 | 1.0000 | no |
+| F-yaml vs F-hero | pass@2 | 13/13 | 15/15 | F-yaml above | 1.0000 | 1.0000 | no |
+| F-yaml vs F-hero | pass@2 | 13/13 | 15/15 | F-yaml below | 1.0000 | 1.0000 | no |
+| F-toml vs F-json | pass@1 | 9/18 | 3/10 | F-toml above | 0.2676 | 1.0000 | no |
+| F-toml vs F-json | pass@1 | 9/18 | 3/10 | F-toml below | 0.9242 | 1.0000 | no |
+| F-toml vs F-json | pass@2 | 18/18 | 10/10 | F-toml above | 1.0000 | 1.0000 | no |
+| F-toml vs F-json | pass@2 | 18/18 | 10/10 | F-toml below | 1.0000 | 1.0000 | no |
+| F-toml vs F-lines | pass@1 | 9/18 | 3/13 | F-toml above | 0.1258 | 1.0000 | no |
+| F-toml vs F-lines | pass@1 | 9/18 | 3/13 | F-toml below | 0.9728 | 1.0000 | no |
+| F-toml vs F-lines | pass@2 | 18/18 | 13/13 | F-toml above | 1.0000 | 1.0000 | no |
+| F-toml vs F-lines | pass@2 | 18/18 | 13/13 | F-toml below | 1.0000 | 1.0000 | no |
+| F-toml vs F-hero | pass@1 | 9/18 | 6/15 | F-toml above | 0.4123 | 1.0000 | no |
+| F-toml vs F-hero | pass@1 | 9/18 | 6/15 | F-toml below | 0.8224 | 1.0000 | no |
+| F-toml vs F-hero | pass@2 | 18/18 | 15/15 | F-toml above | 1.0000 | 1.0000 | no |
+| F-toml vs F-hero | pass@2 | 18/18 | 15/15 | F-toml below | 1.0000 | 1.0000 | no |
+| F-json vs F-lines | pass@1 | 3/10 | 3/13 | F-json above | 0.5368 | 1.0000 | no |
+| F-json vs F-lines | pass@1 | 3/10 | 3/13 | F-json below | 0.8032 | 1.0000 | no |
+| F-json vs F-lines | pass@2 | 10/10 | 13/13 | F-json above | 1.0000 | 1.0000 | no |
+| F-json vs F-lines | pass@2 | 10/10 | 13/13 | F-json below | 1.0000 | 1.0000 | no |
+| F-json vs F-hero | pass@1 | 3/10 | 6/15 | F-json above | 0.8243 | 1.0000 | no |
+| F-json vs F-hero | pass@1 | 3/10 | 6/15 | F-json below | 0.4697 | 1.0000 | no |
+| F-json vs F-hero | pass@2 | 10/10 | 15/15 | F-json above | 1.0000 | 1.0000 | no |
+| F-json vs F-hero | pass@2 | 10/10 | 15/15 | F-json below | 1.0000 | 1.0000 | no |
+| F-lines vs F-hero | pass@1 | 3/13 | 6/15 | F-lines above | 0.9145 | 1.0000 | no |
+| F-lines vs F-hero | pass@1 | 3/13 | 6/15 | F-lines below | 0.2928 | 1.0000 | no |
+| F-lines vs F-hero | pass@2 | 13/13 | 15/15 | F-lines above | 1.0000 | 1.0000 | no |
+| F-lines vs F-hero | pass@2 | 13/13 | 15/15 | F-lines below | 1.0000 | 1.0000 | no |
+
+- Left tied: F-yaml, F-toml, F-json, F-lines, F-hero; they go to the sitting's other measures (parser size, hazards, tokens).
+
+## The habit count: first turns refused where the first message falls on a line of a named ecosystem's habit
+
+| ecosystem | habit | claude-haiku-5-5 | claude-sonnet-5-5 | total |
+|---|---|---|---|---|
+| Go | `require`, alone or opening `require ( ... )` | 0 | 2 | 2 |
+| Go | a `module` line naming the program | 0 | 1 | 1 |
+| Go | an address with a domain in a `use` | 1 | 0 | 1 |
+| Go | a `v` before an index version | 1 | 0 | 1 |
+| Python | a `==` pin | 1 | 0 | 1 |
+| Cargo | `[package]` | 0 | 1 | 1 |
+| Cargo | the shorthand `name = "1.2.3"` | 1 | 0 | 1 |
+| npm | a `^1.2.3` or `~1.2.3` range | 1 | 0 | 1 |
+| **Go** | all | 2 | 3 | 5 |
+| **Python** | all | 1 | 0 | 1 |
+| **Cargo** | all | 1 | 1 | 2 |
+| **npm** | all | 1 | 0 | 1 |
+
+- the totals: n 117, pass1 44, n2 116, pass2 113, absent2 1, silent 1, crash 1, none 1, void 1, grader_error 0: as expected
+- the habit count by ecosystem, Cargo 2, Go 5, Python 1, npm 1, against the expectations' column: as expected
+
+## The hard stops, exercised on ledgers in the dry folder
+- readers at 17.20 USD: 4 may start, each reserving 0.40, 18.80 at most against the stop 19.00: yes
+- the seat on that ledger: 1 may start, its stop 3.00 and the total 20.20 within 22.00: yes
+- readers at 19.00 and the cap probe at 0.05: the seat refused by the overall stop (22.05 past 22.00) though its own stop has room, a reader refused by its own, a second cap probe allowed: yes
+- a reader session that reports no cost is charged its reserve: 0.40 USD: yes
+- a reader's command: `claude -p 'Read brief.md in this directory and follow it exactly. Your inputs are the files in this directory only. Answer in English.' --bare --no-session-persistence --system-prompt 'You work in the directory sessions/007. You read its files with the Read tool, by absolute path.' --model claude-sonnet-5-5 --restricted --safe-mode --strict-mcp-config --tools Read --allowedTools Read --disallowedTools Bash,Write,WebFetch,WebSearch,Glob,Grep,Edit,Task,Agent,ListAgents,SendMessage --max-budget-usd 0.20 --output-format stream-json --verbose`; its environment adds GIT_CEILING_DIRECTORIES=sessions, CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192 and the key: yes
+- a second spending invocation while one holds the lock refuses: yes
+
+## The cap probe, on a fake stream-json (no session runs)
+- calls writing [40, 64]: `CLAUDE_CODE_MAX_OUTPUT_TOKENS=64: held: 104 output tokens over 2 calls, at most 64 each, the last call 64`; charged as `capprobe`, claude-haiku-5-5, --max-budget-usd 0.05, CLAUDE_CODE_MAX_OUTPUT_TOKENS=64: yes
+- calls writing [40, 2950]: `CLAUDE_CODE_MAX_OUTPUT_TOKENS=64: did not hold: 2990 output tokens over 2 calls, past 64 a call, the last call alone 2950`; charged as `capprobe`, claude-haiku-5-5, --max-budget-usd 0.05, CLAUDE_CODE_MAX_OUTPUT_TOKENS=64: yes
+- calls writing None: `CLAUDE_CODE_MAX_OUTPUT_TOKENS=64: unmeasured: the result reports no usage, or no call was made`; charged as `capprobe`, claude-haiku-5-5, --max-budget-usd 0.05, CLAUDE_CODE_MAX_OUTPUT_TOKENS=64: yes
+
+## The blind seat, assembled from blind/seat/ and run by a fake `claude`
+- assembled: brief.md, geom/area.hero, heroes-spec.md, task-1.md, task-2.md, variant-1.md, variant-2.md, variant-3.md; exactly the list, heroes-spec.md the lane's byte for byte, no file holding `U-angle`, `U-bare`, `U-pkg`, `F-yaml`, `F-toml`, `F-json`, `F-lines`, `F-hero`, `pkg-toml`, `angle-toml`, `bare-toml`, ` arm `, `panel` (the specification's own ` arm `, its `match` arms, excepted): yes
+  - variant-1.md from sections/pkg-toml.md
+  - variant-2.md from sections/angle-toml.md
+  - variant-3.md from sections/bare-toml.md
+  - task-1.md from tasks/T2/task.md
+  - task-2.md from tasks/T3/task.md
+  - geom/area.hero from tasks/T3/given/geom/area.hero
+- the check proved: a variant naming `U-angle` and a file not in the list are both caught: yes
+- --help `--model <model>                   Model for the current sess…`: claude-opus-5-5 (`claude --help` lists --model with no choices that leave it out: `--model <model> Model fo): yes
+- --help `--print                           Print the response and exi…`: claude-sonnet-5-5 (`claude --help` lists no --model, so claude-opus-5-5 cannot be asked for): yes
+- --help `--model <model>                   The model (choices: "sonne…`: claude-sonnet-5-5 (`claude --help` gives --model the choices "sonnet", "haiku", and claude-opus-5-5 is not on): yes
+- a run that writes report.md in its folder: `seat: exit 0, cost 0.9100 USD, 3 tool calls, valid; report.md written`; charged 0.91 as `seat`, a second seat refused, the flags and CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000: yes
+- a run that writes a file outside its folder: `seat: exit 0, cost 0.9100 USD, 3 tool calls, VOID: a call that was no Read or Write inside its folder; report.md MISSING`; charged 0.91 as `seat`, a second seat refused, the flags and CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000: yes
+
+## The manifest, on a copy of the materials
+- 144 lines, the runner first by its path in the trunk; a copy matching it passes; with world.json changed and a file added, prepare refuses: `refused: `prepare` starts only over the pinned materials, and docs/panel/235-briefs/blind/world.json differs from the manifest; docs/panel/235-briefs/blind/extra.txt is not in the manifest`: yes
+
+## Summary: 118 answers graded as expected, 0 not; 0 problems

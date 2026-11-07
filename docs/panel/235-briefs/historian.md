@@ -41,3 +41,16 @@ what its page states, the page re-read today.
 
 End with your verdict row in the shared brief's shape (advisory) and your
 `search` section.
+
+## And from the critic's first pass
+
+- **1, the words**: the names each system gives the folder of modules, the
+  unit with a version, the manifest, the fingerprint file and the verbs, and
+  where a project renamed one, a page stating why.
+- **15, with the ffi-pragmatist**: what an index had to deliver at its start
+  and what it added later (publishing, namespaces, signing, yanking), each
+  from the index's own pages.
+- **21, Go or Cargo under the author's criterion** (*the one that works best
+  for language models*): any page that measures how models write either
+  system's files, cited only where it states a measurement; where none is
+  found, write what was searched and where, as a question.

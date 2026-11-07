@@ -1,74 +1,120 @@
-# Panel 235, the reader test: what the grader must say of each hand-made answer (blind235.py dry)
-arm	task	label	outcome	first code	why
-U-angle	T1	right	pass	-	the catalogue and the program as section 14 asks
-U-angle	T1	wrong-no-brackets	fail	use_spelling	the bare spelling, the brackets forgotten
-U-angle	T1	wrong-pkg-spelling	fail	use_spelling	U-pkg's spelling, written in this arm
-U-angle	T2	right	pass	-	two names for two packages called csv
-U-angle	T2	wrong-entry-not-named	fail	unknown_entry	the use lines keep the authors' name, which no entry has
-U-angle	T2	wrong-one-name-twice	fail	catalogue_syntax	both entries named csv, as their authors call them
-U-angle	T3	right	pass	-	the own module without brackets, the package with them
-U-angle	T3	wrong-own-in-brackets	fail	unknown_package_module	the program's own module written in brackets too
-U-angle	T3	wrong-sum-short	fail	catalogue_sum	the fingerprint copied one digit short
-U-bare	T1	right	pass	-	the catalogue and the program as section 14 asks
-U-bare	T1	wrong-angle-spelling	fail	use_spelling	U-angle's spelling, written in this arm
-U-bare	T1	wrong-module-alone	fail	unknown_module	the module named without its entry, as a flat import
-U-bare	T2	right	pass	-	two names for two packages called csv
-U-bare	T2	wrong-entry-not-named	fail	unknown_module	the use lines keep the authors' name: with no entry of that name, the line reads as the program's own module
-U-bare	T2	wrong-tag-unquoted	fail	catalogue_value	a tag written without its quotes
-U-bare	T3	right	pass	-	the entry named otherwise than the program's folder `geom`
-U-bare	T3	wrong-collision	fail	entry_collision	the entry keeps its authors' name, the name of the program's folder
-U-bare	T3	wrong-renamed-not-used	fail	unknown_module	the entry renamed, its use line not
-U-pkg	T1	right	pass	-	the catalogue and the program as section 14 asks
-U-pkg	T1	wrong-angle-spelling	fail	use_spelling	U-angle's spelling, written in this arm
-U-pkg	T1	wrong-no-pkg	fail	use_spelling	the `pkg/` forgotten
-U-pkg	T2	right	pass	-	two names for two packages called csv
-U-pkg	T2	wrong-entry-not-named	fail	unknown_entry	the use lines keep the authors' name, which no entry has
-U-pkg	T2	wrong-module-of-other	fail	unknown_package_module	the second module asked of the first package
-U-pkg	T3	right	pass	-	the own module as today, the package under `pkg/`
-U-pkg	T3	wrong-own-under-pkg	fail	unknown_package_module	the program's own module written under `pkg/` too
-U-pkg	T3	wrong-index-source	fail	fetch_failed	a git package written as an entry of the index
-F-yaml	T1	right	pass	-	plain scalars, as the section's example writes them
-F-yaml	T1	wrong-flat-indent	fail	catalogue_field	the fields written at the entry's own indentation, so YAML reads three entries
-F-yaml	T1	wrong-version-as-number	fail	catalogue_value	a version YAML's core schema reads as a float (the trap of an unquoted two-number version)
-F-yaml	T2	right	pass	-	one value quoted, the rest plain: both are strings
-F-yaml	T2	wrong-no-space	fail	catalogue_syntax	no space after a colon
-F-yaml	T2	wrong-tab	fail	catalogue_syntax	a tab in the indentation
-F-yaml	T3	right	pass	-	a comment and a document marker before the mapping
-F-yaml	T3	wrong-list	fail	catalogue_field	the entries written as a list of mappings with a `name`
-F-yaml	T3	wrong-unclosed-quote	fail	catalogue_syntax	a quote opened and not closed
-F-toml	T1	right	pass	-	the catalogue and the program as section 14 asks
-F-toml	T1	wrong-version-unquoted	fail	catalogue_value	a version written without its quotes
-F-toml	T1	wrong-cargo-shorthand	fail	catalogue_field	Cargo's shorthand, a string for an entry, and no sum
-F-toml	T2	right	pass	-	inline tables, which TOML reads as the section's tables
-F-toml	T2	wrong-missing-quote	fail	catalogue_syntax	a string's closing quote forgotten
-F-toml	T2	wrong-table-name	fail	catalogue_field	the table named `dependency`
-F-toml	T3	right	pass	-	the own module without brackets, the package with them
-F-toml	T3	wrong-field-typo	fail	catalogue_field	a field misspelled
-F-toml	T3	wrong-version-and-tag	fail	catalogue_field	a git entry given a version beside its tag, as Cargo allows
-F-lines	T1	right	pass	-	one line, after a comment
-F-lines	T1	wrong-no-source-word	fail	catalogue_syntax	the word `index` left out
-F-lines	T1	wrong-go-block	fail	catalogue_syntax	Go's `require ( … )` block
-F-lines	T2	right	pass	-	two names for two packages called csv
-F-lines	T2	wrong-swapped	fail	fetch_failed	the address and the tag in the other order
-F-lines	T2	wrong-name-missing	fail	catalogue_syntax	the entry's name left out
-F-lines	T3	right	pass	-	the own module without brackets, the package with them
-F-lines	T3	wrong-tag-no-v	fail	fetch_failed	the tag written as the version, without its `v`
-F-lines	T3	wrong-no-brackets	fail	use_spelling	the package's module written as the program's own
-F-hero	T1	right	pass	-	the catalogue fenced as `hero`, beside the program
-F-hero	T1	wrong-unquoted	fail	catalogue_value	a value written without its quotes
-F-hero	T1	wrong-two-spaces	fail	catalogue_syntax	fields indented two spaces, as YAML would
-F-hero	T2	right	pass	-	two names for two packages called csv
-F-hero	T2	wrong-same-name	fail	catalogue_name	both declarations named csv, as their authors call them
-F-hero	T2	wrong-equals	fail	catalogue_syntax	TOML's `=` for a field
-F-hero	T3	right	pass	-	the own module without brackets, the package with them
-F-hero	T3	wrong-record-literal	fail	catalogue_syntax	the entry written as a record construction on one line
-F-hero	T3	wrong-unclosed-quote	fail	catalogue_syntax	a string literal not closed
-extra	T1	silent	silent	-	builds and runs, and prints `is` where the task shows ` = `
-extra	T1	crash	crash	-	builds, and aborts on `.must()` of the numeral of 0
-extra	T1	compile-error	fail	unknown_in_module	a function the module does not declare: the compiler's own message, its path in the arm's spelling
-extra	T1	void-read-outside	void	-	a right answer from a session that read a file outside its folder
-extra	T1	no-answer	none	-	an answer with no program
-extra	T1	no-catalogue	fail	catalogue_missing	the program alone
-extra	T1	heading-in-fence	pass	-	comments that read like the answer's headings, inside the fence
-extra	T2	task-unmet	fail	task_unmet	the right output with the second package not used, which the task asks for
-extra	T3	go-address	fail	use_spelling	Go's habit, the address written in the `use`
+# Panel 235, the reader test: what the grader must say of each hand-made answer (blind235.py dry); habit is the ecosystem the habit count tags it with
+arm	task	label	outcome	first code	habit	why
+U-angle	T1	right	pass	-	-	the catalogue and the program as section 14 asks
+U-angle	T1	wrong-no-brackets	fail	use_spelling	-	the bare spelling, the brackets forgotten
+U-angle	T1	wrong-pkg-spelling	fail	use_spelling	-	U-pkg's spelling, written in this arm
+U-angle	T1	wrong-python-pin	fail	catalogue_version	Python	Python's `==` written into the version
+U-angle	T1	critic-angle-bold-filename	pass	-	-	the critic's probe: the file named in bold above the block
+U-angle	T1	critic-angle-spaces-in-brackets	pass	-	-	the critic's probe: spaces inside the brackets
+U-angle	T1	critic-angle-subheading-filename	pass	-	-	the critic's probe: `### heroes.toml` under `## catalogue` stays in the part
+U-angle	T1	critic-angle-whole-path-in-brackets	fail	use_spelling	-	the critic's probe: `use <roman/numeral>`, C's `#include <a/b>`, refused by the grader with the arm's spelling
+U-angle	T2	right	pass	-	-	two names for two packages called csv
+U-angle	T2	right-program-first	pass	-	-	no headings, the program first: the block holding `function main` is the program
+U-angle	T2	wrong-entry-not-named	fail	unknown_entry	-	the use lines keep the authors' name, which no entry has
+U-angle	T2	wrong-no-brackets-not-named	fail	use_spelling	-	no brackets and the authors' name: the module's holder found, as in every arm
+U-angle	T2	wrong-one-name-twice	fail	catalogue_syntax	-	both entries named csv, as their authors call them
+U-angle	T2	critic-angle-T2-entry-names-of-authors-in-use	pass	-	-	the critic's probe: names of the program's choice, an address ending `.git`
+U-angle	T3	right	pass	-	-	the own module without brackets, the package with them
+U-angle	T3	wrong-own-in-brackets	fail	unknown_package_module	-	the program's own module written in brackets too
+U-angle	T3	wrong-sum-short	fail	catalogue_sum	-	the fingerprint copied one digit short
+U-bare	T1	right	pass	-	-	the catalogue and the program as section 14 asks
+U-bare	T1	wrong-angle-spelling	fail	use_spelling	-	U-angle's spelling, written in this arm
+U-bare	T1	wrong-module-alone	fail	unknown_module	-	the module named without its entry, as a flat import
+U-bare	T1	wrong-path-in-brackets	fail	use_spelling	-	`use <roman/numeral>` in this arm: refused with this arm's spelling
+U-bare	T1	critic-bare-index-entry-is-roman	pass	-	-	the critic's probe: the right answer
+U-bare	T2	right	pass	-	-	two names for two packages called csv
+U-bare	T2	wrong-entry-not-named	fail	unknown_entry	-	the use lines keep the authors' name, which no entry has and no own module either: the same lookup and guess as the other arms
+U-bare	T2	wrong-tag-unquoted	fail	catalogue_value	-	a tag written without its quotes
+U-bare	T3	right	pass	-	-	the entry named otherwise than the program's folder `geom`
+U-bare	T3	wrong-collision	fail	entry_collision	-	the entry keeps its authors' name, the name of the program's folder
+U-bare	T3	wrong-renamed-not-used	fail	unknown_entry	-	the entry renamed, its use line not: no entry `geom` and no own module `geom/polygon`, the module held by `geom_cara`
+U-bare	T3	critic-bare-use-without-catalogue-entry-but-folder	pass	-	-	the critic's probe: the entry named otherwise than the folder
+U-pkg	T1	right	pass	-	-	the catalogue and the program as section 14 asks
+U-pkg	T1	wrong-angle-spelling	fail	use_spelling	-	U-angle's spelling, written in this arm
+U-pkg	T1	wrong-no-pkg	fail	use_spelling	-	the `pkg/` forgotten
+U-pkg	T1	wrong-path-in-brackets	fail	use_spelling	-	`use <roman/numeral>` in this arm: refused with this arm's spelling
+U-pkg	T1	critic-pkg-alias	pass	-	-	the critic's probe: `as` renaming a package's module
+U-pkg	T2	right	pass	-	-	two names for two packages called csv
+U-pkg	T2	wrong-entry-not-named	fail	unknown_entry	-	the use lines keep the authors' name, which no entry has
+U-pkg	T2	wrong-module-of-other	fail	unknown_package_module	-	the second module asked of the first package
+U-pkg	T3	right	pass	-	-	the own module as today, the package under `pkg/`
+U-pkg	T3	wrong-index-source	fail	fetch_failed	-	a git package written as an entry of the index
+U-pkg	T3	wrong-own-under-pkg	fail	unknown_package_module	-	the program's own module written under `pkg/` too
+F-yaml	T1	right	pass	-	-	plain scalars, as the section's example writes them
+F-yaml	T1	wrong-flat-indent	fail	catalogue_field	-	the fields written at the entry's own indentation, so YAML reads three entries
+F-yaml	T1	wrong-version-as-number	fail	catalogue_value	-	a version YAML's core schema reads as a float (the trap of an unquoted two-number version)
+F-yaml	T1	critic-yaml-flow-entry	pass	-	-	the critic's probe: an entry as a flow mapping
+F-yaml	T1	critic-yaml-name-key	fail	catalogue_field	-	the critic's probe: `name: app`, refused citing the section's sentence
+F-yaml	T1	critic-yaml-quoted	pass	-	-	the critic's probe: every value quoted
+F-yaml	T2	right	pass	-	-	the tags plain and quoted as each needs: `v1.2.0` is a string plain, `"1.10"` only quoted
+F-yaml	T2	wrong-no-space	fail	catalogue_syntax	-	no space after a colon
+F-yaml	T2	wrong-tab	fail	catalogue_syntax	-	a tab in the indentation
+F-yaml	T2	wrong-tag-float	fail	catalogue_value	-	YAML's trap: `tag: 1.10` plain is the number 1.1 by the core schema
+F-yaml	T3	right	pass	-	-	a comment and a document marker before the mapping
+F-yaml	T3	wrong-list	fail	catalogue_field	-	the entries written as a list of mappings with a `name`
+F-yaml	T3	wrong-unclosed-quote	fail	catalogue_syntax	-	a quote opened and not closed
+F-toml	T1	right	pass	-	-	the catalogue and the program as section 14 asks
+F-toml	T1	right-inline	pass	-	-	an inline table under `[dependencies]`
+F-toml	T1	wrong-cargo-shorthand	fail	catalogue_field	Cargo	Cargo's shorthand, a string for an entry, and no sum
+F-toml	T1	wrong-version-unquoted	fail	catalogue_value	-	a version written without its quotes
+F-toml	T1	critic-toml-dotted-keys	pass	-	-	the critic's probe: dotted keys, which crashed the grader before
+F-toml	T1	critic-toml-literal-strings	pass	-	-	the critic's probe: TOML's literal strings
+F-toml	T1	critic-toml-no-headings-cat-first	pass	-	-	the critic's probe: no headings, the catalogue first
+F-toml	T1	critic-toml-package-table	fail	catalogue_field	Cargo	the critic's probe: Cargo's `[package]`, refused citing the section's sentence
+F-toml	T1	critic-toml-trailing-comment	pass	-	-	the critic's probe: comments ending lines
+F-toml	T2	right	pass	-	-	inline tables, which TOML reads as the section's tables
+F-toml	T2	wrong-missing-quote	fail	catalogue_syntax	-	a string's closing quote forgotten
+F-toml	T2	wrong-table-name	fail	catalogue_field	-	the table named `dependency`
+F-toml	T2	wrong-tag-float	fail	catalogue_value	-	`tag = 1.10` unquoted: TOML reads the number 1.1
+F-toml	T3	right	pass	-	-	the own module without brackets, the package with them
+F-toml	T3	right-dotted	pass	-	-	a git entry in dotted keys
+F-toml	T3	wrong-dotted-unquoted	fail	catalogue_value	-	a dotted key's value without its quotes
+F-toml	T3	wrong-field-typo	fail	catalogue_field	-	a field misspelled
+F-toml	T3	wrong-version-and-tag	fail	catalogue_field	-	a git entry given a version beside its tag, as Cargo allows
+F-json	T1	right	pass	-	-	the catalogue and the program as section 14 asks
+F-json	T1	wrong-name-key	fail	catalogue_field	-	the program's own `name`, refused citing the section's sentence
+F-json	T1	wrong-npm-range	fail	catalogue_field	npm	npm's habit: an entry written as a `^2.1.0` range
+F-json	T1	wrong-trailing-comma	fail	catalogue_syntax	-	a comma after the last member
+F-json	T2	right	pass	-	-	two names for two packages called csv
+F-json	T2	wrong-comment	fail	catalogue_syntax	-	a `//` comment, which JSON has not
+F-json	T2	wrong-tag-number	fail	catalogue_value	-	`"tag": 1.10`, a number where a string is owed
+F-json	T3	right	pass	-	-	the own module without brackets, the package with them
+F-json	T3	wrong-bare-tag	fail	catalogue_value	-	a tag written without its quotes
+F-json	T3	wrong-single-quotes	fail	catalogue_syntax	-	keys and strings in single quotes
+F-lines	T1	right	pass	-	-	one line, after a comment
+F-lines	T1	wrong-go-block	fail	catalogue_syntax	Go	Go's `require ( … )` block, refused by the one-line-per-entry rule
+F-lines	T1	wrong-no-source-word	fail	catalogue_syntax	-	the word `index` left out
+F-lines	T1	wrong-require-verb	fail	catalogue_syntax	Go	Go's `require` for the entry's word
+F-lines	T1	wrong-v-version	fail	catalogue_version	Go	Go's `v` before an index version
+F-lines	T1	critic-lines-module-line	fail	catalogue_field	Go	the critic's probe: Go's `module app`, refused citing the section's sentence
+F-lines	T1	critic-lines-trailing-comment	fail	catalogue_syntax	-	the critic's probe: a comment after an entry, where the section says `#` begins a comment line
+F-lines	T2	right	pass	-	-	two names for two packages called csv
+F-lines	T2	wrong-name-missing	fail	catalogue_syntax	-	the entry's name left out
+F-lines	T2	wrong-swapped	fail	fetch_failed	-	the address and the tag in the other order
+F-lines	T3	right	pass	-	-	the own module without brackets, the package with them
+F-lines	T3	wrong-no-brackets	fail	use_spelling	-	the package's module written as the program's own
+F-lines	T3	wrong-tag-no-v	fail	fetch_failed	-	the tag written as a version, without its `v`
+F-hero	T1	right	pass	-	-	the catalogue fenced as `hero`, beside the program
+F-hero	T1	wrong-name-field	fail	catalogue_field	-	the program's own `name`, refused citing the section's sentence
+F-hero	T1	wrong-package-word	fail	catalogue_syntax	-	section 13's `package` for the declaration's word
+F-hero	T1	wrong-two-spaces	fail	catalogue_syntax	-	fields indented two spaces, as YAML would
+F-hero	T1	wrong-unquoted	fail	catalogue_value	-	a value written without its quotes
+F-hero	T1	critic-hero-leading-comment-doc	pass	-	-	the critic's probe: a comment line first
+F-hero	T1	critic-hero-no-headings-cat-first	pass	-	-	the critic's probe: no headings, both blocks fenced `hero`, the catalogue first
+F-hero	T1	critic-hero-package-line-comment	pass	-	-	the critic's probe, in this arm's word: a comment ending the declaration's line
+F-hero	T2	right	pass	-	-	two names for two packages called csv
+F-hero	T2	wrong-equals	fail	catalogue_syntax	-	TOML's `=` for a field
+F-hero	T2	wrong-same-name	fail	catalogue_name	-	both declarations named csv, as their authors call them
+F-hero	T2	wrong-tag-unquoted	fail	catalogue_value	-	`tag: 1.10` unquoted, a number literal
+F-hero	T3	right	pass	-	-	the own module without brackets, the package with them
+F-hero	T3	wrong-record-literal	fail	catalogue_syntax	-	the entry written as a record construction on one line
+F-hero	T3	wrong-unclosed-quote	fail	catalogue_syntax	-	a string literal not closed
+extra	T1	compile-error	fail	unknown_in_module	-	a function the module does not declare: the compiler's own message, its path in the arm's spelling
+extra	T1	crash	crash	-	-	builds, and aborts on `.must()` of the numeral of 0
+extra	T1	heading-in-fence	pass	-	-	comments that read like the answer's headings, inside the fence
+extra	T1	no-answer	none	-	-	an answer with no program
+extra	T1	no-catalogue	fail	catalogue_missing	-	the program alone
+extra	T1	silent	silent	-	-	builds and runs, and prints `is` where the task shows ` = `
+extra	T1	void-read-outside	void	-	-	a right answer from a session that read a file outside its folder
+extra	T2	task-unmet	fail	task_unmet	-	the right output with the second package not used, which the task asks for
+extra	T3	go-address	fail	use_spelling	Go	Go's habit, the address written in the `use`

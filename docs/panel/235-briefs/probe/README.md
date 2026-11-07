@@ -152,3 +152,26 @@ exit 1
 One block was first run with a pattern that matched nothing, a sentence that wraps across two lines in CLAUDE.md; it is re-run above as the lines that hold it, the same day.
 
 The three programs of the last three blocks are not kept as files beside this one: two of them do not parse, which is what they show, and a committed `.hero` must parse (`.claude/hooks/staged.py`). Each block prints its program whole with `cat`; to run one again, write its text to the path the block names.
+
+## Read again on the critic's first pass, 2026-11-07
+
+Two readings of the blocks above were corrected by the completeness critic
+(`docs/panel/235-reports/critic-briefs.md`, its item 16), each re-run that day:
+
+- `use <json>/parse` is refused at `1:1`, the caret under `use`, as the angle
+  block's own output shows; `expected_module_name` names the `<` it found in
+  its text, not by its column. `00-shared.md` said *at the `<`* and now says
+  this.
+- `.claude/rules/cli-surface.md`, quoted in the fourth block, cites `heroes
+  add` at `design.md:772`, a stale line: `grep -n 'heroes add' docs/design.md`
+  prints ``898:it arrives it will be `heroes add`/`heroes fetch` — inside
+  the same binary.``, in §3.5 (`grep -n '^### 3.5' docs/design.md` prints
+  `887`). The quotation stands as the rule file holds it.
+
+And one fact the briefs now state, run in `235-base`:
+
+```
+$ find examples -path '*internal*' -name '*.hero' | wc -l; ls -d examples/*/core | wc -l
+      19
+      14
+```

@@ -18,10 +18,11 @@ whether its cost can pass the author's cap. Report to
 `/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/pm-opening/docs/panel/235-reports/critic-briefs.md`,
 numbered, ending with the repairs you consider most important.
 
-**Second pass, after the seats**: read the five reports and the briefs, and
-name a route nobody listed, a claim asserted and not measured with the command
-that settles it, a contradiction between seats and which is checkable, and the
-question the sitting should have asked. Report to
+**Second pass, after the seats**: read the five seats' reports (the blind
+seat's included), the reader test's `score`, your first pass and the briefs
+as repaired on it, and name a route nobody listed, a claim asserted and not
+measured with the command that settles it, a contradiction between seats and
+which is checkable, and the question the sitting should have asked. Report to
 `/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/pm-opening/docs/panel/235-reports/critic-reports.md`.
 
 Your worktree, if you build or run anything, is

@@ -1,8 +1,14 @@
 ## 14. Packages
+Section 1's *every `use` starts at the directory of the file you compile* now
+holds for the program's own modules; a `use` reaches a package by its entry's
+name in angle brackets, `<json>`.
+
 A program may use packages: modules that others publish, fetched for it. Its
 catalogue, the file `heroes.yaml` beside the file you compile, has one entry
-per package; a program that uses none has none. The catalogue is YAML, each
-entry a mapping under `dependencies`, each value a string:
+per package; a program that uses none has none. The catalogue holds the
+program's dependencies and nothing else: no name, version or description of
+the program itself. The catalogue is YAML, each entry a mapping under
+`dependencies`, each value a string:
 ```
 dependencies:
   json:

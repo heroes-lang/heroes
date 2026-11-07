@@ -15,8 +15,9 @@ breach.
 tokens. You may run it for the specification as it stands and for each
 variant's added section, loading the key with `. /Users/joseph/Temp/heroes/heroes-lang/.env`
 in your shell, **never printing it** (`${#ANTHROPIC_API_KEY}` if you must
-know it loaded). The count is the author's cap's (25 USD for the sitting);
-report how many calls you made. Without it, the vendored rows stand and your
+know it loaded). Its calls come out of the 3.00 USD the author's cap (25 USD
+for the sitting) leaves above the runner's overall stop at 22.00; report how
+many calls you made. Without it, the vendored rows stand and your
 verdict is provisional (`/panel` § 2).
 
 ## Your questions
@@ -49,3 +50,21 @@ kept.
 **The three-inputs rule.** The wording that rewrites `.claude/rules/cli-surface.md`
 § There is no fourth slot and design.md §3.5's *examined and deliberately
 unplaced* paragraph for a catalogue, with its falsifier.
+
+## And from the critic's first pass
+
+- **The cells are 32**: eight arms since the repair (F-json added), two
+  models, pass@1 and pass@2 (`blind/README.md` § The cells). The decision
+  rule that reads them is registered in that README by the coordinator; your
+  predictions are judged by your own rule, as before.
+- **17, panel 056's second condition by its purpose**: *deleting the file
+  never changes which symbols are linked* (design.md §3.5), asked of a
+  catalogue: deleting or mistyping an entry never changes which module
+  compiles, only whether the program builds. Say which spellings and which
+  placements of fetched code meet it, and write it into the falsifier of your
+  three-inputs wording.
+- **20, the simplicity measures**: the new words and concepts a reader must
+  learn under each variant, counted from the sections; the files a program
+  must have, zero when it depends on nothing.
+- **21, with the historian**: how the author's criterion judges Go against
+  Cargo, and what the reader test's habit count can and cannot say of it.

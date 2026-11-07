@@ -14,8 +14,8 @@ Two packages from git do the work, and their authors call both of them
   Its module `fields` declares `function split_line(line: str) -> [str]`: the
   fields of `line` between its commas, in order.
 - the second quotes. Its address: `https://git.example.org/ben/csv`; its tag:
-  `v0.9.4`; its fingerprint:
-  `sha256-6a858c25dddf189645befd02e67b98a1c8cd38ca3e2393474af73c67351d87d6`.
+  `1.10`; its fingerprint:
+  `sha256-8f8ec08f37590a2ff129f489fdd22e48c2221472e13b22ee04f3892fb40bdb75`.
   Its module `quote` declares `function quote_field(field: str) -> str`:
   `field` inside double quotes, each double quote in it doubled.
 

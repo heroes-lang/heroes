@@ -1,15 +1,21 @@
 ## 14. Packages
+Section 1's *every `use` starts at the directory of the file you compile* now
+holds for the program's own modules; a `use` reaches a package by its entry's
+name in angle brackets, `<json>`.
+
 A program may use packages: modules that others publish, fetched for it. Its
 catalogue, the file `heroes.catalogue` beside the file you compile, has one
-entry per package; a program that uses none has none. It is written in Heroes'
-own syntax, one `package` declaration per entry, its fields indented as a
-record's are (section 4), each value a string literal:
+entry per package; a program that uses none has none. The catalogue holds the
+program's dependencies and nothing else: no name, version or description of
+the program itself. It is written in Heroes' own syntax, one `dependency`
+declaration per entry, its fields indented as a record's are (section 4), each
+value a string literal:
 ```
-package json
+dependency json
     version: "1.4.2"
     sum: "sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124"
 
-package yaml
+dependency yaml
     git: "https://git.example.org/ana/yaml"
     tag: "v0.3.1"
     sum: "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"

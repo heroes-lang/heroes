@@ -8,8 +8,8 @@ sum = "sha256-34d7dc508706d83daba5e85482dc993822ee0fc41c9c33c00e62ee5d71a1c176"
 
 [dependency.csv_ben]
 git = "https://git.example.org/ben/csv"
-tag = "v0.9.4"
-sum = "sha256-6a858c25dddf189645befd02e67b98a1c8cd38ca3e2393474af73c67351d87d6"
+tag = "1.10"
+sum = "sha256-8f8ec08f37590a2ff129f489fdd22e48c2221472e13b22ee04f3892fb40bdb75"
 ```
 
 ## program

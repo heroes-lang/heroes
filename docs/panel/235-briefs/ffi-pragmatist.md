@@ -46,3 +46,17 @@ with `curl` and checked with that fingerprint.
 ever runs that dependency's code under each route (a header is compiled, a
 `package` group asks `pkg-config`, which is the machine's program and not the
 package's), and what a hostile package could make the consumer's build do.
+
+## And from the critic's first pass
+
+- **18, the network**: whether `build`, `check` or `run` may ever fetch, or
+  only the verb that adds or fetches, against
+  `selfhost/cli/refresh.hero:4-10`, *the network is admissible only where
+  the answer is pre-recorded*.
+- **5, whose fingerprint is trusted**: the reader test states the sum as *the
+  publisher's fingerprint*; say what each base does (Go's checksum database,
+  Cargo's index `cksum`, a first fetch recorded) and what a hostile index or
+  a moved git tag can make a consumer's build do under each.
+- **15, with the historian**: what row 78, M-package-index, must deliver
+  (publishing, names, signing, a withdrawn version), and what of it the first
+  version's catalogue must already respect.

@@ -56,3 +56,23 @@ in your worktree, its cost in lines and in the `check` and `build` time of
 `selfhost/main.hero` before and after (`/usr/bin/time -p`, the best of N runs,
 the first discarded; say the machine was not still, since other seats run).
 A route that does not build is not adopted (`/panel` § 3c).
+
+## And from the critic's first pass
+
+The questions the shared brief's table gives you beyond those above
+(`00-shared.md` § The sitting's questions):
+
+- **16, alias scope**: a dependency's own `use <x>/…` lines resolved by whose
+  catalogue; two catalogues giving one alias to two packages, or two aliases
+  to one, under one version per program; whether an index package may be
+  named otherwise than its index name, and what the C names
+  (`selfhost/module/names.hero`) give each case.
+- **20, the catalogue's grammar in productions**, for each format of the
+  reader test's F arms (TOML, YAML, JSON, the line format, Heroes' own
+  syntax), beside its parser's lines of Heroes.
+- **9**, a program with no catalogue compiling as today, held by the 69
+  programs of `v0.6.0` that `compat` builds.
+- **11 and 12**: `core` as a catalogue entry against the 14 copies of `core/`
+  in `235-base`, which carry 19 modules under `internal/` (probe); what an
+  `internal/` folder means inside a fetched package, and what the `packages`
+  suite becomes.
