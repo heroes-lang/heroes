@@ -32,6 +32,7 @@ use inventory
 use emit/types
 use emit/key_pointer
 use emit/builtins
+use emit/defined
 use emit/decls as emit_decls
 use diag
 use token
@@ -143,12 +144,13 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
                 )
 
         check_type(@found, @memo, c, decls, ty: f.result, span: containers.reports_at(f, f.span))
+        sites = defined.sites_of(f)
 
         for blk in f.blocks
             for inst in blk.insts
                 check_type(@found, @memo, c, decls, ty: inst.ty, span: containers.reports_at(f, inst.span))
                 check_op(@found, op: inst.op, span: containers.reports_at(f, inst.span))
-                check_fixed_flow(@found, c, f, op: inst.op, span: containers.reports_at(f, inst.span))
+                check_fixed_flow(@found, c, f, sites, op: inst.op, span: containers.reports_at(f, inst.span))
 
     # Sorted by first appearance: an insertion sort over spans, the
     # resolver's own idiom.
@@ -358,7 +360,7 @@ function check_op(@found: [GateNote], op: ir.OpKind, span: token.Span)
 # The refusal is a row and not a repair, because Principle 0 puts the
 # widening behind a need that does not exist: selfhost/ declares zero
 # fixed-array fields, measured by two panel seats.
-function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Function, op: ir.OpKind, span: token.Span)
+function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Function, sites: defined.Sites, op: ir.OpKind, span: token.Span)
     match op
         .store st =>
             if is_fixed_value(c, f, value: st.value)
@@ -374,7 +376,7 @@ function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Fu
                 for arg in containers.args_of(f, con.arguments)
                     match arg
                         .value_arg v =>
-                            if is_fixed_value(c, f, value: v.value) && !is_a_written_literal(f, value: v.value)
+                            if is_fixed_value(c, f, value: v.value) && !is_a_written_literal(f, sites, value: v.value)
                                 note(
                                     @found,
                                     code: "fixed_flow",
@@ -401,22 +403,22 @@ function is_fixed_value(c: state.Checked, f: containers.Function, value: i64) ->
 # Whether this value is the [a, b, c] an author wrote, as opposed to a
 # field read with the same type: a literal renders as {a, b, c}, which
 # C accepts as an initialiser, and a field read renders as v.member,
-# which it does not.
-function is_a_written_literal(f: containers.Function, value: i64) -> bool
-    for blk in f.blocks
-        for inst in blk.insts
-            if !inst.dest.is_err() && inst.dest.must() == value
-                match inst.op
-                    .construct con =>
-                        match con.shape
-                            .array_shape                             => return true
-                            .record_shape | .case_shape | .map_shape => return false
-                            .ok_shape | .fail_shape | .err_shape     => return false
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return false
-                    .field | .index | .map_get | .len_of | .tag_of | .payload              => return false
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return false
+# which it does not. Its writer is read from `sites` (defect 2320).
+function is_a_written_literal(f: containers.Function, sites: defined.Sites, value: i64) -> bool
+    op = defined.op_of(f, sites, value)
 
-    return false
+    if op.is_err()
+        return false
+
+    match op.must()
+        .construct con =>
+            match con.shape
+                .array_shape                             => return true
+                .record_shape | .case_shape | .map_shape => return false
+                .ok_shape | .fail_shape | .err_shape     => return false
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call                  => return false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => return false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return false
 
 function callee_note(@found: [GateNote], callee: ir.Callee, span: token.Span)
     match callee

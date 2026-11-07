@@ -27,6 +27,7 @@ use emit/mangle
 use emit/ctype
 use emit/aggregate
 use emit/container
+use emit/defined
 use emit/places
 use emit/array_read
 use emit/nodebug
@@ -335,7 +336,17 @@ test "defect 097: a fixed-array element is written in place, through the read's 
     # temporary as its base; everything after it is the guard, and the write
     # must carry that same text, so the two cannot disagree on a bound.
     at = stop_place.of(got.s, f, offset: 0)
-    read = container.read_element(got.c, got.s, got.decls, got.names, f, base: 0, index: 1, where: at)
+    read = container.read_element(
+        got.c,
+        got.s,
+        got.decls,
+        got.names,
+        f,
+        defined.sites_of(f),
+        base: 0,
+        index: 1,
+        where: at
+    )
     guard = read.must().slice(from: 2, to: read.must().len())
     assert read.must() == "t0" + guard
     assert guard == "[((uint64_t)(t1) >= UINT64_C(3) ? (hero_panic_at(\"index out of range for a fixed array\", \"t.hero\", \"t.t\", 1, 1), (int64_t)0) : (t1))]"

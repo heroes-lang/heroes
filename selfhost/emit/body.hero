@@ -28,6 +28,7 @@ use emit/static_constant
 use emit/callback_guard
 use emit/callback_thunk
 use emit/inst
+use emit/defined
 use emit/term
 use emit/unread
 use emit/constant_accessor
@@ -145,6 +146,10 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
         back @ back - 1
 
     out = large_value.is_large(names, ty: f.result)
+
+    # Where each temporary is written, found once for the body: a fixed array
+    # is rendered from it at each use (`emit/defined.hero`, defect 2320).
+    sites = defined.sites_of(f)
     index: i64 @= 0
 
     for blk in f.blocks
@@ -152,7 +157,7 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
             writer.line(@w, text: mangle.block(index) + ":")
 
             for one in blk.insts
-                inst.emit(@w, p, c, names, s, decls, f, inst: one, live_values: read, ends: blk.term)
+                inst.emit(@w, p, c, names, s, decls, f, sites, inst: one, live_values: read, ends: blk.term)
 
             term.emit(@w, f, c, term: blk.term, released: released, out: out)
         index @ index + 1

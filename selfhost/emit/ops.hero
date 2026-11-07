@@ -21,6 +21,7 @@ use emit/heroes_call
 use emit/builtins
 use emit/convert
 use emit/bytes_text
+use emit/defined
 use emit/field_lend
 use emit/lend_extent
 use emit/lend_buffer
@@ -46,7 +47,7 @@ use checker
 # `p` is the program held with its index, built once per program
 # (`instances.Held`, defect 492): every lookup below reads it. `site` is where
 # the call stands, the place a check before it names (panel 230's R1).
-function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64], site: i64)
+function call(@w: writer.Writer, p: instances.Held, f: containers.Function, sites: defined.Sites, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64], site: i64)
     assign: str @= ""
 
     if !target.is_err()
@@ -93,7 +94,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             # a T? generated for its result type, so the call and the union are
             # written together (panel 162).
             if builtin_name == "validated_bytes" && !target.is_err()
-                bytes_text.emit(@w, c, s, decls, names, f, run: run, arguments: arguments, into: target.must())
+                bytes_text.emit(@w, c, s, decls, names, f, sites, run: run, arguments: arguments, into: target.must())
                 return
 
             # `ptr` is not a call either, and for the same reason one boundary
@@ -376,6 +377,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         @w,
         instances.hold(p),
         caller,
+        defined.sites_of(caller),
         c,
         names,
         s,
@@ -391,6 +393,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         @w,
         instances.hold(p),
         caller,
+        defined.sites_of(caller),
         c,
         names,
         s,

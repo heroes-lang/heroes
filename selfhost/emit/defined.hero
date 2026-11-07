@@ -1,0 +1,57 @@
+# Where each temporary of a function is written (design.md Part 10; defect
+# 2320). A fixed array has no storage in C (`emit/storageless.hero`), so it
+# is rendered where it is used from the instruction that made it, and the
+# gate asks that instruction whether the author wrote the array
+# (`emit/gate.hero`'s `is_a_written_literal`). Both walked every instruction
+# of the function for each value they asked about, so a construction of N
+# fixed-array fields, or N reads of their elements, cost the square of N:
+# building 2,048, 4,096 and 8,192 `u8[2]` fields took the compiler 21.62,
+# 61.39 and 198.35 billion instructions, and 11.98, 22.92 and 44.74 once
+# each writer was found here, in one pass per function, and read in
+# constant time.
+#
+# The first writer in block order, then in order inside its block, over
+# every block, a block nobody reaches included: what the walks answered, to
+# the gate, which asks of every block, and to the emitter alike.
+
+use ir
+use ir/containers
+
+record Sites
+    # value -> the block of its first writer, -1 where nothing writes it
+    block_of: [i64]
+    # value -> that writer's position in its block
+    inst_of: [i64]
+
+function sites_of(f: containers.Function) -> Sites
+    block_of: [i64] @= []
+    inst_of: [i64] @= []
+
+    for _ in f.values
+        block_of @ block_of.push(-1)
+        inst_of @ inst_of.push(-1)
+
+    index: i64 @= 0
+
+    for blk in f.blocks
+        at: i64 @= 0
+
+        for one in blk.insts
+            if !one.dest.is_err()
+                value = one.dest.must()
+
+                if value >= 0 && value < block_of.len() && block_of[value] == -1
+                    block_of[value] @ index
+                    inst_of[value] @ at
+            at @ at + 1
+
+        index @ index + 1
+
+    return Sites(block_of: block_of, inst_of: inst_of)
+
+# What the first instruction writing `value` does, or none where nothing
+# writes it.
+function op_of(f: containers.Function, sites: Sites, value: i64) -> ir.OpKind?
+    if value < 0 || value >= sites.block_of.len() || sites.block_of[value] < 0
+        return fail(code: "none", msg: "no instruction writes this value")
+    return ok(f.blocks[sites.block_of[value]].insts[sites.inst_of[value]].op)

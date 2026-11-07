@@ -23,6 +23,7 @@ use ir/containers
 use emit/mangle
 use emit/aggregate
 use emit/places
+use emit/defined
 use token
 use parse
 use resolve
@@ -31,8 +32,11 @@ use checker
 # The TEXT of a fixed-array value: the braced literal, or the field
 # read, rendered at the use site. Two producers, both here rather than
 # at their use sites; a third would be an index into an array of
-# arrays, which the checker refuses today.
-function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
+# arrays, which the checker refuses today. The producer is the first
+# instruction writing the value, read from `sites` (`emit/defined.hero`),
+# where a walk of the whole function for each value cost the square of a
+# construction's fixed-array fields (defect 2320).
+function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, sites: defined.Sites, value: i64) -> str?
     is_fixed: bool @= false
 
     match table.get(c.types, containers.value_type(f, value))
@@ -43,61 +47,60 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 
     if !is_fixed
         return fail(code: "none", msg: "has storage")
+    op = defined.op_of(f, sites, value)
 
-    for blk in f.blocks
-        for inst in blk.insts
-            if !inst.dest.is_err() && inst.dest.must() == value
-                match inst.op
-                    .construct con =>
-                        is_array_shape: bool @= false
+    if op.is_err()
+        return fail(code: "none", msg: "no instruction produces this value")
 
-                        match con.shape
-                            .array_shape                             => is_array_shape @ true
-                            .record_shape | .case_shape | .map_shape => is_array_shape @ is_array_shape
-                            .ok_shape | .fail_shape | .err_shape     => is_array_shape @ is_array_shape
+    match op.must()
+        .construct con =>
+            is_array_shape: bool @= false
 
-                        if !is_array_shape
-                            return fail(code: "none", msg: "not a producer of a fixed value")
-                        parts: [str] @= []
+            match con.shape
+                .array_shape                             => is_array_shape @ true
+                .record_shape | .case_shape | .map_shape => is_array_shape @ is_array_shape
+                .ok_shape | .fail_shape | .err_shape     => is_array_shape @ is_array_shape
 
-                        for arg in containers.args_of(f, con.arguments)
-                            match arg
-                                .value_arg v =>
-                                    inner = fixed_text(c, s, decls, f, value: v.value)
+            if !is_array_shape
+                return fail(code: "none", msg: "not a producer of a fixed value")
+            parts: [str] @= []
 
-                                    if inner.is_err()
-                                        parts @ parts.push(mangle.value(v.value))
-                                    else
-                                        parts @ parts.push(inner.must())
-                                .inout_arg => continue
+            for arg in containers.args_of(f, con.arguments)
+                match arg
+                    .value_arg v =>
+                        inner = fixed_text(c, s, decls, f, sites, value: v.value)
 
-                        return ok("{" + parts.join(", ") + "}")
-                    .field fl =>
-                        owner = containers.value_type(f, fl.base)
-                        found = aggregate.field(c, s, decls, owner: owner, index: fl.at)
+                        if inner.is_err()
+                            parts @ parts.push(mangle.value(v.value))
+                        else
+                            parts @ parts.push(inner.must())
+                    .inout_arg => continue
 
-                        if found.is_err()
-                            return fail(code: "none", msg: "not a field of this type")
-                        base_text: str @= mangle.value(fl.base)
-                        inner = fixed_text(c, s, decls, f, value: fl.base)
+            return ok("{" + parts.join(", ") + "}")
+        .field fl =>
+            owner = containers.value_type(f, fl.base)
+            found = aggregate.field(c, s, decls, owner: owner, index: fl.at)
 
-                        if !inner.is_err()
-                            base_text @ inner.must()
-                        return ok(base_text + "." + found.must().member)
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return fail(
-                        code: "none",
-                        msg: "not a producer of a fixed value"
-                    )
-                    .index | .map_get | .len_of | .tag_of | .payload => return fail(
-                        code: "none",
-                        msg: "not a producer of a fixed value"
-                    )
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return fail(
-                        code: "none",
-                        msg: "not a producer of a fixed value"
-                    )
+            if found.is_err()
+                return fail(code: "none", msg: "not a field of this type")
+            base_text: str @= mangle.value(fl.base)
+            inner = fixed_text(c, s, decls, f, sites, value: fl.base)
 
-    return fail(code: "none", msg: "no instruction produces this value")
+            if !inner.is_err()
+                base_text @ inner.must()
+            return ok(base_text + "." + found.must().member)
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return fail(
+            code: "none",
+            msg: "not a producer of a fixed value"
+        )
+        .index | .map_get | .len_of | .tag_of | .payload => return fail(
+            code: "none",
+            msg: "not a producer of a fixed value"
+        )
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return fail(
+            code: "none",
+            msg: "not a producer of a fixed value"
+        )
 
 # `v.params[i]`, the read, for a base that is a fixed array; anything else is
 # the caller's, which is a `[T]` read through the runtime.
@@ -113,7 +116,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 # cover today" — was true only because no test covered it, which is CLAUDE.md
 # §11's premise that expires in silence while the sentence around it still reads
 # as correct.
-function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, index: i64, where: str) -> str?
+function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, sites: defined.Sites, base: i64, index: i64, where: str) -> str?
     length: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
@@ -125,7 +128,7 @@ function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
     if length < 0
         return fail(code: "none", msg: "not a fixed array")
     base_text: str @= mangle.value(base)
-    rendered = fixed_text(c, s, decls, f, value: base)
+    rendered = fixed_text(c, s, decls, f, sites, value: base)
 
     if !rendered.is_err()
         base_text @ rendered.must()
@@ -177,9 +180,10 @@ test "a fixed literal renders braced at the use site, a field read stays an lval
         instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
-    braced = fixed_text(c, s, p.decls, f, value: 3)
+    sites = defined.sites_of(f)
+    braced = fixed_text(c, s, p.decls, f, sites, value: 3)
     assert braced.must() == "{t1, t2}"
-    member = fixed_text(c, s, p.decls, f, value: 4)
+    member = fixed_text(c, s, p.decls, f, sites, value: 4)
     assert member.must() == "t5.cells"
-    plain = fixed_text(c, s, p.decls, f, value: 0)
+    plain = fixed_text(c, s, p.decls, f, sites, value: 0)
     assert plain.is_err()
