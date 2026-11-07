@@ -8,7 +8,8 @@
 # filed after the transcription), so this is their one reader: the open
 # issues listed (`github_issues.OPEN_LISTING`, every page, pull requests left
 # out), narrowed by `--kind`, `--milestone` and `--class`, in the order of
-# their numbers. A line is the number, the kind, the class (`-` for none), the
+# their numbers. A line is the number, the kind, the class (`-` for none, the
+# most severe where two stand, `github_issues.class_of`), the
 # milestone (`-` for none) and the title, one space apart and the title last,
 # so a reader splits four times and keeps the rest; `--json` prints instead
 # one object a line, its members named, its absent ones `null`: the number,
@@ -43,7 +44,7 @@ function chosen(listing: github_issues.Listing, wanted: Narrowed) -> [github_iss
         if wanted.milestone != "" && one.milestone != wanted.milestone
             continue
 
-        if wanted.grade != "" && github_issues.label_value(issue: one, name: "class") != wanted.grade
+        if wanted.grade != "" && github_issues.class_of(one.labels) != wanted.grade
             continue
         by[one.number] @ one
 
@@ -61,7 +62,7 @@ function dash(value: str) -> str
 
 # One issue as `open` prints it.
 function line_of(issue: github_issues.Listed) -> str
-    return issue.number.to_str() + " " + dash(github_issues.kind_of(issue)) + " " + dash(github_issues.label_value(issue: issue, name: "class")) + " " + dash(issue.milestone) + " " + issue.title
+    return issue.number.to_str() + " " + dash(github_issues.kind_of(issue)) + " " + dash(github_issues.class_of(issue.labels)) + " " + dash(issue.milestone) + " " + issue.title
 
 # One issue as `open --json` prints it.
 function json_of(issue: github_issues.Listed) -> str
@@ -75,7 +76,7 @@ function json_of(issue: github_issues.Listed) -> str
         issue_json.member(key: "url", value: "https://github.com/heroes-lang/heroes/issues/" + issue.number.to_str())
         issue_json.member(key: "title", value: issue.title)
         issue_json.nullable(key: "kind", value: github_issues.kind_of(issue))
-        issue_json.nullable(key: "class", value: github_issues.label_value(issue: issue, name: "class"))
+        issue_json.nullable(key: "class", value: github_issues.class_of(issue.labels))
         issue_json.nullable(key: "area", value: github_issues.label_value(issue: issue, name: "area"))
         issue_json.nullable(key: "milestone", value: issue.milestone)
         "\"labels\":[" + labels.join(",") + "]"
@@ -127,6 +128,17 @@ test "open lists the open issues by number, one line each, narrowed by kind, mil
     t: issue_pace.Session @= issue_pace.scripted([])
     assert opened(@t, wanted: every, json: true) == 2
     assert strings.contains(text: t.err[0], needle: "GitHub could not be read")
+
+# Defect 2326: an issue carrying two `class:` labels is listed as its most
+# severe, as a tag counts it, and `--class` finds it there and only there.
+test "an issue carrying two class labels is listed as its most severe (defect 2326)"
+    two = github_issues.held_of(
+        [github_issues.json_of(number: 12, title: "two", body: "b", state: "open", labels: ["kind:defect", "class:adjacent", "class:blocking"], milestone: "", created: "2026-10-06T12:00:00Z", closed: "")]
+    )
+    assert line_of(two.issues[0]) == "12 defect blocking - two"
+    assert strings.contains(text: json_of(two.issues[0]), needle: "\"class\":\"blocking\"")
+    assert chosen(listing: two, wanted: Narrowed(kind: "", milestone: "", grade: "blocking")).len() == 1
+    assert chosen(listing: two, wanted: Narrowed(kind: "", milestone: "", grade: "adjacent")).len() == 0
 
 function issue_wire_answer(body: str) -> issue_wire.Reply
     return issue_wire.answer(status: 200, headers: [DATE], body: body)

@@ -328,7 +328,8 @@ function listed_of(j: json_read.Json) -> Listed?
     )
 
 # The value of the label `<name>:<value>` an issue carries, "" for none: its
-# `kind:`, `class:` or `area:`.
+# `kind:` or `area:`, the first in sorted order where two stand. A class is
+# `class_of`'s, which reads two (defect 2326).
 function label_value(issue: Listed, name: str) -> str
     for label in issue.labels
         if strings.starts_with(text: label, prefix: name + ":")
@@ -338,6 +339,46 @@ function label_value(issue: Listed, name: str) -> str
 
 function kind_of(issue: Listed) -> str
     return label_value(issue: issue, name: "kind")
+
+# The class the `class:` labels among `labels` give (`.claude/rules/
+# verification.md` § Bounded discovery), "" where none stands: the one, and
+# where two or more stand, which `file` never writes, the most severe. Until
+# 2026-11-07 the first in sorted order, so a defect labelled `adjacent` and
+# `blocking` read as `adjacent` and passed a tag its `blocking` should have
+# stopped (defect 2326). A tag that counts a defect of one class counts it of
+# every class more severe, so the most severe is the reading under which two
+# labels pass no tag either would have stopped, and stop none both would
+# have passed; a class `SEVERITY` does not name ranks above them all, since a
+# tag counts what it does not know.
+function class_of(labels: [str]) -> str
+    best: str @= ""
+    rank: i64 @= SEVERITY.len()
+
+    for label in labels
+        if strings.starts_with(text: label, prefix: "class:")
+            grade = strings.without_prefix(text: label, prefix: "class:")
+            at = severity_of(grade)
+
+            if at < rank
+                best @ grade
+                rank @ at
+
+    return best
+
+# The classes of § Bounded discovery, the most severe first.
+constant SEVERITY: [str]
+    ["systemic", "blocking", "adjacent", "improvement"]
+
+# Where `grade` stands in `SEVERITY`, -1 for a class it does not name.
+function severity_of(grade: str) -> i64
+    at: i64 @= 0
+
+    for one in SEVERITY
+        if one == grade
+            return at
+        at @ at + 1
+
+    return -1
 
 # Whether `issue` is the project's own (the module's paragraph above): no pull
 # request, and written by the project (`by_project`).
@@ -491,6 +532,17 @@ test "an issue is read with its labels sorted, its milestone and its state, and 
 # An issue by an author GitHub gives `association`, with `body`.
 function written(number: i64, association: str, body: str) -> Listed
     return held_of([json_full(number: number, title: "t", body: body, state: "open", labels: ["kind:defect"], milestone: "", milestone_number: 0, author: association, created: "2026-10-14T08:00:00Z", closed: "")]).issues[0]
+
+# Defect 2326: two `class:` labels read as the most severe, whatever their
+# sorted order; none is "", and a class `SEVERITY` does not name outranks
+# every one it does.
+test "an issue's class is its one class label, and the most severe where two stand (defect 2326)"
+    assert class_of(["class:blocking", "kind:defect"]) == "blocking"
+    assert class_of(["kind:defect"]) == ""
+    assert class_of(["class:adjacent", "class:blocking"]) == "blocking"
+    assert class_of(["class:improvement", "class:adjacent"]) == "adjacent"
+    assert class_of(["class:blocking", "class:systemic"]) == "systemic"
+    assert class_of(["class:improvement", "class:urgent"]) == "urgent"
 
 test "an issue is the project's own where its author is the project's and the program rendered its body (defect 2042)"
     filed = "Filed 2026-10-14\\n\\n### What happens\\n\\nx"
