@@ -50,6 +50,7 @@ use cli/opening
 use cli/response_file
 use cli/deps
 use cli/order_trial
+use cli/package_reads
 use emit/c_text
 use emit/clang_place
 
@@ -106,6 +107,47 @@ function search_words(c: Compiling) -> [str]
         out @ strings.with_all(list: out, more: ["-I", c.source_dir])
 
     return out
+
+# **A fetched package's unit compiles under its own root** (panel 235's R9,
+# its C1, ratified 2026-11-07): the words a unit of the program compiles
+# under, with no `--include` directory, which is the program's flag and
+# none of the package's, and the package's root where the program's root
+# stands, so its search is the runtime's directory, the package's own
+# `package` groups' answer, which `under` already holds narrowed to the
+# unit's headers (`settled.unit_words`), and its root, and nothing of the
+# program's or of another package. A header the package ships beside its
+# modules is found there without `--include`, a file at its root named
+# like the runtime's is never read, and no file of the program's stands in
+# for one of the package's. `root` is where the package's tree is placed,
+# which nothing places yet: lane pm-use passes it, for each unit of a
+# fetched module, where `settled.compiled_under` gives the program's units
+# theirs.
+function of_package(under: Compiling, root: str) -> Compiling
+    none: [str] = []
+    return Compiling(
+        level: under.level,
+        sanitize: under.sanitize,
+        search_include: none,
+        package_flags: under.package_flags,
+        runtime: under.runtime,
+        source_dir: root
+    )
+
+# **What a fetched package's unit read lies where a package may read** (panel
+# 235's R9, its C2; `cli/package_reads.hero`): `listing` is a `-M` listing
+# its words made, a probe's (`reads`) or its opening's (`unit_reach`), judged
+# before anything compiles; `under` is the unit's own (`of_package`), its
+# `source_dir` the package's root. The toolchain's own directories are asked
+# of clang under the unit's flags and no search word.
+function within_root(build: str, under: Compiling, listing: str?) -> ()?
+    own = package_reads.toolchain_own(build: build, words: flags.level_words(level: under.level, sanitize: under.sanitize))?
+    return package_reads.judged(
+        own: own,
+        root: under.source_dir,
+        runtime: under.runtime,
+        package_flags: libraries.compile_flags(under.package_flags),
+        listing: listing
+    )
 
 # Every word a probe's line compiles under but its own run's: a unit's
 # words (`unit_words`) but their diagnostics. Each probe builds its lines from
@@ -368,6 +410,136 @@ test "a unit's opening reads the runtime's own headers, whatever a directory of 
     assert strings.holds(text: paths.join("\n"), needle: root + "/inc/sub/heroes_standard.h")
     before = strings.with_all(list: ["-I", root + "/inc"], more: probe_words(c))
     assert reads_text(build: root + "/build", words: before, text: text, @memo).is_err()
+    assert !process.remove_tree(root).is_err()
+
+# **A fetched package's unit searches the runtime and its own root, and none
+# of the program's** (panel 235's R9, its C1): no `--include` directory, the
+# package's root where the program's stood, its own packages' words kept.
+test "a fetched package's unit searches the runtime first, then its own packages' words and its root, and nothing of the program's (panel 235's C1)"
+    program = Compiling(
+        level: "-O2",
+        sanitize: false,
+        search_include: ["inc"],
+        package_flags: ["-DHERO_PKG", "-Ipkg"],
+        runtime: "rt",
+        source_dir: "src"
+    )
+    unit = of_package(program, root: "heroes.packages/vec")
+    assert search_words(unit) == ["-I", "rt", "-DHERO_PKG", "-Ipkg", "-I", "heroes.packages/vec"]
+    assert unit.level == "-O2"
+    assert unit_words(unit) == strings.with_all(list: flags.level_words(level: "-O2", sanitize: false), more: search_words(unit))
+
+# **The package's own header is read from its root, a file at its root
+# named like the runtime's is not, and the program's are never searched**
+# (C1), asked of clang as the unit's opening reads them: the program's
+# `--include` directory and root each hold a `vecmath.h` that is an
+# `#error`, the package's root holds the real one beside a planted
+# `heroes_standard.h`; and what the opening read lies where a package may
+# read (C2), the toolchain's own `stdint.h` among it.
+test "a fetched package's unit reads its own header and the runtime's, never the program's (panel 235's C1 and C2)"
+    root = "build/selftest-compiling-package-root"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/inc", "/src", "/pkg/vec"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    for dir in ["/inc", "/src"]
+        assert !write_file(path: root + dir + "/vecmath.h", text: "#error the program's vecmath.h was read for the package's\n").is_err()
+
+    assert !write_file(path: root + "/pkg/vec/vecmath.h", text: "#include <stdint.h>\nstatic inline int64_t vm_dot(void) { return 32; }\n").is_err()
+    assert !write_file(path: root + "/pkg/vec/heroes_standard.h", text: "#error a planted heroes_standard.h was read\n").is_err()
+    program = Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [root + "/inc"],
+        package_flags: [],
+        runtime: "runtime",
+        source_dir: root + "/src"
+    )
+    unit = of_package(program, root: root + "/pkg/vec")
+    memo: {str: str} @= {}
+    read = reads_text(
+        build: root + "/build",
+        words: probe_words(unit),
+        text: order_trial.opening(["vecmath.h"], question: ""),
+        @memo
+    )
+    assert !read.is_err()
+    listed = clang_place.slashed(read.must())
+    assert strings.holds(text: listed, needle: " " + root + "/pkg/vec/vecmath.h")
+    assert strings.holds(text: listed, needle: " runtime/heroes_standard.h")
+    assert !strings.holds(text: listed, needle: root + "/inc/")
+    assert !strings.holds(text: listed, needle: root + "/src/")
+    assert !strings.holds(text: listed, needle: root + "/pkg/vec/heroes_standard.h")
+    assert !within_root(build: root + "/build", under: unit, listing: read).is_err()
+
+    # The same opening as a unit of the program reads the program's header.
+    assert reads_text(
+        build: root + "/build",
+        words: probe_words(program),
+        text: order_trial.opening(["vecmath.h"], question: ""),
+        @memo
+    ).is_err()
+    assert !process.remove_tree(root).is_err()
+
+# **A package's header reaching a file outside its root is refused with the
+# path, before anything compiles** (C2): by a relative climb, by `#embed`
+# and by `__has_include`, each a row of the `-M` listing; a header of the
+# machine's that the package's own `package` answer names passes.
+test "a fetched package's header that reads a file outside its root is refused with its path (panel 235's C2)"
+    root = "build/selftest-compiling-package-outside"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/pkg/vec", "/machine"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    assert !write_file(path: root + "/secret.txt", text: "BUILD-MACHINE-SECRET\n").is_err()
+    assert !write_file(path: root + "/outside.h", text: "#define HERO_OUTSIDE 1\n").is_err()
+    assert !write_file(path: root + "/machine/ray.h", text: "#define HERO_RAY 1\n").is_err()
+    assert !write_file(path: root + "/pkg/vec/climb.h", text: "#include \"../../outside.h\"\n").is_err()
+    assert !write_file(path: root + "/pkg/vec/embed.h", text: "static const char hero_embedded[] = {\n#embed \"../../secret.txt\"\n};\n").is_err()
+    assert !write_file(path: root + "/pkg/vec/probe.h", text: "#if __has_include(\"../../outside.h\")\n#define HERO_FOUND 1\n#endif\n").is_err()
+    assert !write_file(path: root + "/pkg/vec/clean.h", text: "#include <stdint.h>\n#include <ray.h>\n").is_err()
+    program = Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [],
+        package_flags: ["-I" + root + "/machine"],
+        runtime: "runtime",
+        source_dir: "."
+    )
+    unit = of_package(program, root: root + "/pkg/vec")
+    memo: {str: str} @= {}
+
+    # A clang with no `#embed` (Linux's 18) does not preprocess `embed.h`, and
+    # a listing it could not make is refused as unread: refused either way.
+    for pair in [["climb.h", "outside.h"], ["embed.h", "secret.txt"], ["probe.h", "outside.h"]]
+        read = reads_text(
+            build: root + "/build",
+            words: probe_words(unit),
+            text: order_trial.opening([pair[0]], question: ""),
+            @memo
+        )
+        said = within_root(build: root + "/build", under: unit, listing: read)
+        assert said.is_err()
+
+        code = match said
+            .ok _  => ""
+            .err e => e.code
+
+        msg = match said
+            .ok _  => ""
+            .err e => clang_place.slashed(e.msg)
+
+        assert code == "package_reads_outside" && strings.holds(text: msg, needle: pair[1]) || code == "unread" && read.is_err()
+
+    clean = reads_text(
+        build: root + "/build",
+        words: probe_words(unit),
+        text: order_trial.opening(["clean.h"], question: ""),
+        @memo
+    )
+    assert !within_root(build: root + "/build", under: unit, listing: clean).is_err()
     assert !process.remove_tree(root).is_err()
 
 # **A unit and a probe compile under one list** (defects 163 and 167): a

@@ -1,0 +1,351 @@
+# Every file a fetched package's unit reads lies under the package's root,
+# the runtime, the toolchain's own directories or a folder its own `package`
+# groups' answer names (panel 235's R9, its C2, ratified 2026-11-07, and the
+# coordinator's ruling of that day; design.md §4.19, §1.12), judged on
+# clang's `-M` listing of what the unit's headers open, before any compile.
+#
+# **Why a listing and not the search.** C1 puts the runtime's directory first
+# on a package's unit and its own root after it (`compiling.of_package`), so
+# no file of the program's or of another package is FOUND by a name the unit
+# includes; but a header reaches any file by a path: `#include
+# "../../secret.h"`, `#embed`, `__has_include`, an absolute name. Each is a
+# row of clang's listing, which is a fact about the compile in hand, so the
+# listing is what is judged: the ffi-pragmatist measured `#embed` copying a
+# file of the build machine into a binary and `#include` printing its first
+# line into the build's error output, and `-M` naming that file at exit 0
+# with nothing printed (panel 235's report, its § 2).
+#
+# **What a package may read.** Its root; the runtime's directory; the
+# directories clang searches for `<...>` under the unit's own flags and no
+# `-I` of the program's or the package's, the toolchain's and the platform's
+# own (the C library, clang's resource directory, a `CPATH` the machine
+# sets); the files clang adds to every listing itself (`-fdepfile-entry`,
+# the SDK's `SDKSettings.json` on this Mac); and the `-I` and `-F` folders of
+# the `pkg-config` answer for the package's own `package` groups, which are
+# the machine's (the coordinator's ruling). Nothing else: not the program's
+# root, not an `--include` directory, not another package.
+#
+# **Paths are judged as written, a component at a time.** clang writes a path
+# as the `-I` word and the include spelling made it, `heroes.packages/vec/../x.h`
+# among them, so each is read lexically: separators made `/`, `.` dropped, a
+# `..` taking off the part before it, and a relative path that climbs past
+# its first part keeping its `..`, which no allowed directory holds. A
+# directory holds a path when its parts are the path's first parts, so
+# `heroes.packages/vec` does not hold `heroes.packages/vec2/x.h`. What this
+# cannot see, said: a symbolic link inside the root names a file the listing
+# does not, which the fetch refuses before anything is placed (C3).
+#
+# **Nothing calls it yet**: no build places a package. Lane pm-use judges
+# each listing of a fetched package's unit with `compiling.within_root`, the
+# probes' (`compiling.probe_with`'s `reads`) and its opening's
+# (`compiling.unit_reach`), before anything compiles. Measured on this Mac
+# alone; the Linux and Windows legs are unrun, a Windows listing's `\` read
+# as `/` (`lexical`) among what they owe.
+
+use cli/deps
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use emit/clang_place
+
+# The toolchain's own: the directories clang searches for `<...>` under a
+# unit's flags with no `-I` of anyone's, and the files it lists in every
+# compile's dependencies by itself, each read lexically (`lexical`).
+record Own
+    dirs: [str]
+    files: [str]
+
+constant CODE: str
+    "package_reads_outside"
+
+constant STARTS: str
+    "#include <...> search starts here:"
+
+constant ENDS: str
+    "End of search list."
+
+constant FRAMEWORK: str
+    " (framework directory)"
+
+constant DEPFILE_ENTRY: str
+    "-fdepfile-entry="
+
+# The toolchain's own under `words`, asked of `clang -E -v` over an empty
+# file in `build`; absent where clang did not start or said nothing.
+function toolchain_own(build: str, words: [str]) -> Own?
+    dir = build + "/package-reads"
+    process.mkdir_all(dir)?
+    empty = dir + "/empty.c"
+    publish.write_whole(path: empty, text: "", keyed: true)?
+    err = publish.private_name(dir + "/said.txt")
+    line = response_file.carried(line: strings.with_all(list: ["clang", "-E", "-v"], more: words), dir: dir)
+    ran = process.run(program: "clang", words: line.push(empty), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started || ran.code != 0 || said.is_err()
+        return fail(code: "unasked", msg: "clang could not be asked which directories are the toolchain's own")
+    own = own_of(said.must())
+
+    if own.dirs.len() == 0
+        return fail(code: "unasked", msg: "clang named no directory it searches for `<...>`")
+    return ok(own)
+
+# What `clang -E -v` said, read: the directories between its two lines, and
+# every value of `-fdepfile-entry=` on the line it ran.
+function own_of(said: str) -> Own
+    dirs: [str] @= []
+    files: [str] @= []
+    inside: bool @= false
+
+    for row in deps.lines(said)
+        line = strings.trimmed(clang_place.without_return(row))
+
+        if line == STARTS
+            inside @ true
+        else if line == ENDS
+            inside @ false
+        else if inside && line.len() > 0
+            dir: str @= line
+
+            if strings.ends_with(text: dir, suffix: FRAMEWORK)
+                dir @ dir.slice(from: 0, to: dir.len() - FRAMEWORK.len())
+            dirs @ dirs.push(lexical(dir))
+        else
+            for entry in entries(line)
+                files @ files.push(lexical(entry))
+
+    return Own(dirs: dirs, files: files)
+
+# Each value of `-fdepfile-entry=` on a line clang printed: up to the next
+# space, or up to the closing quote where clang quoted the word because its
+# value holds one.
+function entries(line: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+    n = line.len()
+
+    while at + DEPFILE_ENTRY.len() <= n
+        if line.slice(from: at, to: at + DEPFILE_ENTRY.len()) != DEPFILE_ENTRY
+            at @ at + 1
+            continue
+        quoted = at > 0 && line[at - 1] == '"'
+        start = at + DEPFILE_ENTRY.len()
+        stop: i64 @= start
+
+        while stop < n && (quoted && line[stop] != '"' || !quoted && line[stop] != ' ')
+            stop @ stop + 1
+
+        if stop > start
+            out @ out.push(line.slice(from: start, to: stop))
+        at @ stop
+
+    return out
+
+# The folders a package's `pkg-config` answer names, its compile words: each
+# `-I` and `-F` value, joined or the next word.
+function answered(package_flags: [str]) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < package_flags.len()
+        word = package_flags[at]
+
+        if (word == "-I" || word == "-F") && at + 1 < package_flags.len()
+            out @ out.push(lexical(package_flags[at + 1]))
+            at @ at + 2
+            continue
+
+        if word.len() > 2 && (strings.starts_with(text: word, prefix: "-I") || strings.starts_with(text: word, prefix: "-F"))
+            out @ out.push(lexical(word.slice(from: 2, to: word.len())))
+        at @ at + 1
+
+    return out
+
+# A path read lexically: every separator `/`, no `.` part and no empty part
+# but a leading `/`'s, each `..` taking off the part before it, and one that
+# climbs past a relative path's first part kept, since it names a file no
+# directory under the current one holds. An absolute path does not climb
+# past its root.
+function lexical(path: str) -> str
+    p = clang_place.slashed(path)
+    rooted = p.len() > 0 && p[0] == '/'
+    kept: [str] @= []
+
+    for part in pieces(p)
+        if part == "" || part == "."
+            continue
+
+        if part == ".."
+            if kept.len() > 0 && kept[kept.len() - 1] != ".."
+                kept @ without_last(kept)
+            else if !rooted
+                kept @ kept.push("..")
+            continue
+        kept @ kept.push(part)
+
+    if rooted
+        return "/" + kept.join("/")
+
+    if kept.len() == 0
+        return "."
+    return kept.join("/")
+
+# Every part of `parts` but its last.
+function without_last(parts: [str]) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + 1 < parts.len()
+        out @ out.push(parts[at])
+        at @ at + 1
+
+    return out
+
+# `p` cut at each `/`.
+function pieces(p: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < p.len()
+        if p[at] == '/'
+            out @ out.push(p.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    out @ out.push(p.slice(from: start, to: p.len()))
+    return out
+
+# Whether `dir` holds `path`, both read lexically: the directory's parts are
+# the path's first parts and the path has one more at least. `.` holds every
+# relative path that does not climb out of it.
+function holds(dir: str, path: str) -> bool
+    if dir == "."
+        return path.len() > 0 && path[0] != '/' && path != "." && !strings.starts_with(text: path, prefix: "../") && path != ".."
+    return path.len() > dir.len() && strings.starts_with(text: path, prefix: dir) && (path[dir.len()] == '/' || dir == "/")
+
+# The paths of a listing's rows (`<digest> <path>`, after the digest of them
+# all) that no directory of `dirs` holds and that are none of `files`, as the
+# listing wrote them.
+function outside(listing: str, dirs: [str], files: [str]) -> [str]
+    out: [str] @= []
+    first: bool @= true
+
+    for row in deps.lines(listing)
+        if first
+            first @ false
+            continue
+        space: i64 @= 0
+
+        while space < row.len() && row[space] != ' '
+            space @ space + 1
+
+        if space >= row.len()
+            continue
+        written = row.slice(from: space + 1, to: row.len())
+        path = lexical(written)
+        allowed: bool @= false
+
+        for one in files
+            if one == path
+                allowed @ true
+
+        for dir in dirs
+            if holds(dir: dir, path: path)
+                allowed @ true
+
+        if !allowed
+            out @ out.push(written)
+
+    return out
+
+# C2's verdict on one listing of a fetched package's unit: ok where every
+# file it names lies where a package may read, the paths outside named
+# otherwise. `root` is the package's root, `runtime` the runtime's
+# directory, `package_flags` its own groups' compile words, `own` the
+# toolchain's own under its words; a listing clang could not make is no
+# verdict, told, since nothing vouches for what that compile would read.
+function judged(own: Own, root: str, runtime: str, package_flags: [str], listing: str?) -> ()?
+    if listing.is_err()
+        return fail(
+            code: "unread",
+            msg: "the files the package's headers read could not be listed, so nothing vouches for them"
+        )
+    dirs: [str] @= [lexical(root), lexical(runtime)]
+    dirs @ strings.with_all(list: dirs, more: own.dirs)
+    dirs @ strings.with_all(list: dirs, more: answered(package_flags))
+    far = outside(listing.must(), dirs: dirs, files: own.files)
+
+    if far.len() == 0
+        return ok()
+    return fail(
+        code: CODE,
+        msg: "a unit of the package at `" + root + "` reads `" + far.join("`, `") + "`, outside its root, the runtime, the toolchain's own directories and the folders its `package` groups' answer names: a fetched package's headers read only the package's own files"
+    )
+
+## Tests
+
+test "a path is read a part at a time, `..` taking off the part before it and never climbing past a root"
+    assert lexical("heroes.packages/vec/vecmath.h") == "heroes.packages/vec/vecmath.h"
+    assert lexical("heroes.packages/vec/../x.h") == "heroes.packages/x.h"
+    assert lexical("./heroes.packages//vec/./a.h") == "heroes.packages/vec/a.h"
+    assert lexical("vec/../../secret.h") == "../secret.h"
+    assert lexical("/usr/include/../../etc/passwd") == "/etc/passwd"
+    assert lexical("/../x") == "/x"
+    assert lexical("C:\\pkg\\vec\\..\\x.h") == "C:/pkg/x.h"
+    assert lexical("a/..") == "."
+
+test "a directory holds a path by its parts, never by a prefix of a part"
+    assert holds(dir: "heroes.packages/vec", path: "heroes.packages/vec/a.h")
+    assert !holds(dir: "heroes.packages/vec", path: "heroes.packages/vec2/a.h")
+    assert !holds(dir: "heroes.packages/vec", path: "heroes.packages/vec")
+    assert !holds(dir: "heroes.packages/vec", path: "heroes.packages/x.h")
+    assert holds(dir: "/usr/include", path: "/usr/include/stdio.h")
+    assert !holds(dir: "/usr/include", path: "usr/include/stdio.h")
+    assert holds(dir: "/", path: "/etc/passwd")
+    assert holds(dir: ".", path: "a/b.h")
+    assert !holds(dir: ".", path: "../b.h")
+    assert !holds(dir: ".", path: "/b.h")
+
+test "what clang -E -v says is read into the toolchain's own directories and files"
+    said = "clang version 21\n \"/usr/bin/clang\" -cc1 -triple arm64 \"-fdepfile-entry=/Applications/X Y.app/SDK/SDKSettings.json\" -fdepfile-entry=/SDK/Other.json -E -x c e.c\n#include \"...\" search starts here:\n#include <...> search starts here:\n /usr/lib/clang/21/include\n /SDK/usr/include\n /SDK/System/Library/Frameworks (framework directory)\nEnd of search list.\n"
+    own = own_of(said)
+    assert own.dirs == ["/usr/lib/clang/21/include", "/SDK/usr/include", "/SDK/System/Library/Frameworks"]
+    assert own.files == ["/Applications/X Y.app/SDK/SDKSettings.json", "/SDK/Other.json"]
+
+test "a package's own pkg-config folders are read from its compile words, joined or the next word"
+    assert answered(["-DX=1", "-I/opt/ray/include", "-I", "/opt/b", "-F/opt/f", "-lz"]) == ["/opt/ray/include", "/opt/b", "/opt/f"]
+
+test "a listing is judged row by row: the root, the runtime, the toolchain's own and a package's folders pass, a climb out of the root does not"
+    own = Own(dirs: ["/usr/include"], files: ["/SDK/SDKSettings.json"])
+    listing = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h\ndddd /SDK/SDKSettings.json\neeee /opt/ray/include/raylib.h\nffff heroes.packages/vec/../../main.h\ngggg heroes.packages/vec2/x.h"
+    said = judged(
+        own: own,
+        root: "heroes.packages/vec",
+        runtime: "runtime",
+        package_flags: ["-I/opt/ray/include"],
+        listing: ok(listing)
+    )
+    assert said.is_err()
+
+    msg = match said
+        .ok _  => ""
+        .err e => e.code + " " + e.msg
+
+    assert strings.starts_with(text: msg, prefix: CODE + " ")
+    assert strings.holds(text: msg, needle: "`heroes.packages/vec/../../main.h`")
+    assert strings.holds(text: msg, needle: "`heroes.packages/vec2/x.h`")
+    assert !strings.holds(text: msg, needle: "raylib.h")
+    assert !strings.holds(text: msg, needle: "stdint.h")
+    clean = "0123456789abcdef\naaaa heroes.packages/vec/vecmath.h\nbbbb runtime/heroes_unit.h\ncccc /usr/include/stdint.h"
+    assert !judged(own: own, root: "heroes.packages/vec", runtime: "runtime", package_flags: [], listing: ok(clean)).is_err()
+    assert judged(
+        own: own,
+        root: "heroes.packages/vec",
+        runtime: "runtime",
+        package_flags: [],
+        listing: fail(code: "unread", msg: "x")
+    ).is_err()
