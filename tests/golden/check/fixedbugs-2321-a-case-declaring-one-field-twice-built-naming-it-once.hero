@@ -1,0 +1,17 @@
+# fixedbugs, defect 2321, 2026-11-07: a variant's case is a small record
+# (design.md §4.2), and one declaring `x` twice, built naming `x` once, was
+# told that `Shape.dot` is built with `x:, x:`. Its construction is read as
+# a record's is, against each name's first declaration, and is told nothing
+# more.
+variant Shape
+    dot
+        x: i64
+        x: i64  #~ field_declared_twice
+    none
+
+function main()
+    s: Shape = .dot(x: 1)
+
+    match s
+        .dot d => print(d.x)
+        .none  => print(0)

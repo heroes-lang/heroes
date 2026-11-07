@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2318-two-thousand-sibling-blocks-binding-one-name-check-in-linear-work.hero:8204:5: error[shadowed_binding]: `f0` is already in scope, bound at line 10 — shadowing is an error here: a name means one thing for as long as it is visible

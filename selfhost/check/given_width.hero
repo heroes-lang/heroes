@@ -29,6 +29,7 @@ use check/group_fields
 use check/settling
 use check/waiting as waits
 use check/builtins
+use check/declared_once
 
 # After a call's values were checked, from diagnostic `from` on, where the
 # callee is the library's or an `extern` binding: the receiver's, where the
@@ -88,9 +89,13 @@ function after_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
         .record_decl rec =>
             if rec.header.is_err()
                 return
+
+            # The fields the walk checked the construction against, so the
+            # two agree on when every field is given (defect 2321).
+            fields = declared_once.standing(s, doubled: c.doubled, decl: decl, declared: rec.fields, given: given.len())
             names: [str] @= []
 
-            for f in rec.fields
+            for f in fields
                 names @ names.push(source.span_text(s, f.name))
 
             at: [i64] @= group_fields.fields_named(s, names: names, given: given)
@@ -106,7 +111,7 @@ function after_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
 
             for arg in given
                 if at[k] >= 0
-                    ty = lower.lower_ty(@c, a, r, rec.fields[at[k]].ty)
+                    ty = lower.lower_ty(@c, a, r, fields[at[k]].ty)
                     amend(
                         @c,
                         a,

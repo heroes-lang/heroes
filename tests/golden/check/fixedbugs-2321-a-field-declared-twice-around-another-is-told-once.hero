@@ -1,0 +1,13 @@
+# fixedbugs, defect 2321, 2026-11-07: the shape padded, another field
+# between the two declarations of `value`. The construction naming each
+# name once was told it missed `value:, unit:, value:`; read against each
+# name's first declaration it gives every field in order, and is told
+# nothing more.
+record Reading
+    value: i64
+    unit: str
+    value: i64  #~ field_declared_twice
+
+function main()
+    r = Reading(value: 1, unit: "mm")
+    print(r.unit)

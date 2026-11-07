@@ -1,0 +1,15 @@
+# fixedbugs, defect 2321, 2026-11-07: a record declaring `a` twice, built
+# naming `a` once, was told the declaration's mistake and then, at the
+# construction, that it missed `a:, a:`, a second message for the one
+# mistake that asked for a construction no program can write: the
+# construction was read against the fields as written, the refused second
+# included. Now a construction that does not give a value per field as
+# written is read against each name's first declaration, the one `r.a`
+# reads (`check/declared_once.hero`'s `standing`), and is told nothing more.
+record R
+    a: i64
+    a: i64  #~ field_declared_twice
+
+function main()
+    r = R(a: 1)
+    print(r.a)

@@ -1,0 +1,13 @@
+# fixedbugs, defect 2321, 2026-11-07: `a` declared as an `i64` and again as
+# a `str`, built naming it once with a `str`. It was told the construction
+# missed `a:, a:` and the value's type. Now the construction is read against
+# the first declaration, the one the refusal leaves standing and the one a
+# read `r.a` takes, so the type is told alone: as `r.a` would be an `i64`,
+# so is the value a construction gives it.
+record R
+    a: i64
+    a: str  #~ field_declared_twice
+
+function main()
+    r = R(a: "one")  #~ type_mismatch
+    print(r.a)
