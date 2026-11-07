@@ -57,6 +57,7 @@ use cli/kept
 use cli/response_file
 use cli/served
 use cli/front_check
+use cli/opening
 
 # How a refused unit's message names the C clang refused, on its last line.
 constant GENERATED: str
@@ -136,19 +137,30 @@ function components(s: source.Source) -> [str]
 # unit that includes it, and its warning was printed once per unit and again
 # per round. What is kept for the replay is clang's whole text, so another
 # build tells it again.
-function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}, @told: {str: bool}) -> str?
+#
+# **And what its opening reaches NOW, asked of clang** (`cli/opening.hero`,
+# defect 2289): a record names the files a compile read, so a header that
+# would now be found ahead of one of them, a program's own `sqlite3.h` before
+# the platform's, or a probe that now finds a file, is in no record; it moves
+# this answer, so it is another key and a compile. `@opened` holds a build's
+# answers, one per opening and words. Where clang gives none nothing is
+# served warm, and the compile says what a cold build says.
+function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}, @opened: {str: str}, @told: {str: bool}) -> str?
     words = compiling.unit_words(
         compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, package_flags: package_flags, runtime: t.runtime, source_dir: source_dir)
     )
-    key = digest.digest(
+    named = digest.digest(
         t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words) + front_check.key_text(tu_text)
     )
+    head = opening.kept_of(build: t.build, named: named, text: tu_text)
+    reach = compiling.unit_reach(build: t.build, words: words, head: head, memo: @memo, opened: @opened)
+    key = digest.digest(named + "|reaches:" + opening.key_text(reach))
     dir = t.build + "/tu-" + key
     process.mkdir_all(dir)?
     listed = dir + "/" + module + ".deps.txt"
     known = deps.vouched(listed, @memo)
 
-    if !known.is_err()
+    if !reach.is_err() && !known.is_err()
         # A warm object REPLAYS the warnings its compile produced: the
         # flag set exists so a warning can falsify something (§7), and
         # a cache that swallows one on every hit after the first makes
@@ -286,8 +298,12 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     kept.write(path: warnings_of(dir: dir, sum: sum), text: said)?
 
     # Keyed in the one sense a record can be: any record another build
-    # published names artifacts of its own compile, and they are there.
-    publish.write_whole(path: listed, text: listing, keyed: true)?
+    # published names artifacts of its own compile, and they are there. **And
+    # only where the opening reached every file the compile read**
+    # (`opening.covers`): otherwise the key cannot see all it depends on, and
+    # the object serves this build alone.
+    if opening.covers(reach, listed: rows.must())
+        publish.write_whole(path: listed, text: listing, keyed: true)?
     return ok(object)
 
 # The object a record's digest names, and the warnings its compile said.
@@ -334,6 +350,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
     text = "#include <stdint.h>\nint64_t heroes_key_probe(void);\nint64_t heroes_key_probe(void) { return 1; }\n"
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     first = tu_object(
         here,
@@ -345,7 +362,8 @@ test "a unit compiled under one clang answer is compiled again under another (de
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     second = tu_object(
@@ -358,7 +376,8 @@ test "a unit compiled under one clang answer is compiled again under another (de
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
 
@@ -376,7 +395,8 @@ test "a unit compiled under one clang answer is compiled again under another (de
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     assert again == first
@@ -398,6 +418,7 @@ test "a record vouches only for the object its own compile made, and one whose o
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
     told: {str: bool} @= {}
     one: {str: str} @= {}
+    opened_one: {str: str} @= {}
     first = tu_object(
         t,
         module: "vouch",
@@ -408,11 +429,13 @@ test "a record vouches only for the object its own compile made, and one whose o
         package_flags: none,
         source_dir: "",
         search_include: [headers_at],
-        @one,
+        memo: @one,
+        opened: @opened_one,
         @told
     ).must()
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
     two: {str: str} @= {}
+    opened_two: {str: str} @= {}
     second = tu_object(
         t,
         module: "vouch",
@@ -423,13 +446,15 @@ test "a record vouches only for the object its own compile made, and one whose o
         package_flags: none,
         source_dir: "",
         search_include: [headers_at],
-        @two,
+        memo: @two,
+        opened: @opened_two,
         @told
     ).must()
     assert second != first
     assert process.path_exists(first)
     assert !process.remove_file(second).is_err()
     three: {str: str} @= {}
+    opened_three: {str: str} @= {}
     third = tu_object(
         t,
         module: "vouch",
@@ -440,7 +465,8 @@ test "a record vouches only for the object its own compile made, and one whose o
         package_flags: none,
         source_dir: "",
         search_include: [headers_at],
-        @three,
+        memo: @three,
+        opened: @opened_three,
         @told
     ).must()
     assert third == second
@@ -463,6 +489,7 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
     text = "#include <stdint.h>\nint64_t heroes_package_value(void);\nint64_t heroes_package_value(void) { return HEROES_PACKAGE_VALUE; }\n"
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
 
     # Without the package's word the unit does not compile, and nothing is
@@ -477,7 +504,8 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).is_err()
     seven = tu_object(
@@ -490,7 +518,8 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         package_flags: ["-DHEROES_PACKAGE_VALUE=7"],
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     eight = tu_object(
@@ -503,7 +532,8 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         package_flags: ["-DHEROES_PACKAGE_VALUE=8"],
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     assert eight != seven
@@ -519,7 +549,8 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"],
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     assert linked == seven
@@ -536,6 +567,7 @@ test "a unit whose package words pass what one Windows command line holds compil
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     words: [str] @= ["-DHEROES_LONG_LAST=586"]
     length: i64 @= 0
@@ -556,7 +588,8 @@ test "a unit whose package words pass what one Windows command line holds compil
             package_flags: words,
             source_dir: "",
             search_include: none,
-            @memo,
+            memo: @memo,
+            opened: @opened,
             @told
         )
         assert failure_text(object) == ""
@@ -591,6 +624,7 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
     text = "#include <stdint.h>\n#include <beside.h>\nint64_t heroes_beside(void);\nint64_t heroes_beside(void) { return HERO_BESIDE; }\n"
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     first = tu_object(
         t,
@@ -602,7 +636,8 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
         package_flags: none,
         source_dir: one,
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     second = tu_object(
@@ -615,7 +650,8 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
         package_flags: none,
         source_dir: two,
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     assert first != second

@@ -271,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6dd9f5513de0e4bb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ae34d0d463d45a2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2274acopywrittenkeepstheorderitwascopiedwith\tfixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with\n");

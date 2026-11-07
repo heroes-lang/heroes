@@ -1,0 +1,3 @@
+5
+0
+!panic: 1 taken at fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.hero:19:12, in fixedbugs-2291-a-refused-close-nobody-repeats-is-owed-at-exit.main

@@ -301,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("62671c044dfae36b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f7073c056574452", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handletransferintoanullresultisnotmade\thandle-transfer-into-a-null-result-is-not-made\n");

@@ -46,7 +46,7 @@ use cli/strings
 use cli/process
 use cli/publish
 use cli/digest
-use cli/deps
+use cli/opening
 use cli/response_file
 use emit/c_text
 
@@ -164,22 +164,44 @@ function without_diagnostics(listed: [str]) -> [str]
 # user time, as ten of the layout check's screen runs did, against 0.21 s
 # for that program's whole warm build.
 function reads(build: str, words: [str], headers: [str], @memo: {str: str}) -> str?
-    text = include_lines(headers)
+    return reads_text(build: build, words: words, text: include_lines(headers), @memo)
+
+# What `text`, the lines a unit opens with, reaches under `words`: one `clang
+# -M` over it, written under `build/reads/` and named by its text
+# (`opening.reached`), its own file no row.
+function reads_text(build: str, words: [str], text: str, @memo: {str: str}) -> str?
     dir = build + "/reads"
     process.mkdir_all(dir)?
     unit = dir + "/reads-" + digest.digest(text) + ".c"
     publish.write_whole(path: unit, text: text, keyed: true)?
-    depfile = publish.private_name(dir + "/reads.d")
-    line: [str] @= response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: dir)
-    line @ strings.with_all(list: line, more: ["-M", "-MT", "dep", "-MF", depfile, unit])
-    ran = process.run(program: "clang", words: line, out: process.discard(), err: process.discard())
+    line = response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: dir)
+    none: [str] = []
+    return opening.reached(
+        line: line,
+        input: unit,
+        depfile: publish.private_name(dir + "/reads.d"),
+        skip: dir + "/",
+        keyed: none,
+        @memo
+    )
 
-    if !ran.started || ran.code != 0
-        publish.discard(depfile)
-        return fail(code: "unread", msg: "the headers did not preprocess")
-    rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
-    publish.discard(depfile)
-    return rows
+# What `head`, a unit's opening (`opening.kept_of`, defect 2289), reaches
+# under the words the unit compiles under: asked of clang once in a build for
+# each opening and words, `@opened` holding each answer by the two, or
+# `opening.UNREAD` where clang gave none. The units of a program's plain
+# modules share one opening, so a hundred of them ask once.
+function unit_reach(build: str, words: [str], head: str, @memo: {str: str}, @opened: {str: str}) -> str?
+    key = libraries.key_text(words) + "|" + head
+    known = opened[key]
+
+    if !known.is_err() && known.must() != opening.UNREAD
+        return known
+
+    if !known.is_err()
+        return fail(code: "unread", msg: "the includes did not preprocess")
+    got = reads_text(build: build, words: words, text: head, @memo)
+    opened[key] @ got.default(opening.UNREAD)
+    return got
 
 # The lines every probe unit opens with: one angled include per header, in
 # the program's own order (`emit/externs.headers`), spelled as the program's

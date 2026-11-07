@@ -203,9 +203,9 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
             )
 
             if !sub.is_err()
-                spans @ joined(list: spans, more: sub.must().spans)
-                bitspans @ joined(list: bitspans, more: sub.must().bitspans)
-                bits @ joined(list: bits, more: sub.must().bits)
+                added(list: @spans, more: sub.must().spans)
+                added(list: @bitspans, more: sub.must().bitspans)
+                added(list: @bits, more: sub.must().bits)
 
                 # ORDER: none — each name is set in another map, whose one
                 # reader sorts it (`guarded`).
@@ -218,7 +218,7 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
                 continue
 
         if said.must() == membership.DECLARED
-            spans @ joined(list: spans, more: span(t: t, path: path))
+            added(list: @spans, more: span(t: t, path: path))
 
         # A fixed array of records: its elements, one by one.
         if inner >= 0 && element != written.must() && !names.lend_units[membership.KEY + inner.to_str()].is_err()
@@ -236,10 +236,10 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
                 bare[name] @ true
 
         if entry[0] == 'p'
-            spans @ joined(list: spans, more: span(t: t, path: prefix + rest))
+            added(list: @spans, more: span(t: t, path: prefix + rest))
         else if entry[0] == 'f'
-            spans @ joined(
-                list: spans,
+            added(
+                list: @spans,
                 more: ["__builtin_offsetof(" + t + ", " + prefix + rest + ")", "sizeof(" + d + ") - __builtin_offsetof(" + d + ", " + rest + ")"]
             )
         else if entry[0] == 'n' || entry[0] == 'c'
@@ -249,9 +249,9 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
                 return fail(code: "none", msg: "a bit-field's entry this reader cannot read")
 
             if entry[0] == 'c'
-                spans @ joined(list: spans, more: found.must().span)
+                added(list: @spans, more: found.must().span)
             else
-                bitspans @ joined(list: bitspans, more: found.must().span)
+                added(list: @bitspans, more: found.must().span)
                 bits @ bits.push(prefix + found.must().path)
         else
             return fail(code: "none", msg: "an entry of a kind this reader does not know")
@@ -289,13 +289,21 @@ constant NOWHERE: str
 function span(t: str, path: str) -> [str]
     return ["__builtin_offsetof(" + t + ", " + path + ")", "sizeof(((" + t + " *)0)->" + path + ")"]
 
+# `list` and `more` after it, one list.
 function joined(list: [str], more: [str]) -> [str]
     out: [str] @= list
-
-    for one in more
-        out @ out.push(one)
-
+    added(list: @out, more: more)
     return out
+
+# `more` pushed onto `list`, which is lent, so each push grows it in place
+# (defect 409's spelling, `emit/writer.hero`'s `add_line`). Until defect
+# 2284's repair `members` wrote `spans @ joined(list: spans, more: …)` once a
+# member, and `joined`'s copy of the list it was handed made every member cost
+# all the spans before it: 131,072 leaves of a header's struct, a mebibyte of
+# `int64_t` pairs, kept `heroes build` past ten minutes.
+function added(@list: [str], more: [str])
+    for one in more
+        list @ list.push(one)
 
 # The element type of a fixed array, through every dimension, or `ty` itself.
 function innermost(c: state.Checked, ty: i64) -> i64

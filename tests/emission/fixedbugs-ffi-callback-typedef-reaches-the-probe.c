@@ -287,7 +287,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("70b10da01aa2f220", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7dba655c22ff5307", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficallbacktypedefreachestheprobe\tffi-callback-typedef-reaches-the-probe\n");

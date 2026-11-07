@@ -101,6 +101,33 @@ function defined(name: str, through: str) -> str
 function given_back(name: str) -> str
     return "    hero_frame_give(" + pointer(name) + ");"
 
+# Whether a function returns its value out of the room by C's convention: a
+# group's record kept off the frame (panel 233's R4), returned by value as its
+# header says, so the `return` copies it out of one of the function's regions.
+# Such a function gives its regions back by `cleanup`, which C runs after the
+# return has copied its value (defect 2316): given back before the `return`,
+# as every other function's are, the region's chunk was freed by
+# `hero_frame_give` whenever a spare at least as large was already kept, a
+# callee's, and the copy read freed memory, in silence without the sanitizer.
+# A large result is written through `OUT` before the regions go back, so it
+# never needs this.
+function returned_from_room(names: ctype.Names, ty: i64) -> bool
+    return off_frame(names, ty) && !is_large(names, ty)
+
+# The prologue's statement for a region given back at the function's exit by
+# `cleanup`, last taken first, as C runs cleanups in the reverse of their
+# declarations; the pointer is not `const`, since the runtime's
+# `hero_frame_give_at` takes its address as a plain `void *`. The attribute is
+# spelled `__cleanup__`, which no header's macro can take.
+function taken_to_exit(spelled: str, name: str) -> str
+    return spelled + " *" + pointer(name) + " __attribute__((__cleanup__(hero_frame_give_at))) = (" + spelled + " *)hero_frame_take(sizeof(" + spelled + "));"
+
+# The prologue's statement for a region of a function that returns `result`.
+function region(names: ctype.Names, result: i64, spelled: str, name: str) -> str
+    if returned_from_room(names, ty: result)
+        return taken_to_exit(spelled: spelled, name: name)
+    return taken(spelled: spelled, name: name)
+
 # A call's arguments as its callee takes them. A Heroes function, called
 # directly or through a value, takes the destination first where the result is
 # large, `NULL` where the result is discarded, and the address of each large

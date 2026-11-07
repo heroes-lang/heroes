@@ -287,7 +287,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e84a8153a585e56", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b8dffd142b4bf3d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatransferthatfailedandnobodyendedisowedatexit\tfixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit\n");

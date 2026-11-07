@@ -156,10 +156,10 @@ function rounded_power(base: f64, exponent: f64) -&gt; i64
   <p>
     Poi ogni dichiarazione che tocca un handle dice che cosa fa, con una di tre parole. <code>acquires</code> e un nome: la chiamata te ne consegna uno, e quel nome è la funzione che lo riprende. <code>consumes</code>: la chiamata ne riprende uno e ne chiude la vita. <code>borrows</code>: la chiamata te ne mostra uno che la libreria continua a tenere, e tu non devi restituire niente. Nessuna delle tre viene indovinata dal compilatore, perché due funzioni con la stessa firma possono fare l&rsquo;una la prima cosa e l&rsquo;altra la terza: si scrive.
   </p>
-  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="83-84">
+  <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="96-97">
 <pre><code>    function sqlite3_open(filename: cstr lent, @out: CDb acquires sqlite3_close) -&gt; i64
-    function sqlite3_close(db: CDb consumes) -&gt; i64</code></pre>
-    <figcaption>examples/ledger/db/sqlite.hero, righe 83&ndash;84</figcaption>
+    function sqlite3_close(db: CDb consumes) -&gt; i64 when 0</code></pre>
+    <figcaption>examples/ledger/db/sqlite.hero, righe 96&ndash;97</figcaption>
   </figure>
   <p>
     Da quelle parole vengono due controlli. Il primo avviene prima che il programma giri. Un parametro scritto senza <code>@</code> è in prestito: chi chiama tiene il valore e lo rilegge dopo. Passarlo a una chiamata che lo chiude lo lascerebbe con un indirizzo che il C ha già ripreso, quindi il compilatore rifiuta la riga, e la riparazione è scrivere <code>@</code> sul parametro e sulla chiamata. Qui <code>shut</code> riceve la connessione in prestito e prova a chiuderla:

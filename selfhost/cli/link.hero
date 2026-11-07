@@ -251,6 +251,7 @@ function build_beside(index: i64) -> i64
     t.build @ dir
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false)
     made = units.tu_object(
@@ -263,7 +264,8 @@ function build_beside(index: i64) -> i64
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     )
 
@@ -354,6 +356,7 @@ test "two cold compiles of one unit, and of the runtime, each write one object b
         assert !process.remove_tree(t.build).is_err()
         none: [str] = []
         memo: {str: str} @= {}
+        opened: {str: str} @= {}
         told: {str: bool} @= {}
         unit = units.tu_object(
             t,
@@ -365,7 +368,8 @@ test "two cold compiles of one unit, and of the runtime, each write one object b
             package_flags: none,
             source_dir: "",
             search_include: none,
-            @memo,
+            memo: @memo,
+            opened: @opened,
             @told
         ).must()
         runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
@@ -405,6 +409,7 @@ test "a binary's home is named by every word of its link line, and an author's -
     assert link_output.binary_home(t, line: ["a b"], name: "p") != link_output.binary_home(t, line: ["a", "b"], name: "p")
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
@@ -417,7 +422,8 @@ test "a binary's home is named by every word of its link line, and an author's -
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     wanted = t.build + "/app" + process.exe_suffix()
@@ -488,6 +494,7 @@ test "a link over a package's compile words carries none of them and prints noth
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
@@ -500,7 +507,8 @@ test "a link over a package's compile words carries none of them and prints noth
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     words = ["-F" + t.build, "-I" + t.build, "-DHERO_LINK_WORDS=1", "-UHERO_LINK_WORDS"]
@@ -534,6 +542,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
@@ -546,7 +555,8 @@ test "a link whose objects pass what one Windows command line holds reads every 
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     filler = units.tu_object(
@@ -559,7 +569,8 @@ test "a link whose objects pass what one Windows command line holds reads every 
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     objects: [str] @= [runtime, made]
@@ -620,6 +631,7 @@ test "two links of the same objects into one path are one binary (defect 593)"
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
     memo: {str: str} @= {}
+    opened: {str: str} @= {}
     told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
@@ -632,7 +644,8 @@ test "two links of the same objects into one path are one binary (defect 593)"
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo,
+        memo: @memo,
+        opened: @opened,
         @told
     ).must()
     wanted = t.build + "/same" + process.exe_suffix()

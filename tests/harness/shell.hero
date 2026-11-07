@@ -79,6 +79,10 @@ extern "hero_os.h"
     constant HERO_OS_NOT_FOUND: i64
     constant HERO_OS_NOT_TEXT: i64
 
+# `own_scratch` gives its directory back as the process ends (defect 2305).
+extern "stdlib.h"
+    function atexit(f: (function() -> ())) -> i32
+
 # What `hero_dir_scan` is looking for.
 constant DIR_FILES: i64
     0
@@ -1164,16 +1168,41 @@ function remove_tree(path: str) -> ()?
 # same moment: 13 and 14 failures where either run alone read 0, measured that
 # day, every one a test reading another's files. A test that writes files asks
 # for this directory, made fresh, since a process that had the same id before
-# may have left one, and removes it as it ends; one that fails leaves it for
-# whoever reads why, as the net leaves its own when a suite cannot run.
+# may have left one.
+#
+# **AND THIS FUNCTION GIVES IT BACK, NEVER ITS CALLER** (defect 2305,
+# 2026-11-07). Until then this comment said a test removes its own as it ends,
+# and the removing was each test's last line: 39 of the 159 tests that asked
+# had none, a test that returned early passed it by, and the `emission` suite
+# asked once for each program it compiles, so one green run of these tests,
+# 505 passed, took this directory from 1 entry to 48, 19 of them empty, and
+# every run added more. So the removal is registered here with C's `atexit`,
+# which runs when the process returns from `main` or calls `exit` and never
+# when it aborts: a test that passes leaves nothing behind, and one that fails
+# leaves its directory for whoever reads why, as the net leaves its own when a
+# suite cannot run. A process that asks twice registers twice, and the second
+# removal finds nothing left to remove.
 constant SELFTEST: str
     "build/harness-selftest"
 
 function own_scratch() -> str
-    dir = SELFTEST + "/" + pid().to_str()
+    dir = scratch_of(pid())
     _ = remove_tree(dir).is_err()
     _ = mkdir_all(dir).is_err()
+
+    # C refuses only a function it has no room left to keep, and then nothing
+    # would give the directory back: the process stops and says so.
+    assert atexit(scratch_given_back) == 0
     return dir
+
+# The directory `own_scratch` makes for the process whose id is `id`.
+function scratch_of(id: i64) -> str
+    return SELFTEST + "/" + id.to_str()
+
+# What `atexit` runs as this process ends: its directory, removed whole, and
+# nothing said where it is already gone.
+function scratch_given_back()
+    _ = remove_tree(scratch_of(pid())).is_err()
 
 # This process's id — the one number no other process running now shares,
 # which is what a scratch directory's name needs (main.hero).
@@ -1748,6 +1777,33 @@ test "fixedbugs: an empty `-o` is refused naming the flag, never told as a link 
     assert built.code == 2
     assert built.err == "error: `-o` needs a path, and was given an empty one: `heroes build <file.hero> -o <path>`\n"
     assert !remove_tree(scratch).is_err()
+
+# DEFECT 2305 (2026-11-07): the directory `own_scratch` makes is given back
+# when the process that asked for it ends, whatever the process did not do,
+# and kept when it aborts. Asked of two children built over the harness's own
+# modules, one that ends and one that stops on a failed assertion, each having
+# written a file in its directory: until the repair the first left its
+# directory, as 39 of the net's own tests did on every green run.
+test "fixedbugs: a scratch directory is gone once its process ends, and kept where it aborts (defect 2305)"
+    scratch = own_scratch()
+    probe = harness_probe(scratch: scratch, name: "scratch-given-back", main: SCRATCH_PROBE).must()
+    ended = run(scratch: scratch, program: probe, words: [probe, "end"]).must()
+    assert ended.code == 0
+    gone = strings.trimmed(ended.out)
+    assert strings.starts_with(text: gone, prefix: SELFTEST + "/")
+    assert gone != scratch
+    assert !exists(gone)
+    stopped = run(scratch: scratch, program: probe, words: [probe, "abort"]).must()
+    assert stopped.code != 0
+    kept = strings.trimmed(stopped.out)
+    assert strings.starts_with(text: kept, prefix: SELFTEST + "/")
+    assert exists(kept + "/why.txt")
+    assert !remove_tree(kept).is_err()
+
+# The child the test above builds: its own directory asked for, a file written
+# in it and the directory printed; then it ends, or it stops on an assertion.
+constant SCRATCH_PROBE: str
+    "use shell\n\nfunction main()\n    dir = shell.own_scratch()\n    write_file(path: dir + \"/why.txt\", text: \"what a failed run leaves\").must()\n    print(dir)\n\n    if args()[0] == \"abort\"\n        assert dir == \"\"\n"
 
 # A script at `path` that writes `says` and exits 0, made executable.
 function stub_named(path: str, says: str, scratch: str) -> ()?

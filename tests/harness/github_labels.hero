@@ -1,0 +1,273 @@
+# THE LABELS AN ISSUE WAS GIVEN AND LOST, read from the events GitHub keeps
+# of them, so that `records/tagged` judges a defect by the class it held when
+# a tag was placed rather than by the class it holds today (defect 2323).
+#
+# A label says how an issue stands now: defect 2286 carried `class:adjacent`
+# when `m-latency-ceiling` was placed on 2026-11-01 and carries
+# `class:systemic` since 2026-11-07, and a tag is judged by what stood at it
+# (CLAUDE.md § Verification, *what stood open at the newest `m-*` tag*).
+# GitHub keeps every `labeled` and `unlabeled` of an issue with its instant,
+# `GET /repos/heroes-lang/heroes/issues/<n>/events`, a page of `PAGE` at a
+# time until a page holds fewer; `history_of` reads them as `Change`s and
+# `held_after` replays them into the labels they leave. Which changes stand
+# before an instant is the caller's to say (`records_github.class_at`), since
+# that module reads GitHub's instants.
+#
+# **Two premises about the world, each checked where it is read**, so that
+# one that dies is a skip or a failure that names it, never a class read from
+# part of a history:
+#
+# - **GitHub lists an issue's events oldest first, their `id`s rising**
+#   (measured 2026-11-07 on issues 1500, 1973, 2000, 2284 and 2286 to 2288).
+#   A history whose label changes do not rise is an answer this reader was
+#   not written for, `broken`.
+# - **Every label an issue was given or lost is an event.** A label given at
+#   filing is one, a second after the issue at most (2284: created
+#   `14:03:25Z`, labelled `14:03:26Z` on 2026-11-01), and so is a label the
+#   import gave (1973: created at its card's noon on 2026-10-10, labelled
+#   `2026-10-12T11:09:08Z`). So a replay that takes away a label not held, or
+#   gives one already held, has lost an event and fails (`held_after`), and
+#   the caller holds a replay's end to the labels the issue holds today. A
+#   history read in part, as a degraded GitHub gave the listing on 2026-10-22
+#   (defect 2189), is a skip, never read as the history.
+#
+# Each request goes through `issue_pace.exchange`, so a rate limit is waited
+# out and a failing server asked again; a GitHub that cannot be asked is
+# `asked: false` with the reason, and an answer this reader cannot read is
+# `broken`, as `github_issues` reads the listing.
+
+use github_issues
+use issue_github
+use issue_pace
+use issue_wire
+use json_fields
+use json_read
+use strings
+
+constant PAGE: i64
+    100
+
+# Past this many pages one issue's events are an answer that never ends:
+# 10,000 events of one issue.
+constant PAGES: i64
+    100
+
+constant ISSUES: str
+    "/repos/heroes-lang/heroes/issues/"
+
+# One label given (`added`) or taken away, with the event's `id` and its
+# instant as GitHub writes one, `YYYY-MM-DDTHH:MM:SSZ`.
+record Change
+    id: i64
+    instant: str
+    added: bool
+    label: str
+
+# What a run could read of one issue's labels. `asked` is whether GitHub
+# answered every page; where it did not, `why` says why, and `broken` whether
+# the answer came and could not be read (a failure) rather than never came (a
+# skip).
+record History
+    asked: bool
+    broken: bool
+    why: str
+    changes: [Change]
+
+# One page of an issue's events: how many it holds, and its label changes.
+record Page
+    events: i64
+    changes: [Change]
+
+function unasked(why: str) -> History
+    none: [Change] = []
+    return History(asked: false, broken: false, why: why, changes: none)
+
+function broken(why: str) -> History
+    none: [Change] = []
+    return History(asked: false, broken: true, why: why, changes: none)
+
+# The path of page `page` of issue `number`'s events.
+function path_of(number: i64, page: i64) -> str
+    return ISSUES + number.to_str() + "/events?per_page=" + PAGE.to_str() + "&page=" + page.to_str()
+
+# Every change GitHub keeps of issue `number`'s labels, oldest first.
+function history_of(@s: issue_pace.Session, number: i64) -> History
+    out: [Change] @= []
+    last: i64 @= 0
+    page: i64 @= 1
+
+    while page <= PAGES
+        path = path_of(number: number, page: page)
+        reply = issue_pace.exchange(@s, request: issue_wire.Request(method: "GET", path: path, accept: "", body: ""))
+
+        if reply.is_err()
+            return unasked(issue_github.failure(reply))
+        r = reply.must()
+
+        # A refusal is read as the listing reads one: a credential refused or a
+        # server failing is a skip, any other status a failure.
+        if r.status != 200
+            refusal = github_issues.refused(path: path, reply: r)
+            none: [Change] = []
+            return History(asked: false, broken: refusal.broken, why: refusal.why, changes: none)
+        read = page_of(r.body)
+
+        if read.is_err()
+            return broken("GET " + path + " answered what this reader cannot read: " + issue_github.failure(read))
+
+        for one in read.must().changes
+            if one.id <= last
+                return broken(
+                    "GET " + path + " lists event " + one.id.to_str() + " after event " + last.to_str() + ", and this reader was written for GitHub's order, oldest first, the ids rising"
+                )
+            last @ one.id
+            out @ out.push(one)
+
+        if read.must().events < PAGE
+            return History(asked: true, broken: false, why: "", changes: out)
+        page @ page + 1
+
+    return broken(
+        "GET " + path_of(number: number, page: 1) + " and on gave " + PAGES.to_str() + " full pages and no end"
+    )
+
+# One page of an issue's events, its `labeled` and `unlabeled` read and every
+# other event (`renamed`, `closed`, ...) counted and left.
+function page_of(body: str) -> Page?
+    events = json_fields.items_of(json_read.read_json(body)?)?
+    out: [Change] @= []
+
+    for one in events
+        event = json_fields.text_at(of: one, name: "event")?
+
+        if event != "labeled" && event != "unlabeled"
+            continue
+        label = json_fields.field(of: one, name: "label")?
+        out @ out.push(
+            Change(id: json_fields.whole_at(of: one, name: "id")?, instant: json_fields.text_at(of: one, name: "created_at")?, added: event == "labeled", label: json_fields.text_at(of: label, name: "name")?)
+        )
+
+    return ok(Page(events: events.len(), changes: out))
+
+# The labels `changes` leave, applied in their order from none, sorted; or a
+# failure where one takes away a label not held or gives one already held,
+# which is a history that lost an event (the module's second premise).
+function held_after(changes: [Change]) -> [str]?
+    held: [str] @= []
+
+    for one in changes
+        kept: [str] @= []
+
+        for label in held
+            if label != one.label
+                kept @ kept.push(label)
+
+        holding = kept.len() < held.len()
+
+        if one.added && holding
+            return fail(
+                code: "lost",
+                msg: "event " + one.id.to_str() + " gives `" + one.label + "` at " + one.instant + " while it is held, so the event that took it away is missing"
+            )
+
+        if !one.added && !holding
+            return fail(
+                code: "lost",
+                msg: "event " + one.id.to_str() + " takes `" + one.label + "` away at " + one.instant + " and no event gave it, so the event that gave it is missing"
+            )
+
+        if one.added
+            kept @ kept.push(one.label)
+        held @ kept
+
+    return ok(held.sort())
+
+# An event as GitHub lists one, for the tests of every reader of this module:
+# `event` `labeled`, `unlabeled` or another, `label` "" for none.
+function event_json(id: i64, event: str, instant: str, label: str) -> str
+    named: str @= "null"
+
+    if label != ""
+        named @ "{\"name\":\"" + label + "\",\"color\":\"f9d0c4\"}"
+    return "{\"id\":" + id.to_str() + ",\"event\":\"" + event + "\",\"created_at\":\"" + instant + "\",\"label\":" + named + "}"
+
+# A page of `events`, as GitHub answers one, for a scripted transport.
+function answered(events: [str]) -> issue_wire.Reply
+    return issue_wire.answer(status: 200, headers: [github_issues.DATE], body: "[" + events.join(",") + "]")
+
+test "an issue's label changes are read in GitHub's order, its other events left, and replayed into the labels they leave"
+    page = [
+        event_json(id: 1, event: "labeled", instant: "2026-11-01T14:52:50Z", label: "kind:defect")
+        event_json(id: 2, event: "labeled", instant: "2026-11-01T14:52:50Z", label: "class:adjacent")
+        event_json(id: 3, event: "renamed", instant: "2026-11-01T14:52:51Z", label: "")
+        event_json(id: 4, event: "unlabeled", instant: "2026-11-07T13:49:47Z", label: "class:adjacent")
+        event_json(id: 5, event: "labeled", instant: "2026-11-07T13:49:48Z", label: "class:systemic")
+    ]
+    s: issue_pace.Session @= issue_pace.scripted([answered(page)])
+    got = history_of(@s, number: 2286)
+    assert got.asked
+    assert s.world.requests.len() == 1
+    assert s.world.requests[0].path == "/repos/heroes-lang/heroes/issues/2286/events?per_page=100&page=1"
+    assert got.changes.len() == 4
+    assert got.changes[1].label == "class:adjacent"
+    assert got.changes[1].instant == "2026-11-01T14:52:50Z"
+    assert got.changes[1].added
+    assert !got.changes[2].added
+    assert held_after(got.changes).must() == ["class:systemic", "kind:defect"]
+    assert held_after([got.changes[0], got.changes[1]]).must() == ["class:adjacent", "kind:defect"]
+    none: [Change] = []
+    assert held_after(none).must().len() == 0
+
+test "a full page asks the next, and a short one ends the history"
+    full: [str] @= []
+
+    for n in range(from: 1, to: 101)
+        full @ full.push(event_json(id: n, event: "renamed", instant: "2026-11-01T14:52:50Z", label: ""))
+
+    s: issue_pace.Session @= issue_pace.scripted(
+        [answered(full), answered([event_json(id: 101, event: "labeled", instant: "2026-11-02T08:00:00Z", label: "class:blocking")])]
+    )
+    got = history_of(@s, number: 7)
+    assert got.asked
+    assert s.world.requests.len() == 2
+    assert s.world.requests[1].path == "/repos/heroes-lang/heroes/issues/7/events?per_page=100&page=2"
+    assert got.changes.len() == 1
+    assert got.changes[0].label == "class:blocking"
+
+test "a GitHub that cannot be asked is a skip, and an answer this reader cannot read, or out of order, is a failure"
+    nobody: issue_pace.Session @= issue_pace.scripted([])
+    gone = history_of(@nobody, number: 7)
+    assert !gone.asked
+    assert !gone.broken
+    assert gone.why != ""
+    refused: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 401, headers: [github_issues.DATE], body: "{\"message\":\"Bad credentials\"}")]
+    )
+    denied = history_of(@refused, number: 7)
+    assert !denied.asked
+    assert !denied.broken
+    lost: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 404, headers: [github_issues.DATE], body: "{\"message\":\"Not Found\"}")]
+    )
+    assert history_of(@lost, number: 7).broken
+    odd: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [github_issues.DATE], body: "{\"not\":\"a list\"}")]
+    )
+    assert history_of(@odd, number: 7).broken
+    unnamed: issue_pace.Session @= issue_pace.scripted(
+        [answered([event_json(id: 1, event: "labeled", instant: "2026-11-01T14:52:50Z", label: "")])]
+    )
+    assert history_of(@unnamed, number: 7).broken
+    falling: issue_pace.Session @= issue_pace.scripted(
+        [answered([event_json(id: 5, event: "labeled", instant: "2026-11-01T14:52:50Z", label: "class:blocking"), event_json(id: 4, event: "unlabeled", instant: "2026-11-01T14:52:50Z", label: "class:blocking")])]
+    )
+    out_of_order = history_of(@falling, number: 7)
+    assert out_of_order.broken
+    assert strings.contains(text: out_of_order.why, needle: "lists event 4 after event 5")
+
+test "a replay that takes away a label not held, or gives one already held, has lost an event"
+    given = Change(id: 1, instant: "2026-11-01T14:52:50Z", added: true, label: "class:adjacent")
+    taken = Change(id: 2, instant: "2026-11-07T13:49:47Z", added: false, label: "class:adjacent")
+    assert held_after([given, taken]).must().len() == 0
+    assert strings.contains(text: issue_github.failure(held_after([taken])), needle: "no event gave it")
+    assert strings.contains(text: issue_github.failure(held_after([given, given])), needle: "while it is held")

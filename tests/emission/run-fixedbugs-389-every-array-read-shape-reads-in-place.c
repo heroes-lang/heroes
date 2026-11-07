@@ -314,7 +314,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("24d702151c2f0322", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("31e059d1248b6409", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs389everyarrayreadshapereadsinplace\tfixedbugs-389-every-array-read-shape-reads-in-place\n");

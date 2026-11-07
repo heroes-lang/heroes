@@ -1,0 +1,73 @@
+# A name declared twice inside one declaration (design.md §4.2, §4.17;
+# defect 2317): a record's field, a field of a variant's case, and a
+# variant's case. The top of a module declares each name once
+# (`resolve/errors.hero`'s `declared_twice`); inside a declaration nothing
+# asked until 2026-11-07, so a record with two fields `a` passed `check` and
+# stopped `build` at clang's *duplicate member*, exit 2, a group's record
+# declaring one field twice built and ran with two names for one C member,
+# and a variant with two cases `one` was told its `match` did not cover
+# `.one`.
+#
+# Told at the second declaration, naming the first's line, once for each
+# name declared again. Two codes of their own and no thesis rule
+# (`diag.hero`'s list, which `--permissive` drops): a declaration holding
+# one name twice has no meaning a language without the rule could give it,
+# since which field `r.a` reads, or which case `.one` builds, is the
+# question, so the control arm refuses it as the strict build does.
+
+use ast
+use diag
+use source
+use token
+use check/state
+
+function told(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .record_decl rec => fields(@c, s, holder: source.span_text(s, decl.name), declared: rec.fields)
+            .variant_decl v =>
+                holder = source.span_text(s, decl.name)
+                seen: {str: i64} @= {}
+
+                for one_case in v.cases
+                    name = source.span_text(s, one_case.name)
+                    first = seen[name]
+
+                    if first.is_err()
+                        seen[name] @ one_case.name.start
+                    else
+                        at = source.elsewhere(s, here: one_case.name.start, there: first.must())
+                        state.push_diagnostic(
+                            @c,
+                            case_twice(name: name, holder: holder, first: at, span: one_case.name)
+                        )
+                    fields(@c, s, holder: holder + "." + name, declared: one_case.fields)
+            .constant_decl | .function_decl | .test_decl => continue
+
+# Each field name of one record or one case, the second of a name told.
+function fields(@c: state.Checker, s: source.Source, holder: str, declared: [ast.Field])
+    seen: {str: i64} @= {}
+
+    for field in declared
+        name = source.span_text(s, field.name)
+        first = seen[name]
+
+        if first.is_err()
+            seen[name] @ field.name.start
+        else
+            at = source.elsewhere(s, here: field.name.start, there: first.must())
+            state.push_diagnostic(@c, field_twice(name: name, holder: holder, first: at, span: field.name))
+
+function field_twice(name: str, holder: str, first: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "field_declared_twice",
+        message: "`" + name + "` is already a field of `" + holder + "`, declared at " + first + " — a field is named once, or a construction and a read could not say which; rename one or remove it",
+        span: span
+    )
+
+function case_twice(name: str, holder: str, first: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "case_declared_twice",
+        message: "`" + name + "` is already a case of `" + holder + "`, declared at " + first + " — a case is named once, or `." + name + "` could not say which; rename one or remove it",
+        span: span
+    )

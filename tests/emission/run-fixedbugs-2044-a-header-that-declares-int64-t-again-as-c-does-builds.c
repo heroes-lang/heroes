@@ -262,7 +262,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f8a8ca0128884e6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c93e45c1ae4e5cd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2044aheaderthatdeclaresint64tagainascdoesbuilds\tfixedbugs-2044-a-header-that-declares-int64-t-again-as-c-does-builds\n");

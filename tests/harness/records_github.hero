@@ -7,7 +7,9 @@
 #
 # - `records/tagged`, its route for a tag whose own tree holds no `issues/`
 #   (`standing` and `unqueued`; `suite_records.hero` keeps reading the tag's
-#   tree where it holds one, the one exact record of what that tag stood over);
+#   tree where it holds one, the one exact record of what that tag stood over),
+#   each defect judged by the class it held when the tag was placed, read from
+#   the events GitHub keeps of its labels (`classed_at`, defect 2323);
 # - `records/defects-cited`, whose register is `register_of` here and whose
 #   reading of the code is `credit.hero`'s;
 # - `records/numbering`, that no number names two defects (`numbering`);
@@ -40,7 +42,10 @@
 use cards
 use credit
 use github_issues
+use github_labels
+use issue_github
 use issue_pace
+use issue_wire
 use report
 use strings
 
@@ -550,13 +555,18 @@ function prior_art(@r: report.Report, held: github_issues.Listing, known: {str: 
 # A check that needs GitHub and could not ask it: a skip with the reason, or a
 # failure where the answer came and could not be read.
 function unanswered(@r: report.Report, held: github_issues.Listing, label: str)
-    if held.broken
-        report.keep_failure(@r, label: label, detail: "  GitHub's answer could not be read: " + held.why)
+    unread(@r, broken: held.broken, why: held.why, label: label)
+
+# The same for any read of GitHub: `broken` where the answer came and could
+# not be read, `why` what went wrong.
+function unread(@r: report.Report, broken: bool, why: str, label: str)
+    if broken
+        report.keep_failure(@r, label: label, detail: "  GitHub's answer could not be read: " + why)
     else
         report.keep_skip(
             @r,
             label: label,
-            detail: "  GitHub could not be asked, so this check judged nothing: " + held.why
+            detail: "  GitHub could not be asked, so this check judged nothing: " + why
         )
 
 # A milestone tag and the instant `git` says it was created, in seconds since
@@ -650,19 +660,21 @@ function open_at(issue: github_issues.Listed, at: i64) -> bool
     return issue.closed == "" || !at_or_before(issue: issue, instant: issue.closed, at: at)
 
 # The open defects that count against the tag `judged`, `tags` being every
-# milestone tag up to it, each with why: `blocking` and `systemic`, a defect
-# with no class label (which counts as `blocking`), and an `adjacent` one open
-# at `AGED_AT` tags or more, the judged among them; an `improvement` never.
+# milestone tag up to it, each with why, judged by the class it held at
+# `judged`, `at_tag` (`classed_at`): `blocking` and `systemic`, a defect with
+# no class label at the tag (which counts as `blocking`), and an `adjacent`
+# one open at `AGED_AT` tags or more, the judged among them; an `improvement`
+# never.
 #
 # **Every author's, on purpose** (defect 2042 read it and left it): a
 # stranger's defect report open at a tag is one nobody has classed, which
 # counts as `blocking` because a tag over an unread report is what the clean
 # list refuses, and an issue opened after the tag was not open at it, so a
 # stranger cannot turn this check red between tags.
-function standing(held: github_issues.Listing, judged: Tag, tags: [Tag]) -> [str]
+function standing(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: {i64: str}) -> [str]
     out: [str] @= []
 
-    for one in counted(held: held, judged: judged, tags: tags)
+    for one in counted(held: held, judged: judged, tags: tags, at_tag: at_tag)
         out @ out.push(one.said)
 
     return out
@@ -672,26 +684,40 @@ record Counted
     number: i64
     said: str
 
-# What `standing` says, each line with its defect's number.
-function counted(held: github_issues.Listing, judged: Tag, tags: [Tag]) -> [Counted]
+# What `standing` says, each line with its defect's number. A defect open at
+# the tag that `at_tag` holds no class for is counted and told, since a
+# defect this check did not read is never passed.
+function counted(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: {i64: str}) -> [Counted]
     out: [Counted] @= []
 
     for issue in github_issues.of_kind(held: held, kind: "defect")
         if !open_at(issue: issue, at: judged.at)
             continue
-        classed = github_issues.label_value(issue: issue, name: "class")
+        read = at_tag[issue.number]
+
+        if read.is_err()
+            out @ out.push(
+                Counted(number: issue.number, said: told(issue) + "\n      the class it held at " + judged.name + " was never read (`classed_at` asked nothing of it), and a defect this check did not read is never passed")
+            )
+            continue
+        classed = read.must()
+        moved = moved_since(
+            classed: classed,
+            today: github_issues.label_value(issue: issue, name: "class"),
+            judged: judged
+        )
 
         if classed == "improvement"
             continue
 
         if classed == ""
             out @ out.push(
-                Counted(number: issue.number, said: told(issue) + "\n      no `class:` label, and a defect without one counts as `blocking`")
+                Counted(number: issue.number, said: told(issue) + "\n      no `class:` label" + moved + ", and a defect without one counts as `blocking`")
             )
             continue
 
         if classed != "adjacent"
-            out @ out.push(Counted(number: issue.number, said: told(issue) + "\n      `" + classed + "`"))
+            out @ out.push(Counted(number: issue.number, said: told(issue) + "\n      `" + classed + "`" + moved))
             continue
         since: [str] @= []
 
@@ -701,10 +727,147 @@ function counted(held: github_issues.Listing, judged: Tag, tags: [Tag]) -> [Coun
 
         if since.len() >= AGED_AT
             out @ out.push(
-                Counted(number: issue.number, said: told(issue) + "\n      `adjacent`, open at " + since.len().to_str() + " tags (" + since.join(" ") + "), the tag judged among them, and an `adjacent` defect counts as `blocking` once " + AGED_AT.to_str() + " have been")
+                Counted(number: issue.number, said: told(issue) + "\n      `adjacent`" + moved + ", open at " + since.len().to_str() + " tags (" + since.join(" ") + "), the tag judged among them, and an `adjacent` defect counts as `blocking` once " + AGED_AT.to_str() + " have been")
             )
 
     return out
+
+# What a line adds where the class a defect holds today is not the one it
+# held at `judged`: "" where they are the same.
+function moved_since(classed: str, today: str, judged: Tag) -> str
+    if classed == today
+        return ""
+
+    if today == ""
+        return " at " + judged.name + ", none today"
+    return " at " + judged.name + ", `" + today + "` today"
+
+# THE CLASS A DEFECT HELD AT THE TAG (defect 2323). A `class:` label says how
+# a defect is classed now, and `m-latency-ceiling` was read red on 2026-11-07
+# over defect 2286, `adjacent` and young when that tag was placed on
+# 2026-11-01 and classed `systemic` six days later: the tag had not moved,
+# only the label. The rule asks what stood open at the tag (CLAUDE.md
+# § Verification), so each defect is judged by the class it held at the tag's
+# instant, read from the events GitHub keeps of its labels
+# (`github_labels`), and a verdict on a tag is the one its own instant gave,
+# which no later label moves.
+#
+# **Which defects are asked: every one open at the tag, whatever its label
+# today.** A class moves after a tag in every direction: 2286 from `adjacent`
+# to `systemic`, which must not count, and a `blocking` defect relabelled
+# `improvement` or `adjacent` after the tag, which must; so no label of today
+# says the question can be skipped. It costs one request per defect open at
+# the tag (a page holds a hundred events): measured 2026-11-07 against the
+# twelve newest tags, 0 to 7 such defects at each, 4 at `m-latency-ceiling`.
+#
+# **The class at the tag** is the `class:` label standing after every change
+# at or before the tag's instant, to the second, as `open_at` reads an issue's
+# own instants; read as a label of today is (`github_issues.label_value`, the
+# first in sorted order where two stand), so a history that never moved is
+# judged as its label is. **A defect with no `class:` label at the tag
+# counts as `blocking`**, the rule for one with none today: what stood at the
+# tag was a defect nobody had classed, which the clean list refuses, and the
+# check run at the tag's instant read it so.
+#
+# **Where an issue's events cannot be read, nothing is judged**: the check is
+# a skip naming the defect and its label today, never a pass or a failure read
+# from a label that may not be the one the tag stood over; an answer this
+# reader cannot read is a failure, as `unread` tells every GitHub read.
+record Classed
+    asked: bool
+    broken: bool
+    why: str
+    at_tag: {i64: str}
+
+function unclassed(broken: bool, why: str) -> Classed
+    none: {i64: str} = {}
+    return Classed(asked: false, broken: broken, why: why, at_tag: none)
+
+# The class each defect of `held` open at `judged` held at its instant, by
+# its number, every such defect asked once.
+function classed_at(@s: issue_pace.Session, held: github_issues.Listing, judged: Tag) -> Classed
+    at_tag: {i64: str} @= {}
+
+    for issue in github_issues.of_kind(held: held, kind: "defect")
+        if !open_at(issue: issue, at: judged.at)
+            continue
+        history = github_labels.history_of(@s, number: issue.number)
+        today = github_issues.label_value(issue: issue, name: "class")
+        unknown = "the class " + told(issue) + " held at " + judged.name + " is unknown, and its label today, " + said_class(today) + ", is not judged in its place: "
+
+        if !history.asked
+            return unclassed(broken: history.broken, why: unknown + history.why)
+        then = class_at(issue: issue, changes: history.changes, at: judged.at)
+
+        if then.is_err()
+            return unclassed(broken: issue_github.code_of(then) == "shape", why: unknown + issue_github.failure(then))
+        at_tag[issue.number] @ then.must()
+
+    return Classed(asked: true, broken: false, why: "", at_tag: at_tag)
+
+# The class `issue` held at `at`, "" for none, from `changes`, the events of
+# its labels oldest first. A history that lost an event, or whose end is not
+# the `class:` labels the issue holds today, fails `short` (the premises of
+# `github_labels`); an instant this cannot read fails `shape`.
+function class_at(issue: github_issues.Listed, changes: [github_labels.Change], at: i64) -> str?
+    end = github_labels.held_after(changes)
+
+    if end.is_err()
+        return fail(code: "short", msg: "its label events are not whole: " + issue_github.failure(end))
+
+    if classes_of(end.must()) != classes_of(issue.labels)
+        return fail(
+            code: "short",
+            msg: "its label events end with " + listed_classes(end.must()) + " where it holds " + listed_classes(issue.labels) + " today: a page came back short, as a degraded GitHub answers, or a label moved while this run read"
+        )
+    then: [github_labels.Change] @= []
+
+    for one in changes
+        seconds = epoch_of(one.instant)
+
+        if seconds.is_err()
+            return fail(
+                code: "shape",
+                msg: "event " + one.id.to_str() + " has no instant this can read: " + issue_github.failure(seconds)
+            )
+
+        if seconds.must() <= at
+            then @ then.push(one)
+
+    standing_then = github_labels.held_after(then)
+
+    if standing_then.is_err()
+        return fail(
+            code: "short",
+            msg: "its label events before the tag are not whole: " + issue_github.failure(standing_then)
+        )
+    classes = classes_of(standing_then.must())
+
+    if classes.len() == 0
+        return ok("")
+    return ok(strings.without_prefix(text: classes[0], prefix: "class:"))
+
+# The `class:` labels of `labels`, sorted.
+function classes_of(labels: [str]) -> [str]
+    out: [str] @= []
+
+    for label in labels
+        if strings.starts_with(text: label, prefix: "class:")
+            out @ out.push(label)
+
+    return out.sort()
+
+function listed_classes(labels: [str]) -> str
+    classes = classes_of(labels)
+
+    if classes.len() == 0
+        return "no `class:` label"
+    return "`" + classes.join("` `") + "`"
+
+function said_class(classed: str) -> str
+    if classed == ""
+        return "none"
+    return "`" + classed + "`"
 
 # THE AUTHOR'S WAIVER, SINCE THE ISSUES LEFT THE TREE (the author's *B* of
 # 2026-10-24, defect 2198). A tag placed over defects that count against it is
@@ -868,6 +1031,38 @@ function fixture(number: i64, title: str, kind: str, extra: [str], body: str, st
         created: created,
         closed: closed
     )
+
+# The class each defect of `held` holds today, by its number: what
+# `classed_at` reads of a history whose labels never moved, for a test.
+function unmoved(held: github_issues.Listing) -> {i64: str}
+    out: {i64: str} @= {}
+
+    for issue in github_issues.of_kind(held: held, kind: "defect")
+        out[issue.number] @ github_issues.label_value(issue: issue, name: "class")
+
+    return out
+
+# The events of a defect's labels as GitHub answers them, for a scripted
+# transport: `given` at `filed`, then each of `later` at `after`, a `-` in
+# front of a label taking it away. Its ids rise from `first`.
+function labelled(first: i64, filed: str, given: [str], after: str, later: [str]) -> issue_wire.Reply
+    events: [str] @= []
+    id: i64 @= first
+
+    for label in given
+        events @ events.push(github_labels.event_json(id: id, event: "labeled", instant: filed, label: label))
+        id @ id + 1
+
+    for label in later
+        if strings.starts_with(text: label, prefix: "-")
+            events @ events.push(
+                github_labels.event_json(id: id, event: "unlabeled", instant: after, label: strings.without_prefix(text: label, prefix: "-"))
+            )
+        else
+            events @ events.push(github_labels.event_json(id: id, event: "labeled", instant: after, label: label))
+        id @ id + 1
+
+    return github_labels.answered(events)
 
 # An issue a stranger opens from a public form: its author GitHub's `NONE`,
 # its body as written.
@@ -1310,20 +1505,168 @@ test "a tag stands over improvements and young adjacent defects, and over no blo
     young = github_issues.held_of(
         [fixture(number: 2030, title: "Def" + "ect 2030: a", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: "2026-10-16T08:00:00Z", closed: ""), fixture(number: 2031, title: "Def" + "ect 2031: b", kind: "defect", extra: ["class:improvement"], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: ""), fixture(number: 2032, title: "Def" + "ect 2032: c", kind: "defect", extra: ["class:blocking"], body: "b", state: "closed", created: "2026-10-01T08:00:00Z", closed: "2026-10-19T08:00:00Z"), fixture(number: 2033, title: "Def" + "ect 2033: d", kind: "defect", extra: ["class:blocking"], body: "b", state: "open", created: "2026-10-21T08:00:00Z", closed: "")]
     )
-    assert standing(held: young, judged: judged, tags: tags).len() == 0
+    assert standing(held: young, judged: judged, tags: tags, at_tag: unmoved(young)).len() == 0
     aged = github_issues.held_of(
         [fixture(number: 2030, title: "Def" + "ect 2030: a", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: "")]
     )
-    said = standing(held: aged, judged: judged, tags: tags)
+    said = standing(held: aged, judged: judged, tags: tags, at_tag: unmoved(aged))
     assert said.len() == 1
     assert strings.contains(text: said[0], needle: "open at 2 tags (m-judged m-earlier)")
     hard = github_issues.held_of(
         [fixture(number: 2034, title: "Def" + "ect 2034: e", kind: "defect", extra: ["class:systemic"], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: ""), fixture(number: 2035, title: "Def" + "ect 2035: f", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: "")]
     )
-    held = standing(held: hard, judged: judged, tags: tags)
+    held = standing(held: hard, judged: judged, tags: tags, at_tag: unmoved(hard))
     assert held.len() == 2
     assert strings.contains(text: held[0], needle: "`systemic`")
     assert strings.contains(text: held[1], needle: "no `class:` label")
+
+# Defect 2323: `m-latency-ceiling` read red six days after it was placed,
+# over a defect classed `systemic` after it.
+test "a tag is judged by the class each defect held at it, whatever the label says today (defect 2323)"
+    judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
+    earlier = Tag(name: "m-earlier", at: epoch_of("2026-10-15T10:00:00Z").must())
+    tags = [judged, earlier]
+    filed = "2026-10-16T08:00:00Z"
+    after = "2026-10-22T13:49:47Z"
+    d = "Def" + "ect "
+
+    # Five defects open at the tag, young (filed after `m-earlier`), each
+    # classed otherwise today than at the tag; a sixth filed after the tag and
+    # a seventh closed before it, neither asked.
+    held = github_issues.held_of(
+        [fixture(number: 101, title: d + "101: adjacent then, systemic since", kind: "defect", extra: ["class:systemic"], body: "b", state: "open", created: filed, closed: ""), fixture(number: 102, title: d + "102: systemic then, adjacent since", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: filed, closed: ""), fixture(number: 103, title: d + "103: blocking then, closed since", kind: "defect", extra: ["class:blocking"], body: "b", state: "closed", created: filed, closed: "2026-10-21T08:00:00Z"), fixture(number: 104, title: d + "104: classed only after the tag", kind: "defect", extra: ["class:improvement"], body: "b", state: "open", created: filed, closed: ""), fixture(number: 105, title: d + "105: blocking then, an improvement since", kind: "defect", extra: ["class:improvement"], body: "b", state: "open", created: filed, closed: ""), fixture(number: 106, title: d + "106: filed after the tag", kind: "defect", extra: ["class:blocking"], body: "b", state: "open", created: "2026-10-21T08:00:00Z", closed: ""), fixture(number: 107, title: d + "107: closed before the tag", kind: "defect", extra: ["class:blocking"], body: "b", state: "closed", created: filed, closed: "2026-10-19T08:00:00Z")]
+    )
+    s: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 10, filed: filed, given: ["kind:defect", "class:adjacent"], after: after, later: ["-class:adjacent", "class:systemic"]), labelled(first: 20, filed: filed, given: ["kind:defect", "class:systemic"], after: after, later: ["-class:systemic", "class:adjacent"]), labelled(first: 30, filed: filed, given: ["kind:defect", "class:blocking"], after: after, later: []), labelled(first: 40, filed: filed, given: ["kind:defect"], after: after, later: ["class:improvement"]), labelled(first: 50, filed: filed, given: ["kind:defect", "class:blocking"], after: after, later: ["-class:blocking", "class:improvement"])]
+    )
+    classes = classed_at(@s, held: held, judged: judged)
+    assert classes.asked
+    assert s.world.requests.len() == 5
+    assert s.world.requests[4].path == "/repos/heroes-lang/heroes/issues/105/events?per_page=100&page=1"
+    assert classes.at_tag[101].must() == "adjacent"
+    assert classes.at_tag[102].must() == "systemic"
+    assert classes.at_tag[104].must() == ""
+    said = counted(held: held, judged: judged, tags: tags, at_tag: classes.at_tag)
+    numbers: [i64] @= []
+
+    for one in said
+        numbers @ numbers.push(one.number)
+
+    # 101 was a young `adjacent` at the tag and does not count; the others do.
+    assert numbers == [102, 103, 104, 105]
+    assert strings.contains(text: said[0].said, needle: "`systemic` at m-judged, `adjacent` today")
+    assert strings.ends_with(text: said[1].said, suffix: "`blocking`")
+    assert strings.contains(
+        text: said[2].said,
+        needle: "no `class:` label at m-judged, `improvement` today, and a defect without one counts as `blocking`"
+    )
+    assert strings.contains(text: said[3].said, needle: "`blocking` at m-judged, `improvement` today")
+
+    # The same `adjacent` at the tag, open at two tags, is aged, and says
+    # what it is today.
+    aged = github_issues.held_of(
+        [fixture(number: 101, title: d + "101: aged", kind: "defect", extra: ["class:systemic"], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: "")]
+    )
+    old: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 1, filed: "2026-10-14T08:00:00Z", given: ["class:adjacent"], after: after, later: ["-class:adjacent", "class:systemic"])]
+    )
+    told_aged = standing(
+        held: aged,
+        judged: judged,
+        tags: tags,
+        at_tag: classed_at(@old, held: aged, judged: judged).at_tag
+    )
+    assert told_aged.len() == 1
+    assert strings.contains(
+        text: told_aged[0],
+        needle: "`adjacent` at m-judged, `systemic` today, open at 2 tags (m-judged m-earlier)"
+    )
+
+    # A change at the tag's own second stands at it, as an issue created then
+    # is open at it.
+    second = github_issues.held_of(
+        [fixture(number: 108, title: d + "108: t", kind: "defect", extra: ["class:improvement"], body: "b", state: "open", created: filed, closed: "")]
+    )
+    exact: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 1, filed: filed, given: ["class:blocking"], after: "2026-10-20T10:00:00Z", later: ["-class:blocking", "class:improvement"])]
+    )
+    assert classed_at(@exact, held: second, judged: judged).at_tag[108].must() == "improvement"
+
+    # A defect `at_tag` holds nothing for is counted and told, never passed.
+    none: {i64: str} = {}
+    unread_one = standing(held: second, judged: judged, tags: tags, at_tag: none)
+    assert unread_one.len() == 1
+    assert strings.contains(text: unread_one[0], needle: "was never read")
+
+test "two class labels at the tag are read as two today are, the first in sorted order"
+    judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
+    filed = "2026-10-16T08:00:00Z"
+    both = github_issues.held_of(
+        [fixture(number: 109, title: "Def" + "ect 109: t", kind: "defect", extra: ["class:systemic", "class:blocking"], body: "b", state: "open", created: filed, closed: "")]
+    )
+    s: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 1, filed: filed, given: ["class:systemic", "class:blocking"], after: filed, later: [])]
+    )
+    classes = classed_at(@s, held: both, judged: judged)
+    assert classes.at_tag[109].must() == github_issues.label_value(issue: both.issues[0], name: "class")
+    assert classes.at_tag[109].must() == "blocking"
+
+test "a defect whose label events cannot be read, or are not whole, is a skip naming it, and an answer that cannot be read a failure"
+    judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
+    filed = "2026-10-16T08:00:00Z"
+    held = github_issues.held_of(
+        [fixture(number: 110, title: "Def" + "ect 110: t", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: filed, closed: "")]
+    )
+
+    # GitHub not asked: a skip, which names the defect and its label today.
+    nobody: issue_pace.Session @= issue_pace.scripted([])
+    gone = classed_at(@nobody, held: held, judged: judged)
+    assert !gone.asked
+    assert !gone.broken
+    r: report.Report @= report.empty()
+    unread(@r, broken: gone.broken, why: gone.why, label: "records/tagged")
+    assert r.failed == 0
+    assert r.passed == 0
+    assert strings.starts_with(text: r.skips[0], prefix: "SKIP records/tagged")
+    assert strings.contains(text: r.skips[0], needle: "issues/110")
+    assert strings.contains(
+        text: r.skips[0],
+        needle: "held at m-judged is unknown, and its label today, `adjacent`, is not judged in its place"
+    )
+
+    # Events that end on another class than the label today, or that take
+    # away a label nobody gave: part of a history, a skip.
+    short: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 1, filed: filed, given: ["class:blocking"], after: filed, later: [])]
+    )
+    partial = classed_at(@short, held: held, judged: judged)
+    assert !partial.asked
+    assert !partial.broken
+    assert strings.contains(
+        text: partial.why,
+        needle: "end with `class:blocking` where it holds `class:adjacent` today"
+    )
+    lost: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 1, filed: filed, given: [], after: "2026-10-22T13:49:47Z", later: ["-class:blocking", "class:adjacent"])]
+    )
+    missing = classed_at(@lost, held: held, judged: judged)
+    assert !missing.asked
+    assert !missing.broken
+    assert strings.contains(text: missing.why, needle: "no event gave it")
+
+    # An answer that came and cannot be read: a failure.
+    odd: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 404, headers: [github_issues.DATE], body: "{\"message\":\"Not Found\"}")]
+    )
+    refused = classed_at(@odd, held: held, judged: judged)
+    assert refused.broken
+    failed: report.Report @= report.empty()
+    unread(@failed, broken: refused.broken, why: refused.why, label: "records/tagged")
+    assert failed.failed == 1
+    undated: issue_pace.Session @= issue_pace.scripted(
+        [labelled(first: 1, filed: "2026-10-16 08:00", given: ["class:adjacent"], after: filed, later: [])]
+    )
+    assert classed_at(@undated, held: held, judged: judged).broken
 
 test "the author's waiver excuses a tag over exactly the defects a closed decision of the project's carried, and nothing else"
     judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())

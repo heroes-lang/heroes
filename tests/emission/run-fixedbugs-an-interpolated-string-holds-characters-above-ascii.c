@@ -349,7 +349,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("17ad4ea31c44e25d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("24b6a65f24a14344", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsaninterpolatedstringholdscharactersaboveascii\tfixedbugs-an-interpolated-string-holds-characters-above-ascii\n");

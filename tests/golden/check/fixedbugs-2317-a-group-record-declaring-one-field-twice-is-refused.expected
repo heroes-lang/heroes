@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2317-a-group-record-declaring-one-field-twice-is-refused.hero:9:9: error[field_declared_twice]: `a` is already a field of `Pair`, declared at line 8 — a field is named once, or a construction and a read could not say which; rename one or remove it

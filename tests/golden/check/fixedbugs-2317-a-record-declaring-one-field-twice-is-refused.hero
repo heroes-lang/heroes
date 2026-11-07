@@ -1,0 +1,14 @@
+# fixedbugs, defect 2317, 2026-11-07: a record declaring one field name twice
+# passed `check` at exit 0 and stopped `build` at exit 2, clang refusing the
+# struct's duplicate member: nothing asked a declaration's own field names,
+# which the top of a module holds once (`declared_twice`). Now the second is
+# refused where it stands, naming the first's line
+# (`check/declared_once.hero`), and the construction naming both, which the
+# checker reads against the fields as declared, is told nothing more.
+record R
+    a: i64
+    a: i64  #~ field_declared_twice
+
+function main()
+    r = R(a: 1, a: 2)
+    print(r.a)

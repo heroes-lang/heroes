@@ -507,7 +507,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f7bbfad71b71299", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3c8517697a137380", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2254mustdefaultandiserrwrittenascallsprintwhatthedottedonesprint\tfixedbugs-2254-must-default-and-is-err-written-as-calls-print-what-the-dotted-ones-print\n");

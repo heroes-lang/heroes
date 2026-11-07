@@ -33,6 +33,7 @@ use check/ffi
 use check/freer as freer
 use check/generics
 use check/discard
+use check/declared_once
 use value_errors
 use handles
 use flow_errors
@@ -40,6 +41,7 @@ use contextless_errors
 
 function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     one_tag_one_type(@c, s, decls)
+    declared_once.told(@c, s, decls)
     index: i64 @= 0
 
     for decl in decls

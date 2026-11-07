@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2317-a-construction-naming-one-field-twice-is-refused.hero:10:20: error[wrong_label]: `Pair` has nothing called `a` at this position — it is `b`

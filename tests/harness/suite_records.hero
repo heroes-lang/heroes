@@ -14,6 +14,7 @@ use cards
 use credit
 use floors
 use github_issues
+use issue_pace
 use issue_wire
 use item_shape
 use md_links
@@ -1279,7 +1280,22 @@ function github_route(@r: report.Report, scratch: str, held: github_issues.Listi
         )
         return
     judged = tags.must()[0]
-    against = records_github.counted(held: held, judged: judged, tags: tags.must())
+
+    # **Each defect by the class it held when the tag was placed** (defect
+    # 2323), read from the events GitHub keeps of its labels, one request per
+    # defect open at the tag; where one cannot be read the check judges
+    # nothing and says which (`records_github.classed_at`).
+    s: issue_pace.Session @= issue_pace.session(
+        transport: issue_wire.gh(),
+        world: issue_wire.world_at(scratch),
+        live: false
+    )
+    classes = records_github.classed_at(@s, held: held, judged: judged)
+
+    if !classes.asked
+        records_github.unread(@r, broken: classes.broken, why: classes.why, label: "records/tagged")
+        return
+    against = records_github.counted(held: held, judged: judged, tags: tags.must(), at_tag: classes.at_tag)
 
     if against.len() > 0
         numbers: [i64] @= []
@@ -1321,7 +1337,7 @@ constant TAG_CHECK: str
 
 # What the two failures of `tagged` say beneath what they list.
 constant TAGGED_RULE: str
-    "A milestone is tagged over zero `blocking` and zero `systemic` items (CLAUDE.md § Verification;\n  .claude/rules/verification.md § Bounded discovery). An item with no class counts\n  as `blocking`, and an `adjacent` one counts as `blocking` from the second tag\n  placed since it was filed."
+    "A milestone is tagged over zero `blocking` and zero `systemic` items (CLAUDE.md § Verification;\n  .claude/rules/verification.md § Bounded discovery), each judged by the class it\n  held when the tag was placed. An item with no class counts as `blocking`, and an\n  `adjacent` one counts as `blocking` from the second tag placed since it was filed."
 
 constant DECISIONS_RULE: str
     "A pending `panel NNN` is allowed to stand at a tag, because § 4 says the\n  panel never blocks. Anything else is a decision this milestone could have\n  settled and left hanging instead (CLAUDE.md § Verification)."

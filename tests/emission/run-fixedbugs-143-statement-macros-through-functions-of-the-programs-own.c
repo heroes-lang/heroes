@@ -296,7 +296,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6e7e62873248d504", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b87ba433aa535eb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs143statementmacrosthroughfunctionsoftheprogramsown\tfixedbugs-143-statement-macros-through-functions-of-the-programs-own\n");

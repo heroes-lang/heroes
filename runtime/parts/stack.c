@@ -251,6 +251,49 @@ __attribute__((unused)) static void hero_stack_hex(uintptr_t v, char buf[HERO_HE
     buf[at] = '\0';
 }
 
+/* ONE THREAD TELLS A DEATH, FOR BOTH PLATFORMS, above the split (defect 2287,
+ * 2026-11-07). Every arm of the guard's handler writes its line in pieces, a
+ * `write(2)` after a `write(2)`, and a fault takes one thread at a time, so
+ * four threads that ran out of their stacks at once wrote their pieces into
+ * one another: `panic: stack exhausted in panic: stack exhausted in
+ * four.downfour.down`, measured on this Mac, and as many lines as had started
+ * before the first `abort` ended the process, one to three of four in twelve
+ * runs. Four threads reading through null at once ran together the same way.
+ * So the first thread to tell takes this flag and tells, and every later one
+ * waits where it stands for the process to end, which the first one's `abort`
+ * brings: a death is told once, whole, whichever thread wins. `parts/frame.c`
+ * tells a room that ran out through the same flag (panel 233's route told it
+ * this way from the start, with a flag of its own), so a stack and a room run
+ * out on two threads at once are one death too.
+ *
+ * What a signal handler may touch: C11 allows a lock-free atomic object
+ * (7.14.1.1p5), which the assertion holds the platform to, and `pause` is on
+ * POSIX's async-signal-safe list; Windows' handler is a vectored one, ordinary
+ * code on the faulting thread, where `Sleep` may run. A thread that faults
+ * again while it tells, inside its own frame walk say, is not made to wait for
+ * itself, which would hang the process: it goes on and ends it, as before. */
+_Static_assert(ATOMIC_INT_LOCK_FREE == 2, "the told flag is read in a signal handler, which C11 allows only of a lock-free atomic object");
+static _Atomic int hero_stack_told = 0;
+static _Thread_local _Atomic int hero_stack_telling = 0;
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
+static void hero_stack_tell_first(void) {
+    if (atomic_load(&hero_stack_telling)) return;
+    atomic_store(&hero_stack_telling, 1);
+    if (atomic_exchange(&hero_stack_told, 1) != 0) {
+#if defined(_WIN32)
+        for (;;) Sleep(INFINITE);
+#else
+        for (;;) pause();
+#endif
+    }
+}
+
 /* THE HELPERS, compiled on every POSIX build, under the sanitizer too (panel
  * 175). `parts/os.c`'s crash handler writes with them and asks them which Heroes
  * frame it is under, and since panel 175 that handler stays in a `--sanitize`
@@ -528,6 +571,7 @@ void hero_stack_spell(const char *text) { (void)text; }
 
 static LONG WINAPI hero_stack_asan_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
+        hero_stack_tell_first();
         const char *s = "panic: stack exhausted\n";
         size_t n = strlen(s);
         while (n > 0) {
@@ -751,6 +795,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * last, since it names the pc's symbol. */
     int probed = in_guard && !sp_low && !probing && addr < sp && hero_stack_pc_is_probe(pc);
     if (in_guard && (sp_low || probing || probed)) {
+        hero_stack_tell_first();
         const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: stack exhausted");
         if (who != NULL) {
@@ -765,6 +810,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     /* C past a buffer it was lent (the third witness, declared above). */
     HeroLendFault lend;
     if (hero_lend_fault_at(addr, &lend)) {
+        hero_stack_tell_first();
         hero_lend_tell(&lend, hero_stack_say);
         hero_abort();
     }
@@ -812,6 +858,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * a function to every question C can ask at compile time. So the address
      * is still the witness, and the sentence says what can reach it. */
     if (pc == 0) {
+        hero_stack_tell_first();
         hero_stack_say("panic: a null function pointer was called — a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
         hero_abort();
     }
@@ -878,6 +925,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * the order must not depend on where the kernel mapped the dead region. */
     uintptr_t dead_offset = 0;
     if (hero_handle_dead_at(addr, &dead_offset)) {
+        hero_stack_tell_first();
         const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: a dead C handle was used inside C, at offset ");
         hero_stack_say_hex(dead_offset);
@@ -889,6 +937,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
         hero_abort();
     }
     if ((unsigned long long)addr < HERO_NULL_WINDOW) {
+        hero_stack_tell_first();
         const char *who = hero_stack_blame(pc, fp, lr);
         hero_stack_say("panic: a null pointer was read through, at offset ");
         hero_stack_say_hex(addr);
@@ -1019,6 +1068,7 @@ static void hero_stack_veh_say_hex(uintptr_t v) {
 
 static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
+        hero_stack_tell_first();
         hero_stack_veh_say("panic: stack exhausted\n");
         hero_abort();
     }
@@ -1035,6 +1085,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
      * `nullptr`, which no C library checks. */
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
+        hero_stack_tell_first();
         hero_stack_veh_say("panic: a null function pointer was called \xe2\x80\x94 a call went through a function pointer that held none, such as a `ptr` holding `nullptr` handed to C as a callback, or an `extern` function its header declares as a pointer, called while the pointer held none\n");
         hero_abort();
     }
@@ -1077,6 +1128,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && hero_lend_fault_at((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1], &lend)) {
+        hero_stack_tell_first();
         hero_lend_tell(&lend, hero_stack_veh_say);
         hero_abort();
     }
@@ -1084,6 +1136,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && hero_handle_dead_at((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1], &dead_offset)) {
+        hero_stack_tell_first();
         hero_stack_veh_say("panic: a dead C handle was used inside C, at offset ");
         hero_stack_veh_say_hex(dead_offset);
         hero_stack_veh_say("\n" HERO_DEAD_USE_TAIL);
@@ -1092,6 +1145,7 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2
         && (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1] < HERO_NULL_WINDOW) {
+        hero_stack_tell_first();
         /* The offset is half the contract (panel 156 R1: the sentence and the
          * offset are what a reader may rely on, and `called from` is best
          * effort), so it is written here rather than left to the platform with

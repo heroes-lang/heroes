@@ -311,7 +311,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c8e8f4141f2f2ab", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3997e6fd4a4f5392", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown\tfixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own\n");

@@ -52,8 +52,20 @@ extern "sqlite3.h" link "sqlite3"
     # of it, which SQLite's documentation says of `filename` and of `sql`
     # (it copies what it needs). Without the word the compiler assumes C
     # keeps the pointer and refuses `s.cstr()` at the call (spec § 13).
+    #
+    # **A close SQLite refuses ends nothing** (defect 2291, panel 234's R4).
+    # With a statement of the connection still prepared, `sqlite3_close`
+    # answers 5, `SQLITE_BUSY`, and closes nothing: *unable to close due to
+    # unfinalized statements or unfinished backups*, SQLite 3.54.0 on this
+    # Mac. `when 0` says the call ends the connection only when it answers 0,
+    # so after a refusal the connection is still open and still this
+    # program's to give back. Without it the connection was counted given
+    # back whatever SQLite answered, and a close before a finalize ran to
+    # exit 0 with the connection open and nothing said. `sqlite3_finalize`
+    # takes no `when`: it ends the statement whatever it answers, 19 after a
+    # step a constraint refused, so a second finalize would free it twice.
     function sqlite3_open(filename: cstr lent, @out: Db acquires sqlite3_close) -> i64
-    function sqlite3_close(db: Db consumes) -> i64
+    function sqlite3_close(db: Db consumes) -> i64 when 0
     # The fifth argument is `char **errmsg`, and a non-NULL one makes SQLite
     # allocate a copy of the message that the CALLER must release with
     # `sqlite3_free`. This program does not want one, so it is a plain `ptr`
@@ -110,10 +122,22 @@ function main()
         # when the open fails, so the connection is this program's to release
         # here as much as on the way out.
         print("cannot open the database")
-        _ = sqlite3_close(db)
+        given_back(@db)
         return
     _ = run(db, "create table note(body text)")
     _ = run(db, "insert into note(body) values ('hello'), ('from'), ('sqlite')")
     print("rows: ", first_int(db, "select count(*) from note"))
     print("longest: ", first_int(db, "select max(length(body)) from note"))
-    _ = sqlite3_close(db)
+    given_back(@db)
+
+# The connection given back. SQLite answers `SQLITE_OK` when it closed it, and
+# `SQLITE_BUSY` while a statement is still prepared, and then the connection is
+# still open and still this program's (the binding's `when 0`). Every statement
+# here is finalized where it is prepared, so a refusal would be this program's
+# own mistake: it is told, and `main` returning with the connection still owed
+# is the runtime's to stop, naming the open that was never given back.
+function given_back(@db: Db)
+    answer = sqlite3_close(db)
+
+    if answer != SQLITE_OK
+        print("sqlite kept the connection open, answering ", answer)

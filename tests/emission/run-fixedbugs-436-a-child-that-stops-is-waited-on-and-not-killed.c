@@ -456,7 +456,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7cb095d3244cfdc8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09b9ed902ca95eaf", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs436achildthatstopsiswaitedonandnotkilled\tfixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed\n");

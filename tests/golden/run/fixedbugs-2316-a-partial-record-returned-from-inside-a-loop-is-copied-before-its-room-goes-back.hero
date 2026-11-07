@@ -1,0 +1,33 @@
+# fixedbugs, defect 2316, 2026-11-07: the filing's shape returned from inside
+# a loop, the callee called at every turn before it. A
+# function returning a record kept off the frame gave its regions back and
+# then copied the returned value out of one of them: `hero_frame_give` frees a
+# chunk that empties while a spare at least as large is kept, which the callee
+# `helper` leaves, so the `return` read freed memory, at both levels:
+# `heap-use-after-free` under the sanitizer, the right numbers read from freed
+# memory without it. Such a function's regions now go back by `cleanup`, after
+# the return's copy (`emit/large_value.hero`).
+
+extern "fixedbugs-2316-held.h"
+    record Held tag fixedbugs_2316_held partial
+        first: i64
+
+# A callee that takes a region as large and gives it back, which leaves its
+# chunk as the room's spare.
+function helper(n: i64) -> i64
+    h = Held(first: n, rest: zero)
+    return h.first
+
+function make(n: i64, until: i64) -> Held
+    out = Held(first: n, rest: zero)
+
+    for i in range(from: 0, to: until)
+        print(helper(n: i))
+
+        if i == 2
+            return out
+
+    return Held(first: 0, rest: zero)
+
+function main()
+    print(make(n: 7, until: 5).first)
