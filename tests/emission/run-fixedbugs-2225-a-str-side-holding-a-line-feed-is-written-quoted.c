@@ -224,7 +224,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f9a99475024b9d4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bc21e4c01279725", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2225astrsideholdingalinefeediswrittenquoted\tfixedbugs-2225-a-str-side-holding-a-line-feed-is-written-quoted\n");

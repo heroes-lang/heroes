@@ -677,7 +677,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d48537868889224", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("096fd87d198b6f75", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin\tfixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin\n");

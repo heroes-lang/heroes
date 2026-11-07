@@ -386,7 +386,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("159cfa976441dfbb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("01c47f9c1544bd0c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("geompoint\tpoint\ngeomarea\tarea\nrenderascii\tascii\nrenderscale\tscale\n");

@@ -226,7 +226,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f0d6e7a7bff8c21", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b34f37f2d026972", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantreturningnothingiscalledalone\tfixedbugs-510-a-constant-returning-nothing-is-called-alone\n");

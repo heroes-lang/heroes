@@ -284,7 +284,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("772079c912903bc7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6347fece43931917", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs570aheaderspragmaleavesacorrectbindingbuilding\tfixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building\n");

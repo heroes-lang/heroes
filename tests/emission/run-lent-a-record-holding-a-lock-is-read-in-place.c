@@ -352,7 +352,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4df2e47565725bf7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a1a697a16753948", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lentarecordholdingalockisreadinplace\tlent-a-record-holding-a-lock-is-read-in-place\n");

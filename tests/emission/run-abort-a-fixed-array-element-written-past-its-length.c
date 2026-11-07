@@ -341,7 +341,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("736656cf50c0e0a2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f8ddbd401c3bdf3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("abortafixedarrayelementwrittenpastitslength\tabort-a-fixed-array-element-written-past-its-length\n");

@@ -222,7 +222,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("78bb652a21093a39", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("64e2ea2f520c1789", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs547aselfcallthroughaparameteraborts\tfixedbugs-547-a-self-call-through-a-parameter-aborts\n");

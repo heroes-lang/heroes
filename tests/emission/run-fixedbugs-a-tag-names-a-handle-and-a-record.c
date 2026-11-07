@@ -348,7 +348,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f5dc5457628702b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b854a4a272b4d7c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatagnamesahandleandarecord\tfixedbugs-a-tag-names-a-handle-and-a-record\n");

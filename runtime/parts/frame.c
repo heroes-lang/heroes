@@ -133,13 +133,13 @@ void hero_frame_give(void *p) {
     }
 }
 
-/* The same, for `__attribute__((cleanup))`, which hands the address of the
- * pointer: a function's twin of C's convention returns its large result from
- * this room and gives it back after the return has copied it
- * (`selfhost/emit/signature.hero`'s `value_twin`), because a large record
- * returned from a named local costs clang's front end in proportion to its
- * leaves (panel 233: 8.09 billion instructions for 128 MiB, 0.12 billion
- * returned through a pointer). */
+/* The same, for `__attribute__((__cleanup__))`, which hands the address of
+ * the pointer and runs after a `return` has copied its value: a function that
+ * returns a group's record out of this room by C's convention gives its
+ * regions back through here (`selfhost/emit/large_value.hero`'s
+ * `taken_to_exit`, defect 2316). Given back before the `return`, the chunk
+ * the value stood in was freed above whenever a spare at least as large was
+ * already kept, and the return's copy read freed memory. */
 void hero_frame_give_at(void *slot) {
     hero_frame_give(*(void **)slot);
 }

@@ -509,7 +509,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("608800b06437c24a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4caf85b5153a9f9b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396posixfillsitsbuffers\tfixedbugs-396-posix-fills-its-buffers\n");

@@ -264,7 +264,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38ad120e2dfee288", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("24d497135f01bfd8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning\tfixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning\n");

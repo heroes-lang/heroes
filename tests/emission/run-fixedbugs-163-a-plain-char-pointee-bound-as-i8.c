@@ -271,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("622d36853e801394", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e54bb8a6f82f0e4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs163aplaincharpointeeboundasi8\tfixedbugs-163-a-plain-char-pointee-bound-as-i8\n");

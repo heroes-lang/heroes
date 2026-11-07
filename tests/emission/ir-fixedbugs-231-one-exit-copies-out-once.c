@@ -301,7 +301,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("305fbea44e5affd8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c8743a97f5ddd28", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs231oneexitcopiesoutonce\tfixedbugs-231-one-exit-copies-out-once\n");

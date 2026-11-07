@@ -274,7 +274,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("07c897a61f2a14a9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("73f01caa502cf1f9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeanullcstrhandedtocnamesthecall\tplace-a-null-cstr-handed-to-c-names-the-call\n");

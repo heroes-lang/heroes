@@ -290,7 +290,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("54decfec6c79f9db", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("410654f11d7cd72c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fficallbackccallsback\tffi-callback-c-calls-back\n");

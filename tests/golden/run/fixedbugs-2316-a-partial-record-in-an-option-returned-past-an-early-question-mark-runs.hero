@@ -1,0 +1,30 @@
+# fixedbugs, defect 2316, 2026-11-07: the shape beside the filing's that never
+# read freed memory, measured before the repair as after it: a `T?` holding a
+# `partial` record is the program's own and large, so it is written through
+# the caller's slot before the regions go back, on the path a `?` takes early
+# as on the one that finishes. Its regions keep their explicit give.
+
+extern "fixedbugs-2316-held.h"
+    record Held tag fixedbugs_2316_held partial
+        first: i64
+
+# A callee that takes a region as large and gives it back, which leaves its
+# chunk as the room's spare.
+function helper(n: i64) -> i64
+    h = Held(first: n, rest: zero)
+    return h.first
+
+function checked(n: i64) -> i64?
+    if n < 0
+        return fail(code: "negative", msg: "below zero")
+    return ok(n)
+
+function make(n: i64) -> Held?
+    out = Held(first: n, rest: zero)
+    print(helper(n: n + 1))
+    _ = checked(n)?
+    return ok(out)
+
+function main()
+    print(make(n: 7).must().first)
+    print(make(n: -1).is_err())

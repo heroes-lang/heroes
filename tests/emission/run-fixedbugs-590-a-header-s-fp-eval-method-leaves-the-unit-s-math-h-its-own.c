@@ -269,7 +269,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("69828fd4009abf36", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("55aa14d9319d9c86", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown\tfixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own\n");

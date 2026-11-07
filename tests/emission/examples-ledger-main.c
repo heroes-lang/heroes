@@ -3061,7 +3061,7 @@ HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("332f41506c475e8a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f56c6551d4a3bdb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("bookentry\tentry\ndbsqlite\tsqlite\nreportlines\tlines\n");

@@ -278,7 +278,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e1b0b057cd37d8b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a4290092dd65adc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed\tfixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named\n");

@@ -306,7 +306,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("388b8bed138f7745", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("24b310f244925495", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("lentarecordholdingaunionisreadfromabinding\tlent-a-record-holding-a-union-is-read-from-a-binding\n");

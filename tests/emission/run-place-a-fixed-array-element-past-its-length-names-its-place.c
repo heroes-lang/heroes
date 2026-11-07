@@ -294,7 +294,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("311174f07a9cf7ec", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1d38f9f52b9fd53d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeafixedarrayelementpastitslengthnamesitsplace\tplace-a-fixed-array-element-past-its-length-names-its-place\n");

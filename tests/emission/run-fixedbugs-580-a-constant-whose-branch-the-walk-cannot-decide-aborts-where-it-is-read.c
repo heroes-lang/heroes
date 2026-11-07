@@ -221,7 +221,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f1c507841ee3303", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b43d57d72f11053", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread\tfixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read\n");

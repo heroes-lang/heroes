@@ -353,7 +353,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bc5dba90f56c910", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("17ed60ae4059a660", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiaunionarmcwroteiskept\tffi-a-union-arm-c-wrote-is-kept\n");

@@ -291,7 +291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("794a0af120aef931", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("65718ff651b1d681", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handleadiscardedreferenceisstillowed\thandle-a-discarded-reference-is-still-owed\n");
