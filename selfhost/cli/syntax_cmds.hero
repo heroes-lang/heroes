@@ -276,6 +276,22 @@ test "the tree guard sees `owned`, and this is the alias test's own lesson appli
         quiet = guard.refuse_output_the_formatter_broke(path: "t.hero", original: text, formatted: formatted)
         assert quiet.is_err()
 
+# Panel 235's mark, pinned before it could ship as `as` shipped: a printer
+# that wrote the path and not the `<json>/` before it would make a package's
+# module the program's own, the change the bracket exists to refuse, and the
+# dump carries the mark (`dump.hero`), so the guard sees the two trees apart.
+test "the tree guard sees a package's mark taken off"
+    original = "use <json>/parse\n\nfunction main()\n    print(0)\n"
+    stripped = "use parse\n\nfunction main()\n    print(0)\n"
+    caught = guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
+    assert !caught.is_err()
+    assert strings.holds(text: caught.must(), needle: "changed the TREE")
+    parsed = parse.parse(original)
+    s = source.new_source(name: "t.hero", text: original)
+    formatted = fmt.format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert formatted == original
+    assert guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: formatted).is_err()
+
 # Defect 101's last silent move, and the guard that makes the class loud
 # whatever printer moves one: the trunk's `fmt` joined a signature with a
 # comment on its `(` line and moved the comment to the joined line's end, at

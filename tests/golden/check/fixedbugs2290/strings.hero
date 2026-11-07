@@ -1,0 +1,5 @@
+# The module the fixed-bug cases beside it name in another case.
+
+# Whether s holds part.
+function contains(s: str, part: str) -> bool
+    return s.len() >= part.len()

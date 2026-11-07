@@ -100,6 +100,13 @@ function rules_of(grammar: str, name: str) -> [Rule]?
 
     return ok(out)
 
+# The rule `repository.<name>` is where it is one rule and no list of them,
+# as `#use` is (`suite_spec.use_painted`).
+function rule_named(grammar: str, name: str) -> Rule?
+    whole = Span(start: skip_space(text: grammar, at: 0), stop: grammar.len())
+    repository = member(text: grammar, object: whole, key: "repository")?
+    return rule_in(text: grammar, object: member(text: grammar, object: repository, key: name)?)
+
 # One rule object: its `match`, else its `begin`; its `name`. A rule with
 # neither pattern is refused, since it paints nothing an editor could start on.
 function rule_in(text: str, object: Span) -> Rule?
@@ -892,6 +899,8 @@ test "the words a scope paints are read from every rule and every capture named 
     assert scoped_words(grammar: grammar, scope: "keyword.other.contextual.hero").must() == ["as", "link", "package", "tag", "owned"]
     assert scoped_words(grammar: grammar, scope: "keyword.control.use.hero").must() == ["use"]
     assert scoped_words(grammar: grammar, scope: "no.such.scope").must().len() == 0
+    assert rule_named(grammar: grammar, name: "use").must().pattern == "^(use) +([a-z/]+) +(as)"
+    assert rule_named(grammar: grammar, name: "absent").is_err()
 
     # A region named with the scope paints what it holds, and a group that is
     # not a list of words would read as other words than the editor paints.

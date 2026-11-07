@@ -1,0 +1,54 @@
+# What a package's module is called inside one compilation (spec § 1; panel
+# 235's R1, ratified 2026-11-07).
+#
+# A package's module keeps its mark in the compilation, `<json>/parse`, so no
+# module of the program's own, a path of names, can ever be one, and the mark
+# decides where its file is read from: a bracketed `use` resolves through the
+# catalogue alone and a bare one through the tree alone, with no fallback
+# either way (R1, the spec-warden's first condition). Every reader of a module
+# name asks here which of the two it holds, and none looks for a `<` itself.
+
+# Whether `module` is a package's: its name opens with the mark.
+function is_package(module: str) -> bool
+    return module.len() > 0 && module[0] == '<'
+
+# `<json>/` for a module of the package `json`; "" for the program's own, and
+# for a name whose mark never closes, which no reader hands here.
+function package_of(module: str) -> str
+    if !is_package(module)
+        return ""
+    at: i64 @= 1
+
+    while at < module.len() && module[at] != '>'
+        at @ at + 1
+
+    if at + 1 >= module.len()
+        return ""
+    return module.slice(from: 0, to: at + 2)
+
+# The entry's name in a package's module: `json` for `<json>/parse`.
+function entry_of(module: str) -> str
+    owner = package_of(module)
+
+    if owner.len() < 3
+        return ""
+    return owner.slice(from: 1, to: owner.len() - 2)
+
+# The module's path inside its package: `parse` for `<json>/parse`, and the
+# whole name for a module of the program's own.
+function inside_of(module: str) -> str
+    return module.slice(from: package_of(module).len(), to: module.len())
+
+## Tests
+
+test "a package's module keeps its mark, and the mark says whose it is"
+    assert is_package("<json>/parse")
+    assert !is_package("geom/area")
+    assert !is_package("")
+    assert package_of("<json>/a/b") == "<json>/"
+    assert package_of("geom/area") == ""
+    assert package_of("<json") == ""
+    assert entry_of("<json>/a/b") == "json"
+    assert entry_of("geom") == ""
+    assert inside_of("<json>/a/b") == "a/b"
+    assert inside_of("geom/area") == "geom/area"

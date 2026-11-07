@@ -1,0 +1,3 @@
+# A module the fixed-bug case beside it names through `./`.
+function x() -> i64
+    return 1

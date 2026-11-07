@@ -1,7 +1,11 @@
 # Three questions a `use` line asks of its text, and one an `extern` head
 # asks of its header: whether two offsets stand on one line, whether a
 # string's contents are a module's name, and what a string literal holds
-# between its quotes (design.md §3.1, §4.17; panels 031, 032, 099).
+# between its quotes (design.md §3.1, §4.17; panels 031, 032, 099). And since
+# panel 235 (R18, ratified 2026-11-07) a fourth: whether a text is an address,
+# which goes in the catalogue and never in a `use`, and what the message about
+# one says, read alike by the mark's reader (`parse/use_mark.hero`) and the
+# line's (`parse/use_line.hero`).
 #
 # Moved out of `parse/use_line.hero` on 2026-10-02 (lane recovery-b8), when
 # a `use` line's recovery came to drop only its own line and that module
@@ -13,6 +17,9 @@
 # holds what does.
 
 use text_lines
+use bytes
+use keywords
+use foreign_words
 
 # Whether two offsets stand on one line: the distance between them, never
 # each one's line number, a walk from the text's first byte that made a file
@@ -71,6 +78,210 @@ function is_one_part(s: str) -> bool
 
     return true
 
+## Addresses
+
+# Whether `s` is an address, as Go's and npm's imports spell one: a scheme
+# (`https://…`), or a first part holding a `.` with a `/` after it, the host
+# of `github.com/acme/json`. A file's name, `geom.hero`, has no `/` after its
+# dot and is not one.
+function is_address(s: str) -> bool
+    if !bytes.locate(text: s, needle: "://", from: 0).is_err()
+        return true
+    dot: i64 @= -1
+    i: i64 @= 0
+
+    while i < s.len()
+        if s[i] == '/'
+            return dot > 0
+
+        if s[i] == '.' && dot < 0
+            dot @ i
+        i @ i + 1
+
+    return false
+
+# The parts of a path an address holds, Go's host, owner and repository: the
+# first three of `github.com/acme/json/parse`, the rest being a module of the
+# package, which `module_after` answers.
+function address_of(parts: [str]) -> str
+    if parts.len() <= 3
+        return parts.join("/")
+    return parts.slice(from: 0, to: 3).join("/")
+
+function module_after(parts: [str]) -> str
+    if parts.len() <= 3
+        return ""
+    return parts.slice(from: 3, to: parts.len()).join("/")
+
+# The entry an address is likeliest written under: its last part, cut at its
+# first `.` (`json.git`), where that is an entry's name, lowercase letters,
+# digits and `_` after a letter (the catalogue's rule); else "", no guess.
+function address_entry(address: str) -> str
+    parts = address_parts(address)
+
+    if parts.len() == 0
+        return ""
+    last = parts[parts.len() - 1]
+    end: i64 @= 0
+
+    while end < last.len() && last[end] != '.'
+        end @ end + 1
+
+    word = last.slice(from: 0, to: end)
+
+    if word.len() == 0 || !(word[0] >= 'a' && word[0] <= 'z')
+        return ""
+
+    for ch in word.chars()
+        b = ch[0]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
+            return ""
+
+    return word
+
+# The address's parts between its `/`, a scheme's `https:` and the empty part
+# after it left out.
+function address_parts(address: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i <= address.len()
+        if i == address.len() || address[i] == '/'
+            part = address.slice(from: start, to: i)
+
+            if part.len() > 0 && part[part.len() - 1] != ':'
+                out @ out.push(part)
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# An address as a `use` wrote it, read into what the catalogue holds and what
+# the `use` names: `github.com/acme/json/parse` is the address
+# `github.com/acme/json`, its likeliest entry `json`, and the module `parse`.
+record Address
+    address: str
+    entry: str
+    module: str
+
+function read_address(written: str) -> Address
+    parts = address_parts(written)
+    module = module_after(parts)
+    address: str @= written
+
+    if module.len() > 0 && written.len() > module.len()
+        address @ written.slice(from: 0, to: written.len() - module.len() - 1)
+    return Address(address: address, entry: address_entry(address), module: module)
+
+# What a `use` holding an address is told: where the address goes, and the
+# line that names it, which is a line this compiler reads (defect 2308's
+# class: an advice is never a line the compiler refuses).
+function address_said(address: str, entry: str, module: str) -> str
+    said = "`" + address + "` is an address, which the catalogue `heroes.toml` beside the file you compile holds and a `use` never does: the `use` names its entry between `<` `>`, then a module of the package — "
+
+    if entry.len() > 0 && module.len() > 0
+        return said + "`use <" + entry + ">/" + module + "`, `" + entry + "` standing for the entry the catalogue gives that address"
+
+    if entry.len() > 0
+        return said + "`use <" + entry + ">/parse`, `" + entry + "` standing for the entry the catalogue gives that address and `parse` for one of the package's modules"
+    return said + "`use <json>/parse`, `json` standing for the entry the catalogue gives that address and `parse` for one of the package's modules"
+
+## A quoted `use`
+
+# What a quoted `use` is told (defect 2308): the line its quotes hold where
+# that is a line a `use` reads, with the repair writing it, `certain` since
+# the file it reads is the one the quotes named; and where it is not, why not,
+# with no line to copy. The advice was the quotes' text written after `use`,
+# unchecked, and six of the seven shapes tried named a line the compiler
+# refuses.
+record Quoted
+    message: str
+    # The name the repair writes in the quotes' place, "" where none is.
+    repair: str
+
+function quoted(inner: str) -> Quoted
+    said = "a module is named, not quoted"
+
+    if inner.len() == 0
+        return Quoted(
+            message: said + ", and these quotes hold nothing — `use geom` reads `geom.hero` from the directory of the file you compile",
+            repair: ""
+        )
+    path: str @= inner
+
+    if path.len() > 2 && path.slice(from: 0, to: 2) == "./"
+        path @ path.slice(from: 2, to: path.len())
+
+    if path.len() > 5 && path.slice(from: path.len() - 5, to: path.len()) == ".hero"
+        path @ path.slice(from: 0, to: path.len() - 5)
+
+    if is_marked_path(path)
+        return Quoted(
+            message: said + " — write `use " + path + "`, which reaches the module `" + path.slice(from: mark_end(path) + 2, to: path.len()) + "` of the package `" + path.slice(from: 1, to: mark_end(path)) + "`",
+            repair: path
+        )
+
+    if is_use_path(path)
+        return Quoted(
+            message: said + " — write `use " + path + "`, which reads `" + path + ".hero` from the directory of the file you compile",
+            repair: path
+        )
+
+    if climbs(path)
+        return Quoted(
+            message: said + ", and `" + inner + "` climbs: every `use` starts at the directory of the file you compile, and a module above it belongs to a different program",
+            repair: ""
+        )
+    return Quoted(
+        message: said + ", and `" + inner + "` is no module's name: each part of a `use` path is a name, letters, digits and `_` not opening with a digit and no word of the language, so a file named otherwise is one no `use` reaches",
+        repair: ""
+    )
+
+# Whether `s`, written after `use`, is a path the parser reads: names joined
+# by `/`, each one no keyword and no word the lexer refuses as a name
+# (`foreign_words.declared_word`: `use let` is refused at `let`).
+function is_use_path(s: str) -> bool
+    if !is_module_name(s)
+        return false
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len() + 1)
+        if at == s.len() || s[at] == '/'
+            part = s.slice(from: start, to: at)
+
+            if !keywords.keyword(part).is_err() || !foreign_words.declared_word(part).is_err()
+                return false
+            start @ at + 1
+
+    return true
+
+# `<json>/parse`: a package's mark, then a path.
+function is_marked_path(s: str) -> bool
+    end = mark_end(s)
+    return end > 1 && is_use_path(s.slice(from: 1, to: end)) && !has_slash(s.slice(from: 1, to: end)) && end + 1 < s.len() && s[end + 1] == '/' && is_use_path(s.slice(from: end + 2, to: s.len()))
+
+function mark_end(s: str) -> i64
+    if s.len() == 0 || s[0] != '<'
+        return -1
+
+    for at in range(from: 1, to: s.len())
+        if s[at] == '>'
+            return at
+
+    return -1
+
+function has_slash(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] == '/'
+            return true
+
+    return false
+
+function climbs(s: str) -> bool
+    return s == ".." || s.len() >= 3 && s.slice(from: 0, to: 3) == "../" || !bytes.locate(text: s, needle: "/../", from: 0).is_err()
+
 # Rust writes `quoted.trim_matches('"')`; the port says it in five lines, which
 # is the same shape the lexer's own scanners use — the delimiters are known to
 # be there because the token is a `str_lit`.
@@ -105,3 +316,38 @@ test "the identifier rule is asked of a string's contents, part by part"
     assert !is_module_name("shapes/2geom")
     assert unquote("\"geom\"") == "geom"
     assert unquote("geom") == "geom"
+
+test "an address is told apart from a path and a file's name, and its entry guessed"
+    assert is_address("github.com/acme/json")
+    assert is_address("https://git.example.org/ana/yaml")
+    assert !is_address("geom.hero")
+    assert !is_address("shapes/geom")
+    assert !is_address("")
+    assert address_entry("github.com/acme/json") == "json"
+    assert address_entry("https://git.example.org/ana/yaml.git") == "yaml"
+    assert address_entry("github.com/acme/Json") == ""
+    assert address_entry("github.com/acme/go-json") == ""
+    assert address_of(["github.com", "acme", "json", "parse", "deep"]) == "github.com/acme/json"
+    assert module_after(["github.com", "acme", "json", "parse", "deep"]) == "parse/deep"
+    assert module_after(["github.com", "acme", "json"]) == ""
+    read = read_address("github.com/acme/json/parse")
+    assert read.address == "github.com/acme/json"
+    assert read.entry == "json"
+    assert read.module == "parse"
+    assert read_address("https://git.example.org/ana/yaml").module == ""
+
+    # Each advice names a line this compiler reads: an entry, then a module.
+    said = address_said(address: "github.com/acme/json", entry: "json", module: "parse")
+    assert !bytes.locate(text: said, needle: "`use <json>/parse`", from: 0).is_err()
+
+test "a quoted use is advised the line it meant only where the parser reads that line (defect 2308)"
+    assert quoted("geom").repair == "geom"
+    assert quoted("shapes/geom").repair == "shapes/geom"
+    assert quoted("geom.hero").repair == "geom"
+    assert quoted("./lex/token").repair == "lex/token"
+    assert quoted("<json>/parse").repair == "<json>/parse"
+
+    # No line is advised that the compiler refuses: a word of the language, a
+    # name it is not, nothing at all, a climb.
+    for refused in ["", "let", "if", "int", "my-lib", "a b", "../x", "shapes//geom", "2geom", "<json>", "<a/b>/c"]
+        assert quoted(refused).repair == ""

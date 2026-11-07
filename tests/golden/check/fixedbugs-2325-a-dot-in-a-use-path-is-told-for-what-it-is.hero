@@ -1,0 +1,17 @@
+# Fixed defect 2325, 2026-11-08, lane pm-use (found by panel 235's
+# spec-warden): a dot where a `use` path's part belongs was told *a `use`
+# path cannot climb*, whatever it was. `./` names the directory the path
+# already stands in, and taking it out is certain, the line left reading the
+# same file; a part that opens with a dot names a folder no `use` can spell,
+# so a module there is no module of this program; `.` alone names a
+# directory and no module, and `./` with no path after it is told so and
+# repaired by nothing; only `..` climbs.
+use ./fixedbugs2325/json/parse  #~ module_path_names_a_directory
+use .heroes/json/parse  #~ module_path_dot_name
+use fixedbugs2325/./json/lines  #~ module_path_names_a_directory
+use .  #~ module_path_names_a_directory
+use ./  #~ module_path_names_a_directory
+use ../json/parse  #~ module_path_climbs
+
+function main()
+    print(parse.x() + lines.y())

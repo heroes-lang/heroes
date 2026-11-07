@@ -1,0 +1,286 @@
+# What a `use` line's package mark holds, read from its tokens (spec § 1,
+# `Use`; panel 235's R1 and R18, ratified 2026-11-07): `use <json>/parse`
+# reaches the module `parse` of the package `json`, the mark `<` name `>` `/`
+# with every token touching the one before, as a path's parts touch.
+#
+# The parser asks this file and says what it answers (`parse/use_mark.hero`):
+# the reading needs the line's tokens and its text and never the cursor, which
+# is the seam the parser's line budget names (`tests/harness/suite_layout.hero`,
+# `BUDGETS`), as `module_text.hero`'s questions are. Each habit a model brings
+# from another language gets the message that names it (R18), and a repair is
+# `certain` only where the line it writes is the one meant whatever the
+# catalogue holds:
+#
+# - `use <json/parse>`, C's `#include <a/b>`: an entry's name holds no `/`,
+#   so the first name is the entry: certain;
+# - `use <json>.parse`, a dot for the slash, and `use <"json">/parse`, a
+#   quoted name: certain; `use < json >/parse`, the parts apart: certain;
+# - `use <github.com/acme/json>/parse`, an address, and the same without the
+#   brackets: the catalogue holds an address and the `use` its entry, which
+#   only the catalogue names, so the repair is a `guess`;
+# - `use <json>`, a package with no module, an unclosed mark and an empty one:
+#   no repair, which module or name is meant being the author's.
+
+use token
+use diag
+use describe
+use keywords
+use module_text
+
+# The diagnostic owed by the mark at `tokens[at]`, a `<`, or none where the
+# mark is whole: then its four tokens stand at `at` to `at + 3`.
+function read(tokens: [token.Token], at: i64, text: str) -> [diag.Diagnostic]
+    line = line_at(tokens, at: at, text: text)
+    open = line[0].span
+
+    if line.len() < 2 || line[1].kind != .ident && line[1].kind != .str_lit
+        return [
+            refused(code: "package_wants_a_name", message: "expected the package's name after `<`, found " + describe.found(tokens[at + 1], text) + " — `use <json>/parse`, `json` being an entry of the catalogue `heroes.toml` beside the file you compile", span: open)
+        ]
+    close = closing(line)
+
+    if line[1].kind == .str_lit && !module_text.is_address(module_text.unquote(text_of(text, line[1])))
+        return [quoted_name(line, text)]
+
+    if dotted_inside(line, close: close) || line[1].kind == .str_lit
+        return [address(line, text, close: close)]
+    name = text_of(text, line[1])
+
+    if close < 0
+        return [
+            refused(code: "package_mark_unclosed", message: "`<" + name + "` wants its `>` — `use <" + name + ">/parse`, the package's name between the brackets and its module after them", span: open)
+        ]
+
+    if close > 2
+        return [whole_path_inside(line, text, close: close)]
+
+    if line.len() > 4 && line[3].kind == .dot && line[4].kind == .ident
+        return [dot_after(line, text)]
+
+    if line.len() < 5 || line[3].kind != .slash || line[4].kind != .ident
+        return [
+            refused(code: "package_wants_a_module", message: "a package is reached through one of its modules — `use <" + name + ">/parse`, `parse` being a file of the package `" + name + "`", span: token.Span(start: open.start, end: line[2].span.end))
+        ]
+
+    if !touching(line, upto: 4)
+        written = "<" + name + ">/" + text_of(text, line[4])
+        return [
+            repaired(code: "package_mark_apart", message: "the mark touches its parts, as a path's parts do — `use " + written + "`, with no space inside it", span: token.Span(start: open.start, end: line[4].span.end), written: written, offered: true, certain: true)
+        ]
+    none: [diag.Diagnostic] = []
+    return none
+
+# `use github.com/acme/json/parse`: Go's import path with no mark, at the dot
+# after `first`, its first name. The address where the run of touching tokens
+# from `first` is one, none otherwise.
+function unmarked(tokens: [token.Token], at: i64, text: str, first: token.Span) -> [diag.Diagnostic]
+    line = line_at(tokens, at: at, text: text)
+    last: i64 @= 0
+
+    while last + 1 < line.len() && line[last + 1].span.start == line[last].span.end
+        last @ last + 1
+
+    span = token.Span(start: first.start, end: line[last].span.end)
+    written = text.slice(from: span.start, to: span.end)
+
+    if !module_text.is_address(written)
+        none: [diag.Diagnostic] = []
+        return none
+    return [address_told(module_text.read_address(written), span: span)]
+
+# An address told where it is the whole of what a `use` names, quoted or not:
+# the repair, a `guess`, writes the entry and the module in its place.
+function address_told(held: module_text.Address, span: token.Span) -> diag.Diagnostic
+    written = "<" + held.entry + ">/" + held.module
+    return repaired(
+        code: "use_holds_an_address",
+        message: module_text.address_said(address: held.address, entry: held.entry, module: held.module),
+        span: span,
+        written: written,
+        offered: held.entry.len() > 0 && held.module.len() > 0,
+        certain: false
+    )
+
+## Reading the line
+
+# The tokens from `at` to the end of its line: its terminator, a comment, the
+# end of the text, or a token on a later line (a `use` plants no terminator
+# after punctuation, `use_line.skip_rest_of_line`). Never empty.
+function line_at(tokens: [token.Token], at: i64, text: str) -> [token.Token]
+    out: [token.Token] @= [tokens[at]]
+    probe: i64 @= at + 1
+
+    while probe < tokens.len() && on_the_line(tokens[probe], text, from: tokens[at].span.start)
+        out @ out.push(tokens[probe])
+        probe @ probe + 1
+
+    return out
+
+function on_the_line(t: token.Token, text: str, from: i64) -> bool
+    if t.kind == .terminator || t.kind == .eof || t.kind == .comment || t.kind == .indent || t.kind == .dedent
+        return false
+    return module_text.one_line(text, from: from, to: t.span.start)
+
+# Where the mark's `>` stands in `line`, or -1 where the line has none.
+function closing(line: [token.Token]) -> i64
+    for at in range(from: 1, to: line.len())
+        if line[at].kind == .gt
+            return at
+
+    return -1
+
+# Whether a `.` stands between the brackets, or before the line's end where
+# they never close: an address's dots (`<github.com/acme/json>`).
+function dotted_inside(line: [token.Token], close: i64) -> bool
+    end: i64 @= close
+
+    if end < 0
+        end @ line.len()
+
+    for at in range(from: 1, to: end)
+        if line[at].kind == .dot
+            return true
+
+    return false
+
+# Whether each of the first `upto` + 1 tokens touches the one before it.
+function touching(line: [token.Token], upto: i64) -> bool
+    for at in range(from: 1, to: upto + 1)
+        if at < line.len() && line[at].span.start != line[at - 1].span.end
+            return false
+
+    return true
+
+# Whether nothing follows `from` but an `as` and a name, what a repair of the
+# mark leaves standing as it was.
+function ends_cleanly(line: [token.Token], text: str, from: i64) -> bool
+    if from >= line.len()
+        return true
+    return from + 2 == line.len() && line[from].kind == .ident && text_of(text, line[from]) == keywords.WORD_AS && line[from + 1].kind == .ident
+
+function text_of(text: str, t: token.Token) -> str
+    return text.slice(from: t.span.start, to: t.span.end)
+
+## The refusals
+
+function refused(code: str, message: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: code, message: message, span: span)
+
+# A refusal with, where `offered`, the repair that writes `written` over
+# `span`, `certain` or a `guess`.
+function repaired(code: str, message: str, span: token.Span, written: str, offered: bool, certain: bool) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(code: code, message: message, span: span)
+
+    if offered
+        certainty: diag.Certainty @= .guess
+
+        if certain
+            certainty @ .certain
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `" + written + "`", replacement: written, span: span, certainty: certainty)
+        )
+    return d
+
+# `use <"json">/parse`: the name is bare between the brackets. Certain where
+# the quotes hold a name and the mark goes on as one does.
+function quoted_name(line: [token.Token], text: str) -> diag.Diagnostic
+    inner = module_text.unquote(text_of(text, line[1]))
+    whole = line.len() > 4 && line[2].kind == .gt && line[3].kind == .slash && line[4].kind == .ident
+    named = module_text.is_one_part(inner)
+    module: str @= "parse"
+    name: str @= "json"
+
+    if whole
+        module @ text_of(text, line[4])
+
+    if named
+        name @ inner
+    d: diag.Diagnostic @= refused(
+        code: "package_name_quoted",
+        message: "a package's name is written bare between `<` `>`, never quoted — `use <" + name + ">/" + module + "`",
+        span: line[1].span
+    )
+
+    if named && whole
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `<" + inner + ">`", replacement: inner, span: line[1].span, certainty: .certain)
+        )
+    return d
+
+# `use <json/parse>`: the whole path inside. Certain where the names are a
+# path and nothing but an `as` follows the `>`.
+function whole_path_inside(line: [token.Token], text: str, close: i64) -> diag.Diagnostic
+    parts: [str] @= []
+    path: bool @= close % 2 == 0
+
+    for at in range(from: 1, to: close)
+        if at % 2 == 1 && line[at].kind == .ident
+            parts @ parts.push(text_of(text, line[at]))
+        else if at % 2 == 1 || line[at].kind != .slash
+            path @ false
+
+    written = "<" + parts[0] + ">/" + parts.slice(from: 1, to: parts.len()).join("/")
+    span = token.Span(start: line[0].span.start, end: line[close].span.end)
+    return repaired(
+        code: "package_mark_holds_a_path",
+        message: "only the package's name goes between `<` `>`, its module after them — `use " + written + "`",
+        span: span,
+        written: written,
+        offered: path && parts.len() > 1 && ends_cleanly(line, text, from: close + 1),
+        certain: true
+    )
+
+# `use <json>.parse`: a dot for the slash after the mark. Certain where
+# nothing but an `as` follows the module's name.
+function dot_after(line: [token.Token], text: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= refused(
+        code: "package_wants_a_slash",
+        message: "a package's module follows its `>` after a `/`, not a `.` — `use <" + text_of(text, line[1]) + ">/" + text_of(text, line[4]) + "`",
+        span: line[3].span
+    )
+
+    if ends_cleanly(line, text, from: 5)
+        d.fixes @ d.fixes.push(diag.Fix(title: "write `/`", replacement: "/", span: line[3].span, certainty: .certain))
+    return d
+
+# `use <github.com/acme/json>/parse`: an address in the mark, its module after
+# the mark or inside it. The repair is a `guess`, the address's last part.
+function address(line: [token.Token], text: str, close: i64) -> diag.Diagnostic
+    last: i64 @= close - 1
+    end: i64 @= close
+
+    if close < 0
+        last @ line.len() - 1
+        end @ last
+    span = token.Span(start: line[0].span.start, end: line[end].span.end)
+    held = module_text.read_address(module_text.unquote(text.slice(from: line[1].span.start, to: line[last].span.end)))
+    after = module_after(line, text, close: close)
+
+    if after.len() > 0
+        return repaired(
+            code: "use_holds_an_address",
+            message: module_text.address_said(address: held.address, entry: held.entry, module: after),
+            span: span,
+            written: "<" + held.entry + ">",
+            offered: held.entry.len() > 0,
+            certain: false
+        )
+
+    if close < 0 || !ends_cleanly(line, text, from: close + 1)
+        return refused(
+            code: "use_holds_an_address",
+            message: module_text.address_said(address: held.address, entry: held.entry, module: held.module),
+            span: span
+        )
+    return address_told(held, span: span)
+
+# The path written after a mark's `>` and its `/`, "" where none is.
+function module_after(line: [token.Token], text: str, close: i64) -> str
+    if close < 0 || close + 2 >= line.len() || line[close + 1].kind != .slash || line[close + 2].kind != .ident
+        return ""
+    at: i64 @= close + 2
+
+    while at + 2 < line.len() && line[at + 1].kind == .slash && line[at + 2].kind == .ident
+        at @ at + 2
+
+    return text.slice(from: line[close + 2].span.start, to: line[at].span.end)

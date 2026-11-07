@@ -1,0 +1,22 @@
+# Fixed defect 2308, 2026-11-08, lane pm-use (found by M-core-packages'
+# coordinator): the message for a quoted `use` wrote the quotes' text after
+# `use`, unchecked, and six of seven shapes were advised a line the compiler
+# refuses. A line is advised, and written for certain, only where the parser
+# reads it: a path, a file's name with its `.hero`, a path under `./`, a
+# package's module. An address is told as an address (panel 235's R18); a
+# word of the language, a name that is no name, nothing at all and a climb
+# are each told why, with no line to copy.
+use "fixedbugs2308/csv"  #~ use_wants_a_name
+use "fixedbugs2308/geom.hero"  #~ use_wants_a_name
+use "./fixedbugs2308/lines"  #~ use_wants_a_name
+use "github.com/acme/toml"  #~ use_holds_an_address
+use "github.com/acme/toml/read"  #~ use_holds_an_address
+use "my-lib"  #~ use_wants_a_name
+use ""  #~ use_wants_a_name
+use "../x"  #~ use_wants_a_name
+use "a b"  #~ use_wants_a_name
+use "let"  #~ use_wants_a_name
+use "<json>/parse"  #~ use_wants_a_name
+
+function main()
+    print(csv.x() + geom.y() + lines.z())
