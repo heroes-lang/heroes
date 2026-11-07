@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2321-a-field-declared-twice-with-two-types-is-read-as-the-first.hero:9:5: error[field_declared_twice]: `a` is already a field of `R`, declared at line 8 — a field is named once, or a construction and a read could not say which; rename one or remove it
+tests/golden/check/fixedbugs-2321-a-field-declared-twice-with-two-types-is-read-as-the-first.hero:12:14: error[type_mismatch]: expected `i64`, found `str`

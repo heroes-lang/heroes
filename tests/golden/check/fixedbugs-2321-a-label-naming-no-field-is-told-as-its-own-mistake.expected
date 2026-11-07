@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2321-a-label-naming-no-field-is-told-as-its-own-mistake.hero:8:5: error[field_declared_twice]: `a` is already a field of `R`, declared at line 7 — a field is named once, or a construction and a read could not say which; rename one or remove it
+tests/golden/check/fixedbugs-2321-a-label-naming-no-field-is-told-as-its-own-mistake.hero:11:11: error[wrong_label]: `R` has nothing called `b` at this position — it is `a`

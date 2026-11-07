@@ -1,0 +1,11 @@
+# fixedbugs, defect 2321, 2026-11-07: a construction naming nothing, of a
+# record declaring `a` twice. It misses `a` whichever way the declaration
+# is repaired, so it is told, and the message names the fields once each,
+# `a:`, where it named `a:, a:`, which no construction can give.
+record R
+    a: i64
+    a: i64  #~ field_declared_twice
+
+function main()
+    r = R()  #~ missing_fields
+    print(r.a)

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2321-a-construction-naming-a-field-declared-twice-once-is-told-nothing-more.hero:11:5: error[field_declared_twice]: `a` is already a field of `R`, declared at line 10 — a field is named once, or a construction and a read could not say which; rename one or remove it

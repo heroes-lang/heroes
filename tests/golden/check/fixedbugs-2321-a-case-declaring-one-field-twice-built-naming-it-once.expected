@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2321-a-case-declaring-one-field-twice-built-naming-it-once.hero:9:9: error[field_declared_twice]: `x` is already a field of `Shape.dot`, declared at line 8 — a field is named once, or a construction and a read could not say which; rename one or remove it

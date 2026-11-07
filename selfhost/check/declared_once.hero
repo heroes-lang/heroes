@@ -9,7 +9,10 @@
 # `.one`.
 #
 # Told at the second declaration, naming the first's line, once for each
-# name declared again. Two codes of their own and no thesis rule
+# name declared again, and told once: a construction of the record or the
+# case that gives a value per field as written, or one per name as the
+# first declarations leave it, is told nothing more (`standing`, defect
+# 2321). Two codes of their own and no thesis rule
 # (`diag.hero`'s list, which `--permissive` drops): a declaration holding
 # one name twice has no meaning a language without the rule could give it,
 # since which field `r.a` reads, or which case `.one` builds, is the
@@ -22,9 +25,14 @@ use token
 use check/state
 
 function told(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    index: i64 @= -1
+
     for decl in decls
+        index @ index + 1
+
         match decl.kind
-            .record_decl rec => fields(@c, s, holder: source.span_text(s, decl.name), declared: rec.fields)
+            .record_decl rec =>
+                fields(@c, s, decl: index, holder: source.span_text(s, decl.name), declared: rec.fields)
             .variant_decl v =>
                 holder = source.span_text(s, decl.name)
                 seen: {str: i64} @= {}
@@ -41,11 +49,12 @@ function told(@c: state.Checker, s: source.Source, decls: [ast.Decl])
                             @c,
                             case_twice(name: name, holder: holder, first: at, span: one_case.name)
                         )
-                    fields(@c, s, holder: holder + "." + name, declared: one_case.fields)
+                    fields(@c, s, decl: index, holder: holder + "." + name, declared: one_case.fields)
             .constant_decl | .function_decl | .test_decl => continue
 
-# Each field name of one record or one case, the second of a name told.
-function fields(@c: state.Checker, s: source.Source, holder: str, declared: [ast.Field])
+# Each field name of one record or one case, the second of a name told and
+# its declaration `decl` marked, so a construction of it asks `standing`.
+function fields(@c: state.Checker, s: source.Source, decl: i64, holder: str, declared: [ast.Field])
     seen: {str: i64} @= {}
 
     for field in declared
@@ -55,8 +64,40 @@ function fields(@c: state.Checker, s: source.Source, holder: str, declared: [ast
         if first.is_err()
             seen[name] @ field.name.start
         else
+            c.doubled[decl] @ true
             at = source.elsewhere(s, here: field.name.start, there: first.must())
             state.push_diagnostic(@c, field_twice(name: name, holder: holder, first: at, span: field.name))
+
+# The fields of declaration `decl`, a record's or one of its cases', that a
+# construction giving `given` values is checked against. As written, where
+# `told` found no name declared twice in it, or where the construction
+# gives a value per field written, every label then in place (defect
+# 2317's cases). Otherwise each name's first declaration, the one a read
+# `r.a` reaches, since the second is refused where it stands
+# (`reach.case_named` rules a case the same way): `R(a: 1)` named `a` once
+# and was told it missed `a:, a:`, a construction no program can write
+# (defect 2321), and `R()` is told it misses `a:`, which every repair of
+# the declaration leaves it missing.
+function standing(s: source.Source, doubled: {i64: bool}, decl: i64, declared: [ast.Field], given: i64) -> [ast.Field]
+    # Empty in every program that declares no name twice, which so pays
+    # no lookup and no table for any construction it makes.
+    if doubled.len() == 0 || given == declared.len() || doubled[decl].is_err()
+        return declared
+    return first_of_each(s, declared: declared)
+
+# Each name's first declaration among `declared`, in their order.
+function first_of_each(s: source.Source, declared: [ast.Field]) -> [ast.Field]
+    seen: {str: bool} @= {}
+    kept: [ast.Field] @= []
+
+    for field in declared
+        name = source.span_text(s, field.name)
+
+        if seen[name].is_err()
+            seen[name] @ true
+            kept @ kept.push(field)
+
+    return kept
 
 function field_twice(name: str, holder: str, first: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(

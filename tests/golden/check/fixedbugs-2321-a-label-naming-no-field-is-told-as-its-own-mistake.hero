@@ -1,0 +1,12 @@
+# fixedbugs, defect 2321, 2026-11-07: a construction labelling a field the
+# record does not have, of a record declaring `a` twice. It was told that
+# it missed `a:, a:`; read against each name's first declaration, its own
+# mistake is told, the label `b` where the field is `a`, true whichever
+# way the declaration is repaired.
+record R
+    a: i64
+    a: i64  #~ field_declared_twice
+
+function main()
+    r = R(b: 1)  #~ wrong_label
+    print(r.a)

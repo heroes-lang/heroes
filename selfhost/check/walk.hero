@@ -74,6 +74,7 @@ use check/settling
 use check/empty_binding
 use check/width_class
 use check/given_width
+use check/declared_once
 use check/exit_code
 use check/discard
 use check/kept_cells
@@ -1856,7 +1857,7 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
             name = source.span_text(s, decls[decl].name)
             expected: [FieldSpec] @= []
 
-            for f in rec.fields
+            for f in declared_once.standing(s, doubled: c.doubled, decl: decl, declared: rec.fields, given: given.len())
                 expected @ expected.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
 
             declared_at = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
@@ -1952,7 +1953,7 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
                 return
             expected_fields: [FieldSpec] @= []
 
-            for f in v.cases[found].fields
+            for f in declared_once.standing(s, doubled: c.doubled, decl: decl, declared: v.cases[found].fields, given: given.len())
                 expected_fields @ expected_fields.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
 
             declared_at = source.elsewhere(s, here: span.start, there: v.cases[found].name.start)

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2321-a-field-declared-twice-around-another-is-told-once.hero:9:5: error[field_declared_twice]: `value` is already a field of `Reading`, declared at line 7 — a field is named once, or a construction and a read could not say which; rename one or remove it
