@@ -18,6 +18,8 @@
 
 use text_lines
 use bytes
+use keywords
+use foreign_words
 
 # Whether two offsets stand on one line: the distance between them, never
 # each one's line number, a walk from the text's first byte that made a file
@@ -186,6 +188,100 @@ function address_said(address: str, entry: str, module: str) -> str
         return said + "`use <" + entry + ">/parse`, `" + entry + "` standing for the entry the catalogue gives that address and `parse` for one of the package's modules"
     return said + "`use <json>/parse`, `json` standing for the entry the catalogue gives that address and `parse` for one of the package's modules"
 
+## A quoted `use`
+
+# What a quoted `use` is told (defect 2308): the line its quotes hold where
+# that is a line a `use` reads, with the repair writing it, `certain` since
+# the file it reads is the one the quotes named; and where it is not, why not,
+# with no line to copy. The advice was the quotes' text written after `use`,
+# unchecked, and six of the seven shapes tried named a line the compiler
+# refuses.
+record Quoted
+    message: str
+    # The name the repair writes in the quotes' place, "" where none is.
+    repair: str
+
+function quoted(inner: str) -> Quoted
+    said = "a module is named, not quoted"
+
+    if inner.len() == 0
+        return Quoted(
+            message: said + ", and these quotes hold nothing — `use geom` reads `geom.hero` from the directory of the file you compile",
+            repair: ""
+        )
+    path: str @= inner
+
+    if path.len() > 2 && path.slice(from: 0, to: 2) == "./"
+        path @ path.slice(from: 2, to: path.len())
+
+    if path.len() > 5 && path.slice(from: path.len() - 5, to: path.len()) == ".hero"
+        path @ path.slice(from: 0, to: path.len() - 5)
+
+    if is_marked_path(path)
+        return Quoted(
+            message: said + " — write `use " + path + "`, which reaches the module `" + path.slice(from: mark_end(path) + 2, to: path.len()) + "` of the package `" + path.slice(from: 1, to: mark_end(path)) + "`",
+            repair: path
+        )
+
+    if is_use_path(path)
+        return Quoted(
+            message: said + " — write `use " + path + "`, which reads `" + path + ".hero` from the directory of the file you compile",
+            repair: path
+        )
+
+    if climbs(path)
+        return Quoted(
+            message: said + ", and `" + inner + "` climbs: every `use` starts at the directory of the file you compile, and a module above it belongs to a different program",
+            repair: ""
+        )
+    return Quoted(
+        message: said + ", and `" + inner + "` is no module's name: each part of a `use` path is a name, letters, digits and `_` not opening with a digit and no word of the language, so a file named otherwise is one no `use` reaches",
+        repair: ""
+    )
+
+# Whether `s`, written after `use`, is a path the parser reads: names joined
+# by `/`, each one no keyword and no word the lexer refuses as a name
+# (`foreign_words.declared_word`: `use let` is refused at `let`).
+function is_use_path(s: str) -> bool
+    if !is_module_name(s)
+        return false
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len() + 1)
+        if at == s.len() || s[at] == '/'
+            part = s.slice(from: start, to: at)
+
+            if !keywords.keyword(part).is_err() || !foreign_words.declared_word(part).is_err()
+                return false
+            start @ at + 1
+
+    return true
+
+# `<json>/parse`: a package's mark, then a path.
+function is_marked_path(s: str) -> bool
+    end = mark_end(s)
+    return end > 1 && is_use_path(s.slice(from: 1, to: end)) && !has_slash(s.slice(from: 1, to: end)) && end + 1 < s.len() && s[end + 1] == '/' && is_use_path(s.slice(from: end + 2, to: s.len()))
+
+function mark_end(s: str) -> i64
+    if s.len() == 0 || s[0] != '<'
+        return -1
+
+    for at in range(from: 1, to: s.len())
+        if s[at] == '>'
+            return at
+
+    return -1
+
+function has_slash(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] == '/'
+            return true
+
+    return false
+
+function climbs(s: str) -> bool
+    return s == ".." || s.len() >= 3 && s.slice(from: 0, to: 3) == "../" || !bytes.locate(text: s, needle: "/../", from: 0).is_err()
+
 # Rust writes `quoted.trim_matches('"')`; the port says it in five lines, which
 # is the same shape the lexer's own scanners use — the delimiters are known to
 # be there because the token is a `str_lit`.
@@ -243,3 +339,15 @@ test "an address is told apart from a path and a file's name, and its entry gues
     # Each advice names a line this compiler reads: an entry, then a module.
     said = address_said(address: "github.com/acme/json", entry: "json", module: "parse")
     assert !bytes.locate(text: said, needle: "`use <json>/parse`", from: 0).is_err()
+
+test "a quoted use is advised the line it meant only where the parser reads that line (defect 2308)"
+    assert quoted("geom").repair == "geom"
+    assert quoted("shapes/geom").repair == "shapes/geom"
+    assert quoted("geom.hero").repair == "geom"
+    assert quoted("./lex/token").repair == "lex/token"
+    assert quoted("<json>/parse").repair == "<json>/parse"
+
+    # No line is advised that the compiler refuses: a word of the language, a
+    # name it is not, nothing at all, a climb.
+    for refused in ["", "let", "if", "int", "my-lib", "a b", "../x", "shapes//geom", "2geom", "<json>", "<a/b>/c"]
+        assert quoted(refused).repair == ""

@@ -315,3 +315,17 @@ test "a package's mark: each habit is told, and only a sure repair is certain"
 
     renamed = parse.parse("use <json/parse> as p\n")
     assert renamed.diagnostics[0].fixes.len() == 1
+
+# Defect 2308's promise held to the parser itself: every line a quoted `use`
+# is advised, and its certain repair writes, is one the parser reads, and a
+# shape with no such line is advised none.
+test "a quoted use is repaired only into a line the parser reads (defect 2308)"
+    for inner in ["geom", "shapes/geom", "geom.hero", "./lex/token", "<json>/parse", "", "let", "if", "int", "my-lib", "a b", "../x", "github.com/acme/csv", "<json>"]
+        p = parse.parse("use \"" + inner + "\"\n")
+        assert p.diagnostics.len() == 1
+
+        for fix in p.diagnostics[0].fixes
+            if fix.certainty == .certain
+                repaired = parse.parse("use " + fix.replacement + "\n")
+                assert repaired.diagnostics.len() == 0
+                assert repaired.uses.len() == 1

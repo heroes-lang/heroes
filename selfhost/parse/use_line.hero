@@ -32,6 +32,7 @@ use ast
 use keywords
 use bytes
 use parse/use_mark
+use package_mark
 use use_dots
 
 ## The declaration
@@ -250,28 +251,28 @@ function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
 ## The two refusals a use line has always had
 
 # `use "geom"` — the shape four other languages write. The quotes are part of
-# the literal's span, so the replacement is its own text with them removed —
-# and it is only CERTAIN when what is left is a name this language could have
-# accepted, which since M-package-layout includes a path.
-#
-# The message stopped saying *"beside this one"* with the same landing: that
-# was true of every module while the tree was flat and is false of a path,
-# so it names the file the `use` reads and where the reading starts instead.
+# the literal's span, so the repair is the line they hold, written in their
+# place, and **it is advised only where the parser reads that line** (defect
+# 2308): until then the message wrote the quotes' text after `use` unchecked,
+# and of seven quoted shapes six were advised a line the compiler refuses,
+# `use github.com/acme/csv`, `use geom.hero`, `use my-lib`, `use ../x`.
+# `module_text.quoted` decides what a quoted name holds; an address there is
+# told as one on a bare line (`package_mark.address_told`, panel 235's R18).
 function quoted_module(@c: cursor.Cursor, text: str)
     s = cursor.current_span(c)
-    quoted = cursor.slice_of(text, s)
-    inner = module_text.unquote(quoted)
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "use_wants_a_name",
-        message: "a module is named, not quoted — write `use " + inner + "`, which reads `" + inner + ".hero` from the directory of the file you compile",
-        span: s
-    )
+    inner = module_text.unquote(cursor.slice_of(text, s))
 
-    if module_text.is_module_name(inner)
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "write `use " + inner + "`", replacement: inner, span: s, certainty: .certain)
-        )
-    cursor.say(@c, d)
+    if module_text.is_address(inner)
+        cursor.say(@c, package_mark.address_told(module_text.read_address(inner), span: s))
+    else
+        said = module_text.quoted(inner)
+        d: diag.Diagnostic @= diag.new_diagnostic(code: "use_wants_a_name", message: said.message, span: s)
+
+        if said.repair.len() > 0
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: "write `use " + said.repair + "`", replacement: said.repair, span: s, certainty: .certain)
+            )
+        cursor.say(@c, d)
     _ = cursor.bump(@c)
 
     # The line goes on as a name's would: `as g` is its alias, and anything
