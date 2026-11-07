@@ -1,0 +1,33 @@
+# fixedbugs, defect 2291, 2026-11-07: `examples/sqlite` and `examples/ledger`
+# bound `sqlite3_close` with `consumes` and no `when 0`, so a close SQLite
+# refused was counted as the connection given back. While a statement of the
+# connection is still prepared SQLite answers 5, `SQLITE_BUSY`, and closes
+# nothing: a close before a finalize printed 5 and exited 0 with the
+# connection open, and a program that read SQLite's reason off the connection
+# it kept was stopped as one using a handle it had given back. With `when 0`,
+# the binding both programs carry since, the refused close ends nothing: the
+# reason is read off the connection still open, the statement still steps and
+# is finalized, and the second close is the one that ends the life, nothing
+# owed at exit.
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    function sqlite3_open(filename: cstr lent, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64 when 0
+    function sqlite3_errmsg(db: Db) -> cstr
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_step(statement: Stmt) -> i64
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+
+function main()
+    db: Db @= nullptr
+    assert sqlite3_open(":memory:".cstr(), @db) == SQLITE_OK
+    statement: Stmt @= nullptr
+    tail: cstr @= nullptr
+    assert sqlite3_prepare_v2(db: db, sql: "select 1".cstr(), length: -1, statement: @statement, tail: @tail) == SQLITE_OK
+    print("a close with a statement prepared: ", sqlite3_close(db))
+    print("sqlite says: ", sqlite3_errmsg(db).validated().default("nothing"))
+    print("the statement still steps: ", sqlite3_step(statement))
+    print("finalized: ", sqlite3_finalize(statement))
+    print("closed: ", sqlite3_close(db))

@@ -1,0 +1,24 @@
+# fixedbugs, defect 2291, 2026-11-07: the defect's own reproducer, with the
+# binding as `examples/sqlite` and `examples/ledger` carry it since. A close
+# before the finalize is refused, `SQLITE_BUSY`, and until the binding said
+# `when 0` the connection was counted given back: the program printed 5 and 0
+# and exited 0 with the connection open, which no instrument on this Mac or
+# LeakSanitizer on Linux reported. Now the refused close ends nothing, nobody
+# closes again, and `main` returning with the connection still owed is
+# stopped, naming the open that was never given back.
+extern "sqlite3.h" link "sqlite3"
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    function sqlite3_open(filename: cstr lent, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64 when 0
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+
+function main()
+    db: Db @= nullptr
+    assert sqlite3_open(":memory:".cstr(), @db) == 0
+    statement: Stmt @= nullptr
+    tail: cstr @= nullptr
+    assert sqlite3_prepare_v2(db: db, sql: "select 1".cstr(), length: -1, statement: @statement, tail: @tail) == 0
+    print(sqlite3_close(db))
+    print(sqlite3_finalize(statement))

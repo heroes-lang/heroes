@@ -41,19 +41,39 @@ function main()
 
     if built.is_err()
         print("the ledger could not be built: ", err_text_of(built))
-        _ = sqlite.closed(@db)
+        given_back(@db)
         exit(1)
     shown = show(db)
 
     if shown.is_err()
         print("the ledger could not be read back: ", err_text_of(shown))
-        _ = sqlite.closed(@db)
+        given_back(@db)
         exit(1)
-    _ = sqlite.closed(@db)
+    given_back(@db)
+
+# The connection given back, or the program stopped saying why SQLite kept it
+# open (`sqlite.closed`). Told and then `exit(1)`, as every failure here is,
+# because `exit` ends the program before the runtime's count of the handles
+# never given back: a refused close followed by `exit` with nothing printed is
+# the silence defect 2291 was.
+function given_back(@db: sqlite.Db)
+    closing = sqlite.closed(@db)
+
+    if closing.is_err()
+        print("sqlite would not close the database: ", err_text_of(closing))
+        exit(1)
 
 # The schema, the accounts and the entries — the entries through ONE
 # prepared statement, bound and stepped and reset ten times, which is the
 # shape `examples/sqlite/` does not have.
+#
+# **EVERY STATEMENT IS FINALIZED ON EVERY PATH, the refused ones too.** A
+# statement left prepared makes SQLite refuse the close (defect 2291), and a
+# `?` between `prepared` and `finalized` is a path that leaves one: until that
+# repair a refusal inside a loop or a query below returned through its `?`
+# with the statement still prepared. So what can be refused works in a
+# function of its own, and its answer is kept, the statement finalized, and
+# only then the answer handed on.
 function build(db: sqlite.Db) -> ()?
     sqlite.run(db, "create table account(name text primary key, kind text not null)")?
     sqlite.run(db, "create table entry(id integer primary key, account text not null, memo text not null, cents integer not null)")?
@@ -62,16 +82,28 @@ function build(db: sqlite.Db) -> ()?
     # reason to name `begin` and `commit` rather than describing them.
     sqlite.run(db, "begin")?
     accounts: sqlite.Statement @= sqlite.prepared(db, "insert into account(name, kind) values (?, ?)")?
+    put_accounts = inserted_accounts(accounts)
+    _ = sqlite.finalized(@accounts)
+    put_accounts?
+    rows: sqlite.Statement @= sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
+    put_entries = inserted_entries(rows)
+    _ = sqlite.finalized(@rows)
+    put_entries?
+    sqlite.run(db, "commit")?
+    return ok()
 
+# Every account through the one statement `build` prepared and finalizes.
+function inserted_accounts(accounts: sqlite.Statement) -> ()?
     for a in entry.accounts()
         sqlite.bind_text(statement: accounts, at: 1, text: a.name)?
         sqlite.bind_text(statement: accounts, at: 2, text: a.kind)?
         _ = sqlite.stepped(accounts)?
         sqlite.reset(accounts)?
 
-    _ = sqlite.finalized(@accounts)
-    rows: sqlite.Statement @= sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
+    return ok()
 
+# Every entry through the one statement `build` prepared and finalizes.
+function inserted_entries(rows: sqlite.Statement) -> ()?
     for e in entry.book()
         sqlite.bind_int(statement: rows, at: 1, value: e.id)?
         sqlite.bind_text(statement: rows, at: 2, text: e.account)?
@@ -80,8 +112,6 @@ function build(db: sqlite.Db) -> ()?
         _ = sqlite.stepped(rows)?
         sqlite.reset(rows)?
 
-    _ = sqlite.finalized(@rows)
-    sqlite.run(db, "commit")?
     return ok()
 
 # The report, and the check. Four queries: the joined balances, the whole
@@ -144,6 +174,12 @@ function show(db: sqlite.Db) -> ()?
 # order is no more promised than a map's key order.
 function queried_balances(db: sqlite.Db) -> [entry.Balance]?
     statement: sqlite.Statement @= sqlite.prepared(db, "select account, count(*), sum(cents) from entry group by account order by account")?
+    read = balances_of(statement)
+    _ = sqlite.finalized(@statement)
+    return read
+
+# Every row of the balances' statement, which `queried_balances` finalizes.
+function balances_of(statement: sqlite.Statement) -> [entry.Balance]?
     out: [entry.Balance] @= []
     going: bool @= true
 
@@ -156,50 +192,41 @@ function queried_balances(db: sqlite.Db) -> [entry.Balance]?
                 out @ out.push(entry.Balance(account: name, entries: count, total: entry.Amount(cents: cents)))
             .stepped_done => going @ false
 
-    _ = sqlite.finalized(@statement)
     return ok(out)
 
 # One integer from one row — through the typed cell reader, so a query
 # edited to return text does not answer zero.
 function queried_int(db: sqlite.Db, sql: str) -> i64?
     statement: sqlite.Statement @= sqlite.prepared(db, sql)?
-    value: i64 @= 0
-    found: bool @= false
-
-    match sqlite.stepped(statement)?
-        .stepped_row =>
-            value @ sqlite.integer_of(sqlite.cell(statement: statement, column: 0)?)?
-            found @ true
-        .stepped_done => found @ false
-
+    read = first_int(statement: statement, sql: sql)
     _ = sqlite.finalized(@statement)
+    return read
 
-    if !found
-        return fail(code: "no_row", msg: sql + " answered no rows")
-    return ok(value)
+# The first row's first column as a whole number; `queried_int` finalizes.
+function first_int(statement: sqlite.Statement, sql: str) -> i64?
+    match sqlite.stepped(statement)?
+        .stepped_row  => return sqlite.integer_of(sqlite.cell(statement: statement, column: 0)?)
+        .stepped_done => return fail(code: "no_row", msg: sql + " answered no rows")
 
 function queried_float(db: sqlite.Db, sql: str) -> f64?
     statement: sqlite.Statement @= sqlite.prepared(db, sql)?
-    value: f64 @= 0.0
-    found: bool @= false
-
-    match sqlite.stepped(statement)?
-        .stepped_row =>
-            match sqlite.cell(statement: statement, column: 0)?
-                .float_cell f   => value @ f.value
-                .integer_cell i => value @ to_f64(i.value)
-                .text_cell      => value @ value
-                .null_cell      => value @ value
-                .blob_cell      => value @ value
-
-            found @ true
-        .stepped_done => found @ false
-
+    read = first_float(statement: statement, sql: sql)
     _ = sqlite.finalized(@statement)
+    return read
 
-    if !found
-        return fail(code: "no_row", msg: sql + " answered no rows")
-    return ok(value)
+# The first row's first column as a float, a whole number widened and any
+# other cell read as zero; `queried_float` finalizes.
+function first_float(statement: sqlite.Statement, sql: str) -> f64?
+    match sqlite.stepped(statement)?
+        .stepped_row  => _ = 0
+        .stepped_done => return fail(code: "no_row", msg: sql + " answered no rows")
+
+    return match sqlite.cell(statement: statement, column: 0)?
+        .float_cell f   => ok(f.value)
+        .integer_cell i => ok(to_f64(i.value))
+        .text_cell      => ok(0.0)
+        .null_cell      => ok(0.0)
+        .blob_cell      => ok(0.0)
 
 # Whether two balance lists are the same, account for account. Written out
 # rather than `==` on the arrays, so a failure can say which account
@@ -244,14 +271,14 @@ test "the book goes into the database and comes back unchanged"
     from_db = queried_balances(db).must()
     mine = entry.balances(entry.book())
     assert same_balances(from_db: from_db, mine: mine)
-    _ = sqlite.closed(@db)
+    sqlite.closed(@db).must()
 
 test "sqlite's total and heroes' total are the same number"
     db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
     assert queried_int(db, "select sum(cents) from entry").must() == entry.total(entry.book()).cents
     assert queried_int(db, "select count(*) from entry").must() == entry.book().len()
-    _ = sqlite.closed(@db)
+    sqlite.closed(@db).must()
 
 test "the join agrees with the same join done in Heroes"
     db: sqlite.Db @= sqlite.opened().must()
@@ -267,14 +294,14 @@ test "the join agrees with the same join done in Heroes"
             mine @ mine + e.amount.cents
 
     assert living == mine
-    _ = sqlite.closed(@db)
+    sqlite.closed(@db).must()
 
 test "a statement the database refuses is a refusal here, with sqlite's own words"
     db: sqlite.Db @= sqlite.opened().must()
     bad = sqlite.run(db, "select * from nothing_at_all")
     assert bad.is_err()
     assert lines.holds(text: err_text_of(bad), needle: "no such table")
-    _ = sqlite.closed(@db)
+    sqlite.closed(@db).must()
 
 test "a column read at the wrong type is a refusal and not a zero"
     db: sqlite.Db @= sqlite.opened().must()
@@ -285,7 +312,33 @@ test "a column read at the wrong type is a refusal and not a zero"
     assert sqlite.text_of(cell).must() == "september"
     assert sqlite.integer_of(cell).is_err()
     _ = sqlite.finalized(@statement)
-    _ = sqlite.closed(@db)
+    sqlite.closed(@db).must()
+
+# DEFECT 2291 (2026-11-07): a refusal inside a query returned through its `?`
+# with the statement still prepared, SQLite then refused the close, and the
+# binding counted the refused close as a close. Each query's statement is
+# finalized on every path now, so the close after a refusal is SQLite's yes:
+# a whole number asked of a text column, and a step SQLite refuses, the
+# integer overflow `abs` raises.
+test "a query refused halfway leaves no statement prepared, so the close is not refused"
+    db: sqlite.Db @= sqlite.opened().must()
+    build(db).must()
+    assert queried_int(db, "select memo from entry where id = 1").is_err()
+    assert queried_float(db, "select abs(-9223372036854775808)").is_err()
+    sqlite.closed(@db).must()
+
+# And the close SQLite refuses, on purpose: with a statement still prepared it
+# answers `SQLITE_BUSY`, `closed` tells it in SQLite's words, and the
+# connection is still open and still this program's, so the statement
+# finalized and the close made again give it back.
+test "a close sqlite refuses is told in its words, and the connection still closes after"
+    db: sqlite.Db @= sqlite.opened().must()
+    statement: sqlite.Statement @= sqlite.prepared(db, "select 1").must()
+    refused = sqlite.closed(@db)
+    assert refused.is_err()
+    assert lines.holds(text: err_text_of(refused), needle: "unable to close due to unfinalized statements")
+    _ = sqlite.finalized(@statement)
+    sqlite.closed(@db).must()
 
 test "the prepared statement really is reused: ten entries, one statement"
     db: sqlite.Db @= sqlite.opened().must()
@@ -296,7 +349,7 @@ test "the prepared statement really is reused: ten entries, one statement"
     # what says the statement was reset and reused rather than re-prepared.
     assert sqlite.changed(db) == 1
     assert queried_int(db, "select count(*) from entry").must() == 10
-    _ = sqlite.closed(@db)
+    sqlite.closed(@db).must()
 
 # The message of a failed call, one function per result type — because a
 # generic `err_text<T>(x: T?)` is a shape this language does not have:
