@@ -1,0 +1,12 @@
+# A module of the fixed-bug case beside it, named by the case's other module
+# and not by the case itself.
+
+# Whether s holds part.
+function holds(s: str, part: str) -> bool
+    return s.len() >= part.len()
+
+constant LIMIT: i64
+    3
+
+record Point
+    x: i64
