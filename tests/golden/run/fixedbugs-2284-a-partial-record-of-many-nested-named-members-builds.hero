@@ -1,0 +1,17 @@
+# fixedbugs, defect 2284, 2026-11-07: a group record bound `partial` whose
+# header names many members at depth kept `heroes build` past ten minutes, in
+# the compiler's own lock screen (panel 215's R2): it asked clang whether each
+# member at every depth was a lock, eleven assertions a member, 8,192 named
+# leaves making a unit of 23 MB that the build digested twice; panel 233's
+# ffi-pragmatist measured the work multiplied by 8 to 9.5 at each quadrupling
+# of named members. A member's answer is its type's, so a record is asked once
+# per type it holds, the first member of each in the dump's order naming it
+# (`cli/locks.hero`). This header's 512 leaves are the issue's `n8`.
+extern "fixedbugs-2284-a-partial-record-of-many-nested-named-members-builds.h"
+    record Held tag heroes_nest partial
+        first: i64
+    function heroes_nest_first(h: Held) -> i64
+
+function main()
+    held = Held(first: 7, rest: zero)
+    print(heroes_nest_first(h: held))
