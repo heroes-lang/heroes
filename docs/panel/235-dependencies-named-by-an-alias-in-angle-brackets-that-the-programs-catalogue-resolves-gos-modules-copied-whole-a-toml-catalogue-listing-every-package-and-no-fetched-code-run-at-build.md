@@ -850,3 +850,16 @@ format or JSON; C5, fetched headers' constants read from clang's dump and the pr
 become catalogue entries. No control beat the author's spelling, so no measured case against
 positions 3 and 7 is put. Beside the ratification, the owed measurement: whether to spend part of
 the 19 USD left on the tasks that ask how a catalogue is read, edited and merged.
+
+**RATIFIED, 2026-11-07**, R1 to R20 as adopted, and inside them the three choices as the sitting
+took them: Go's modules with minimal version selection and no lock file; the TOML subset; C5 by
+clang's dump, a fetched header that needs the probe refused. And R15's amendment of panel 234's R2
+with them: the copies of `core/` leave `<program>/core/` and become fingerprinted entries of the
+program's catalogue. The author answered in conversation that evening, meant as: *ok, I ratify*,
+on the coordinator's account of the resolution, which recommended ratifying R1 to R20 as adopted
+and named the three places where the author might choose otherwise and the amendment of panel
+234's R2. So **the conservative resolution of § What the conservative resolution would have been
+is taken in none of the three**. Recorded as a reading (CLAUDE.md § 4). The author may overturn
+it. It does not settle defects 2324 to 2327, filed beside the sitting, nor the measurement left
+owed, the tasks that ask how a catalogue is read, edited and merged; it opens M-package-manager's
+first version, over C.

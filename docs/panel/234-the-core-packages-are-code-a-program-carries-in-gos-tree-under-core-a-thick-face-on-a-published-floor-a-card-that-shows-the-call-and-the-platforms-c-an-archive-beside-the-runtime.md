@@ -688,3 +688,12 @@ resolution would have been is taken in none of the six, and the paired run at th
 place of a run now and one at the close.** Recorded as a reading (CLAUDE.md § 4). The author may
 overturn it; the four defects filed beside the sitting, 2289 to 2292, and R16's route, priced and
 built at its step's own sitting, are not settled by it.
+
+**Amended 2026-11-07 by panel 235's R15, ratified that day** (decision 2329,
+`docs/panel/235-dependencies-named-by-an-alias-in-angle-brackets-that-the-programs-catalogue-resolves-gos-modules-copied-whole-a-toml-catalogue-listing-every-package-and-no-fetched-code-run-at-build.md`):
+R2's placement, a copy of `core/` in each program's own root reached by a bare `use`, fails that
+sitting's question 17 under every spelling (its spec-warden's § 6: a copy left behind compiles as
+the program's own when its catalogue entry is deleted), so the copies become fingerprinted entries
+of the program's catalogue, resolved from a local static index, and `use core/…` becomes `use
+<core>/…`, no old spelling kept. R2's choice of Go's tree for the packages themselves,
+`core/strings` and the rest, stands.

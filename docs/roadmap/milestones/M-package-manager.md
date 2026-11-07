@@ -184,3 +184,20 @@ criterion is measured rather than assumed: the blind seat and the reader test,
 within the author's cap of 25 USD for the whole sitting, compare the
 competing forms on what a model writes right at the first turn and what it
 is told when it does not.
+
+**Panel 235, ratified 2026-11-07** (decision 2329,
+`docs/panel/235-dependencies-named-by-an-alias-in-angle-brackets-that-the-programs-catalogue-resolves-gos-modules-copied-whole-a-toml-catalogue-listing-every-package-and-no-fetched-code-run-at-build.md`):
+R1 to R20 as adopted. The author's `use <name>/module`, a bare `use` the
+program's own; Go's modules in their newest release, the program's catalogue
+the build list, minimal version selection in the verb, no lock file;
+`heroes.toml`, a TOML subset read all or nothing; fingerprints over the
+committed blobs, `path` entries told at every build; fetched code placed where
+no `use` can spell it and checked at every build; `build`, `check` and `run`
+never fetch; the ffi-pragmatist's C1 to C5, no fetched code run at build;
+`heroes add` and `heroes fetch`; the three-inputs rule rewritten; CLAUDE.md §
+2 unchanged; `core` as fingerprinted entries, amending panel 234's R2. **What
+the first version owes, in its lanes**: R12's wording for design.md §3.5,
+`.claude/rules/cli-surface.md` and CLAUDE.md § 10 in one commit; the
+specification's text with the code that makes it true (R13); the `use`
+cluster, defects 2290, 2292, 2308 and 2325, and the header search of C1 with
+defect 2324, in the first lane; R19's goldens before the close.
