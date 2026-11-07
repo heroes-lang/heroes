@@ -1,0 +1,88 @@
+# What a `.` where a `use` path's part belongs says (spec § 1; panel 099 R4;
+# defect 2325, found by panel 235's spec-warden). A path's part is a name, so
+# a dot there is one of four things, each told for what it is:
+#
+# - `..`, a climb: every `use` starts at the directory of the file you compile,
+#   and a module above it belongs to another program (panel 099 R4);
+# - `./`, the directory the path already stands in, which the path is written
+#   without: a certain repair, the line it writes reading the same file;
+# - `.heroes`, a part whose name opens with a dot, which no `use` can spell, so
+#   no module there is reachable (panel 235's R7 rests on it): no repair, the
+#   folder's name being the author's;
+# - `.` alone, a directory and no module.
+#
+# Until defect 2325 all four were told *a `use` path cannot climb*, true of the
+# first alone. Asked by `parse/use_line.hero`, it reads the line's tokens and
+# never the cursor, along the seam `tests/harness/suite_layout.hero`'s
+# `BUDGETS` names.
+
+use token
+use diag
+use module_text
+
+# What the dot at `tokens[at]` is told, `start` being where the path begins,
+# the dot itself where it is the path's first character.
+function told(tokens: [token.Token], at: i64, text: str, start: i64) -> diag.Diagnostic
+    dot = tokens[at].span
+    next = tokens[at + 1]
+    touches = next.span.start == dot.end && module_text.one_line(text, from: dot.start, to: next.span.start)
+
+    if touches && next.kind == .dot
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "module_path_climbs",
+            message: "a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits",
+            span: dot
+        )
+        d.notes @ d.notes.push(
+            "a module above that directory belongs to a different program: give this one its own root, or move the file in"
+        )
+        return d
+
+    if touches && next.kind == .ident
+        name = text.slice(from: dot.start, to: next.span.end)
+        return diag.new_diagnostic(
+            code: "module_path_dot_name",
+            message: "a part of a `use` path is a name, and `" + name + "` opens with a dot: no `use` reaches a file or a folder whose name opens with one, so a module there is no module of this program — give its folder a name a `use` can spell, `" + name.slice(from: 1, to: name.len()) + "`",
+            span: token.Span(start: dot.start, end: next.span.end)
+        )
+
+    if touches && next.kind == .slash
+        return dot_slash(tokens, at: at, text: text, start: start)
+    return diag.new_diagnostic(
+        code: "module_path_names_a_directory",
+        message: "`.` names the directory of the file you compile and no module in it — `use geom` names `geom.hero` there",
+        span: dot
+    )
+
+# `use ./json/parse`, `use lex/./token`: `./` names the directory the path
+# stands in, so it is written without it, and the repair taking it out is
+# certain where the path left is one a `use` reads.
+function dot_slash(tokens: [token.Token], at: i64, text: str, start: i64) -> diag.Diagnostic
+    span = token.Span(start: tokens[at].span.start, end: tokens[at + 1].span.end)
+    last: i64 @= at + 1
+
+    while last + 1 < tokens.len() && in_path(tokens[last + 1].kind) && tokens[last + 1].span.start == tokens[last].span.end
+        last @ last + 1
+
+    written = text.slice(from: start, to: span.start) + text.slice(from: span.end, to: tokens[last].span.end)
+    said = "`./` names the directory the path already stands in, and a `use` path starts at the directory of the file you compile"
+
+    if !module_text.is_module_name(written)
+        return diag.new_diagnostic(
+            code: "module_path_names_a_directory",
+            message: said + ", so the path is written without it",
+            span: span
+        )
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "module_path_names_a_directory",
+        message: said + " — `use " + written + "`, without it",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `use " + written + "`", replacement: "", span: span, certainty: .certain)
+    )
+    return d
+
+# The kinds a path's run of touching tokens holds after `./`.
+function in_path(kind: token.TokenKind) -> bool
+    return kind == .ident || kind == .slash || kind == .dot

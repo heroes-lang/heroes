@@ -32,6 +32,7 @@ use ast
 use keywords
 use bytes
 use parse/use_mark
+use use_dots
 
 ## The declaration
 
@@ -59,7 +60,7 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     # missing name, it is a relative path: the author knows exactly what
     # they meant and the compiler owes them the reason it cannot be written.
     if cursor.at(c, .dot)
-        climbs(@c, text, keyword)
+        climbs(@c, text, keyword, path: cursor.current_span(c).start)
         return
 
     # `use <json>/parse`: a package's module, the mark read by its own module
@@ -127,7 +128,7 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
         _ = cursor.bump(@c)
 
         if cursor.at(c, .dot)
-            climbs(@c, text, keyword)
+            climbs(@c, text, keyword, path: name.start)
             return
 
         if !cursor.at(c, .ident)
@@ -168,8 +169,8 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
 
 ## The three refusals
 
-# `use ../lex/token` — the one refusal whose answer is a design decision
-# rather than a slip, so the message carries the decision.
+# `use ../lex/token`, `use ./lex/token`, `use .heroes/lex` — a dot where a
+# part of the path belongs (panel 099 R4; defect 2325).
 #
 # **There is no climb operator, deliberately** (panel 099 R4, three seats):
 # the spec-warden priced `..` at +7 spec tokens with three silences left
@@ -181,19 +182,14 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
 # the root is a module of a different program, and this is where the author
 # is told.
 #
-# One message for `.`, `..`, `./x` and `../x` alike: they are four spellings
-# of one intent, and the sentence that answers the intent answers all four.
-# The provoking case is a witness, not the class.
-function climbs(@c: cursor.Cursor, text: str, keyword: token.Span)
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "module_path_climbs",
-        message: "a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits",
-        span: cursor.current_span(c)
-    )
-    d.notes @ d.notes.push(
-        "a module above that directory belongs to a different program: give this one its own root, or move the file in"
-    )
-    cursor.say(@c, d)
+# **And only `..` climbs.** Until defect 2325 one message answered every dot
+# here, *a `use` path cannot climb*, so `use ./json/parse` and `use
+# .heroes/json/parse` were told a rule neither broke: `./` names the directory
+# the path already stands in, and a part opening with a dot names a folder no
+# `use` can spell. Each is told for what it is by `use_dots.hero`, which reads
+# the line's tokens; `path` is where the path begins.
+function climbs(@c: cursor.Cursor, text: str, keyword: token.Span, path: i64)
+    cursor.say(@c, use_dots.told(c.tokens, at: c.pos, text: text, start: path))
     skip_rest_of_line(@c, text, from: keyword)
 
 # `use syntax/` and `use syntax /decl` — a separator with no part after it,
@@ -449,9 +445,9 @@ test "three parts, and a space in a path is not a path"
     assert more.len() == 1
     assert cursor.slice_of("use a / b", more[0].name) == "a"
 
-test "a path cannot climb, and one message answers all four spellings"
-    # Panel 099 R4. `..`, `.`, `./x` and `../x` are four spellings of one
-    # intent, so the sentence that answers the intent answers all four.
+test "a path cannot climb, and a dot that does not climb is told what it is"
+    # Panel 099 R4, and defect 2325: `..` climbs, and `./` and a part opening
+    # with a dot do not, so each is told for what it is.
     climb: [token.Token] = [
         token.made(.kw_use, start: 0, end: 3)
         token.made(.dot, start: 4, end: 5)
@@ -483,6 +479,35 @@ test "a path cannot climb, and one message answers all four spellings"
     declaration(@d, @more, "use lex/..")
     assert more.len() == 0
     assert d.diagnostics[0].code == "module_path_climbs"
+
+    # `use ./x`: the directory the path stands in, taken out for certain.
+    here: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.dot, start: 4, end: 5)
+        token.made(.slash, start: 5, end: 6)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.eof, start: 7, end: 7)
+    ]
+    e: cursor.Cursor @= cursor.new_cursor(here)
+    none: [ast.Use] @= []
+    declaration(@e, @none, "use ./x")
+    assert e.diagnostics[0].code == "module_path_names_a_directory"
+    assert e.diagnostics[0].fixes[0].certainty == .certain
+    assert e.diagnostics[0].fixes[0].span == token.Span(start: 4, end: 6)
+
+    # `use .x/y`: a part opening with a dot, which no `use` spells.
+    hidden: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.dot, start: 4, end: 5)
+        token.made(.ident, start: 5, end: 6)
+        token.made(.slash, start: 6, end: 7)
+        token.made(.ident, start: 7, end: 8)
+        token.made(.eof, start: 8, end: 8)
+    ]
+    f: cursor.Cursor @= cursor.new_cursor(hidden)
+    declaration(@f, @none, "use .x/y")
+    assert f.diagnostics[0].code == "module_path_dot_name"
+    assert f.diagnostics[0].fixes.len() == 0
 
 test "a separator with nothing after it names the two modules it is between"
     dangling: [token.Token] = [
