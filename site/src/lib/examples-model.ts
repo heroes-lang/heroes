@@ -37,6 +37,17 @@ const GALLERY = 'examples/gallery';
 /** Files that are the harness's inputs rather than the program's own data. */
 const HARNESS_FILES = new Set(['main.args', 'main.expected', 'main.stdin']);
 
+/**
+ * A file a program's folder holds for its readers and never opens: the folder's
+ * own `README.md`, and a package's card, `core/<path>.md` beside the face module
+ * `core/<path>.hero` it is written from. Shown under no heading.
+ */
+function isDocument(path: string, dir: string): boolean {
+  const name = path.slice(dir.length + 1);
+  if (name === 'README.md') return true;
+  return name.startsWith('core/') && name.endsWith('.md') && isFile(`${path.slice(0, -'.md'.length)}.hero`);
+}
+
 /** The floor the corpus suite carries, and for the same reason: a walk that finds fewer programs than last time is a broken walk, not a smaller corpus. */
 const PROGRAM_FLOOR = 44;
 const GALLERY_FLOOR = 10;
@@ -186,9 +197,30 @@ function buildExample(slug: string, kind: 'program' | 'gallery', dir: string, he
           : 'unrecorded';
   }
 
-  const inputs = otherPaths
-    .filter((path) => !HARNESS_FILES.has(basename(path)))
-    .map((path) => inputFile(path, dir));
+  // What the program reads is asked of the program, never of its folder: a file
+  // a line of its `main.args` names, a header one of its `extern` groups names,
+  // and `main.stdin`. A folder also holds files the program never opens, the
+  // packages program's README and its cards among them, which the folder rule
+  // listed as input (defect 2332). A file that is neither read nor a document
+  // this module knows is a build error, never a skip.
+  const named = new Set(args);
+  const headers = new Set(groups.map((group) => `${dir}/${group.header}`));
+  const inputs: SourceFile[] = [];
+  for (const path of otherPaths) {
+    if (HARNESS_FILES.has(basename(path))) continue;
+    if (named.has(path) || headers.has(path)) {
+      inputs.push(inputFile(path, dir));
+      continue;
+    }
+    if (isDocument(path, dir)) continue;
+    throw new Error(
+      `${path} is in ${dir} and the program does not read it.\n` +
+        `  no line of main.args names it, no extern group names it as a header, and it\n` +
+        `  is neither the folder's README.md nor a package's card. A page lists under\n` +
+        `  Input only what its program reads (defect 2332): name the file in main.args,\n` +
+        `  or teach this module what kind of file it is.`
+    );
+  }
   if (stdinPath !== null) inputs.push(inputFile(stdinPath, dir));
 
   const allPaths = [...heroPaths, ...otherPaths].sort(byBytes);
