@@ -1,0 +1,18 @@
+# fixedbugs, defect 2284's remainder, 2026-11-07: a group record bound
+# `partial` whose header names many members at depth. Once the lock screen
+# asked once per type (lane b23-cli's repair), the build still spent its
+# time in the padding table: `emit/padding.hero`'s `members` gathered a
+# span for each leaf of the layout dump by `joined`, which copied the spans
+# so far every time, so the table cost the square of the leaves; the
+# issue's 131,072 leaves passed 600 s. They are now appended in place. The
+# compiler's own instructions at `-O2` on this program's 2,048 leaves read
+# 6.74 billion before and 4.24 after; on the issue's 8,192, 54.17 and 14.26;
+# and the issue's mebibyte builds in 170.46 billion.
+extern "fixedbugs-2284-a-partial-record-of-two-thousand-nested-named-members-builds-in-linear-work.h"
+    record Held tag fixedbugs_2284_nest partial
+        first: i64
+    function fixedbugs_2284_nest_first(h: Held) -> i64
+
+function main()
+    held = Held(first: 7, rest: zero)
+    print(fixedbugs_2284_nest_first(h: held))
