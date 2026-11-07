@@ -1,0 +1,220 @@
+# Whether a module's file is named as its `use` spells it (spec § 1; panel
+# 234's R3 item 4, the compiler-engineer's shape (b), ratified 2026-11-06;
+# defect 2290). A volume that ignores case, this Mac's APFS and Windows'
+# NTFS, opens `core/strings.hero` for `use Core/Strings`, so a misspelt `use`
+# compiled there and was `unknown_module` on Linux, and one file reached under
+# two spellings compiled twice, `h_CoreStrings_…` beside `h_corestrings_…`.
+# The open answers for the volume; the directory's listing answers for the
+# name, on every machine alike: a module is read only where each part of its
+# path is a name its directory lists, byte for byte.
+#
+# The listings are asked once a directory and kept for the compilation's
+# discovery (`Listed`), so a tree of many modules in few folders costs a scan
+# a folder.
+
+use ast
+use diag
+use source
+use module/names as module_names
+use bytes
+use cli/process
+
+extern "stdlib.h"
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+
+extern "hero_os.h"
+    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+
+# The names each directory lists, by the directory's path and the kind asked,
+# `f` for files and `d` for directories.
+record Listed
+    names: {str: [str]}
+
+function none() -> Listed
+    return Listed(names: {})
+
+# Whether the file `module` names under `opened`, the directory every `use`
+# starts at as files are opened (`modules.open_directory`), is listed under
+# each part's own spelling. A directory that cannot be listed answers no, as
+# a file that is not there does.
+function spelt(@listed: Listed, opened: str, module: str) -> bool
+    parts = split(module)
+    at: i64 @= 0
+    folder: str @= opened
+
+    while at < parts.len()
+        last = at == parts.len() - 1
+        name: str @= parts[at]
+        kind: i64 @= 1
+
+        if last
+            name @ name + ".hero"
+            kind @ 0
+
+        if !holds(names_in(@listed, folder: folder, kind: kind), name: name)
+            return false
+        folder @ folder + parts[at] + "/"
+        at @ at + 1
+
+    return true
+
+# The spellings under `opened` that differ from `module` only in case, each a
+# module's name, for the message an unknown module is told with.
+function others(opened: str, module: str) -> [str]
+    listed: Listed @= none()
+    found: [str] @= [""]
+    parts = split(module)
+    at: i64 @= 0
+
+    while at < parts.len()
+        last = at == parts.len() - 1
+        kind: i64 @= 1
+        want: str @= parts[at]
+
+        if last
+            kind @ 0
+            want @ want + ".hero"
+        grown: [str] @= []
+
+        for prefix in found
+            for name in names_in(@listed, folder: opened + prefix, kind: kind)
+                if same_but_case(a: name, b: want)
+                    grown @ grown.push(prefix + name)
+
+        found @ next_prefixes(grown, last: last)
+        at @ at + 1
+
+    return found
+
+# What a `use` whose module is not in the compilation is told (defect 2290):
+# the plain message where nothing answers, and where the directory lists one
+# file under another case, that file's spelling, repaired for certain, since
+# the line it writes reads the one file the directory holds under any case.
+# The repair keeps what the file calls the module, `as` the old last part
+# where no `as` was written; and it is a `guess` where the file names the
+# module so spelt already, the repair then naming one module twice. Two such
+# files, on a volume that keeps case, are no one repair.
+function unknown(s: source.Source, uses: [ast.Use], used: ast.Use, base: str, name: str) -> diag.Diagnostic
+    said = "there is no module `" + name + "` — `use " + name + "` reads `" + base + name + ".hero`, from the directory of `" + s.name + "`, the file you compile, "
+    spelt_so = others(opened: base, module: name)
+
+    if spelt_so.len() != 1
+        return diag.new_diagnostic(
+            code: "unknown_module",
+            message: said + "and that file is not there",
+            span: used.name
+        )
+    right = spelt_so[0]
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "unknown_module",
+        message: said + "and the directory lists it as `" + base + right + ".hero`: a `use` names a file as its directory lists it, on every machine alike — `use " + right + "`",
+        span: used.name
+    )
+    written: str @= right
+    certainty: diag.Certainty @= .certain
+
+    if used.binding.end == used.name.end && module_names.binding_of(right) != module_names.binding_of(name)
+        written @ right + " as " + module_names.binding_of(name)
+
+    for other in uses
+        if source.file_of(s, other.span.start) == source.file_of(s, used.span.start) && source.span_text(s, other.name) == right
+            certainty @ .guess
+
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `use " + written + "`", replacement: written, span: used.name, certainty: certainty)
+    )
+    return d
+
+## Small readers
+
+function next_prefixes(grown: [str], last: bool) -> [str]
+    out: [str] @= []
+
+    for one in grown
+        if last
+            out @ out.push(one.slice(from: 0, to: one.len() - 5))
+        else
+            out @ out.push(one + "/")
+
+    return out
+
+# A directory's names of one kind, scanned once and kept.
+function names_in(@listed: Listed, folder: str, kind: i64) -> [str]
+    key = kind.to_str() + folder
+    kept = listed.names[key]
+
+    if !kept.is_err()
+        return kept.must()
+    scanned = scan(folder: folder, kind: kind)
+    listed.names[key] @ scanned
+    return scanned
+
+function scan(folder: str, kind: i64) -> [str]
+    where: str @= folder
+
+    if where.len() == 0
+        where @ "."
+    found = hero_dir_scan(root: where.cstr(), want: kind, recursive: 0)
+    out: [str] @= []
+
+    if found < 0
+        return out
+
+    for at in range(from: 0, to: found)
+        status: i64 @= 0
+        marks: i64 @= 0
+        name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
+
+        if status == HERO_OS_OK
+            out @ out.push(name)
+
+    hero_dir_release()
+    return out
+
+function holds(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+function split(module: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: module.len() + 1)
+        if at == module.len() || module[at] == '/'
+            out @ out.push(module.slice(from: start, to: at))
+            start @ at + 1
+
+    return out
+
+# Whether two names are one name but for the case of their ASCII letters.
+function same_but_case(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+
+    for at in range(from: 0, to: a.len())
+        if bytes.lower(a[at]) != bytes.lower(b[at])
+            return false
+
+    return true
+
+## Tests
+
+test "a module is read under the spelling its directory lists, and the other spellings are found"
+    dir = "build/selftest-spelling"
+
+    if process.mkdir_all(dir).is_err() || write_file(path: dir + "/geom.hero", text: "function g() -> i64\n    return 2\n").is_err()
+        return
+    listed: Listed @= none()
+    assert spelt(@listed, opened: dir + "/", module: "geom")
+    assert !spelt(@listed, opened: dir + "/", module: "Geom")
+    assert !spelt(@listed, opened: dir + "/", module: "absent")
+    assert others(opened: dir + "/", module: "GEOM") == ["geom"]
+    assert others(opened: dir + "/", module: "absent").len() == 0
+    assert split("a/b/c") == ["a", "b", "c"]
+    assert same_but_case(a: "Core", b: "core")
+    assert !same_but_case(a: "Core", b: "cores")
