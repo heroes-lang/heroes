@@ -64,29 +64,31 @@ function lowered_to_no_call(name: str) -> bool
 # C union (panel 186 R7, spec § 13). A field's construction is never unlabelled
 # past the checker (§4.9), so a label that names nothing here is the
 # compiler's own fault, and it stops loudly.
+#
+# Each label is found through a map of the record's field names, made once
+# per construction (defect 2288): a scan of every name for every label cost
+# the fields times the labels, 8,192 of each in one record, which put the
+# compiler's own work near the square of a construction's fields. Where two
+# fields share a name the later one's position is kept, as the scan's last
+# match was.
 function given_fields(s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg]) -> [i64]
     out: [i64] @= []
-    names: [str] @= []
+    position: {str: i64} @= {}
 
     match decls[decl].kind
         .record_decl rec =>
+            at: i64 @= 0
+
             for f in rec.fields
-                names @ names.push(source.span_text(s, f.name))
+                position[source.span_text(s, f.name)] @ at
+                at @ at + 1
         .constant_decl | .function_decl | .variant_decl | .test_decl => return out
 
     for arg in given
         assert !arg.name.is_err()
-        label = source.span_text(s, arg.name.must())
-        found: i64 @= -1
-        k: i64 @= 0
-
-        while k < names.len()
-            if names[k] == label
-                found @ k
-            k @ k + 1
-
-        assert found >= 0
-        out @ out.push(found)
+        found = position[source.span_text(s, arg.name.must())]
+        assert !found.is_err()
+        out @ out.push(found.must())
 
     return out
 

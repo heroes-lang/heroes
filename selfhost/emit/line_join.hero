@@ -21,17 +21,24 @@
 # The line written last, not yet in the writer's chunk.
 record Held
     text: str
+    # The C lines written on it after `text`, each with the space before it,
+    # joined once when the line is written (`whole`): a `+` per joined line
+    # copied the line so far, and a Heroes line that lowers to thousands of C
+    # lines, a construction of thousands of fields, cost the square of its
+    # length (defect 2288).
+    beside: [str]
     held: bool
     # Whether a line may be joined onto it: `plain`'s answer, kept.
     plain: bool
 
 function nothing_held() -> Held
-    return Held(text: "", held: false, plain: false)
+    return Held(text: "", beside: [], held: false, plain: false)
 
 # Hold `text` in place of the line held before it, which the writer has
 # written whole.
 function hold(@h: Held, text: str)
     h.text @ text
+    h.beside @ []
     h.held @ true
     h.plain @ plain(text)
 
@@ -42,13 +49,24 @@ function joins(h: Held, text: str) -> bool
 
 # `text` written on the held line, its indentation dropped.
 function write_beside(@h: Held, text: str)
-    h.text @ h.text + " " + unindented(text)
+    grown(@h.beside, text: " " + unindented(text))
+
+# Lent, so the push grows the parts in place (defect 409's spelling,
+# `emit/writer.hero`'s `add_line`).
+function grown(@parts: [str], text: str)
+    parts @ parts.push(text)
+
+# The held line whole, with every line written beside it.
+function whole(h: Held) -> str
+    if h.beside.len() == 0
+        return h.text
+    return h.text + h.beside.join("")
 
 # The held line, ended, or nothing where none is held: the output's last.
 function tail(h: Held) -> str
     if !h.held
         return ""
-    return h.text + "\n"
+    return whole(h) + "\n"
 
 # Whether a line of C may stand on a physical line beside another: not
 # blank, not a directive or a preprocessor line, and holding no newline and
@@ -85,6 +103,14 @@ test "a plain line joins a plain line, and a directive, a blank, a newline or a 
     assert joins(h, text: "    t2 = t1;")
     write_beside(@h, text: "    t2 = t1;")
     assert tail(h) == "    t1 = h0_a; t2 = t1;\n"
+
+    # Every line joined stands in the order written, and a line held after
+    # them starts with none beside it (defect 2288: the joined lines are kept
+    # apart until the line is written whole).
+    write_beside(@h, text: "    t3 = t2;")
+    assert whole(h) == "    t1 = h0_a; t2 = t1; t3 = t2;"
+    hold(@h, text: "    t4 = t3;")
+    assert tail(h) == "    t4 = t3;\n"
 
     for alone in ["", "    ", "#line 3", "  #include \"a.h\"", "x; // y", "a;\nb;"]
         assert !plain(alone)

@@ -190,7 +190,7 @@ function sits_on(w: Writer, file: str, at: i64) -> bool
 # builtin, hence the longer name.)
 function push_line(@w: Writer, text: str)
     if w.held.held
-        add_line(@w.chunk, text: w.held.text + "\n")
+        add_line(@w.chunk, text: line_join.whole(w.held) + "\n")
 
         if len(w.chunk) == CHUNK_LINES
             add_line(@w.chunks, text: join(w.chunk, ""))
