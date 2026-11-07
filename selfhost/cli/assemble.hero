@@ -119,6 +119,10 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # rather than rebuilt per unit. It starts from the probes' own digests
     # (defect 416), the same build's answers about the same headers.
     memo: {str: str} @= lent.digests
+
+    # What each opening of the round reaches, asked once (`compiling.unit_reach`,
+    # defect 2289): a program's plain modules share one opening.
+    opened: {str: str} @= {}
     asked: [value_run.Unit] @= []
 
     # Every unit clang refused, its plan's index and its text, which the
@@ -154,7 +158,8 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             package_flags: settled.unit_words(site, headers: plan.headers),
             source_dir: site.source_dir,
             search_include: options.headers_from,
-            @memo,
+            memo: @memo,
+            opened: @opened,
             @told
         )
 
