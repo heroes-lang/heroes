@@ -1,0 +1,8 @@
+# The module of the fixed-bug case beside it that names `fixedbugs2292/strs`.
+use fixedbugs2292/strs
+
+function count() -> i64
+    return strs.LIMIT
+
+function origin() -> strs.Point
+    return strs.Point(x: 0)

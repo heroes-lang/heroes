@@ -1,0 +1,16 @@
+# Fixed defect 2292, 2026-11-08, lane pm-use (found by panel 234's
+# compiler-engineer): a module written as a qualifier with no `use` of it in
+# the file was told `unknown_name`, with names in scope nobody meant, and then
+# `unknown_function` for the name after the dot, with a `guess` renaming it
+# `fold`; the missing line was named nowhere. It is one message on the
+# qualifier now, naming the `use` the file lacks, with a `guess` writing it at
+# the top: here `fixedbugs2292/strs`, which the case's other module names. A
+# constant read through the same name, and a type written with it, are told
+# the same way; the type was `not_a_module`.
+use fixedbugs2292/helper
+
+function main()
+    print(strs.holds(s: "abc", part: "b"))  #~ unknown_name
+    print(strs.LIMIT + helper.count())  #~ unknown_name
+    p: strs.Point = helper.origin()  #~ unknown_name
+    print(p.x)

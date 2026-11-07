@@ -25,6 +25,7 @@ use resolve/did_you_mean
 use resolve/offered
 use resolve/errors
 use module/diagnostics
+use resolve/missing_use
 use type_text
 
 function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
@@ -151,6 +152,12 @@ function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls:
     reached = resolved.used_module_named(r.out, from: r.module, binding: module)
 
     if reached.is_err()
+        # A module no `use` of this file names, its file there (defect 2292).
+        missing = missing_use.named(r, s, name: module, span: span)
+
+        if !missing.is_err()
+            state.push_diagnostic(@r, missing.must())
+            return
         known = state.used_modules(r)
         state.push_diagnostic(@r, diagnostics.not_a_module(name: module, known: known, span: span))
         return

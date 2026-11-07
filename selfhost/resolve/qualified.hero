@@ -30,6 +30,7 @@ use resolve/offered
 use resolve/errors
 use module/diagnostics
 use resolve/binding as resolve_binding
+use resolve/missing_use
 
 # `geom.f(...)` — the receiver is a module this file names. Returns whether
 # it handled the expression; everything it does not handle falls through to
@@ -38,7 +39,14 @@ function qualified(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     found_module = module_at(r, a, s, receiver)
 
     if found_module.is_err()
-        return false
+        # `strs.holds(…)` beside `strs.hero` and no `use strs`: one message on
+        # the qualifier, naming the line the file lacks, and the name after
+        # the dot left to the module (defect 2292).
+        missing = missing_use.told(r, a, s, receiver, bare: is_bare_name(a, receiver))
+
+        if !missing.is_err()
+            state.push_diagnostic(@r, missing.must())
+        return !missing.is_err()
     module = found_module.must()
     state.keyed_add(@r.module_reads, module: r.module, name: module)
     state.record_use(@r, at: receiver, to: .module)
