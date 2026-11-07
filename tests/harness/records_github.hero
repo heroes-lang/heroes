@@ -671,7 +671,7 @@ function open_at(issue: github_issues.Listed, at: i64) -> bool
 # counts as `blocking` because a tag over an unread report is what the clean
 # list refuses, and an issue opened after the tag was not open at it, so a
 # stranger cannot turn this check red between tags.
-function standing(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: {i64: str}) -> [str]
+function standing(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: {i64: [str]}) -> [str]
     out: [str] @= []
 
     for one in counted(held: held, judged: judged, tags: tags, at_tag: at_tag)
@@ -687,7 +687,7 @@ record Counted
 # What `standing` says, each line with its defect's number. A defect open at
 # the tag that `at_tag` holds no class for is counted and told, since a
 # defect this check did not read is never passed.
-function counted(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: {i64: str}) -> [Counted]
+function counted(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: {i64: [str]}) -> [Counted]
     out: [Counted] @= []
 
     for issue in github_issues.of_kind(held: held, kind: "defect")
@@ -700,12 +700,9 @@ function counted(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: 
                 Counted(number: issue.number, said: told(issue) + "\n      the class it held at " + judged.name + " was never read (`classed_at` asked nothing of it), and a defect this check did not read is never passed")
             )
             continue
-        classed = read.must()
-        moved = moved_since(
-            classed: classed,
-            today: github_issues.label_value(issue: issue, name: "class"),
-            judged: judged
-        )
+        at_labels = read.must()
+        classed = github_issues.class_of(at_labels)
+        moved = moved_since(classed: classed, today: github_issues.class_of(issue.labels), judged: judged) + doubled(labels: at_labels, judged: judged)
 
         if classed == "improvement"
             continue
@@ -731,6 +728,14 @@ function counted(held: github_issues.Listing, judged: Tag, tags: [Tag], at_tag: 
             )
 
     return out
+
+# What a line adds where `labels`, the `class:` labels a defect held at
+# `judged`, are two or more, which `file` never writes (defect 2326): ""
+# where one or none stands.
+function doubled(labels: [str], judged: Tag) -> str
+    if labels.len() < 2
+        return ""
+    return ", the most severe of the " + labels.len().to_str() + " `class:` labels it carried at " + judged.name + ", " + listed_classes(labels) + ", where `file` writes one"
 
 # What a line adds where the class a defect holds today is not the one it
 # held at `judged`: "" where they are the same.
@@ -762,12 +767,12 @@ function moved_since(classed: str, today: str, judged: Tag) -> str
 #
 # **The class at the tag** is the `class:` label standing after every change
 # at or before the tag's instant, to the second, as `open_at` reads an issue's
-# own instants; read as a label of today is (`github_issues.label_value`, the
-# first in sorted order where two stand), so a history that never moved is
-# judged as its label is. **A defect with no `class:` label at the tag
-# counts as `blocking`**, the rule for one with none today: what stood at the
-# tag was a defect nobody had classed, which the clean list refuses, and the
-# check run at the tag's instant read it so.
+# own instants; read as a label of today is (`github_issues.class_of`: the
+# most severe where two stand, which the line counting it says, defect 2326),
+# so a history that never moved is judged as its label is. **A defect with no
+# `class:` label at the tag counts as `blocking`**, the rule for one with none
+# today: what stood at the tag was a defect nobody had classed, which the
+# clean list refuses, and the check run at the tag's instant read it so.
 #
 # **Where an issue's events cannot be read, nothing is judged**: the check is
 # a skip naming the defect and its label today, never a pass or a failure read
@@ -777,22 +782,25 @@ record Classed
     asked: bool
     broken: bool
     why: str
-    at_tag: {i64: str}
+    # The `class:` labels each defect held at the tag, by its number: one in
+    # a sound record, none where it was unclassed, two where `file` was not
+    # the writer (defect 2326).
+    at_tag: {i64: [str]}
 
 function unclassed(broken: bool, why: str) -> Classed
-    none: {i64: str} = {}
+    none: {i64: [str]} = {}
     return Classed(asked: false, broken: broken, why: why, at_tag: none)
 
-# The class each defect of `held` open at `judged` held at its instant, by
-# its number, every such defect asked once.
+# The `class:` labels each defect of `held` open at `judged` held at its
+# instant, by its number, every such defect asked once.
 function classed_at(@s: issue_pace.Session, held: github_issues.Listing, judged: Tag) -> Classed
-    at_tag: {i64: str} @= {}
+    at_tag: {i64: [str]} @= {}
 
     for issue in github_issues.of_kind(held: held, kind: "defect")
         if !open_at(issue: issue, at: judged.at)
             continue
         history = github_labels.history_of(@s, number: issue.number)
-        today = github_issues.label_value(issue: issue, name: "class")
+        today = github_issues.class_of(issue.labels)
         unknown = "the class " + told(issue) + " held at " + judged.name + " is unknown, and its label today, " + said_class(today) + ", is not judged in its place: "
 
         if !history.asked
@@ -805,11 +813,11 @@ function classed_at(@s: issue_pace.Session, held: github_issues.Listing, judged:
 
     return Classed(asked: true, broken: false, why: "", at_tag: at_tag)
 
-# The class `issue` held at `at`, "" for none, from `changes`, the events of
-# its labels oldest first. A history that lost an event, or whose end is not
-# the `class:` labels the issue holds today, fails `short` (the premises of
-# `github_labels`); an instant this cannot read fails `shape`.
-function class_at(issue: github_issues.Listed, changes: [github_labels.Change], at: i64) -> str?
+# The `class:` labels `issue` held at `at`, sorted, from `changes`, the
+# events of its labels oldest first. A history that lost an event, or whose
+# end is not the `class:` labels the issue holds today, fails `short` (the
+# premises of `github_labels`); an instant this cannot read fails `shape`.
+function class_at(issue: github_issues.Listed, changes: [github_labels.Change], at: i64) -> [str]?
     end = github_labels.held_after(changes)
 
     if end.is_err()
@@ -841,11 +849,7 @@ function class_at(issue: github_issues.Listed, changes: [github_labels.Change], 
             code: "short",
             msg: "its label events before the tag are not whole: " + issue_github.failure(standing_then)
         )
-    classes = classes_of(standing_then.must())
-
-    if classes.len() == 0
-        return ok("")
-    return ok(strings.without_prefix(text: classes[0], prefix: "class:"))
+    return ok(classes_of(standing_then.must()))
 
 # The `class:` labels of `labels`, sorted.
 function classes_of(labels: [str]) -> [str]
@@ -1032,13 +1036,13 @@ function fixture(number: i64, title: str, kind: str, extra: [str], body: str, st
         closed: closed
     )
 
-# The class each defect of `held` holds today, by its number: what
+# The `class:` labels each defect of `held` holds today, by its number: what
 # `classed_at` reads of a history whose labels never moved, for a test.
-function unmoved(held: github_issues.Listing) -> {i64: str}
-    out: {i64: str} @= {}
+function unmoved(held: github_issues.Listing) -> {i64: [str]}
+    out: {i64: [str]} @= {}
 
     for issue in github_issues.of_kind(held: held, kind: "defect")
-        out[issue.number] @ github_issues.label_value(issue: issue, name: "class")
+        out[issue.number] @ classes_of(issue.labels)
 
     return out
 
@@ -1543,9 +1547,9 @@ test "a tag is judged by the class each defect held at it, whatever the label sa
     assert classes.asked
     assert s.world.requests.len() == 5
     assert s.world.requests[4].path == "/repos/heroes-lang/heroes/issues/105/events?per_page=100&page=1"
-    assert classes.at_tag[101].must() == "adjacent"
-    assert classes.at_tag[102].must() == "systemic"
-    assert classes.at_tag[104].must() == ""
+    assert classes.at_tag[101].must() == ["class:adjacent"]
+    assert classes.at_tag[102].must() == ["class:systemic"]
+    assert classes.at_tag[104].must().len() == 0
     said = counted(held: held, judged: judged, tags: tags, at_tag: classes.at_tag)
     numbers: [i64] @= []
 
@@ -1590,26 +1594,61 @@ test "a tag is judged by the class each defect held at it, whatever the label sa
     exact: issue_pace.Session @= issue_pace.scripted(
         [labelled(first: 1, filed: filed, given: ["class:blocking"], after: "2026-10-20T10:00:00Z", later: ["-class:blocking", "class:improvement"])]
     )
-    assert classed_at(@exact, held: second, judged: judged).at_tag[108].must() == "improvement"
+    assert classed_at(@exact, held: second, judged: judged).at_tag[108].must() == ["class:improvement"]
 
     # A defect `at_tag` holds nothing for is counted and told, never passed.
-    none: {i64: str} = {}
+    none: {i64: [str]} = {}
     unread_one = standing(held: second, judged: judged, tags: tags, at_tag: none)
     assert unread_one.len() == 1
     assert strings.contains(text: unread_one[0], needle: "was never read")
 
-test "two class labels at the tag are read as two today are, the first in sorted order"
+# Defect 2326: a defect labelled `adjacent` and `blocking` was read as the
+# first in sorted order, `adjacent`, and passed a tag its `blocking` label
+# should have stopped. Two labels, which `file` never writes, are read as the
+# most severe, at the tag and today alike, and the line counting the defect
+# says it carried two; two whose most severe counts nowhere pass, as either
+# alone would.
+test "two class labels are read as the most severe, at the tag and today, and told (defect 2326)"
     judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
-    filed = "2026-10-16T08:00:00Z"
+    earlier = Tag(name: "m-earlier", at: epoch_of("2026-10-15T10:00:00Z").must())
+    tags = [judged, earlier]
+    d = "Def" + "ect "
     both = github_issues.held_of(
-        [fixture(number: 109, title: "Def" + "ect 109: t", kind: "defect", extra: ["class:systemic", "class:blocking"], body: "b", state: "open", created: filed, closed: "")]
+        [fixture(number: 2030, title: d + "2030: a", kind: "defect", extra: ["class:adjacent", "class:blocking"], body: "b", state: "open", created: "2026-10-16T08:00:00Z", closed: "")]
+    )
+    said = standing(held: both, judged: judged, tags: tags, at_tag: unmoved(both))
+    assert said.len() == 1
+    assert strings.contains(
+        text: said[0],
+        needle: "`blocking`, the most severe of the 2 `class:` labels it carried at m-judged, `class:adjacent` `class:blocking`, where `file` writes one"
+    )
+    mild = github_issues.held_of(
+        [fixture(number: 2031, title: d + "2031: b", kind: "defect", extra: ["class:improvement", "class:adjacent"], body: "b", state: "open", created: "2026-10-16T08:00:00Z", closed: "")]
+    )
+    assert standing(held: mild, judged: judged, tags: tags, at_tag: unmoved(mild)).len() == 0
+    aged = github_issues.held_of(
+        [fixture(number: 2032, title: d + "2032: c", kind: "defect", extra: ["class:improvement", "class:adjacent"], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: "")]
+    )
+    told_aged = standing(held: aged, judged: judged, tags: tags, at_tag: unmoved(aged))
+    assert told_aged.len() == 1
+    assert strings.contains(text: told_aged[0], needle: "`adjacent`, the most severe of the 2 `class:` labels")
+
+    # At the tag, from the label events: two stood then and one today.
+    filed = "2026-10-16T08:00:00Z"
+    then = github_issues.held_of(
+        [fixture(number: 109, title: d + "109: t", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: filed, closed: "")]
     )
     s: issue_pace.Session @= issue_pace.scripted(
-        [labelled(first: 1, filed: filed, given: ["class:systemic", "class:blocking"], after: filed, later: [])]
+        [labelled(first: 1, filed: filed, given: ["class:adjacent", "class:blocking"], after: "2026-10-22T13:49:47Z", later: ["-class:blocking"])]
     )
-    classes = classed_at(@s, held: both, judged: judged)
-    assert classes.at_tag[109].must() == github_issues.label_value(issue: both.issues[0], name: "class")
-    assert classes.at_tag[109].must() == "blocking"
+    classes = classed_at(@s, held: then, judged: judged)
+    assert classes.at_tag[109].must() == ["class:adjacent", "class:blocking"]
+    counted_then = counted(held: then, judged: judged, tags: tags, at_tag: classes.at_tag)
+    assert counted_then.len() == 1
+    assert strings.contains(
+        text: counted_then[0].said,
+        needle: "`blocking` at m-judged, `adjacent` today, the most severe of the 2 `class:` labels it carried at m-judged"
+    )
 
 test "a defect whose label events cannot be read, or are not whole, is a skip naming it, and an answer that cannot be read a failure"
     judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
