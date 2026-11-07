@@ -420,8 +420,77 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     braces(@r, scratch: scratch, compiler: compiler)
     escapes_painted(@r, scratch: scratch, compiler: compiler, spec: text.must())
     literals_painted(@r, scratch: scratch, compiler: compiler)
+    use_painted(@r)
     plugin_agrees(@r)
     return ok(r)
+
+# The grammar's `use` rule run on the lines the parser reads `as` on, a
+# package's mark among them (panel 235's R1), and on two it refuses, where
+# `as` is no mark: a rule that stopped at the `<` would show a renamed
+# package's `as` as a name.
+function use_painted(@r: report.Report)
+    grammar = read_file(GRAMMAR)
+
+    if grammar.is_err()
+        report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
+        return
+    rule = textmate.rule_named(grammar: grammar.must(), name: "use")
+
+    if rule.is_err()
+        report.keep_failure(
+            @r,
+            label: "spec/colouring",
+            detail: "  the grammar's `use` rule cannot be read: " + error_of(rule)
+        )
+        return
+
+    # The reader runs no anchor and no class escape (`textmate.hero`), so the
+    # rule is run as an editor runs it on these lines: from the line's start,
+    # where `^` holds, each `\s+` a run of the spaces the lines hold, and the
+    # closing `\b` dropped, the line ending or going on with a space there.
+    rules = [as_run(rule.must())]
+    wrong: [str] @= []
+
+    for line in ["use geom as g", "use syntax/decl as d", "use <json>/parse as p", "use <json>/a/b as c"]
+        if !paints_as(rules, line: line)
+            wrong @ wrong.push("the parser reads `as` as a mark on `" + line + "`, and the grammar does not paint it")
+
+    for line in ["use < json >/parse as p", "use <json/parse> as p"]
+        if paints_as(rules, line: line)
+            wrong @ wrong.push("the parser refuses `" + line + "`, and the grammar paints its `as` as a mark")
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(@r, label: "spec/colouring", detail: "  " + wrong.join("\n  "))
+
+function as_run(rule: textmate.Rule) -> textmate.Rule
+    pattern: str @= rule.pattern
+
+    if pattern.len() > 0 && pattern[0] == '^'
+        pattern @ pattern.slice(from: 1, to: pattern.len())
+
+    if strings.ends_with(text: pattern, suffix: "\\b")
+        pattern @ pattern.slice(from: 0, to: pattern.len() - 2)
+    return textmate.Rule(
+        pattern: strings.split_text(text: pattern, separator: "\\s+").join(" +"),
+        scope: rule.scope,
+        opens: rule.opens
+    )
+
+# Whether the rules' first match on `line` reaches the end of its `as`.
+function paints_as(rules: [textmate.Rule], line: str) -> bool
+    got = textmate.painted(rules: rules, text: line)
+
+    if got.is_err() || got.must().reach < 2
+        return false
+    reach = got.must().reach
+    return line.slice(from: reach - 2, to: reach) == "as"
+
+function error_of(got: textmate.Rule?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # The two gated numbers, and the headroom.
 function budget(@r: report.Report, scratch: str, compiler: str)

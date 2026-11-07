@@ -31,6 +31,7 @@ use cursor
 use ast
 use keywords
 use bytes
+use parse/use_mark
 
 ## The declaration
 
@@ -61,6 +62,19 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
         climbs(@c, text, keyword)
         return
 
+    # `use <json>/parse`: a package's module, the mark read by its own module
+    # (panel 235's R1), the name's span then reaching back over it, so every
+    # reader of the line takes the module's name whole, mark and all.
+    mark: i64 @= -1
+
+    if cursor.at(c, .lt)
+        opened = use_mark.opening(@c, text)
+
+        if opened.is_err()
+            skip_rest_of_line(@c, text, from: keyword)
+            return
+        mark @ opened.must()
+
     if !cursor.at(c, .ident)
         missing_name(@c, text, keyword)
         return
@@ -71,11 +85,20 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     # diagnostic can point at it.
     last: token.Span @= name
 
+    if mark >= 0
+        name @ token.Span(start: mark, end: name.end)
+
     # `use geom.shapes` — a dot is not the separator, and the second token
     # is where the author finds that out. The message names the spelling
     # that works rather than the absence of one: a path exists now, and it
     # is written with `/` (spec § Files and layout; panel 032 R2 killed the
     # quoted form, panel 099 R1 fixed the base).
+    # `use github.com/acme/json/parse`: an address, whose dots are no
+    # separator, and which the catalogue holds (panel 235's R18).
+    if cursor.at(c, .dot) && mark < 0 && use_mark.unmarked_address(@c, text, first: name)
+        skip_rest_of_line(@c, text, from: name)
+        return
+
     if cursor.at(c, .dot)
         cursor.error(
             @c,

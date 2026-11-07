@@ -38,6 +38,8 @@ use source
 use module/names as module_names
 use module/paths
 use module/reading
+use module/placed as places
+use module/package_told
 use ast
 use parse
 
@@ -102,7 +104,9 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
                 if one == module
                     already @ true
 
-            if already
+            # A package's module is never read from the program's tree: the
+            # mark says the catalogue answers for it (panel 235's R1).
+            if already || places.is_package(module)
                 continue
             opened = open_directory(path) + module + ".hero"
             found = reading.text_at(opened: opened, name: paths.directory_text(path) + module + ".hero", edited: edited)
@@ -198,6 +202,10 @@ function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
                 present @ true
 
         if present
+            continue
+
+        if places.is_package(name)
+            out @ out.push(package_told.unknown(s, name: name, span: used.name))
             continue
         d: diag.Diagnostic = diag.new_diagnostic(
             code: "unknown_module",

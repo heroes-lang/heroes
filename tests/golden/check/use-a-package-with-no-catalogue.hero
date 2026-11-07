@@ -1,0 +1,12 @@
+# M-package-manager step 2, panel 235's R1 and R18 (2026-11-07): a bracketed
+# `use` is read through the catalogue alone, never from the program's tree,
+# and this directory holds no `heroes.toml`, so neither package has an entry.
+# `usemark235/area.hero` is the program's own module of the second path
+# without its brackets, and taking them off is a `guess`, never `certain`:
+# where the catalogue or its entry was deleted, that repair would compile the
+# program's module in the package's place.
+use <json>/parse  #~ unknown_entry
+use <usemark235>/area  #~ unknown_entry
+
+function main()
+    print(parse.x() + area.y())

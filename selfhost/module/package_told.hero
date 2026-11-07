@@ -1,0 +1,56 @@
+# What a `use` reaching a package is told where its module is not in the
+# compilation (spec § 1; panel 235's R1 and R18, ratified 2026-11-07).
+# Asked by `modules.unknown_modules` alone, on the error path, so a program
+# whose every module is found asks nothing here.
+#
+# Each answer names the file the program must change and what to write, so
+# the message carries the repair (design.md §4.17). **A repair that moves a
+# `use` across the mark is `certain` only where nothing on the other side
+# answers the same path** (R18, the compiler-engineer's rule): taking the
+# brackets off `use <roman>/numeral` because the program has its own
+# `roman/numeral.hero` would compile that module in the package's place where
+# the entry was deleted or mistyped, so that repair is a `guess`.
+
+use token
+use diag
+use source
+use module/placed
+use module/paths
+use cli/files
+
+# The catalogue's file, beside the file you compile.
+constant CATALOGUE: str
+    "heroes.toml"
+
+function unknown(s: source.Source, name: str, span: token.Span) -> diag.Diagnostic
+    base = paths.directory_text(s.name)
+    entry = placed.entry_of(name)
+    inside = placed.inside_of(name)
+
+    if present(base + CATALOGUE)
+        return diag.new_diagnostic(
+            code: "catalogue_unread",
+            message: "`use " + name + "` reaches the package `" + entry + "` through the catalogue `" + base + CATALOGUE + "`, and this compiler reads no catalogue yet (M-package-manager's step 3)",
+            span: span
+        )
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "unknown_entry",
+        message: "`<" + entry + ">` names no entry: there is no catalogue `" + base + CATALOGUE + "` beside `" + s.name + "`, the file you compile, and a package's module is read only through its entry there — `heroes add " + entry + "` writes one",
+        span: span
+    )
+
+    # A GUESS, never certain: where the catalogue or its entry was deleted,
+    # the program's own module of that path is another module, and applying
+    # the repair would compile it in the package's place.
+    if present(base + entry + "/" + inside + ".hero")
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `use " + entry + "/" + inside + "`", replacement: entry + "/" + inside, span: span, certainty: .guess)
+        )
+    return d
+
+# Whether anything stands at `path`, a link to a file included: "there is no
+# `heroes.toml`" is said only where nothing is.
+function present(path: str) -> bool
+    match files.entry(path)
+        .absent                                        => return false
+        .file | .directory | .link | .other | .unknown => return true

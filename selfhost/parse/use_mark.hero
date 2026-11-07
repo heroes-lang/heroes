@@ -1,0 +1,37 @@
+# `use <json>/parse`, the package's mark, read by the parser (spec § 1,
+# `Use`; panel 235's R1, ratified 2026-11-07). What the mark holds and every
+# habit beside it are asked of `package_mark.hero`, which reads tokens and
+# never the cursor; this file says its answer and moves the cursor, so the
+# name's span the caller builds starts at the `<` and every reader of the
+# line takes the module's name whole, mark and all (`ast.Use.name`).
+
+use token
+use cursor
+use package_mark
+
+# After `use`, at `<`: the cursor past the mark, on the module's first name,
+# and where the mark starts; or the line told and a failure, the caller then
+# dropping the rest of it (`use_line.skip_rest_of_line`).
+function opening(@c: cursor.Cursor, text: str) -> i64?
+    told = package_mark.read(c.tokens, at: c.pos, text: text)
+
+    for d in told
+        cursor.say(@c, d)
+        return fail(code: "told", msg: d.message)
+
+    start = cursor.current_span(c).start
+
+    for _ in range(from: 0, to: 4)
+        _ = cursor.bump(@c)
+
+    return ok(start)
+
+# At the dot after a `use` line's first name `first`: true, and the line told,
+# where the line names an address, `use github.com/acme/json/parse` (R18).
+function unmarked_address(@c: cursor.Cursor, text: str, first: token.Span) -> bool
+    told = package_mark.unmarked(c.tokens, at: c.pos, text: text, first: first)
+
+    for d in told
+        cursor.say(@c, d)
+
+    return told.len() > 0
