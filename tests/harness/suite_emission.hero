@@ -216,7 +216,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             elsewhere = platform_skips.emission_reason(one.label)
 
             if elsewhere.is_err()
-                compiles(@r, one: one)
+                compiles(@r, scratch: scratch, one: one)
             else
                 report.keep_skip(@r, label: "emission/" + one.label + "/compiles", detail: "  " + elsewhere.must())
 
@@ -451,8 +451,11 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
 # since the compiler's own warning words are its build's to hold and a
 # second copy of them here would drift; a group's `package` is asked of
 # `pkg-config`, as the compiler asks it. The link and the two routes are
-# the generator's oracle 4, the task's other half.
-function compiles(@r: report.Report, one: Program)
+# the generator's oracle 4, the task's other half. Its captures and listings
+# go under the run's own `scratch`, which the harness removes as it ends:
+# until defect 2305 they went under the net's own tests' directory, one
+# left behind by every run of this suite.
+function compiles(@r: report.Report, scratch: str, one: Program)
     words: [str] @= [
         "clang"
         "-std=gnu11"
@@ -465,11 +468,10 @@ function compiles(@r: report.Report, one: Program)
         directory_of(one.source)
     ]
 
-    for flag in package_flags(one.source)
+    for flag in package_flags(scratch: scratch, source: one.source)
         words @ words.push(flag)
 
     words @ words.push(one.stored)
-    scratch = shell.own_scratch()
     ran = shell.attempted(scratch: scratch, program: "clang", words: words)
 
     if ran.is_err()
@@ -522,10 +524,10 @@ function directory_of(path: str) -> str
 # names, its own directory being where its modules are; a package
 # `pkg-config` does not know adds nothing, and the header it would have found
 # is then the machine's lack.
-function package_flags(source: str) -> [str]
+function package_flags(scratch: str, source: str) -> [str]
     flags: [str] @= []
     dir = directory_of(source)
-    listed = shell.list_entries(scratch: shell.own_scratch(), dir: dir)
+    listed = shell.list_entries(scratch: scratch, dir: dir)
 
     if listed.is_err()
         return flags
