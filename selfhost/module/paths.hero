@@ -136,6 +136,29 @@ function directory_text(path: str) -> str
 
     return kept.join("")
 
+# The directory files are OPENED through — the "/" rule alone, which
+# is PathBuf::parent's answer on every machine the fixpoint runs on.
+function open_directory(path: str) -> str
+    cs = path.chars()
+    cut: i64 @= -1
+    index: i64 @= 0
+
+    for ch in cs
+        if ch == "/"
+            cut @ index
+        index @ index + 1
+
+    if cut == -1
+        return ""
+    kept: [str] @= []
+    index @ 0
+
+    while index <= cut
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
 ## The rule that USED to make a qualifier a program-wide key
 
 # **`last_parts_collide` was here and is deleted** (panel 100 R3, 2026-09-02).

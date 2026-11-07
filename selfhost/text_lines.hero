@@ -227,3 +227,32 @@ test "a margin is measured to the line's start, and a tab in it is seen"
     # `y` does not begin its line.
     assert margin_width(text, at: 15) == -1
     assert !margin_has_tab(text, at: 15)
+
+# Moved here from `source.hero` at M-package-manager step 3 (panel 235),
+# whose ceiling it paid when the compilation came to hold the packages it
+# reaches: two answers about a text's lines that know nothing of a `Source`.
+# The '\n' count of one segment — what `starts_of(text).len() - 1` answers
+# for a whole text, without building the array.
+function newlines_in(text: str) -> i64
+    count: i64 @= 0
+    i: i64 @= 0
+
+    while i < text.len()
+        if text[i] == '\n'
+            count @ count + 1
+        i @ i + 1
+
+    return count
+
+# Byte offset of the first byte of each line. starts[0] == 0, and the length
+# is the number of lines, which is what makes it double as a line count.
+function starts_of(text: str) -> [i64]
+    starts: [i64] @= [0]
+    i: i64 @= 0
+
+    while i < text.len()
+        if text[i] == '\n'
+            starts @ starts.push(i + 1)
+        i @ i + 1
+
+    return starts

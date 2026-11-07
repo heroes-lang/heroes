@@ -1,0 +1,37 @@
+# What discovery found of the packages a compilation reaches (spec § 1; panel
+# 235's R3, R6 and R7, ratified 2026-11-07), held by the compilation's
+# `source.Source` as its faults are: filled by discovery
+# (`module/packages.hero`) and told by the graph (`module/package_told.hero`),
+# and read by every pass that names a module (`module/placed.identity`).
+#
+# A leaf, so `source.hero` can hold it without reaching the catalogue.
+
+# A package the compilation reaches: the program's alias for it, the entry's
+# name in the program's catalogue; the folder its modules are read from, as a
+# message names it and as it is opened; why its modules were not read, ""
+# where they were; and whether it is a `path` entry, a folder of the author's
+# own, read unverified (R6).
+record Package
+    alias: str
+    root: str
+    opened: str
+    problem: str
+    unverified: bool
+
+# An alias a package's own catalogue gives a package of the build (R3): in a
+# file of the package `package`, `<written>` names the package the program's
+# catalogue calls `<meant>`, matched by the source each entry names.
+record Alias
+    package: str
+    written: str
+    meant: str
+
+record Reached
+    packages: [Package]
+    aliases: [Alias]
+
+# A compilation that names no package.
+function none() -> Reached
+    packages: [Package] = []
+    aliases: [Alias] = []
+    return Reached(packages: packages, aliases: aliases)

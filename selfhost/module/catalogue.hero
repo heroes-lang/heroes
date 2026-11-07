@@ -1,0 +1,457 @@
+# The catalogue: the file beside the file you compile naming the packages its
+# `use <name>/…` lines reach (spec § 1; panel 235's R5, R6 and R12, ratified
+# 2026-11-07). `heroes.toml`, a subset of TOML (R5): a table
+# `[dependencies.<name>]` per entry, each value a string between double quotes
+# on its line, `#` a comment, and one `index` line above the tables, the
+# address of the index the verbs read. Every other TOML form is refused with
+# its line (inline tables, dotted keys, literal and multi-line strings,
+# escapes, arrays, numbers, booleans, dates), so `version = 2.1.0` and
+# `tag = 1.10` are refused and never converted; and so is every key an entry
+# does not have, a compiler flag, a search path, a library, a language version
+# or the program's own name among them (`.claude/rules/cli-surface.md` § Four
+# input classes): the catalogue holds the program's dependencies and nothing
+# else.
+#
+# **Read all or nothing** (R5): a catalogue that does not read names no
+# entry, the lines read before the refused one included, so no reading of it
+# is a guess (the compiler-engineer's first prototype compiled a program from
+# the entries above a refused line, measured and repaired). **Reading it runs
+# no code**: every value is text, and nothing here evaluates one.
+#
+# A program with no bracketed `use` reads no catalogue (R12): `modules.hero`
+# reads this file only where a `use` holds the mark.
+
+use module/sums
+
+# One entry: its name, the alias its program's `use` lines write between the
+# brackets, and its source, one of three (R6): the Heroes index by `version`;
+# git by `git`, `tag` and `commit`, the commit the tag named when the entry was
+# written, so a moved tag is refused rather than followed; or a local folder,
+# `path`, the author's own while a package is developed. `sum` is required of
+# the first two and refused on the third.
+record Entry
+    name: str
+    version: str
+    git: str
+    tag: str
+    commit: str
+    path: str
+    sum: str
+
+record Catalogue
+    # The file read, "" where there is none.
+    file: str
+    # The `index` line's address, "" where the line is absent.
+    index: str
+    entries: [Entry]
+    # The first line refused, with its file and number, "" where every line
+    # read; a catalogue holding one names no entry.
+    problem: str
+
+constant FILE: str
+    "heroes.toml"
+
+# The catalogue of no entries, which no file holds.
+function empty() -> Catalogue
+    entries: [Entry] = []
+    return Catalogue(file: "", index: "", entries: entries, problem: "")
+
+# The catalogue in the directory `opened`, named in a message as `named` is
+# (the directory as the author spelt it, `paths.directory_text`). Absent, it
+# is the catalogue of no entries and no problem.
+function read(opened: str, named: str) -> Catalogue
+    file = named + FILE
+
+    match read_file(opened + FILE)
+        .ok text => return parsed(file: file, text: text)
+        .err e =>
+            if e.code == "file_not_found"
+                return empty()
+            return refused(empty(), why: "`" + file + "` cannot be read: " + e.msg)
+
+# The entry named `name`, or a failure saying the catalogue holds none, or
+# that it does not read: a catalogue that did not read names nothing.
+function entry(c: Catalogue, name: str) -> Entry?
+    if c.problem.len() > 0
+        return fail(code: "catalogue_refused", msg: c.problem)
+
+    for one in c.entries
+        if one.name == name
+            return ok(one)
+
+    return fail(code: "unknown_entry", msg: name)
+
+## What an entry is
+
+# The package an entry names, whatever the catalogue calls it (R3): the
+# index's address and the package's name there, a git address, or a folder
+# read from `folder`, the directory the catalogue stands in, its `.` and `..`
+# taken out. Two entries naming one package give one text.
+function source_of(e: Entry, index: str, folder: str) -> str
+    if e.version.len() > 0
+        return "index " + index + " " + e.name
+
+    if e.git.len() > 0
+        return "git " + e.git
+    return "path " + sums.folded(folder + e.path)
+
+# An entry's source as a message names it.
+function said_source(e: Entry) -> str
+    if e.version.len() > 0
+        return "the index's `" + e.name + "`"
+
+    if e.git.len() > 0
+        return "`" + e.git + "`"
+    return "the folder `" + e.path + "`"
+
+## The reading
+
+function parsed(file: str, text: str) -> Catalogue
+    c: Catalogue @= Catalogue(file: file, index: "", entries: [], problem: "")
+    at: i64 @= 0
+    number: i64 @= 1
+
+    while at < text.len()
+        end: i64 @= at
+
+        while end < text.len() && text[end] != '\n'
+            end @ end + 1
+
+        said = line(@c, row: text.slice(from: at, to: end))
+
+        if said.len() > 0
+            return refused(c, why: file + ":" + number.to_str() + ": " + said)
+        at @ end + 1
+        number @ number + 1
+
+    for e in c.entries
+        wrong = incomplete(e)
+
+        if wrong.len() > 0
+            return refused(c, why: file + ": the entry `" + e.name + "` " + wrong)
+
+    twice = one_package_twice(c.entries)
+
+    if twice.len() > 0
+        return refused(c, why: file + ": " + twice)
+    return c
+
+# A catalogue that does not read: the problem, and no entry (R5).
+function refused(c: Catalogue, why: str) -> Catalogue
+    none: [Entry] = []
+    return Catalogue(file: c.file, index: "", entries: none, problem: why)
+
+# One line read into the catalogue: "" where it read, else what is wrong.
+function line(@c: Catalogue, row: str) -> str
+    at = past_spaces(row, at: 0)
+
+    if at == row.len() || row[at] == '#' || row[at] == '\r' && at + 1 == row.len()
+        return ""
+
+    if row[at] == '['
+        return table(@c, row: row, at: at)
+    key_end: i64 @= at
+
+    while key_end < row.len() && (row[key_end] >= 'a' && row[key_end] <= 'z' || row[key_end] == '_')
+        key_end @ key_end + 1
+
+    key = row.slice(from: at, to: key_end)
+    eq = past_spaces(row, at: key_end)
+
+    if key.len() == 0 || eq >= row.len() || row[eq] != '='
+        return "a line is a table `[dependencies.<name>]`, `<key> = \"<value>\"`, a comment or nothing, found `" + row + "`"
+    value = quoted(row, at: past_spaces(row, at: eq + 1))
+
+    if value.is_err()
+        return failure_of(value)
+
+    if c.entries.len() == 0
+        return top_line(@c, key: key, value: value.must())
+    return field(@c, key: key, value: value.must())
+
+# A line above every table: the `index` line alone.
+function top_line(@c: Catalogue, key: str, value: str) -> str
+    if key != "index"
+        return "`" + key + "` is no line of a catalogue: above its entries it holds the `index` line alone, and each entry is a table `[dependencies.<name>]`; the catalogue holds the program's dependencies and nothing else"
+
+    if c.index.len() > 0
+        return "the `index` line is written twice"
+    scheme = sums.address_scheme(value)
+
+    if scheme.len() > 0
+        return "the `index` line " + scheme
+    c.index @ value
+    return ""
+
+# One `key = "value"` line inside the last table.
+function field(@c: Catalogue, key: str, value: str) -> str
+    last = c.entries.len() - 1
+    e: Entry @= c.entries[last]
+    taken: bool @= false
+
+    if key == "version"
+        taken @ e.version.len() > 0
+        e.version @ value
+    else if key == "git"
+        taken @ e.git.len() > 0
+        e.git @ value
+    else if key == "tag"
+        taken @ e.tag.len() > 0
+        e.tag @ value
+    else if key == "commit"
+        taken @ e.commit.len() > 0
+        e.commit @ value
+    else if key == "path"
+        taken @ e.path.len() > 0
+        e.path @ value
+    else if key == "sum"
+        taken @ e.sum.len() > 0
+        e.sum @ value
+    else
+        return "`" + key + "` is not a key an entry has: an entry holds `version` and `sum` for the index, `git`, `tag`, `commit` and `sum` for git, or `path`, and the catalogue holds nothing but the program's dependencies"
+
+    if taken
+        return "`" + key + "` is written twice in the entry `" + e.name + "`"
+
+    if value.len() == 0
+        return "`" + key + "` is empty in the entry `" + e.name + "`"
+    c.entries[last] @ e
+    return ""
+
+function table(@c: Catalogue, row: str, at: i64) -> str
+    head = "[dependencies."
+
+    if row.len() < at + head.len() || row.slice(from: at, to: at + head.len()) != head
+        return "a table is `[dependencies.<name>]`, one per entry, found `" + row + "`; the catalogue holds the program's dependencies and nothing else"
+    start = at + head.len()
+    close: i64 @= start
+
+    while close < row.len() && row[close] != ']'
+        close @ close + 1
+
+    name = row.slice(from: start, to: close)
+
+    if close == row.len() || after_value(row, at: close + 1).len() > 0
+        return "a table is `[dependencies.<name>]` and nothing after it but a comment, found `" + row + "`"
+
+    if !entry_name(name)
+        return "an entry's name is lowercase letters, digits and `_`, starting with a letter, as `[dependencies.json]`, found `" + name + "`"
+
+    for one in c.entries
+        if one.name == name
+            return "the entry `" + name + "` is written twice"
+
+    c.entries @ c.entries.push(Entry(name: name, version: "", git: "", tag: "", commit: "", path: "", sum: ""))
+    return ""
+
+## What an entry holds
+
+# What is wrong with an entry read whole, "" where nothing is: one source,
+# and what that source needs (R6).
+function incomplete(e: Entry) -> str
+    sources: i64 @= 0
+
+    for given in [e.version, e.git, e.path]
+        if given.len() > 0
+            sources @ sources + 1
+
+    if sources != 1
+        return "names one source: a `version` from the index, a `git` address with its `tag` and `commit`, or a local `path`"
+
+    if e.path.len() > 0
+        if e.sum.len() > 0 || e.tag.len() > 0 || e.commit.len() > 0
+            return "is a local `path`, which holds no `sum`, `tag` or `commit`: a folder of the author's own is read as it stands, and told as unverified"
+        return ""
+
+    if e.version.len() > 0
+        if e.tag.len() > 0 || e.commit.len() > 0
+            return "comes from the index by its `version`, which takes no `tag` or `commit`"
+
+        if !sums.version_shape(e.version)
+            return "has the `version` `" + e.version + "`, and a version is exact, three numbers with no leading zero: `1.4.2`"
+    else
+        scheme = sums.address_scheme(e.git)
+
+        if scheme.len() > 0
+            return "has the `git` address `" + e.git + "`, which " + scheme
+
+        if e.tag.len() == 0 || e.commit.len() == 0
+            return "wants the `tag` its `git` address is fetched at and the `commit` that tag named when the entry was written"
+
+        if !sums.commit_shape(e.commit)
+            return "has the `commit` `" + e.commit + "`, and a commit is 40 or 64 lowercase hexadecimal digits"
+
+    if !sums.sum_shape(e.sum)
+        return "wants its `sum`, `sha256-` then 64 lowercase hexadecimal digits, which `heroes add` writes"
+    return ""
+
+# Two entries for one package within one catalogue, refused (R3): two
+# aliases of one package would compile it twice.
+function one_package_twice(entries: [Entry]) -> str
+    at: i64 @= 0
+
+    while at < entries.len()
+        earlier: i64 @= 0
+
+        while earlier < at
+            a = entries[earlier]
+            b = entries[at]
+
+            if a.git.len() > 0 && a.git == b.git || a.path.len() > 0 && a.path == b.path
+                return "the entries `" + a.name + "` and `" + b.name + "` name one package, and a program holds one version of each package under one name"
+            earlier @ earlier + 1
+
+        at @ at + 1
+
+    return ""
+
+## Small readers
+
+# A basic string on one line: `"` … `"`, no `\` and no control character, and
+# nothing after it but spaces and a comment.
+function quoted(row: str, at: i64) -> str?
+    if at >= row.len() || row[at] != '"'
+        return fail(code: "unquoted", msg: "a value is a string between double quotes: `version = \"1.4.2\"`")
+
+    if at + 2 < row.len() && row[at + 1] == '"' && row[at + 2] == '"'
+        return fail(code: "multi", msg: "a value is a string on its line, never a multi-line `\"\"\"` one")
+    probe: i64 @= at + 1
+
+    while probe < row.len() && row[probe] != '"'
+        if row[probe] == '\\'
+            return fail(code: "escape", msg: "a value holds no `\\`: the catalogue's strings have no escapes")
+
+        if row[probe] < 32 || row[probe] == 127
+            return fail(code: "control", msg: "a value holds no control character")
+        probe @ probe + 1
+
+    if probe >= row.len()
+        return fail(code: "unclosed", msg: "the string is not closed on its line")
+    rest = after_value(row, at: probe + 1)
+
+    if rest.len() > 0
+        return fail(code: "trailing", msg: rest)
+    return ok(row.slice(from: at + 1, to: probe))
+
+function failure_of(value: str?) -> str
+    match value
+        .ok _  => return ""
+        .err e => return e.msg
+
+# What stands after a value or a table's `]` but spaces and a comment.
+function after_value(row: str, at: i64) -> str
+    rest = past_spaces(row, at: at)
+
+    if rest >= row.len() || row[rest] == '#' || row[rest] == '\r' && rest + 1 == row.len()
+        return ""
+    return "only a comment may follow on the line, found `" + row.slice(from: rest, to: row.len()) + "`"
+
+function past_spaces(row: str, at: i64) -> i64
+    probe: i64 @= at
+
+    while probe < row.len() && (row[probe] == ' ' || row[probe] == '\t')
+        probe @ probe + 1
+
+    return probe
+
+# An entry's name, the alias a `use` writes between `<` `>`: lowercase letters,
+# digits and `_`, starting with a letter.
+function entry_name(name: str) -> bool
+    if name.len() == 0 || !(name[0] >= 'a' && name[0] <= 'z')
+        return false
+    at: i64 @= 1
+
+    while at < name.len()
+        b = name[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
+            return false
+        at @ at + 1
+
+    return true
+
+## Tests
+
+function sum_of(digit: str) -> str
+    return "sha256-" + digit.repeat(64.to_u64().must())
+
+test "a catalogue of the three sources reads, and none is none"
+    text = "# the program's packages\nindex = \"https://index.example.org/heroes\"\n\n[dependencies.json]\nversion = \"1.4.2\"  # pinned\nsum = \"" + sum_of("a") + "\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum_of("c") + "\"\n\n[dependencies.core]\npath = \"../packages/core\"\n"
+    c = parsed(file: "heroes.toml", text: text)
+    assert c.problem == ""
+    assert c.index == "https://index.example.org/heroes"
+    assert c.entries.len() == 3
+    assert entry(c, name: "json").must().version == "1.4.2"
+    assert entry(c, name: "yaml").must().tag == "v0.3.1"
+    assert entry(c, name: "core").must().path == "../packages/core"
+    assert entry(c, name: "toml").is_err()
+    absent = read(opened: "build/selftest-no-catalogue-here/", named: "build/selftest-no-catalogue-here/")
+    assert absent.file == "" && absent.problem == "" && absent.entries.len() == 0
+
+test "every other TOML form is refused with its line, and a refused line names nothing"
+    head = "[dependencies.json]\n"
+    shapes = [
+        "version = 1.4.2\n"
+        "version = 2\n"
+        "version = [\"1.4.2\"]\n"
+        "version = { v = \"1.4.2\" }\n"
+        "version = '1.4.2'\n"
+        "version = \"\"\"1.4.2\"\"\"\n"
+        "version = \"1.4\\u0032\"\n"
+        "json.version = \"1.4.2\"\n"
+        "flags = \"-O2\"\n"
+        "version = \"1.4.2\" extra\n"
+        "version = true\n"
+    ]
+
+    for shape in shapes
+        c = parsed(file: "h", text: head + shape)
+        assert c.problem.slice(from: 0, to: 4) == "h:2:"
+        assert c.entries.len() == 0
+
+    assert parsed(file: "h", text: "[package]\nname = \"app\"\n").problem.slice(from: 0, to: 4) == "h:1:"
+    assert parsed(file: "h", text: "name = \"app\"\n").problem.slice(from: 0, to: 4) == "h:1:"
+    assert parsed(file: "h", text: "[[dependencies]]\n").problem.slice(from: 0, to: 4) == "h:1:"
+    assert parsed(file: "h", text: "[dependencies.Json]\n").problem.slice(from: 0, to: 4) == "h:1:"
+    assert parsed(file: "h", text: "[dependencies.json]\n[dependencies.json]\n").problem == "h:2: the entry `json` is written twice"
+    assert parsed(file: "h", text: "index = \"https://a.example\"\nindex = \"https://b.example\"\n").problem == "h:2: the `index` line is written twice"
+
+    # The lines read before the refused one are never used (R5).
+    broken = parsed(file: "h", text: "[dependencies.core]\npath = \"../core\"\nversion = 1\n")
+    assert broken.entries.len() == 0
+    assert entry(broken, name: "core").is_err()
+
+test "an entry holds one source and what that source needs, and nothing else"
+    sum = sum_of("d")
+    commit = "e".repeat(40.to_u64().must())
+    wrong = [
+        "[dependencies.json]\nversion = \"1.4.2\"\n"
+        "[dependencies.json]\nversion = \"1.4\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-abc\"\n"
+        "[dependencies.json]\nversion = \"1.4.2\"\ntag = \"v1\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\ngit = \"https://a.example/json\"\ntag = \"v1\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\ngit = \"https://a.example/json\"\ntag = \"v1\"\ncommit = \"abc\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\ngit = \"ssh://a.example/json\"\ntag = \"v1\"\ncommit = \"" + commit + "\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\npath = \"../json\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\npath = \"../json\"\nversion = \"1.4.2\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.json]\n"
+    ]
+
+    for text in wrong
+        c = parsed(file: "h", text: text)
+        assert c.problem.slice(from: 0, to: 18) == "h: the entry `json"
+        assert c.entries.len() == 0
+
+    # One package under two names is refused (panel 235's R3).
+    twice = parsed(file: "h", text: "[dependencies.a]\npath = \"../json\"\n\n[dependencies.b]\npath = \"../json\"\n")
+    assert twice.problem == "h: the entries `a` and `b` name one package, and a program holds one version of each package under one name"
+
+# The specification's own example (spec § 1), byte for byte as its fence
+# holds it and as `tests/harness/suite_spec.hero`'s `fragments` pins it: an
+# example the one document a reader trusts holds is a claim, so it is read.
+test "the specification's catalogue reads"
+    text = "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d0ae598e95dc970b74767f19372d61af8\"\nsum = \"sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9\"\n"
+    c = parsed(file: "heroes.toml", text: text)
+    assert c.problem == ""
+    assert c.entries.len() == 2
+    assert entry(c, name: "yaml").must().commit == "9fceb02d0ae598e95dc970b74767f19372d61af8"
