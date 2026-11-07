@@ -34,6 +34,7 @@ use cli/kept as kept_answers
 use cli/libraries
 use cli/value_run
 use cli/value_c2
+use cli/constant_dump
 use cli/value_told
 use cli/compile
 use cli/io
@@ -153,3 +154,23 @@ function defined_text(dir: str, one: value_run.Unit, said: str) -> str?
     if !value_told.refusing(said)
         return fail(code: "none", msg: "refusing nothing")
     return value_run.preprocessed(dir: dir, one: one, defines: true)
+
+# **C5's dump route answers this probe's two canaries as the probe does**
+# (`cli/constant_dump.hero`; panel 235's R9, its C5: the route a fetched
+# package's unit is to take, since R9 runs none of its code at build): the
+# undefined canary's `(-2147483647 - 1) / -1` has no value from the dump, and
+# the defined one's `1000 / 60` reads 16, nothing run.
+test "the dump route a fetched header is to take refuses the probe's undefined canary and reads its defined one (panel 235's C5)"
+    opening = "#define HERO_CANARY_UNDEFINED ((-2147483647 - 1) / -1)\n#define HERO_CANARY_DEFINED (1000 / 60)\n"
+    canaries = [
+        constant_dump.Asked(name: "HERO_CANARY_UNDEFINED", unsigned: false)
+        constant_dump.Asked(name: "HERO_CANARY_DEFINED", unsigned: false)
+    ]
+    got = constant_dump.values(
+        build: "build/selftest-value-ask-dump",
+        words: ["-std=gnu11"],
+        opening: opening,
+        asked: canaries
+    ).must()
+    assert got[0].value.is_err()
+    assert got[1].value.must() == "16"

@@ -1,0 +1,414 @@
+# A header constant's integer value read from clang's front end, nothing run
+# (panel 235's R9, its C5, provisional until measured on the four CI legs;
+# design.md §4.19, §1.12). The build does not take this route: panel 216's
+# probe still runs a unit's accessors to judge its constants
+# (`cli/value_ask.hero`). It is the route a fetched package's unit is to take,
+# since R9 refuses to run a fetched header's code at build.
+#
+# **The route** (the critic's of panel 235, its finding 11, made strict). The
+# unit's opening, as its compile reads its headers, and after it one
+# enumerator per constant asked, `enum : long long { hero_constant_<i> =
+# (NAME) };`, `unsigned long long` for an unsigned type, compiled
+# `-fsyntax-only` under the unit's own words with clang's JSON dump of the
+# enumerators alone (`-ast-dump-filter`). An enumerator's initialiser is an
+# integer constant expression, so clang's constant evaluator folds it, and
+# the dump holds the value of the expression in its own C type, a
+# `ConstantExpr`'s `value`, below the conversion to the enumerator's type.
+#
+# **Strict, or the dump reads what C leaves undefined.** Measured on this
+# Mac's Apple clang 21 (2026-11-07, `-std=gnu11`, the unit's dialect), the
+# critic's form gave a value at exit 0 with no word for `1 << 40` (the sign
+# bit's `-2147483648`), `INT64_MIN / -1` (`INT64_MIN`), `-1 << 3`,
+# `(int)1e20` (`2147483647`) and `1 << 31`, every one a value panel 216's
+# probe refuses. clang folds such an expression only as a GNU extension,
+# once its evaluator has found it is not a constant expression, and says so
+# under `-Wgnu-folding-constant`; a shift into the sign bit it says under
+# `-Wshift-sign-overflow`. Both are errors here (`STRICT`), and a constant
+# whose enumerator clang refuses has no value: it needs the probe, which a
+# fetched header may not have. What that refuses beside the undefined: a
+# `static const` object and a comma expression, each a value C defines that
+# is not an integer constant expression; a float, a string, a record's brace
+# list and a call, which no enumerator holds. Each constant is asked twice,
+# on two lines, and two values that differ are refused: `__COUNTER__` or
+# `__LINE__` gives the accessor's own expansion another one.
+#
+# **Measured against the probe over the tree, 2026-11-07** (every `constant`
+# of `examples/` and `tests/golden/` a unit of its program names, each built
+# on this Mac, its value printed by its unit's own opening and words): of 96
+# in programs that build, 83 read the value the program reads and 0 another,
+# one is a pointer, and 12 are refused, values C defines that need the probe
+# (three floats, two comma expressions, two statement expressions,
+# `(int)(1000.0 / 60)` and four read through an object or an initialiser),
+# and 13 record constants are not asked. **What it does not judge yet**, which is why the build does
+# not take it: a value that reads a declaration, an enumerator or an object,
+# is read as that declaration's initialiser made it, and no diagnostic on the
+# constant's line sees what C left undefined there. Five constants defect
+# 2109's case refuses read here at exit 0 (`enum { EA = 1 << 31 }` read
+# through `EB = EA + 1`, among them), so each answer names the declarations
+# its value reads (`Read.refers`), which a fetched header's route must judge
+# or refuse.
+
+use cli/clang_tree
+use cli/deps
+use cli/digest
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+
+# One constant asked: its C name and whether the type it is bound as is
+# unsigned, which the enumerator's own type follows.
+record Asked
+    name: str
+    unsigned: bool
+
+# One constant's answer: the decimal value clang's evaluator gave the
+# expression in its own C type, or why the dump holds none; and the
+# declarations its value reads, an enumerator or an object, whose own
+# initialiser no diagnostic on the constant's line judges.
+record Read
+    name: str
+    value: str?
+    refers: [str]
+
+constant PREFIX: str
+    "hero_constant_"
+
+# The second enumerator's suffix.
+constant AGAIN: str
+    "_again"
+
+# What opens an error's words on a line clang printed.
+constant ERROR: str
+    ": error: "
+
+# The two warnings that make an enumerator the evaluator could not hold to
+# C's rules an error: a GNU fold, and a shift into the sign bit; on the
+# command line, and raised again before each enumerator (`text_of`).
+constant RAISED: [str]
+    [
+        "-Wgnu-folding-constant"
+        "-Wshift-sign-overflow"
+    ]
+
+# On the command line with no limit to the errors told: clang stops telling
+# them at its twentieth by default, and a constant past it read its value
+# with nothing said (measured on this file's own test of fourteen shapes).
+constant STRICT: [str]
+    [
+        "-Werror=gnu-folding-constant"
+        "-Werror=shift-sign-overflow"
+        "-ferror-limit=0"
+    ]
+
+# The probe's text: the opening, then each constant asked twice, each time
+# the two warnings raised to errors again and its enumerator, so the `i`th
+# constant's two enumerators stand on lines `first_line(opening) + 6 * i + 2`
+# and `+ 5`. Raised again before each, since a header reaches past its
+# region: measured on this Mac, a header closing the region's `push` with a
+# `pop` of its own and silencing the two let `INT64_MIN / -1` read at exit 0,
+# and a `_Pragma` in one bound value's expansion silenced the next line's.
+# Asked twice on two lines, since a value `__COUNTER__` or `__LINE__` moves
+# is not the one the accessor's own expansion reads (defect 2145's shape).
+function text_of(opening: str, asked: [Asked]) -> str
+    out: [str] @= [ended(opening)]
+    at: i64 @= 0
+
+    for one in asked
+        under: str @= "long long"
+
+        if one.unsigned
+            under @ "unsigned long long"
+
+        for suffix in ["", AGAIN]
+            for warning in RAISED
+                out @ out.push("#pragma clang diagnostic error \"" + warning + "\"\n")
+
+            out @ out.push("enum : " + under + " { " + PREFIX + at.to_str() + suffix + " = (" + one.name + ") };\n")
+
+        at @ at + 1
+
+    return out.join("")
+
+# The text with its last line ended.
+function ended(text: str) -> str
+    if text.len() == 0 || text[text.len() - 1] == '\n'
+        return text
+    return text + "\n"
+
+# The line the first enumerator stands on.
+function first_line(opening: str) -> i64
+    count: i64 @= 1
+    text = ended(opening)
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            count @ count + 1
+        at @ at + 1
+
+    return count
+
+# Every constant's answer, asked of clang once under `words`, the unit's
+# own, in a file of `build` named by its text; absent where clang did not
+# start or wrote no dump.
+function values(build: str, words: [str], opening: str, asked: [Asked]) -> [Read]?
+    dir = build + "/constant-dump"
+    process.mkdir_all(dir)?
+    text = text_of(opening, asked: asked)
+    unit = dir + "/dump-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    out = publish.private_name(dir + "/dump.json")
+    err = publish.private_name(dir + "/said.txt")
+    head = strings.with_all(list: strings.with_all(list: ["clang"], more: words), more: STRICT)
+    line = response_file.carried(line: head, dir: dir)
+    ran = process.run(
+        program: "clang",
+        words: strings.with_all(list: line, more: ["-fsyntax-only", "-Xclang", "-ast-dump=json", "-Xclang", "-ast-dump-filter=" + PREFIX, unit]),
+        out: out,
+        err: err
+    )
+    dumped = read_back.words(out)
+    said = read_back.words(err).default("")
+    publish.discard(out)
+    publish.discard(err)
+
+    if !ran.started || dumped.is_err()
+        return fail(code: "unasked", msg: "clang wrote no dump of the constants' enumerators")
+    tree = clang_tree.read(dumped.must())?
+    return ok(answers(tree, said: said, unit: unit, first: first_line(opening), asked: asked))
+
+# Each asked constant's value from the dump, or clang's first error on its
+# enumerator's line, or that the dump holds no value for it; with the
+# declarations its value reads.
+function answers(tree: clang_tree.Tree, said: str, unit: str, first: i64, asked: [Asked]) -> [Read]
+    found: {str: str} @= {}
+    reads: {str: [str]} @= {}
+    at: i64 @= 0
+
+    for node in tree.nodes
+        if node.kind == "EnumConstantDecl" && strings.starts_with(text: node.name, prefix: PREFIX)
+            value = folded(tree, at: at)
+
+            if value.len() > 0
+                found[node.name] @ value
+            reads[node.name] @ referred(tree, at: at)
+        at @ at + 1
+
+    refused = errors(said: said, unit: unit, first: first, count: asked.len())
+    out: [Read] @= []
+    none: [str] = []
+    index: i64 @= 0
+
+    for one in asked
+        why = refused[index]
+        value = found[PREFIX + index.to_str()]
+        again = found[PREFIX + index.to_str() + AGAIN]
+        refers = reads[PREFIX + index.to_str()].default(none)
+
+        if why.len() > 0
+            out @ out.push(Read(name: one.name, value: fail(code: "refused", msg: why), refers: refers))
+        else if !value.is_err() && (again.is_err() || again.must() != value.must())
+            out @ out.push(
+                Read(name: one.name, value: fail(code: "moving", msg: "its value moves with where it is expanded, so the dump's is not the one its accessor reads"), refers: refers)
+            )
+        else if value.is_err()
+            out @ out.push(
+                Read(name: one.name, value: fail(code: "unread", msg: "the dump holds no value for its enumerator"), refers: refers)
+            )
+        else
+            out @ out.push(Read(name: one.name, value: ok(value.must()), refers: refers))
+        index @ index + 1
+
+    return out
+
+# The value of the `ConstantExpr` an enumerator's initialiser is, below the
+# conversions to the enumerator's type, `""` where there is none.
+function folded(tree: clang_tree.Tree, at: i64) -> str
+    node: i64 @= at
+
+    while tree.children[node].len() > 0
+        node @ tree.children[node][0]
+
+        if tree.nodes[node].kind == "ConstantExpr"
+            return tree.nodes[node].value
+
+        if tree.nodes[node].kind != "ImplicitCastExpr"
+            return ""
+
+    return ""
+
+# The names of the declarations below node `at` that a reference names, each
+# once, in the order the dump writes them.
+function referred(tree: clang_tree.Tree, at: i64) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+    open: [i64] @= [at]
+
+    while open.len() > 0
+        node = open[open.len() - 1]
+        rest: [i64] @= []
+        k: i64 @= 0
+
+        while k + 1 < open.len()
+            rest @ rest.push(open[k])
+            k @ k + 1
+
+        open @ rest
+        one = tree.nodes[node]
+
+        if one.ref_name.len() > 0 && seen[one.ref_name].is_err()
+            seen[one.ref_name] @ true
+            out @ out.push(one.ref_name)
+        back: i64 @= tree.children[node].len() - 1
+
+        while back >= 0
+            open @ open.push(tree.children[node][back])
+            back @ back - 1
+
+    return out
+
+# clang's first error on each constant's two lines, `""` where it said none;
+# the `i`th constant's stand on lines `first + 6 * i + 2` and `+ 5`
+# (`text_of`).
+function errors(said: str, unit: str, first: i64, count: i64) -> [str]
+    out: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push("")
+
+    prefix = unit + ":"
+
+    for line in deps.lines(said)
+        if !strings.starts_with(text: line, prefix: prefix)
+            continue
+        rest = line.slice(from: prefix.len(), to: line.len())
+        number = leading_number(rest)
+        at = found_at(text: rest, part: ERROR)
+        index = (number - first - 2) / 6
+        place = (number - first - 2) % 6
+
+        if number < first + 2 || place != 0 && place != 3 || index >= count || at < 0
+            continue
+
+        if out[index].len() == 0
+            out[index] @ rest.slice(from: at + ERROR.len(), to: rest.len())
+
+    return out
+
+# Where `part` first stands in `text`, or -1.
+function found_at(text: str, part: str) -> i64
+    at: i64 @= 0
+
+    while at + part.len() <= text.len()
+        if text.slice(from: at, to: at + part.len()) == part
+            return at
+        at @ at + 1
+
+    return -1
+
+# The number a text opens with, or -1.
+function leading_number(text: str) -> i64
+    value: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len() && text[at] >= '0' && text[at] <= '9' && at < 9
+        value @ value * 10 + to_i64(text[at] - '0').must()
+        at @ at + 1
+
+    if at == 0
+        return -1
+    return value
+
+## Tests
+
+# The words the tests ask clang under: the unit's dialect, which the shapes'
+# verdicts are measured in.
+constant DIALECT: [str]
+    ["-std=gnu11"]
+
+# **An integer, a `sizeof`, an `enum` member, a shifted expression and a
+# macro to a literal are read from the dump, and nothing runs**: the header
+# holds a constructor that would write a file, and none is left behind. The
+# member is the one answer that reads a declaration, and says so.
+test "a header constant's integer value is read from clang's dump with nothing run (panel 235's C5)"
+    dir = "build/selftest-constant-dump-read"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    ran = dir + "/RAN.txt"
+    opening = "#include <stdint.h>\n#include <stdio.h>\nenum hero_colour { HERO_RED = 7, HERO_GREEN };\n#define HERO_LIT 42\n#define HERO_TO_LIT HERO_LIT\n#define HERO_SZ sizeof(int32_t[3])\n#define HERO_BIG ((1LL << 40) + 3)\n#define HERO_NEG (-5)\n#define HERO_TOP UINT64_MAX\n__attribute__((constructor)) static void hero_ran(void) { FILE *f = fopen(\"" + ran + "\", \"a\"); if (f) { fputs(\"ran\\n\", f); fclose(f); } }\n"
+    asked = [
+        Asked(name: "HERO_LIT", unsigned: false)
+        Asked(name: "HERO_SZ", unsigned: true)
+        Asked(name: "HERO_GREEN", unsigned: false)
+        Asked(name: "HERO_BIG", unsigned: false)
+        Asked(name: "HERO_TO_LIT", unsigned: false)
+        Asked(name: "HERO_NEG", unsigned: false)
+        Asked(name: "HERO_TOP", unsigned: true)
+    ]
+    got = values(build: dir, words: DIALECT, opening: opening, asked: asked).must()
+    want = ["42", "12", "8", "1099511627779", "42", "-5", "18446744073709551615"]
+    at: i64 @= 0
+
+    for one in got
+        assert one.name == asked[at].name
+        assert one.value.must() == want[at]
+        at @ at + 1
+
+    assert got[2].refers == ["HERO_GREEN"]
+    assert got[0].refers.len() == 0
+    assert got[1].refers.len() == 0
+    assert read_file(ran).is_err()
+    assert !process.remove_tree(dir).is_err()
+
+# **What C leaves undefined, what is no integer constant expression, what is
+# no integer and what moves with its expansion have no value from the dump**:
+# each was read at exit 0 by the critic's form, or is no integer at all, and
+# each is refused here. A header that closes its region and silences the two
+# warnings, and a `_Pragma` inside a value, are measured shapes the raising
+# before each enumerator holds against (`text_of`).
+test "a value C leaves undefined, one that is no integer constant expression or no integer, and one that moves have no value from the dump (panel 235's C5)"
+    dir = "build/selftest-constant-dump-refused"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    hostile = "#pragma clang diagnostic push\n#pragma clang diagnostic pop\n#pragma clang diagnostic pop\n#pragma clang diagnostic ignored \"-Wgnu-folding-constant\"\n#pragma clang diagnostic ignored \"-Wshift-sign-overflow\"\n#pragma clang diagnostic push\n"
+    opening = "#include <stdint.h>\n#include <limits.h>\n" + hostile + "static const int hero_k = 5;\nint hero_f(void);\n#define HERO_MINDIV (INT64_MIN / -1)\n#define HERO_SIGN (1 << 31)\n#define HERO_PAST (1 << 40)\n#define HERO_CAST ((int)1e20)\n#define HERO_OVER (INT_MAX + 1)\n#define HERO_SILENCED (_Pragma(\"clang diagnostic ignored \\\"-Wgnu-folding-constant\\\"\") INT64_MIN / -1)\n#define HERO_AFTER (INT64_MIN / -1)\n#define HERO_FLOAT 1.5\n#define HERO_STR \"abc\"\n#define HERO_CALL hero_f()\n#define HERO_OBJECT hero_k\n#define HERO_COMMA (1, 2)\n#define HERO_COUNTED (__COUNTER__ + 1)\n#define HERO_LINE __LINE__\n"
+    names = [
+        "HERO_MINDIV"
+        "HERO_SIGN"
+        "HERO_PAST"
+        "HERO_CAST"
+        "HERO_OVER"
+        "HERO_SILENCED"
+        "HERO_AFTER"
+        "HERO_FLOAT"
+        "HERO_STR"
+        "HERO_CALL"
+        "HERO_OBJECT"
+        "HERO_COMMA"
+        "HERO_COUNTED"
+        "HERO_LINE"
+    ]
+    asked: [Asked] @= []
+
+    for name in names
+        asked @ asked.push(Asked(name: name, unsigned: false))
+
+    got = values(build: dir, words: DIALECT, opening: opening, asked: asked).must()
+    assert got.len() == names.len()
+
+    for one in got
+        assert one.value.is_err()
+
+    assert !process.remove_tree(dir).is_err()
+
+# **An error is the constant's whose line it stands on**: two lines a
+# constant's two enumerators, the second three below the first, the three
+# lines past the opening's the first constant's.
+test "clang's errors are each the constant's whose enumerator line they name"
+    said = "/b/d.c:7:38: error: first\n/b/d.c:7:40: error: second on the line\n/b/d.c:13:1: error: third\n/b/h.h:2:1: error: in the header\n/b/d.c:4:1: warning: not an error\n"
+    assert errors(said: said, unit: "/b/d.c", first: 5, count: 3) == ["first", "third", ""]
+    assert first_line("a\nb\n") == 3
+    assert first_line("a\nb") == 3
+    assert text_of("x\n", asked: [Asked(name: "K", unsigned: true)]) == "x\n#pragma clang diagnostic error \"-Wgnu-folding-constant\"\n#pragma clang diagnostic error \"-Wshift-sign-overflow\"\nenum : unsigned long long { hero_constant_0 = (K) };\n#pragma clang diagnostic error \"-Wgnu-folding-constant\"\n#pragma clang diagnostic error \"-Wshift-sign-overflow\"\nenum : unsigned long long { hero_constant_0_again = (K) };\n"
