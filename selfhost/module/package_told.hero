@@ -1,43 +1,86 @@
 # What a `use` reaching a package is told where its module is not in the
-# compilation (spec § 1; panel 235's R1 and R18, ratified 2026-11-07).
-# Asked by `modules.unknown_modules` alone, on the error path, so a program
-# whose every module is found asks nothing here.
+# compilation (spec § 1; panel 235's R1, R3, R5, R7 and R18, ratified
+# 2026-11-07). Asked by `modules.unknown_modules` alone, on the error path, so
+# a program whose every module is found asks nothing here.
 #
-# Each answer names the file the program must change and what to write, so
-# the message carries the repair (design.md §4.17). **A repair that moves a
-# `use` across the mark is `certain` only where nothing on the other side
-# answers the same path** (R18, the compiler-engineer's rule): taking the
-# brackets off `use <roman>/numeral` because the program has its own
-# `roman/numeral.hero` would compile that module in the package's place where
-# the entry was deleted or mistyped, so that repair is a `guess`.
+# Discovery records what it found of each package it reached
+# (`reached.Package`, its `problem`), and this file tells it on the `use` line
+# that reached it, once a package; the program's catalogue is read again here
+# only to say which entry it lacks or which line of it does not read, once a
+# compilation (R5: told with its line and never applied, the catalogue being
+# no file of the compilation, which a `Fix` edits).
+#
+# Each answer names the file the program must change and what to write
+# (design.md §4.17). **A repair that moves a `use` across the mark is
+# `certain` only where nothing on the other side answers the same path**
+# (R18, the compiler-engineer's rule): taking the brackets off `use
+# <roman>/numeral` because the program has its own `roman/numeral.hero` would
+# compile that module in the package's place where the entry was deleted or
+# mistyped, so that repair is a `guess`; putting brackets on `use
+# roman/numeral` where `roman` is an entry, its tree holds `numeral.hero` and
+# the program has no `roman/numeral.hero` is `certain`.
 
 use token
+use ast
 use diag
 use source
+use module/catalogue
 use module/placed
+use module/packages
 use module/paths
+use module/spelling
 use cli/files
 
-# The catalogue's file, beside the file you compile.
-constant CATALOGUE: str
-    "heroes.toml"
+# What `used` is told, `name` its module in the compilation ("" where no
+# package of the build answers it), none where an earlier `use` already told
+# its cause: `told` holds what the graph said before.
+function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnostic]) -> [diag.Diagnostic]
+    span = used.name
+    from = source.module_at(s, used.span.start)
+    written = source.span_text(s, span)
+    none: [diag.Diagnostic] = []
 
-function unknown(s: source.Source, name: str, span: token.Span) -> diag.Diagnostic
-    base = paths.directory_text(s.name)
+    if placed.is_package(from) && name.len() == 0
+        owner = placed.entry_of(from)
+        return [
+            diag.new_diagnostic(code: "unknown_entry", message: "`<" + placed.entry_of(written) + ">` is no entry of the catalogue of the package `" + owner + "`, `" + root_of(s, alias: owner) + catalogue.FILE + "`: the package names a package its catalogue does not hold, and a package is fetched whole — `heroes fetch` places it again", span: span)
+        ]
     entry = placed.entry_of(name)
-    inside = placed.inside_of(name)
 
-    if present(base + CATALOGUE)
-        return diag.new_diagnostic(
-            code: "catalogue_unread",
-            message: "`use " + name + "` reaches the package `" + entry + "` through the catalogue `" + base + CATALOGUE + "`, and this compiler reads no catalogue yet (M-package-manager's step 3)",
-            span: span
-        )
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "unknown_entry",
-        message: "`<" + entry + ">` names no entry: there is no catalogue `" + base + CATALOGUE + "` beside `" + s.name + "`, the file you compile, and a package's module is read only through its entry there — `heroes add " + entry + "` writes one",
-        span: span
-    )
+    for p in s.reached.packages
+        if p.alias == entry && p.problem.len() > 0
+            if said(told, code: "package_unread", entry: entry)
+                return none
+            return [
+                diag.new_diagnostic(code: "package_unread", message: "`<" + entry + ">` cannot be read: " + p.problem, span: span)
+            ]
+
+        if p.alias == entry
+            return [
+                diag.new_diagnostic(code: "unknown_package_module", message: "the package `" + entry + "` has no module `" + placed.inside_of(name) + "`: `use " + written + "` reads `" + p.root + placed.inside_of(name) + ".hero`, and that file is not there", span: span)
+            ]
+
+    base = paths.directory_text(s.name)
+    listed = catalogue.read(opened: base, named: base)
+
+    if listed.problem.len() > 0
+        if said(told, code: "catalogue_refused", entry: "")
+            return none
+        return [
+            diag.new_diagnostic(code: "catalogue_refused", message: "`use " + written + "` reaches a package through the catalogue, and it does not read: " + listed.problem + " — a catalogue that does not read names no package, the lines above that one included", span: span)
+        ]
+    return [no_entry(s, listed: listed, entry: entry, inside: placed.inside_of(name), span: span)]
+
+# `<json>` is no entry: of no catalogue, there being none, or of the program's.
+# A `guess` takes the brackets off where the program's own module of that
+# path is there (R18).
+function no_entry(s: source.Source, listed: catalogue.Catalogue, entry: str, inside: str, span: token.Span) -> diag.Diagnostic
+    base = paths.directory_text(s.name)
+    message: str @= "`<" + entry + ">` names no entry: there is no catalogue `" + base + catalogue.FILE + "` beside `" + s.name + "`, the file you compile, and a package's module is read only through its entry there — `heroes add " + entry + "` writes one"
+
+    if listed.file.len() > 0
+        message @ "`<" + entry + ">` is no entry of the catalogue `" + listed.file + "`" + entries_said(listed) + " — `heroes add " + entry + "` writes one"
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "unknown_entry", message: message, span: span)
 
     # A GUESS, never certain: where the catalogue or its entry was deleted,
     # the program's own module of that path is another module, and applying
@@ -48,8 +91,72 @@ function unknown(s: source.Source, name: str, span: token.Span) -> diag.Diagnost
         )
     return d
 
-# Whether anything stands at `path`, a link to a file included: "there is no
-# `heroes.toml`" is said only where nothing is.
+function entries_said(listed: catalogue.Catalogue) -> str
+    if listed.entries.len() == 0
+        return ", which holds none"
+    names: [str] @= []
+
+    for e in listed.entries
+        names @ names.push("`" + e.name + "`")
+
+    return ", whose entries are " + names.join(", ")
+
+# A bare `use` no own module answers: told with its mark where its first part
+# is an entry of the catalogue and the package holds the module, the brackets
+# forgotten (R18), the repair certain where the package's placed tree holds
+# the file, since nothing of the program's own answers that path, and a
+# `guess` where the tree is not there to ask; else as a module the directory
+# does not hold (`spelling.unknown`, defect 2290).
+function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str) -> diag.Diagnostic
+    base = paths.directory_text(s.name)
+    entry = head_of(name)
+    listed = catalogue.read(opened: base, named: base)
+
+    if entry == name || catalogue.entry(listed, name: entry).is_err()
+        return spelling.unknown(s, uses, used: used, base: base, name: name)
+    marked = "<" + entry + ">/" + name.slice(from: entry.len() + 1, to: name.len())
+    book: packages.Book @= packages.book(named: base, opened: base)
+    at = packages.file_of(@book, marked)
+    certainty: diag.Certainty @= .guess
+
+    if !at.is_err()
+        if !present(at.must().opened)
+            return spelling.unknown(s, uses, used: used, base: base, name: name)
+        certainty @ .certain
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "package_unmarked",
+        message: "there is no module `" + name + "` of this program, and `" + entry + "` is an entry of its catalogue: a package's module is written in angle brackets — `use " + marked + "`",
+        span: used.name
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `use " + marked + "`", replacement: marked, span: used.name, certainty: certainty)
+    )
+    return d
+
+function head_of(name: str) -> str
+    at: i64 @= 0
+
+    while at < name.len() && name[at] != '/'
+        at @ at + 1
+
+    return name.slice(from: 0, to: at)
+
+function root_of(s: source.Source, alias: str) -> str
+    for p in s.reached.packages
+        if p.alias == alias
+            return p.root
+
+    return ""
+
+# Whether a diagnostic of `code` naming `<entry>` (any, for "") was told.
+function said(told: [diag.Diagnostic], code: str, entry: str) -> bool
+    for d in told
+        if d.code == code && (entry.len() == 0 || d.message.len() > entry.len() + 2 && d.message.slice(from: 0, to: entry.len() + 3) == "`<" + entry + ">")
+            return true
+
+    return false
+
+# Whether anything stands at `path`, a link to a file included.
 function present(path: str) -> bool
     match files.entry(path)
         .absent                                        => return false

@@ -30,6 +30,8 @@
 use token
 use char_column
 use module/names as module_names
+use module/reached
+use text_lines
 
 ## The two tables
 
@@ -76,6 +78,8 @@ record Source
     # The offset of every byte of `text` continuing a character, ascending:
     # a column without a walk of its line (`char_column.at`, defect 372).
     continuations: [i64]
+    # The packages discovery reached (panel 235, `module/reached.hero`).
+    reached: reached.Reached
 
 # A byte that is not part of a well-formed UTF-8 sequence: where the U+FFFD
 # that stands for it begins, and its value (panel 189, defect 227).
@@ -168,39 +172,21 @@ function from_files(inputs: [InputFile]) -> Source
         table @ table.push(entry)
         pieces @ pieces.push(input.text)
         size @ size + input.text.len()
-        newlines @ newlines + newlines_in(input.text)
+        newlines @ newlines + text_lines.newlines_in(input.text)
 
     whole = pieces.join("")
     none: [Fault] = []
-    starts = starts_of(whole)
+    starts = text_lines.starts_of(whole)
     more = char_column.continuations_of(whole)
-    return Source(name: name, text: whole, line_starts: starts, files: table, faults: none, continuations: more)
-
-# The '\n' count of one segment — what `starts_of(text).len() - 1` answers
-# for a whole text, without building the array.
-function newlines_in(text: str) -> i64
-    count: i64 @= 0
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '\n'
-            count @ count + 1
-        i @ i + 1
-
-    return count
-
-# Byte offset of the first byte of each line. starts[0] == 0, and the length
-# is the number of lines, which is what makes it double as a line count.
-function starts_of(text: str) -> [i64]
-    starts: [i64] @= [0]
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '\n'
-            starts @ starts.push(i + 1)
-        i @ i + 1
-
-    return starts
+    return Source(
+        name: name,
+        text: whole,
+        line_starts: starts,
+        files: table,
+        faults: none,
+        continuations: more,
+        reached: reached.none()
+    )
 
 ## Which file — the index that makes concatenation reversible
 

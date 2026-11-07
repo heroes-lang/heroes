@@ -26,8 +26,26 @@ so a long expression, a condition included, breaks inside parentheses.
   module you name needs its own `use`. No wildcard.
 - A `use` may be a path: `use syntax/decl` binds `decl`, the last part, and
   `use syntax/decl as sd` binds `sd` instead. A file may not bind one name twice;
-  two files may name the same module differently. Every `use` starts at the
-  directory of the file you compile.
+  two files may name the same module differently. A `use` starts at the
+  directory of the file you compile, unless its first part is a name in angle
+  brackets: `use <json>/parse` reaches the module `parse` of the package `json`,
+  code others publish, which the program's catalogue `heroes.toml`, beside the
+  file you compile, names with its source, exact version and fingerprint.
+  `heroes add json` writes that entry; a program that uses no package has no
+  catalogue. Inside a package a `use` starts at the package's own root, and its
+  brackets name entries of the package's own catalogue; a program holds one
+  version of each package, every one listed in its catalogue:
+```
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124"
+
+[dependencies.yaml]
+git = "https://git.example.org/ana/yaml"
+tag = "v0.3.1"
+commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
+sum = "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"
+```
 - `#` comments to end of line, markdown inside. A comment directly above a
   declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
@@ -37,7 +55,7 @@ so a long expression, a condition included, breaks inside parentheses.
   and a string is one line.
 
     File = { NEWLINE } { Use | Declaration } .
-    Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .
+    Use  = "use" [ "<" ident ">" "/" ] ident { "/" ident } [ "as" ident ] NEWLINE .
 
 ## 2. Literals
 - A literal takes the type its context asks for — `b: u8 = 255`, and `b + 1` is a

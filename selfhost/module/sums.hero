@@ -1,0 +1,110 @@
+# The shapes a catalogue's values take (spec § 1; panel 235's R5 and R6,
+# ratified 2026-11-07): a fingerprint, an exact version, a commit and an
+# address. Each is asked of the text alone and none reaches the network: the
+# compiler never fetches (R8), so what it can know of a value it reads is its
+# shape, and the fingerprint of the tree a fetch placed.
+
+# `sha256-` then 64 lowercase hexadecimal digits: Go's `h1` shape, over a
+# listing of the package's files (R6, `module/fingerprint.hero`).
+function sum_shape(sum: str) -> bool
+    return sum.len() == 71 && sum.slice(from: 0, to: 7) == "sha256-" && lower_hex(sum.slice(from: 7, to: 71))
+
+# An exact version, three numbers with no leading zero: `1.4.2`, never a
+# range, never `v1.4.2` or `1.4`.
+function version_shape(version: str) -> bool
+    numbers: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= version.len()
+        if at == version.len() || version[at] == '.'
+            if !number_shape(version.slice(from: start, to: at))
+                return false
+            numbers @ numbers + 1
+            start @ at + 1
+        at @ at + 1
+
+    return numbers == 3
+
+function number_shape(text: str) -> bool
+    if text.len() == 0 || text.len() > 1 && text[0] == '0'
+        return false
+
+    for ch in text.chars()
+        if !(ch[0] >= '0' && ch[0] <= '9')
+            return false
+
+    return true
+
+# A git commit: 40 lowercase hexadecimal digits, or 64 where the repository
+# names its objects by SHA-256.
+function commit_shape(commit: str) -> bool
+    return (commit.len() == 40 || commit.len() == 64) && lower_hex(commit)
+
+function lower_hex(text: str) -> bool
+    for ch in text.chars()
+        b = ch[0]
+
+        if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f')
+            return false
+
+    return text.len() > 0
+
+# What is wrong with an address a catalogue holds, "" where nothing is: the
+# verbs fetch from `https://`, and from `file://` inside the program's own
+# repository, and every other scheme is refused (R9's C4, the coordinator's
+# ruling of 2026-11-07), here where the catalogue is read, so a scheme no verb
+# takes is never written down as a source.
+function address_scheme(address: str) -> str
+    for scheme in ["https://", "file://"]
+        if address.len() > scheme.len() && address.slice(from: 0, to: scheme.len()) == scheme
+            return ""
+
+    return "is no address the verbs fetch from: a source is `https://`, or `file://` inside the program's own repository"
+
+# A folder's path with its `.` and `..` parts taken out where a part before
+# them answers them, lexically: `a/../b/./c` is `b/c`, and `../x` stays.
+function folded(path: str) -> str
+    kept: [str] @= []
+    start: i64 @= 0
+    rooted = path.len() > 0 && path[0] == '/'
+
+    for at in range(from: 0, to: path.len() + 1)
+        if at == path.len() || path[at] == '/'
+            part = path.slice(from: start, to: at)
+            start @ at + 1
+
+            if part == ".." && kept.len() > 0 && kept[kept.len() - 1] != ".."
+                kept @ kept.slice(from: 0, to: kept.len() - 1)
+            else if part.len() > 0 && part != "."
+                kept @ kept.push(part)
+
+    if rooted
+        return "/" + kept.join("/")
+    return kept.join("/")
+
+## Tests
+
+test "a catalogue's values are asked their shape, and nothing else"
+    assert sum_shape("sha256-" + "0123456789abcdef".repeat(4.to_u64().must()))
+    assert !sum_shape("sha256-" + "0123456789ABCDEF".repeat(4.to_u64().must()))
+    assert !sum_shape("sha256-abc")
+    assert !sum_shape("h1:" + "a".repeat(68.to_u64().must()))
+    assert version_shape("1.4.2")
+    assert version_shape("0.10.0")
+    assert !version_shape("01.4.2")
+    assert !version_shape("1.4")
+    assert !version_shape("v1.4.2")
+    assert !version_shape("1.4.2-rc.1")
+    assert !version_shape("1..2")
+    assert commit_shape("0123456789abcdef0123456789abcdef01234567")
+    assert !commit_shape("0123456789abcdef")
+    assert address_scheme("https://git.example.org/ana/yaml") == ""
+    assert address_scheme("file://packages/yaml") == ""
+    assert address_scheme("ssh://git@example.org/yaml").len() > 0
+    assert address_scheme("--upload-pack=touch /tmp/x").len() > 0
+    assert address_scheme("https://").len() > 0
+    assert folded("a/../b/./c") == "b/c"
+    assert folded("../x") == "../x"
+    assert folded("heroes.packages/k/../../x/") == "x"
+    assert folded("/abs/./y") == "/abs/y"

@@ -20,11 +20,12 @@ use token
 use source
 use lexer
 use stream_tables
+use text_lines
 
 function written(s: source.Source, span: token.Span) -> str
     text = source.span_text(s, span)
 
-    if source.newlines_in(text) == 0
+    if text_lines.newlines_in(text) == 0
         return text
     tokens = lexer.lex_one(text).tokens
     parts: [str] @= []
@@ -32,7 +33,7 @@ function written(s: source.Source, span: token.Span) -> str
 
     for t in tokens
         if !stream_tables.is_invisible(t.kind) && t.kind != .eof
-            if last >= 0 && source.newlines_in(text.slice(from: last, to: t.span.start)) > 0
+            if last >= 0 && text_lines.newlines_in(text.slice(from: last, to: t.span.start)) > 0
                 parts @ parts.push(" ")
             else if last >= 0
                 parts @ parts.push(text.slice(from: last, to: t.span.start))
