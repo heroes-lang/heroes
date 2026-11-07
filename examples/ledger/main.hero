@@ -337,7 +337,7 @@ test "a close sqlite refuses is told in its words, and the connection still clos
     statement: sqlite.Statement @= sqlite.prepared(db, "select 1").must()
     refused = sqlite.closed(@db)
     assert refused.is_err()
-    assert lines.holds(text: err_text_of(refused), needle: "unable to close due to unfinalized statements")
+    assert strings.contains(s: err_text_of(refused), substr: "unable to close due to unfinalized statements")
     _ = sqlite.finalized(@statement)
     sqlite.closed(@db).must()
 
