@@ -1,0 +1,10 @@
+# Regular polygons: the module `polygon` of the package its authors call
+# `geom`, https://git.example.org/cara/geom at tag v3.0.2 (panel 235's
+# reader test).
+
+# The perimeter of a regular hexagon whose side is `side`: six times `side`.
+function hexagon_perimeter(side: i64) -> i64
+    return 6 * side
+
+test "a hexagon of side 5"
+    assert hexagon_perimeter(5) == 30

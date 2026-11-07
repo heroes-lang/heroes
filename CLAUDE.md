@@ -234,9 +234,9 @@ rewrite a snapshot and cannot invent an annotation.
 
 ## 10. One command
 Any new capability is a `heroes` subcommand or flag. **Never a second binary,
-never a script, never a Makefile.** The stopping rule, the exit-code contract
-and the refusal of a fourth input class are in `.claude/rules/cli-surface.md`
-(CL-016, CL-022).
+never a script, never a Makefile.** The stopping rule, the exit-code contract,
+the fourth input class, the catalogue, and the refusal of a fifth are in
+`.claude/rules/cli-surface.md` (CL-016, CL-022).
 
 ## 11. Language and conventions
 **Everything written is English**: code, comments, docs, commits, verdicts, and

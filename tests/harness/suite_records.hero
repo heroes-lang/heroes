@@ -322,6 +322,9 @@ constant REFUSED: [str]
         "M-embedded-clang"
         "M-single-binary"
         "M-bundled-toolchain"
+        "M-package-registry"
+        "M-heroes-index"
+        "M-central-index"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -609,8 +612,13 @@ constant REFUSED: [str]
 # `REFUSED` gains its three runners-up, each refused in its
 # `docs/roadmap/names.md` row: `M-embedded-clang`, `M-single-binary` and
 # `M-bundled-toolchain`.
+# **96 -> 97 on 2026-11-07**, `M-package-index`, entered at row 78 by the
+# author's instruction of 2026-11-06, the index a Heroes package is published
+# to and fetched from beside git. `REFUSED` gains its three runners-up, each
+# refused in its `docs/roadmap/names.md` row: `M-package-registry`,
+# `M-heroes-index` and `M-central-index`.
 constant ROWS: i64
-    96
+    97
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

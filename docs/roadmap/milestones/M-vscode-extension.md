@@ -44,7 +44,8 @@ after M-lsp-server and immediately before the gate. **Row 85 since
 2026-10-18**, one further when M-readonly-lend entered the chain at row 68
 (`b5db7e8ff`), still after M-lsp-server and before the gate. **Row 86 since
 2026-10-26**, one further again when M-standalone-compiler entered the chain
-at row 82.
+at row 82. **Row 87 since 2026-11-07**, one further again when M-package-index
+entered at row 78.
 
 **A comparison read on 2026-10-25, offered by the session of that day for this
 row.** Goose's extension (github.com/aardappel/goose, [goose/vscode/README.md](https://github.com/aardappel/goose/blob/master/vscode/README.md))

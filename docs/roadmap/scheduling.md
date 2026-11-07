@@ -497,6 +497,22 @@ one down, their order kept. No sitting: a scheduling changes no language
 convenes one. § The chain holds 92 rows with no gap, by a count over the
 table and by `site/src/lib/chain.ts`, which refuses a gap at build time.
 
+**2026-11-06, M-package-manager opened beside M-core-packages, and
+M-package-index entered at row 78, by the author's instructions** of that
+day, given in conversation and meant as: *the dependency system is decided
+before the core packages, and built twice, first over C, then over the core
+packages, its interface unchanged*; and *one day there will be a Heroes
+index, a site we download these packages from as well as from git, like `pip
+install`, and the catalogue must allow for it now*. Row 77 opened on
+2026-11-07 in the lane `pm-opening`, beside 76, which pauses after its first
+batch until 77's first version can distribute it. The index goes immediately
+after 77 because the catalogue 77 delivers must already name it as a source;
+the fifteen scheduled rows from M-web-framework on each move one down, their
+order kept. No sitting for the scheduling: a scheduling changes no language
+(https://github.com/heroes-lang/heroes/issues/820); row 77's opening sitting
+is 235, and row 78's opening convenes its own. § The chain holds 93 rows with
+no gap, by a count over the table.
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since

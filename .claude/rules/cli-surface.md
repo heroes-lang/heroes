@@ -44,17 +44,36 @@ run. Inspection is `--dump-<stage>` (design.md §3.5 has the list); `--json` say
 output, not a dump. One argv table parses the arguments and prints the help, so
 the two cannot disagree.
 
-## There is no fourth slot, because there is no fourth input class
+## Four input classes: the catalogue is the fourth, and there is no fifth
 
-The three shapes above all answer *what does this capability do to the inputs the
-tool already has*: a `.hero` file, argv, and the machine's environment. A
-**per-project file** is none of them, so this rule does not admit one (CL-016).
-The refusal is **not permanent**: it is conditional on panel 056's three return
-conditions, which are its only amendment path.
+The shapes above answer *what does this capability do to the inputs the tool
+already has*: a `.hero` file, argv, the machine's environment, and **one
+per-project file, the program's catalogue**, `heroes.toml` beside the file
+compiled, holding the dependencies a `use <name>/…` reaches and the address of
+the index the verbs read, and nothing else (spec § 1). It is admitted by the
+author's call (panel 235, 2026-11-07, recorded `retro-record`, ratified the same
+day), not by panel 056's three return conditions: its entries repeat the names
+the `use` lines write, so the second condition's letter cannot hold, and what is
+kept is that condition's purpose, as the falsifier below. **A program with no
+`use <name>/…` has no catalogue and reads none.** The catalogue holds, per
+entry, its source, its exact version or tag and its fingerprint; a compiler
+flag, a search path, a library or package of spec § 13, a language version, a
+mode or the program's own name is refused by the reader, never ignored.
 
-`heroes add` and `heroes fetch` are subcommands when they arrive
-(design.md:772, and that line number is the one citation shape no instrument can
-check, CL-037).
+**The falsifier**: deleting the catalogue, deleting one of its entries, or
+mistyping any field of one never changes which module compiles, only whether
+the program builds, and a fetched copy left behind after its entry is gone
+compiles nothing; a `path` entry, a local folder while a package is developed,
+is the one exemption, and every build that uses one says so (panel 235's R6).
+The `check` golden form holds one case for each; one program that compiles
+another module after such an edit returns the admission to a sitting.
+
+**A fifth input class is refused** on panel 056's three conditions, its only
+amendment path: a second per-project file beside the catalogue, a lock, a
+workspace or a configuration, is a fifth class.
+
+`heroes add` and `heroes fetch` are subcommands when they arrive (design.md
+§3.5, cited by its section, CL-037).
 
 ## What this rule refuses today
 
