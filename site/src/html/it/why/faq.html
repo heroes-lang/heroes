@@ -68,7 +68,7 @@
   <h2 id="libraries">Le librerie, ed eseguirlo</h2>
   <dl class="why">
     <dt>C&rsquo;è una libreria standard? Come aggiungo una libreria?</dt>
-    <dd>Una libreria standard non c&rsquo;è, di proposito: le funzioni predefinite stanno in una riga della specifica. Tutto il resto è una libreria C che dichiari in poche righe nel tuo file, nominando il suo header e la libreria, e clang verifica la tua dichiarazione sull&rsquo;header. SQLite, libcurl, raylib e SDL sono collegate negli esempi senza codice di raccordo. Un comando che scarica i pacchetti è nella roadmap. <a href="/it/docs/the-c-boundary/">Usare le librerie C&nbsp;&rarr;</a></dd>
+    <dd>Una libreria standard non c&rsquo;è, di proposito: le funzioni predefinite stanno in una riga della specifica. Tutto il resto è una libreria C che dichiari in poche righe nel tuo file, nominando il suo header e la libreria, e clang verifica la tua dichiarazione sull&rsquo;header, oppure un pacchetto di codice Heroes che il tuo programma porta con sé, come i pacchetti core per lavorare con il testo. SQLite, libcurl, raylib e SDL sono collegate negli esempi senza codice di raccordo. Un comando che scarica i pacchetti è nella roadmap. <a href="/it/docs/the-c-boundary/">Usare le librerie C&nbsp;&rarr;</a></dd>
     <dt>Il C può chiamare Heroes?</dt>
     <dd>Una libreria C richiama Heroes attraverso una funzione che le passi tu, come un ordinamento o una finestra prendono una callback. Costruire in Heroes una libreria condivisa che un programma C carica non è una cosa che fa oggi.</dd>
     <dt>Si possono eseguire operazioni in parallelo?</dt>
