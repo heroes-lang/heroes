@@ -132,7 +132,7 @@ nothing.
 
 **What the decision touches**, each rule reopened by name and never around
 it: the three inputs and the per-project file (`.claude/rules/cli-surface.md`
-§ There is no fourth slot, and panel 056's three return conditions, whose
+§ There is no fourth slot, since 2026-11-07 § Four input classes, and panel 056's three return conditions, whose
 second a catalogue repeating the alias `use` writes cannot meet, so that
 point is the author's call and is recorded as such); the grammar of `use`
 (`spec/heroes-spec.md` § 1); panel 099's premise, *no manifest*; panel 100's

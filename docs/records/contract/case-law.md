@@ -271,6 +271,13 @@ second job*: the golden harness collects `.hero` only, so a new input class
 would arrive with its diagnostics exempt from the one invariant a regenerator
 cannot forge, which panel 020's historian already refused for `unsupported`.
 
+**Amended 2026-11-07, panel 235's R12, ratified that day**: one per-project file is admitted, the
+program's catalogue, by the author's call and not by 056's conditions, whose second cannot hold
+for a file whose entries the `use` lines name; its purpose is kept as the falsifier, deleting or
+mistyping an entry never changes which module compiles, `path` entries excepted and told. A fifth
+input class stays refused on the three conditions. The rule's home is
+`.claude/rules/cli-surface.md` § Four input classes.
+
 ## CL-017 — A number or a repository fact goes into a record only if it was measured in the session that writes it
 2026-08-16 · author instruction · § Run it, or say it is unrun
 

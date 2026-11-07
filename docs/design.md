@@ -897,12 +897,20 @@ Dependencies, honestly: with no standard library (§1.11), a v1 "dependency" is 
 in the source next to the `extern` that needs it. No package manager exists before modules do; when
 it arrives it will be `heroes add`/`heroes fetch` — inside the same binary.
 
-***A per-project file is examined and deliberately unplaced*** (panel 056, ratified 2026-08-15):
-neither Part 6 nor Part 7. Three conditions, all met, return it to a panel, kept on
-M-package-manager's page: one key, not two, a `prefix <dir>` from which `-I` and `-L` are both
-derived; no string in the file also in a `.hero` file, so deleting the file never changes which
-symbols are linked; and one named binding that `package "<name>"` and one command line cannot
-build. (Written 2026-11-06, panel 234's R11; owed since panel 056.)
+***A per-project file is admitted once, as the program's catalogue*** (panel 235, the author's
+call of 2026-11-07, recorded `retro-record` and ratified the same day; examined and deliberately
+unplaced from panel 056, ratified 2026-08-15, until then). `heroes.toml` holds the dependencies a
+`use <name>/…` reaches, each with its source, its exact version or tag and its fingerprint, and the
+address of the index the verbs read, and nothing else; a program that reaches none has none. Panel
+056's second condition, *no string in the file also in a `.hero` file*, cannot hold for a file whose
+entries the `use` lines name; its purpose is kept as the admission's falsifier: **deleting or
+mistyping an entry never changes which module compiles, only whether the program builds**, which
+holds only where a `use` without brackets never reaches fetched code and every source is checked
+against its fingerprint, a `path` entry being the one exemption and told at every build. Every
+other per-project file stays examined and unplaced, its three conditions kept on
+M-package-manager's page (panel 056's: one key, not two, a `prefix <dir>` from which `-I` and `-L`
+are both derived; no string in the file also in a `.hero` file; one named binding that `package
+"<name>"` and one command line cannot build).
 
 One declared exception with an expiry date: `cargo build`/`cargo test` build *the compiler* until
 the fixpoint (as Zig's contributors use Zig's build system while users type only `zig`); after M-selfhost-fixpoint,
