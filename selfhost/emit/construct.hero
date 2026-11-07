@@ -22,6 +22,7 @@ use emit/aggregate
 use emit/container
 use emit/fallible
 use emit/storageless
+use emit/defined
 use emit/zeroed
 use emit/writer
 use emit/byte_copy
@@ -38,7 +39,7 @@ use checker
 # dispatcher reached its decided 350 lines as the map's literal took the site
 # its key's check names (panel 230's R1), and the shape is this module's
 # question.
-function emit(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, inst: ir.Inst, shape: ir.Shape, run: ir.Run, target: str?)
+function emit(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, sites: defined.Sites, inst: ir.Inst, shape: ir.Shape, run: ir.Run, target: str?)
     match shape
         .record_shape | .case_shape => record_or_case(
             @w,
@@ -47,6 +48,7 @@ function emit(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
             s,
             decls,
             f,
+            sites,
             ty: inst.ty,
             shape: shape,
             run: run,
@@ -95,7 +97,7 @@ function argument_names(f: containers.Function, run: ir.Run) -> [str]
 # A group's record whose construction ends with `rest: zero` is the one
 # exception, written as statements rather than a literal: every byte zero,
 # then each field it names (`emit/zeroed.hero`, panel 194).
-function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, ty: i64, shape: ir.Shape, run: ir.Run, target: str?, span: token.Span)
+function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, sites: defined.Sites, ty: i64, shape: ir.Shape, run: ir.Run, target: str?, span: token.Span)
     if target.is_err()
         return
     rendered: [str] @= []
@@ -104,7 +106,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
     for arg in containers.args_of(f, run)
         match arg
             .value_arg v =>
-                inner = storageless.fixed_text(c, s, decls, f, value: v.value)
+                inner = storageless.fixed_text(c, s, decls, f, sites, value: v.value)
                 fixed @ fixed.push(!inner.is_err())
 
                 if inner.is_err()
@@ -336,6 +338,7 @@ test "one expression for the by-value shapes, statements for the containers"
         s,
         parsed.decls,
         f,
+        defined.sites_of(f),
         ty: int_id,
         shape: .record_shape(decl: 0, given: [0]),
         run: ir.Run(start: 0, length: 1),

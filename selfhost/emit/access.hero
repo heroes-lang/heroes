@@ -19,6 +19,7 @@ use emit/mangle
 use emit/ctype
 use emit/aggregate
 use emit/container
+use emit/defined
 use emit/array_read
 use emit/str_read
 use emit/fallible
@@ -71,7 +72,7 @@ function string_byte(@w: writer.Writer, s: source.Source, f: containers.Function
 # xs[i]: an element, read through the descriptor — or, for a fixed
 # array, subscripted in place, which is why `s` and `decls` are here:
 # the base spelling comes from storageless.fixed_text (panel 085 R6).
-function element(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, base: i64, index: i64, target: str?, site: i64)
+function element(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, sites: defined.Sites, base: i64, index: i64, target: str?, site: i64)
     if target.is_err()
         return
     text = container.read_element(
@@ -80,6 +81,7 @@ function element(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [
         decls,
         names,
         f,
+        sites,
         base: base,
         index: index,
         where: stop_place.of(s, f, offset: site)

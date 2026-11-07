@@ -43,13 +43,14 @@ use ir/containers
 use emit/ctype
 use emit/writer
 use emit/storageless
+use emit/defined
 use emit/nodebug
 use ast
 use source
 
 # Emit `into = validated_bytes(value)`. Named `validated` until defect 501
 # reserved that name (`resolve/builtin_names.hero`).
-function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, run: ir.Run, arguments: [str], into: str)
+function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, sites: defined.Sites, run: ir.Run, arguments: [str], into: str)
     given = containers.args_of(f, run)
     source_value: i64 @= 0 - 1
 
@@ -97,7 +98,7 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
         # of this file used `arguments[0]` and clang said
         # `use of undeclared identifier 't1300'`, which is how the class was
         # found rather than remembered.
-        place = storageless.fixed_text(c, s, decls, f, value: source_value)
+        place = storageless.fixed_text(c, s, decls, f, sites, value: source_value)
 
         if place.is_err()
             writer.line(@w, text: "    hero_unreachable(); /* a fixed run with no rendering */")

@@ -34,6 +34,7 @@ use emit/mangle
 use emit/ctype
 use emit/descriptors
 use emit/storageless
+use emit/defined
 use emit/array_read
 use emit/nodebug
 use emit/stop_place
@@ -89,10 +90,10 @@ function build_array(c: state.Checked, names: ctype.Names, result: i64, argument
 # runtime with `where`, the place the program read at (defect 389; panel
 # 230's R1). The cast is on the RESULT's type, so the element type is stated
 # at every read and clang checks the assignment.
-function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, base: i64, index: i64, where: str) -> str?
+function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, sites: defined.Sites, base: i64, index: i64, where: str) -> str?
     # A fixed array is no runtime container: it is subscripted directly and
     # guarded by the compiler, and `storageless.element` owns that read.
-    fixed = storageless.element(c, s, decls, f, base: base, index: index, where: where)
+    fixed = storageless.element(c, s, decls, f, sites, base: base, index: index, where: where)
 
     if !fixed.is_err()
         return fixed
@@ -244,5 +245,5 @@ test "an array literal is one block and a push in place per element, a read is a
         instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
-    read = read_element(got.c, got.s, got.decls, got.names, f, base: 0, index: 1, where: "P")
+    read = read_element(got.c, got.s, got.decls, got.names, f, defined.sites_of(f), base: 0, index: 1, where: "P")
     assert read.must() == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? hero_panic_index_at(t0, t1, P) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
