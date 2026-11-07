@@ -92,3 +92,6 @@ down, M-compatibility-promise to 74 and M-launch-posts to 87.
 
 **Renumbered 2026-10-26**: M-standalone-compiler entered the chain at row 82,
 so this row is 87 and M-launch-posts 88; M-compatibility-promise stays at 74.
+
+**Renumbered 2026-11-07**: M-package-index entered the chain at row 78,
+so this row is 88 and M-launch-posts 89.

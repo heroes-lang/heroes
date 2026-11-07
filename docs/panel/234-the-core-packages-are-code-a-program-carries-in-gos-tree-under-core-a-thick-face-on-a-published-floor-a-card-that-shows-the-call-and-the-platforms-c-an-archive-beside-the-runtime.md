@@ -676,3 +676,24 @@ an index line. A yes settles where the packages live, what they hold and how the
 opens the conventions page and the first batch; it does not settle the four defects filed beside
 the sitting, which this milestone repairs whatever the answer, nor R16's route, which is priced and
 built at its step's own sitting.
+
+**RATIFIED, 2026-11-06**, R1 to R16 as adopted, and inside them the six choices as the sitting took
+them: F, the platform layer as an archive beside the runtime; I, the in-order check; C, the two
+compiler refusals; M, `core/slices`; N, the paired run at the close; E, the card in call form. The
+author answered in conversation that afternoon, meant as: *I ratify 2304*, on the coordinator's
+report, which recommended ratifying R1 to R16 as adopted and named N as the one place where the
+sitting parts from the author's own words, a run now and one at the close. So **the question to the
+author is answered: R1 to R16 stand, the conservative resolution of § What the conservative
+resolution would have been is taken in none of the six, and the paired run at the close stands in
+place of a run now and one at the close.** Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it; the four defects filed beside the sitting, 2289 to 2292, and R16's route, priced and
+built at its step's own sitting, are not settled by it.
+
+**Amended 2026-11-07 by panel 235's R15, ratified that day** (decision 2329,
+`docs/panel/235-dependencies-named-by-an-alias-in-angle-brackets-that-the-programs-catalogue-resolves-gos-modules-copied-whole-a-toml-catalogue-listing-every-package-and-no-fetched-code-run-at-build.md`):
+R2's placement, a copy of `core/` in each program's own root reached by a bare `use`, fails that
+sitting's question 17 under every spelling (its spec-warden's § 6: a copy left behind compiles as
+the program's own when its catalogue entry is deleted), so the copies become fingerprinted entries
+of the program's catalogue, resolved from a local static index, and `use core/…` becomes `use
+<core>/…`, no old spelling kept. R2's choice of Go's tree for the packages themselves,
+`core/strings` and the rest, stands.

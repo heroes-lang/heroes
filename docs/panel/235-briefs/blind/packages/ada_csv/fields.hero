@@ -1,0 +1,20 @@
+# Comma-separated values, split: the module `fields` of the package its
+# authors call `csv`, https://git.example.org/ada/csv at tag v1.2.0
+# (panel 235's reader test).
+
+# The fields of `line` between its commas, in order; no quoting is read.
+function split_line(line: str) -> [str]
+    out: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: line.len())
+        if line[i] == ','
+            out @ out.push(line.slice(from: start, to: i))
+            start @ i + 1
+
+    out @ out.push(line.slice(from: start, to: line.len()))
+    return out
+
+test "three fields, and an empty one"
+    assert split_line("red,green,blue") == ["red", "green", "blue"]
+    assert split_line("a,,b") == ["a", "", "b"]

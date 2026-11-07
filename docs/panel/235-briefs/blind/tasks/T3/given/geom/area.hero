@@ -1,0 +1,5 @@
+# The program's own module `geom/area`.
+
+# The area of a square whose side is `side`.
+function square(side: i64) -> i64
+    return side * side

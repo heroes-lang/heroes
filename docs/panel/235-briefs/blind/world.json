@@ -1,0 +1,40 @@
+{
+  "about": "Panel 235's reader test: what the grader's world holds. The Heroes index and the git hosts it can fetch from, each package a folder of packages/ whose fingerprint blind235.py recomputes and checks against `sum` before it grades; and what each task needs. Nothing else exists in this world.",
+  "fingerprint": "sha256 over the package folder's files in byte order of their paths relative to it, each written as its path, a zero byte, its length in decimal, a zero byte and its bytes; written `sha256-` then 64 lowercase hex digits",
+  "index": {
+    "roman": {
+      "2.1.0": {"dir": "packages/roman", "sum": "sha256-79151d65cd1d4c2caf5095b19dd286eded992640e674dc3e4ca71650b287fbe9"}
+    }
+  },
+  "git": {
+    "https://git.example.org/ada/csv": {
+      "v1.2.0": {"dir": "packages/ada_csv", "sum": "sha256-34d7dc508706d83daba5e85482dc993822ee0fc41c9c33c00e62ee5d71a1c176"}
+    },
+    "https://git.example.org/ben/csv": {
+      "1.10": {"dir": "packages/ben_csv", "sum": "sha256-8f8ec08f37590a2ff129f489fdd22e48c2221472e13b22ee04f3892fb40bdb75"}
+    },
+    "https://git.example.org/cara/geom": {
+      "v3.0.2": {"dir": "packages/cara_geom", "sum": "sha256-40400ef59eede9a63c4ebae1e2a9ca0633467bdd4fc652250d3869641abd8214"}
+    }
+  },
+  "tasks": {
+    "T1": {
+      "needs": [{"source": "index", "name": "roman", "version": "2.1.0"}],
+      "own": [],
+      "given": []
+    },
+    "T2": {
+      "needs": [
+        {"source": "git", "address": "https://git.example.org/ada/csv", "tag": "v1.2.0"},
+        {"source": "git", "address": "https://git.example.org/ben/csv", "tag": "1.10"}
+      ],
+      "own": [],
+      "given": []
+    },
+    "T3": {
+      "needs": [{"source": "git", "address": "https://git.example.org/cara/geom", "tag": "v3.0.2"}],
+      "own": ["geom/area"],
+      "given": ["geom/area.hero"]
+    }
+  }
+}
