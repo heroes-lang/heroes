@@ -174,3 +174,13 @@ the dependency system needs it, and says which line and why; § 2 is then
 amended in the commit that lands the ruling, under the section it amends,
 with this date, and the contract's count re-measured with it. Where the
 sitting finds the line not needed, § 2 stands as written.
+
+**The author's position after reading the survey, 2026-11-07**
+(`docs/panel/235-reports/historian-survey.md`), meant as: *the sitting decides
+between Go and Cargo; the sitting decides the catalogue's format, YAML, TOML
+or another; I want the most modern and current solution, the one that works
+best for language models*. So panel 235 rules both, and the author's
+criterion is measured rather than assumed: the blind seat and the reader test,
+within the author's cap of 25 USD for the whole sitting, compare the
+competing forms on what a model writes right at the first turn and what it
+is told when it does not.
