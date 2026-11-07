@@ -1,0 +1,25 @@
+# Roman numerals, from 1 to 3999: the module `numeral` of the package
+# `roman`, version 2.1.0 of the Heroes index (panel 235's reader test).
+
+# The Roman numeral of `n`, failing `out_of_range` where `n` is below 1 or
+# above 3999.
+function to_roman(n: i64) -> str?
+    if n < 1 || n > 3999
+        return fail(code: "out_of_range", msg: f"{n} has no Roman numeral")
+    values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+    symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+    rest @= n
+    out @= ""
+
+    for i in range(from: 0, to: values.len())
+        while rest >= values[i]
+            out @ out + symbols[i]
+            rest @ rest - values[i]
+
+    return ok(out)
+
+test "three numerals and a number out of range"
+    assert to_roman(4).must() == "IV"
+    assert to_roman(1987).must() == "MCMLXXXVII"
+    assert to_roman(2026).must() == "MMXXVI"
+    assert to_roman(4000).is_err()
