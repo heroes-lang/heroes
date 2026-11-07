@@ -1,7 +1,7 @@
 # M-package-manager — packages, and what stands in for a standard library
 
 
-**Scheduled, no warrant.** Not a decision to take later: design.md:772 already
+**Scheduled, no warrant.** Not a decision to take later: design.md §3.5 already
 fixes the shape — *"No package manager exists before modules do; when it arrives
 it will be `heroes add`/`heroes fetch` — inside the same binary"* (never a second
 binary, CLAUDE.md §6 and §10). Its real prerequisite is
@@ -163,3 +163,14 @@ the three-inputs rule; R2 and `core` as a catalogue entry; `internal/` and the
 new verbs; the C under the first version, programs run or libraries bound;
 the interface that stays fixed from the first version to the second; and what
 row 78 must deliver.
+
+**The author's word on CLAUDE.md § 2, 2026-11-07**, given in conversation when
+panel 235's survey brief found that copying Go's `go.mod` or Cargo's
+`Cargo.toml` whole brings a line declaring a language version or an edition
+(`go`, `toolchain`, `edition`, `rust-version`), which § 2 forbids before
+`1.0.0` (*no declared version, no mode*), meant as: *if it is needed, let us
+relax this rule*. So the sitting may keep such a line where it measures that
+the dependency system needs it, and says which line and why; § 2 is then
+amended in the commit that lands the ruling, under the section it amends,
+with this date, and the contract's count re-measured with it. Where the
+sitting finds the line not needed, § 2 stands as written.
