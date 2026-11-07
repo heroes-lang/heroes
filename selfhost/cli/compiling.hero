@@ -48,7 +48,10 @@ use cli/publish
 use cli/digest
 use cli/opening
 use cli/response_file
+use cli/deps
+use cli/order_trial
 use emit/c_text
+use emit/clang_place
 
 # Everything the program's C is compiled under but the words of one run (its
 # input, its output, its listing): the level, whether it is sanitised, the
@@ -72,21 +75,32 @@ function unit_words(c: Compiling) -> [str]
     return strings.with_all(list: flags.level_words(level: c.level, sanitize: c.sanitize), more: search_words(c))
 
 # The search, in the order a unit's compile searches (`units.tu_object`): the
-# `--include` directories, a package's compile words by the one rule every
-# compile step reads (`libraries.compile_flags`; defect 161: `-I` alone was
-# kept here), the runtime, and the source's own directory, so `extern
+# runtime first, then the `--include` directories, a package's compile words
+# by the one rule every compile step reads (`libraries.compile_flags`; defect
+# 161: `-I` alone was kept here), and the source's own directory, so `extern
 # "mylib.h"` finds a header beside the `.hero` file. The same headers must be
 # found from the same places, or the question is asked of another header.
+#
+# **The runtime's directory is the first a unit searches** (panel 235's R9,
+# its C1; defect 2324, 2026-11-07), so no file of the program's stands in for
+# a header the C this compiler writes includes, `heroes_unit.h`, `hero_os.h`,
+# the guard's two and `heroes_standard.h`: each is the first the unit names
+# and is found where `-I` is searched first. Until then the runtime stood
+# after the `--include` directories and a package's `-I`, and a
+# `heroes_standard.h` in a directory `--include` named was read in its place,
+# read the runtime's through `#include_next` and defined
+# `__builtin_add_overflow` to report nothing: an `i64` sum past the top
+# printed `-9223372036854775808` at exit 0 where the program panics, exit 134,
+# and nothing was said. The rest keep their order, so a program's header found
+# in an `--include` directory before its own root is still found there.
 function search_words(c: Compiling) -> [str]
-    out: [str] @= []
+    out: [str] @= ["-I", c.runtime]
 
     for one in c.search_include
         out @ strings.with_all(list: out, more: ["-I", one])
 
     for flag in libraries.compile_flags(c.package_flags)
         out @ out.push(flag)
-
-    out @ strings.with_all(list: out, more: ["-I", c.runtime])
 
     if c.source_dir.len() > 0
         out @ strings.with_all(list: out, more: ["-I", c.source_dir])
@@ -280,12 +294,88 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
     third: {str: str} @= {}
     assert reads(root + "/build", words: words, headers: ["hero-no-such-header.h"], @third).is_err()
 
+# **No file of the program's stands in for a header the unit includes from the
+# runtime** (defect 2324). A directory `--include` names, a package's `-I` and
+# the source's own directory each hold a file named like every header of the
+# runtime's, each an `#error`; the `--include` directory also holds a header
+# of the program's own with a name no runtime header has, and one named like
+# the runtime's under a folder of its own. The unit's opening as the emitter
+# writes it (`order_trial.opening`), with groups naming those two and the
+# runtime's `hero_compiler.h`, reads every runtime header from the runtime and
+# the program's two from where they stand, and no planted file. Under the
+# order that stood until the repair, the `--include` directory ahead of the
+# runtime's, the same opening reads a planted file and does not preprocess,
+# so the test is not blind.
+test "a unit's opening reads the runtime's own headers, whatever a directory of the program's holds (defect 2324)"
+    root = "build/selftest-compiling-runtime-first"
+    assert !process.remove_tree(root).is_err()
+    planted = [
+        "heroes_unit.h"
+        "heroes_runtime.h"
+        "hero_os.h"
+        "heroes_guard_open.h"
+        "heroes_guard_close.h"
+        "heroes_standard.h"
+        "hero_compiler.h"
+    ]
+
+    for dir in ["/inc/sub", "/pkg", "/src"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    for dir in ["/inc", "/pkg", "/src"]
+        for name in planted
+            assert !write_file(path: root + dir + "/" + name, text: "#error a program's " + name + " was read in place of the runtime's\n").is_err()
+
+    assert !write_file(path: root + "/inc/mine.h", text: "#define HERO_MINE 2324\n").is_err()
+    assert !write_file(path: root + "/inc/sub/heroes_standard.h", text: "#define HERO_SUB 2324\n").is_err()
+    c = Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [root + "/inc"],
+        package_flags: ["-I" + root + "/pkg"],
+        runtime: "runtime",
+        source_dir: root + "/src"
+    )
+    text = order_trial.opening(["hero_compiler.h", "mine.h", "sub/heroes_standard.h"], question: "")
+    memo: {str: str} @= {}
+    read = reads_text(build: root + "/build", words: probe_words(c), text: text, @memo)
+    assert !read.is_err()
+    paths: [str] @= []
+
+    # A row is `<digest> <path>`, after the digest of them all.
+    for row in deps.lines(clang_place.slashed(read.must()))
+        space: i64 @= 0
+
+        while space < row.len() && row[space] != 32
+            space @ space + 1
+
+        if space < row.len()
+            paths @ paths.push(row.slice(from: space + 1, to: row.len()))
+
+    for name in planted
+        mine: bool @= false
+
+        for path in paths
+            if path == "runtime/" + name
+                mine @ true
+
+        assert mine
+
+    for path in paths
+        if strings.starts_with(text: path, prefix: root + "/")
+            assert path == root + "/inc/mine.h" || path == root + "/inc/sub/heroes_standard.h"
+
+    assert strings.holds(text: paths.join("\n"), needle: root + "/inc/sub/heroes_standard.h")
+    before = strings.with_all(list: ["-I", root + "/inc"], more: probe_words(c))
+    assert reads_text(build: root + "/build", words: before, text: text, @memo).is_err()
+    assert !process.remove_tree(root).is_err()
+
 # **A unit and a probe compile under one list** (defects 163 and 167): a
 # unit's words are the compiler's flags, the build's level and sanitizers,
-# then the search, the `--include` directories, a package's compile words
-# but its link words, the runtime and the source's own directory last; a
-# probe's are the same list but its diagnostics, the level and the
-# sanitizers included.
+# then the search, the runtime first (defect 2324), the `--include`
+# directories, a package's compile words but its link words, and the
+# source's own directory last; a probe's are the same list but its
+# diagnostics, the level and the sanitizers included.
 # **A probe whose words pass what one Windows line holds reads its headers**
 # (defect 586): the package words a unit compiles under reach every probe's
 # line too, and the probes run before any unit does, so a line held to
@@ -326,7 +416,7 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         runtime: "rt",
         source_dir: "src"
     )
-    assert search_words(c) == ["-I", "inc", "-DHERO_PKG", "-Ipkg", "-I", "rt", "-I", "src"]
+    assert search_words(c) == ["-I", "rt", "-I", "inc", "-DHERO_PKG", "-Ipkg", "-I", "src"]
 
     # The machine's frame word stands between the list and the level, where
     # this machine has one (defect 2253): Linux arm64 read this test red until

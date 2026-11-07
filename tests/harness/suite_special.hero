@@ -29,6 +29,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     the_specs_own_example_opens_a_database(@r, scratch: scratch, compiler: compiler)
     a_search_path_is_one_word(@r, scratch: scratch, compiler: compiler)
     a_search_path_that_names_nothing(@r, scratch: scratch, compiler: compiler)
+    a_runtime_named_header_in_a_search_path_is_never_read(@r, scratch: scratch, compiler: compiler)
     one_bad_argument_does_not_kill_the_other_two(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
@@ -547,6 +548,84 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
             @r,
             label: "special/a path that names nothing",
             detail: "  an existing but empty search path was refused"
+        )
+        return
+    report.keep_pass(@r)
+
+# The headers the C this compiler writes includes from the runtime, and the
+# one a group of the compiler's own names (defect 2324).
+constant RUNTIME_HEADERS: [str]
+    [
+        "heroes_unit.h"
+        "heroes_runtime.h"
+        "hero_os.h"
+        "heroes_guard_open.h"
+        "heroes_guard_close.h"
+        "heroes_standard.h"
+        "hero_compiler.h"
+    ]
+
+# A program reading a header of its own and adding past `i64`'s top.
+constant PAST_THE_TOP: str
+    "extern \"mine2324.h\"\n    constant MINE_2324: i64\n\nfunction main()\n    print(MINE_2324)\n    big: i64 = 9223372036854775807\n    n = args().len()\n    print(big + n)\n"
+
+# **No file in a directory `--include` names stands in for a header of the
+# runtime's** (defect 2324; panel 235's R9, its C1). Two such directories
+# hold a file named like each header above, each reading the next one by
+# `#include_next` and then defining `__builtin_add_overflow` to report
+# nothing, and the second holds the program's own `mine2324.h`, which its
+# group names. The program prints its header's value and its sum past the top
+# panics, as with no `--include`; until the repair the runtime's directory
+# came after both, and the sum printed `-9223372036854775808` at exit 0 with
+# nothing said. The files are written here, as the cache suite writes its
+# headers: a file named like the runtime's has no program beside it to claim
+# it, which `records/c` asks of a `.h` outside the directories that own C.
+function a_runtime_named_header_in_a_search_path_is_never_read(@r: report.Report, scratch: str, compiler: str)
+    label = "special/a runtime-named header in a search path is never read"
+    home = scratch + "/runtime-first"
+    laid: ()? @= shell.remove_tree(home)
+
+    for dir in ["/a", "/b"]
+        if !laid.is_err()
+            laid @ shell.mkdir_all(home + dir)
+
+        for name in RUNTIME_HEADERS
+            if !laid.is_err()
+                laid @ write_file(
+                    path: home + dir + "/" + name,
+                    text: "#include_next <" + name + ">\n#define __builtin_add_overflow(a, b, r) ((*(r) = (a) + (b)), 0)\n"
+                )
+
+    for pair in [["/b/mine2324.h", "#define MINE_2324 2324\n"], ["/main.hero", PAST_THE_TOP]]
+        if !laid.is_err()
+            laid @ write_file(path: home + pair[0], text: pair[1])
+
+    if laid.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + home)
+        return
+    binary = home + "/past-the-top" + shell.exe_suffix()
+    compiled = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", home + "/main.hero", "--include", home + "/a", "--include", home + "/b", "-o", binary]
+    )
+
+    if compiled.is_err() || compiled.must().code != 0
+        report.keep_failure(@r, label: label, detail: "  `build` with the two directories: " + shell.ending(compiled))
+        return
+    ran = shell.run(scratch: scratch, program: binary, words: [binary, "x"])
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  the program did not run: " + shell.refusal(ran))
+        return
+    wanted = expectation.split("2324\n!panic: integer overflow\n").must()
+    missed = expectation.unmet(wanted, out: ran.must().out, err: ran.must().err, code: ran.must().code)
+
+    if !missed.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  a file named like the runtime's was read in its place: the program " + missed.must()
         )
         return
     report.keep_pass(@r)
