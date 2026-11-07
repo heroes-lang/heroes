@@ -55,8 +55,8 @@ function bound_of(s: source.Source, decls: [ast.Decl], headers: [str]) -> [Bound
 
         match decl.kind
             .function_decl fd =>
-                out @ with_name(
-                    out,
+                with_name(
+                    @out,
                     @seen,
                     s,
                     span: decl.name,
@@ -67,22 +67,22 @@ function bound_of(s: source.Source, decls: [ast.Decl], headers: [str]) -> [Bound
 
                 for mark in [fd.value.owned_result, fd.value.acquires_result, fd.value.retains_result]
                     if !mark.is_err()
-                        out @ with_words(out, @seen, s, span: mark.must(), header: header, place: place)
+                        with_words(@out, @seen, s, span: mark.must(), header: header, place: place)
 
                 for param in fd.value.params
                     for mark in [param.owned, param.acquires, param.transfers, param.retains]
                         if !mark.is_err()
-                            out @ with_words(out, @seen, s, span: mark.must(), header: header, place: place)
+                            with_words(@out, @seen, s, span: mark.must(), header: header, place: place)
             .constant_decl =>
-                out @ with_name(out, @seen, s, span: decl.name, header: header, place: place, arity: -1)
+                with_name(@out, @seen, s, span: decl.name, header: header, place: place, arity: -1)
             .record_decl rec =>
-                out @ with_name(out, @seen, s, span: decl.name, header: header, place: place, arity: -1)
+                with_name(@out, @seen, s, span: decl.name, header: header, place: place, arity: -1)
 
                 if !rec.tag.is_err()
-                    out @ with_name(out, @seen, s, span: rec.tag.must(), header: header, place: place, arity: -1)
+                    with_name(@out, @seen, s, span: rec.tag.must(), header: header, place: place, arity: -1)
 
                 for field in rec.fields
-                    out @ with_name(out, @seen, s, span: field.name, header: header, place: place, arity: -1)
+                    with_name(@out, @seen, s, span: field.name, header: header, place: place, arity: -1)
             .variant_decl | .test_decl => continue
 
     return out
@@ -98,27 +98,28 @@ function place_of(headers: [str], header: str) -> i64
 
     return 0
 
-function with_name(out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64, arity: i64) -> [Bound]
+# Lent, so each name grows the list in place (defect 2319; defect 409's
+# spelling): returned as `out.push(…)` and assigned back, the list was copied
+# once a name, and a group's record names every field, so 8,192 members cost
+# the square of 8,192 copies.
+function with_name(@out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64, arity: i64)
     name = source.span_text(s, span)
 
     if !seen[name].is_err()
-        return out
+        return
     seen[name] @ true
-    return out.push(Bound(name: name, header: header, place: place, span: span, arity: arity))
+    out @ out.push(Bound(name: name, header: header, place: place, span: span, arity: arity))
 
 # ORDER: by name, as `sort` orders a `str`; each releaser a mark's span names,
 # called with one argument.
-function with_words(out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64) -> [Bound]
+function with_words(@out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64)
     words: {str: bool} @= {}
     macro_guard.words_into(@words, text: source.span_text(s, span))
-    grown: [Bound] @= out
 
     for word in sort(keys(words))
         if seen[word].is_err()
             seen[word] @ true
-            grown @ grown.push(Bound(name: word, header: header, place: place, span: span, arity: 1))
-
-    return grown
+            out @ out.push(Bound(name: word, header: header, place: place, span: span, arity: 1))
 
 ## Tests
 
