@@ -161,3 +161,44 @@ function present(path: str) -> bool
     match files.entry(path)
         .absent                                        => return false
         .file | .directory | .link | .other | .unknown => return true
+
+## Private modules
+
+# Every `use` naming a private module from outside its owner (panel 235's
+# R16, ratified 2026-11-07, the program's own folders as well as a
+# package's): `<core>/strings/internal/scan` is `<core>/strings`'s, the
+# module before the LAST `internal` part, and only that module and the
+# modules under it name it, Go's rule for `internal` since Go 1.4.
+function private_reaches(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= found
+
+    for used in uses
+        from = source.module_at(s, used.span.start)
+        name = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
+        owner = owner_of(name)
+
+        if owner.len() > 0 && from != owner && !(from.len() > owner.len() && from.slice(from: 0, to: owner.len() + 1) == owner + "/")
+            out @ out.push(
+                diag.new_diagnostic(code: "private_module", message: "`" + name + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `" + owner + "` offers instead", span: used.name)
+            )
+
+    return out
+
+# The module a private module belongs to, "" for one under no `internal`.
+function owner_of(name: str) -> str
+    cut: i64 @= -1
+
+    for at in range(from: 0, to: name.len())
+        if at + 9 <= name.len() && name.slice(from: at, to: at + 9) == "/internal" && (at + 9 == name.len() || name[at + 9] == '/')
+            cut @ at
+
+    if cut < 0
+        return ""
+    return name.slice(from: 0, to: cut)
+
+test "a private module is its owner's and its owner's modules' alone"
+    assert owner_of("<core>/strings/internal/scan") == "<core>/strings"
+    assert owner_of("<core>/strings") == ""
+    assert owner_of("a/internal/b/internal/c") == "a/internal/b"
+    assert owner_of("internalx/y") == ""
+    assert owner_of("a/internals/b") == ""

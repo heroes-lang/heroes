@@ -1,0 +1,4 @@
+# A private module of `internal235/geom`, the module its `internal` folder
+# belongs to (panel 235's R16).
+function twice(n: i64) -> i64
+    return n * 2

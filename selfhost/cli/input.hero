@@ -181,3 +181,26 @@ test "no catalogue is read without a bracketed use, and one that does not read n
     told = modules.errors(m, parse.parse(m.text).uses)
     assert told.len() == 1
     assert told[0].code == "catalogue_refused"
+
+# Panel 235's R3: a package's own catalogue may call a package of the build by
+# another alias, and its module is the program's alias's in the compilation,
+# so one package compiles once whatever its users call it.
+test "two aliases of one package compile one module"
+    dir = "build/selftest-aliases"
+    assert !process.mkdir_all(dir + "/lib/json").is_err()
+    assert !process.mkdir_all(dir + "/lib/mine").is_err()
+    assert !write_file(path: dir + "/heroes.toml", text: "[dependencies.json]\npath = \"lib/json\"\n\n[dependencies.mine]\npath = \"lib/mine\"\n").is_err()
+    assert !write_file(path: dir + "/lib/mine/heroes.toml", text: "[dependencies.js]\npath = \"../json\"\n").is_err()
+    assert !write_file(path: dir + "/lib/json/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: dir + "/lib/mine/text.hero", text: "use <js>/parse\n\nfunction y() -> i64\n    return parse.x()\n").is_err()
+    assert !write_file(path: dir + "/main.hero", text: "use <json>/parse\nuse <mine>/text\n\nfunction main()\n    print(parse.x() + text.y())\n").is_err()
+    s = read_compilation(path: dir + "/main.hero", library: "").must()
+    assert modules.errors(s, parse.parse(s.text).uses).len() == 0
+    held: i64 @= 0
+
+    for f in s.files
+        if f.module == "<json>/parse"
+            held @ held + 1
+
+    assert held == 1
+    assert s.files.len() == 4

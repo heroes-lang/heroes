@@ -1,0 +1,20 @@
+# A package read from a folder of the author's own, said every time a
+# compilation reads it (spec § 1; panel 235's R6, ratified 2026-11-07): a
+# `path` entry has no fingerprint, so a mistyped one reads other code at exit
+# 0, measured by the sitting's critic, and the falsifier names it its one
+# exemption, told and never silent. Said on stderr, where a diagnostic is,
+# and never under `--json`, whose stderr is one document.
+
+use source
+use cli/argv
+use cli/io
+
+function say(s: source.Source, inv: argv.Invocation)
+    if argv.has(inv, spelling: "--json")
+        return
+
+    for p in s.reached.packages
+        if p.unverified && p.problem.len() == 0
+            io.eprint(
+                text: "note: the package `" + p.alias + "` is read from the folder `" + p.root + "`, a `path` entry of the catalogue: unverified, no fingerprint holds it"
+            )
