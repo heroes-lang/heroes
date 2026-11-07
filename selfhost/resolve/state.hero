@@ -8,11 +8,11 @@
 # module WITHOUT a cycle forcing it.
 #
 # One flat array of (name, local), the count of it still open, an array of
-# marks saying where each open scope begins, and where each name's latest
-# binding stands. Closing a scope lowers the count to its mark, the entries
-# past it written over as bindings follow, and a lookup finds a name's entry
-# by name and asks whether it is still open (defect 364). That is the whole
-# structure — no tree, no parent pointers.
+# marks saying where each open scope begins, and where each name's innermost
+# open binding stands. Closing a scope lowers the count to its mark and gives
+# each name it took away the place it stood over, the entries past the mark
+# written over as bindings follow, and a lookup reads the name's place alone
+# (defects 364, 2318). That is the whole structure — no tree, no parent pointers.
 #
 # Four rules are decided here rather than in the walk, because all four are
 # about the STACK and not about any one statement:
@@ -53,6 +53,9 @@ use module/diagnostics
 record ScopeEntry
     name: str
     local: i64
+    # The place `Scopes.at` held for the name before this entry, -1 for
+    # none: what closing the entry's scope gives back (defect 2318).
+    under: i64
 
 record Scopes
     entries: [ScopeEntry]
@@ -62,12 +65,12 @@ record Scopes
     top: i64
     # Where each open scope begins in `entries`.
     marks: [i64]
-    # Where each name's latest binding stands in `entries`, written as it is
-    # bound and never removed. A position the stack no longer holds, or whose
-    # entry names another, is a binding a closed scope took away; an open
-    # one holds at most one entry of a name, since a second is refused as a
-    # shadow (defect 364: each lookup scanned every open entry, so a
-    # function's locals cost the square of their number).
+    # Where each name's innermost open binding stands in `entries`, -1 where
+    # none does: written as a name is bound, given back as its scope closes
+    # (`ScopeEntry.under`), so a lookup reads it alone. Until 2026-11-07 a
+    # name it did not hold open, each fresh binding's shadow check and each
+    # top-level function's or built-in's name, scanned every open entry, and
+    # a function's locals cost the square of their number (defects 364, 2318).
     at: {str: i64}
 
 function new_scopes() -> Scopes
@@ -85,6 +88,14 @@ function close_scope(@r: Resolver)
     if r.scopes.marks.len() > 0
         mark @ r.scopes.marks[r.scopes.marks.len() - 1]
         r.scopes.marks @ r.scopes.marks.slice(from: 0, to: r.scopes.marks.len() - 1)
+
+    # Innermost first: a name bound twice here gets back what stood before both.
+    k: i64 @= r.scopes.top - 1
+
+    while k >= mark
+        r.scopes.at[r.scopes.entries[k].name] @ r.scopes.entries[k].under
+        k @ k - 1
+
     r.scopes.top @ mark
 
 function scope_depth(r: Resolver) -> i64
@@ -102,25 +113,9 @@ function lookup_local(r: Resolver, name: str) -> i64?
         return fail(code: "free", msg: "no open scope binds this name")
     return ok(r.scopes.entries[at].local)
 
-# The position of the open entry binding `name` (`Scopes.at`), or -1.
+# The position of the innermost open entry binding `name` (`Scopes.at`), or -1.
 function open_entry(r: Resolver, name: str) -> i64
-    found = r.scopes.at[name]
-
-    if !found.is_err() && found.must() < r.scopes.top && r.scopes.entries[found.must()].name == name
-        return found.must()
-
-    # The map names the LAST entry bound under the name, and since a shadow is
-    # told and then bound (panel 226's R1) that entry may stand in a scope
-    # already closed while an outer one still binds the name: the scan the map
-    # exists to avoid, taken only then, innermost first.
-    k: i64 @= r.scopes.top - 1
-
-    while k >= 0
-        if r.scopes.entries[k].name == name
-            return k
-        k @ k - 1
-
-    return -1
+    return r.scopes.at[name].default(-1)
 
 # Whether the INNERMOST scope already binds this name. One caller: two
 # patterns of one arm may not bind the same payload name.
@@ -380,8 +375,9 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         @r.out.locals,
         resolved.Local(name: name, kind: binding.kind, mutable: binding.mutable, owner: r.owner, depth: scope_depth(r), ty: binding.ty, value: binding.value, reads: 0, writes: 0, symbol: binding.symbol, deferred: false)
     )
+    under = open_entry(r, text)
     r.scopes.at[text] @ r.scopes.top
-    put_entry(@r.scopes.entries, at: r.scopes.top, one: ScopeEntry(name: text, local: index))
+    put_entry(@r.scopes.entries, at: r.scopes.top, one: ScopeEntry(name: text, local: index, under: under))
     r.scopes.top @ r.scopes.top + 1
     return ok(index)
 
@@ -449,7 +445,8 @@ test "a sibling scope's binding is invisible, a parent's shadows"
 
     # Under the control arm the same shadow is told and then bound (panel
     # 226's R1): the inner lines read the inner x, and the outer x comes back
-    # when the block closes, through the scan `open_entry` falls back on.
+    # when the block closes, the place the shadow's entry gives back (defect
+    # 2318).
     r.permissive @ true
     bound_x = declare(
         @r,
@@ -538,6 +535,56 @@ test "a binding a closed scope took away is gone, whatever took its place"
     )
     assert lookup_local(r, "x").must() == again.must()
     assert visible_locals(r) == ["x", "y"]
+
+# Defect 2318: the map answers alone, for a name bound twice in one scope
+# (a shadow the control arm binds) as for one never bound, and each close
+# gives back the place its entries stood over, the innermost first.
+test "each closed scope gives a name back the binding it stood over"
+    s = tiny()
+    decls: [ast.Decl] = []
+    r: Resolver @= new_resolver(expr_count: 0, type_count: 0)
+    r.permissive @ true
+    open_scope(@r)
+    outer = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 0, end: 1),
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
+    )
+    open_scope(@r)
+    first = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 4, end: 5),
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
+    )
+    second = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 4, end: 5),
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
+    )
+    assert lookup_local(r, "x").must() == second.must()
+    assert first.must() != second.must()
+    assert lookup_local(r, "y").is_err()
+    close_scope(@r)
+    assert lookup_local(r, "x").must() == outer.must()
+    assert visible_locals(r) == ["x"]
+
+    # The map itself keeps no place a closed scope took away, which is what
+    # lets a lookup read it alone: it kept the inner `x`'s until 2026-11-07,
+    # and a scan of every open entry answered instead.
+    assert r.scopes.at["x"].must() == 0
+    open_scope(@r)
+    assert !declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
+    close_scope(@r)
+    assert r.scopes.at["y"].must() == -1
+    close_scope(@r)
+    assert lookup_local(r, "x").is_err()
+    assert r.scopes.at["x"].must() == -1
 
 test "a read through record_use counts, and only a local's"
     r: Resolver @= new_resolver(expr_count: 2, type_count: 0)

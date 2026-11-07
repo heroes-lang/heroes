@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2318-two-thousand-bindings-made-by-a-top-level-function-check-in-linear-work.hero:2061:5: error[shadowed_binding]: `x0` is already in scope, bound at line 13 — shadowing is an error here: a name means one thing for as long as it is visible
