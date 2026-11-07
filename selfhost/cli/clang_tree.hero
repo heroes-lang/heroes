@@ -37,6 +37,9 @@ record Node
     ref_id: str
     ref_kind: str
     ref_name: str
+    # A `ConstantExpr`'s `value`, the integer clang's constant evaluator gave
+    # it, as clang writes it (`cli/constant_dump.hero`, panel 235's C5).
+    value: str
 
 # The tree: the nodes in the order clang wrote them, each node's children in
 # order, and every node with an `id` found by it.
@@ -94,7 +97,7 @@ function read(text: str) -> Tree?
 
             if b == '{' && (depth == 0 || !stack[depth - 1].object && direct(stack[depth - 1].path))
                 nodes @ nodes.push(
-                    Node(parent: parent, id: "", kind: "", name: "", qual: "", desugared: "", begin: -1, end: -1, end_length: 0, ref_id: "", ref_kind: "", ref_name: "")
+                    Node(parent: parent, id: "", kind: "", name: "", qual: "", desugared: "", begin: -1, end: -1, end_length: 0, ref_id: "", ref_kind: "", ref_name: "", value: "")
                 )
                 one.owner @ nodes.len() - 1
             else if depth > 0
@@ -185,6 +188,8 @@ function kept_text(@nodes: [Node], open: Open, key: str, value: str)
         nodes[owner].kind @ value
     else if path == "" && key == "name"
         nodes[owner].name @ value
+    else if path == "" && key == "value"
+        nodes[owner].value @ value
     else if path == "type" && key == "qualType"
         nodes[owner].qual @ value
     else if path == "type" && key == "desugaredQualType"

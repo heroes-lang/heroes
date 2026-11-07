@@ -620,16 +620,20 @@ function listed(names: [str], name: str) -> bool
     return false
 
 # The words clang searches with to answer for a header, as the compiler's own
-# search reaches them (`selfhost/cli/compiling.hero`'s `search_words`): each
-# package's compile words, the runtime's directory and the case's own. The
-# `--include` directories are the one part left out, since the harness passes
-# none; a narrower search could only fail to refute an absence the compiler
-# named, never name one. None of the compiler's own flags moves the search
-# (`selfhost/cli/flags.hero`, read 2026-10-04: no `-isystem`, no `--target`).
+# search reaches them (`selfhost/cli/compiling.hero`'s `search_words`): the
+# runtime's directory first (defect 2324), each package's compile words and
+# the case's own. The `--include` directories are the one part left out, since
+# the harness passes none; a narrower search could only fail to refute an
+# absence the compiler named, never name one. None of the compiler's own
+# flags moves the search (`selfhost/cli/flags.hero`, read 2026-10-04: no
+# `-isystem`, no `--target`).
 # `hint` is `HEROES_RUNTIME` as `runtime_hint` reads it.
 function searched(scratch: str, dir: str, bound: Binds, hint: str?) -> [str]?
     runtime: str @= hint?
-    out: [str] @= []
+
+    if runtime.len() == 0
+        runtime @ "runtime"
+    out: [str] @= ["-I", runtime]
 
     for package in bound.packages
         ran = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--", package])
@@ -638,10 +642,6 @@ function searched(scratch: str, dir: str, bound: Binds, hint: str?) -> [str]?
             for word in strings.words(ran.must().out)
                 out @ out.push(word)
 
-    if runtime.len() == 0
-        runtime @ "runtime"
-    out @ out.push("-I")
-    out @ out.push(runtime)
     out @ out.push("-I")
     out @ out.push(dir)
     return ok(out)
