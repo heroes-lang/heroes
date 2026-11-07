@@ -72,6 +72,13 @@
 #    undefined built warm at exit 0, and the program printed what the
 #    machine held. One header gives each probe a value, edited four times,
 #    and every build must say what a cold one would.
+# 9. **A header found ahead of the one a build read is seen** (defect 2289).
+#    A record names the files a compile read, so a file written afterwards
+#    where clang now finds it first is in none: a `sqlite3.h` beside a
+#    program ran warm and was refused cold. A decoy `stdlib.h` beside the
+#    program, a `conf.h` in an `--include` directory and a file a
+#    `__has_include` now finds must each move the build as they move a cold
+#    one.
 #
 # THE PROGRAM IS WRITTEN HERE rather than kept under
 # `tests/golden/surface-fixtures/`, and the header is why: the case is
@@ -188,6 +195,28 @@ constant VALUES_CALLER: str
 constant UNDEFINED_VALUE: str
     "(-2147483647 - 1) / -1"
 
+# The ninth direction's own programs (defect 2289), each in a directory of
+# its own under this one: a group naming a header of C's own that no header
+# of the runtime includes, so a decoy beside the program is read by the
+# group's unit alone; a `conf.h` beside the program with an `--include`
+# directory searched before it; and a `conf.h` whose value turns on a file
+# that `__has_include` finds.
+constant AHEAD_HOME: str
+    "cache-ahead"
+
+constant AHEAD_SYSTEM: str
+    "extern \"stdlib.h\"\n    function abs(x: i32) -> i32\n\nfunction main()\n    print(abs(x: -3))\n"
+
+constant AHEAD_CONF: str
+    "extern \"conf.h\"\n    constant CONF_LIMIT: i64\n\nfunction main()\n    print(CONF_LIMIT)\n"
+
+constant AHEAD_PROBED: str
+    "#if __has_include(<hero-probe-2289.h>)\n#define CONF_LIMIT 2\n#else\n#define CONF_LIMIT 1\n#endif\n"
+
+# What the decoy says, which clang's refusal of it quotes.
+constant AHEAD_DECOY: str
+    "a decoy stdlib.h beside the program"
+
 # Where `heroes build` keeps its objects: the `build/` of the directory the
 # harness runs in, the repository root.
 constant OBJECTS: str
@@ -202,8 +231,84 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     a_warm_cache_never_turns_a_failure_into_a_pass(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_replays_a_warning_that_was_repaired(@r, scratch: scratch, compiler: compiler)
     a_header_edit_reaches_the_value_probes(@r, scratch: scratch, compiler: compiler)
+    a_header_found_ahead_is_seen(@r, scratch: scratch, compiler: compiler)
     builds_started_together_all_succeed(@r, scratch: scratch, compiler: compiler)
     return ok(r)
+
+# **A header found ahead of the one a build read is seen** (defect 2289). A
+# kept object is vouched for by the files its compile read, and a file the
+# program adds afterwards where clang now finds it first is none of them: a
+# decoy `stdlib.h` beside the program, before the platform's; a `conf.h` in
+# an `--include` directory, before the program's own; a file a
+# `__has_include` that found nothing now finds. Each build after the file is
+# written must say what a cold build of the same files says, and none did
+# (measured 2026-11-07: `3` at exit 0 where a cold build refuses the decoy,
+# and `1` where it prints `2`, twice).
+function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/a header found ahead of the one a build read is seen"
+    home = scratch + "/" + AHEAD_HOME
+    laid: ()? @= shell.remove_tree(home)
+
+    for dir in ["/system", "/include/inc", "/probe"]
+        if !laid.is_err()
+            laid @ shell.mkdir_all(home + dir)
+
+    for pair in [["/system/prog.hero", AHEAD_SYSTEM], ["/include/prog.hero", AHEAD_CONF], ["/include/conf.h", "#define CONF_LIMIT 1\n"], ["/probe/prog.hero", AHEAD_CONF], ["/probe/conf.h", AHEAD_PROBED]]
+        if !laid.is_err()
+            laid @ write_file(path: home + pair[0], text: pair[1])
+
+    if laid.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the programs out under " + scratch)
+        return
+    wrong: [str] @= []
+    system = [compiler, "run", home + "/system/prog.hero"]
+    searched = [compiler, "run", home + "/include/prog.hero", "--include", home + "/include/inc"]
+    probe = [compiler, "run", home + "/probe/prog.hero"]
+
+    # Each step: the file written before the build, then what the build must
+    # print, `""` where it must refuse the decoy.
+    steps = [
+        ["", "", "3"]
+        ["/system/stdlib.h", "#error \"" + AHEAD_DECOY + "\"\n", ""]
+        ["", "", "1"]
+        ["/include/inc/conf.h", "#define CONF_LIMIT 2\n", "2"]
+        ["", "", "1"]
+        ["/probe/hero-probe-2289.h", "\n", "2"]
+    ]
+    runs = [system, system, searched, searched, probe, probe]
+    at: i64 @= 0
+
+    while at < steps.len()
+        step = steps[at]
+
+        if step[0].len() > 0 && write_file(path: home + step[0], text: step[1]).is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot write " + step[0])
+            return
+        said = shell.run_guarded(scratch: scratch, words: runs[at])
+        named = runs[at][2]
+
+        if step[2] == ""
+            refused = !said.is_err() && said.must().code == 1
+            told = refused && strings.contains(text: said.must().err, needle: "ffi_header_refused") && strings.contains(text: said.must().err, needle: AHEAD_DECOY)
+
+            if !told
+                wrong @ wrong.push(
+                    "    with " + step[0] + " written, `run " + named + "`: " + shell.ending(said) + ", where a cold build refuses the decoy"
+                )
+        else if said.is_err() || said.must().code != 0 || said.must().out != step[2] + "\n"
+            wrong @ wrong.push(
+                "    `run " + named + "` after " + step[0] + ": " + shell.ending(said) + ", where a cold build prints " + step[2]
+            )
+        at @ at + 1
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  a record names the files a compile read, and a file found ahead of one of them is none: a unit's key must take what its opening reaches now, asked of clang (`cli/opening.hero`), or the warm object answers for a header the cold build no longer reads."
+        )
+    else
+        report.keep_pass(@r)
 
 # The program the builds share, beside a binding whose `@` the pointee check
 # asks about, so the check runs too. It lives under the run's scratch, whose
