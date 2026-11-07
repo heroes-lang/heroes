@@ -278,7 +278,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1b40c4866c647fd4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("284a1c4274c0e0bb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2254afieldnamedmustholdingafunctioniscalled\tfixedbugs-2254-a-field-named-must-holding-a-function-is-called\n");

@@ -21,12 +21,16 @@ use cli/libraries
 use cli/read_back
 use cli/strings
 
-# The questions of every name at a place.
+# The questions of every name at a place, each name's pushed onto the list
+# in place (defect 2319): `out @ strings.with_all(list: out, more: …)` copied
+# every question asked so far at each name, the square of a group record's
+# fields, every one of which is a name asked.
 function questions(bound: [bound_names.Bound], place: i64) -> [str]
     out: [str] @= []
 
     for b in bound
-        out @ strings.with_all(list: out, more: bound_said.question(place: place, name: b.name, arity: b.arity))
+        for line in bound_said.question(place: place, name: b.name, arity: b.arity)
+            out @ out.push(line)
 
     return out
 

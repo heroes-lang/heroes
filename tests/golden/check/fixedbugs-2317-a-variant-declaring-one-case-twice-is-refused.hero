@@ -1,0 +1,17 @@
+# fixedbugs, defect 2317, 2026-11-07: a variant declaring one case name twice
+# was told only that its `match` did not cover `.one`, which the arm names:
+# the arm reached the second `one`, the first stayed uncovered, and the
+# message was false. Now the second is refused where it stands, naming the
+# first's line; the first is the case every arm and construction names, so
+# the `match` is told nothing more.
+variant Turn
+    one
+    two
+    one  #~ case_declared_twice
+
+function main()
+    t: Turn = .one
+
+    match t
+        .one => print(1)
+        .two => print(2)

@@ -1,0 +1,92 @@
+# fixedbugs, defect 2316, 2026-11-07: the shape beside the filing's that never
+# read freed memory, measured before the repair as after it: a program record
+# of 2 MiB, past panel 233's line, is returned through the caller's slot, written
+# before the regions go back, after a callee that took and gave back one as
+# large. Its regions keep their explicit give.
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+record E6
+    a: E5
+    b: E5
+    c: E5
+    d: E5
+    e: E5
+    f: E5
+    g: E5
+    h: E5
+
+# A callee that takes a region as large and gives it back, which leaves its
+# chunk as the room's spare.
+function helper(n: i64) -> i64
+    e = fill(n: n)
+    return e.a.a.a.a.a.a.x
+
+function fill(n: i64) -> E6
+    e0 = E0(x: n)
+    e1 = E1(a: e0, b: e0, c: e0, d: e0, e: e0, f: e0, g: e0, h: e0)
+    e2 = E2(a: e1, b: e1, c: e1, d: e1, e: e1, f: e1, g: e1, h: e1)
+    e3 = E3(a: e2, b: e2, c: e2, d: e2, e: e2, f: e2, g: e2, h: e2)
+    e4 = E4(a: e3, b: e3, c: e3, d: e3, e: e3, f: e3, g: e3, h: e3)
+    e5 = E5(a: e4, b: e4, c: e4, d: e4, e: e4, f: e4, g: e4, h: e4)
+    return E6(a: e5, b: e5, c: e5, d: e5, e: e5, f: e5, g: e5, h: e5)
+
+function make(n: i64) -> E6
+    out = fill(n: n)
+    print(helper(n: n + 1))
+    return out
+
+function main()
+    e = make(n: 7)
+    print(e.h.h.h.h.h.h.x)

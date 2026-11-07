@@ -213,8 +213,11 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
                     missing: [str] @= []
                     index: i64 @= 0
 
+                    # A case whose name an earlier case holds is the one
+                    # refused as declared twice, which no arm can name
+                    # (`case_named`), so it is never told missing.
                     for one_case in v.cases
-                        if covered[index].is_err()
+                        if covered[index].is_err() && case_named(@c, s, decl: n.decl, cases: v.cases, name: source.span_text(s, one_case.name)) == index
                             missing @ missing.push("." + source.span_text(s, one_case.name))
                         index @ index + 1
 
@@ -241,8 +244,12 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
 
 # A variant's case by name: its index, or -1 where it has none of that name.
 # The names are read into a table the first time a case of the variant is
-# named, the last case of a name winning as the walk over them did, so every
-# later arm and construction asks the table (defects 512 and 513).
+# named, so every later arm and construction asks the table (defects 512 and
+# 513). The first case of a name wins: a second of the name is refused where
+# it stands (`check/declared_once.hero`, defect 2317), so the first is the
+# declaration, as at a module's top, and an arm or a construction naming it
+# is told nothing more. Until 2026-11-07 the last won, and an arm `.one`
+# covered the second `one` and left the first told missing.
 function case_named(@c: state.Checker, s: source.Source, decl: i64, cases: [ast.Case], name: str) -> i64
     found = c.cases[decl]
     names: {str: i64} @= {}
@@ -253,7 +260,10 @@ function case_named(@c: state.Checker, s: source.Source, decl: i64, cases: [ast.
         at: i64 @= 0
 
         for one in cases
-            names[source.span_text(s, one.name)] @ at
+            spelled = source.span_text(s, one.name)
+
+            if names[spelled].is_err()
+                names[spelled] @ at
             at @ at + 1
 
         c.cases[decl] @ names

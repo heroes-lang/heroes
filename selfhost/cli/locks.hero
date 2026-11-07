@@ -21,6 +21,17 @@
 # one's. A bound would have been a silence: a lock five arrays deep, read
 # as no lock at all. The test at the bottom holds the premise, a struct that
 # points at an array of itself.
+#
+# **A record is asked once for each type it holds** (defect 2284). A
+# member's answer is its type's, and one translation unit names one type by
+# one spelling (struct tags and typedef names share the file's scope, and an
+# unnamed type is printed with its place), so the first member of each type
+# in the dump's order asks for all of them, and an array whose element type
+# was asked asks no round. The first lock in the dump's order is the first
+# member of its type, so the lock told is the one told before. One question
+# per member made 16,382 of them, eleven assertions each, for 8,192 named
+# leaves in pairs of pairs: a unit of 23 MB, digested twice, and the work
+# multiplied by 8 to 9.5 at each quadrupling (panel 233's ffi-pragmatist).
 
 use ast
 use source
@@ -42,6 +53,7 @@ use cli/read_back
 use cli/layout
 use cli/layout_runs
 use cli/compiling
+use cli/strings
 use parse
 use resolve
 use checker
@@ -92,6 +104,9 @@ function found(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 
     next: i64 @= ELEMENTS
 
+    # Each record's types asked already, by the record and the element type.
+    asked: {str: bool} @= {}
+
     while asking.len() > 0
         made = layout_runs.kept_dump(
             sc.asking,
@@ -119,6 +134,11 @@ function found(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
             for m in read.must()
                 if m.path.len() == 0 || m.bitfield
                     continue
+                held = owner.decl.to_str() + " " + element_of(m.type_text)
+
+                if !asked[held].is_err()
+                    continue
+                asked[held] @ true
                 path: str @= m.path
 
                 if owner.prefix.len() > 0
@@ -178,6 +198,20 @@ function rank_of(type_text: str) -> i64
         at @ at - 1
 
     return n
+
+# A type's text without the array bounds it ends with, the type an element
+# is: `struct c[2]` is `struct c`, `int[2][3]` and `int[]` are `int`.
+function element_of(type_text: str) -> str
+    at: i64 @= type_text.len()
+
+    while at > 0 && type_text[at - 1] == ']'
+        while at > 0 && type_text[at - 1] != '['
+            at @ at - 1
+
+        if at > 0
+            at @ at - 1
+
+    return type_text.slice(from: 0, to: at)
 
 # What clang said of the identity unit, kept under the unit's digest.
 function asked_kept(a: layout_runs.Asking, text: str) -> str?
@@ -263,3 +297,54 @@ test "the element rounds find a lock an array of records holds, and end at a str
     held = found(t, low.program, c, s, parsed.decls, probe: probe, records: every)
     assert held[named["holder"].must()].must().path == "many[0].lock"
     assert held[named["light"].must()].is_err()
+
+# **A record is asked once for each type it holds, and its lock is told where
+# the dump first holds one** (defect 2284). `x` and `y` hold the platform's
+# lock in one type, an array of that type follows, and three groups of pairs
+# of pairs repeat their four types across 45 members: the lock is `x.lock`,
+# as it was when every member was asked, and the unit clang is asked holds
+# fewer questions than the record has members.
+test "a record is asked once for each type it holds, and its lock is told where the dump first holds one (defect 2284)"
+    text = "extern \"dl.h\"\n    record deep tag deep partial\n        n: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-locks-types"
+    headers_at = "build/selftest-locks-types-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    lock = "#include <stdint.h>\n#ifdef _WIN32\n#include <windows.h>\ntypedef CRITICAL_SECTION hero_lk;\n#else\n#include <pthread.h>\ntypedef pthread_mutex_t hero_lk;\n#endif\n"
+    pairs = "struct pair { int64_t a; int64_t b; };\nstruct two { struct pair left; struct pair right; };\nstruct four { struct two left; struct two right; };\n"
+    held = "struct guarded { int64_t k; hero_lk lock; };\nstruct deep { int32_t n; struct four f0; struct guarded x; struct four f1; struct guarded y; struct guarded many[3]; struct four f2; };\n"
+    assert !write_file(path: headers_at + "/dl.h", text: lock + pairs + held).is_err()
+    none: [str] = []
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [headers_at],
+        package_flags: none,
+        runtime: t.runtime,
+        source_dir: ""
+    )
+    probe = compiling.probe(t.build, under: under, headers: ["dl.h"])
+    every: {i64: bool} @= {}
+    every[0] @ true
+    laid: {i64: str} @= {}
+    assert !layout.check_records(t, low.program, c, s, parsed.decls, probe: probe, records: ok(every), @laid).is_err()
+    found_here = found(t, low.program, c, s, parsed.decls, probe: probe, records: every)
+    assert found_here[0].must().path == "x.lock"
+    questions: i64 @= 0
+
+    for path in process.files_under(t.build).must()
+        if strings.holds(text: path, needle: "locks-") && strings.ends_with(text: path, suffix: ".c")
+            for row in deps.lines(read_file(path).must())
+                if strings.ends_with(text: row, suffix: "\"hero_lk_has\"")
+                    questions @ questions + 1
+
+    assert questions > 0
+    assert questions < 45
+    assert !process.remove_tree(t.build).is_err()

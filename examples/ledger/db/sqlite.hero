@@ -80,8 +80,21 @@ extern "sqlite3.h" link "sqlite3"
     # Without the word the compiler assumes C keeps the pointer and refuses
     # the lend (spec § 13). `sqlite3_bind_text` below carries no word, and
     # `bind_text` says why.
+    #
+    # **`when 0` on `sqlite3_close`, because SQLite may refuse to close**
+    # (defect 2291, panel 234's R4). With a statement of the connection still
+    # prepared it answers 5, `SQLITE_BUSY`, and closes nothing (*unable to
+    # close due to unfinalized statements or unfinished backups*, SQLite
+    # 3.54.0 on this Mac), so the call ends the connection only when it
+    # answers 0, and after a refusal the connection is still this program's.
+    # Without the clause it was counted given back whatever SQLite answered:
+    # a refusal inside a query left its statement prepared, the close that
+    # followed was refused, and the program exited 1 with both open and
+    # nothing said. `sqlite3_finalize` takes no `when`: it ends the statement
+    # whatever it answers, 19 after a step a constraint refused, so a second
+    # finalize would free it twice.
     function sqlite3_open(filename: cstr lent, @out: CDb acquires sqlite3_close) -> i64
-    function sqlite3_close(db: CDb consumes) -> i64
+    function sqlite3_close(db: CDb consumes) -> i64 when 0
     # **The fifth argument is `char **errmsg`, and this program asks for it
     # again** — panel 109's condition 8, the program the whole milestone was
     # convened for. A non-NULL one makes SQLite allocate a copy of the message
@@ -245,13 +258,24 @@ function opened() -> Db?
         # SQLite's own, read off the handle before it is closed, rather than the
         # sentence this program used to invent about a failure it had not
         # actually asked about.
-        reason = why(Db(handle: db))
-        _ = sqlite3_close(db)
+        handed: Db @= Db(handle: db)
+        reason = why(handed)
+        closed(@handed)?
         return fail(code: "cannot_open", msg: reason)
     return ok(Db(handle: db))
 
-function closed(@db: Db) -> i64
-    return sqlite3_close(db.handle)
+# The connection given back, or a refusal in SQLite's own words. SQLite
+# refuses while a statement of the connection is still prepared, and then the
+# connection is still open and still the caller's (`when 0` above): the
+# refusal is read off the connection it left open, which stays usable, and a
+# caller that finalizes what it left prepared may close it again. Every
+# statement this program prepares is finalized on every path, so a refusal
+# here is the program's own mistake, and it is told rather than counted as a
+# close.
+function closed(@db: Db) -> ()?
+    if sqlite3_close(db.handle) != SQLITE_OK
+        return fail(code: "still_open", msg: "sqlite kept the connection open: " + why(db))
+    return ok()
 
 # One statement run for its effect, with SQLite's own message on failure.
 #

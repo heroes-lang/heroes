@@ -1,0 +1,5 @@
+a close with a statement prepared: 5
+sqlite says: unable to close due to unfinalized statements or unfinished backups
+the statement still steps: 100
+finalized: 0
+closed: 0

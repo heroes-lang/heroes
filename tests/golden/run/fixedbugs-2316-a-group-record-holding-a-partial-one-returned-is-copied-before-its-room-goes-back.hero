@@ -1,0 +1,32 @@
+# fixedbugs, defect 2316, 2026-11-07: a group record that holds the header's
+# `partial` record by value, kept off the frame because what it holds is, and
+# returned by its C convention. A
+# function returning a record kept off the frame gave its regions back and
+# then copied the returned value out of one of them: `hero_frame_give` frees a
+# chunk that empties while a spare at least as large is kept, which the callee
+# `helper` leaves, so the `return` read freed memory, at both levels:
+# `heap-use-after-free` under the sanitizer, the right numbers read from freed
+# memory without it. Such a function's regions now go back by `cleanup`, after
+# the return's copy (`emit/large_value.hero`).
+
+extern "fixedbugs-2316-held.h"
+    record Held tag fixedbugs_2316_held partial
+        first: i64
+    record Box tag fixedbugs_2316_box
+        tag: i64
+        inner: Held
+
+# A callee that takes a region as large and gives it back, which leaves its
+# chunk as the room's spare.
+function helper(n: i64) -> i64
+    b = Box(tag: n, inner: Held(first: n, rest: zero))
+    return b.tag
+
+function make(n: i64) -> Box
+    out = Box(tag: n, inner: Held(first: n + 1, rest: zero))
+    print(helper(n: n + 2))
+    return out
+
+function main()
+    b = make(n: 7)
+    print(b.tag + b.inner.first)

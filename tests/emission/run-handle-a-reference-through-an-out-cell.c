@@ -298,7 +298,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("04d058ef45b5c34f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11d9b0ab4e122436", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handleareferencethroughanoutcell\thandle-a-reference-through-an-out-cell\n");

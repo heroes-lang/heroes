@@ -1,0 +1,17 @@
+# fixedbugs, defect 2317, 2026-11-07: two cases of one name with two payloads.
+# Before, the construction and the arm reached the second, so `.one(x: 1)` was
+# told that `Turn.one` has nothing called `x`, a type mismatch beside it, and
+# the `match` that it did not cover `.one`, three false messages and none
+# naming the mistake. Now the second case is refused, naming the first, and
+# the first is what the construction and the arm read.
+variant Turn
+    one
+        x: i64
+    one  #~ case_declared_twice
+        y: str
+
+function main()
+    t: Turn = .one(x: 1)
+
+    match t
+        .one p => print(p.x)

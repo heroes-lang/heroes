@@ -196,8 +196,8 @@ SP h_ffirestzeroapartialrecord_built(void) {
 #line 12
 #define t2 (*hero_big_t2)
 #line 12
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG SP *const hero_big_t2 = (SP *)hero_frame_take(sizeof(SP)); HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(4); t2 = *(SP *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; hero_frame_give(hero_big_t2); return t2;
+    HERO_NODEBUG int32_t t1; HERO_NODEBUG SP *hero_big_t2 __attribute__((__cleanup__(hero_frame_give_at))) = (SP *)hero_frame_take(sizeof(SP)); HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(4); t2 = *(SP *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; return t2;
 #line 202 "ffirestzeroapartialrecord.c"
 }
 #undef t2
@@ -322,7 +322,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("386ae4ba4f66d638", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("45743c7657c3371f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroapartialrecord\tffi-rest-zero-a-partial-record\n");

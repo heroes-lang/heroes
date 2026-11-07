@@ -1,0 +1,28 @@
+# fixedbugs, defect 2287, 2026-11-07: four threads that run out of their
+# stacks at once, three spawned and `main`, each recursing without end. The
+# guard's handler wrote its line in pieces on every thread that faulted, so
+# the pieces ran into one another, `panic: stack exhausted in panic: stack
+# exhausted in ...`, and as many lines were written as had started before the
+# first abort ended the process: one to three of four in twelve runs on this
+# Mac. One thread tells now, and every other waits for the process to end, so
+# the line is said once and whole. A `!panic:` asks stderr to hold a text,
+# which pieces run together can still hold, so the net's own tests build this
+# program and hold its stderr to that one line, run after run
+# (`tests/harness/suite_run.hero`). Under the sanitiser ASan names the
+# overflow; Windows' guard names no function and says the first sentence
+# alone, which is what the expectation names.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function down(n: i64) -> i64
+    if n < 0
+        return 0
+    return down(n + 1) + 1
+
+function main()
+    a = hero_thread_spawn(body: down, arg: 1)
+    b = hero_thread_spawn(body: down, arg: 1)
+    c = hero_thread_spawn(body: down, arg: 1)
+    here = down(1)
+    print(hero_thread_join(handle: a), " ", hero_thread_join(handle: b), " ", hero_thread_join(handle: c), " ", here)

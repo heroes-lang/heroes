@@ -74,8 +74,8 @@ function none() -> Declarations
 # A statement written as it is: an author's binding, a guarded local, a zero
 # by bytes.
 function whole(@d: Declarations, text: str)
-    d.heads @ d.heads.push(text)
-    d.declarators @ d.declarators.push([])
+    grown(@d.heads, text: text)
+    grown_lists(@d.declarators, list: [])
 
 # A declaration the debugger is not shown: `words`, written between the mark
 # and the type (an attribute, or nothing), the type's C spelling, and the name
@@ -91,10 +91,21 @@ function hidden(@d: Declarations, words: str, spelling: str, declared: str)
 
     if found.is_err()
         d.at[head] @ d.heads.len()
-        d.heads @ d.heads.push(head)
-        d.declarators @ d.declarators.push([split.must().stars + declared])
+        grown(@d.heads, text: head)
+        grown_lists(@d.declarators, list: [split.must().stars + declared])
         return
-    d.declarators[found.must()] @ d.declarators[found.must()].push(split.must().stars + declared)
+    grown(@d.declarators[found.must()], text: split.must().stars + declared)
+
+# Lent, so each push grows its array in place (defect 2288; defect 409's
+# spelling, `emit/writer.hero`'s `add_line`): written through the field,
+# `d.declarators[k] @ d.declarators[k].push(…)` copied every declarator of
+# that spelling at every push, and 8,192 temporaries of one C type in one
+# prologue cost the square of 8,192 copies of a name.
+function grown(@list: [str], text: str)
+    list @ list.push(text)
+
+function grown_lists(@lists: [[str]], list: [str])
+    lists @ lists.push(list)
 
 # The statements, a shared declaration's declarators joined after its head.
 function statements(d: Declarations) -> [str]

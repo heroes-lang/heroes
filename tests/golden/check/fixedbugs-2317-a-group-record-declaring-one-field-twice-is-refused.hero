@@ -1,0 +1,14 @@
+# fixedbugs, defect 2317, 2026-11-07: a group's record declaring one field
+# twice over a C struct with one such member passed `check` and `build` at
+# exit 0, two Heroes names for one C member, each construction writing it
+# twice. Refused as a program's own record is, at the second, naming the
+# first's line.
+extern "fixedbugs-2317-a-group-record-declaring-one-field-twice-is-refused.h"
+    record Pair tag fixedbugs_2317_pair
+        a: i64
+        a: i64  #~ field_declared_twice
+        b: i64
+
+function main()
+    p = Pair(a: 1, a: 2, b: 3)
+    print(p.a + p.b)

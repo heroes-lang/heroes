@@ -291,7 +291,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12a4c0f81b93e56d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fae18b423f04654", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsareferencethatnamesanotherreleaserisrefused\tfixedbugs-a-reference-that-names-another-releaser-is-refused\n");

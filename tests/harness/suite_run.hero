@@ -388,6 +388,36 @@ test "fixedbugs: a program that writes bytes that are not UTF-8 is told as one t
     assert strings.contains(text: got.failures[0], needle: "on stdout 1 byte is not, in `c<0xE9>`")
     assert !shell.remove_tree(scratch).is_err()
 
+# DEFECT 2287 (2026-11-07): four threads that ran out of their stacks at once
+# wrote their lines in pieces into one another, and as many lines as had
+# started before the first abort ended the process. The case's `!panic:` asks
+# stderr to hold a text, which pieces run together can still hold, so its own
+# program is built here and run eight times, its stderr held each time to one
+# whole line and nothing else: one thread tells, and every other waits for the
+# process to end. Measured before the repair on this Mac, 6 runs in 12 wrote
+# two lines or more, so a runtime that still let them run together would pass
+# eight runs in a row about once in 250. The line is the first sentence alone
+# on Windows, whose guard names no function, so its words past that are not
+# asked.
+test "fixedbugs: four threads out of stack at once tell one whole line, run after run (defect 2287)"
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    binary = scratch + "/four-threads" + shell.exe_suffix()
+    source = RUN_DIR + "/fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero"
+    built = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", source, "-o", binary]).must()
+    assert built.code == 0
+
+    for _ in range(from: 0, to: 8)
+        said = shell.run(scratch: scratch, program: binary, words: [binary]).must()
+        assert said.code != 0
+        assert said.out == ""
+        assert strings.starts_with(text: said.err, prefix: "panic: stack exhausted")
+        assert strings.split_text(text: said.err, separator: "panic:").len() == 2
+        assert strings.split_text(text: said.err, separator: "\n").len() == 2
+        assert strings.ends_with(text: said.err, suffix: "\n")
+
+    assert !shell.remove_tree(scratch).is_err()
+
 # DEFECT 390's control (2026-10-07): a C library writing eight bytes past a
 # record's last field, its `memset` named past the header's fortified macro,
 # as a library compiled apart calls it, so `-O2` sets no trap of its own. The

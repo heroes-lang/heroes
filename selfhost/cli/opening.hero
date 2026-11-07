@@ -1,0 +1,381 @@
+# What a compile's includes reach NOW, asked of clang before a kept object is
+# served, and folded into that object's key (design.md §4.19, §1.12; defect
+# 2289, 2026-11-07).
+#
+# **A kept object is vouched for by the files its compile READ**
+# (`cli/deps.hero`), and a file that would now be found ahead of one it read
+# is none of them. A program's own directory stands on every unit's search
+# after the runtime's (`compiling.search_words`) and before the system's, so
+# a `sqlite3.h` written at a program's root after a build is found before the
+# platform's: the warm build served the object compiled against the
+# platform's header and printed `true` at exit 0, while the same tree built
+# with no `build/` was refused, `error[ffi_header_refused]` (panel 234's
+# ffi-pragmatist; reproduced 2026-11-07). One tree was two programs by the
+# state of its `build/`. The runtime's object had the same hole on its own
+# search: a `stdio.h` written into a directory `CPATH` names after a build,
+# warm `3` at exit 0, cold *the runtime did not compile* (measured the same
+# day).
+#
+# **Why clang is asked again rather than the search reconstructed.** A record
+# can be widened by every place a header COULD have been found ahead of the
+# one opened, `D/<name>` for each directory searched before the one that
+# answered; but a lookup that found nothing names no file, and every unit
+# this Mac compiles asks `__has_include(<AvailabilityInternalPrivate.h>)` and
+# `__has_include(<realtime_safety/realtime_safety.h>)` and finds nothing. Such
+# a file at a program's root turns the probe true cold and leaves the warm
+# object as it was, and no list of what was opened can see that. `clang -M`
+# over the same text under the same words lists what the preprocessor opens
+# now, a file only `__has_include` found among them (measured on clang 21), so
+# its answer moves wherever the compile's would. It is a fact about the
+# compile in hand, as `deps.hero` asks one, rather than a model of clang's
+# search kept here.
+#
+# **A unit is asked of its opening alone** (`of`): every line of the emitted
+# C that opens or probes a file stands there, before the first line of the
+# program's own code, so the same opening under the same words is one
+# question however many units share it, and a program of a hundred plain
+# modules asks it once. Measured on the compiler's own 702 units: every
+# `#include` stands within the first 57 lines, and after it the lines that
+# are directives are `#line`, `#define`, `#undef`, `#pragma` and the
+# conditionals `#ifdef __OPTIMIZE__` and `#if HERO_STATIC_CONSTANTS`, the
+# runtime's macro, which the guard pushes before a group's header and pops
+# after it, so no header can make it probe a file. The opening's listing
+# held the compile's own, 54 files plain and 55 under the sanitizers, and no
+# other. **That premise is asked of every compile, not written here alone**:
+# a unit whose compile read a file its opening did not reach is kept with no
+# record (`covers`), so it compiles again at every build, the loud side,
+# rather than ever being served for what its opening cannot see.
+
+use cli/deps
+use cli/kept
+use cli/process
+use cli/publish
+use cli/runtime_key
+use cli/strings
+
+# What this compiler was compiled from (panel 222's R1), which names the
+# openings it keeps (`kept_of`), as `cli/help.hero` binds it.
+extern "hero_os.h"
+    function hero_program_sources() -> str
+
+# What a key names where clang could not say what a compile reaches: the
+# opening did not preprocess, or clang did not start. No object is served
+# warm under it, so the compile runs and says what a cold build says.
+constant UNREAD: str
+    "unread"
+
+# A unit's opening: its text through the end of the last line that opens or
+# probes a file, `""` where no line does. A line ending in `\` goes on in the
+# next, as C reads it, so a directive folded over two lines is one.
+#
+# Every byte of every unit is read here at every build, so the length is
+# asked once and a byte is compared before anything is called: measured on
+# the compiler's own warm build, a call to `len` per byte was most of this
+# file's cost.
+function of(text: str) -> str
+    n = text.len()
+    end: i64 @= 0
+    start: i64 @= 0
+
+    while start < n
+        stop: i64 @= start
+
+        while stop < n && (text[stop] != '\n' || folded(text, at: stop))
+            stop @ stop + 1
+
+        if opens_at(text, from: start, to: stop)
+            end @ stop + 1
+        start @ stop + 1
+
+    if end > n
+        end @ n
+    return text.slice(from: 0, to: end)
+
+# A unit's opening as a build keeps it: `of` is asked once of each unit's
+# text, and its answer kept under `build/openings/`, named by `named`, the
+# digest the unit's key takes of its text and words, and by this compiler's
+# own sources, so a compiler whose `of` reads otherwise asks again. A warm
+# build reads a few lines per unit where `of` read every byte: measured on
+# the compiler's own warm build, about 104 MB of C, 2.2% of its instructions
+# (defect 2289). A kept answer that is not whole is no answer (`kept.read`),
+# and one that cannot be kept is asked again: a cost, never another opening.
+function kept_of(build: str, named: str, text: str) -> str
+    dir = build + "/openings"
+    path = dir + "/" + named + "-" + hero_program_sources() + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return known.must()
+    head = of(text)
+
+    if !process.mkdir_all(dir).is_err()
+        _ = kept.write(path: path, text: head).is_err()
+    return head
+
+# Whether the line end at `at` is a fold: a `\` before it, with or without a
+# `\r` between them.
+function folded(text: str, at: i64) -> bool
+    before: i64 @= at - 1
+
+    if before >= 0 && text[before] == '\r'
+        before @ before - 1
+
+    return before >= 0 && text[before] == '\\'
+
+# Whether one logical line is a directive that opens a file, or a condition
+# that probes one by name: `#include`, `#include_next`, `#import`, `#embed`,
+# and an `#if` or `#elif` holding `__has_include` or `__has_embed`. Blanks may
+# stand before and after the `#`, as C allows.
+function opens_a_file(line: str) -> bool
+    return opens_at(line, from: 0, to: line.len())
+
+# The same of the line `text` holds from `from` to `to`, read where it stands:
+# a unit's lines are cut only where one is a condition to search.
+function opens_at(text: str, from: i64, to: i64) -> bool
+    at: i64 @= blanks(text, from: from, to: to)
+
+    if at >= to || text[at] != '#'
+        return false
+    at @ blanks(text, from: at + 1, to: to)
+    stop: i64 @= at
+
+    while stop < to && (text[stop] == '_' || text[stop] >= 'a' && text[stop] <= 'z')
+        stop @ stop + 1
+
+    name = text.slice(from: at, to: stop)
+
+    if name == "include" || name == "include_next" || name == "import" || name == "embed"
+        return true
+
+    if name != "if" && name != "elif"
+        return false
+    line = text.slice(from: from, to: to)
+    return strings.holds(text: line, needle: "__has_include") || strings.holds(text: line, needle: "__has_embed")
+
+function blanks(text: str, from: i64, to: i64) -> i64
+    at: i64 @= from
+
+    while at < to && (text[at] == ' ' || text[at] == '\t')
+        at @ at + 1
+
+    return at
+
+# What clang's preprocessor opens of `input` under `line` (`clang` and its
+# words), written as a record is (`deps.pointer_text`): the digest of the
+# rows, then the rows, `<digest> <path>` per file, so a key takes it whole at
+# the price of one digest per build. One `-M` run, its listing read by
+# `deps.rows_keyed`, so a path is read exactly as a compile's own listing is.
+# `skip` is a directory whose files are not rows, where the input itself
+# stands, and a file `keyed` names is none either, its bytes being in the key
+# already. Absent where clang did not start or the input does not preprocess.
+function reached(line: [str], input: str, depfile: str, skip: str, keyed: [str], @memo: {str: str}) -> str?
+    words = strings.with_all(list: line, more: ["-M", "-MT", "dep", "-MF", depfile, input])
+    ran = process.run(program: "clang", words: words, out: process.discard(), err: process.discard())
+
+    if !ran.started || ran.code != 0
+        publish.discard(depfile)
+        return fail(code: "unread", msg: "the includes did not preprocess")
+    rows = deps.rows_keyed(depfile: depfile, skip: skip, keyed: keyed, @memo)
+    publish.discard(depfile)
+    return ok(deps.pointer_text(rows?))
+
+# What `runtime.c` reaches under `words`, the runtime's own compile words but
+# its run's: every file but the runtime's own, whose bytes `runtime_key`
+# holds, so a file the runtime's compile would now find ahead of one it read,
+# or a file in the runtime's directory that `runtime.c` does not name, moves
+# the answer, and where the runtime stands does not: a key holds the runtime's
+# contents, never its path (defect 435).
+function of_runtime(build: str, runtime: str, words: [str], @memo: {str: str}) -> str?
+    # A runtime whose files cannot be listed has every file digested instead:
+    # an answer that moves with its path, a recompile and never a stale one.
+    none: [str] = []
+    keyed = runtime_key.made_of(runtime).default(none)
+    line = strings.with_all(list: strings.with_all(list: ["clang"], more: words), more: ["-I", runtime])
+    process.mkdir_all(build)?
+    depfile = publish.private_name(build + "/runtime-reached.d")
+    return reached(line: line, input: runtime + "/runtime.c", depfile: depfile, skip: "", keyed: keyed, @memo)
+
+# What a key takes of a reach: the digest of its rows, its first line, or
+# `UNREAD`.
+function key_text(reach: str?) -> str
+    match reach
+        .ok text => return text.slice(from: 0, to: 16)
+        .err _   => return UNREAD
+
+# Whether a compile's record holds no file its opening did not reach: every
+# path of `listed`'s rows, `<digest> <path>` each, is a path of `reach`'s
+# (whose first line, the digest alone, names none).
+# False where the reach is absent, so nothing is recorded for a compile whose
+# opening clang could not read.
+function covers(reach: str?, listed: str) -> bool
+    if reach.is_err()
+        return false
+    reached_paths: {str: bool} @= {}
+
+    for row in deps.lines(reach.must())
+        path = path_of(row)
+
+        if !path.is_err()
+            reached_paths[path.must()] @ true
+
+    for row in deps.lines(listed)
+        path = path_of(row)
+
+        if row.len() > 0 && (path.is_err() || reached_paths[path.must()].is_err())
+            return false
+
+    return true
+
+# The path a row names after its first field and one space: `absent` (a file
+# that could not be read) or a key of sixteen characters. The field is
+# recognised before anything is cut, and each cut falls after a space, so no
+# cut splits a character (spec § 10 Strings, arrays, maps); a row of no such
+# shape names no path.
+function path_of(row: str) -> str?
+    if strings.starts_with(text: row, prefix: deps.ABSENT + " ")
+        return ok(row.slice(from: deps.ABSENT.len() + 1, to: row.len()))
+
+    if row.len() > 17 && row[16] == ' '
+        return ok(row.slice(from: 17, to: row.len()))
+    return fail(code: "shape", msg: "a row of no shape this file reads")
+
+## Tests
+
+test "a unit's opening ends at its last line that opens or probes a file"
+    assert of("") == ""
+    assert of("int x;\n") == ""
+    assert of("/* head */\n#include <a.h>\nint x;\n") == "/* head */\n#include <a.h>\n"
+    assert of("#include \"a.h\"\n#pragma once_more\n  #  include_next <b.h>\n#line 3 \"x.hero\"\nint y;\n") == "#include \"a.h\"\n#pragma once_more\n  #  include_next <b.h>\n"
+    assert of("#import <c.h>") == "#import <c.h>"
+    assert of("#embed \"d.bin\"\nint z;\n") == "#embed \"d.bin\"\n"
+
+    # A probe in a condition opens the opening as far as it stands; a
+    # condition that probes nothing, and a `#line` naming a file, do not.
+    assert of("#include <a.h>\n#if __has_include(<b.h>)\n#endif\nint w;\n") == "#include <a.h>\n#if __has_include(<b.h>)\n"
+    assert of("#include <a.h>\n#elif defined(X) && __has_embed(\"e.bin\")\n") == "#include <a.h>\n#elif defined(X) && __has_embed(\"e.bin\")\n"
+    assert of("#include <a.h>\n#if HERO_STATIC_CONSTANTS\n#endif\n#line 9 \"include.hero\"\n") == "#include <a.h>\n"
+
+    # A directive folded over two lines is one, at either line end.
+    assert of("#include \\\n<a.h>\nint v;\n") == "#include \\\n<a.h>\n"
+    assert of("#if X && \\\r\n__has_include(<a.h>)\r\n#endif\r\n") == "#if X && \\\r\n__has_include(<a.h>)\r\n"
+
+# **An opening is cut once and kept by the digest the unit's key takes of its
+# text** (defect 2289): asked again under that name, the kept answer is read
+# and the text is not cut again; another name is another unit; and a kept
+# answer that is not whole is none, so the text is cut again.
+test "a unit's opening is kept by its key's digest, and a kept one that is not whole is cut again (defect 2289)"
+    build = "build/selftest-opening-kept"
+    assert !process.remove_tree(build).is_err()
+    one = "0123456789abcdef"
+    assert kept_of(build: build, named: one, text: "/* u */\n#include <a.h>\nint x;\n") == "/* u */\n#include <a.h>\n"
+    assert kept_of(build: build, named: one, text: "#include <b.h>\n") == "/* u */\n#include <a.h>\n"
+    assert kept_of(build: build, named: "fedcba9876543210", text: "#include <b.h>\n") == "#include <b.h>\n"
+    path = build + "/openings/" + one + "-" + hero_program_sources() + ".txt"
+    held = read_file(path).must()
+    assert !write_file(path: path, text: held.slice(from: 0, to: held.len() - 3)).is_err()
+    assert kept_of(build: build, named: one, text: "#include <b.h>\n") == "#include <b.h>\n"
+    assert !process.remove_tree(build).is_err()
+
+test "a line is a directive by its name, whatever blanks stand around the hash"
+    assert opens_a_file("#include <a.h>")
+    assert opens_a_file("\t# include <a.h>")
+    assert !opens_a_file("#includes <a.h>")
+    assert !opens_a_file("x = 1; #include <a.h>")
+    assert !opens_a_file("#define include 1")
+    assert !opens_a_file("#ifdef __has_include")
+    assert opens_a_file("#if __has_include_next(<a.h>)")
+
+test "a compile's record is covered only by a reach holding every file it read"
+    assert covers(
+        ok("0123456789abcdef /a.h\n0123456789abcdef /b.h"),
+        listed: "fedcba9876543210 /b.h\nfedcba9876543210 /a.h"
+    )
+    assert covers(ok("0123456789abcdef /a.h"), listed: "")
+    assert !covers(ok("0123456789abcdef /a.h"), listed: "0123456789abcdef /a.h\n0123456789abcdef /c.h")
+    assert !covers(fail(code: "unread", msg: "x"), listed: "")
+
+# **The reach moves when a header appears ahead of the one read, and when a
+# probe that found nothing finds a file** (defect 2289): the two shapes no
+# record of what was opened can see. The source's directory stands after the
+# include directory, as a program's root stands after the runtime's.
+test "what an opening reaches moves when a header appears earlier in the search, or a probe finds a file (defect 2289)"
+    root = "build/selftest-opening-reach"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in [root + "/inc", root + "/src", root + "/at"]
+        assert !process.mkdir_all(dir).is_err()
+
+    assert !write_file(path: root + "/inc/x.h", text: "#if __has_include(<probe.h>)\n#define HERO_PROBED 1\n#endif\n").is_err()
+    text = "#include <x.h>\n"
+    assert !write_file(path: root + "/at/opening.c", text: text).is_err()
+    line = ["clang", "-I", root + "/src", "-I", root + "/inc"]
+    none: [str] = []
+    first: {str: str} @= {}
+    before = reached(
+        line: line,
+        input: root + "/at/opening.c",
+        depfile: root + "/at/one.d",
+        skip: root + "/at/",
+        keyed: none,
+        @first
+    ).must()
+    assert strings.holds(text: before, needle: root + "/inc/x.h")
+
+    # A file only `__has_include` finds is a file the answer names.
+    assert !write_file(path: root + "/inc/probe.h", text: "\n").is_err()
+    second: {str: str} @= {}
+    probed = reached(
+        line: line,
+        input: root + "/at/opening.c",
+        depfile: root + "/at/two.d",
+        skip: root + "/at/",
+        keyed: none,
+        @second
+    ).must()
+    assert strings.holds(text: probed, needle: root + "/inc/probe.h")
+    assert key_text(ok(probed)) != key_text(ok(before))
+
+    # A header ahead of the one read is another answer.
+    assert !write_file(path: root + "/src/x.h", text: "\n").is_err()
+    third: {str: str} @= {}
+    ahead = reached(
+        line: line,
+        input: root + "/at/opening.c",
+        depfile: root + "/at/three.d",
+        skip: root + "/at/",
+        keyed: none,
+        @third
+    ).must()
+    assert strings.holds(text: ahead, needle: root + "/src/x.h")
+    assert !strings.holds(text: ahead, needle: root + "/at/")
+
+    # One that does not preprocess is no answer, and its key is `UNREAD`.
+    assert !write_file(path: root + "/src/x.h", text: "#error a decoy\n").is_err()
+    fourth: {str: str} @= {}
+    refused = reached(
+        line: line,
+        input: root + "/at/opening.c",
+        depfile: root + "/at/four.d",
+        skip: root + "/at/",
+        keyed: none,
+        @fourth
+    )
+    assert refused.is_err()
+    assert key_text(refused) == UNREAD
+    assert !process.path_exists(root + "/at/four.d")
+
+    # A file whose bytes the key holds is no row, and is not read.
+    assert !process.remove_file(root + "/src/x.h").is_err()
+    fifth: {str: str} @= {}
+    named = reached(
+        line: line,
+        input: root + "/at/opening.c",
+        depfile: root + "/at/five.d",
+        skip: root + "/at/",
+        keyed: [root + "/inc/x.h"],
+        @fifth
+    ).must()
+    assert !strings.holds(text: named, needle: root + "/inc/x.h")
+    assert strings.holds(text: named, needle: root + "/inc/probe.h")
+    assert fifth[root + "/inc/x.h"].is_err()
+    assert !process.remove_tree(root).is_err()

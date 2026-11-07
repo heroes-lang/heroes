@@ -1,0 +1,28 @@
+# fixedbugs, defect 2291, 2026-11-07, the consumer beside `sqlite3_close`:
+# panel 234's R4 asks `when 0` of every consumer that may refuse to end its
+# handle, and `sqlite3_finalize` is not one. It answers the error of the
+# statement's last step, 1 after a step SQLite refused (here the integer
+# overflow `abs` raises), and ends the statement all the same: the close after
+# it answers 0, which SQLite refuses while a statement is still prepared. So
+# its binding takes no `when`, and the program owes nothing at exit; with
+# `when 0` on it the runtime would hold the statement owed, and a second
+# finalize would free it twice.
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    function sqlite3_open(filename: cstr lent, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64 when 0
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_step(statement: Stmt) -> i64
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+
+function main()
+    db: Db @= nullptr
+    assert sqlite3_open(":memory:".cstr(), @db) == SQLITE_OK
+    statement: Stmt @= nullptr
+    tail: cstr @= nullptr
+    assert sqlite3_prepare_v2(db: db, sql: "select abs(-9223372036854775808)".cstr(), length: -1, statement: @statement, tail: @tail) == SQLITE_OK
+    print("the step: ", sqlite3_step(statement))
+    print("finalized: ", sqlite3_finalize(statement))
+    print("closed: ", sqlite3_close(db))

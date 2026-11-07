@@ -56,22 +56,20 @@ typedef struct HeroFrameChunk {
 static _Thread_local HeroFrameChunk *hero_frame_top = NULL;
 static _Thread_local HeroFrameChunk *hero_frame_spare = NULL;
 static _Atomic size_t hero_frame_held = 0;
-static _Atomic int hero_frame_told = 0;
 
 /* THE MESSAGE OPENS AS THE STACK GUARD'S DOES AND SAYS WHICH ROOM RAN OUT:
  * `panic: stack exhausted in <module.function>`, the function whose prologue
  * asked, named as the guard names one where the platform's guard names any
  * (`parts/stack.c`, POSIX by `dladdr` on the return address, Windows the first
  * sentence alone), then that the room large values take off the stack is full,
- * since the stack itself may be nearly empty. One thread tells it: a second
- * that runs out while the first is telling waits for the process to end, so
- * two messages never interleave. */
+ * since the stack itself may be nearly empty. One thread tells it, through
+ * the guard's own flag (`hero_stack_tell_first`, defect 2287): a second that
+ * runs out while the first is telling, of its room or of its stack, waits for
+ * the process to end, so two messages never interleave. */
 static _Noreturn void hero_frame_exhausted(void *caller) {
     fflush(stdout);
 #if !defined(_WIN32)
-    if (atomic_exchange(&hero_frame_told, 1) != 0) {
-        for (;;) pause();
-    }
+    hero_stack_tell_first();
     Dl_info info;
     hero_stack_say("panic: stack exhausted");
     if (caller != NULL && dladdr(caller, &info) != 0 && info.dli_sname != NULL && hero_stack_is_heroes(info.dli_sname)) {
@@ -133,13 +131,13 @@ void hero_frame_give(void *p) {
     }
 }
 
-/* The same, for `__attribute__((cleanup))`, which hands the address of the
- * pointer: a function's twin of C's convention returns its large result from
- * this room and gives it back after the return has copied it
- * (`selfhost/emit/signature.hero`'s `value_twin`), because a large record
- * returned from a named local costs clang's front end in proportion to its
- * leaves (panel 233: 8.09 billion instructions for 128 MiB, 0.12 billion
- * returned through a pointer). */
+/* The same, for `__attribute__((__cleanup__))`, which hands the address of
+ * the pointer and runs after a `return` has copied its value: a function that
+ * returns a group's record out of this room by C's convention gives its
+ * regions back through here (`selfhost/emit/large_value.hero`'s
+ * `taken_to_exit`, defect 2316). Given back before the `return`, the chunk
+ * the value stood in was freed above whenever a spare at least as large was
+ * already kept, and the return's copy read freed memory. */
 void hero_frame_give_at(void *slot) {
     hero_frame_give(*(void **)slot);
 }

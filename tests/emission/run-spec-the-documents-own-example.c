@@ -237,7 +237,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("08501fa75a85a1c7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1559776362e202ae", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("specthedocumentsownexample\tspec-the-documents-own-example\n");

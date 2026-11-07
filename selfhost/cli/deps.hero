@@ -107,7 +107,7 @@ function digest_of(path: str, @memo: {str: str}) -> str
     # its key is one no header of text can have (panel 189's R6,
     # `module/reading.key_of`).
     read = file_reading.key_of(path)
-    answer: str @= "absent"
+    answer: str @= ABSENT
 
     if !read.is_err()
         answer @ read.must()
@@ -209,6 +209,11 @@ function paths_of(text: str) -> [str]
 # byte reads as U+FFFD, and the path holding one, a name this compiler cannot
 # open, is recorded `absent`, which `fresh_rows` never vouches for.
 function rows_of(depfile: str, skip: str, @memo: {str: str}) -> str?
+    none: [str] = []
+    return rows_keyed(depfile: depfile, skip: skip, keyed: none, @memo)
+
+# The same, and no row for a file `keyed` names, a key holding its bytes.
+function rows_keyed(depfile: str, skip: str, keyed: [str], @memo: {str: str}) -> str?
     listing = file_reading.source_text(depfile)
 
     if listing.is_err()
@@ -219,17 +224,33 @@ function rows_of(depfile: str, skip: str, @memo: {str: str}) -> str?
     # On Windows a listing's separators are `\` whatever the words said, and
     # `skip` is written with `/` (`under`).
     either = process.exe_suffix() == ".exe"
+    exact: {str: bool} @= {}
+
+    for one in keyed
+        exact[one] @ true
 
     for path in paths_of(listing.must().text)
-        if under(path: path, prefix: skip, either: either)
+        if skip.len() > 0 && under(path: path, prefix: skip, either: either) || !exact[path].is_err() || either && named(path, keyed: keyed)
             continue
 
         if unheld && !bytes.rfind(text: path, needle: "�").is_err()
-            rows @ rows.push("absent " + path)
+            rows @ rows.push(ABSENT + " " + path)
         else
             rows @ rows.push(digest_of(path, @memo) + " " + path)
 
     return ok(rows.join("\n"))
+
+# Whether `path` is one of `keyed`, byte for byte but the separators.
+function named(path: str, keyed: [str]) -> bool
+    for one in keyed
+        if one.len() == path.len() && under(path: path, prefix: one, either: true)
+            return true
+
+    return false
+
+# A row's first field where a file could not be read.
+constant ABSENT: str
+    "absent"
 
 # The whole record for those rows: the digest its artifacts are named by,
 # then the rows. The caller publishes it after every artifact it names.

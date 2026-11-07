@@ -1,0 +1,12 @@
+# fixedbugs, defect 2317, 2026-11-07: the same name declared again with
+# another type and another field between the two, which passed `check` and
+# stopped `build` at clang's duplicate member as the shape of one type did.
+# Told at the second `a`, naming the first's line.
+record Reading
+    value: i64
+    unit: str
+    value: str  #~ field_declared_twice
+
+function main()
+    r = Reading(value: 1, unit: "mm", value: "one")
+    print(r.unit)

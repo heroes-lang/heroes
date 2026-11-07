@@ -342,7 +342,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("722a45823e4cc259", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f339d3e46a92340", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded\tfixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed\n");

@@ -1,0 +1,16 @@
+# fixedbugs, defect 2317, 2026-11-07: a variant's case is a small record
+# (§4.2), and one declaring a field twice passed `check` as a record did, its
+# payload's C struct holding a duplicate member. Told at the second `x`, the
+# holder named as the case.
+variant Shape
+    dot
+        x: i64
+        x: i64  #~ field_declared_twice
+    none
+
+function main()
+    s: Shape = .dot(x: 1, x: 2)
+
+    match s
+        .dot d => print(d.x)
+        .none  => print(0)

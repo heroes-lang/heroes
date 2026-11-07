@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2317-a-record-declaring-one-field-twice-with-two-types-is-refused.hero:8:5: error[field_declared_twice]: `value` is already a field of `Reading`, declared at line 6 — a field is named once, or a construction and a read could not say which; rename one or remove it

@@ -32,6 +32,7 @@ use cli/io
 use cli/link_flags
 use cli/clang_floor
 use cli/deps
+use cli/opening
 use cli/digest
 use cli/flags
 use cli/process
@@ -264,18 +265,30 @@ function object_words(t: Toolchain, named: str) -> [str]
 # `skip` is the runtime's own directory because `runtime_key` already
 # hashes every byte of it (CLAUDE.md §1: a repair is attacked at the
 # shapes next to the one that provoked it, before the commit).
+#
+# **And what `runtime.c` reaches NOW** (`opening.of_runtime`, defect 2289): a
+# `stdio.h` written after a build into a directory `CPATH` names was found
+# ahead of the platform's by a cold build, which refused it, and by no record,
+# so the warm one linked the old object. It is asked of clang at every build
+# and keyed, as a unit's opening is, and nothing is served warm without it.
 function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
+    memo: {str: str} @= {}
+    reach = opening.of_runtime(
+        build: t.build,
+        runtime: t.runtime,
+        words: flags.level_words(level: level, sanitize: sanitize),
+        @memo
+    )
     key = digest.digest(
-        t.fingerprint + "|" + t.compiler_key + "|" + build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key
+        t.fingerprint + "|" + t.compiler_key + "|" + build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|reaches:" + opening.key_text(reach)
     )
     process.mkdir_all(t.build)?
     stem = t.build + "/runtime-" + key
     listed = stem + ".deps.txt"
-    memo: {str: str} @= {}
     known = deps.vouched(listed, @memo)
 
     # Served only as its compile wrote it (defect 443, `cli/served.hero`).
-    if !known.is_err() && served.serves(stem + "-" + known.must() + ".o")
+    if !reach.is_err() && !known.is_err() && served.serves(stem + "-" + known.must() + ".o")
         return ok(stem + "-" + known.must() + ".o")
     depfile = publish.private_name(stem + ".d")
     staged = publish.private_name(stem + ".o")
@@ -304,7 +317,10 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     object = stem + "-" + listing.slice(from: 0, to: 16) + ".o"
     served.seal(staged: staged, object: object)?
     publish.publish(staged: staged, path: object, keyed: true)?
-    publish.write_whole(path: listed, text: listing, keyed: true)?
+
+    # Recorded only where the reach holds every file the compile read.
+    if opening.covers(reach, listed: rows.must())
+        publish.write_whole(path: listed, text: listing, keyed: true)?
     return ok(object)
 
 ## Tests
@@ -446,20 +462,76 @@ test "the runtime's object is named by what it read, beside the record that name
 # it answers the same object, where a compile would have no `runtime.c` to
 # read. The key holds the runtime's contents, never its path, which is what
 # this test rests on; one that keyed the path would fail here first.
-test "a warm ask for the runtime's object compiles nothing and reads no runtime (defect 435)"
+#
+# **Amended 2026-11-07 by defect 2289**: a warm ask now asks clang what
+# `runtime.c` reaches (`opening.of_runtime`), so it reads the runtime it is
+# asked from, and a directory that is not there serves nothing. The runtime
+# it is asked from is now a copy standing elsewhere that preprocesses and
+# does not compile: the same object, since the key holds the runtime's
+# contents and what its includes reach, never where it stands, and a compile
+# would refuse it. A warm build's clang calls are five since then, the
+# runtime's `-M` and its units' openings' added.
+test "a warm ask for the runtime's object compiles nothing, wherever the runtime stands (defect 435)"
     t: Toolchain @= locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-runtime-warm-435"
-    assert !process.remove_tree(t.build).is_err()
+    copy = "build/selftest-runtime-warm-435-copy"
+
+    for dir in [t.build, copy]
+        assert !process.remove_tree(dir).is_err()
+
     object = runtime_object(t, level: "-O0", sanitize: false).must()
+    assert !process.mkdir_all(copy + "/parts").is_err()
+
+    for path in runtime_key.made_of(t.runtime).must()
+        name = path.slice(from: t.runtime.len() + 1, to: path.len())
+        held: str @= read_file(path).must()
+
+        if name == "runtime.c"
+            held @ held + "int heroes_435_not_compiled = ;\n"
+        assert !write_file(path: copy + "/" + name, text: held).is_err()
+
     gone: Toolchain @= t
-    gone.runtime @ "build/selftest-runtime-warm-435-no-runtime"
-    assert !process.path_exists(path: gone.runtime)
+    gone.runtime @ copy
     assert runtime_object(gone, level: "-O0", sanitize: false).must() == object
 
-    # The same directory at another level is another key, and that one does
-    # compile, so it fails where there is nothing to compile.
+    # The same copy at another level is another key, and that one does
+    # compile, so it fails where the runtime does not compile.
     assert runtime_object(gone, level: "-O2", sanitize: false).is_err()
-    assert !process.remove_tree(t.build).is_err()
+
+    for dir in [t.build, copy]
+        assert !process.remove_tree(dir).is_err()
+
+# **A header written into the runtime's search after a build is another
+# runtime object** (defect 2289). A copy of the runtime is compiled and asked
+# again warm; then a `stdio.h` is written beside its `runtime.c`, which
+# `<stdio.h>` finds first, and the warm ask compiles again and clang refuses
+# it, as a build with no `build/` does. With the file gone the first object is
+# served again. Measured before the repair with `CPATH` naming such a file:
+# warm `3` at exit 0, cold *the runtime did not compile*.
+test "a header written into the runtime's search after a build is another runtime object (defect 2289)"
+    t: Toolchain @= locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-runtime-ahead-2289"
+    copy = "build/selftest-runtime-ahead-2289-runtime"
+
+    for dir in [t.build, copy]
+        assert !process.remove_tree(dir).is_err()
+
+    assert !process.mkdir_all(copy + "/parts").is_err()
+
+    for path in runtime_key.made_of(t.runtime).must()
+        name = path.slice(from: t.runtime.len() + 1, to: path.len())
+        assert !write_file(path: copy + "/" + name, text: read_file(path).must()).is_err()
+
+    t.runtime @ copy
+    first = runtime_object(t, level: "-O0", sanitize: false).must()
+    assert runtime_object(t, level: "-O0", sanitize: false).must() == first
+    assert !write_file(path: copy + "/stdio.h", text: "#error a stdio.h written after the build\n").is_err()
+    assert runtime_object(t, level: "-O0", sanitize: false).is_err()
+    assert !process.remove_file(copy + "/stdio.h").is_err()
+    assert runtime_object(t, level: "-O0", sanitize: false).must() == first
+
+    for dir in [t.build, copy]
+        assert !process.remove_tree(dir).is_err()
 
 test "an object compiled under one clang answer is never served under another (defect 122)"
     found = locate_toolchain(hint: "", fingerprint: "port-test")
