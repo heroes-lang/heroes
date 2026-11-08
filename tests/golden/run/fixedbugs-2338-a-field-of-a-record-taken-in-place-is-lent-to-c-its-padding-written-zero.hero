@@ -1,0 +1,48 @@
+# fixedbugs, defect 2338, 2026-11-08: a program record holding a group's
+# `partial` record counts as large (panel 233's R4), so a function takes it as
+# a pointer to its caller's copy, `const h_..._Wrap *`. Lending its field to C
+# read-only zeroes the bytes no C member holds first (panel 215's R1), and that
+# write went through the `const` pointer: `heroes check` exit 0, `heroes build`
+# exit 2, clang's `passing 'const struct ... *' to parameter of type 'void *'
+# discards qualifiers`. The place is now spelled through the parameter's
+# pointer cast to the record's own type (`large_value.writable`): the bytes
+# written are padding, no part of the value, in the caller's own temporary.
+# C counts the padding bytes it finds non-zero: none. Panel 236 found it.
+
+extern "fixedbugs-2338-padded.h"
+    record Padded tag fixedbugs_2338_padded partial
+        a: i8
+        b: i64
+        c: i8
+    function fixedbugs_2338_dirty(p: Padded lent) -> i64
+    function fixedbugs_2338_scribble()
+
+record Wrap
+    tag: i64
+    inner: Padded
+
+# One record deeper: the place is the parameter's field's field.
+record Outer
+    flag: i64
+    mid: Wrap
+
+function inspect(w: Wrap) -> i64
+    fixedbugs_2338_scribble()
+    return fixedbugs_2338_dirty(w.inner) + w.tag
+
+function deep(o: Outer) -> i64
+    fixedbugs_2338_scribble()
+    return fixedbugs_2338_dirty(o.mid.inner) + o.flag
+
+# Handed on: the callee's parameter points at this function's own copy.
+function hand_on(w: Wrap) -> i64
+    fixedbugs_2338_scribble()
+    return inspect(w: w) + fixedbugs_2338_dirty(w.inner)
+
+function main()
+    fixedbugs_2338_scribble()
+    w = Wrap(tag: 0, inner: Padded(a: 1, b: 7, c: 2, rest: zero))
+    print(inspect(w: w))
+    print(deep(o: Outer(flag: 0, mid: w)))
+    print(hand_on(w: w))
+    print(w.inner.b)

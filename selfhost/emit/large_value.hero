@@ -100,6 +100,26 @@ function crosses(names: ctype.Names, f: containers.Function) -> bool
 
     return true
 
+# A place rooted in a parameter its caller hands in place, spelled through that
+# pointer as writable: the place is the caller's own copy behind `const T *`,
+# and what is written through it is only what no member holds, the padding
+# panel 215's R1 zeroes before a lend (`emit/padding.hero`), never the value.
+# Refused at build, exit 2, for a program record holding a `partial` one since
+# panel 233's route (defect 2338).
+function writable(f: containers.Function, c: state.Checked, names: ctype.Names, root: i64, place: str) -> str
+    if root < 0 || root >= f.slots.len() || !in_pointer_param(f, names, slot_id: root)
+        return place
+    name = mangle.slot(index: root, name: f.slots[root].name)
+    spelled = ctype.c_type(names, c: c, ty: f.slots[root].ty)
+
+    if spelled.is_err() || place.len() < name.len() || place.slice(from: 0, to: name.len()) != name
+        return place
+    rest = place.slice(from: name.len(), to: place.len())
+
+    if rest != "" && rest.slice(from: 0, to: 1) != "." && rest.slice(from: 0, to: 1) != "["
+        return place
+    return "(*(" + spelled.must() + " *)" + in_pointer(name) + ")" + rest
+
 # The pointer a large slot or temporary is reached through, and the pointer a
 # large parameter arrives as.
 function pointer(name: str) -> str

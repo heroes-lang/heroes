@@ -58,6 +58,7 @@ use emit/mangle
 use emit/aggregate
 use emit/lend_count
 use emit/membership
+use emit/large_value
 
 # What the members of one record hold, as spans of the outer type, and the
 # arrays of records among them, whose elements are zeroed one by one.
@@ -86,7 +87,8 @@ function zero(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
         match arg
             .inout_arg io =>
                 ty = lend_count.place_type(c, s, decls, f, at: io.place)
-                address = "&" + aggregate.place(c, s, decls, f, at: io.place, site: site)
+                place = aggregate.place(c, s, decls, f, at: io.place, site: site)
+                address = "&" + large_value.writable(f, c, names, root: io.place.root, place: place)
 
                 for line in of_place(c, names, s, decls, ty: ty, address: address)
                     writer.line(@w, text: "    " + line)
