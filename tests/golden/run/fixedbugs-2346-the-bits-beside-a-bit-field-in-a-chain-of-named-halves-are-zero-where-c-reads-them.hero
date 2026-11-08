@@ -1,0 +1,50 @@
+# fixedbugs, defect 2346, 2026-11-08: the bits beside a named bit-field are
+# found once, before `main`, from the record's table (panel 223), and that
+# walk asked every whole member's span of each byte a bit-field shares, the
+# bytes times the spans: panel 233's chain of named halves with such a byte
+# in each leaf ran 77,137,845,552 instructions before `main` at fourteen
+# levels and `-O0`. The bytes are found first and each span is asked once now
+# (`runtime/parts/lend.c`'s `hero_pad_masks`): 121 million. This chain is ten
+# levels, its leaf bound `partial` so its members are the layout dump's, and
+# C, lent the record, reads every byte: the bits beside each bit-field and the
+# padding zero, and every member as it was set.
+extern "fixedbugs-2346-bit-field-halves.h"
+    record B0 tag fixedbugs_2346_b0 partial
+        a: i64
+    record B1 tag fixedbugs_2346_b1
+        left: B0
+        right: B0
+    record B2 tag fixedbugs_2346_b2
+        left: B1
+        right: B1
+    record B3 tag fixedbugs_2346_b3
+        left: B2
+        right: B2
+    record B4 tag fixedbugs_2346_b4
+        left: B3
+        right: B3
+    record B5 tag fixedbugs_2346_b5
+        left: B4
+        right: B4
+    record B6 tag fixedbugs_2346_b6
+        left: B5
+        right: B5
+    record B7 tag fixedbugs_2346_b7
+        left: B6
+        right: B6
+    record B8 tag fixedbugs_2346_b8
+        left: B7
+        right: B7
+    record B9 tag fixedbugs_2346_b9
+        left: B8
+        right: B8
+    record B10 tag fixedbugs_2346_b10
+        left: B9
+        right: B9
+    function fixedbugs_2346_b_make() -> B10
+    function fixedbugs_2346_b_check(@p: B10) -> i64
+
+function main()
+    chain: B10 @= fixedbugs_2346_b_make()
+    print(fixedbugs_2346_b_check(@chain))
+    print(chain.right.right.right.right.right.right.right.right.right.right.a)

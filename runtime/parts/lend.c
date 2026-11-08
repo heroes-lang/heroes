@@ -509,6 +509,38 @@ void hero_lend_local_name(void *local, const char *callee, const char *param) {
     }
 }
 
+/* A TABLE'S SPANS IN OFFSET ORDER, sorted in place as offset and length pairs
+ * (defect 2346) by a heapsort: it allocates nothing and recurses nowhere,
+ * before `main` where no stack is guarded yet, and costs n log n whatever
+ * order the table is in. Spans of one offset keep no order, which no reader
+ * of the sorted pairs asks for. */
+static void hero_pad_sift(size_t *pairs, size_t root, size_t end) {
+    for (;;) {
+        size_t child = 2 * root + 1;
+        if (child >= end) return;
+        if (child + 1 < end && pairs[2 * child + 2] > pairs[2 * child]) child++;
+        if (pairs[2 * root] >= pairs[2 * child]) return;
+        size_t off = pairs[2 * root], len = pairs[2 * root + 1];
+        pairs[2 * root] = pairs[2 * child];
+        pairs[2 * root + 1] = pairs[2 * child + 1];
+        pairs[2 * child] = off;
+        pairs[2 * child + 1] = len;
+        root = child;
+    }
+}
+
+static void hero_pad_sort(size_t *pairs, size_t n) {
+    for (size_t i = n / 2; i > 0; i--) hero_pad_sift(pairs, i - 1, n);
+    for (size_t end = n; end > 1; end--) {
+        size_t off = pairs[0], len = pairs[1];
+        pairs[0] = pairs[2 * (end - 1)];
+        pairs[1] = pairs[2 * (end - 1) + 1];
+        pairs[2 * (end - 1)] = off;
+        pairs[2 * (end - 1) + 1] = len;
+        hero_pad_sift(pairs, 0, end - 1);
+    }
+}
+
 /* The gaps of one padding table (panel 215's R1, issue 1334;
  * emit/padding_tables.hero): every run of the `size` bytes no span covers,
  * written as offset and length pairs into `gaps`, and how many there are.
@@ -517,26 +549,40 @@ void hero_lend_local_name(void *local, const char *callee, const char *param) {
  * member the screen or the layout dump names, so clang computed every number;
  * a union's arms each give a span, so a byte is a gap only where it is padding
  * in every arm, and the spans need no order (an arm may start below the member
- * before it in the table). A gap ends at the offset of a span past it or at
- * `size`, a different one each time, so there are at most `n + 1` of them,
- * the room the unit gives `gaps`. Called once per table, before `main`, by the
- * unit's constructor: a type's gaps never change, so a lend only writes. */
+ * before it in the table). Called once per table, before `main`, by the
+ * unit's constructor: a type's gaps never change, so a lend only writes.
+ *
+ * ONE PASS OVER THE SPANS IN OFFSET ORDER (defect 2346). Until then the walk
+ * asked every span from the table's first at each run it stepped over, so a
+ * table of n spans cost n times n: panel 233's chain of group records by named
+ * halves, sixteen levels and one mebibyte, whose table holds a span for each
+ * of its 131,071 nested records and two for each of its 65,536 leaves, ran 637
+ * billion instructions before `main` at `-O0`. The spans are copied into
+ * `gaps`, which the unit gives room for them and one pair more, sorted there
+ * by offset (`hero_pad_sort`), and read once in that order: a gap is the run
+ * between the furthest byte the spans before it reach and the next span's
+ * offset, and a span of no bytes, which the table writes for each record a
+ * union question asks of, covers nothing. Each gap is written over a span
+ * already read, since a span read adds at most one, so no span still to read
+ * is overwritten, and there are at most `n + 1`. */
 size_t hero_pad_gaps(size_t size, const size_t *spans, size_t n, size_t *gaps) {
+    memcpy(gaps, spans, 2 * n * sizeof(size_t));
+    hero_pad_sort(gaps, n);
     size_t at = 0, count = 0;
-    while (at < size) {
-        size_t next = size;
-        int covered = 0;
-        for (size_t i = 0; i < n; i++) {
-            size_t off = spans[2 * i], len = spans[2 * i + 1];
-            if (off <= at && at < off + len) { covered = 1; at = off + len; break; }
-            if (off > at && off < next) next = off;
+    for (size_t i = 0; i < n; i++) {
+        size_t off = gaps[2 * i], len = gaps[2 * i + 1];
+        if (len == 0 || off >= size) continue;
+        if (off > at) {
+            gaps[2 * count] = at;
+            gaps[2 * count + 1] = off - at;
+            count++;
         }
-        if (covered) continue;
-        if (count > n) hero_panic("a padding table gave more gaps than it has spans — this is a compiler bug, please report it");
+        if (off + len > at) at = off + len;
+    }
+    if (at < size) {
         gaps[2 * count] = at;
-        gaps[2 * count + 1] = next - at;
+        gaps[2 * count + 1] = size - at;
         count++;
-        at = next;
     }
     return count;
 }
@@ -559,22 +605,44 @@ void hero_pad_fill(void *p, size_t size, size_t count, const size_t *gaps, size_
  * bit-field's, which no write may reach) and is left out, as is a byte no
  * named bit-field touches or every bit of which one holds. At most `room`
  * bytes, the sum of each bit-field's own. Called once per table, before
- * `main`, after `hero_pad_gaps`. */
+ * `main`, after `hero_pad_gaps`.
+ *
+ * THE BYTES FIRST, THEN EACH SPAN ONCE (defect 2346). Until then each byte a
+ * bit-field shares asked every span whether it covered it, the bytes times the
+ * spans: panel 233's chain with a named bit-field in each of its leaves,
+ * fourteen levels, ran 77 billion instructions before `main`. The bytes are
+ * written into `masks` in offset order, at most `room` of them, since each
+ * lies in a named bit-field's own; each whole member's span finds the first of
+ * them at or past its offset by halving and marks those it covers with a mask
+ * of no bits, which no byte kept here has; and the bytes left are moved down
+ * in their order. */
 size_t hero_pad_masks(const size_t *spans, size_t nfull, const void *object, size_t size, size_t *masks, size_t room) {
     const unsigned char *image = object;
     size_t count = 0;
     for (size_t at = 0; at < size; at++) {
         if (image[at] == 0 || image[at] == 0xFF) continue;
-        int whole = 0;
-        for (size_t s = 0; s < nfull; s++)
-            if (spans[2 * s] <= at && at < spans[2 * s] + spans[2 * s + 1]) whole = 1;
-        if (whole) continue;
         if (count == room) hero_panic("a bit-field table gave more bytes than it has room for — this is a compiler bug, please report it");
         masks[2 * count] = at;
         masks[2 * count + 1] = image[at];
         count++;
     }
-    return count;
+    for (size_t s = 0; s < nfull; s++) {
+        size_t off = spans[2 * s], end = off + spans[2 * s + 1], lo = 0, hi = count;
+        while (lo < hi) {
+            size_t mid = lo + (hi - lo) / 2;
+            if (masks[2 * mid] < off) lo = mid + 1;
+            else hi = mid;
+        }
+        for (size_t k = lo; k < count && masks[2 * k] < end; k++) masks[2 * k + 1] = 0;
+    }
+    size_t kept = 0;
+    for (size_t k = 0; k < count; k++) {
+        if (masks[2 * k + 1] == 0) continue;
+        masks[2 * kept] = masks[2 * k];
+        masks[2 * kept + 1] = masks[2 * k + 1];
+        kept++;
+    }
+    return kept;
 }
 
 /* The bits no named bit-field holds, in each byte one shares, written zero in
