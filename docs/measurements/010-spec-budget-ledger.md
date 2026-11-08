@@ -274,3 +274,8 @@ corrects one fact of the row: the specification's text landed at the milestone's
 (`301ce606c`, `git show --stat` naming `spec/heroes-spec.md`), not at step 2 (`574e579c7`), which
 added the form to the compiler and touched no line of the specification; the count the row carries,
 10,904 real, is that text's.
+
+**Row 8327's clause re-argued, 2026-11-08.** R13's text in spec § 1 is **kept**, by the author's
+decision of 2026-11-08 (decision 2353, the answer *a*), and no new prediction is registered for it:
+the half that failed predicted what the form would cost the compiler, and it cost less; the half that
+held is what a program and its reader are told, and it held case by case.
