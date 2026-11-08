@@ -29,7 +29,8 @@ use ir/layout
 
 # Whether `id` is a field read through a path of fields alone, rooted in a
 # local or a parameter, each field found: the read `place` spells whole.
-function read(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+# `names` holds the fields' tables (`named_fields.hero`, defect 2336).
+function read(@names: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> bool
     match a.exprs[id].kind
         .name =>
             match r.uses[id]
@@ -46,9 +47,9 @@ function read(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Sour
                 .module                                => return false
                 .local | .top | .builtin | .unresolved => _ = 0
 
-            if layout.field_index(decls, c, s, owner: c.expr_types[f.base], name: f.name).is_err()
+            if layout.field_index(@names, decls, c, s, owner: c.expr_types[f.base], name: f.name).is_err()
                 return false
-            return read(a, r, c, s, decls, id: f.base)
+            return read(@names, a, r, c, s, decls, id: f.base)
         .field_name | .index | .int_lit | .float_lit | .str_lit | .interp | .char_lit => return false
         .bool_lit | .null_ptr | .hole | .unary | .binary | .call | .method            => return false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error   => return false

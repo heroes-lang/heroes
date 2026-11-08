@@ -251,7 +251,7 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
 # is told nothing more. Until 2026-11-07 the last won, and an arm `.one`
 # covered the second `one` and left the first told missing.
 function case_named(@c: state.Checker, s: source.Source, decl: i64, cases: [ast.Case], name: str) -> i64
-    found = c.cases[decl]
+    found = c.names[decl]
     names: {str: i64} @= {}
 
     if !found.is_err()
@@ -266,6 +266,6 @@ function case_named(@c: state.Checker, s: source.Source, decl: i64, cases: [ast.
                 names[spelled] @ at
             at @ at + 1
 
-        c.cases[decl] @ names
+        c.names[decl] @ names
 
     return names[name].default(-1)

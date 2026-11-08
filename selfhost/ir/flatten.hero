@@ -217,7 +217,7 @@ function walk_place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         .field f =>
             owner = c.expr_types[f.base]
             root = walk_place(@b, a, r, c, s, decls, id: f.base, steps: @steps)
-            found = layout.field_index(decls, c, s, owner: owner, name: f.name)
+            found = layout.field_index(@b.names, decls, c, s, owner: owner, name: f.name)
 
             if !found.is_err()
                 steps @ steps.push(.field_step(at: found.must()))
@@ -612,7 +612,7 @@ function value_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
 function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     match table.get(c.types, ty)
         .named n =>
-            found = layout.case_index(@b.cases, decls, s, decl: n.decl, name: name)
+            found = layout.case_index(@b.names, decls, s, decl: n.decl, name: name)
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
@@ -790,7 +790,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     # The three readers of a T? asked before it until defect 2254, so a
     # field `must` holding a function was lowered as a tag read of the
     # record, and clang refused the program the checker had accepted.
-    field_ty = layout.field_type(decls, c, s, owner: c.expr_types[receiver], name: name)
+    field_ty = layout.field_type(@b.names, decls, c, s, owner: c.expr_types[receiver], name: name)
 
     if !field_ty.is_err()
         is_function: bool @= false
@@ -845,11 +845,11 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
     # The fallback is deliberate: a field the checker could not resolve
     # has already been reported, and lowering stays quiet.
     function_ty: i64 @= ty
-    written = layout.field_type(decls, c, s, owner: owner, name: name)
+    written = layout.field_type(@b.names, decls, c, s, owner: owner, name: name)
 
     if !written.is_err()
         function_ty @ written.must()
-    found = layout.field_index(decls, c, s, owner: owner, name: name)
+    found = layout.field_index(@b.names, decls, c, s, owner: owner, name: name)
     target: i64 @= 0
 
     if found.is_err()
@@ -1325,11 +1325,11 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 return emissions.name_expr(@b, r, decls, id: id, ty: ty, span: span)
 
             # A field of a place is read in place, never from a copy (panel 215's R3, `ir/in_place.hero`).
-            if in_place.read(a, r, c, s, decls, id: id)
+            if in_place.read(@b.names, a, r, c, s, decls, id: id)
                 return build.emit(@b, op: .load(place: place(@b, a, r, c, s, decls, id: id)), ty: ty, span: span)
             owner = c.expr_types[f.base]
             base = expr(@b, a, r, c, s, decls, id: f.base)
-            found = layout.field_index(decls, c, s, owner: owner, name: f.name)
+            found = layout.field_index(@b.names, decls, c, s, owner: owner, name: f.name)
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
