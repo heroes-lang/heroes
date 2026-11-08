@@ -1,0 +1,300 @@
+# A core package's card, written from its face (task 2294; panel 234's R5): the
+# `use` line, the module doc's first sentence, each record with its fields,
+# each function's signature with the call a program writes beside it, and each
+# code with what the face's docs say of it. The form is the one panel 234's
+# reader test measured as E2, whose exemplar is
+# `docs/panel/234-briefs/blind/S/card-H-call.md`: with each function's call
+# written beside its signature, one of the two models tested was right at the
+# first turn 14 times in 15, against 5 in 15 with the declarations alone.
+#
+# **The call is derived, never written by hand.** Each argument is the
+# parameter's own name, labelled exactly where the compiler requires a label:
+# at a parameter whose type another parameter of the signature shares (spec
+# § 9), the types compared alone, an `@` or a `lent` mark aside, as
+# `selfhost/check/type_fit.hero`'s `shared` compares them (measured
+# 2026-11-06: `bump(@x: Pair, y: Pair)`, `peek(x: Pair lent, y: Pair)` and
+# `pick<A>(first: A, second: A, take: bool)` each refused without the labels,
+# and `take` needed none). Whether each call compiles as written is asked of
+# the compiler, by building `proof_source`'s program (`package_judge.hero`).
+
+use package_codes
+use package_face
+use strings
+
+# The card of a face, every code with the meaning the face's docs give it.
+function card_text(face: package_face.Face, codes: [package_codes.Code]) -> str
+    out: [str] @= ["# " + face.binding + ": `use core/" + face.path + "`\n\n" + face.said + "\n"]
+
+    if face.shapes.len() > 0
+        lines: [str] @= []
+
+        for shape in face.shapes
+            lines @ lines.push(shape_line(shape))
+
+        out @ out.push("\n## Types\n\n" + lines.join("\n\n") + "\n")
+
+    if face.callables.len() > 0
+        lines: [str] @= []
+
+        for f in face.callables
+            lines @ lines.push(
+                "- `" + f.written + "`, called `" + call_of(binding: face.binding, f: f) + "`: " + f.said
+            )
+
+        out @ out.push("\n## Functions\n\n" + lines.join("\n") + "\n")
+
+    if codes.len() > 0
+        lines: [str] @= []
+
+        for code in codes
+            named: str @= "`" + code.code + "`"
+
+            if code.through.len() > 0
+                named @ named + ", `" + face.binding + "." + code.through + "`"
+            lines @ lines.push("- " + named + ": " + ended(code.meaning))
+
+        out @ out.push("\n## Codes\n\n" + lines.join("\n") + "\n")
+    return out.join("")
+
+# A meaning as a card ends it: a clause gains its period, and a doc's sentence
+# keeps the one it has.
+function ended(text: str) -> str
+    if strings.ends_with(text: text, suffix: ".")
+        return text
+    return text + "."
+
+# A record's line: `` `record Halves` with `before: str` and `after: str`: ``
+# and its doc's first sentence.
+function shape_line(shape: package_face.Shape) -> str
+    if shape.fields.len() == 0
+        return "`record " + shape.name + "`: " + shape.said
+    named: [str] @= []
+
+    for field in shape.fields
+        named @ named.push("`" + field.name + ": " + field.ty + "`")
+
+    return "`record " + shape.name + "` with " + listed(named) + ": " + shape.said
+
+# `a`, `a and b`, `a, b and c`.
+function listed(items: [str]) -> str
+    if items.len() == 1
+        return items[0]
+    return items.slice(from: 0, to: items.len() - 1).join(", ") + " and " + items[items.len() - 1]
+
+# The call a program writes: the binding, the function's name, and each
+# argument the parameter's own name, `@` where the parameter is, labelled where
+# its type is another parameter's too.
+function call_of(binding: str, f: package_face.Callable) -> str
+    arguments: [str] @= []
+
+    for p in f.params
+        sharing: i64 @= 0
+
+        for q in f.params
+            if q.ty == p.ty
+                sharing @ sharing + 1
+
+        label: str @= ""
+
+        if sharing > 1
+            label @ p.name + ": "
+        mark: str @= ""
+
+        if p.mutable
+            mark @ "@"
+        arguments @ arguments.push(label + mark + p.name)
+
+    return binding + "." + f.name + "(" + arguments.join(", ") + ")"
+
+# A program that calls every function as the card writes the call, built by the
+# check: one function per call, whose parameters are the face's own, so each
+# argument is a value of its parameter's type under the parameter's own name,
+# the face's records written through the binding, and its `main` naming each
+# `str` constant as the card does. A `use` of the face that a parameter's type
+# needs is repeated, and no other. `card` is the card's path, for the program's
+# own doc.
+function proof_source(face: package_face.Face, card: str) -> str
+    out: [str] @= [
+        "# The calls " + card + " writes, each compiled as the card writes it.\n\nuse core/" + face.path + "\n"
+    ]
+    needed: {str: bool} @= {}
+
+    for f in face.callables
+        for p in f.params
+            for b in bindings_in(p.ty)
+                needed[b] @ true
+
+        for b in bindings_in(f.result)
+            needed[b] @ true
+
+    for row in face.uses
+        named = use_binding(row)
+
+        if named != face.binding && !needed[named].is_err()
+            out @ out.push(row + "\n")
+
+    # Each constant a code is written through is named as the card names it.
+    main: [str] @= ["\nfunction main()\n"]
+
+    for one in face.constants
+        main @ main.push("    _ = " + face.binding + "." + one.name + "\n")
+
+    if face.constants.len() == 0
+        main @ main.push("    _ = 0\n")
+    out @ out.push(main.join(""))
+    local: [str] @= []
+
+    for shape in face.shapes
+        local @ local.push(shape.name)
+
+    for f in face.callables
+        params: [str] @= []
+
+        for p in f.params
+            mark: str @= ""
+
+            if p.mutable
+                mark @ "@"
+            lent: str @= ""
+
+            if p.lent
+                lent @ " lent"
+            params @ params.push(mark + p.name + ": " + qualified(ty: p.ty, binding: face.binding, local: local) + lent)
+
+        head = "\nfunction call_" + f.name + f.generics + "(" + params.join(", ") + ")"
+        call = call_of(binding: face.binding, f: f)
+
+        if f.result.len() == 0 || f.result == "()"
+            out @ out.push(head + "\n    " + call + "\n")
+        else
+            out @ out.push(
+                head + " -> " + qualified(ty: f.result, binding: face.binding, local: local) + "\n    return " + call + "\n"
+            )
+
+    return out.join("")
+
+# A type as a program writes it: each name of the face's own records reached
+# through the binding, `Halves?` read as `strings.Halves?`, and every other
+# name as it stands.
+function qualified(ty: str, binding: str, local: [str]) -> str
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < ty.len()
+        if !word(ty[at])
+            at @ at + 1
+            continue
+        end: i64 @= at
+
+        while end < ty.len() && word(ty[end])
+            end @ end + 1
+
+        name = ty.slice(from: at, to: end)
+
+        if (at == 0 || ty[at - 1] != '.') && holds(names: local, name: name)
+            out @ out.push(ty.slice(from: start, to: at) + binding + ".")
+            start @ at
+        at @ end
+
+    return out.join("") + ty.slice(from: start, to: ty.len())
+
+# The bindings a type reaches through, `json` in `[json.Value]`.
+function bindings_in(ty: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < ty.len()
+        if !word(ty[at])
+            at @ at + 1
+            continue
+        end: i64 @= at
+
+        while end < ty.len() && word(ty[end])
+            end @ end + 1
+
+        if end < ty.len() && ty[end] == '.'
+            out @ out.push(ty.slice(from: at, to: end))
+        at @ end
+
+    return out
+
+# What a `use` line binds: the name after `as`, or the path's last part.
+function use_binding(row: str) -> str
+    words = strings.words(row)
+
+    if words.len() == 4 && words[2] == "as"
+        return words[3]
+    parts = strings.split_on(text: words[1], byte: '/')
+    return parts[parts.len() - 1]
+
+function word(byte: u8) -> bool
+    return byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z' || byte >= '0' && byte <= '9' || byte == '_'
+
+function holds(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+# The `maximum` row of `heroes measure`'s answer, the budget's number (panel
+# 234's R5 sets the card's budget in vendored tokens, the unit the net can
+# read). Read by the row's name and never its prose, as `suite_spec.hero`'s
+# `maximum_of` reads it, for the reason that function's comment gives: a label
+# a person reads may be corrected, and the row's name is its identity.
+function maximum_in(said: str) -> i64?
+    for row in strings.lines(said)
+        if strings.starts_with(text: row, prefix: "  maximum")
+            words = strings.words(row)
+
+            if words.len() >= 2
+                return strings.to_number(words[1])
+
+    return fail(code: "cannot_measure", msg: "`heroes measure` printed no `maximum` row")
+
+## Tests
+
+test "the call labels exactly the parameters whose type another shares, and marks `@`"
+    face = package_face.face_of(
+        path: "core_test",
+        text: "# T.\n\n# A.\nfunction a(s: str, prefix: str) -> bool\n    return true\n\n# B.\nfunction b(s: str) -> str\n    return s\n\n# C.\nfunction c(@x: Pair, y: Pair lent, n: i64)\n    _ = 0\n\n# D.\nfunction d<A>(first: A, second: A, take: bool) -> A\n    return first\n\n# E.\nfunction e()\n    _ = 0\n"
+    )
+    calls: [str] @= []
+
+    for f in face.callables
+        calls @ calls.push(call_of(binding: "m", f: f))
+
+    assert calls == ["m.a(s: s, prefix: prefix)", "m.b(s)", "m.c(x: @x, y: y, n)", "m.d(first: first, second: second, take)", "m.e()"]
+
+test "a card is written in E2's form, each section only where it has a line"
+    text = "# Text, taken apart. More.\n\n# Two halves. More.\nrecord Halves\n    before: str\n    after: str\n\n# Whether it begins. More.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# The halves, failing `not_found` where `s` holds no `sep`.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s, after: sep))\n"
+    face = package_face.face_of(path: "strings", text: text)
+    codes = [package_codes.Code(code: "not_found", through: "", meaning: "where `s` holds no `sep` (`split_once`)")]
+    assert card_text(face: face, codes: codes) == "# strings: `use core/strings`\n\nText, taken apart.\n\n## Types\n\n`record Halves` with `before: str` and `after: str`: Two halves.\n\n## Functions\n\n- `has_prefix(s: str, prefix: str) -> bool`, called `strings.has_prefix(s: s, prefix: prefix)`: Whether it begins.\n- `split_once(s: str, sep: str) -> Halves?`, called `strings.split_once(s: s, sep: sep)`: The halves, failing `not_found` where `s` holds no `sep`.\n\n## Codes\n\n- `not_found`: where `s` holds no `sep` (`split_once`).\n"
+    nothing: [package_codes.Code] = []
+    bare = package_face.face_of(path: "net/http", text: "# Http.\n")
+    assert card_text(face: bare, codes: nothing) == "# http: `use core/net/http`\n\nHttp.\n"
+    assert listed(["`a`", "`b`", "`c`"]) == "`a`, `b` and `c`"
+
+    # A code written through a constant names the constant as a program writes it.
+    numbers = package_face.face_of(
+        path: "strconv",
+        text: "# Numbers.\n\n# What fails.\nconstant NOT_A_NUMBER: str\n    \"not_a_number\"\n"
+    )
+    through = [package_codes.Code(code: "not_a_number", through: "NOT_A_NUMBER", meaning: "What fails.")]
+    assert card_text(face: numbers, codes: through) == "# strconv: `use core/strconv`\n\nNumbers.\n\n## Codes\n\n- `not_a_number`, `strconv.NOT_A_NUMBER`: What fails.\n"
+    assert proof_source(face: numbers, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse core/strconv\n\nfunction main()\n    _ = strconv.NOT_A_NUMBER\n"
+
+test "the proof calls each function as the card does, its records through the binding"
+    text = "# S.\n\nuse core/strings/internal/scan\nuse core/encoding/json\n\n# H.\nrecord Halves\n    before: str\n\n# One.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s + sep))\n\n# Two.\nfunction gather(xs: [Halves], v: json.Value)\n    _ = 0\n"
+    face = package_face.face_of(path: "strings", text: text)
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse core/strings\nuse core/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction call_split_once(s: str, sep: str) -> strings.Halves?\n    return strings.split_once(s: s, sep: sep)\n\nfunction call_gather(xs: [strings.Halves], v: json.Value)\n    strings.gather(xs, v)\n"
+    assert qualified(ty: "{str: [Halves]}", binding: "s", local: ["Halves"]) == "{str: [s.Halves]}"
+    assert qualified(ty: "x.Halves", binding: "s", local: ["Halves"]) == "x.Halves"
+    assert use_binding("use core/a/b as c") == "c"
+
+test "the budget's number is the `maximum` row of `heroes measure`"
+    said = "card.md\n  claude-legacy       809   (64995 ranks)\n  cl100k_base         808   (100256 ranks)\n  maximum             809   a lower bound, not the reader's tokeniser\n"
+    assert maximum_in(said).must() == 809
+    assert maximum_in("card.md\n  real  12\n").is_err()

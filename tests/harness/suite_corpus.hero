@@ -22,7 +22,10 @@
 #      OFF THE PROGRAM and not off a list of names: a directory whose
 #      modules declare an `extern` group is bound to a live library, whose
 #      version decides what the program prints — `examples/curl/` prints
-#      this machine's libcurl.
+#      this machine's libcurl. Both are asked of the program's OWN modules
+#      since 2026-11-06 (task 2293): a program carries each core package it
+#      uses as a copy under its `core/`, whose tests are the package's, so
+#      a program with none of its own passed on its copy's.
 #   3. `main.expected` — what the program prints, in three configurations,
 #      with `main.args` supplying its arguments.
 #   4. at least one program reaches the end of `main` rather than calling
@@ -128,15 +131,19 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     crossing: i64 @= 0
 
     for dir in programs
-        modules = module_texts(scratch: scratch, dir: dir)?
+        modules = module_texts(scratch: scratch, dir: dir, carried: true)?
+        own = module_texts(scratch: scratch, dir: dir, carried: false)?
 
-        if !declares_any(modules: modules, opening: "test \"") && !declares_any(modules: modules, opening: "extern \"")
+        if !declares_any(modules: own, opening: "test \"") && !declares_any(modules: own, opening: "extern \"")
             report.keep_failure(
                 @r,
                 label: "corpus/" + strings.base_name(path: dir),
                 detail: "  " + dir + " neither tests itself nor binds a C library — design.md's \"asserts its own behaviour in `test` blocks\", asked of each directory"
             )
 
+        # Check 4 reads the packages a program carries too: a package that
+        # exits is a program that exits, and a copy read wrongly here can only
+        # count a program as not crossing, the loud direction.
         if !holds(modules: modules, needle: "exit(")
             crossing @ crossing + 1
         took = one_program(
@@ -519,18 +526,27 @@ function program_directories(scratch: str) -> [str]?
 # tripped it only because `main.hero` happens to carry two tests of its own.
 # `suite_canonical.hero:84-85` made this same repair for the same reason and
 # measured what it was missing: 325 files of 371.
-function module_texts(scratch: str, dir: str) -> [str]?
+#
+# `carried` keeps the packages the program carries under its `core/`; without
+# it, the modules are the program's own (`own_module`).
+function module_texts(scratch: str, dir: str, carried: bool) -> [str]?
     texts: [str] @= []
     nothing: [str] = []
 
     for entry in shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
-        if strings.ends_with(text: entry, suffix: ".hero")
+        if strings.ends_with(text: entry, suffix: ".hero") && (carried || own_module(dir: dir, path: entry))
             text = read_file(entry)
 
             if !text.is_err()
                 texts @ texts.push(text.must())
 
     return ok(texts)
+
+# Whether a module is the program's own and not a package it carries: a copy
+# stands under the program's `core/` and only there (`examples/packages/README.md`
+# § 1.4), so a directory named `core` deeper in the program is the program's.
+function own_module(dir: str, path: str) -> bool
+    return !strings.starts_with(text: path, prefix: dir + "/core/")
 
 # Every module of the program, as the paths the compiler names them by. A
 # directory that cannot be walked answers none, and the witness then reads the
@@ -616,6 +632,25 @@ test "a directory that neither tests itself nor binds C is caught"
     assert !declares_any(modules: neither, opening: "test \"")
     assert !declares_any(modules: neither, opening: "extern \"")
     assert !declares_any(modules: pretending, opening: "test \"")
+
+test "a program tests itself in its own modules, never in the packages it carries (task 2293)"
+    assert own_module(dir: "examples/ini", path: "examples/ini/main.hero")
+    assert own_module(dir: "examples/ini", path: "examples/ini/lib/core/x.hero")
+    assert !own_module(dir: "examples/ini", path: "examples/ini/core/strings.hero")
+
+    # A program whose one `test` block stands in a package it carries is a
+    # program that tests nothing of its own.
+    scratch = shell.own_scratch()
+    tree = scratch + "/corpus-carried"
+    assert !shell.mkdir_all(tree + "/core/strings/internal").is_err()
+    assert !write_file(path: tree + "/main.hero", text: "function main()\n    print(1)\n").is_err()
+    assert !write_file(path: tree + "/core/strings/internal/scan.hero", text: "test \"a\"\n    assert true\n").is_err()
+    every = module_texts(scratch: scratch, dir: tree, carried: true)
+    own = module_texts(scratch: scratch, dir: tree, carried: false)
+    assert declares_any(modules: every.must(), opening: "test \"")
+    assert own.must().len() == 1
+    assert !declares_any(modules: own.must(), opening: "test \"")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the leak-gate check reads `exit(` off the program"
     assert holds(modules: ["function main()\n    exit(2)\n"], needle: "exit(")

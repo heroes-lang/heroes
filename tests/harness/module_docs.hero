@@ -1,0 +1,210 @@
+# A Heroes module's declarations read as text, with the comments that
+# document them: its top-level functions, the comment directly above a row, the
+# module's own doc, a doc's paragraphs and a paragraph's first sentence. The
+# `packages` suite asks whether every function has a doc (`package_rules.hero`),
+# and a package's card is written from these docs (`package_face.hero`).
+#
+# **Kept apart from `module_text.hero`**, which reads a module's code, its
+# literals and its comments dropped: this reads the comments themselves, and the
+# two meet only in what a name is made of (`module_text.word_byte`).
+
+use module_text
+use strings
+
+# A top-level `function` of a module: its line's index in the module's rows,
+# and its name.
+record Declared
+    at: i64
+    name: str
+
+# Every top-level `function` of a module's rows: a line opening `function ` in
+# column 0, so never a member of an `extern` group, which is indented.
+function functions_of(rows: [str]) -> [Declared]
+    out: [Declared] @= []
+    at: i64 @= 0
+
+    for row in rows
+        if strings.starts_with(text: row, prefix: "function ")
+            out @ out.push(Declared(at: at, name: name_after(text: row, start: 9)))
+        at @ at + 1
+
+    return out
+
+# The name that begins at `start` of `text`: its word characters.
+function name_after(text: str, start: i64) -> str
+    end: i64 @= start
+
+    while end < text.len() && module_text.word_byte(text[end])
+        end @ end + 1
+
+    return text.slice(from: start, to: end)
+
+# The value of the `str` constant declared at row `at`, `constant NAME: str`
+# with a plain literal alone on the row below, or none for any other constant:
+# a code a package adds is such a constant (`examples/packages/README.md` § 3.3). A literal
+# holding an escape or a brace is not plain, and is none.
+function str_constant(rows: [str], at: i64) -> str?
+    if !strings.ends_with(text: rows[at], suffix: ": str") || at + 1 >= rows.len()
+        return fail(code: "not_found", msg: "row " + (at + 1).to_str() + " declares no `str` constant")
+    body = strings.trimmed(rows[at + 1])
+
+    if body.len() < 2 || body[0] != '"' || body[body.len() - 1] != '"'
+        return fail(code: "not_found", msg: "row " + (at + 2).to_str() + " holds no plain literal")
+    inner = body.slice(from: 1, to: body.len() - 1)
+
+    for mark in ["\\", "\"", "{", "}"]
+        if strings.contains(text: inner, needle: mark)
+            return fail(code: "not_found", msg: "row " + (at + 2).to_str() + " holds no plain literal")
+
+    return ok(inner)
+
+# The comment directly above row `at`: the rows opening with `#` that stand
+# with no gap above it, a `##` heading ending them, each without its `#` and
+# the one space after it.
+function doc_above(rows: [str], at: i64) -> [str]
+    top: i64 @= at
+
+    while top > 0 && commented(rows[top - 1])
+        top @ top - 1
+
+    out: [str] @= []
+
+    for row in rows.slice(from: top, to: at)
+        out @ out.push(uncommented(row))
+
+    return out
+
+# The module's own doc: the comment its first rows hold, where a blank row ends
+# it. A comment that runs straight into a declaration documents that
+# declaration, and the module then has none.
+function module_doc(rows: [str]) -> [str]
+    end: i64 @= 0
+
+    while end < rows.len() && commented(rows[end])
+        end @ end + 1
+
+    out: [str] @= []
+
+    if end == 0 || end < rows.len() && rows[end].len() > 0
+        return out
+
+    for row in rows.slice(from: 0, to: end)
+        out @ out.push(uncommented(row))
+
+    return out
+
+# Whether a row is a comment, and not a `##` section heading.
+function commented(row: str) -> bool
+    return strings.starts_with(text: row, prefix: "#") && !strings.starts_with(text: row, prefix: "##")
+
+function uncommented(row: str) -> str
+    if strings.starts_with(text: row, prefix: "# ")
+        return strings.without_prefix(text: row, prefix: "# ")
+    return strings.without_prefix(text: row, prefix: "#")
+
+# A doc's paragraphs, each its lines joined by one space; an empty line of the
+# doc, a `#` alone, ends one.
+function paragraphs(doc: [str]) -> [str]
+    out: [str] @= []
+    lines_of: [str] @= []
+
+    for line in doc
+        if line.len() == 0
+            if lines_of.len() > 0
+                out @ out.push(lines_of.join(" "))
+            lines_of @ []
+        else
+            lines_of @ lines_of.push(line)
+
+    if lines_of.len() > 0
+        out @ out.push(lines_of.join(" "))
+    return out
+
+# The first sentence of `paragraph`: through the first `.` outside a code span
+# that ends the paragraph or stands before a space and then anything but a
+# lower-case letter, so `e.g. a` runs on and the `.` of `strings.TrimSpace`
+# inside backticks ends nothing. A paragraph with no such `.` is one sentence.
+function first_sentence(paragraph: str) -> str
+    spanned: bool @= false
+    at: i64 @= 0
+
+    while at < paragraph.len()
+        byte = paragraph[at]
+
+        if byte == '`'
+            spanned @ !spanned
+        else if byte == '.' && !spanned && ends_sentence(text: paragraph, at: at)
+            return paragraph.slice(from: 0, to: at + 1)
+        at @ at + 1
+
+    return paragraph
+
+# The sentences of `paragraph`, in order, each as `first_sentence` ends one.
+function sentences(paragraph: str) -> [str]
+    out: [str] @= []
+    rest: str @= strings.trimmed(paragraph)
+
+    while rest.len() > 0
+        one = first_sentence(rest)
+        out @ out.push(one)
+        rest @ strings.trimmed(rest.slice(from: one.len(), to: rest.len()))
+
+    return out
+
+function ends_sentence(text: str, at: i64) -> bool
+    if at + 1 == text.len()
+        return true
+
+    if text[at + 1] != ' '
+        return false
+    return at + 2 == text.len() || text[at + 2] < 'a' || text[at + 2] > 'z'
+
+## Tests
+
+test "functions are read in column 0, and a doc is the comment with no gap above"
+    rows = [
+        "# The module."
+        ""
+        "# One."
+        "# Two."
+        "function f(a: i64) -> i64"
+        "    return a"
+        ""
+        "##"
+        "function g()"
+        "    function h()"
+    ]
+    found = functions_of(rows)
+    assert found.len() == 2
+    assert found[0].name == "f" && found[0].at == 4
+    assert found[1].name == "g"
+    assert doc_above(rows: rows, at: 4) == ["One.", "Two."]
+    assert doc_above(rows: rows, at: 8).len() == 0
+    assert module_doc(rows) == ["The module."]
+    assert module_doc(["# Documents f.", "function f()"]).len() == 0
+    assert name_after(text: "function pick<A>(x: A) -> A", start: 9) == "pick"
+
+test "a `str` constant's plain literal is its value, and any other constant has none"
+    rows = [
+        "constant NOT_A_NUMBER: str"
+        "    \"not_a_number\""
+        "constant MOST: i64"
+        "    3"
+        "constant SPLICED: str"
+        "    \"a{b}\""
+    ]
+    assert str_constant(rows: rows, at: 0).must() == "not_a_number"
+    assert str_constant(rows: rows, at: 2).is_err()
+    assert str_constant(rows: rows, at: 4).is_err()
+    assert str_constant(rows: ["constant LAST: str"], at: 0).is_err()
+
+test "a paragraph's sentences are read one after another"
+    assert sentences("It fails `a`. It answers `b.c` too. Then") == ["It fails `a`.", "It answers `b.c` too.", "Then"]
+    assert sentences("").len() == 0
+
+test "a first sentence ends at a `.` outside backticks that a capital or the end follows"
+    assert first_sentence("Whether `s` begins with `prefix`. Every text begins with \"\".") == "Whether `s` begins with `prefix`."
+    assert first_sentence("Go's `strings.TrimSpace` reads it. Then more.") == "Go's `strings.TrimSpace` reads it."
+    assert first_sentence("One, e.g. a thing, then. Two.") == "One, e.g. a thing, then."
+    assert first_sentence("No period at all") == "No period at all"
+    assert paragraphs(["a", "b", "", "c"]) == ["a b", "c"]

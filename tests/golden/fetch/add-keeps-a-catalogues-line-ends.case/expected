@@ -1,0 +1,15 @@
+$ heroes add json -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+# written on Windows
+index = "file://../../../../../tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-88ed723d8c92c5d15dcbbbc763a54a2efcfcc333452c3f4e1d065235780499b8"
+heroes.packages:
+json@1.4.2-18a5a806e7336ed8

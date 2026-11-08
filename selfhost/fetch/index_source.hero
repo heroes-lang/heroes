@@ -1,0 +1,429 @@
+# A package read from a static index (panel 235's R20, the first version's
+# reading of it, and R9's C4, ratified 2026-11-07): files a site or a folder
+# serves, read with curl, and nothing run on the other side. Its layout is the
+# one the ffi-pragmatist measured (its § 4), every name below fixed by R19's
+# goldens:
+#
+#     <index>/<name>/versions              one `<version> <sum>` a line
+#     <index>/<name>/<version>/list        the listing the sum is taken over
+#     <index>/<name>/<version>/files/<path>  each file at its own address
+#
+# **Why these names.** `versions` is crates.io's sparse index, one file per
+# package holding a line per version with its checksum (RFC 2789), and Go's
+# proxy `@v/list`, one version a line; `list` is the very text `sum` is the
+# SHA-256 of (`module/fingerprint.hero`'s listing, Go's `h1` in hexadecimal),
+# so a listing is checked against the catalogue before any file is asked for;
+# and each file at its own address, as JSR serves them, so the first version
+# needs `curl` alone and no archive, no `tar` and no zlib (the ffi-pragmatist's
+# route nobody listed, its § 3). A version's files are never rewritten once
+# published (crates.io, the survey's Table 3), which an exact sum relies on.
+#
+# **Checked twice before it is placed**: each file against its line of the
+# listing as it lands, so a file the index changed is named; and the staged
+# tree's fingerprint, read from the disk, against the entry's sum
+# (`fetch/staging.hero`), so what the disk holds is what the sum names.
+
+use cli/process
+use cli/strings
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module/sums
+use fetch/address
+use fetch/made_index
+use fetch/made_repo
+use fetch/staging
+use fetch/transport
+use fetch/tree_names
+
+extern "hero_compiler.h"
+    function hero_file_sha256(path: cstr lent, @status: i64) -> str
+    function hero_text_sha256(text: str) -> str
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+
+# The index a catalogue with no `index` line reads (R5, R9's C4): the Heroes
+# index, which row 78 serves; its address waits on that row and is held here
+# alone.
+constant HEROES_INDEX: str
+    "https://index.heroes-lang.org"
+
+# The most bytes a `versions` file or a listing may hold: Go's bound on a
+# `go.mod` (`modfetch`, 16 MiB), past which no honest index's text goes.
+constant TEXT_CAP: i64
+    16777216
+
+# The most bytes one file of a package may hold: Go's bound on a module's
+# whole zip, 500 MiB, rounded up to a power of two.
+constant FILE_CAP: i64
+    536870912
+
+# One version an index lists, with the sum of its listing.
+record Listed
+    version: str
+    sum: str
+
+# The address the catalogue's `index` line gives, or the Heroes index's.
+function written_index(line: str) -> str
+    if line.len() == 0
+        return HEROES_INDEX
+    return line
+
+# The versions the index at `index` lists for `name`, each with its sum.
+function versions(tools: transport.Tools, index: address.Address, name: str, scratch: str) -> [Listed]?
+    into = scratch + "/versions.txt"
+    asked = transport.got(
+        tools,
+        at: address.under(index, inside: name + "/versions"),
+        into: into,
+        cap: TEXT_CAP,
+        scratch: scratch
+    )
+
+    if asked.is_err()
+        if code_of(asked) == "absent"
+            return fail(
+                code: "absent",
+                msg: "the index `" + index.written + "` lists no package `" + name + "`: " + why(asked)
+            )
+        return fail(code: code_of(asked), msg: why(asked))
+    text = read_file(into)
+
+    if text.is_err()
+        return fail(code: "index_refused", msg: "the index's `" + name + "/versions` is not text")
+    out: [Listed] @= []
+    number: i64 @= 1
+
+    for line in lines_of(text.must())
+        space = space_in(line)
+
+        if space < 0 || !sums.version_shape(line.slice(from: 0, to: space)) || !sums.sum_shape(line.slice(from: space + 1, to: line.len()))
+            return fail(
+                code: "index_refused",
+                msg: "line " + number.to_str() + " of the index's `" + name + "/versions` is not `<version> <sum>`: `" + line + "`"
+            )
+
+        for one in out
+            if one.version == line.slice(from: 0, to: space)
+                return fail(
+                    code: "index_refused",
+                    msg: "the index's `" + name + "/versions` lists " + one.version + " twice"
+                )
+
+        out @ out.push(
+            Listed(version: line.slice(from: 0, to: space), sum: line.slice(from: space + 1, to: line.len()))
+        )
+        number @ number + 1
+
+    return ok(out)
+
+# The index entry `e` of the program whose folder is `program` fetched and
+# placed under its key: the folder it now stands in. `index` is the catalogue's
+# `index` line, "" for the Heroes index.
+function fetched(tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
+    at = address.judged(written_index(index), root: root)?
+    s = staging.opened(program)?
+    done = written(tools, index: at, name: e.name, version: e.version, sum: e.sum, s: s)
+
+    if done.is_err()
+        staging.dropped(s)
+        return fail(code: code_of(done), msg: why(done))
+    return staging.placed(
+        s,
+        program: program,
+        key: placed.key(e, index: index),
+        sum: e.sum,
+        what: "`" + e.name + "` " + e.version + " from the index `" + at.written + "`"
+    )
+
+# The tree of `name` at `version` written into `s`: its listing first, held to
+# `sum` before any file is asked for and its names judged whole
+# (`fetch/tree_names.hero`); then each file, held to its line as it lands.
+function written(tools: transport.Tools, index: address.Address, name: str, version: str, sum: str, s: staging.Staging) -> ()?
+    base = name + "/" + version
+    listed = s.folder + "/list.txt"
+    asked = transport.got(
+        tools,
+        at: address.under(index, inside: base + "/list"),
+        into: listed,
+        cap: TEXT_CAP,
+        scratch: s.folder
+    )
+
+    if asked.is_err()
+        if code_of(asked) == "absent"
+            return fail(
+                code: "absent",
+                msg: "the index `" + index.written + "` serves no " + name + " " + version + ": " + why(asked)
+            )
+        return fail(code: code_of(asked), msg: why(asked))
+    text = read_file(listed)
+
+    if text.is_err()
+        return fail(
+            code: "name_refused",
+            msg: "the listing of " + name + " " + version + " is not text, so a name in it is not UTF-8, which no file of a package's may be"
+        )
+    listing = text.must()
+    got = "sha256-" + hero_text_sha256(text: listing)
+
+    if got != sum
+        return fail(
+            code: "sum_mismatch",
+            msg: "the listing of " + name + " " + version + " at the index `" + index.written + "` sums to `" + got + "`, and the catalogue's `sum` for it is `" + sum + "`: the package is not the one its entry was written for, and nothing was fetched"
+        )
+    files = lines_of_listing(listing)?
+
+    for one in files
+        path = s.tree + "/" + one.path
+        made(process.mkdir_all(path.slice(from: 0, to: last_slash(path))))?
+        transport.got(tools, at: address.under(index, inside: base + "/files/" + one.path), into: path, cap: FILE_CAP, scratch: s.folder)?
+        status: i64 @= 0
+        landed = hero_file_sha256(path: path.cstr(), status: @status)
+
+        if status != HERO_OS_OK || landed != one.sum
+            return fail(
+                code: "sum_mismatch",
+                msg: "`" + one.path + "` of " + name + " " + version + " does not match its line of the listing, " + one.sum + ", and nothing was placed"
+            )
+
+    return ok()
+
+# One line of a listing: a file's SHA-256 and its name.
+record Line
+    sum: str
+    path: str
+
+# A listing read as the lines its sum was taken over: `<64 hex>  <name>` and a
+# line end each, the names in the order of their bytes, none twice, every name
+# one a package may hold, and no two one where case is ignored. A listing in
+# any other shape is refused, since it is not the canonical one a tree's sum
+# reads (`module/fingerprint.hero`).
+function lines_of_listing(listing: str) -> [Line]?
+    out: [Line] @= []
+    paths: [str] @= []
+    from: i64 @= 0
+
+    if listing.len() > 0 && listing[listing.len() - 1] != '\n'
+        return fail(
+            code: "index_refused",
+            msg: "the listing does not end with a line end, which its canonical form does"
+        )
+
+    for at in range(from: 0, to: listing.len())
+        if listing[at] == '\n'
+            line = listing.slice(from: from, to: at)
+
+            if line.len() < 67 || !sums.sum_shape("sha256-" + line.slice(from: 0, to: 64)) || line[64] != ' ' || line[65] != ' '
+                return fail(
+                    code: "index_refused",
+                    msg: "a line of the listing is not `<sha256>  <name>`: `" + line + "`"
+                )
+            path = line.slice(from: 66, to: line.len())
+            said = tree_names.name_said(path)
+
+            if said.len() > 0
+                return fail(code: "name_refused", msg: said)
+
+            if paths.len() > 0 && !before(first: paths[paths.len() - 1], then: path)
+                return fail(
+                    code: "index_refused",
+                    msg: "the listing names `" + path + "` after `" + paths[paths.len() - 1] + "`, where its canonical form orders the names by their bytes, each once"
+                )
+            out @ out.push(Line(sum: line.slice(from: 0, to: 64), path: path))
+            paths @ paths.push(path)
+            from @ at + 1
+
+    twice = tree_names.collision(paths)
+
+    if twice.len() > 0
+        return fail(code: "name_refused", msg: twice)
+    return ok(out)
+
+# Whether `first` comes before `then` in the order of their bytes, a name
+# before every longer name it opens.
+function before(first: str, then: str) -> bool
+    at: i64 @= 0
+
+    while at < first.len() && at < then.len()
+        if first[at] != then[at]
+            return first[at] < then[at]
+        at @ at + 1
+
+    return first.len() < then.len()
+
+# A text's lines, each without its line end; a last line with none is a line.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: from, to: at))
+            from @ at + 1
+
+    if from < text.len()
+        out @ out.push(text.slice(from: from, to: text.len()))
+    return out
+
+function space_in(line: str) -> i64
+    for at in range(from: 0, to: line.len())
+        if line[at] == ' '
+            return at
+
+    return -1
+
+function last_slash(path: str) -> i64
+    at: i64 @= path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return at
+
+# A folder that could not be made under the staging folder, told as the
+# machine's.
+function made(done: ()?) -> ()?
+    match done
+        .ok _  => return ok()
+        .err e => return fail(code: "cannot_place", msg: e.msg)
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.code
+
+function why(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+# The scratch these cases share: a repository standing for the program's
+# own, `app/` its folder, and `idx/` a static index beside it.
+constant SCRATCH: str
+    "build/selftest-fetch-index"
+
+# A PNG's signature, then a byte no UTF-8 holds.
+constant PNG: str
+    "89504e470d0a1a0a0000000d49484452ff"
+
+record Made
+    root: address.Root
+    sum: str
+
+# A program in a repository of its own and an index beside its folder
+# publishing `json` 1.4.2: a module, a file deeper down and one not text.
+function index_made() -> Made
+    made_repo.made(SCRATCH).must()
+    process.mkdir_all(SCRATCH + "/app").must()
+    sum = made_index.published(
+        idx: SCRATCH + "/idx",
+        name: "json",
+        version: "1.4.2",
+        files: ["parse.hero", "function x() -> i64\n    return 1\n", "sub/note.txt", "deep\n"],
+        raw: ["logo.png", PNG]
+    ).must()
+    root = transport.root_of(transport.path_tools(), folder: SCRATCH + "/app", scratch: SCRATCH).must()
+    return Made(root: root, sum: sum)
+
+function entry(name: str, version: str, sum: str) -> catalogue.Entry
+    return catalogue.Entry(name: name, version: version, git: "", tag: "", commit: "", path: "", sum: sum)
+
+test "an index lists a package's versions with their sums, and places a version whose listing and files match"
+    m = index_made()
+    index = address.judged("file://../idx", root: m.root).must()
+    listed = versions(transport.path_tools(), index: index, name: "json", scratch: SCRATCH).must()
+    assert listed.len() == 1
+    assert listed[0].version == "1.4.2" && listed[0].sum == m.sum
+    at = fetched(
+        transport.path_tools(),
+        e: entry(name: "json", version: "1.4.2", sum: m.sum),
+        program: SCRATCH + "/app/",
+        root: m.root,
+        index: "file://../idx"
+    ).must()
+    assert at == SCRATCH + "/app/heroes.packages/" + placed.key(entry(name: "json", version: "1.4.2", sum: m.sum), index: "file://../idx")
+    assert read_file(at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
+    assert fingerprint.of(at).must() == m.sum
+
+    match versions(transport.path_tools(), index: index, name: "yaml", scratch: SCRATCH)
+        .ok _  => assert false
+        .err e => assert e.code == "absent"
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a listing whose sum is not the entry's fetches no file, and a file the index changed is named and places nothing"
+    m = index_made()
+    wrong = "sha256-" + "0".repeat(64.to_u64().must())
+    s = staging.opened(SCRATCH + "/app/").must()
+    index = address.judged("file://../idx", root: m.root).must()
+
+    match written(transport.path_tools(), index: index, name: "json", version: "1.4.2", sum: wrong, s: s)
+        .ok _  => assert false
+        .err e => assert e.code == "sum_mismatch"
+
+    assert !process.path_exists(s.tree + "/parse.hero")
+    staging.dropped(s)
+
+    # One byte appended to a file on the index, as the ffi-pragmatist's
+    # tampered site did: the listing still sums to the entry's, the file no
+    # longer to its line.
+    assert !write_file(path: SCRATCH + "/idx/json/1.4.2/files/sub/note.txt", text: "deep!\n").is_err()
+
+    match fetched(transport.path_tools(), e: entry(name: "json", version: "1.4.2", sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "file://../idx")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "sum_mismatch"
+            assert strings.starts_with(
+                text: e.msg,
+                prefix: "`sub/note.txt` of json 1.4.2 does not match its line of the listing"
+            )
+
+    assert !process.path_exists(SCRATCH + "/app/heroes.packages/" + placed.key(entry(name: "json", version: "1.4.2", sum: m.sum), index: "file://../idx"))
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# The ffi-pragmatist's hostile index (its § 4): a listing naming a path above
+# the package, its sum the one the entry holds, is refused before any file is
+# fetched, and nothing lands where the name points.
+test "a listing naming a place above the package, out of order or twice is refused before any file is fetched"
+    m = index_made()
+    hostile = [
+        "1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  ../../../escaped.txt\n"
+        "1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  b\n1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  a\n"
+        "1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  a\n1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  a\n"
+        "1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  A\n1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258  a\n"
+        "1060092d1ce0ae5ca5ac11bc1d078c5fa9e263f3fb6c736293a5dbb018e59258 one space\n"
+    ]
+    index = address.judged("file://../idx", root: m.root).must()
+
+    for listing in hostile
+        assert !process.mkdir_all(SCRATCH + "/idx/evil/1.0.0/files").is_err()
+        assert !write_file(path: SCRATCH + "/idx/evil/1.0.0/list", text: listing).is_err()
+        s = staging.opened(SCRATCH + "/app/").must()
+
+        match written(transport.path_tools(), index: index, name: "evil", version: "1.0.0", sum: "sha256-" + hero_text_sha256(text: listing), s: s)
+            .ok _  => assert false
+            .err e => assert e.code == "name_refused" || e.code == "index_refused"
+
+        assert process.walk(s.tree).must().files.len() == 0
+        staging.dropped(s)
+
+    assert !process.path_exists(SCRATCH + "/app/escaped.txt")
+    assert !process.path_exists(SCRATCH + "/escaped.txt")
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a versions file holding a line that is not a version and its sum is refused"
+    m = index_made()
+    index = address.judged("file://../idx", root: m.root).must()
+    assert !write_file(path: SCRATCH + "/idx/json/versions", text: "1.4.2 " + m.sum + "\nlatest\n").is_err()
+
+    match versions(transport.path_tools(), index: index, name: "json", scratch: SCRATCH)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "index_refused"
+            assert e.msg == "line 2 of the index's `json/versions` is not `<version> <sum>`: `latest`"
+
+    assert !process.remove_tree(SCRATCH).is_err()

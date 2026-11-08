@@ -27,6 +27,7 @@
 # same hour.
 
 use book/entry
+use core/strings
 use db/sqlite
 use report/lines
 
@@ -300,7 +301,7 @@ test "a statement the database refuses is a refusal here, with sqlite's own word
     db: sqlite.Db @= sqlite.opened().must()
     bad = sqlite.run(db, "select * from nothing_at_all")
     assert bad.is_err()
-    assert lines.holds(text: err_text_of(bad), needle: "no such table")
+    assert strings.contains(s: err_text_of(bad), substr: "no such table")
     sqlite.closed(@db).must()
 
 test "a column read at the wrong type is a refusal and not a zero"
@@ -336,7 +337,7 @@ test "a close sqlite refuses is told in its words, and the connection still clos
     statement: sqlite.Statement @= sqlite.prepared(db, "select 1").must()
     refused = sqlite.closed(@db)
     assert refused.is_err()
-    assert lines.holds(text: err_text_of(refused), needle: "unable to close due to unfinalized statements")
+    assert strings.contains(s: err_text_of(refused), substr: "unable to close due to unfinalized statements")
     _ = sqlite.finalized(@statement)
     sqlite.closed(@db).must()
 

@@ -1,0 +1,115 @@
+# What a refused address is told it looks like (panel 235's R9, its C4: every
+# scheme but `https://` and `file://` refused with its line; R18, a mistake in
+# the catalogue told and never machine-applied). A model writing a source
+# brings the habits of the systems it read: Go's and npm's `git@host:path`,
+# pip's `git+https://`, an `http://` mirror, a folder written bare. Each is
+# told by what it is, and where the same source has an address this command
+# reads, the message writes it; the verb never writes it into the catalogue.
+
+use fetch/url_bytes
+use cli/strings
+
+# What every refusal of a source's shape ends with: the two it may have.
+constant SHAPES: str
+    "a package is fetched over `https://`, or over `file://` from inside the program's own repository"
+
+# An address that is neither `https://` nor `file://`, told by what it most
+# looks like.
+function other(written: str) -> str
+    shown = url_bytes.shown(written)
+    end = scheme_end(written)
+
+    if end > 0
+        scheme = written.slice(from: 0, to: end)
+        rest = written.slice(from: end + 3, to: written.len())
+
+        if scheme == "http"
+            return "`" + shown + "` is read in clear, so anything between could change what is fetched: write `https://" + rest + "`"
+
+        if lowered(scheme) == "https" || lowered(scheme) == "file"
+            return "`" + shown + "` writes its scheme in capitals: write `" + lowered(scheme) + "://" + rest + "`"
+        return "`" + shown + "` is fetched over `" + scheme + "://`, which this command does not read: " + SHAPES
+
+    if strings.holds(text: written, needle: "::")
+        return "`" + shown + "` names one of git's remote helpers, which runs a program to fetch: " + SHAPES
+    at = ssh_at(written)
+
+    if at > 0
+        colon = colon_after(written, from: at)
+        return "`" + shown + "` is an ssh address, which this command does not read: the same repository over https is often `https://" + written.slice(from: at + 1, to: colon) + "/" + written.slice(from: colon + 1, to: written.len()) + "`"
+    as_file: str @= "file://./" + shown
+
+    if strings.starts_with(text: written, prefix: "/") || strings.starts_with(text: written, prefix: "./") || strings.starts_with(text: written, prefix: "../")
+        as_file @ "file://" + shown
+    return "`" + shown + "` is a path and no address: a repository inside the program's own is `file://` and its path, `" + as_file + "` here, and a package's folder while it is developed is its entry's `path`"
+
+# Where `://` follows a scheme of letters, digits, `+`, `-` and `.` at the
+# address's start, or -1.
+function scheme_end(written: str) -> i64
+    at: i64 @= 0
+
+    while at < written.len() && (url_bytes.host_byte(written[at]) || written[at] == '+')
+        at @ at + 1
+
+    if at > 0 && at + 3 <= written.len() && written[at] == ':' && written[at + 1] == '/' && written[at + 2] == '/'
+        return at
+    return -1
+
+# Where the `@` of `user@host:path` stands, an ssh address with no scheme,
+# or -1: an `@` before the first `:`, which comes before any `/`, with a host
+# and a path around that `:`.
+function ssh_at(written: str) -> i64
+    at: i64 @= 0
+
+    while at < written.len() && written[at] != '@' && written[at] != ':' && written[at] != '/'
+        at @ at + 1
+
+    if at == 0 || at == written.len() || written[at] != '@'
+        return -1
+    colon = colon_after(written, from: at)
+
+    if colon >= written.len() - 1 || colon == at + 1 || strings.holds(text: written.slice(from: at, to: colon), needle: "/")
+        return -1
+    return at
+
+function colon_after(written: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < written.len() && written[at] != ':'
+        at @ at + 1
+
+    return at
+
+# `text` with its ASCII capitals made small.
+function lowered(text: str) -> str
+    pieces: [str] @= []
+
+    for ch in text.chars()
+        if ch[0] >= 'A' && ch[0] <= 'Z'
+            at = (ch[0] - 'A').to_i64().must()
+            pieces @ pieces.push("abcdefghijklmnopqrstuvwxyz".slice(from: at, to: at + 1))
+        else
+            pieces @ pieces.push(ch)
+
+    return pieces.join("")
+
+## Tests
+
+# The habits a model brings from other systems, each told by what it is; the
+# address this command reads is written where one exists.
+test "an address of another scheme is told what it looks like, and the address this command reads is written where there is one"
+    assert other("http://github.com/acme/json") == "`http://github.com/acme/json` is read in clear, so anything between could change what is fetched: write `https://github.com/acme/json`"
+    assert other("HTTPS://github.com/acme/json") == "`HTTPS://github.com/acme/json` writes its scheme in capitals: write `https://github.com/acme/json`"
+    assert other("git@github.com:acme/json.git") == "`git@github.com:acme/json.git` is an ssh address, which this command does not read: the same repository over https is often `https://github.com/acme/json.git`"
+    assert other("ssh://git@github.com/acme/json") == "`ssh://git@github.com/acme/json` is fetched over `ssh://`, which this command does not read: " + SHAPES
+    assert other("git+https://github.com/acme/json") == "`git+https://github.com/acme/json` is fetched over `git+https://`, which this command does not read: " + SHAPES
+    assert other("ext::sh -c touch% /tmp/x") == "`ext::sh -c touch% /tmp/x` names one of git's remote helpers, which runs a program to fetch: " + SHAPES
+    assert other("../json") == "`../json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../json` here, and a package's folder while it is developed is its entry's `path`"
+    assert other("vendor/json") == "`vendor/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./vendor/json` here, and a package's folder while it is developed is its entry's `path`"
+
+    # `user@host` with no path after the `:` is no ssh address, and a `/`
+    # before the `@` makes it a path.
+    assert ssh_at("git@host:") == -1
+    assert ssh_at("a/git@host:x") == -1
+    assert ssh_at("git@host:x") == 3
+    assert lowered("HtTpS") == "https"

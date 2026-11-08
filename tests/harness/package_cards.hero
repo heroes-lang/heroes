@@ -1,0 +1,108 @@
+# THE PACKAGE CARDS' PROGRAM (task 2294, panel 234's R5), a root of the harness
+# beside `main.hero`:
+#
+#     heroes run tests/harness/package_cards.hero -- write
+#     heroes run tests/harness/package_cards.hero -- check
+#
+# from the repository's root. `write` writes the card of every face module of
+# the canonical tree, `examples/packages/core/<path>.md` beside its
+# `<path>.hero`, and then judges the tree as written; `check` judges it as it
+# stands, naming each stored card that differs from what `write` would write,
+# each over its budget, each whose calls do not compile as written, and each
+# face the card's form cannot say (`package_judge.hero`). The `packages` suite's
+# `cards` label asks the same in-process. Exit 0 where every card holds, 1
+# where one does not, 2 where the cards could not be judged; a run that is not
+# green leaves its scratch, `build/harness-cards-<pid>`, with each card as
+# measured and each proof as built.
+#
+# A program and not a verb of `heroes`, for the reason `main.hero` is one:
+# § 10's stopping rule, and panel 234's R5, which put no card flag in the
+# compiler. The compiler that measures each card and builds its calls is the
+# one the machine is asked for (`shell.some_compiler`): `HEROES_COMPILER`, else
+# `./heroes`, as the net's own tests ask.
+
+use package_judge
+use package_rules
+use shell
+
+constant USAGE: str
+    "usage: heroes run tests/harness/package_cards.hero -- write\n       heroes run tests/harness/package_cards.hero -- check"
+
+function main()
+    asked = word_of(args())
+
+    if asked.is_err()
+        print("package_cards: " + said(asked))
+        print(USAGE)
+        exit(code: 2)
+    found = shell.some_compiler()
+
+    if found.is_err()
+        print("package_cards: " + said(found))
+        exit(code: 2)
+    scratch = "build/harness-cards-" + shell.pid().to_str()
+
+    if shell.mkdir_all(scratch).is_err()
+        print("package_cards: cannot make " + scratch)
+        exit(code: 2)
+    lines: [str] @= []
+
+    if asked.must() == "write"
+        wrote = package_judge.written(scratch: scratch, compiler: found.must(), root: package_rules.CANONICAL)
+
+        if wrote.is_err()
+            print("package_cards: the cards could not be written: " + said(wrote))
+            exit(code: 2)
+
+        for path in wrote.must().paths
+            print("wrote " + path)
+
+        lines @ wrote.must().found
+    else
+        judged = package_judge.judged(scratch: scratch, compiler: found.must(), root: package_rules.CANONICAL)
+
+        if judged.is_err()
+            print("package_cards: the cards could not be judged: " + said(judged))
+            exit(code: 2)
+        lines @ judged.must()
+
+    if lines.len() == 0
+        _ = shell.remove_tree(scratch).is_err()
+        print("package_cards: every card of " + package_rules.CANONICAL + " holds")
+        return
+
+    print("package_cards: " + package_rules.CANONICAL + "'s cards do not hold:")
+
+    for line in lines
+        print(line)
+
+    # A red run leaves its scratch, each card as measured and each proof as
+    # built, for whoever reads why (`shell.own_scratch`'s rule).
+    print("  the cards as measured and their proofs stand in " + scratch)
+    exit(code: 1)
+
+# The one word after `--`, `write` or `check`, or why the words are not it.
+function word_of(given: [str]) -> str?
+    if given.len() != 1
+        return fail(
+            code: "usage",
+            msg: "one word is needed, `write` or `check`, and " + given.len().to_str() + " were given"
+        )
+
+    if given[0] != "write" && given[0] != "check"
+        return fail(code: "usage", msg: "no word `" + given[0] + "`: `write` or `check`")
+    return ok(given[0])
+
+# Why a step could not be taken, as its error says it.
+function said<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "the program takes one word, `write` or `check`, and names what it was given instead"
+    assert word_of(["write"]).must() == "write"
+    assert word_of(["check"]).must() == "check"
+    nothing: [str] = []
+    assert said(word_of(nothing)) == "one word is needed, `write` or `check`, and 0 were given"
+    assert said(word_of(["check", "more"])) == "one word is needed, `write` or `check`, and 2 were given"
+    assert said(word_of(["Write"])) == "no word `Write`: `write` or `check`"

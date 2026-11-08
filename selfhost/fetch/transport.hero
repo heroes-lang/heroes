@@ -1,0 +1,444 @@
+# How a package is fetched: `git` and `curl` run as programs through
+# `process.run` (panel 235's R10, ratified 2026-11-07), never a library bound
+# into `heroes`: libgit2 is not on this Mac, libcurl would put a TLS client in
+# every `heroes`, and the seed's one clang line stays as it is (the
+# ffi-pragmatist's § 3). `build`, `check` and `run` reach neither program
+# (R8); `heroes add` and `heroes fetch` reach both, through this file alone.
+#
+# **Every word a package or a catalogue controls stands after `--`** (R9's
+# C4), so an address or a tag that opens with `-` is never read as an option;
+# and each was judged before it got here (`fetch/address.hero`,
+# `fetch/git_words.hero`).
+#
+# **What each program is told, and why.** curl: `-q` first, so no `.curlrc`
+# adds an option; `-fsS`, a refused answer an exit; `--proto =https,file`,
+# and `--proto-redir =https` with `--location` and `--max-redirs 5`, so a
+# redirect is followed to `https://` alone; `--globoff`, so `[1-3]` is no
+# glob; `--connect-timeout 30` and `--speed-limit 1 --speed-time 60`, so a
+# source that stops answering ends the fetch instead of holding it;
+# `--max-filesize`, the caller's bound, curl's exit 63; and `--write-out
+# %{http_code}`, so a 404 is told apart from a network that did not answer.
+# git: `protocol.allow=never` with `https` and `file` allowed, so git itself
+# refuses every other protocol, a redirect's included; `http.sslVerify=true`,
+# whatever a user's configuration says; `http.lowSpeedLimit=1` with
+# `http.lowSpeedTime=60`, curl's stall bound in git's words;
+# `transfer.fsckObjects=true`, so an object git would refuse to hold, a tree
+# naming `..` or `.git` among them, is refused as it arrives. And
+# `GIT_TERMINAL_PROMPT=0` with
+# `GCM_INTERACTIVE=never` in this process's environment, which git inherits:
+# a source asking for a password fails at once instead of waiting for one.
+#
+# **A missing program is told by name, exit 2** (R10's note for row 83): a
+# `heroes` that cannot start `git` says `git` and what it is needed for. Every
+# failure's code is `fetch/told.hero`'s, which gives its exit.
+
+use cli/files
+use cli/process
+use cli/read_back
+use cli/strings
+use fetch/address
+use fetch/git_words
+use fetch/made_repo
+use fetch/told
+
+# `runtime/hero_compiler.h`: this process's environment, which every program
+# it starts inherits.
+extern "hero_compiler.h"
+    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
+
+# The programs this file runs, by name: `git` and `curl` as the PATH finds
+# them, or a test's own names where it asks what a missing one is told.
+record Tools
+    git: str
+    curl: str
+
+function path_tools() -> Tools
+    return Tools(git: "git", curl: "curl")
+
+# The bytes `at` names written into the file `into`, read with curl; a file
+# past `cap` bytes is refused. The streams curl answers on land in `scratch`.
+function got(tools: Tools, at: address.Address, into: str, cap: i64, scratch: str) -> ()?
+    if at.local.len() > 0
+        here = local_said(at.local)
+
+        if here.len() > 0
+            return fail(code: "absent", msg: here)
+    code_path = scratch + "/curl-code.txt"
+    said_path = scratch + "/curl-said.txt"
+    words = [
+        tools.curl
+        "-q"
+        "-fsS"
+        "--globoff"
+        "--proto"
+        "=https,file"
+        "--proto-redir"
+        "=https"
+        "--location"
+        "--max-redirs"
+        "5"
+        "--connect-timeout"
+        "30"
+        "--speed-limit"
+        "1"
+        "--speed-time"
+        "60"
+        "--max-filesize"
+        cap.to_str()
+        "--output"
+        into
+        "--write-out"
+        "%{http_code}"
+        "--"
+        at.url
+    ]
+    ran = process.run(program: tools.curl, words: words, out: code_path, err: said_path)
+
+    if !ran.started
+        return fail(
+            code: "no_curl",
+            msg: "`" + tools.curl + "` could not be started on this machine, and `heroes` runs it to read a package's index: install curl, or put it on the PATH"
+        )
+
+    if ran.code == 0
+        return ok()
+    status = strings.trimmed(read_back.words(code_path).default(""))
+    curl_said = strings.trimmed(read_back.words(said_path).default(""))
+
+    if ran.code == 22 && (status == "404" || status == "410")
+        return fail(code: "absent", msg: "`" + at.url + "` answered " + status + ": the index serves no such file")
+
+    if ran.code == 63
+        return fail(
+            code: "too_large",
+            msg: "`" + at.url + "` is past the " + cap.to_str() + " bytes a file read here may be: " + curl_said
+        )
+    return fail(
+        code: "unreachable",
+        msg: "`curl` exited " + ran.code.to_str() + " reading `" + at.url + "`: " + curl_said
+    )
+
+# What stops a local index's file from being read, or "" where nothing does:
+# curl answers a folder at exit 0 with nothing read (measured 2026-11-08,
+# curl 8.7.1), and a link inside an index could name a file outside it.
+function local_said(path: str) -> str
+    match files.entry(path)
+        .file      => return ""
+        .absent    => return "there is no file `" + path + "`"
+        .directory => return "`" + path + "` is a folder, where a file was asked for"
+        .link      => return "`" + path + "` is a link, and an index's file is read through no link"
+        .other     => return "`" + path + "` is neither a file nor a folder"
+        .unknown   => return "`" + path + "` could not be asked what it is" + process.because()
+
+# git's settings for every command it runs here, before the command's own
+# words.
+function settings(tools: Tools) -> [str]
+    return [
+        tools.git
+        "-c"
+        "protocol.allow=never"
+        "-c"
+        "protocol.https.allow=always"
+        "-c"
+        "protocol.file.allow=always"
+        "-c"
+        "http.sslVerify=true"
+        "-c"
+        "http.lowSpeedLimit=1"
+        "-c"
+        "http.lowSpeedTime=60"
+        "-c"
+        "transfer.fsckObjects=true"
+    ]
+
+# git run with `words` after its settings, what it prints written into `out`;
+# a run that fails is told with git's own words under the code `failed_as`:
+# `unreachable` for a source on the network, `absent` for a local one, which
+# has no network to fail, and `git_failed` for the staging folder's own
+# repository, where a failure is git's or the machine's.
+function git_ran(tools: Tools, words: [str], out: str, scratch: str, failed_as: str) -> ()?
+    _ = hero_env_put(name: "GIT_TERMINAL_PROMPT".cstr(), value: "0".cstr())
+    _ = hero_env_put(name: "GCM_INTERACTIVE".cstr(), value: "never".cstr())
+    said_path = scratch + "/git-said.txt"
+    ran = process.run(
+        program: tools.git,
+        words: strings.with_all(list: settings(tools), more: words),
+        out: out,
+        err: said_path
+    )
+
+    if !ran.started
+        return fail(
+            code: "no_git",
+            msg: "`" + tools.git + "` could not be started on this machine, and `heroes` runs it to fetch a package from git: install git, or put it on the PATH"
+        )
+
+    if ran.code == 0
+        return ok()
+    git_said = strings.trimmed(read_back.words(said_path).default(""))
+    return fail(code: failed_as, msg: "`git " + verb_of(words) + "` exited " + ran.code.to_str() + ": " + git_said)
+
+# The command a run of git's `words` names: the first word after git's own
+# options, `-C <folder>` and `--git-dir=<folder>`.
+function verb_of(words: [str]) -> str
+    at: i64 @= 0
+
+    while at < words.len() && strings.starts_with(text: words[at], prefix: "-")
+        if words[at] == "-C"
+            at @ at + 1
+        at @ at + 1
+
+    if at < words.len()
+        return words[at]
+    return "?"
+
+# Where the program at `folder` stands in its repository, as git answers it.
+# A folder in no repository has the empty root, git's words beside it, and
+# no `file://` source; and an environment that names a repository of its own,
+# `GIT_DIR` or `GIT_WORK_TREE` as a git hook's does, is refused, since git
+# would answer for that one.
+function root_of(tools: Tools, folder: str, scratch: str) -> address.Root?
+    for name in ["GIT_DIR", "GIT_WORK_TREE"]
+        if process.env(name).default("x").len() > 0
+            return fail(
+                code: "git_environment",
+                msg: "`" + name + "` is set, so git would answer for the repository it names rather than for the program's folder: run `heroes` without it"
+            )
+
+    out = scratch + "/git-root.txt"
+    asked = git_ran(
+        tools,
+        words: ["-C", folder, "rev-parse", "--show-toplevel", "--show-prefix"],
+        out: out,
+        scratch: scratch,
+        failed_as: "absent"
+    )
+
+    # A local failure is `absent`: git ran and found no repository here. A
+    # git that could not be started leaves no root either, and is said so: a
+    # program reading its index over `https://` needs curl alone (R10), and
+    # only a `file://` source, which the root admits, is refused for it.
+    if asked.is_err()
+        if code_of(asked) == "absent"
+            return ok(address.Root(top: "", here: "", why: reason(asked)))
+
+        if code_of(asked) == "no_git"
+            return ok(address.Root(top: "", here: "", why: address.NO_GIT))
+        return fail(code: code_of(asked), msg: reason(asked))
+    lines = parts(read_back.words(out).default(""))
+
+    if lines.len() < 1 || lines[0].len() == 0
+        return ok(address.Root(top: "", here: "", why: "`git rev-parse` answered no root for `" + folder + "`"))
+    prefix: str @= ""
+
+    if lines.len() > 1
+        prefix @ lines[1]
+
+    if strings.ends_with(text: prefix, suffix: "/")
+        prefix @ prefix.slice(from: 0, to: prefix.len() - 1)
+
+    if prefix.len() == 0
+        return ok(address.Root(top: lines[0], here: lines[0], why: ""))
+    return ok(address.Root(top: lines[0], here: lines[0] + "/" + prefix, why: ""))
+
+# The commit `tag` names at `source`, peeled through an annotated tag, asked
+# with `git ls-remote` before anything is fetched: `absent` where the source
+# has no such tag. The tag is judged here first: the catalogue's reader asks
+# only that it be written, and nothing else stands between a catalogue and
+# git's arguments.
+function tag_commit(tools: Tools, source: address.Address, tag: str, scratch: str) -> str?
+    wrong = git_words.tag_said(tag)
+
+    if wrong.len() > 0
+        return fail(code: "tag_refused", msg: wrong)
+    out = scratch + "/git-tags.txt"
+    ref = "refs/tags/" + tag
+    away: str @= "unreachable"
+
+    if source.local.len() > 0
+        away @ "absent"
+    git_ran(tools, words: ["ls-remote", "--", source.url, ref, ref + "^{}"], out: out, scratch: scratch, failed_as: away)?
+    plain: str @= ""
+    peeled: str @= ""
+
+    for one in parts(read_back.words(out).default(""))
+        tab = tab_at(one)
+
+        if tab > 0
+            if one.slice(from: tab + 1, to: one.len()) == ref
+                plain @ one.slice(from: 0, to: tab)
+            else if one.slice(from: tab + 1, to: one.len()) == ref + "^{}"
+                peeled @ one.slice(from: 0, to: tab)
+
+    if peeled.len() > 0
+        return ok(peeled)
+
+    if plain.len() > 0
+        return ok(plain)
+    return fail(code: "absent", msg: "`" + source.written + "` has no tag `" + tag + "`")
+
+# Where the first tab of `line` stands, or -1.
+function tab_at(line: str) -> i64
+    for at in range(from: 0, to: line.len())
+        if line[at] == '\t'
+            return at
+
+    return -1
+
+# A text's lines, the last one's end ending it.
+function parts(text: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: from, to: at))
+            from @ at + 1
+
+    if from < text.len()
+        out @ out.push(text.slice(from: from, to: text.len()))
+    return out
+
+function reason(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
+
+## Tests
+
+# The scratch these cases share: a repository standing for the program's
+# own, `app/` its folder, and `src/` beside it a git source made on the fly
+# (panel 235's R19: no case reaches the network).
+constant SCRATCH: str
+    "build/selftest-fetch-transport"
+
+# A program in its own repository made under `build/`, whatever the tree
+# around it is, with the source repository beside its folder: the program's
+# root, and the commit the source's `v1` and `v2` name.
+function stage_made() -> address.Root
+    made_repo.made(SCRATCH).must()
+    process.mkdir_all(SCRATCH + "/app").must()
+    made_repo.made(SCRATCH + "/src").must()
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["a.txt", "one\n", "d/b.hero", "function main()\n"],
+        message: "one"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1", annotated: false).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v2", annotated: true).must()
+    return root_of(path_tools(), folder: SCRATCH + "/app", scratch: SCRATCH).must()
+
+test "git answers where the program stands, and a folder in no repository has no root and git's words for it"
+    root = stage_made()
+    assert strings.ends_with(text: root.top, suffix: "/" + SCRATCH)
+    assert root.here == root.top + "/app"
+    assert root.why == ""
+    nowhere = root_of(path_tools(), folder: SCRATCH + "/no-such-folder", scratch: SCRATCH).must()
+    assert nowhere.top == ""
+    assert strings.starts_with(text: nowhere.why, prefix: "`git rev-parse` exited 128: ")
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a tag's commit is asked of a local source through git, an annotated tag peeled, and a missing tag or source told absent"
+    root = stage_made()
+    commit = made_repo.head(SCRATCH + "/src").must()
+    source = address.judged("file://../src", root: root).must()
+    assert source.local == root.top + "/src"
+    assert tag_commit(path_tools(), source: source, tag: "v1", scratch: SCRATCH).must() == commit
+    assert tag_commit(path_tools(), source: source, tag: "v2", scratch: SCRATCH).must() == commit
+
+    match tag_commit(path_tools(), source: source, tag: "v3", scratch: SCRATCH)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "absent"
+            assert e.msg == "`file://../src` has no tag `v3`"
+
+    gone = address.judged("file://../no-repository", root: root).must()
+
+    match tag_commit(path_tools(), source: gone, tag: "v1", scratch: SCRATCH)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "absent"
+            assert strings.starts_with(text: e.msg, prefix: "`git ls-remote` exited 128: ")
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# R10's note for row 83: a missing program is told by name, exit 2.
+test "a git or a curl that cannot be started is told by name, and the exit is the tool's"
+    root = stage_made()
+    source = address.judged("file://../src", root: root).must()
+    missing = Tools(git: "heroes-no-such-git", curl: "heroes-no-such-curl")
+
+    match tag_commit(missing, source: source, tag: "v1", scratch: SCRATCH)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "no_git"
+            assert e.msg == "`heroes-no-such-git` could not be started on this machine, and `heroes` runs it to fetch a package from git: install git, or put it on the PATH"
+            assert told.exit_of(e.code) == 2
+
+    file = address.judged("file://../src/a.txt", root: root).must()
+
+    # With no git, the root is unknown and said so: a `file://` source is
+    # refused as the tool's, and an `https://` one, which needs curl alone,
+    # is judged as ever.
+    unknown = root_of(missing, folder: SCRATCH + "/app", scratch: SCRATCH).must()
+    assert unknown.top == "" && unknown.why == address.NO_GIT
+
+    match address.judged("file://../src", root: unknown)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "no_git"
+            assert told.exit_of(e.code) == 2
+
+    assert address.judged("https://git.example.org/ana/yaml", root: unknown).must().url == "https://git.example.org/ana/yaml"
+
+    match got(missing, at: file, into: SCRATCH + "/got.txt", cap: 1024, scratch: SCRATCH)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "no_curl"
+            assert e.msg == "`heroes-no-such-curl` could not be started on this machine, and `heroes` runs it to read a package's index: install curl, or put it on the PATH"
+            assert told.exit_of(e.code) == 2
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "curl reads a local file byte for byte, and a missing file, a folder and a file past its bound are refused as the input's"
+    root = stage_made()
+    file = address.judged("file://../src/d/b.hero", root: root).must()
+    got(path_tools(), at: file, into: SCRATCH + "/got.txt", cap: 1024, scratch: SCRATCH).must()
+    assert read_file(SCRATCH + "/got.txt").must() == "function main()\n"
+
+    for shape in ["file://../src/none.txt", "file://../src/d"]
+        match got(path_tools(), at: address.judged(shape, root: root).must(), into: SCRATCH + "/got.txt", cap: 1024, scratch: SCRATCH)
+            .ok _ => assert false
+            .err e =>
+                assert e.code == "absent"
+                assert told.exit_of(e.code) == 1
+
+    match got(path_tools(), at: file, into: SCRATCH + "/got.txt", cap: 4, scratch: SCRATCH)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "too_large"
+            assert told.exit_of(e.code) == 1
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# C4: a `file://` source names only a path inside the program's own
+# repository, and reaches it through no link.
+test "a file address outside the program's repository, or through a link below its root, is refused before any program runs"
+    root = stage_made()
+
+    match address.judged("file://../..", root: root)
+        .ok _  => assert false
+        .err e => assert strings.holds(text: e.msg, needle: "outside the program's own repository")
+
+    linked = files.symbolic_link(target: "src", name: SCRATCH + "/linked")
+
+    if !linked.is_err()
+        match address.judged("file://../linked/a.txt", root: root)
+            .ok _  => assert false
+            .err e => assert e.msg == "`file://../linked/a.txt` reaches its folder through the link `" + root.top + "/linked`, and a `file://` source is read through no link, which could name a place outside the program's repository"
+    assert !process.remove_tree(SCRATCH).is_err()

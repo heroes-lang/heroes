@@ -1,0 +1,14 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/add-from-the-index.case/idx -C <work>/app
+exit 0
+stdout:
+added json 1.4.2
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/add-from-the-index.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-c5e937500d7206bbee6d9fae216773d604f937abe1bc776b704a6fa48fceb463"
+heroes.packages:
+json@1.4.2-3235abc8c1557e26

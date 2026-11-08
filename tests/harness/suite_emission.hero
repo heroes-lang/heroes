@@ -162,9 +162,12 @@ constant ENTRIES: [str]
 # same: one it cannot emit for a library it lacks is skipped by name, and
 # floored below a third. **467 on 2026-10-07**: `ls tests/emission/*.c | wc
 # -l`, every one claimed (the suite's `orphans`), and the suite's own count.
-# **589 on 2026-10-10**, at batch 19's gate, the suite's own count. **752 on
-# 2026-11-07**, at batch 23's gate, the count its blessing run told as
-# `FLOOR emission`.
+# **589 on 2026-10-10**, at batch 19's gate, the suite's own count.
+# **737 on 2026-11-06**, at M-core-packages' first batch gate, the suite's own
+# count: the batch's one new program, `examples/packages/`, took the trunk's 736
+# past 589 by more than a quarter. **752 on 2026-11-07**, at batch 23's gate,
+# the count its blessing run told as `FLOOR emission`; the two met at batch 1's
+# merge of the trunk, which keeps the higher.
 constant LEAST: i64
     752
 

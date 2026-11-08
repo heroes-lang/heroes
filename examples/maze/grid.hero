@@ -13,6 +13,8 @@
 # because padding invents open squares and a solver that walks through one has
 # found a path the file does not describe.
 
+use core/strings
+
 ## Error codes
 #
 # One `constant` per code, so a typo is `error[unknown_name]` here rather
@@ -44,25 +46,10 @@ constant START: u8
 constant GOAL: u8
     'E'
 
-function split_lines(text: str) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '\n'
-            out @ out.push(text.slice(from: start, to: i))
-            start @ i + 1
-        i @ i + 1
-
-    if start < text.len()
-        out @ out.push(text.slice(from: start, to: text.len()))
-    return out
-
 function read(text: str) -> Grid?
     rows: [str] @= []
 
-    for line in split_lines(text)
+    for line in strings.split_lines(text)
         if line != ""
             rows @ rows.push(line)
 

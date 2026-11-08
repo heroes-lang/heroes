@@ -1,9 +1,12 @@
 # `heroes measure --refresh`: go and ask the model's own tokeniser, and print
 # the record for a person to paste (panel 123 R4 and R5).
 #
-# THIS IS THE ONLY PLACE IN THE COMPILER THAT REACHES THE NETWORK, and every
-# other command stays offline for a reason design.md Part 11 metric 1 states in
-# as many words — *no API key, no network*. The gate may not do this: the
+# THIS IS ONE OF TWO PLACES IN THE COMPILER THAT REACH THE NETWORK, and every
+# command that reads a program stays offline for a reason design.md Part 11
+# metric 1 states in as many words — *no API key, no network*. The other,
+# since M-package-manager's first version, is `fetch/transport.hero`, which
+# `heroes add` and `heroes fetch` reach a package's source through, its answer
+# pre-recorded as a sum (panel 235's R8). The gate may not do this: the
 # repository is public and GitHub passes no secret to a fork's pull request, so
 # a key-gated check would be structurally red on every fork PR forever. **The
 # network is admissible only where the answer is pre-recorded**, which is
@@ -87,7 +90,7 @@ function asked(body: str, tag: str) -> str?
     if !ran.started
         return fail(
             code: "no_curl",
-            msg: "cannot start `curl`, which is how this one flag reaches the network — every other command here is offline and stays that way (design.md Part 11 metric 1)"
+            msg: "cannot start `curl`, which is how this one flag reaches the network — every command that reads a program is offline and stays that way (design.md Part 11 metric 1)"
         )
 
     # Both streams are read back as clang's are (`cli/read_back.hero`, defect

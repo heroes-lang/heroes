@@ -1,0 +1,9 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+error[no_catalogue]: there is no catalogue `<work>/app/heroes.toml`, so there is nothing to fetch: `heroes add` writes one
+heroes.toml:
+(none)
+heroes.packages:
+(none)

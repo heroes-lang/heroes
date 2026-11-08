@@ -1,0 +1,46 @@
+# A static index a test makes on the fly under `build/`, in the layout
+# `fetch/index_source.hero` reads, so the verbs that fetch are tested against
+# an index in a folder and never the network (panel 235's R19: the goldens
+# read an index from a folder). Nothing here is reached by a command; only the
+# `test` blocks of `fetch/` call it.
+
+use cli/process
+use module/fingerprint
+use fetch/made_repo
+
+# `name` at `version` published into the index folder `idx`: `files`, a path
+# and its text in turn, and `raw`, a path and its bytes in hexadecimal in
+# turn, written under the version's `files/`; its listing beside them, read
+# by the compiler's own fingerprint; and its line added to the package's
+# `versions`. The sum an honest entry holds.
+function published(idx: str, name: str, version: str, files: [str], raw: [str]) -> str?
+    base = idx + "/" + name + "/" + version
+    tree = base + "/files"
+    process.mkdir_all(tree)?
+    at: i64 @= 0
+
+    while at + 1 < files.len()
+        path = tree + "/" + files[at]
+        process.mkdir_all(path.slice(from: 0, to: last_slash(path)))?
+        write_file(path: path, text: files[at + 1])?
+        at @ at + 2
+
+    at @ 0
+
+    while at + 1 < raw.len()
+        made_repo.raw_file(path: tree + "/" + raw[at], hex: raw[at + 1])?
+        at @ at + 2
+
+    write_file(path: base + "/list", text: fingerprint.listing(tree)?)?
+    sum = fingerprint.of(tree)?
+    listed = read_file(idx + "/" + name + "/versions").default("")
+    write_file(path: idx + "/" + name + "/versions", text: listed + version + " " + sum + "\n")?
+    return ok(sum)
+
+function last_slash(path: str) -> i64
+    at: i64 @= path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return at

@@ -1,0 +1,180 @@
+# The build list `heroes add` writes (panel 235's R2 and R3, ratified
+# 2026-11-07): every package of the build, transitive ones included, at the
+# version minimal version selection chooses, each with its sum, so the
+# program's catalogue holds the build whole and the compiler solves nothing.
+#
+# **Minimal version selection, Go's** (the compiler-engineer's § 0, its
+# prototype `235-compiler-engineer-scratch/mvs/main.hero`): every requirement
+# reachable from the program is walked, and of the versions met for one
+# package the highest is the one built; no solver, no backtracking, no list of
+# versions asked of the index but the package `add` names. The program's own
+# version of each package is so at least each dependency's (the coordinator's
+# ruling of 2026-11-07, the check living in the verb). The package `add`
+# names replaces the program's entry for it, so `add json@1.3.0` lowers it,
+# unless a dependency requires more.
+#
+# **A package is one identity** (R3): `catalogue.source_of`, the text the
+# compiler matches a dependency's entry to the program's by, so what this
+# walk keeps apart the compiler keeps apart. A requirement no entry of the
+# program has joins it under the alias its requirer gives it, or that alias
+# and a number where the program's own catalogue uses the name for another
+# package. Refused, never guessed: a requirement naming a local `path`, which
+# only the program's own catalogue may hold; an index package from another
+# index than the program's, whose identity the compiler would not match; one
+# version of a package named with two sums, or with two commits; and two tags
+# of one git source that are not both versions.
+#
+# Each package walked is placed as it is read (`fetch/placing.hero`), so the
+# catalogue it holds is read from a tree held to its sum.
+
+use module/catalogue
+use fetch/address
+use fetch/placing
+use fetch/transport
+use fetch/versions
+
+# One package of the build: its entry as the program's catalogue will hold
+# it, its identity, and the package whose catalogue first required it, ""
+# for one the program names itself.
+record Pick
+    entry: catalogue.Entry
+    identity: str
+    for_whom: str
+
+# The build list for the program whose folder is `program`, its catalogue
+# `c`, once `wanted` is added to it.
+function chosen(tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue, wanted: catalogue.Entry) -> [Pick]?
+    picks: [Pick] @= []
+    wanted_id = catalogue.source_of(wanted, index: c.index, folder: program)
+    placed_wanted: bool @= false
+
+    for e in c.entries
+        id = catalogue.source_of(e, index: c.index, folder: program)
+
+        if id == wanted_id
+            picks @ picks.push(Pick(entry: renamed(wanted, name: e.name), identity: id, for_whom: ""))
+            placed_wanted @ true
+        else if e.name == wanted.name
+            return fail(
+                code: "bad_usage",
+                msg: "the catalogue's entry `" + e.name + "` is " + catalogue.said_source(e) + ", another package than " + catalogue.said_source(wanted) + ": name the new one with `--as`"
+            )
+        else
+            picks @ picks.push(Pick(entry: e, identity: id, for_whom: ""))
+
+    if !placed_wanted
+        picks @ picks.push(Pick(entry: wanted, identity: wanted_id, for_whom: ""))
+    pending: [i64] @= range(from: 0, to: picks.len())
+
+    while pending.len() > 0
+        at = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+        e = picks[at].entry
+        tree = placing.placed_tree(tools, e: e, program: program, root: root, index: c.index)?
+        own = placing.own_catalogue(e, folder: tree.folder)?
+
+        for r in own.entries
+            id = required_id(r: r, own: own, of: e, program: program, c: c)?
+            found = index_of(picks, identity: id)
+
+            if found < 0
+                if r.version.len() > 0 && taken(picks, name: r.name)
+                    return fail(
+                        code: "requirement_refused",
+                        msg: "the catalogue of `" + e.name + "` needs the index's `" + r.name + "`, and the program's catalogue names another package `" + r.name + "`: an index package keeps the index's name, so the program's own entry is the one to rename"
+                    )
+                picks @ picks.push(
+                    Pick(entry: renamed(r, name: free_name(picks, wanted: r.name)), identity: id, for_whom: e.name)
+                )
+                pending @ pending.push(picks.len() - 1)
+            else if raised(held: picks[found].entry, by: r, of: e)?
+                picks[found].entry @ renamed(r, name: picks[found].entry.name)
+                picks[found].for_whom @ e.name
+                pending @ pending.push(found)
+
+    return ok(picks)
+
+# The identity of the requirement `r` that `of`'s catalogue `own` holds.
+function required_id(r: catalogue.Entry, own: catalogue.Catalogue, of: catalogue.Entry, program: str, c: catalogue.Catalogue) -> str?
+    if r.path.len() > 0
+        return fail(
+            code: "requirement_refused",
+            msg: "the catalogue of `" + of.name + "` names the local folder `" + r.path + "` for `" + r.name + "`, and only the program's own catalogue holds a `path`, while a package is developed"
+        )
+
+    if r.version.len() > 0 && own.index != c.index
+        return fail(
+            code: "requirement_refused",
+            msg: "the catalogue of `" + of.name + "` reads `" + r.name + "` from the index `" + index_index(own.index) + "`, and the program's reads `" + index_index(c.index) + "`: a program reads one index, which its catalogue's `index` line names"
+        )
+    return ok(catalogue.source_of(r, index: c.index, folder: program))
+
+function index_index(line: str) -> str
+    if line.len() == 0
+        return "the Heroes index"
+    return line
+
+# Whether `by`, a requirement of `of`'s, raises `held` above the version it
+# names; refused where the two name one version two ways or two tags no order
+# reads.
+function raised(held: catalogue.Entry, by: catalogue.Entry, of: catalogue.Entry) -> bool?
+    if held.version.len() > 0
+        if held.version == by.version
+            if held.sum != by.sum
+                return fail(code: "sum_mismatch", msg: two_ways(held: held, by: by, of: of, what: "sum"))
+            return ok(false)
+        return versions.newer(a: by.version, than: held.version)
+
+    if held.tag == by.tag
+        if held.commit != by.commit || held.sum != by.sum
+            return fail(code: "sum_mismatch", msg: two_ways(held: held, by: by, of: of, what: "commit and sum"))
+        return ok(false)
+    newer = versions.newer(a: by.tag, than: held.tag)
+
+    if newer.is_err()
+        return fail(
+            code: "requirement_refused",
+            msg: "the build names `" + held.git + "` at the tag `" + held.tag + "` and, for `" + of.name + "`, at `" + by.tag + "`, two tags that are not both versions, so no order chooses one: add the one meant with `heroes add`"
+        )
+    return newer
+
+function two_ways(held: catalogue.Entry, by: catalogue.Entry, of: catalogue.Entry, what: str) -> str
+    return "the catalogue of `" + of.name + "` names " + catalogue.said_source(by) + " at " + placing.at_said(by) + " with another " + what + " than the build holds for it, `" + held.sum + "`: one version is one tree, and two sums for it mean one of them is not the tree it names"
+
+# `e` under the name `name`.
+function renamed(e: catalogue.Entry, name: str) -> catalogue.Entry
+    return catalogue.Entry(
+        name: name,
+        version: e.version,
+        git: e.git,
+        tag: e.tag,
+        commit: e.commit,
+        path: e.path,
+        sum: e.sum
+    )
+
+# `wanted` where no pick holds the name, else it and the first number from 2
+# that makes it one no pick holds.
+function free_name(picks: [Pick], wanted: str) -> str
+    if !taken(picks, name: wanted)
+        return wanted
+    n: i64 @= 2
+
+    while taken(picks, name: wanted + "_" + n.to_str())
+        n @ n + 1
+
+    return wanted + "_" + n.to_str()
+
+function taken(picks: [Pick], name: str) -> bool
+    for one in picks
+        if one.entry.name == name
+            return true
+
+    return false
+
+function index_of(picks: [Pick], identity: str) -> i64
+    for at in range(from: 0, to: picks.len())
+        if picks[at].identity == identity
+            return at
+
+    return -1

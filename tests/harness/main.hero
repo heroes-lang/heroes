@@ -58,6 +58,10 @@
 #   compat        the promise `1.0.0` rests on: a release's examples/ checked
 #                 by today's compiler, red from v1.0.0 on, told before it
 #   corpus        examples/ — real programs, tests and output, three ways
+#   packages      the core packages' trees under examples/: each program's
+#                 copy the canonical tree's, every module reached by its
+#                 driver, named and spelled as the conventions say, quiet,
+#                 documented and tested (task 2293)
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
 #   surface       what a user types: exit codes, streams, flags, rendering
@@ -111,6 +115,7 @@ use suite_wholes
 use suite_seed
 use suite_determinism
 use suite_emission
+use suite_fetch
 use suite_fixes
 use suite_generated
 use suite_golden
@@ -119,6 +124,7 @@ use suite_latency
 use suite_lines
 use suite_lldb
 use suite_order
+use suite_packages
 use suite_probe
 use suite_records
 use suite_runtime
@@ -541,6 +547,33 @@ function main()
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
+    # The core packages' trees under examples/, every copy against the
+    # canonical tree and every module against the conventions (task 2293).
+    # Reads files, and runs the compiler once, for the driver's reach.
+    if only == "" || only == "packages"
+        got = suite_packages.run_all(scratch: scratch, compiler: compiler)
+
+        if got.is_err()
+            print("harness: the packages suite could not run" + why(got))
+            exit(2)
+        print("  packages: " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The package manager's interface (panel 235's R19, task 2312): what
+    # `heroes add` and `heroes fetch` print, exit with and write, each case a
+    # folder of `tests/golden/fetch/`, an index read from a folder and a git
+    # source made on the fly, so no case reaches the network.
+    if only == "" || only == "fetch"
+        got = suite_fetch.run_all(scratch: scratch, compiler: compiler, only: pick)
+
+        if got.is_err()
+            print("harness: the fetch suite could not run" + why(got))
+            exit(2)
+        print("  " + shown(name: "fetch", pick: pick) + ": " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
     # The formatter's probe: every comment placement the skeptic seats made
     # by hand, formatted and judged twice in one process (panel 179).
     if only == "" || only == "probe"
@@ -640,7 +673,7 @@ function main()
 # asked by the same hook about one issue file or one file the code cites a
 # defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch"]
         if name == suite
             return true
 
@@ -726,6 +759,14 @@ constant GENERATOR_PROGRAM: str
 # twice and the parser's once. Tested the same way, one test for the root.
 constant LATENCY_PROGRAM: str
     "tests/harness/latency.hero"
+
+# **AND THE SIXTH, the package cards' program** (M-core-packages, 2026-11-06,
+# task 2294): `package_cards.hero` and its word, which only it reaches; the
+# modules that write and judge a card are reached from this root as well,
+# through the `packages` suite, so their tests run twice and the word's once.
+# Tested the same way, one test for the root.
+constant CARDS_PROGRAM: str
+    "tests/harness/package_cards.hero"
 
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each a file of `dir`, in the order they are found. A `use` of any
@@ -961,6 +1002,32 @@ test "the latency instrument's own tests run with the net's own, every block its
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "latency").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "latency").must()
+    said: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the package cards' program's own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", CARDS_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.starts_with(text: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    for line in skips_in(ran.out)
+        print(CARDS_PROGRAM + ": " + line)
+
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "package_cards").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "package_cards").must()
     said: [str] @= []
 
     for line in strings.lines(ran.out)

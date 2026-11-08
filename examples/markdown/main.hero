@@ -12,7 +12,7 @@
 # different modules, a `while` over an index because a fenced block consumes
 # lines the loop has not reached, `continue` as a `match` arm body, and the
 # language's rule that two parameters of one type must be named at the call
-# site — which is why `starts` is written `head.starts(word: "```")`.
+# site — which is why a prefix is asked `strings.has_prefix(s: head, prefix: "```")`.
 
 use blocks
 use render

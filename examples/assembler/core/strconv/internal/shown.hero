@@ -1,0 +1,14 @@
+# How `strconv` names, in a message, the text it could not read: quoted where
+# it is short, and by its length where it is long, so a message never carries a
+# whole file.
+
+# `s` as a message shows it: in quotes up to 40 bytes, else as its length.
+function quoted(s: str) -> str
+    if s.len() > 40
+        return f"a text of {s.len()} bytes"
+    return f"\"{s}\""
+
+test "quoted: a short text in quotes, a long one by its length"
+    assert quoted("") == "\"\""
+    assert quoted("12x") == "\"12x\""
+    assert quoted(repeat("9", 41)) == "a text of 41 bytes"

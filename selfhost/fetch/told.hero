@@ -1,0 +1,80 @@
+# How a refusal of the verbs that fetch is told, and the exit each earns
+# (`.claude/rules/cli-surface.md` § One command: diagnostics on stderr, exit 1
+# the input has a mistake, exit 2 the tool could not run; panel 235's R19,
+# from the compiler-engineer's § 12: a fetch that fails on the network is exit
+# 2, a sum that does not match exit 1).
+#
+# A refusal is told as the compiler tells a diagnostic, its place first where
+# it has one: `heroes.toml:7: error[source_refused]: ...` for a word a
+# catalogue's line wrote, `error[no_git]: ...` for what has no line. Every
+# code a module of `fetch/` fails with is in one of the two lists below, and a
+# code in neither is told as the tool's, exit 2: a refusal nobody classified
+# is this compiler's to answer for, never the author's input.
+
+# The codes that blame the input, exit 1: a source refused by its shape, a
+# word a catalogue wrote, a source that answers that what was asked for is not
+# there, a file past its bound, a tree holding a name no package may, a tag
+# that moved, a sum that does not match, an index's file in no shape it has,
+# a catalogue that does not read or a requirement it may not hold, and no
+# catalogue where one is fetched from.
+constant INPUT_CODES: [str]
+    [
+        "source_refused"
+        "tag_refused"
+        "commit_refused"
+        "absent"
+        "too_large"
+        "name_refused"
+        "tag_moved"
+        "sum_mismatch"
+        "index_refused"
+        "catalogue_refused"
+        "requirement_refused"
+        "no_catalogue"
+    ]
+
+# The codes that blame the tool or the machine, exit 2: a program this command
+# runs is not here, a source on the network did not answer, git asked inside
+# another git command's environment, git failing on the staging folder's own
+# repository, a tree that could not be written or moved into place.
+constant TOOL_CODES: [str]
+    [
+        "no_git"
+        "no_curl"
+        "unreachable"
+        "git_environment"
+        "git_failed"
+        "cannot_place"
+    ]
+
+# The exit `code` earns.
+function exit_of(code: str) -> i64
+    for one in INPUT_CODES
+        if one == code
+            return 1
+
+    return 2
+
+# One refusal as stderr shows it, its place first where it has one.
+function line(at: str, code: str, said: str) -> str
+    if at.len() == 0
+        return "error[" + code + "]: " + said
+    return at + ": error[" + code + "]: " + said
+
+## Tests
+
+test "a refusal is told with its place first, and its code gives the exit"
+    assert line(at: "heroes.toml:7", code: "source_refused", said: "x") == "heroes.toml:7: error[source_refused]: x"
+    assert line(at: "", code: "no_git", said: "y") == "error[no_git]: y"
+
+    for code in INPUT_CODES
+        assert exit_of(code) == 1
+
+        for other in TOOL_CODES
+            assert other != code
+
+    for code in TOOL_CODES
+        assert exit_of(code) == 2
+
+    # A code nobody classified is the tool's to answer for.
+    assert exit_of("never_written") == 2

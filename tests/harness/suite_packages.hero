@@ -1,0 +1,333 @@
+# The core packages' trees, held to the conventions a reader cannot be trusted
+# to keep by eye: `examples/packages/README.md`, whose rules marked "(the
+# `packages` suite)" are held here (panel 234's R3, task 2293).
+#
+# WHY THIS EXISTS. A program carries the packages it uses as a copy under its
+# own `core/` (`examples/packages/README.md` § 1.4), so one package stands in many places,
+# and a copy can drift with nothing failing: the program builds on its stale
+# copy, its tests pass on it, and the repair made in the canonical tree never
+# reaches it. The compiler judges one program at a time, and none of these
+# rules is a fact of one program, so the net holds them.
+#
+# WHAT IT WALKS: every `core/` tree under `examples/`, the canonical one,
+# `examples/packages/core/`, and each program's copy, `examples/<program>/core/`
+# (thirteen on 2026-11-06), and every module under `examples/` for the one rule
+# a program's own module can break. Each question is a label of its own, and
+# a failure names every file it found and how to repair it:
+#
+#   packages/copies    each file of a copy is its original's, byte for byte
+#   packages/reach     each module of the canonical tree is one the driver,
+#                      `examples/packages/main.hero`, reaches, so `heroes test`
+#                      on it runs every package's tests: asked of the
+#                      compiler, a reached module being named by a `#line` of
+#                      the driver's `--emit-c`
+#   packages/internal  a package's private module is named from its own package
+#                      alone, asked of every module under `examples/`
+#   packages/case      no two `.hero` paths of the project differ only in case,
+#                      and every part of a path under a `core/` is lower case
+#   packages/names     records and variants in PascalCase, constants in
+#                      SCREAMING_CASE
+#   packages/codes     every literal code a `fail` writes is snake_case
+#   packages/quiet     no `print(`, `exit(`, `args(` or `args_checked(` but in
+#                      `log` and `os`
+#   packages/docs      every top-level function has a doc comment
+#   packages/tests     every top-level function is called by a `test` block of
+#                      its own module
+#   packages/cards     each face's card is what `package_cards.hero -- write`
+#                      writes, within its budget, every call it writes
+#                      compiling as written (task 2294, `package_judge.hero`)
+#
+# The rules are functions over text in `package_rules.hero`, each asked of
+# literal inputs by its tests, so a tree nobody has written yet is judged there
+# before it exists.
+#
+# **What `reach` cannot see**, measured 2026-11-06: a module that declares only
+# records emits no `#line`, so the driver's emission does not name it though the
+# driver reaches it. Such a module is told as unreached, the loud direction, and
+# the failure says why.
+
+use package_judge
+use package_rules
+use report
+use floors
+use shell
+use strings
+
+constant EXAMPLES: str
+    "examples"
+
+# The canonical tree's own program (`examples/packages/README.md` § 1.6).
+constant DRIVER: str
+    "examples/packages/main.hero"
+
+# The floor: the `.hero` files the walk judged in every core tree. **28 on
+# 2026-11-06**, the day the suite landed: the canonical tree's two modules and
+# thirteen programs' copies of them. A walk that stops reaching the copies finds
+# the canonical tree's own few and is red, which a floor of that count would
+# pass. **38 the same day**, raised on purpose when `core/strconv` arrived with
+# its private module and four programs' copies of both (step 6 of
+# M-core-packages, merged into the lane before its gate): 4 canonical, 34 copies.
+constant LEAST: i64
+    38
+
+# A file the walk read: where it stands, its core tree and its path under that
+# tree, or "" for both where it is a program's own module, and its text.
+record Held
+    path: str
+    tree: str
+    rel: str
+    text: str
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @= report.empty()
+
+    if !shell.is_directory(package_rules.CANONICAL)
+        return fail(code: "absent", msg: package_rules.CANONICAL + " is not there, and every copy is judged against it")
+    files = walked(scratch)?
+    cored: [Held] @= []
+    count: i64 @= 0
+
+    for h in files
+        if h.tree.len() > 0
+            cored @ cored.push(h)
+
+            if strings.ends_with(text: h.rel, suffix: ".hero")
+                count @ count + 1
+
+    floors.check(
+        @r,
+        label: "packages",
+        found: count,
+        floor: LEAST,
+        what: "`.hero` files in the core trees under " + EXAMPLES + "/"
+    )
+    copies(@r, cored)
+    reach(@r, scratch: scratch, compiler: compiler, cored: cored)?
+    internal(@r, files)
+    spelled(@r, scratch: scratch, cored: cored)?
+    each_module(@r, cored)
+    cards(@r, scratch: scratch, compiler: compiler)?
+    return ok(r)
+
+# Every file of every core tree under `examples/`, and every module of the
+# programs beside them, read.
+function walked(scratch: str) -> [Held]?
+    nothing: [str] = []
+    out: [Held] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: EXAMPLES, skip: nothing)?
+        tree = package_rules.tree_of(path)
+
+        if tree.is_err() && !strings.ends_with(text: path, suffix: ".hero")
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            return fail(
+                code: "unreadable",
+                msg: "cannot read " + path + " as text, and every file of a core tree and every module is read"
+            )
+        root = tree.default("")
+        rel: str @= ""
+
+        if root.len() > 0
+            rel @ strings.without_prefix(text: path, prefix: root + "/")
+        out @ out.push(Held(path: path, tree: root, rel: rel, text: text.must()))
+
+    return ok(out)
+
+# One label's verdict: a pass where nothing was found, else one failure naming
+# every finding under the rule it breaks and its repair.
+function keep(@r: report.Report, label: str, found: [str], rule: str)
+    if found.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(@r, label: label, detail: "  " + rule + "\n" + found.join("\n"))
+
+function copies(@r: report.Report, cored: [Held])
+    originals: {str: str} @= {}
+
+    for h in cored
+        if h.tree == package_rules.CANONICAL
+            originals[h.path] @ h.text
+
+    found: [str] @= []
+
+    for h in cored
+        if h.tree != package_rules.CANONICAL
+            at = package_rules.original_of(tree: h.tree, path: h.path)
+            said = package_rules.copy_said(copy: h.text, original: originals[at], at: at)
+
+            if said.len() > 0
+                found @ found.push("    " + h.path + " " + said)
+
+    keep(
+        @r,
+        label: "packages/copies",
+        found: found,
+        rule: "every file of a program's `core/` is its original in " + package_rules.CANONICAL + "/, byte for byte (`examples/packages/README.md` § 1.4), so a repair made there reaches a program only when the program takes it. Fix: copy the original over the copy, `cp " + package_rules.CANONICAL + "/<path> examples/<program>/core/<path>`, and run the program's tests; a change a program needs is made in the canonical tree first, with its tests, then copied:"
+    )
+
+# Whether the driver reaches every module of the canonical tree, asked of the
+# compiler: the modules its emission names in a `#line`.
+function reach(@r: report.Report, scratch: str, compiler: str, cored: [Held]) -> ()?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", DRIVER, "--emit-c"])?
+
+    if ran.code != 0
+        report.keep_failure(
+            @r,
+            label: "packages/reach",
+            detail: "  the driver, " + DRIVER + ", does not build (exit " + ran.code.to_str() + "), so what it reaches cannot be asked: " + strings.trimmed(ran.err)
+        )
+        return ok()
+    named: {str: bool} @= {}
+
+    for path in package_rules.line_paths(ran.out)
+        named[path] @ true
+
+    found: [str] @= []
+
+    for h in cored
+        if h.tree == package_rules.CANONICAL && strings.ends_with(text: h.rel, suffix: ".hero") && named[h.path].is_err()
+            found @ found.push("    " + h.path)
+
+    keep(
+        @r,
+        label: "packages/reach",
+        found: found,
+        rule: "every module of " + package_rules.CANONICAL + "/ is reached by its driver, " + DRIVER + ", so that `heroes test` on the driver runs its tests (`examples/packages/README.md` § 1.6), and the driver's `--emit-c` names no `#line` in these. Fix: `use` the package from the driver and name something of it, or reach it from a package the driver reaches. A module that declares only records emits no `#line` (measured 2026-11-06), so one is told here though the driver reaches it:"
+    )
+    return ok()
+
+function internal(@r: report.Report, files: [Held])
+    found: [str] @= []
+
+    for h in files
+        if strings.ends_with(text: h.path, suffix: ".hero")
+            importer: str @= ""
+
+            if h.tree.len() > 0
+                importer @ package_rules.module_path(tree: h.tree, path: h.path)
+
+            for said in package_rules.misplaced_uses(importer: importer, text: h.text)
+                found @ found.push("    " + h.path + ": " + said)
+
+    keep(
+        @r,
+        label: "packages/internal",
+        found: found,
+        rule: "a package's private module, under `core/<package>/internal/`, is named only by the package's face, `core/<package>.hero`, and by the modules under `core/<package>/` (`examples/packages/README.md` § 1.3, Go's rule). Fix: call the package's face; what a program needs of a private module belongs on the face:"
+    )
+
+# No two `.hero` paths of the project differ only in case, and every part of a
+# path under a core tree is lower case.
+function spelled(@r: report.Report, scratch: str, cored: [Held]) -> ()?
+    modules: [str] @= []
+
+    for path in shell.project_files(scratch)?
+        if strings.ends_with(text: path, suffix: ".hero")
+            modules @ modules.push(path)
+
+    found: [str] @= []
+
+    for twins in package_rules.case_twins(modules)
+        found @ found.push("    " + twins + " differ only in case")
+
+    for h in cored
+        for part in package_rules.crooked_parts(h.rel)
+            found @ found.push("    " + h.path + ": `" + part + "` is not lower case")
+
+    keep(
+        @r,
+        label: "packages/case",
+        found: found,
+        rule: "no two module paths differ only in case, and every part of a path under a `core/` is lower case (`examples/packages/README.md` § 1.5): a volume that folds case reads two spellings as one file, and a program that compiles there is refused on Linux. Fix: rename in lower case with `git mv`, and spell every `use` as the file is spelled:"
+    )
+    return ok()
+
+# The rules asked of each module of a core tree alone.
+function each_module(@r: report.Report, cored: [Held])
+    names: [str] @= []
+    codes: [str] @= []
+    quiet: [str] @= []
+    docs: [str] @= []
+    tests: [str] @= []
+
+    for h in cored
+        if !strings.ends_with(text: h.rel, suffix: ".hero")
+            continue
+        at = "    " + h.path + ": "
+
+        for said in package_rules.misnamed(h.text)
+            names @ names.push(at + said)
+
+        for said in package_rules.crooked_codes(h.text)
+            codes @ codes.push(at + said)
+
+        for said in package_rules.noisy(module: package_rules.module_path(tree: h.tree, path: h.path), text: h.text)
+            quiet @ quiet.push(at + said)
+
+        for said in package_rules.undocumented(h.text)
+            docs @ docs.push(at + said)
+
+        for said in package_rules.untested(h.text)
+            tests @ tests.push(at + said + " is called by no `test` block of its module")
+
+    keep(
+        @r,
+        label: "packages/names",
+        found: names,
+        rule: "under `core/`, a record or a variant is named in PascalCase and a constant in SCREAMING_CASE (`examples/packages/README.md` § 2.5). Fix: rename it, and every use of it:"
+    )
+    keep(
+        @r,
+        label: "packages/codes",
+        found: codes,
+        rule: "a code is a stable snake_case string, `[a-z][a-z0-9_]*` (spec § 6, `examples/packages/README.md` § 3.2). Fix: rename the code, in the package that writes it and in every program that matches it:"
+    )
+    keep(
+        @r,
+        label: "packages/quiet",
+        found: quiet,
+        rule: "no package prints, exits or reads its program's words but `log` and `os`, whose work it is (`examples/packages/README.md` § 5.2), and these calls stand in a package's code or its tests. Fix: answer a value, or a `T?` whose failure the program reports; a test asserts what it would have printed:"
+    )
+    keep(
+        @r,
+        label: "packages/docs",
+        found: docs,
+        rule: "every top-level function of a package has a doc comment directly above it, whose first sentence says what it answers (`examples/packages/README.md` § 6.1); the package's card is written from it. Fix: write the comment, with no blank line between it and the function:"
+    )
+    keep(
+        @r,
+        label: "packages/tests",
+        found: tests,
+        rule: "every top-level function of a package is called by a `test` block of its own module, the edges first (`examples/packages/README.md` § 6.2). Fix: add a `test` beside the module's others that calls it:"
+    )
+
+# The cards of the canonical tree's faces, asked in-process as the card
+# program's `check` asks them (`package_judge.hero`).
+function cards(@r: report.Report, scratch: str, compiler: str) -> ()?
+    keep(
+        @r,
+        label: "packages/cards",
+        found: package_judge.judged(scratch: scratch, compiler: compiler, root: package_rules.CANONICAL)?,
+        rule: "every face of " + package_rules.CANONICAL + "/ has its card beside it, `<path>.md`, written from the face by `" + package_judge.WRITE + "` and never by hand (`examples/packages/README.md` § 8.2); a card spends at most " + package_judge.MOST.to_str() + " tokens by `heroes measure`'s `maximum`, the face cards together no more than the specification itself (`examples/packages/README.md` § 8.3, panel 234's R5), and every call it writes compiles as written. Fix: run `write` and commit each card with its face; a face the card cannot say is told by name, and so is a card over its budget:"
+    )
+    return ok()
+
+## Tests
+
+test "the floor is under the count the walk found on the day it landed"
+    # 38 on 2026-11-06: the canonical tree's four modules and 34 copies; a walk
+    # reaching the canonical tree alone finds 4.
+    assert LEAST <= 38
+    assert LEAST > 4
+
+test "a label passes on nothing found, and fails once naming everything found"
+    r: report.Report @= report.empty()
+    nothing: [str] = []
+    keep(@r, label: "packages/x", found: nothing, rule: "the rule:")
+    assert r.passed == 1
+    keep(@r, label: "packages/y", found: ["    a", "    b"], rule: "the rule:")
+    assert r.failed == 1
+    assert r.failures == ["FAIL packages/y\n  the rule:\n    a\n    b"]

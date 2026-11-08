@@ -68,7 +68,7 @@
   <h2 id="libraries">Libraries, and running it</h2>
   <dl class="why">
     <dt>Is there a standard library? How do I add a library?</dt>
-    <dd>There is no standard library, on purpose: the built-ins fit in one line of the specification. Everything else is a C library you declare in a few lines of your own file, naming its header and the library, and clang checks your declaration against the header. SQLite, libcurl, raylib and SDL are bound in the examples with no glue code. A command that fetches packages is on the roadmap. <a href="/docs/the-c-boundary/">Using C libraries&nbsp;&rarr;</a></dd>
+    <dd>There is no standard library, on purpose: the built-ins fit in one line of the specification. Everything else is either a C library you declare in a few lines of your own file, naming its header and the library, with clang checking your declaration against the header, or a package of Heroes code your program carries with it, like the core packages for working with text. SQLite, libcurl, raylib and SDL are bound in the examples with no glue code. A command that fetches packages is on the roadmap. <a href="/docs/the-c-boundary/">Using C libraries&nbsp;&rarr;</a></dd>
     <dt>Can C call Heroes?</dt>
     <dd>A C library calls back into Heroes through a function you hand it, the way a sort routine or a window takes a callback. Building a shared library in Heroes for a C program to load is not something it does today.</dd>
     <dt>Can operations run in parallel?</dt>

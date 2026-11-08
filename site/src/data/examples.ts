@@ -72,6 +72,7 @@ export const groups: Group[] = [
       'roman',
       'words',
       'wrap',
+      'packages',
     ],
   },
   {

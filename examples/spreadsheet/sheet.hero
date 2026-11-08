@@ -9,6 +9,8 @@
 # The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
 # are skipped, which is what makes the sample readable.
 
+use core/strings
+
 ## Error codes
 #
 # One `constant` per code, so a typo is `error[unknown_name]` here rather
@@ -38,37 +40,6 @@ function is_letter(c: u8) -> bool
 
 function is_digit(c: u8) -> bool
     return c >= '0' && c <= '9'
-
-function is_space(c: u8) -> bool
-    return c == ' ' || c == '\t' || c == 13
-
-function trimmed(line: str) -> str
-    from: i64 @= 0
-
-    while from < line.len() && is_space(line[from])
-        from @ from + 1
-
-    to: i64 @= line.len()
-
-    while to > from && is_space(line[to - 1])
-        to @ to - 1
-
-    return line.slice(from: from, to: to)
-
-function split_lines(text: str) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == '\n'
-            out @ out.push(text.slice(from: start, to: i))
-            start @ i + 1
-        i @ i + 1
-
-    if start < text.len()
-        out @ out.push(text.slice(from: start, to: text.len()))
-    return out
 
 ## Names
 
@@ -103,12 +74,12 @@ function is_name(word: str) -> bool
 # range whose end is before its start is empty rather than an error — the same
 # answer `range(from: 3, to: 1)` gives, so there is one rule to remember.
 function expand(text: str) -> [str]?
-    at = index_of(text, ':')
+    corners = match strings.split_once(s: text, sep: ":")
+        .ok halves => halves
+        .err _     => return fail(code: ERR_BAD_RANGE, msg: "`" + text + "` is not a range: two cells joined by `:`")
 
-    if at < 0
-        return fail(code: ERR_BAD_RANGE, msg: "`" + text + "` is not a range: two cells joined by `:`")
-    from = cell_of(trimmed(text.slice(from: 0, to: at)))?
-    to = cell_of(trimmed(text.slice(from: at + 1, to: text.len())))?
+    from = cell_of(strings.trim_space(corners.before))?
+    to = cell_of(strings.trim_space(corners.after))?
     out: [str] @= []
 
     for row in range(from: from.row, to: to.row + 1)
@@ -117,36 +88,27 @@ function expand(text: str) -> [str]?
 
     return ok(out)
 
-function index_of(text: str, c: u8) -> i64
-    i: i64 @= 0
-
-    while i < text.len()
-        if text[i] == c
-            return i
-        i @ i + 1
-
-    return 0 - 1
-
 ## The file
 
 # `NAME = formula` per line, `#` a comment, blank lines skipped.
 function read(text: str) -> Sheet?
     cells: {str: str} @= {}
 
-    for line in split_lines(text)
-        head = trimmed(line)
+    for line in strings.split_lines(text)
+        head = strings.trim_space(line)
 
         if head == "" || head[0] == '#'
             continue
-        at = index_of(head, '=')
 
-        if at < 0
-            return fail(code: ERR_NO_ASSIGNMENT, msg: "`" + head + "` is not `NAME = formula`")
-        name = trimmed(head.slice(from: 0, to: at))
+        assignment = match strings.split_once(s: head, sep: "=")
+            .ok halves => halves
+            .err _     => return fail(code: ERR_NO_ASSIGNMENT, msg: "`" + head + "` is not `NAME = formula`")
+
+        name = strings.trim_space(assignment.before)
 
         if !is_name(name)
             return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell name")
-        cells[name] @ trimmed(head.slice(from: at + 1, to: head.len()))
+        cells[name] @ strings.trim_space(assignment.after)
 
     return ok(Sheet(cells: cells))
 

@@ -21,22 +21,7 @@
 # one space, because the input's spacing is not the output's; and a trailing
 # space is never written, because it is invisible and it changes a diff.
 
-function words_of(text: str) -> [str]
-    out: [str] @= []
-    piece: str @= ""
-
-    for ch in text.chars()
-        if ch == " " || ch == "\n" || ch == "\t"
-            if piece.len() > 0
-                out @ out.push(piece)
-            piece @ ""
-        else
-            piece @ piece + ch
-
-    if piece.len() > 0
-        out @ out.push(piece)
-
-    return out
+use core/strings
 
 function wrapped(text: str, width: i64) -> [str]?
     if width < 1
@@ -44,7 +29,7 @@ function wrapped(text: str, width: i64) -> [str]?
     lines: [str] @= []
     current: str @= ""
 
-    for word in words_of(text)
+    for word in strings.fields(text)
         if current.len() == 0
             # First word on the line, whatever its length: a word longer than
             # the width overflows rather than being broken.
@@ -165,7 +150,7 @@ test "every word survives, in order, whatever the width"
         back: [str] @= []
 
         for line in said
-            for word in words_of(line)
+            for word in strings.fields(line)
                 back @ back.push(word)
 
-        assert back == words_of(PASSAGE)
+        assert back == strings.fields(PASSAGE)

@@ -7,6 +7,7 @@
 # check the text never have to open a database.
 
 use book/entry
+use core/strings
 
 constant BALANCE_HEADING: str
     "account  kind     entries      total"
@@ -42,21 +43,6 @@ function right(text: str, to: i64) -> str
         return " " + text
     return repeat(" ", to_u64(to - text.len()).must()) + text
 
-# Whether `text` holds `needle`. Here because `main.hero` asserts against
-# SQLite's own error message, and a message is the one thing this program
-# does not control the exact words of.
-function holds(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 test "a cell is padded and never cut, on both sides"
     assert wide(text: "ab", to: 5) == "ab   "
     assert wide(text: "abcdef", to: 3) == "abcdef "
@@ -65,19 +51,19 @@ test "a cell is padded and never cut, on both sides"
 
 test "a book line carries the entry, its account's kind and the amount"
     line = book_lines(entry.book(), entry.accounts())[0]
-    assert holds(text: line, needle: "rent")
-    assert holds(text: line, needle: "housing")
-    assert holds(text: line, needle: "september")
-    assert holds(text: line, needle: "-1200.00")
+    assert strings.contains(s: line, substr: "rent")
+    assert strings.contains(s: line, substr: "housing")
+    assert strings.contains(s: line, substr: "september")
+    assert strings.contains(s: line, substr: "-1200.00")
 
 test "a balance line carries the account and its total"
     b = entry.balances(entry.book())[1]
     line = balance_line(b, "living")
-    assert holds(text: line, needle: "food")
-    assert holds(text: line, needle: "living")
-    assert holds(text: line, needle: "-110.80")
+    assert strings.contains(s: line, substr: "food")
+    assert strings.contains(s: line, substr: "living")
+    assert strings.contains(s: line, substr: "-110.80")
 
 test "the search finds what is there and refuses what is not"
-    assert holds(text: "no such table: nothing", needle: "no such table")
-    assert !holds(text: "short", needle: "much longer than the text")
-    assert holds(text: "abc", needle: "abc")
+    assert strings.contains(s: "no such table: nothing", substr: "no such table")
+    assert !strings.contains(s: "short", substr: "much longer than the text")
+    assert strings.contains(s: "abc", substr: "abc")

@@ -1,0 +1,309 @@
+# The program's catalogue as `heroes add` rewrites it (panel 235's R5 and R11,
+# ratified 2026-11-07): every line the author wrote kept as it was, comments
+# and blank lines among them; each entry the build list moved changed in its
+# own lines alone, a value replaced between its quotes and a comment after it
+# kept; and each new entry appended as one table, in the form pm-use's reader
+# reads (`module/catalogue.hero`) and the specification's example shows:
+#
+#     [dependencies.json]
+#     version = "1.4.2"
+#     sum = "sha256-…"
+#
+# its fields in the order `version`, `sum` for the index, `git`, `tag`,
+# `commit`, `sum` for git, `path` alone for a folder, new tables in the order
+# of their names, one blank line before each. An `index` line the command line
+# gave is written above every table. A comment is kept because TOML admits
+# one and the author wrote it (one of R5's reasons for TOML, the historian's
+# § 3); Go's `go get` keeps a `go.mod`'s comments the same way.
+#
+# **A line keeps its own end**: a catalogue written on Windows ends its lines
+# `\r\n`, and a line read here keeps its `\r`, so a line left alone is written
+# back byte for byte and a value changed keeps it; a line added takes the end
+# of the file's first line. Until 2026-11-08, the day it was written, every
+# `\r` was dropped, measured on a catalogue `index = "file://../idx"\r\n`.
+#
+# The text is read here only for the places of its tables and keys: whether
+# it reads at all is the reader's, which `add` asked first.
+
+use module/catalogue
+
+# `text`, the catalogue as it stands ("" where there is none), with `entries`
+# written into it and `index`, where not "", as its `index` line.
+function edited(text: str, entries: [catalogue.Entry], index: str) -> str
+    lines: [str] @= lines_of(text)
+    eol = end_of(lines)
+
+    for e in sorted(entries)
+        head = table_at(lines, name: e.name)
+
+        if head < 0
+            lines @ appended(lines, e: e, eol: eol)
+        else
+            for key in keys_of(e)
+                lines @ set_field(lines, head: head, key: key, value: value_of(e, key: key), eol: eol)
+
+    if index.len() > 0 && key_line(lines, from: 0, to: first_table(lines), key: "index") < 0
+        lines @ with_index(lines, index: index, eol: eol)
+    return lines.join("\n") + "\n"
+
+# What a line the editor adds ends with before its `\n`: the `\r` of a file
+# whose first line ends `\r\n`, else nothing.
+function end_of(lines: [str]) -> str
+    if lines.len() > 0 && lines[0].len() > 0 && lines[0][lines[0].len() - 1] == '\r'
+        return "\r"
+    return ""
+
+# The fields an entry of `e`'s source holds, in the order they are written.
+function keys_of(e: catalogue.Entry) -> [str]
+    if e.version.len() > 0
+        return ["version", "sum"]
+
+    if e.git.len() > 0
+        return ["git", "tag", "commit", "sum"]
+    return ["path"]
+
+function value_of(e: catalogue.Entry, key: str) -> str
+    return match key
+        "version" => e.version
+        "git"     => e.git
+        "tag"     => e.tag
+        "commit"  => e.commit
+        "sum"     => e.sum
+        _         => e.path
+
+# `lines` with the table of `e` added at the end, one blank line before it.
+function appended(lines: [str], e: catalogue.Entry, eol: str) -> [str]
+    out: [str] @= without_trailing_blanks(lines)
+
+    if out.len() > 0
+        out @ out.push(eol)
+    out @ out.push("[dependencies." + e.name + "]" + eol)
+
+    for key in keys_of(e)
+        out @ out.push(key + " = \"" + value_of(e, key: key) + "\"" + eol)
+
+    return out
+
+# `lines` with the table opening at `head` holding `key` as `value`: its line
+# changed between its quotes where it is there, added after the table's last
+# field where it is not.
+function set_field(lines: [str], head: i64, key: str, value: str, eol: str) -> [str]
+    end = table_end(lines, head: head)
+    at = key_line(lines, from: head + 1, to: end, key: key)
+    out: [str] @= lines
+
+    if at >= 0
+        out[at] @ with_value(line: lines[at], value: value)
+        return out
+    last: i64 @= head
+
+    for probe in range(from: head + 1, to: end)
+        if !blank(lines[probe]) && trimmed_start(lines[probe])[0] != '#'
+            last @ probe
+
+    pieces: [str] @= lines.slice(from: 0, to: last + 1)
+    pieces @ pieces.push(key + " = \"" + value + "\"" + eol)
+
+    for rest in lines.slice(from: last + 1, to: lines.len())
+        pieces @ pieces.push(rest)
+
+    return pieces
+
+# A `key = "value"` line with its value replaced and all around it kept.
+function with_value(line: str, value: str) -> str
+    open: i64 @= 0
+
+    while open < line.len() && line[open] != '"'
+        open @ open + 1
+
+    close: i64 @= open + 1
+
+    while close < line.len() && line[close] != '"'
+        close @ close + 1
+
+    if close >= line.len()
+        return line
+    return line.slice(from: 0, to: open + 1) + value + line.slice(from: close, to: line.len())
+
+# `lines` with an `index` line above its first table.
+function with_index(lines: [str], index: str, eol: str) -> [str]
+    first = first_table(lines)
+    out: [str] @= lines.slice(from: 0, to: first)
+    out @ out.push("index = \"" + index + "\"" + eol)
+
+    if first < lines.len()
+        out @ out.push(eol)
+
+    for rest in lines.slice(from: first, to: lines.len())
+        out @ out.push(rest)
+
+    return out
+
+## Places in the text
+
+# The line of `text`, counted from 1, where the entry `name` sets `key`, or
+# where its table opens for `key` "" or a key it does not set; 0 where the
+# text has no such entry. A refusal of the verbs is told there.
+function place_of(text: str, name: str, key: str) -> i64
+    lines = lines_of(text)
+
+    if key == "index"
+        return key_line(lines, from: 0, to: first_table(lines), key: "index") + 1
+    head = table_at(lines, name: name)
+
+    if head < 0
+        return 0
+
+    if key.len() > 0
+        at = key_line(lines, from: head + 1, to: table_end(lines, head: head), key: key)
+
+        if at >= 0
+            return at + 1
+    return head + 1
+
+# The text's lines without their `\n`, a `\r` before one kept; "" holds none.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: from, to: at))
+            from @ at + 1
+
+    if from < text.len()
+        out @ out.push(text.slice(from: from, to: text.len()))
+    return out
+
+# Whether a line holds nothing but spaces, tabs and its `\r`.
+function blank(line: str) -> bool
+    for at in range(from: 0, to: line.len())
+        if line[at] != ' ' && line[at] != '\t' && line[at] != '\r'
+            return false
+
+    return true
+
+# Where `[dependencies.<name>]` opens, or -1.
+function table_at(lines: [str], name: str) -> i64
+    for at in range(from: 0, to: lines.len())
+        if trimmed_start(lines[at]) == "[dependencies." + name + "]" || starts_table(line: lines[at], name: name)
+            return at
+
+    return -1
+
+function starts_table(line: str, name: str) -> bool
+    head = "[dependencies." + name + "]"
+    rest = trimmed_start(line)
+    return rest.len() > head.len() && rest.slice(from: 0, to: head.len()) == head && (rest[head.len()] == ' ' || rest[head.len()] == '#' || rest[head.len()] == '\r')
+
+# Where the table opening at `head` ends: the next table, or the text's end.
+function table_end(lines: [str], head: i64) -> i64
+    for at in range(from: head + 1, to: lines.len())
+        if trimmed_start(lines[at]).len() > 0 && trimmed_start(lines[at])[0] == '['
+            return at
+
+    return lines.len()
+
+function first_table(lines: [str]) -> i64
+    for at in range(from: 0, to: lines.len())
+        if trimmed_start(lines[at]).len() > 0 && trimmed_start(lines[at])[0] == '['
+            return at
+
+    return lines.len()
+
+# The line between `from` and `to` that sets `key`, or -1.
+function key_line(lines: [str], from: i64, to: i64, key: str) -> i64
+    for at in range(from: from, to: to)
+        rest = trimmed_start(lines[at])
+
+        if rest.len() > key.len() && rest.slice(from: 0, to: key.len()) == key && (rest[key.len()] == ' ' || rest[key.len()] == '=')
+            return at
+
+    return -1
+
+function trimmed_start(line: str) -> str
+    at: i64 @= 0
+
+    while at < line.len() && (line[at] == ' ' || line[at] == '\t')
+        at @ at + 1
+
+    return line.slice(from: at, to: line.len())
+
+function without_trailing_blanks(lines: [str]) -> [str]
+    end: i64 @= lines.len()
+
+    while end > 0 && blank(lines[end - 1])
+        end @ end - 1
+
+    return lines.slice(from: 0, to: end)
+
+# `entries` in the order of their names.
+function sorted(entries: [catalogue.Entry]) -> [catalogue.Entry]
+    names: [str] @= []
+
+    for e in entries
+        names @ names.push(e.name)
+
+    out: [catalogue.Entry] @= []
+
+    for name in sort(names)
+        for e in entries
+            if e.name == name
+                out @ out.push(e)
+
+    return out
+
+## Tests
+
+function entry(name: str, version: str, sum: str) -> catalogue.Entry
+    return catalogue.Entry(name: name, version: version, git: "", tag: "", commit: "", path: "", sum: sum)
+
+# The form a new catalogue takes, byte for byte, and what pm-use's reader
+# reads back from it.
+test "a new catalogue is the specification's form, its index line first, read back by the reader"
+    git = catalogue.Entry(
+        name: "yaml",
+        version: "",
+        git: "https://git.example.org/ana/yaml",
+        tag: "v0.3.1",
+        commit: "9fceb02d0ae598e95dc970b74767f19372d61af8",
+        path: "",
+        sum: "sha256-" + "c".repeat(64.to_u64().must())
+    )
+    text = edited(
+        text: "",
+        entries: [git, entry(name: "json", version: "1.4.2", sum: "sha256-" + "a".repeat(64.to_u64().must()))],
+        index: "file://./idx"
+    )
+    assert text == "index = \"file://./idx\"\n\n[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-" + "a".repeat(64.to_u64().must()) + "\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d0ae598e95dc970b74767f19372d61af8\"\nsum = \"sha256-" + "c".repeat(64.to_u64().must()) + "\"\n"
+    back = catalogue.parsed(file: "heroes.toml", text: text)
+    assert back.problem == ""
+    assert back.index == "file://./idx"
+    assert back.entries.len() == 2
+
+test "an entry that moved changes in its own lines, its comment kept, and every other line the author wrote stays"
+    before = "# the program's packages\n[dependencies.json]  # the parser\nversion = \"1.4.2\"  # pinned for the release\nsum = \"sha256-" + "a".repeat(64.to_u64().must()) + "\"\n\n# the folder I am writing\n[dependencies.mine]\npath = \"../mine\"\n"
+    after = edited(
+        text: before,
+        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), catalogue.Entry(name: "mine", version: "", git: "", tag: "", commit: "", path: "../mine", sum: ""), entry(name: "core", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
+        index: ""
+    )
+    assert after == "# the program's packages\n[dependencies.json]  # the parser\nversion = \"1.5.0\"  # pinned for the release\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\n\n# the folder I am writing\n[dependencies.mine]\npath = \"../mine\"\n\n[dependencies.core]\nversion = \"0.1.0\"\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\n"
+    assert catalogue.parsed(file: "h", text: after).problem == ""
+    assert place_of(text: after, name: "json", key: "version") == 3
+    assert place_of(text: after, name: "mine", key: "") == 7
+    assert place_of(text: after, name: "absent", key: "sum") == 0
+    assert place_of(text: after, name: "", key: "index") == 0
+
+# A catalogue written with `\r\n` keeps every line's end, a value changed and
+# a table added included, and reads back.
+test "a catalogue whose lines end with a return keeps them, every line it adds ending so too"
+    before = "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.4.2\"  # pinned\r\nsum = \"sha256-" + "a".repeat(64.to_u64().must()) + "\"\r\n"
+    after = edited(
+        text: before,
+        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), entry(name: "core", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
+        index: ""
+    )
+    assert after == "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.5.0\"  # pinned\r\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\r\n\r\n[dependencies.core]\r\nversion = \"0.1.0\"\r\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\r\n"
+    assert catalogue.parsed(file: "h", text: after).problem == ""
+    assert place_of(text: after, name: "json", key: "sum") == 5

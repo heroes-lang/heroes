@@ -1,0 +1,13 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[tag_moved]: the tag `v0.3.1` of `file://../git/yaml` names the commit e45e574b74a1bb7f8a2ba6185f3785fd62409e37, and the entry `yaml` was written when it named 0000000000000000000000000000000000000001: a tag that moved is refused, never followed, and `heroes add` writes the entry again once the new commit is the one meant
+heroes.toml:
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "0000000000000000000000000000000000000001"
+sum = "sha256-1111111111111111111111111111111111111111111111111111111111111111"
+heroes.packages:
+(none)

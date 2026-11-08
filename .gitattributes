@@ -30,3 +30,9 @@ tests/golden/check/fixedbugs-135-crlf-*.applied -text
 # A message at a CRLF line end told where an LF line end is (defect 373,
 # lane cli12, 2026-10-06): its bytes are its CRLF line ends.
 tests/golden/check/fixedbugs-373-*.hero -text
+
+# A catalogue written on Windows, its lines ended `\r\n`, and the transcript of
+# `heroes add` keeping every one (M-package-manager step 13, 2026-11-08): their
+# bytes are their line ends.
+tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/before.toml -text
+tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/expected -text

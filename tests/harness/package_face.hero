@@ -1,0 +1,313 @@
+# A core package's face read for its card (task 2294): the module doc's first
+# sentence, each record with its fields, each function with its signature, its
+# parameters and its doc, each `str` constant, and what the card's form has no
+# line for. The codes the package writes, and what the face says of each, are
+# `package_codes.hero`'s.
+#
+# The face is read as text in canonical form, which the `canonical` suite holds
+# `examples/` to, and in which `heroes fmt` writes each declaration on one line
+# (measured 2026-11-06: a signature written over two lines comes back as one).
+# A signature that does not close on its line is refused rather than guessed.
+#
+# **What the form has no line for is refused, by name, never left out.** A
+# `variant`, an `extern` group and a constant that names no code are each a
+# name a program writes, so a card that left them out would be a card that lies
+# by omission; the refusal says what to teach this module first. A `str`
+# constant a `fail` writes its code through is a code the package adds (the
+# conventions' § 3.3), and the card lists it among the codes.
+
+use module_docs
+use strings
+
+# A record's field, or a function's parameter, as declared: its name, its type
+# as written, and the marks a parameter may carry.
+record Slot
+    name: str
+    ty: str
+    mutable: bool
+    lent: bool
+
+# A record of the face, for the card's `## Types`.
+record Shape
+    name: str
+    fields: [Slot]
+    said: str
+
+# A function of the face, for the card's `## Functions`: its signature as the
+# face writes it after `function `, its type parameters as written (`<A, B>` or
+# ""), its parameters, its result ("" where it answers nothing), its doc's
+# paragraphs joined, and the doc's first sentence.
+record Callable
+    name: str
+    written: str
+    generics: str
+    params: [Slot]
+    result: str
+    doc: str
+    said: str
+
+# A `str` constant of the face, `constant NAME: str` over a plain literal,
+# which may name a code the package writes: its name, its value and its doc's
+# first sentence.
+record Named
+    name: str
+    value: str
+    said: str
+
+# What a face is to its card: its path under `core/`, what `use core/<path>`
+# binds, its module doc's first sentence, its records, functions and `str`
+# constants, its `use` lines, and what the card's form cannot say of it.
+record Face
+    path: str
+    binding: str
+    said: str
+    shapes: [Shape]
+    callables: [Callable]
+    constants: [Named]
+    uses: [str]
+    refused: [str]
+
+# The face at `path` under `core/`, read from its text.
+function face_of(path: str, text: str) -> Face
+    rows = strings.lines(text)
+    refused: [str] @= []
+    said = first_said(module_docs.module_doc(rows))
+
+    if said.len() == 0
+        refused @ refused.push("the module has no doc, whose first sentence a card opens with")
+    shapes: [Shape] @= []
+    callables: [Callable] @= []
+    constants: [Named] @= []
+    uses: [str] @= []
+    at: i64 @= 0
+
+    for row in rows
+        if strings.starts_with(text: row, prefix: "use ")
+            uses @ uses.push(row)
+        else if strings.starts_with(text: row, prefix: "record ")
+            shapes @ shapes.push(shape_at(rows: rows, at: at))
+        else if strings.starts_with(text: row, prefix: "function ")
+            got = callable_at(rows: rows, at: at)
+
+            if got.is_err()
+                refused @ refused.push("line " + (at + 1).to_str() + ": " + why(got))
+            else
+                callables @ callables.push(got.must())
+        else if strings.starts_with(text: row, prefix: "constant ")
+            value = module_docs.str_constant(rows: rows, at: at)
+
+            if value.is_err()
+                refused @ refused.push(
+                    "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has a line for a `str` constant naming a code alone: teach `package_face.hero` another before a face declares it"
+                )
+            else
+                constants @ constants.push(
+                    Named(name: module_docs.name_after(text: row, start: 9), value: value.must(), said: first_said(module_docs.doc_above(rows: rows, at: at)))
+                )
+        else
+            for word in ["variant ", "extern "]
+                if strings.starts_with(text: row, prefix: word)
+                    refused @ refused.push(
+                        "line " + (at + 1).to_str() + ": `" + strings.trimmed(row) + "`, and a card has no line for a " + strings.trimmed(word) + " yet: teach `package_face.hero` one before a face declares it"
+                    )
+        at @ at + 1
+
+    for shape in shapes
+        if shape.said.len() == 0
+            refused @ refused.push("`record " + shape.name + "` has no doc, whose first sentence its card line writes")
+
+    for f in callables
+        if f.said.len() == 0
+            refused @ refused.push("`function " + f.name + "` has no doc, whose first sentence its card line writes")
+
+    return Face(
+        path: path,
+        binding: binding_of(path),
+        said: said,
+        shapes: shapes,
+        callables: callables,
+        constants: constants,
+        uses: uses,
+        refused: refused
+    )
+
+# What `use core/<path>` binds: the path's last part (spec § 1).
+function binding_of(path: str) -> str
+    parts = strings.split_on(text: path, byte: '/')
+    return parts[parts.len() - 1]
+
+# The first sentence of a doc's first paragraph, or "" where there is no doc.
+function first_said(doc: [str]) -> str
+    paragraphs = module_docs.paragraphs(doc)
+
+    if paragraphs.len() == 0
+        return ""
+    return module_docs.first_sentence(paragraphs[0])
+
+function why(got: Callable?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# The record declared at row `at`: its name, the fields indented under it, a
+# comment among them skipped, and its doc's first sentence.
+function shape_at(rows: [str], at: i64) -> Shape
+    name = module_docs.name_after(text: rows[at], start: 7)
+    fields: [Slot] @= []
+    below: i64 @= at + 1
+
+    while below < rows.len() && strings.starts_with(text: rows[below], prefix: "    ")
+        row = strings.trimmed(rows[below])
+
+        if !strings.starts_with(text: row, prefix: "#")
+            fields @ fields.push(slot_of(row))
+        below @ below + 1
+
+    return Shape(name: name, fields: fields, said: first_said(module_docs.doc_above(rows: rows, at: at)))
+
+# The function declared at row `at`, or why it cannot be read: a signature that
+# does not close on its row, a parameter named `_`, which a call cannot write.
+function callable_at(rows: [str], at: i64) -> Callable?
+    written = strings.without_prefix(text: rows[at], prefix: "function ")
+    name = module_docs.name_after(text: written, start: 0)
+    rest = written.slice(from: name.len(), to: written.len())
+    generics: str @= ""
+
+    if strings.starts_with(text: rest, prefix: "<")
+        close = strings.index_of(text: rest, needle: ">")
+
+        if close.is_err()
+            return fail(code: "unread", msg: "`function " + name + "`'s type parameters do not close on its line")
+        generics @ rest.slice(from: 0, to: close.must() + 1)
+    after = rest.slice(from: generics.len(), to: rest.len())
+    close = closing(text: after, open: 0)
+
+    if !strings.starts_with(text: after, prefix: "(") || close.is_err()
+        return fail(
+            code: "unread",
+            msg: "`function " + name + "`'s parameters do not close on its line, which `heroes fmt` writes on one: format the face"
+        )
+    tail = after.slice(from: close.must() + 1, to: after.len())
+
+    if tail.len() > 0 && !strings.starts_with(text: tail, prefix: " -> ")
+        return fail(code: "unread", msg: "`function " + name + "` has `" + tail + "` after its parameters")
+    params: [Slot] @= []
+
+    for piece in split_top(after.slice(from: 1, to: close.must()))
+        slot = slot_of(piece)
+
+        if slot.name == "_" || slot.name.len() == 0
+            return fail(code: "unread", msg: "`function " + name + "` has a parameter with no name a call can write")
+        params @ params.push(slot)
+
+    doc = module_docs.paragraphs(module_docs.doc_above(rows: rows, at: at))
+    return ok(
+        Callable(name: name, written: written, generics: generics, params: params, result: strings.without_prefix(text: tail, prefix: " -> "), doc: doc.join(" "), said: first_said(module_docs.doc_above(rows: rows, at: at)))
+    )
+
+# A parameter or a field, `[@]name: Type [lent]`, read.
+function slot_of(text: str) -> Slot
+    piece = strings.trimmed(text)
+    mutable = strings.starts_with(text: piece, prefix: "@")
+    body = strings.without_prefix(text: piece, prefix: "@")
+    colon = strings.index_of(text: body, needle: ": ")
+
+    if colon.is_err()
+        return Slot(name: body, ty: "", mutable: mutable, lent: false)
+    ty = body.slice(from: colon.must() + 2, to: body.len())
+    lent = strings.ends_with(text: ty, suffix: " lent")
+    return Slot(
+        name: body.slice(from: 0, to: colon.must()),
+        ty: strings.without_suffix(text: ty, suffix: " lent"),
+        mutable: mutable,
+        lent: lent
+    )
+
+# The index of the bracket that closes the one at `open`, the brackets between
+# counted, or none where the text ends first.
+function closing(text: str, open: i64) -> i64?
+    depth: i64 @= 0
+    at: i64 @= open
+
+    while at < text.len()
+        byte = text[at]
+
+        if byte == '(' || byte == '[' || byte == '{'
+            depth @ depth + 1
+        else if byte == ')' || byte == ']' || byte == '}'
+            depth @ depth - 1
+
+            if depth == 0
+                return ok(at)
+        at @ at + 1
+
+    return fail(code: "open", msg: "the bracket does not close")
+
+# `text` cut at each comma outside brackets, each part trimmed; nothing at all
+# is no part.
+function split_top(text: str) -> [str]
+    out: [str] @= []
+
+    if strings.trimmed(text).len() == 0
+        return out
+    depth: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        byte = text[at]
+
+        if byte == '(' || byte == '[' || byte == '{'
+            depth @ depth + 1
+        else if byte == ')' || byte == ']' || byte == '}'
+            depth @ depth - 1
+        else if byte == ',' && depth == 0
+            out @ out.push(strings.trimmed(text.slice(from: start, to: at)))
+            start @ at + 1
+        at @ at + 1
+
+    return out.push(strings.trimmed(text.slice(from: start, to: text.len())))
+
+## Tests
+
+test "a face is read: its doc, its records with their fields, its functions with their parameters"
+    text = "# Text, taken apart. More.\n\nuse core/strings/internal/scan\n\n# A pair. Of halves.\nrecord Halves\n    before: str\n    # a comment inside\n    after: str\n\n# Whether it begins.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# Swaps.\nfunction swap<A>(@a: A, b: A lent)\n    _ = 0\n"
+    face = face_of(path: "strings", text: text)
+    assert face.binding == "strings"
+    assert face.said == "Text, taken apart."
+    assert face.uses == ["use core/strings/internal/scan"]
+    assert face.refused.len() == 0
+    assert face.shapes.len() == 1
+    assert face.shapes[0].name == "Halves" && face.shapes[0].said == "A pair."
+    assert face.shapes[0].fields.len() == 2
+    assert face.shapes[0].fields[1].name == "after" && face.shapes[0].fields[1].ty == "str"
+    assert face.callables.len() == 2
+    first = face.callables[0]
+    assert first.written == "has_prefix(s: str, prefix: str) -> bool"
+    assert first.result == "bool" && first.said == "Whether it begins."
+    assert first.params[1].name == "prefix" && first.params[1].ty == "str"
+    second = face.callables[1]
+    assert second.generics == "<A>" && second.result == ""
+    assert second.params[0].mutable && second.params[0].ty == "A"
+    assert second.params[1].lent && second.params[1].ty == "A"
+
+test "a parameter's type keeps its brackets and its commas whole"
+    assert split_top("xs: [A], f: (function(from: str, to: str) -> ()), m: {str: [i64]}") == ["xs: [A]", "f: (function(from: str, to: str) -> ())", "m: {str: [i64]}"]
+    assert split_top("").len() == 0
+    assert binding_of("net/http") == "http"
+
+test "what the form has no line for is refused by name, and so is what cannot be read"
+    face = face_of(
+        path: "x",
+        text: "# X.\n\nconstant MOST: i64\n    3\n\nvariant Shape\n    dot\n\nfunction f(a: i64,\n\nfunction g(_: i64)\n    _ = 0\n\nfunction h() -> i64\n    return 1\n"
+    )
+    assert face.refused.len() == 5
+    assert strings.contains(
+        text: face.refused[0],
+        needle: "line 3: `constant MOST: i64`, and a card has a line for a `str` constant naming a code alone"
+    )
+    assert strings.contains(text: face.refused[1], needle: "a card has no line for a variant yet")
+    assert strings.contains(text: face.refused[2], needle: "do not close on its line")
+    assert strings.contains(text: face.refused[3], needle: "no name a call can write")
+    assert face.refused[4] == "`function h` has no doc, whose first sentence its card line writes"
+    assert face_of(path: "y", text: "# Documents f.\nfunction f()\n    _ = 0\n").refused[0] == "the module has no doc, whose first sentence a card opens with"

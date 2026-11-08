@@ -134,7 +134,7 @@ function counted(text: str) -> Count
         if b == '\n'
             lines @ lines + 1
 
-        if is_space(b)
+        if separates_words(b)
             inside @ false
         else
             if !inside
@@ -144,7 +144,10 @@ function counted(text: str) -> Count
 
     return Count(lines: lines, words: words, bytes: text.len())
 
-function is_space(b: u8) -> bool
+# Whether `b` is one of the bytes that separate words here: a space, a tab, a
+# line feed or a carriage return. A rule of this program's own, written as a
+# comparison because it names its own set.
+function separates_words(b: u8) -> bool
     return b == ' ' || b == '\t' || b == '\n' || b == 13
 
 function shown(c: Count) -> str

@@ -1,0 +1,1 @@
+add evil --index file://../../../../../tests/golden/fetch/add-a-hostile-listing.case/idx -C <work>/app

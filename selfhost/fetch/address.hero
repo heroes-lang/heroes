@@ -1,0 +1,267 @@
+# Where a package may come from: an address judged as the catalogue or the
+# command line writes it, before any program reads it (panel 235's R9, its C4,
+# ratified 2026-11-07 with the coordinator's ruling of that day; R10). Every
+# source on the network is `https://`; `file://` names only a path inside the
+# program's own repository, the one git answers for the program's folder, so a
+# catalogue cannot aim a fetch at a file elsewhere on the machine; every other
+# address is refused, and the verb tells the refusal at the line that wrote it
+# (`fetch/told.hero`).
+#
+# **An address is judged by what it is, never by what a tool would make of
+# it.** `git` reads `ext::<command>` as a command to run and `git@host:path` as
+# ssh, and `curl` reads a `[1-3]` in an address as three files and a `#` as the
+# end of its path; so two shapes are admitted and every other is refused by
+# name (`fetch/scheme_told.hero` says what each looks like), and what is handed
+# on is an address neither tool reads two ways (`fetch/url_bytes.hero`).
+#
+# **A relative `file://` path is the program folder's**, `file://./index` or
+# `file://../shared/index`, so a catalogue a repository commits names one
+# folder on every machine. curl has no such form (`file://./x` is its exit 3,
+# *Bad file:// URL*, measured 2026-11-08 with curl 8.7.1), so the path is made
+# absolute here from the folder git names, and handed on so
+# (`fetch/local_path.hero`). `file://host/x` is refused rather than read: RFC
+# 8089 reads `host` as a machine and a relative reading would read it as a
+# folder, and an address read two ways is the class this file refuses.
+
+use fetch/local_path
+use fetch/scheme_told
+use fetch/url_bytes
+use cli/strings
+
+# One address judged.
+record Address
+    # As it was written, which every message quotes.
+    written: str
+
+    # What `git` or `curl` is handed: an `https://` address as written, a
+    # `file://` one absolute and percent-encoded.
+    url: str
+
+    # The absolute path a `file://` address names, and "" for one on the
+    # network.
+    local: str
+
+# The program's place in its repository, both paths absolute as git answers
+# them: the repository's root and the program's own folder. Both are "" for a
+# program outside every repository, which has no `file://` source, and `why`
+# is then git's own words for it.
+record Root
+    top: str
+    here: str
+    why: str
+
+# The code every refusal here carries.
+constant REFUSED: str
+    "source_refused"
+
+# What a root that could not be asked says, `git` not being on the machine:
+# an index over `https://` needs `curl` alone (R10), so the verbs go on
+# without a root, and a `file://` source, which only the root admits, is
+# refused as the tool's, exit 2.
+constant NO_GIT: str
+    "git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH"
+
+# `written` judged for a program standing at `root`.
+function judged(written: str, root: Root) -> Address?
+    if written.len() == 0
+        return refused("an empty address names no source: " + scheme_told.SHAPES)
+    odd = url_bytes.first_unplain(written)
+
+    if odd >= 0
+        return refused(
+            "`" + url_bytes.shown(written) + "` holds " + url_bytes.byte_said(written, at: odd) + " at byte " + (odd + 1).to_str() + ", and an address is ASCII with no space or control character, anything else percent-encoded (`%20` for a space)"
+        )
+
+    if strings.starts_with(text: written, prefix: "https://")
+        return on_network(written)
+
+    if strings.starts_with(text: written, prefix: "file://")
+        return on_machine(written, root: root)
+    return refused(scheme_told.other(written))
+
+# The failure every refusal is.
+function refused(said: str) -> Address?
+    return fail(code: REFUSED, msg: said)
+
+# An `https://` address: a host, a port if one is written, and a path of the
+# bytes RFC 3986 lets a path hold. No account and no password, since a
+# catalogue is a shared file and git's own credential helper holds those; no
+# query and no fragment, which name no repository or index here.
+function on_network(written: str) -> Address?
+    rest = written.slice(from: 8, to: written.len())
+    end: i64 @= 0
+
+    while end < rest.len() && rest[end] != '/'
+        end @ end + 1
+
+    authority = rest.slice(from: 0, to: end)
+
+    if strings.holds(text: authority, needle: "@")
+        return refused(
+            "`" + written + "` names an account: a catalogue is shared, so it holds no account and no password, and git's credential helper is where they live"
+        )
+    host = url_bytes.host_said(authority)
+
+    if host.len() > 0
+        return refused("`" + written + "` " + host + ": " + scheme_told.SHAPES)
+    path = url_bytes.path_said(rest.slice(from: end, to: rest.len()))
+
+    if path.len() > 0
+        return refused("`" + written + "` " + path)
+    return ok(Address(written: written, url: written, local: ""))
+
+# A `file://` address: an absolute path, `file:///…`, or one from the
+# program's folder, `file://./…` or `file://../…`, inside the program's own
+# repository and through no link below its root.
+function on_machine(written: str, root: Root) -> Address?
+    rest = written.slice(from: 7, to: written.len())
+    relative = rest == "." || rest == ".." || strings.starts_with(text: rest, prefix: "./") || strings.starts_with(text: rest, prefix: "../")
+
+    if !relative && !strings.starts_with(text: rest, prefix: "/")
+        return refused(
+            "`" + written + "` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./" + rest + "`, and an absolute one `file:///` and the path"
+        )
+    wrong = url_bytes.path_said(rest)
+
+    if wrong.len() > 0
+        return refused("`" + written + "` " + wrong)
+    path = url_bytes.decoded(rest)
+
+    if path.is_err()
+        return refused("`" + written + "` " + reason(path))
+
+    if root.top.len() == 0 && root.why == NO_GIT
+        return fail(code: "no_git", msg: "`" + written + "` cannot be read: " + NO_GIT)
+
+    if root.top.len() == 0
+        return refused(
+            "`" + written + "` is read only from inside the program's own repository, and the program's folder is in none: " + root.why
+        )
+    whole: str @= path.must()
+
+    if relative
+        whole @ root.here + "/" + whole
+    else if local_path.drive_lettered(whole.slice(from: 1, to: whole.len()))
+        whole @ whole.slice(from: 1, to: whole.len())
+    made = local_path.normalised(whole)
+
+    if made.is_err()
+        return refused("`" + written + "` " + reason(made))
+
+    if !local_path.within(path: made.must(), top: root.top)
+        return refused(
+            "`" + written + "` names `" + made.must() + "`, outside the program's own repository `" + root.top + "`, which is where a `file://` source is read from"
+        )
+    link = local_path.linked_part(path: made.must(), top: root.top)
+
+    if link.len() > 0
+        return refused(
+            "`" + written + "` reaches its folder through the link `" + link + "`, and a `file://` source is read through no link, which could name a place outside the program's repository"
+        )
+    return ok(Address(written: written, url: local_path.url_of(made.must()), local: made.must()))
+
+# The address of the file `inside` names under `base`, an index's folder or
+# address: its path percent-encoded after the base's own.
+function under(base: Address, inside: str) -> Address
+    slash: str @= "/"
+
+    if strings.ends_with(text: base.url, suffix: "/")
+        slash @ ""
+    path: str @= ""
+
+    if base.local.len() > 0
+        path @ base.local + "/" + inside
+    return Address(written: base.written, url: base.url + slash + url_bytes.encoded(inside), local: path)
+
+function reason(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+## Tests
+
+# A program at `/nowhere/repo/app`: no folder there exists, so no part of a
+# path under it is a link, and the judge's answers are asked of the text.
+function nowhere() -> Root
+    return Root(top: "/nowhere/repo", here: "/nowhere/repo/app", why: "")
+
+test "an https address is handed on as written, and an address with an account, a query or a byte no address holds is refused"
+    for good in ["https://github.com/acme/json", "https://github.com/acme/json.git", "https://index.heroes-lang.org/", "https://h:8443/a/b", "https://[::1]/x", "https://h/a%20b"]
+        got = judged(good, root: nowhere()).must()
+        assert got.url == good
+        assert got.local == ""
+
+    for bad in ["https://", "https://user:secret@github.com/acme/json", "https://github.com/acme/json?ref=v1", "https://github.com/acme/json#v1", "https://exa mple.com/x", "https://h:99999/x", "https://h/a\nb"]
+        match judged(bad, root: nowhere())
+            .ok _  => assert false
+            .err e => assert e.code == REFUSED
+
+    match judged("https://user:secret@github.com/acme/json", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "`https://user:secret@github.com/acme/json` names an account: a catalogue is shared, so it holds no account and no password, and git's credential helper is where they live"
+
+    # A line break in an address reaches no terminal as itself.
+    match judged("https://h/a\nb", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "`https://h/a<0x0A>b` holds the control character <0x0A> at byte 12, and an address is ASCII with no space or control character, anything else percent-encoded (`%20` for a space)"
+
+test "a file address is a path from the program's folder or an absolute one inside its repository, and every other shape is refused"
+    relative = judged("file://../idx/./json", root: nowhere()).must()
+    assert relative.local == "/nowhere/repo/idx/json"
+    assert relative.url == "file:///nowhere/repo/idx/json"
+    here = judged("file://.", root: nowhere()).must()
+    assert here.local == "/nowhere/repo/app"
+    absolute = judged("file:///nowhere/repo/a%20b", root: nowhere()).must()
+    assert absolute.local == "/nowhere/repo/a b"
+    assert absolute.url == "file:///nowhere/repo/a%20b"
+
+    match judged("file://../../elsewhere", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "`file://../../elsewhere` names `/nowhere/elsewhere`, outside the program's own repository `/nowhere/repo`, which is where a `file://` source is read from"
+
+    match judged("file://localhost/nowhere/repo/x", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "`file://localhost/nowhere/repo/x` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./localhost/nowhere/repo/x`, and an absolute one `file:///` and the path"
+
+    # A catalogue's reader admits any text after the scheme; a relative path
+    # is told the form that names it.
+    match judged("file://packages/yaml", root: nowhere())
+        .ok _  => assert false
+        .err e => assert strings.holds(
+            text: e.msg,
+            needle: "a path from the program's folder is `file://./packages/yaml`"
+        )
+
+    match judged("file:///../../..", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "`file:///../../..` climbs above the root of the machine's folders with `..`"
+
+    match judged("file:///nowhere/repo/%0A", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "`file:///nowhere/repo/%0A` writes a control character, `%0A`, which no folder's name holds"
+
+    outside = Root(top: "", here: "", why: "git said: not a git repository")
+
+    match judged("file://./x", root: outside)
+        .ok _  => assert false
+        .err e => assert e.msg == "`file://./x` is read only from inside the program's own repository, and the program's folder is in none: git said: not a git repository"
+
+test "an address of no scheme this command reads is refused, told what it looks like"
+    for bad in ["", "http://h/x", "ssh://h/x", "git@h:x/y.git", "ext::sh -c x", "../json", "HTTPS://h/x", "ftp://h/x"]
+        match judged(bad, root: nowhere())
+            .ok _  => assert false
+            .err e => assert e.code == REFUSED
+
+    match judged("", root: nowhere())
+        .ok _  => assert false
+        .err e => assert e.msg == "an empty address names no source: " + scheme_told.SHAPES
+
+test "a file under an index's address is joined part by part, percent-encoded"
+    base = Address(written: "https://h/idx", url: "https://h/idx", local: "")
+    assert under(base, inside: "json/1.0.0/files/a b.hero").url == "https://h/idx/json/1.0.0/files/a%20b.hero"
+    slashed = Address(written: "https://h/idx/", url: "https://h/idx/", local: "")
+    assert under(slashed, inside: "json/versions").url == "https://h/idx/json/versions"
+    folder = Address(written: "file://./idx", url: "file:///r/idx", local: "/r/idx")
+    joined = under(folder, inside: "json/versions")
+    assert joined.url == "file:///r/idx/json/versions"
+    assert joined.local == "/r/idx/json/versions"
