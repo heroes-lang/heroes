@@ -151,7 +151,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
 
         # A fetched package's unit searches its own root and none of the
         # program's folders (panel 235's R9, its C1; defect 2351).
-        under = settled.unit_under(t, options, site, s: s, plan: plan)
+        under = settled.unit_under(t, options, site, s: s, decls: art.decls, plan: plan)
         made = units.tu_object(
             t,
             module: component,
@@ -185,7 +185,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         else
             objects @ objects.push(made.must())
             asked @ asked.push(
-                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, s: s, plan: plan), defined: plan.mine.defined, cut: false, reads: made.must())
+                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, s: s, decls: art.decls, plan: plan), defined: plan.mine.defined, cut: false, reads: made.must())
             )
         at @ at + 1
 
@@ -205,7 +205,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
                 version: site.version,
                 sources: site.sources,
                 is_root: plan.module == root,
-                words: settled.probe_words(t, options, site, s: s, plan: plan),
+                words: settled.probe_words(t, options, site, s: s, decls: art.decls, plan: plan),
                 reads: refused_reads[index]
             )
 

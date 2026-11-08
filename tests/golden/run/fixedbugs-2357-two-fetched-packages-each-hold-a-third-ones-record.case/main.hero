@@ -1,0 +1,13 @@
+# fixedbugs, defect 2357, lane b25-pkgc, 2026-11-08.
+#
+# Two fetched packages, `a` and `c`, each holding a third one's group record
+# by value, `pt.Point`. Each package's unit searches the runtime, its own
+# folder, then the folder of the package whose record it reaches (the
+# coordinator's ruling), and what it reads there is held where a package may
+# read (panel 235's R9, its C2): until the repair neither found `pt.h`.
+use <a>/sum
+use <c>/product
+
+function main()
+    print(sum.sum())
+    print(product.product())

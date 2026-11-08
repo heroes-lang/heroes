@@ -1,0 +1,11 @@
+# The package `pt` of the case two folders up, as `heroes fetch` places it: a
+# group record of the header it ships, and the function that builds one
+# (defect 2357).
+extern "pt.h"
+    record Point tag pt_point
+        x: i64
+        y: i64
+    function pt_make(x: i64, y: i64) -> Point
+
+function make(x: i64, y: i64) -> Point
+    return pt_make(x: x, y: y)

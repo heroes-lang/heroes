@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2357, lane b25-pkgc, 2026-11-08.
+#
+# A fetched package shipping a `stdint.h` of its own, which reads the C
+# library's and redefines `INT64_MAX` as 7. A package's folder is searched
+# before the system's, by its own units and by every unit reaching its
+# records, so its file stood in for the library's: `PK_TOP`, bound as
+# `INT64_MAX`, printed 7 at exit 0 (measured on this Mac after defect 2351).
+# Panel 237's tree route now asks every search the program's does not make,
+# and its note names the package as who named the folder.
+use <pk>/pk
+
+function main()
+    print(pk.top())

@@ -29,10 +29,20 @@
 # **A `path` entry is the author's own code** (panel 235's R6, *the author's
 # own source while a package is developed*; its C1, C2 and C5 *tell a
 # fetched unit apart*): its units keep the program's words, the program's
-# folders and `--include` among them, as the program's own modules and the
-# library do. Its headers resolve as the program's do, so a folder it names
-# beside its modules is found by `--include` or by a path from the program's
-# root, and its constants are read by panel 216's probe.
+# folders and `--include` among them, and panel 216's probe, as the program's
+# own modules and the library do, and **search its own folder after them**
+# (defect 2357): until then a `path` package binding the header beside its
+# modules was refused `ffi_missing_header` unless `--include` named its folder.
+#
+# **A unit that reaches another package's group record searches that
+# package's folder after its own route** (defect 2357, the coordinator's
+# ruling): it spells the record's C type, so it includes the header the
+# package's group names, which no folder of its own holds. Until then a
+# program holding `pt.Point` by value was refused `ffi_missing_header` at the
+# package's line unless `--include` named the package's folder. A file of the
+# unit's own folders standing in for that header, found first, is refused
+# before anything compiles (`cli/package_stand_in.hero`), as is a file of a
+# package's folder standing in for a header of the C library or the runtime.
 
 use ast
 use source
@@ -40,6 +50,8 @@ use diag
 use token
 use bytes
 use module/placed
+use emit/unit_plan
+use emit/externs as emit_externs
 use cli/compiling
 use cli/digest
 use cli/order_trial
@@ -50,46 +62,117 @@ use cli/response_file
 use cli/strings
 use cli/deps
 
-# The root a fetched package's module compiled to `component` searches, as
-# files are opened, with no `/` at its end; absent for a module of the
-# program's own, of the library and of a `path` entry, which keep the
-# program's words.
-function root_of(s: source.Source, component: str) -> str?
+# Where a module's package lives: the folder its files are opened from, with
+# no `/` at its end, `""` for a module of the program's own or of the
+# library; the program's alias for the package; and whether a fetch placed
+# it, `false` for a `path` entry's folder, the author's own.
+record Place
+    folder: str
+    alias: str
+    fetched: bool
+
+# A header a unit reaches through another package's group record, and that
+# package's place: the file must be the one in its folder.
+record Reach
+    place: Place
+    header: str
+
+function place_of(s: source.Source, component: str) -> Place
     for entry in s.files
         if entry.component == component && !entry.is_library && placed.is_package(entry.module)
             alias = placed.entry_of(entry.module)
 
             for p in s.reached.packages
-                if p.alias == alias && !p.unverified
-                    return ok(without_slash(p.opened))
+                if p.alias == alias
+                    return Place(folder: without_slash(p.opened), alias: alias, fetched: !p.unverified)
 
-            return fail(code: "own", msg: "a `path` entry's module, the author's own")
+            return Place(folder: "", alias: alias, fetched: false)
 
-    return fail(code: "own", msg: "a module of the program's own")
+    return Place(folder: "", alias: "", fetched: false)
 
-# What the unit of `component` compiles under: `under`, the program's, for a
-# module of its own, and its package's for a fetched package's (C1).
-function unit_under(under: compiling.Compiling, s: source.Source, component: str) -> compiling.Compiling
-    root = root_of(s, component)
+# The root a fetched package's module compiled to `component` searches;
+# absent for a module of the program's own, of the library and of a `path`
+# entry, which keep the program's words and its probe.
+function root_of(s: source.Source, component: str) -> str?
+    place = place_of(s, component)
 
-    if root.is_err()
+    if !place.fetched
+        return fail(code: "own", msg: "a module of the program's own or of a `path` entry")
+    return ok(place.folder)
+
+# Each header `plan`'s unit reads for a group record of another package's,
+# with that package's place, once each and in the declarations' order: the
+# records it spells (`unit_plan.Plan.records`) whose module is a package's
+# other than its own.
+function reached_of(s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan) -> [Reach]
+    own = place_of(s, plan.module)
+    out: [Reach] @= []
+
+    # ORDER: by declaration index, the order the program wrote them.
+    for decl in sort(keys(plan.records))
+        p = place_of(s, source.component_at(s, decls[decl].name.start))
+        header: token.Span? @= fail(code: "none", msg: "no header")
+
+        match decls[decl].kind
+            .record_decl rec                                             => header @ rec.header
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+        if p.folder.len() > 0 && p.folder != own.folder && !header.is_err()
+            one = Reach(place: p, header: emit_externs.unquoted(s, span: header.must()))
+
+            if !holds(out, one)
+                out @ out.push(one)
+
+    return out
+
+function holds(found: [Reach], one: Reach) -> bool
+    for other in found
+        if other.place.folder == one.place.folder && other.header == one.header
+            return true
+
+    return false
+
+# What the unit of `plan` compiles under, `under` being the program's for its
+# headers' packages: a fetched package's own (C1); and after its own route, a
+# `path` entry's folder where it is one's, then the folder of each package
+# whose group record it reaches (defect 2357).
+function unit_under(under: compiling.Compiling, s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan) -> compiling.Compiling
+    own = place_of(s, plan.module)
+    base: compiling.Compiling @= under
+    after: [str] @= []
+
+    if own.fetched
+        base @ compiling.of_package(under, root: own.folder)
+    else if own.folder.len() > 0
+        after @ after.push(own.folder)
+
+    for one in reached_of(s, decls, plan)
+        if !strings_hold(after, one: one.place.folder)
+            after @ after.push(one.place.folder)
+
+    return searching_after(base, folders: after)
+
+function strings_hold(list: [str], one: str) -> bool
+    for item in list
+        if item == one
+            return true
+
+    return false
+
+# `under` with `folders` searched after its own route, in their order: its
+# own folder, which a search names last (`compiling.search_words`), becomes
+# an `-I` word before them, so each is searched after it and before the
+# system's places.
+function searching_after(under: compiling.Compiling, folders: [str]) -> compiling.Compiling
+    if folders.len() == 0
         return under
-    return compiling.of_package(under, root: root.must())
-
-# What the one file `--emit-c` writes is asked under (`cli/one_file.hero`):
-# the program's words, then the root of every fetched package the program
-# reaches, each after the program's own places, so a package's header the one
-# file reads is found where its unit finds it and none stands ahead of one of
-# the program's.
-function with_roots(under: compiling.Compiling, s: source.Source) -> compiling.Compiling
     words: [str] @= under.package_flags
 
     if under.source_dir.len() > 0
         words @ words.push("-I" + under.source_dir)
 
-    for p in s.reached.packages
-        if !p.unverified && p.problem.len() == 0
-            words @ words.push("-I" + without_slash(p.opened))
+    for folder in folders
+        words @ words.push("-I" + folder)
 
     return compiling.Compiling(
         level: under.level,
@@ -100,12 +183,28 @@ function with_roots(under: compiling.Compiling, s: source.Source) -> compiling.C
         source_dir: ""
     )
 
+# What the one file `--emit-c` writes is asked under (`cli/one_file.hero`):
+# the program's words, then the folder of every package the program reaches,
+# fetched or a `path` entry's, each after the program's own places, so a
+# package's header the one file reads is found where its unit finds it and
+# none stands ahead of one of the program's.
+function with_roots(under: compiling.Compiling, s: source.Source) -> compiling.Compiling
+    folders: [str] @= []
+
+    for p in s.reached.packages
+        if p.problem.len() == 0
+            folders @ folders.push(without_slash(p.opened))
+
+    return searching_after(under, folders: folders)
+
 # C2's verdict on a fetched package's unit whose headers are `headers`, under
-# `under`, its own (`unit_under`): the lines its probes open with and its
-# unit's opening, each listed by `clang -M` and judged, before any of them
-# compiles. A listing clang could not make fails `unread`, its message the
-# header clang did not find there, or `""`.
-function reached(build: str, under: compiling.Compiling, headers: [str], @memo: {str: str}) -> ()?
+# `under`, its own (`unit_under`), `root` the package's: the lines its probes
+# open with and its unit's opening, each listed by `clang -M` and judged,
+# before any of them compiles; a folder its words search, another package's
+# whose record it reaches among them, is one it may read. A listing clang
+# could not make fails `unread`, its message the header clang did not find
+# there, or `""`.
+function read_within(build: str, under: compiling.Compiling, root: str, headers: [str], @memo: {str: str}) -> ()?
     words = compiling.probe_words(under)
 
     for text in [compiling.include_lines(headers), order_trial.opening(headers, question: "")]
@@ -113,7 +212,7 @@ function reached(build: str, under: compiling.Compiling, headers: [str], @memo: 
 
         if listing.is_err()
             return fail(code: "unread", msg: missing(build: build, words: words, text: text))
-        compiling.within_root(build: build, under: under, listing: listing)?
+        compiling.within_root(build: build, under: under, root: root, listing: listing)?
 
     return ok()
 

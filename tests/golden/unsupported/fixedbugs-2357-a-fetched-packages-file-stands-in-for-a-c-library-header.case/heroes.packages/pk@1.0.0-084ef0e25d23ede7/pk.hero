@@ -1,0 +1,7 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places it: a
+# constant of the header it ships, which reads `<stdint.h>` (defect 2357).
+extern "pk.h"
+    constant PK_TOP: i64
+
+function top() -> i64
+    return PK_TOP

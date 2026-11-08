@@ -1,0 +1,5 @@
+# The catalogue of the package `a`: the package `pt`, as the program lists it.
+
+[dependencies.pt]
+version = "1.0.0"
+sum = "sha256-d256e15f53949e95139203735f1702530ad4b0a8cdab919063120100f7cf5db7"

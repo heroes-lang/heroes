@@ -1,0 +1,13 @@
+# Defect 2357, lane b25-pkgc, 2026-11-08: a surface fixture rather than a
+# `run` case, since every build of a `path` entry says so on stderr (R6).
+#
+# A `path` entry, a folder of the author's own (panel 235's R6), whose module
+# binds the header beside it and holds a fetched package's record by value.
+# Its units keep the program's route and panel 216's probe, the author's own
+# code, and search its own folder after that route, then the folder of the
+# package whose record it reaches (the coordinator's ruling): until the
+# repair `loc.h` was not found unless `--include` named the folder.
+use <loc>/loc
+
+function main()
+    print(loc.v())

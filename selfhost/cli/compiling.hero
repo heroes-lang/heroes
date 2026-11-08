@@ -137,14 +137,17 @@ function of_package(under: Compiling, root: str) -> Compiling
 # **What a fetched package's unit read lies where a package may read** (panel
 # 235's R9, its C2; `cli/package_reads.hero`): `listing` is a `-M` listing
 # its words made, a probe's (`reads`) or its opening's (`unit_reach`), judged
-# before anything compiles; `under` is the unit's own (`of_package`), its
-# `source_dir` the package's root. The toolchain's own directories are asked
-# of clang under the unit's flags and no search word.
-function within_root(build: str, under: Compiling, listing: str?) -> ()?
+# before anything compiles; `under` is the unit's own (`of_package`) and
+# `root` the package's, which `under` searches as its own folder or, where
+# the unit reaches another package's header, among its `-I` words with that
+# package's after it (`package_units.unit_under`, defect 2357), each of them
+# a folder it may read. The toolchain's own directories are asked of clang
+# under the unit's flags and no search word.
+function within_root(build: str, under: Compiling, root: str, listing: str?) -> ()?
     own = package_reads.toolchain_own(build: build, words: flags.level_words(level: under.level, sanitize: under.sanitize))?
     return package_reads.judged(
         own: own,
-        root: under.source_dir,
+        root: root,
         runtime: under.runtime,
         package_flags: libraries.compile_flags(under.package_flags),
         listing: listing
@@ -472,7 +475,7 @@ test "a fetched package's unit reads its own header and the runtime's, never the
     assert !strings.holds(text: listed, needle: root + "/inc/")
     assert !strings.holds(text: listed, needle: root + "/src/")
     assert !strings.holds(text: listed, needle: root + "/pkg/vec/heroes_standard.h")
-    assert !within_root(build: root + "/build", under: unit, listing: read).is_err()
+    assert !within_root(build: root + "/build", under: unit, root: root + "/pkg/vec", listing: read).is_err()
 
     # The same opening as a unit of the program reads the program's header.
     assert reads_text(
@@ -521,7 +524,7 @@ test "a fetched package's header that reads a file outside its root is refused w
             text: order_trial.opening([pair[0]], question: ""),
             @memo
         )
-        said = within_root(build: root + "/build", under: unit, listing: read)
+        said = within_root(build: root + "/build", under: unit, root: root + "/pkg/vec", listing: read)
         assert said.is_err()
 
         code = match said
@@ -540,7 +543,7 @@ test "a fetched package's header that reads a file outside its root is refused w
         text: order_trial.opening(["clean.h"], question: ""),
         @memo
     )
-    assert !within_root(build: root + "/build", under: unit, listing: clean).is_err()
+    assert !within_root(build: root + "/build", under: unit, root: root + "/pkg/vec", listing: clean).is_err()
     assert !process.remove_tree(root).is_err()
 
 # **A unit and a probe compile under one list** (defects 163 and 167): a

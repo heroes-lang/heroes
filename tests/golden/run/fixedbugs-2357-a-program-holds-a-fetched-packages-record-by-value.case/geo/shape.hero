@@ -1,0 +1,8 @@
+# A module of the program's own in a folder of its own, holding the package
+# `pt`'s record by value too: its unit spells `pt_point`, so it reads `pt.h`
+# from the package's folder, searched after the program's (defect 2357).
+use <pt>/pt
+
+function sum() -> i64
+    p: pt.Point = pt.make(x: 5, y: 6)
+    return p.x + p.y
