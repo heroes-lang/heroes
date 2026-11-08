@@ -59,6 +59,7 @@ use check/table
 use check/lower
 use check/ffi_buffer
 use ffi_errors
+use diag
 use digits
 use widths
 use parse
@@ -213,9 +214,16 @@ function declared_lends(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
         # a `const` pointer (panel 217's R3, `read_lend.hero`).
         if param.mutable || group_record(c, decls, param)
             continue
+        deleted: token.Span? @= fail(code: "kept", msg: "no deletion alone repairs it")
 
         if group_handle(c, decls, param)
             why @ "`" + param_name + "` is a handle, the pointer itself, which C receives by value, so nothing is lent — only a `cstr`, a `ptr` or a group's record that is no handle is lent without `@`"
+
+            # On a handle the word is the whole defect: nothing read it, so
+            # deleting it changes no meaning (panel 237's R7, defect 2347).
+            # A number or a `ptr` keeps no fix: its message offers `@` or
+            # `counted_by` beside the deletion, so no one repair is certain.
+            deleted @ param.lent_word
         else if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
             why @ "`" + param_name + "` is not a `cstr`, a `ptr` or a group's record, and only those are lent without `@`"
         else if is_ptr(c, param.ty) && param.counted_by.is_err()
@@ -224,7 +232,7 @@ function declared_lends(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
         if why != ""
             state.push_diagnostic(
                 @c,
-                ffi_errors.lent_shape(parameter: param_name, function_name: source.span_text(s, declared_name), why: why, span: param.name)
+                ffi_errors.lent_shape(parameter: param_name, function_name: source.span_text(s, declared_name), why: why, text: s.text, word: deleted, span: param.name)
             )
 
 # A group's record lent whole: an `@` parameter whose type is a record of a
@@ -291,7 +299,8 @@ function integer_count(c: state.Checker, param: ast.Param) -> bool
 # one is imported by it, so a `use checker` here would be a module cycle the
 # language refuses outright. The lowering loop is not decoration —
 # `declared_extents` reads `written_types`, and `lower_ty` is what fills it.
-function shape_refusals(text: str) -> i64
+# `declared_lends` is asked beside it, as `check/ffi.hero` asks both.
+function judged(text: str) -> [diag.Diagnostic]
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
@@ -308,12 +317,16 @@ function shape_refusals(text: str) -> i64
                 if fd.value.is_extern
                     none: {i64: bool} = {}
                     declared_extents(@c, p.tree, s, p.decls, f: fd.value, declared_name: decl.name, refused: none)
+                    declared_lends(@c, s, p.decls, f: fd.value, declared_name: decl.name)
             .constant_decl | .record_decl | .variant_decl | .test_decl =>
                 _ = 0
 
+    return c.out.diagnostics
+
+function shape_refusals(text: str) -> i64
     n: i64 @= 0
 
-    for d in c.out.diagnostics
+    for d in judged(text)
         if d.code == "counted_by_shape"
             n @ n + 1
 
@@ -352,3 +365,42 @@ test "a stated extent is a number of at least one or an integer constant of the 
     assert shape_refusals(group + "    function f(p: ptr counted_by SCALE)\n" + tail) == 1
     assert shape_refusals(group + "    function f(p: ptr counted_by OTHER)\n" + other + tail) == 1
     assert shape_refusals(group + "    function f(p: ptr counted_by LEN, LEN: u64)\n" + tail) == 0
+
+# Panel 237's R7 (defect 2347): on a handle the word is the whole defect, and
+# its deletion, the word with its blank, is certain wherever the word stands;
+# the shapes beside it keep their reports with no fix, or are quiet. Each row:
+# the declarations, the text every `certain` fix leaves, how many reports.
+test "lent on a handle is deleted by a certain fix, and nowhere else is"
+    group = "extern \"s.h\"\n    record Db tag db\n    record Op tag void\n    record Pt tag pt\n        x: i32\n"
+    tail = "\nfunction main()\n    print(1)\n"
+    rows = [
+        ["    function f(db: Db lent) -> i32\n", "    function f(db: Db) -> i32\n", "1"]
+        ["    function f(db: Db lent consumes)\n", "    function f(db: Db consumes)\n", "1"]
+        ["    function f(db: Db consumes\tlent, o: Op lent)\n", "    function f(db: Db consumes, o: Op)\n", "2"]
+        ["    function f(\n        db: Db lent,\n        n: i32\n    )\n", "    function f(\n        db: Db,\n        n: i32\n    )\n", "1"]
+        ["    function f(n: i64 lent)\n", "    function f(n: i64 lent)\n", "1"]
+        ["    function f(p: ptr lent)\n", "    function f(p: ptr lent)\n", "1"]
+        ["    function f(@db: Db lent)\n", "    function f(@db: Db lent)\n", "0"]
+        ["    function f(p: Pt lent)\n", "    function f(p: Pt lent)\n", "0"]
+    ]
+
+    for row in rows
+        reports: [diag.Diagnostic] @= []
+
+        for d in judged(group + row[0] + tail)
+            if d.code == "lent_shape"
+                reports @ reports.push(d)
+
+        repaired: str @= group + row[0] + tail
+        k: i64 @= reports.len() - 1
+
+        # The last report first, so the earlier offsets hold.
+        while k >= 0
+            for fix in reports[k].fixes
+                assert fix.certainty == .certain && fix.replacement == ""
+                repaired @ repaired.slice(from: 0, to: fix.span.start) + repaired.slice(from: fix.span.end, to: repaired.len())
+
+            k @ k - 1
+
+        assert repaired == group + row[1] + tail
+        assert reports.len().to_str() == row[2]

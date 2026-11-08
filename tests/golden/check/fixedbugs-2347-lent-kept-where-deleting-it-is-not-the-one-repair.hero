@@ -1,0 +1,21 @@
+# Fixed defect 2347, 2026-11-08, panel 237's R7, the shapes beside it: the
+# `certain` fix deleting `lent` is a handle's alone. A number by value, a `ptr`
+# that declares no extent and a record that is no group's are refused
+# `lent_shape` as before and keep no fix, since their message offers another
+# repair beside the deletion (`@`, `counted_by <n> lent`, a group's record), so
+# no one repair is certain; the record's `ffi_type` stands as well. `--apply`
+# deletes the handle's word and leaves the three as they are.
+
+record Mine
+    x: i64
+
+extern "lent.h"
+    record Db tag db
+    function close(db: Db lent) -> i32  #~ lent_shape
+    function bump(n: i64 lent) -> i64  #~ lent_shape
+    function fill(buf: ptr lent, n: u64) -> i64  #~ lent_shape
+    #~v lent_shape ffi_type
+    function size(m: Mine lent) -> i64
+
+function main()
+    print(0)

@@ -125,7 +125,10 @@ function counted_by_shape(parameter: str, function_name: str, why: str, span: to
 # read on a by-value `cstr` or `ptr` — the two types a lend produces — and on
 # an `@` parameter since panel 196's R3; unread, it is refused, which is
 # `check/marks.hero`'s rule for the handle words applied to this one.
-function lent_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
+# `word`, where the caller holds one, is the word whose deletion alone repairs
+# it, on a handle (panel 237's R7, defect 2347): a `certain` fix takes it out
+# of `text` with its blank.
+function lent_shape(parameter: str, function_name: str, why: str, text: str, word: token.Span?, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lent_shape",
         message: "`lent` on `" + parameter + "` of `" + function_name + "` is a word nothing reads — " + why,
@@ -134,7 +137,31 @@ function lent_shape(parameter: str, function_name: str, why: str, span: token.Sp
     d.notes @ d.notes.push(
         "`lent` says the call keeps nothing of what it is handed, so a lend — `s.cstr()`, `f.ptr()` — may land on the parameter. It is read on a by-value `cstr` or `ptr`, and on an `@` parameter, where it says C keeps nothing of the address after the call, and nowhere else"
     )
+
+    if !word.is_err()
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "delete `lent`", replacement: "", span: word_taken_out(text, word: word.must()), certainty: .certain)
+        )
     return d
+
+# The text a fix deletes to take a word out of its line: the word and the
+# blanks before it, `db: Db lent consumes` reading `db: Db consumes`; or,
+# where the word opens its line, the word and the blanks after it, so no
+# line is joined to the one above and no comment swallows what follows.
+function word_taken_out(text: str, word: token.Span) -> token.Span
+    start: i64 @= word.start
+
+    while start > 0 && (text[start - 1] == ' ' || text[start - 1] == '\t')
+        start @ start - 1
+
+    if start > 0 && text[start - 1] != '\n'
+        return token.Span(start: start, end: word.end)
+    end: i64 @= word.end
+
+    while end < text.len() && (text[end] == ' ' || text[end] == '\t')
+        end @ end + 1
+
+    return token.Span(start: word.start, end: end)
 
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
@@ -345,3 +372,9 @@ test "a float key splits on is-a-float versus reaches-one"
     assert bare.message == "`f64` cannot be a map key, because it is a float"
     inside = float_map_key(key: "Reading", reached: "Reading.value", span: span)
     assert inside.message == "`Reading` cannot be a map key, because `Reading.value` is a float"
+
+test "a word is taken out with the blanks before it, or after it where it opens its line"
+    assert word_taken_out("a lent b", word: token.Span(start: 2, end: 6)) == token.Span(start: 1, end: 6)
+    assert word_taken_out("a \t lent)", word: token.Span(start: 4, end: 8)) == token.Span(start: 1, end: 8)
+    assert word_taken_out("a\n    lent  )", word: token.Span(start: 6, end: 10)) == token.Span(start: 6, end: 12)
+    assert word_taken_out("a\nlent", word: token.Span(start: 2, end: 6)) == token.Span(start: 2, end: 6)

@@ -414,6 +414,9 @@ record Param
     # `s: cstr lent` — the call KEEPS NOTHING of what it is handed, so a lend
     # may land here; absent, C is assumed to keep it (panel 171).
     lent: bool
+    # Where that word stands, held exactly when `lent` is true: a fix that
+    # deletes it points at the word written (defect 2347, `owned`'s reason).
+    lent_word: token.Span?
 
 # A record field, or a variant case's payload field. Fields carry doc comments
 # of their own — §4.1's adjacency rule is about declarations, and a field is
@@ -643,7 +646,7 @@ test "a declaration owns its members directly, no arena"
     generics: [token.Span] = []
     unowned: token.Span? = fail(code: "none", msg: "not owned")
     ps: [Param] = [
-        Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false, acquires: unowned, transfers: unowned, retains: unowned, borrows: false, counted_by: unowned, lent: false)
+        Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false, acquires: unowned, transfers: unowned, retains: unowned, borrows: false, counted_by: unowned, lent: false, lent_word: unowned)
     ]
     doc: [token.Span] = []
     f = FunctionDecl(

@@ -124,7 +124,7 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
                     holder: "`" + cursor.slice_of(text, name) + "`"
                 )
                 out @ out.push(
-                    ast.Param(name: name, ty: ty, mutable: mutable, owned: m.owned, consumes: m.consumes, acquires: m.acquires, transfers: m.transfers, retains: m.retains, borrows: m.borrows, counted_by: m.counted_by, lent: m.lent)
+                    ast.Param(name: name, ty: ty, mutable: mutable, owned: m.owned, consumes: m.consumes, acquires: m.acquires, transfers: m.transfers, retains: m.retains, borrows: m.borrows, counted_by: m.counted_by, lent: !m.lent.is_err(), lent_word: m.lent)
                 )
 
                 if open_ended && unclosed.ends_at_the_line(c)
@@ -158,10 +158,11 @@ function opens_a_parameter(c: cursor.Cursor) -> bool
 # parameter's eight, or a result's five, in one record the callers copy into
 # the tree. A `Span?` is the payload's span where the word carries one (the
 # freer, the extent, the releaser set, the success value) and a `bool` where
-# it is bare, exactly as `ast.Param` and `ast.FunctionDecl` keep them.
+# it is bare, exactly as `ast.Param` and `ast.FunctionDecl` keep them; bare
+# `lent` alone keeps the word's own span, which `ast.Param` keeps as well.
 record Marks
     counted_by: token.Span?
-    lent: bool
+    lent: token.Span?
     owned: token.Span?
     consumes: bool
     transfers: token.Span?
@@ -174,7 +175,7 @@ function no_marks() -> Marks
     absent: token.Span? = fail(code: "absent", msg: "no mark")
     return Marks(
         counted_by: absent,
-        lent: false,
+        lent: absent,
         owned: absent,
         consumes: false,
         transfers: absent,
@@ -220,8 +221,12 @@ function read_marks(@c: cursor.Cursor, text: str, in_group: bool, on_result: boo
             again @ !m.counted_by.is_err()
             m.counted_by @ first_of(slot: m.counted_by, got: parse_marks.counted_by_marker(@c, text, in_group: true))
         else if word == keywords.WORD_LENT && !on_result
-            again @ m.lent
-            m.lent @ parse_marks.bare_marker(@c, text: text, in_group: true, word: word)
+            # The word's own span, kept for the fix that deletes it where
+            # nothing reads it (defect 2347).
+            again @ !m.lent.is_err()
+
+            if parse_marks.bare_marker(@c, text: text, in_group: true, word: word)
+                m.lent @ first_of(slot: m.lent, got: ok(keyword))
         else if word == keywords.WORD_OWNED
             again @ !m.owned.is_err()
             m.owned @ first_of(slot: m.owned, got: parse_marks.owned_marker(@c, text, in_group: true))
