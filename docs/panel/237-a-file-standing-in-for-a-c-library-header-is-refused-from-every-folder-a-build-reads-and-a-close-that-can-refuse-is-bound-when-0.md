@@ -212,3 +212,15 @@ Under the decision issue, from `237-reports/historian.md` § Candidate lines, ea
   beside it. Corrected under its own section.
 - The historian wrote one stray file, `historian.argument.tmp`, in its worktree; the coordinator read
   and removed it before copying the report.
+
+## The payment of R6, 2026-11-08
+
+**Falsified, both halves.** R4 was run again on the specification as landed at `7ee862fcf` (fence B
+and R7's sentence), the same three models, 72 sessions, 16:08 to 16:24, 4.5208 USD of the author's
+10: the close was bound bare once, where none was registered (`R4-L-h17`, Haiku 5.5, silent with one
+connection open, defect 2322's report), and `lent_shape` was the first error of 37 of the 72, where
+at most 19 were (Sonnet 5.5 in all 24 of its sessions, on `sqlite3_prepare_v2(db: Db lent, …`). So
+by R6's registered branch the removal pays: § 13's `when` paragraph loses *and a call returning
+nothing takes no clause*, −10 vendored and 10,915 to 10,900 real, the rule kept by the checker
+(`when_on_void`) and by the `Member` production. How it was run, the table, the cost and the archive
+are `237-reports/payment.md`.
