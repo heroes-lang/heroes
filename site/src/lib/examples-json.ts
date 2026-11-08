@@ -39,6 +39,7 @@ export function examplesIndex(): string {
       externs: example.externs,
       links: example.links,
       packages: example.packages,
+      dependencies: example.fetched.map((one) => ({ name: one.name, version: one.version })),
       threads: example.threads,
       reads_file: example.readsFile,
       writes_file: example.writesFile,

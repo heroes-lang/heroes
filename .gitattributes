@@ -36,3 +36,12 @@ tests/golden/check/fixedbugs-373-*.hero -text
 # bytes are their line ends.
 tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/before.toml -text
 tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/expected -text
+
+# A package's files whose bytes are its fingerprint (panel 235's R6 and R7,
+# M-package-manager step 14): the local static index's published versions and
+# every tree `heroes add` placed in a program. `text=auto` would normalise a
+# CRLF file when it is added, so the committed bytes would no longer be the
+# ones the version's `list` and the catalogue's `sum` name; git keeps them as
+# they are, on every leg.
+examples/index/** -text
+**/heroes.packages/** -text

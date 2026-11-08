@@ -13,7 +13,7 @@
 # because padding invents open squares and a solver that walks through one has
 # found a path the file does not describe.
 
-use core/strings
+use <core>/strings
 
 ## Error codes
 #

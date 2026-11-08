@@ -21,7 +21,7 @@
 # one space, because the input's spacing is not the output's; and a trailing
 # space is never written, because it is invisible and it changes a diff.
 
-use core/strings
+use <core>/strings
 
 function wrapped(text: str, width: i64) -> [str]?
     if width < 1

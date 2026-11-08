@@ -23,9 +23,11 @@
 #      modules declare an `extern` group is bound to a live library, whose
 #      version decides what the program prints — `examples/curl/` prints
 #      this machine's libcurl. Both are asked of the program's OWN modules
-#      since 2026-11-06 (task 2293): a program carries each core package it
-#      uses as a copy under its `core/`, whose tests are the package's, so
-#      a program with none of its own passed on its copy's.
+#      since 2026-11-06 (task 2293): a program carried each core package it
+#      used as a copy under its `core/`, whose tests are the package's, so
+#      a program with none of its own passed on its copy's. Since
+#      2026-11-08 (panel 235's R15) it fetches them under
+#      `heroes.packages/`, which is never its own (`placed_trees.hero`).
 #   3. `main.expected` — what the program prints, in three configurations,
 #      with `main.args` supplying its arguments.
 #   4. at least one program reaches the end of `main` rather than calling
@@ -528,8 +530,8 @@ function program_directories(scratch: str) -> [str]?
 # `suite_canonical.hero:84-85` made this same repair for the same reason and
 # measured what it was missing: 325 files of 371.
 #
-# `carried` keeps the packages the program carries under its `core/`; without
-# it, the modules are the program's own (`own_module`).
+# `carried` keeps the packages the program fetched under `heroes.packages/`;
+# without it, the modules are the program's own (`own_module`).
 function module_texts(scratch: str, dir: str, carried: bool) -> [str]?
     texts: [str] @= []
     nothing: [str] = []
@@ -543,14 +545,14 @@ function module_texts(scratch: str, dir: str, carried: bool) -> [str]?
 
     return ok(texts)
 
-# Whether a module is the program's own and not a package it carries: a copy
-# stands under the program's `core/` and only there (`examples/packages/README.md`
-# § 1.4), so a directory named `core` deeper in the program is the program's;
-# and a package a fetch placed stands in a folder named `heroes.packages`,
-# left out by that name wherever it stands (panel 235's R7,
-# `placed_trees.hero`).
+# Whether a module is the program's own and not a package it carries: a
+# package a fetch placed stands in a folder named `heroes.packages`, left out
+# by that name wherever it stands (panel 235's R7, `placed_trees.hero`). Until
+# 2026-11-08 a program's copy stood under its `core/`, so that folder was left
+# out too; a folder named `core` is the program's own since the copies left.
 function own_module(dir: str, path: str) -> bool
-    return !strings.starts_with(text: path, prefix: dir + "/core/") && !placed_trees.within(path)
+    _ = dir
+    return !placed_trees.within(path)
 
 # Every module of the program, as the paths the compiler names them by. A
 # directory that cannot be walked answers none, and the witness then reads the
@@ -640,7 +642,7 @@ test "a directory that neither tests itself nor binds C is caught"
 test "a program tests itself in its own modules, never in the packages it carries (task 2293)"
     assert own_module(dir: "examples/ini", path: "examples/ini/main.hero")
     assert own_module(dir: "examples/ini", path: "examples/ini/lib/core/x.hero")
-    assert !own_module(dir: "examples/ini", path: "examples/ini/core/strings.hero")
+    assert own_module(dir: "examples/ini", path: "examples/ini/core/strings.hero")
 
     # A placed package is no module of the program, by its folder's name; a
     # folder only holding the word is the program's (panel 235's R7).
@@ -652,9 +654,10 @@ test "a program tests itself in its own modules, never in the packages it carrie
     # program that tests nothing of its own.
     scratch = shell.own_scratch()
     tree = scratch + "/corpus-carried"
-    assert !shell.mkdir_all(tree + "/core/strings/internal").is_err()
+    placed = tree + "/heroes.packages/core@0.1.0-0123456789abcdef"
+    assert !shell.mkdir_all(placed + "/strings/internal").is_err()
     assert !write_file(path: tree + "/main.hero", text: "function main()\n    print(1)\n").is_err()
-    assert !write_file(path: tree + "/core/strings/internal/scan.hero", text: "test \"a\"\n    assert true\n").is_err()
+    assert !write_file(path: placed + "/strings/internal/scan.hero", text: "test \"a\"\n    assert true\n").is_err()
     every = module_texts(scratch: scratch, dir: tree, carried: true)
     own = module_texts(scratch: scratch, dir: tree, carried: false)
     assert declares_any(modules: every.must(), opening: "test \"")

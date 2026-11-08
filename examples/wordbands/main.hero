@@ -20,7 +20,7 @@
 # WHAT COMES BACK IS STILL A NUMBER. The map, the words and the text are
 # dropped on the thread that made them; only the count crosses.
 
-use core/strings
+use <core>/strings
 
 extern "hero_os.h"
     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64

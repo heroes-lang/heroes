@@ -17,7 +17,7 @@
 # touching the disk, and it is what value semantics makes free: `complete`
 # returns a new list, because there is nothing else it could return.
 
-use core/strconv
+use <core>/strconv
 use list
 
 ## Error codes

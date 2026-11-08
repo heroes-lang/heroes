@@ -54,9 +54,10 @@ record Named
     value: str
     said: str
 
-# What a face is to its card: its path under `core/`, what `use core/<path>`
-# binds, its module doc's first sentence, its records, functions and `str`
-# constants, its `use` lines, and what the card's form cannot say of it.
+# What a face is to its card: its path under the package's root, what
+# `use <core>/<path>` binds, its module doc's first sentence, its records,
+# functions and `str` constants, its `use` lines, and what the card's form
+# cannot say of it.
 record Face
     path: str
     binding: str
@@ -67,7 +68,7 @@ record Face
     uses: [str]
     refused: [str]
 
-# The face at `path` under `core/`, read from its text.
+# The face at `path` under the package's root, read from its text.
 function face_of(path: str, text: str) -> Face
     rows = strings.lines(text)
     refused: [str] @= []
@@ -131,7 +132,7 @@ function face_of(path: str, text: str) -> Face
         refused: refused
     )
 
-# What `use core/<path>` binds: the path's last part (spec § 1).
+# What `use <core>/<path>` binds: the path's last part (spec § 1).
 function binding_of(path: str) -> str
     parts = strings.split_on(text: path, byte: '/')
     return parts[parts.len() - 1]
@@ -271,11 +272,11 @@ function split_top(text: str) -> [str]
 ## Tests
 
 test "a face is read: its doc, its records with their fields, its functions with their parameters"
-    text = "# Text, taken apart. More.\n\nuse core/strings/internal/scan\n\n# A pair. Of halves.\nrecord Halves\n    before: str\n    # a comment inside\n    after: str\n\n# Whether it begins.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# Swaps.\nfunction swap<A>(@a: A, b: A lent)\n    _ = 0\n"
+    text = "# Text, taken apart. More.\n\nuse strings/internal/scan\n\n# A pair. Of halves.\nrecord Halves\n    before: str\n    # a comment inside\n    after: str\n\n# Whether it begins.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# Swaps.\nfunction swap<A>(@a: A, b: A lent)\n    _ = 0\n"
     face = face_of(path: "strings", text: text)
     assert face.binding == "strings"
     assert face.said == "Text, taken apart."
-    assert face.uses == ["use core/strings/internal/scan"]
+    assert face.uses == ["use strings/internal/scan"]
     assert face.refused.len() == 0
     assert face.shapes.len() == 1
     assert face.shapes[0].name == "Halves" && face.shapes[0].said == "A pair."

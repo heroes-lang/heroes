@@ -1,8 +1,8 @@
 # The package cards written and judged (task 2294): what the card program's two
 # words do, `write` and `check` (`package_cards.hero`), and what the `packages`
-# suite's `cards` label asks in-process. Each card stands beside its face,
-# `examples/packages/core/<path>.md` beside `<path>.hero`, and is held to three
-# things:
+# suite's `cards` label asks in-process. Each card stands beside its face in the
+# package's source, the newest version of the index (`package_rules.source_root`),
+# `<path>.md` beside `<path>.hero`, and is held to three things:
 #
 # - it is what `write` writes from the face, byte for byte, so a card is true
 #   by construction and never written by hand (`examples/packages/README.md` § 8.2);
@@ -19,6 +19,7 @@
 use package_card
 use package_codes
 use package_face
+use package_rules
 use shell
 use strings
 
@@ -240,19 +241,28 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
         )
     return package_card.maximum_in(said.out)
 
-# A copy of the tree's modules where each card's proof is built: a program's
-# `use core/...` starts at its own directory (spec § 1), so the proof stands
-# beside a `core/` of its own.
+# A folder where each card's proof is built as a program: a `use <core>/...`
+# reads the catalogue beside the file compiled (spec § 1), so the proof stands
+# beside a catalogue of its own whose one entry, `core`, is a `path` to a copy
+# of the source's modules, the author's own folder while a package is developed
+# (panel 235's R6): nothing is fetched, and the calls are compiled against the
+# source as it stands, a version in preparation included. The copy's folder
+# holds a `.`, so no bare `use` of the proof can spell it.
 function proof_tree(scratch: str, root: str, rels: [str]) -> str?
     dir = scratch + "/cards-proof"
 
     for rel in rels
         if strings.ends_with(text: rel, suffix: ".hero")
-            target = dir + "/core/" + rel
+            target = dir + "/" + COPY + "/" + rel
             shell.mkdir_all(parent(target))?
             write_file(path: target, text: read(root + "/" + rel)?)?
 
+    write_file(path: dir + "/heroes.toml", text: "[dependencies." + package_rules.PACKAGE + "]\npath = \"" + COPY + "\"\n")?
     return ok(dir)
+
+# The folder beside the proofs holding the copy of the source's modules.
+constant COPY: str
+    "core.source"
 
 function parent(path: str) -> str
     cut: i64 @= 0

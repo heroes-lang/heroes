@@ -7,7 +7,7 @@
 # testable without a terminal: a test plays a list of commands and looks at what
 # came back.
 
-use core/strings
+use <core>/strings
 use world
 
 record Game

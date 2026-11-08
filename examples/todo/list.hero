@@ -14,7 +14,7 @@
 # disk, and it is the same split value semantics makes free: `complete` returns a
 # new list rather than editing one, because there is no other thing it could do.
 
-use core/strings
+use <core>/strings
 
 ## Error codes
 #

@@ -1,11 +1,13 @@
 # The core packages' own program. It reaches every package that no other
-# package uses, so `heroes test main.hero` runs the tests of every module under
-# `core/`, and it prints what a few calls answer, as `main.expected` says.
-# A program that uses a package carries a copy of it under its own `core/`,
-# byte for byte this tree's (`README.md` beside this file).
+# package uses, so `heroes test main.hero` runs the tests of every module of
+# `core`, and it prints what a few calls answer, as `main.expected` says. Like
+# every program that uses them it names them `use <core>/strings`, through its
+# catalogue `heroes.toml`, which `heroes add core` wrote from the index beside
+# this folder, and builds from the tree that verb placed under
+# `heroes.packages/` (`README.md` beside this file).
 
-use core/strconv
-use core/strings
+use <core>/strconv
+use <core>/strings
 
 function main()
     words = strings.fields("  the core packages  ")

@@ -8,7 +8,7 @@
 # and the order of the tests below is part of the grammar: `***` is a horizontal
 # rule and `* item` is a bullet, so the rule is asked about first.
 
-use core/strings
+use <core>/strings
 use inline
 
 variant Block

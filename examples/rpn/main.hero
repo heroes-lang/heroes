@@ -15,8 +15,8 @@
 # easy to leave out, and leaving it out is invisible until somebody types a
 # zero. The check is here and it has its own case.
 
-use core/strconv
-use core/strings
+use <core>/strconv
+use <core>/strings
 
 variant Token
     number

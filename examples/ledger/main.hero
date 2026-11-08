@@ -27,7 +27,7 @@
 # same hour.
 
 use book/entry
-use core/strings
+use <core>/strings
 use db/sqlite
 use report/lines
 

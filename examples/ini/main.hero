@@ -25,7 +25,7 @@
 # Choice 2 is the one worth arguing about, and it is deliberate: `last wins`
 # is convenient and it is how a value gets overridden by accident.
 
-use core/strings
+use <core>/strings
 
 record Config
     sections: {str: {str: str}}

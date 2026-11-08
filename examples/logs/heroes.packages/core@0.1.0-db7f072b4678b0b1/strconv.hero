@@ -1,0 +1,107 @@
+# Numbers read from text, where a number too large for its type is a failure
+# the caller answers and never an abort. The loop over the digits is the one the
+# programs of `examples/` wrote by hand (the admission notes at the end of this
+# file).
+
+use strconv/internal/shown
+
+# What `atoi` fails with where a text is not a number at all. A number that is
+# one but lies beyond an `i64` fails `does_not_fit`, the built-ins' own code.
+constant NOT_A_NUMBER: str
+    "not_a_number"
+
+# The integer `s` writes in decimal, with an optional `+` or `-` before its
+# digits: Go's `strconv.Atoi`. It fails `not_a_number` where `s` holds anything
+# else, an empty text or a space included, and `does_not_fit` where the number
+# lies beyond an `i64`.
+function atoi(s: str) -> i64?
+    at: i64 @= 0
+    negative: bool @= false
+
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        negative @ s[0] == '-'
+        at @ 1
+
+    if at == s.len()
+        return fail(code: NOT_A_NUMBER, msg: shown.quoted(s) + " is not a number")
+
+    # The digits are added below zero, so the lowest `i64`, which has no
+    # positive twin, is read like any other number; and each step is asked
+    # first whether it would leave the type, so no step can abort.
+    lowest = -9223372036854775807 - 1
+    total: i64 @= 0
+
+    while at < s.len()
+        c = s[at]
+
+        if c < '0' || c > '9'
+            return fail(code: NOT_A_NUMBER, msg: shown.quoted(s) + " is not a number")
+        digit = to_i64(c - '0').must()
+
+        if total < (lowest + digit) / 10
+            return fail(code: "does_not_fit", msg: shown.quoted(s) + " does not fit an i64")
+        total @ total * 10 - digit
+        at @ at + 1
+
+    if negative
+        return ok(total)
+
+    if total == lowest
+        return fail(code: "does_not_fit", msg: shown.quoted(s) + " does not fit an i64")
+    return ok(-total)
+
+## Tests
+
+test "atoi: the empty text, a sign alone, and zero written three ways"
+    assert atoi("").is_err()
+    assert atoi("+").is_err()
+    assert atoi("-").is_err()
+    assert atoi("0").must() == 0
+    assert atoi("-0").must() == 0
+    assert atoi("007").must() == 7
+
+test "atoi: a sign, and what is not a digit"
+    assert atoi("42").must() == 42
+    assert atoi("-42").must() == -42
+    assert atoi("+42").must() == 42
+    assert atoi(" 1").is_err()
+    assert atoi("1 ").is_err()
+    assert atoi("1_000").is_err()
+    assert atoi("0x10").is_err()
+    assert atoi("4é").is_err()
+
+    match atoi("12x")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_A_NUMBER && e.msg == "\"12x\" is not a number"
+
+# The copies this package replaced multiplied before asking, and
+# `number_of("99999999999999999999")` aborted, `integer overflow`.
+test "atoi: the largest and the lowest i64, and one past each"
+    assert atoi("9223372036854775807").must() == 9223372036854775807
+    assert atoi("-9223372036854775808").must() == -9223372036854775807 - 1
+
+    match atoi("9223372036854775808")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match atoi("-9223372036854775809")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match atoi("99999999999999999999")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+## Admission
+#
+# `atoi` is here because the programs of `examples/` wrote it by hand, counted
+# on 2026-11-06 by what the functions do: `number_of` in `assembler`, `rpn` and
+# `todo`, and `int_of` in `query`, each a `str -> i64?` loop over the digits,
+# each multiplying before asking whether the number still fits, so that
+# `todo`'s `number_of("99999999999999999999")` aborted, `integer overflow`, run
+# on 2026-11-06. Each program keeps a wrapper that gives the failure its own
+# code and line.
+#
+# Not adopted: the `gallery`'s `number_of`, which teaches a fallible function
+# by writing one; `markdown`'s, which reads a list marker's digits whose width
+# it already knows; and `interpreter`'s, which reads a `Value`.

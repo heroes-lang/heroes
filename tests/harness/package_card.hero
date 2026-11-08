@@ -16,14 +16,23 @@
 # `pick<A>(first: A, second: A, take: bool)` each refused without the labels,
 # and `take` needed none). Whether each call compiles as written is asked of
 # the compiler, by building `proof_source`'s program (`package_judge.hero`).
+#
+# **The `use` line is the catalogue's since panel 235's R15** (ratified
+# 2026-11-07, M-package-manager step 14): the core packages are one entry,
+# `core`, so a program writes `use <core>/strings`, and a face's own `use`
+# lines, written from the package's root (R4), are a program's once the
+# package's name is put before them.
 
 use package_codes
 use package_face
+use package_rules
 use strings
 
 # The card of a face, every code with the meaning the face's docs give it.
 function card_text(face: package_face.Face, codes: [package_codes.Code]) -> str
-    out: [str] @= ["# " + face.binding + ": `use core/" + face.path + "`\n\n" + face.said + "\n"]
+    out: [str] @= [
+        "# " + face.binding + ": `use <" + package_rules.PACKAGE + ">/" + face.path + "`\n\n" + face.said + "\n"
+    ]
 
     if face.shapes.len() > 0
         lines: [str] @= []
@@ -115,7 +124,7 @@ function call_of(binding: str, f: package_face.Callable) -> str
 # own doc.
 function proof_source(face: package_face.Face, card: str) -> str
     out: [str] @= [
-        "# The calls " + card + " writes, each compiled as the card writes it.\n\nuse core/" + face.path + "\n"
+        "# The calls " + card + " writes, each compiled as the card writes it.\n\nuse <" + package_rules.PACKAGE + ">/" + face.path + "\n"
     ]
     needed: {str: bool} @= {}
 
@@ -131,7 +140,7 @@ function proof_source(face: package_face.Face, card: str) -> str
         named = use_binding(row)
 
         if named != face.binding && !needed[named].is_err()
-            out @ out.push(row + "\n")
+            out @ out.push(program_use(row) + "\n")
 
     # Each constant a code is written through is named as the card names it.
     main: [str] @= ["\nfunction main()\n"]
@@ -219,6 +228,15 @@ function bindings_in(ty: str) -> [str]
 
     return out
 
+# A face's `use` line as a program writes it: a module of the package itself,
+# which the face names from the package's root (R4), is the package's name in
+# brackets and the same path; a line already naming a package in brackets is a
+# program's as it stands.
+function program_use(row: str) -> str
+    if strings.starts_with(text: row, prefix: "use <")
+        return row
+    return "use <" + package_rules.PACKAGE + ">/" + strings.without_prefix(text: row, prefix: "use ")
+
 # What a `use` line binds: the name after `as`, or the path's last part.
 function use_binding(row: str) -> str
     words = strings.words(row)
@@ -271,10 +289,10 @@ test "a card is written in E2's form, each section only where it has a line"
     text = "# Text, taken apart. More.\n\n# Two halves. More.\nrecord Halves\n    before: str\n    after: str\n\n# Whether it begins. More.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# The halves, failing `not_found` where `s` holds no `sep`.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s, after: sep))\n"
     face = package_face.face_of(path: "strings", text: text)
     codes = [package_codes.Code(code: "not_found", through: "", meaning: "where `s` holds no `sep` (`split_once`)")]
-    assert card_text(face: face, codes: codes) == "# strings: `use core/strings`\n\nText, taken apart.\n\n## Types\n\n`record Halves` with `before: str` and `after: str`: Two halves.\n\n## Functions\n\n- `has_prefix(s: str, prefix: str) -> bool`, called `strings.has_prefix(s: s, prefix: prefix)`: Whether it begins.\n- `split_once(s: str, sep: str) -> Halves?`, called `strings.split_once(s: s, sep: sep)`: The halves, failing `not_found` where `s` holds no `sep`.\n\n## Codes\n\n- `not_found`: where `s` holds no `sep` (`split_once`).\n"
+    assert card_text(face: face, codes: codes) == "# strings: `use <core>/strings`\n\nText, taken apart.\n\n## Types\n\n`record Halves` with `before: str` and `after: str`: Two halves.\n\n## Functions\n\n- `has_prefix(s: str, prefix: str) -> bool`, called `strings.has_prefix(s: s, prefix: prefix)`: Whether it begins.\n- `split_once(s: str, sep: str) -> Halves?`, called `strings.split_once(s: s, sep: sep)`: The halves, failing `not_found` where `s` holds no `sep`.\n\n## Codes\n\n- `not_found`: where `s` holds no `sep` (`split_once`).\n"
     nothing: [package_codes.Code] = []
     bare = package_face.face_of(path: "net/http", text: "# Http.\n")
-    assert card_text(face: bare, codes: nothing) == "# http: `use core/net/http`\n\nHttp.\n"
+    assert card_text(face: bare, codes: nothing) == "# http: `use <core>/net/http`\n\nHttp.\n"
     assert listed(["`a`", "`b`", "`c`"]) == "`a`, `b` and `c`"
 
     # A code written through a constant names the constant as a program writes it.
@@ -283,16 +301,22 @@ test "a card is written in E2's form, each section only where it has a line"
         text: "# Numbers.\n\n# What fails.\nconstant NOT_A_NUMBER: str\n    \"not_a_number\"\n"
     )
     through = [package_codes.Code(code: "not_a_number", through: "NOT_A_NUMBER", meaning: "What fails.")]
-    assert card_text(face: numbers, codes: through) == "# strconv: `use core/strconv`\n\nNumbers.\n\n## Codes\n\n- `not_a_number`, `strconv.NOT_A_NUMBER`: What fails.\n"
-    assert proof_source(face: numbers, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse core/strconv\n\nfunction main()\n    _ = strconv.NOT_A_NUMBER\n"
+    assert card_text(face: numbers, codes: through) == "# strconv: `use <core>/strconv`\n\nNumbers.\n\n## Codes\n\n- `not_a_number`, `strconv.NOT_A_NUMBER`: What fails.\n"
+    assert proof_source(face: numbers, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/strconv\n\nfunction main()\n    _ = strconv.NOT_A_NUMBER\n"
 
 test "the proof calls each function as the card does, its records through the binding"
-    text = "# S.\n\nuse core/strings/internal/scan\nuse core/encoding/json\n\n# H.\nrecord Halves\n    before: str\n\n# One.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s + sep))\n\n# Two.\nfunction gather(xs: [Halves], v: json.Value)\n    _ = 0\n"
+    text = "# S.\n\nuse strings/internal/scan\nuse encoding/json\n\n# H.\nrecord Halves\n    before: str\n\n# One.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s + sep))\n\n# Two.\nfunction gather(xs: [Halves], v: json.Value)\n    _ = 0\n"
     face = package_face.face_of(path: "strings", text: text)
-    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse core/strings\nuse core/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction call_split_once(s: str, sep: str) -> strings.Halves?\n    return strings.split_once(s: s, sep: sep)\n\nfunction call_gather(xs: [strings.Halves], v: json.Value)\n    strings.gather(xs, v)\n"
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/strings\nuse <core>/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction call_split_once(s: str, sep: str) -> strings.Halves?\n    return strings.split_once(s: s, sep: sep)\n\nfunction call_gather(xs: [strings.Halves], v: json.Value)\n    strings.gather(xs, v)\n"
     assert qualified(ty: "{str: [Halves]}", binding: "s", local: ["Halves"]) == "{str: [s.Halves]}"
     assert qualified(ty: "x.Halves", binding: "s", local: ["Halves"]) == "x.Halves"
     assert use_binding("use core/a/b as c") == "c"
+    assert use_binding("use <core>/a/b") == "b"
+
+    # A face's own line from the package's root is the program's in brackets,
+    # and a line already bracketed stays as written.
+    assert program_use("use strings/internal/scan") == "use <core>/strings/internal/scan"
+    assert program_use("use <json>/value") == "use <json>/value"
 
 test "the budget's number is the `maximum` row of `heroes measure`"
     said = "card.md\n  claude-legacy       809   (64995 ranks)\n  cl100k_base         808   (100256 ranks)\n  maximum             809   a lower bound, not the reader's tokeniser\n"
