@@ -1,0 +1,37 @@
+# Fixed defect 2347, 2026-11-08, panel 237's R7: `lent` on an `extern` handle
+# parameter is refused `lent_shape`, a handle being the pointer itself, which C
+# receives by value, so nothing is lent; and the report carries a `certain`
+# fix deleting the word with its blank, which repairs exactly that and changes
+# no meaning, since nothing read the word. Until this day it carried none, and
+# it was the first error of 143 of the 288 first tries of the sitting's reader
+# test. The word is deleted wherever it stands among the marks, in a signature
+# of one line or of several, and on a `tag void` handle; the shapes beside it
+# are quiet: `lent`
+# on an `@` handle is read (panel 196's R3), and a group's record that is no
+# handle, lent without `@`, is a pointer to const.
+
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    function sqlite3_open(path: cstr lent, @out: Db lent acquires sqlite3_close) -> i64
+    function sqlite3_errmsg(db: Db lent) -> cstr  #~ lent_shape
+    function sqlite3_close(db: Db lent consumes) -> i64 when 0  #~ lent_shape
+    function sqlite3_finalize(st: Stmt consumes lent) -> i64  #~ lent_shape
+    function sqlite3_prepare_v2(
+        db: Db lent,  #~ lent_shape
+        sql: cstr lent,
+        n: i32,
+        @st: Stmt acquires sqlite3_finalize,
+        tail: ptr
+    ) -> i64
+
+extern "time.h"
+    record Tm tag tm partial
+        tm_year: i32
+    record Opaque tag void
+    function mktime(t: Tm lent) -> i64
+    function free(p: Opaque lent)  #~ lent_shape
+
+function main()
+    print(SQLITE_OK)

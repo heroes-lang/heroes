@@ -115,7 +115,8 @@ test "the two ends and the words between print as the one-line form does"
         retains: none,
         borrows: false,
         counted_by: none,
-        lent: false
+        lent: false,
+        lent_word: none
     )
     second = ast.Param(
         name: token.Span(start: 21, end: 22),
@@ -128,7 +129,8 @@ test "the two ends and the words between print as the one-line form does"
         retains: none,
         borrows: false,
         counted_by: none,
-        lent: true
+        lent: true,
+        lent_word: ok(token.Span(start: 28, end: 32))
     )
     fd = ast.FunctionDecl(
         generics: [token.Span(start: 11, end: 12)],
