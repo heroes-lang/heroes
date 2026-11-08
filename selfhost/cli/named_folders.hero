@@ -57,6 +57,9 @@ function of_compiler(under: compiling.Compiling, packages: {str: [str]}) -> {str
             origin: shadowed_words.Origin(kind: shadowed_words.INCLUDE, name: "")
         )
 
+    # ORDER: by the package's name, as `sort` orders a `str`; where two
+    # packages answer one folder, the first taken is the origin its note
+    # names, so the note observes this order.
     for name in sort(keys(packages))
         for dir in package_reads.answered(libraries.compile_flags(packages[name].default([])))
             out @ taken(out, dir: dir, origin: shadowed_words.Origin(kind: shadowed_words.PACKAGE, name: name))
