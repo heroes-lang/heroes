@@ -1,0 +1,1 @@
+CCC_OVERRIDE_OPTIONS=#+-includetests/golden/unsupported/fixedbugs-2344-a-file-ccc-override-options-includes.case/envdir/force.h

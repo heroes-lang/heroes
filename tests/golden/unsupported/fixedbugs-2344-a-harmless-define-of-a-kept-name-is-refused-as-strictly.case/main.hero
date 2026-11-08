@@ -1,0 +1,10 @@
+#~ shadowed_macro
+# fixedbugs, defect 2344 (panel 237's R2, its one strict refusal, said):
+# `-Dtrue=0` through `CCC_OVERRIDE_OPTIONS` is harmless today, the guard
+# giving `true` back, and refused all the same: a `-D` of a name the guard
+# keeps is refused whatever it does, the line a package's answer is held
+# to.
+
+function main()
+    b = true
+    print(b)

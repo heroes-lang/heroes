@@ -166,7 +166,9 @@ function reported_with_file(text: str) -> [str]
 # modules tells a diagnostic in another of them, which its file alone tells
 # apart from one at the same line of the case (defect 2128). The file is what
 # precedes the line's number, a path with no colon of its own, as every path
-# an expectation prints is.
+# an expectation prints is; a path a case's run printed whole is written
+# `<root>/...` (`case_setting.hero`), which is the same path from the
+# repository's root, where every suite runs (defect 2344).
 function reported_by_file(text: str) -> [str]
     found: [str] @= []
     pending: str @= ""
@@ -180,7 +182,7 @@ function reported_by_file(text: str) -> [str]
                     number = strings.to_number(parts[1])
 
                     if !number.is_err()
-                        found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + pending)
+                        found @ found.push(from_root(parts[0]) + ":" + number.must().to_str() + ":" + pending)
                 pending @ ""
             continue
         code = code_of(row)
@@ -194,13 +196,17 @@ function reported_by_file(text: str) -> [str]
             number = strings.to_number(strings.trimmed(parts[1]))
 
             if !number.is_err()
-                found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + code.must())
+                found @ found.push(from_root(parts[0]) + ":" + number.must().to_str() + ":" + code.must())
                 placed @ true
 
         if !placed
             pending @ code.must()
 
     return found
+
+# A path as the repository's root reads it: `<root>/` taken off.
+function from_root(path: str) -> str
+    return strings.without_prefix(text: path, prefix: "<root>/")
 
 # The `<line>:<code>` of the diagnostics `said` tells in `path`.
 function told_in(said: [str], path: str) -> [str]
@@ -357,4 +363,8 @@ test "a case's expectation is read with each diagnostic's file, so another modul
     assert other_files(said, path: "t/case.hero") == ["t/sub/values.hero"]
     brief = "t/case.hero:3:5: error[unused_binding]: x\n"
     assert reported_by_file(brief) == ["t/case.hero:3:unused_binding"]
+
+    # A path a case's run printed whole is the same path from the root.
+    whole = "error[shadowed_header]: a file stands in\n  at <root>/t/x.case/main.hero:1:1\n"
+    assert reported_by_file(whole) == ["t/x.case/main.hero:1:shadowed_header"]
     assert other_files(reported_by_file(brief), path: "t/case.hero").len() == 0

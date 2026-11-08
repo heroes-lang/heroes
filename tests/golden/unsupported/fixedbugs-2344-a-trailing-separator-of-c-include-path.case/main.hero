@@ -1,0 +1,10 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's completeness critic, finding 4): a
+# trailing separator, `C_INCLUDE_PATH='/nonexistent-2344:'`, is an empty
+# element after a folder clang cannot find, so `.`, the folder clang runs
+# in (`here/`), is searched before the platform's; `print(true)` printed
+# `false` at exit 0.
+
+function main()
+    b = true
+    print(b)

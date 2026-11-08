@@ -1,0 +1,81 @@
+# A file of a folder the build names, read where the C this compiler writes
+# looks for a header of the C library: the record the refusal tells, and the
+# rule that says which folder found a file (design.md §4.19, §1.12; defect
+# 2333, panel 237).
+#
+# **Which directory found a file is the longest of the search's that holds
+# it**: the runtime's, clang's own and the platform's (`others`), or one the
+# program, a package or the environment named (`named`), a tie going to
+# `others`, so a folder that holds the system's directories shadows nothing it
+# did not find. Moved out of `cli/shadowed.hero` when panel 237's R2 widened
+# that refusal past §11's 300 lines.
+
+use cli/package_reads
+
+# One file of a named folder read in the library's place: the path clang
+# listed, the folder that held it, and the name the library's header has
+# there.
+record Shadow
+    path: str
+    folder: str
+    named: str
+
+# The folder of `named` that found `path`, read lexically: the longest
+# directory holding it among `named` and `others`, "" where that is one of
+# `others` or a tie gives it to them.
+function finder(path: str, named: [str], others: [str]) -> str
+    best: str @= ""
+    best_named: bool @= false
+
+    for dir in others
+        if package_reads.holds(dir: dir, path: path) && dir.len() > best.len()
+            best @ dir
+
+    for dir in named
+        if package_reads.holds(dir: dir, path: path) && dir.len() > best.len()
+            best @ dir
+            best_named @ true
+
+    if best_named
+        return best
+    return ""
+
+# Each of `paths` a folder of `named` found (`finder`).
+function shadows(paths: [str], named: [str], others: [str]) -> [Shadow]
+    out: [Shadow] @= []
+
+    for written in paths
+        path = package_reads.lexical(written)
+        folder = finder(path: path, named: named, others: others)
+
+        if folder.len() > 0
+            out @ out.push(Shadow(path: written, folder: folder, named: relative(path: path, dir: folder)))
+
+    return out
+
+# `path` without the directory `dir` that holds it and its separator.
+function relative(path: str, dir: str) -> str
+    if dir == "."
+        return path
+
+    if dir == "/"
+        return path.slice(from: 1, to: path.len())
+    return path.slice(from: dir.len() + 1, to: path.len())
+
+## Tests
+
+# **The directory that found a file is the longest of the search's that holds
+# it**: a named folder holding a system directory shadows nothing it did not
+# find, a tie goes to the platform's, and a file of the source's own folder,
+# relative or absolute, is told with the library's name it took.
+test "a listed file is the named folder's only where the longest directory holding it is one the program named"
+    got = shadows(
+        paths: ["./stdint.h", "/usr/include/stdint.h", "inc/sys/cdefs.h", "runtime/heroes_unit.h", "/usr/include/math.h", "/opt/pkg/include/stdbool.h"],
+        named: [".", "inc", "/", "/usr/include", "/opt/pkg/include"],
+        others: ["runtime", "/usr/include"]
+    )
+    assert got.len() == 3
+    assert got[0].path == "./stdint.h" && got[0].folder == "." && got[0].named == "stdint.h"
+    assert got[1].path == "inc/sys/cdefs.h" && got[1].named == "sys/cdefs.h"
+    assert got[2].folder == "/opt/pkg/include" && got[2].named == "stdbool.h"
+    assert relative(path: "/x/a.h", dir: "/") == "x/a.h"

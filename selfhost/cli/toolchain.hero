@@ -81,6 +81,8 @@ record Toolchain
     # (`clang_floor.target`), empty when clang did not answer: whose linker
     # the link runs, which `link_flags.target_words` asks (defect 593).
     target: str
+    # The answer whole, "" where none came, which `cli/clang_added.hero` reads (defect 2344).
+    asked_answer: str
 
 # Where the runtime is, when it is not ./runtime — the REAL environment
 # variable, the same channel the bootstrap reads and the same one
@@ -169,16 +171,16 @@ function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
     said = clang_floor.identity(build_dir: "build", runtime: runtime, words: asked)
 
     return ok(
-        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")))
+        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""))
     )
 
-# What the key is given for clang's answer: the answer, or what was said
-# instead. A clang that did not answer keys apart from one that did, and the
-# build's own compile then says why.
+# What the key is given for clang's answer: the answer, or what was said instead, so a
+# clang that did not answer keys apart, its build saying why; and `CCC_OVERRIDE_OPTIONS`,
+# whose `s/-O2/...` the `-O0` answer never shows, left objects a clean build read (defect 2344).
 function answer_text(said: str?) -> str
     match said
-        .ok text => return "answered|" + text
-        .err e   => return "unanswered|" + e.msg
+        .ok text => return "answered|" + text + process.env_written(name: "CCC_OVERRIDE_OPTIONS")
+        .err e   => return "unanswered|" + e.msg + process.env_written(name: "CCC_OVERRIDE_OPTIONS")
 
 # The words a key carries for the level, its debug word and the sanitizers:
 # the flags themselves, so a sanitizer list that grows is another key, where

@@ -1,0 +1,9 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's compiler-engineer, a shape nobody had
+# listed): `CCC_OVERRIDE_OPTIONS` adds `-include` of a file defining
+# `stdbool.h`'s guard and `true` as 0, read before every unit's first line
+# and every guard; `print(true)` printed `false` at exit 0.
+
+function main()
+    b = true
+    print(b)

@@ -1,0 +1,9 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's compiler-engineer, a shape nobody had
+# listed): `CCC_OVERRIDE_OPTIONS` adds `-imacros` of the same file, whose
+# macros alone stand before every unit; `print(true)` printed `false` at
+# exit 0.
+
+function main()
+    b = true
+    print(b)

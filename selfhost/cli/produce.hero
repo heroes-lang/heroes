@@ -123,9 +123,10 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         io.eprint(text: "internal error: a group head's name was never judged\n  " + unjudged)
         return fail(code: "failed", msg: "a group head's name reached the tools unjudged")
 
-    # A binding of a name the runtime's own header declares, whatever header
-    # its group names, told before any unit is compiled (defect 2256).
+    # Told before the runtime or a unit compiles: a binding of a name the runtime's own
+    # header declares (defect 2256), a kept name or a file the environment gives clang (defect 2344).
     runtime_bound.stopped(s, art.must().decls, runtime: t.runtime, permissive: options.permissive)?
+    shadowed.environment_stopped(t, s, permissive: options.permissive)?
 
     # Where the binary lands is the round's to learn, from the link line it
     # runs (`link.link_objects`), and the C of every unit is written where
@@ -283,8 +284,7 @@ function failure_text(failed: [str]?) -> str
         .ok    => return ""
         .err e => return e.msg
 
-# The message of a failed `()?` and its code, the clang floor's and the
-# round's alike, are `cli/whose.hero`'s, which reads both of a refusal.
+# A failed `()?`'s message and code, the floor's and the round's, are `cli/whose.hero`'s.
 
 function path_code(failed: str?) -> str
     match failed

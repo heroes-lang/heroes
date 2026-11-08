@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2344-a-file-ccc-override-options-reads-for-its-macros.case/envdir/force.h` is read before the first line of every unit this build compiles, through `CCC_OVERRIDE_OPTIONS`'s `-imacros`: what it defines stands before the C library's headers and every guard, so nothing undoes it
+  at tests/golden/unsupported/fixedbugs-2344-a-file-ccc-override-options-reads-for-its-macros.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: take `-imacros tests/golden/unsupported/fixedbugs-2344-a-file-ccc-override-options-reads-for-its-macros.case/envdir/force.h` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset

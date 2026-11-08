@@ -1,13 +1,16 @@
 # What a golden case that is a folder may ask of the run beside its files
 # (M-package-manager step 5b): a shape no file of the repository can hold, a
 # machine with no git, a program git places in no repository, a link on the
-# way to a source. Two files beside `main.hero`, either or both:
+# way to a source, a variable clang reads. Three files beside `main.hero`, any
+# of them:
 #
 #     environment    `NAME=VALUE` a line, set for the case's run alone and put
 #                    back after it, `<root>` in a value standing for the
 #                    repository's root as git answers it
 #     links          `<name> <target>` a line, a symbolic link made in the
 #                    case before its run, holding `<target>` as written
+#     directory      one line, a folder of the case: its run starts there,
+#                    so `.` names it for the compiler and every clang it runs
 #
 # **No link is ever made in the tree**: a case with links runs in a copy under
 # the harness's scratch folder (`build/`, inside the repository, so git
@@ -22,8 +25,20 @@
 # **Which variables, a fact about each**: `PATH` and `GIT_CEILING_DIRECTORIES`,
 # the two whose empty value reads as unset to what a case's compiler runs (an
 # empty ceiling list is none to git, and `PATH` is set in every run of this
-# harness), so a variable this run had unset is put back empty. Any other
+# harness), so a variable this run had unset is put back empty. **And the
+# three clang reads into every compile** (`CLANG_READS`, panel 237's R2,
+# defect 2344): their empty value is no unset, Apple clang searching `.` for
+# an empty `CPATH`, and the runtime has no unset, so they are never set in
+# this harness's own process, where every later case's clang would read them:
+# the case's compiler is started through `/usr/bin/env` with them, and the
+# case is skipped by name where that is not the machine's, Windows. Any other
 # name is refused with the case's name, never set.
+#
+# **A case with a `directory` runs from a copy of its folder**, as one with
+# links does, since the compiler writes its cache under the folder it runs in:
+# started there by `/usr/bin/env -C`, with the compiler and the case's own
+# paths written whole, so an empty element of `CPATH` names a folder of the
+# case and never the repository's root.
 
 use apply_tree
 use shell
@@ -32,47 +47,94 @@ use strings
 extern "hero_compiler.h"
     function hero_env_put(name: cstr lent, value: cstr lent) -> i64
 
-# The variables a case's `environment` may set.
+# The variables a case's `environment` may set in this process, put back
+# after its run.
 constant SETTABLE: [str]
     ["PATH", "GIT_CEILING_DIRECTORIES"]
 
+# The variables clang reads into every compile, which a case's `environment`
+# may set for its compiler alone.
+constant CLANG_READS: [str]
+    ["CPATH", "C_INCLUDE_PATH", "CCC_OVERRIDE_OPTIONS"]
+
+# The one program that starts a case's compiler with variables of its own,
+# from a folder of its own: POSIX's `env`, `-C` in GNU's and in this Mac's.
+constant ENV: str
+    "/usr/bin/env"
+
 # What a case asks of its run: each variable `NAME=VALUE`, each link `name
-# target`, as written.
+# target`, as written, and the folder it starts in, "" for none.
 record Setting
     environment: [str]
     links: [str]
+    directory: str
 
 # The setting of the case in the folder `dir`, none where it asks nothing, or
 # the refusal of a line it may not write.
 function read_setting(dir: str) -> Setting?
     environment = lines_of(read_file(dir + "/environment").default(""))
     links = lines_of(read_file(dir + "/links").default(""))
+    directory = lines_of(read_file(dir + "/directory").default(""))
 
     for pair in environment
         cut = strings.index_of(text: pair, needle: "=")
 
-        if cut.is_err() || !settable(pair.slice(from: 0, to: cut.must()))
+        if cut.is_err() || !settable(pair.slice(from: 0, to: cut.must())) && !reads(pair.slice(from: 0, to: cut.must()))
             return fail(
                 code: "setting",
-                msg: dir + "/environment sets `" + pair + "`, and a case sets only " + SETTABLE.join(" and ") + ", the variables whose empty value reads as unset, as `NAME=VALUE`"
+                msg: dir + "/environment sets `" + pair + "`, and a case sets only " + SETTABLE.join(" and ") + ", the variables whose empty value reads as unset, and " + CLANG_READS.join(", ") + ", which clang reads, as `NAME=VALUE`"
             )
 
     for link in links
         if strings.split_on(text: link, byte: 32).len() != 2
             return fail(code: "setting", msg: dir + "/links holds `" + link + "`, and a link is `<name> <target>`")
 
-    return ok(Setting(environment: environment, links: links))
+    if directory.len() > 1 || directory.len() == 1 && !inside(directory[0])
+        return fail(
+            code: "setting",
+            msg: dir + "/directory holds `" + directory.join(" ") + "`, and it is one line, a folder of the case named from it"
+        )
+    return ok(Setting(environment: environment, links: links, directory: directory.join("")))
+
+# Whether `path` names a folder inside the case: relative, and never climbing.
+function inside(path: str) -> bool
+    if path.len() == 0 || path[0] == '/' || path[0] == '\\'
+        return false
+
+    for part in strings.split_on(text: path, byte: 47)
+        if part == ".."
+            return false
+
+    return true
 
 # The code a case skipped here fails with, which a form keeps as a skip.
 constant SKIP: str
     "setting_skipped"
 
 # Why the case `s` names cannot run on this machine, "" where it can: a link
-# made with `ln`, which Windows has not.
+# made with `ln`, or a run started by `/usr/bin/env`, which Windows has not.
 function skip_here(s: Setting) -> str
     if s.links.len() > 0 && shell.exe_suffix() == ".exe"
         return "the case makes a symbolic link with `ln -s` before its run, as `apply_tree.hero`'s link cases do, and this platform has no `ln`"
+
+    if started_by_env(s) && shell.exe_suffix() == ".exe"
+        return "the case starts its compiler through `" + ENV + "`, with a variable clang reads or from a folder of its own, and this platform has no `" + ENV + "`"
     return ""
+
+# Whether the case's compiler is started through `/usr/bin/env`: it sets a
+# variable clang reads, or starts in a folder of its own.
+function started_by_env(s: Setting) -> bool
+    return s.directory.len() > 0 || clang_pairs(s).len() > 0
+
+# The case's `NAME=VALUE` lines of a variable clang reads.
+function clang_pairs(s: Setting) -> [str]
+    out: [str] @= []
+
+    for pair in s.environment
+        if reads(pair.slice(from: 0, to: strings.index_of(text: pair, needle: "=").must()))
+            out @ out.push(pair)
+
+    return out
 
 # Whether a run failed as a case skipped here.
 function is_skip(said: shell.Run?) -> bool
@@ -82,11 +144,19 @@ function is_skip(said: shell.Run?) -> bool
 
 # Whether a case asks anything of its run.
 function asks(s: Setting) -> bool
-    return s.environment.len() > 0 || s.links.len() > 0
+    return s.environment.len() > 0 || s.links.len() > 0 || s.directory.len() > 0
 
-# Whether `name` is a variable a case may set.
+# Whether `name` is a variable a case may set in this process.
 function settable(name: str) -> bool
     for one in SETTABLE
+        if one == name
+            return true
+
+    return false
+
+# Whether `name` is a variable clang reads, set for a case's compiler alone.
+function reads(name: str) -> bool
+    for one in CLANG_READS
         if one == name
             return true
 
@@ -104,13 +174,14 @@ function repository_root(scratch: str) -> str?
     return ok(strings.trimmed(asked.out))
 
 # The run of `words` for the case in `dir` as `s` asks it, what it printed
-# written back as the case's own: in a copy holding its links, with its
-# variables set and put back.
+# written back as the case's own: in a copy holding its links or starting in
+# its folder, with its variables set and put back, those clang reads given to
+# its compiler alone.
 function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
     at: str @= dir
     line: [str] @= words
 
-    if s.links.len() > 0
+    if s.links.len() > 0 || s.directory.len() > 0
         at @ scratch + "/set/" + strings.base_name(path: dir)
         apply_tree.copy_tree(scratch: scratch, from: dir, to: at)?
 
@@ -125,18 +196,27 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
                 )
 
         line @ swapped_all(words: words, old: dir, new: at)
+    started: str @= program
+
+    if started_by_env(s)
+        line @ env_line(line, s: s, at: whole(root: root, path: at), root: root)
+        started @ ENV
     before: [str] @= []
 
     for pair in s.environment
         cut = strings.index_of(text: pair, needle: "=").must()
         name = pair.slice(from: 0, to: cut)
+
+        # A variable clang reads went to the compiler's line alone.
+        if reads(name)
+            continue
         before @ before.push(name + "=" + shell.env(name).default(""))
         _ = hero_env_put(
             name: name.cstr(),
             value: swapped(text: pair.slice(from: cut + 1, to: pair.len()), old: "<root>", new: root).cstr()
         )
 
-    said = shell.run(scratch: scratch, program: program, words: line)
+    said = shell.run(scratch: scratch, program: started, words: line)
 
     for pair in before
         cut = strings.index_of(text: pair, needle: "=").must()
@@ -151,6 +231,44 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
     back.out @ written_back(text: back.out, at: at, dir: dir, root: root)
     back.err @ written_back(text: back.err, at: at, dir: dir, root: root)
     return ok(back)
+
+# **The line that starts a case's compiler through `/usr/bin/env`**: from the
+# case's `directory` in `at`, its copy, where it names one, the compiler and
+# the copy's paths then written whole, since a relative one would be read from
+# there; then each variable clang reads, `<root>` its value's root; then the
+# compiler's own line.
+function env_line(words: [str], s: Setting, at: str, root: str) -> [str]
+    out: [str] @= [ENV]
+    line: [str] @= words
+
+    if s.directory.len() > 0
+        out @ out.push("-C").push(at + "/" + s.directory)
+        line @ [whole(root: root, path: words[0])]
+
+        for word in words.slice(from: 1, to: words.len())
+            line @ line.push(swapped(text: word, old: unwhole(root: root, path: at), new: at))
+
+    for pair in clang_pairs(s)
+        out @ out.push(swapped(text: pair, old: "<root>", new: root))
+
+    for word in line
+        out @ out.push(word)
+
+    return out
+
+# `path` written whole: as it is where it starts at the root, else from the
+# repository's root.
+function whole(root: str, path: str) -> str
+    if path.len() > 0 && path[0] == '/'
+        return path
+
+    if strings.starts_with(text: path, prefix: "./")
+        return root + "/" + path.slice(from: 2, to: path.len())
+    return root + "/" + path
+
+# `path`, written whole, as the repository's root reads it.
+function unwhole(root: str, path: str) -> str
+    return strings.without_prefix(text: path, prefix: root + "/")
 
 # `text` with the folder the case ran in written as the case's own, and the
 # repository's root as `<root>`: the absolute form first.
@@ -206,5 +324,23 @@ test "a setting names only the variables whose empty value reads as unset, and l
     assert !settable("GIT_DIR")
     assert !settable("HOME")
     assert lines_of("# why\nPATH=<root>/build/no-tools\n\n") == ["PATH=<root>/build/no-tools"]
-    none = Setting(environment: [], links: [])
+    none = Setting(environment: [], links: [], directory: "")
     assert !asks(none)
+    assert !started_by_env(none)
+
+# **A variable clang reads is never set in this process** (defect 2344): it
+# is given to the case's compiler alone, through `/usr/bin/env`, a `<root>` in
+# its value written whole; and a case with a `directory` starts there, its
+# compiler and its copy's paths written whole, so nothing is read from the
+# folder it starts in but what the case meant.
+test "a variable clang reads is given to the case's compiler alone, and a directory is where its run starts"
+    assert reads("CPATH") && reads("C_INCLUDE_PATH") && reads("CCC_OVERRIDE_OPTIONS")
+    assert !settable("CPATH") && !reads("PATH")
+    plain = Setting(environment: ["PATH=/x", "CPATH=<root>/inc"], links: [], directory: "")
+    assert started_by_env(plain) && clang_pairs(plain) == ["CPATH=<root>/inc"]
+    words = ["./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
+    assert env_line(words, s: plain, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "CPATH=/r/inc", "./heroes-next", "build", "build/h-1/set/x.case/main.hero"]
+    moved = Setting(environment: ["C_INCLUDE_PATH=:"], links: [], directory: "here")
+    assert env_line(words, s: moved, at: "/r/build/h-1/set/x.case", root: "/r") == [ENV, "-C", "/r/build/h-1/set/x.case/here", "C_INCLUDE_PATH=:", "/r/heroes-next", "build", "/r/build/h-1/set/x.case/main.hero"]
+    assert inside("here") && inside("a/b") && !inside("../up") && !inside("/abs") && !inside("a/../..")
+    assert whole(root: "/r", path: "/abs") == "/abs" && unwhole(root: "/r", path: "/r/b/c") == "b/c"

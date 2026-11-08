@@ -1,0 +1,9 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's R2): `C_INCLUDE_PATH` names a folder
+# holding a `stdbool.h` that defines `true` as 0, which clang searches before
+# the platform's as a `-c-isystem` folder; `print(true)` printed `false` at
+# exit 0. Refused at the program's first byte, its note naming the variable.
+
+function main()
+    b = true
+    print(b)
