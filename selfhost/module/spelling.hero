@@ -41,10 +41,8 @@ function none() -> Listed
 # a file that is not there does.
 function spelt(@listed: Listed, opened: str, module: str) -> bool
     parts = split(module)
-    at: i64 @= 0
-    folder: str @= opened
 
-    while at < parts.len()
+    for at in range(from: 0, to: parts.len())
         last = at == parts.len() - 1
         name: str @= parts[at]
         kind: i64 @= 1
@@ -53,10 +51,11 @@ function spelt(@listed: Listed, opened: str, module: str) -> bool
             name @ name + ".hero"
             kind @ 0
 
+        # The folder the part stands in, its path joined once (defect 105).
+        folder = opened + parts.slice(from: 0, to: at).push("").join("/")
+
         if !holds(names_in(@listed, folder: folder, kind: kind), name: name)
             return false
-        folder @ folder + parts[at] + "/"
-        at @ at + 1
 
     return true
 
