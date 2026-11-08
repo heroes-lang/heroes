@@ -340,7 +340,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("741eb29b3eabbce6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0a65b1a863370cec", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife\tfixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life\n");

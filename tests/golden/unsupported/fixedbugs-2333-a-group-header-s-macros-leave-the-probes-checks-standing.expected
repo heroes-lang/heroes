@@ -1,0 +1,15 @@
+error[ffi_field_type]: `Pt.x` is `int32_t` in `fixedbugs-2333-checks.h`, a signed 32-bit integer, not `i64` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-2333-a-group-header-s-macros-leave-the-probes-checks-standing.hero:12:9
+     |
+  12 |         x: i64  #~ ffi_field_type
+     |         ^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `x`, or name the header that spells `Pt` this way
+  fix (guess): declare `x` with `i32`
+
+error[ffi_field_type]: `Pt.y` is `int32_t` in `fixedbugs-2333-checks.h`, a signed 32-bit integer, not `i64` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-2333-a-group-header-s-macros-leave-the-probes-checks-standing.hero:13:9
+     |
+  13 |         y: i64  #~ ffi_field_type
+     |         ^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `y`, or name the header that spells `Pt` this way
+  fix (guess): declare `y` with `i32`

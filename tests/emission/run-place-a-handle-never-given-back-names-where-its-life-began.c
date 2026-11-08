@@ -285,7 +285,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("19f32ab24fa5de0b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("303a29be74312e11", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeahandlenevergivenbacknameswhereitslifebegan\tplace-a-handle-never-given-back-names-where-its-life-began\n");

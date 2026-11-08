@@ -243,7 +243,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("36797fb87a82a7eb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4cc07ec41f0df7f2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2212apoweroftwoandtheleastsubnormalsprintthedigitstheyneed\tfixedbugs-2212-a-power-of-two-and-the-least-subnormals-print-the-digits-they-need\n");

@@ -111,6 +111,10 @@
 #include "heroes_guard_open.h"
 #include "heroes_guard_close.h"
 #include "heroes_standard.h"
+/* The guard's and `heroes_standard.h`'s own pair, which they include and this
+ * names, so the runtime's key holds them too (defect 2333). */
+#include "heroes_reserved_open.h"
+#include "heroes_reserved_close.h"
 
 #include <locale.h>
 #include <float.h>

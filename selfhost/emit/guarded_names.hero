@@ -181,9 +181,72 @@ constant MATH_LINES: [str]
         "tgammal trunc truncf truncl"
     ]
 
+# **The names C reserves for the implementation that the C this compiler
+# writes holds** (defect 2333, 2026-11-08): every `__x` and `_X` of an emitter
+# module's text, the three overflow builtins `emit/operator.hero` composes,
+# and every one of the runtime's four headers. `macro_guard` left them to the
+# headers on purpose, as names a system header may define, and a header did:
+# `#define __builtin_add_overflow(a, b, r) ((*(r) = (a) + (b)), 0)` in the
+# header a group names turned an `i64` sum past the top into
+# `-9223372036854775808` at exit 0, `#define _Static_assert(c, m)` let a
+# `double` function bound `-> i64` build and print `1`, `#define
+# __builtin_constant_p(x) 1` bound `stdout` as a constant, and `#define _Bool
+# int` was an internal error at exit 2 (measured on this Mac the day the
+# repair landed). No system header this Mac's SDK or clang ships defines one
+# of them where clang compiles C: each definition found stands under
+# `!defined(__GNUC__)`, `#ifndef __has_feature` or C++. So
+# `runtime/heroes_reserved_open.h` saves each and
+# `runtime/heroes_reserved_close.h` gives it back, around the groups' headers
+# inside the guard, around the library's headers `heroes_standard.h` reads
+# after them, and around the headers of every probe an emitter module writes
+# (`reserved_around`); `macro_guard`'s tests hold the two files to this list
+# and every emitter module and runtime header to it. Sorted by bytes.
+constant RESERVED_LINES: [str]
+    [
+        "_Alignof _Atomic _Bool _CRT_SECURE_NO_WARNINGS _Generic _Noreturn"
+        "_Static_assert _USE_MATH_DEFINES _WIN32 __DBL_MANT_DIG__"
+        "__DBL_MAX_EXP__ __DBL_MIN_EXP__ __FLT_EVAL_METHOD__ __INT16_C_SUFFIX__"
+        "__INT16_MAX__ __INT16_TYPE__ __INT32_C_SUFFIX__ __INT32_MAX__"
+        "__INT32_TYPE__ __INT64_C_SUFFIX__ __INT64_MAX__ __INT64_TYPE__"
+        "__INT8_C_SUFFIX__ __INT8_MAX__ __INT8_TYPE__ __INTPTR_TYPE__"
+        "__LDBL_MANT_DIG__ __LDBL_MAX_EXP__ __LDBL_MIN_EXP__ __OPTIMIZE__"
+        "__SANITIZE_ADDRESS__ __UINT16_TYPE__ __UINT32_TYPE__"
+        "__UINT64_C_SUFFIX__ __UINT64_TYPE__ __UINT8_TYPE__ __UINTPTR_TYPE__"
+        "__asm__ __atomic_always_lock_free __attribute__ __builtin_add_overflow"
+        "__builtin_classify_type __builtin_constant_p __builtin_huge_val"
+        "__builtin_memcpy __builtin_memmove __builtin_memset"
+        "__builtin_mul_overflow __builtin_offsetof __builtin_strlen"
+        "__builtin_sub_overflow __builtin_types_compatible_p __cleanup__"
+        "__has_feature __noinline__ __optnone__ __typeof__"
+    ]
+
+# The line that saves the reserved names, and the one that gives them back.
+constant RESERVED_OPEN_LINE: str
+    "#include \"heroes_reserved_open.h\""
+
+constant RESERVED_CLOSE_LINE: str
+    "#include \"heroes_reserved_close.h\""
+
 # The names, one each.
 function names() -> [str]
     return split(NAMES)
+
+# The reserved names, one each.
+function reserved() -> [str]
+    return split(RESERVED_LINES)
+
+# A probe's lines of a group's headers between the two that save and give
+# back the reserved names, so what the probe writes after them means what the
+# compiler wrote; none where there are none.
+function reserved_around(lines: [str]) -> [str]
+    if lines.len() == 0
+        return lines
+    out: [str] @= [RESERVED_OPEN_LINE]
+
+    for line in lines
+        out @ out.push(line)
+
+    return out.push(RESERVED_CLOSE_LINE)
 
 # The macros left to the headers, one each.
 function left() -> [str]

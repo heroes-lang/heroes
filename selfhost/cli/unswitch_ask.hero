@@ -28,6 +28,7 @@ use source
 use emit/c_text
 use emit/ffi_lookup
 use emit/ffi_switched
+use emit/guarded_names
 use ir/containers
 use cli/toolchain
 use cli/compiling
@@ -115,7 +116,7 @@ function set_unit(headers: [str], undefined: str) -> str
     index: i64 @= 0
 
     for header in headers
-        lines @ strings.with_all(list: lines, more: c_text.includes([header]))
+        lines @ strings.with_all(list: lines, more: guarded_names.reserved_around(c_text.includes([header])))
         lines @ strings.with_all(list: lines, more: markers(at: index.to_str()))
 
         if undefined != ""
@@ -228,7 +229,7 @@ test "each header is followed by a marker per strict switch, and the asked switc
     )
     assert ffi_lookup.has(
         text: got,
-        needle: "#include <cfg.h>\n#if defined(_POSIX_C_SOURCE)\n#line 1 \"hero-ask-unswitch-set _POSIX_C_SOURCE 0\"\n_Static_assert(0, \"hero-unswitch-set\");\n#endif\n"
+        needle: "#include <cfg.h>\n#include \"heroes_reserved_close.h\"\n#if defined(_POSIX_C_SOURCE)\n#line 1 \"hero-ask-unswitch-set _POSIX_C_SOURCE 0\"\n_Static_assert(0, \"hero-unswitch-set\");\n#endif\n"
     )
     assert strings.ends_with(text: got, suffix: "#endif\n#undef _POSIX_C_SOURCE\n")
     assert !ffi_lookup.has(text: set_unit(headers: ["cfg.h"], undefined: ""), needle: "#undef")

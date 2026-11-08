@@ -275,7 +275,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("75cb611710829d87", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c126024350ded8d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs540areleaseinsidealinekeepstheline\tfixedbugs-540-a-release-inside-a-line-keeps-the-line\n");

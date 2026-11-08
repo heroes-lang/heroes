@@ -470,7 +470,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2070a7b75c02890d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36b7a6c3008dd914", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffithepaddingcreadsiszero\tffi-the-padding-c-reads-is-zero\n");

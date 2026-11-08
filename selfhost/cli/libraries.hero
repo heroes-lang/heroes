@@ -545,10 +545,12 @@ test "the refusal's note names the list word for word, and the list admits every
     assert !open
     assert spans.len() == 16
 
+    # The value is a word the guard keeps none of: since defect 2333 a `-D` or
+    # `-U` of one, `v` among them, the runtime's macros' own, is refused.
     for named in spans
         if package_words.valued(named)
-            assert !filter_words(package: "n", said: named + " v").is_err()
-            assert !filter_words(package: "n", said: named + "v").is_err()
+            assert !filter_words(package: "n", said: named + " pkgv").is_err()
+            assert !filter_words(package: "n", said: named + "pkgv").is_err()
             continue
         filled: str @= named
 

@@ -60,6 +60,7 @@ use check/state
 use emit/extern_union
 use emit/layout_text
 use emit/c_text
+use emit/guarded_names
 
 constant SCREEN: str
     "hero_ly_screen"
@@ -80,7 +81,7 @@ constant NO_LAYOUT: str
     "heroes-ffi-no-layout"
 
 function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], c: state.Checked, u: extern_union.Used) -> str
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
 
     lines @ lines.push("#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
     lines @ lines.push("#pragma clang diagnostic error \"-Wexcess-initializers\"")
@@ -236,7 +237,7 @@ function strays(said: str) -> bool
 # The question clang's JSON answers: one typedef of each record's type, whose
 # `type` says what the record's name stands for.
 function type_unit(headers: [str], wanted: [layout_text.Asked]) -> str
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
 
     for one in wanted
         lines @ lines.push("typedef " + one.c_type + " " + TYPED + one.decl.to_str() + ";")
@@ -356,7 +357,7 @@ test "a type with no layout is read from where clang erred, and the type behind 
     assert behind_of(json, decl: 0).must() == "struct opaque_s"
     assert behind_of(json, decl: 4).must() == "struct whole_s"
     assert behind_of(json, decl: 7).is_err()
-    assert type_unit(["x.h"], wanted: [layout_text.Asked(decl: 0, c_type: "opaque_t")]) == "#include <x.h>\ntypedef opaque_t hero_ly_ty_0;\n"
+    assert type_unit(["x.h"], wanted: [layout_text.Asked(decl: 0, c_type: "opaque_t")]) == "#include \"heroes_reserved_open.h\"\n#include <x.h>\n#include \"heroes_reserved_close.h\"\ntypedef opaque_t hero_ly_ty_0;\n"
 
     # A note in the header is no stray, an error in it is, and so is a
     # header the machine lacks: then the program's own compile tells it.

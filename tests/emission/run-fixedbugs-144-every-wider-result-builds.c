@@ -393,7 +393,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ebd42734c098c65", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7504417f7094dc6b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs144everywiderresultbuilds\tfixedbugs-144-every-wider-result-builds\n");

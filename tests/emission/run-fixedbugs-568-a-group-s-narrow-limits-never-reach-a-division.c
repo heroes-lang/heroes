@@ -272,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3027226e6e25c5c0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("466e217a12b115c7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs568agroupsnarrowlimitsneverreachadivision\tfixedbugs-568-a-group-s-narrow-limits-never-reach-a-division\n");

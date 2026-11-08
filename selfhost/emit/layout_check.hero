@@ -32,6 +32,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use emit/guarded_names
 
 # The markers, one writer and one reader each (`emit/ffi_layout.hero`).
 constant MISSING: str
@@ -57,7 +58,7 @@ constant MEMBER: str
 # `dump` is the rows of the blocks this compiler asked for
 # (`layout_rows.wrapper_rows`), never clang's whole output.
 function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], u: extern_union.Used, c: state.Checked) -> str?
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
     wrote: bool @= false
 
     rows = layout_rows.rows_of(dump)
@@ -319,7 +320,7 @@ test "the assertions for a struct holding an anonymous union: a member left out,
     control = "         0 | struct hero_ly_control\n         0 |   struct hero_ly_control::(unnamed at control.c:1:26) v\n         0 |     int a\n         4 |     union hero_ly_control::(anonymous at control.c:1:42) \n         4 |       int b\n         4 |       float c\n         8 |     struct hero_ly_control::(anonymous at control.c:1:69) \n         8 |       int g\n        12 |       int h\n        16 |     struct hero_ly_control::(unnamed at control.c:1:95) n\n        16 |       int p\n    20:0-1 |     unsigned int d\n    20:2-2 |     unsigned int \n        24 |     int[0] e\n           | [sizeof=24, align=4]\n         0 | union hero_ly_control::(anonymous at control.c:1:42)\n           | [sizeof=4, align=4]\n"
     dump = control + "         0 | union SA::(anonymous at ./u.h:8:32)\n           | [sizeof=4, align=4]\n         0 | struct hero_ly_0\n         0 |   SA v\n         0 |     int32_t kind\n         4 |     union SA::(anonymous at ./u.h:8:32) \n         4 |       int32_t i\n         4 |       float f\n         8 |     int32_t x\n           | [sizeof=12, align=4]\n"
     unit = check_unit(["u.h"], dump: dump, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).must()
-    assert layout_rows.byte_index(text: unit, needle: "#include <u.h>") == 0
+    assert layout_rows.byte_index(text: unit, needle: "#include \"heroes_reserved_open.h\"\n#include <u.h>\n#include \"heroes_reserved_close.h\"") == 0
     assert layout_rows.byte_index(text: unit, needle: "#line 2 \"t.hero\"") > 0
     assert layout_rows.byte_index(text: unit, needle: "_Static_assert(sizeof(((SA *)0)->x) == 0 || __builtin_classify_type(*(SA *)0) == 13, \"heroes-ffi-missing SA x\");") > 0
     assert layout_rows.byte_index(text: unit, needle: "\"heroes-ffi-shared SA i f\"") > 0

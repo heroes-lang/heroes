@@ -264,7 +264,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12125aa748fe5b5c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("285959b36d89ab62", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes\tfixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes\n");

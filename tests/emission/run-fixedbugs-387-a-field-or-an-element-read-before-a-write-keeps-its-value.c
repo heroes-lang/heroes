@@ -367,7 +367,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4883516853f063b2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5eca5074787bb3b8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue\tfixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value\n");

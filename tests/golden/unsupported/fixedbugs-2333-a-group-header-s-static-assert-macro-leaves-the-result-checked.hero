@@ -1,0 +1,12 @@
+# fixedbugs, defect 2333, lane pm-cbound, 2026-11-08: the header a group names
+# defines `_Static_assert` to nothing, and binds a `double` function as
+# returning `i64`. Before the repair the check of the result's type vanished
+# with the keyword and the program built, printing `1` at exit 0; the reserved
+# pair now gives `_Static_assert` back after the group, and the binding is
+# refused as it is without the macro.
+
+extern "fixedbugs-2333-checks.h"
+    function hero_2333_half(x: f64) -> i64  #~ ffi_return_type
+
+function main()
+    print(hero_2333_half(x: 3.0))

@@ -1,0 +1,14 @@
+# fixedbugs, defect 2333, lane pm-cbound, 2026-11-08: the header a group names
+# defines `__builtin_add_overflow` to report nothing. The guard left the names
+# C reserves for the implementation to the headers, on purpose, so before the
+# repair the sum past the top printed `-9223372036854775808` at exit 0 where the program aborts; the reserved pair now saves
+# and gives back every such name the compiler's own C writes, around the
+# groups (`emit/guarded_names.hero`, `runtime/heroes_reserved_open.h`).
+
+extern "fixedbugs-2333-overflow.h"
+    constant HERO_2333_ONE: i64
+
+function main()
+    big: i64 = 9223372036854775807
+    print(HERO_2333_ONE)
+    print(big + HERO_2333_ONE)

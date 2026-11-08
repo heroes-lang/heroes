@@ -1,0 +1,17 @@
+# fixedbugs, defect 2333, lane pm-cbound, 2026-11-08: the header a group names
+# defines `_Static_assert`, `_Generic`, `__builtin_offsetof` and
+# `__builtin_types_compatible_p` over what the layout check's probe writes,
+# and a record whose fields are wider than the struct's. Before the repair the
+# probe's checks vanished, and the build stopped at exit 2, *internal error*,
+# on clang's conversion warning in the unit; the reserved pair now stands
+# around every probe's headers too, and the fields are told as they are
+# without the macros, at exit 1.
+
+extern "fixedbugs-2333-checks.h"
+    record Pt tag hero_2333_pt
+        x: i64  #~ ffi_field_type
+        y: i64  #~ ffi_field_type
+
+function main()
+    p = Pt(x: 1, y: 2)
+    print(p.x)

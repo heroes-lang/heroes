@@ -28,6 +28,7 @@ use emit/c_text
 use emit/externs as emit_externs
 use emit/ffi_lookup
 use emit/ffi_switched
+use emit/guarded_names
 use ir/containers
 use cli/toolchain
 use cli/compiling
@@ -88,7 +89,7 @@ function names_of(program: containers.Program, s: source.Source, decls: [ast.Dec
 # The question unit: the switch before every header, then the questions.
 function unit(defined: str, headers: [str], names: [str]) -> str
     lines: [str] @= ["#define " + defined]
-    lines @ strings.with_all(list: lines, more: c_text.includes(headers))
+    lines @ strings.with_all(list: lines, more: guarded_names.reserved_around(c_text.includes(headers)))
     return lines.join("\n") + "\n" + questions(names)
 
 # Each name under a file of its own, its type asked and the assertion that
@@ -171,7 +172,7 @@ function first_word(text: str) -> str
 
 test "a switch stands before every header, and each name asks its type under a file of its own"
     got = unit(defined: "_GNU_SOURCE 1", headers: ["sched.h"], names: ["sched_getcpu"])
-    assert got == "#define _GNU_SOURCE 1\n#include <sched.h>\n#line 1 \"hero-ask-switch sched_getcpu\"\n__typeof__(sched_getcpu) *hero_switch_0 = 0;\n_Static_assert(0, \"hero-switch-asked\");\n"
+    assert got == "#define _GNU_SOURCE 1\n#include \"heroes_reserved_open.h\"\n#include <sched.h>\n#include \"heroes_reserved_close.h\"\n#line 1 \"hero-ask-switch sched_getcpu\"\n__typeof__(sched_getcpu) *hero_switch_0 = 0;\n_Static_assert(0, \"hero-switch-asked\");\n"
     assert first_word("_XOPEN_SOURCE 700") == "_XOPEN_SOURCE"
 
 test "a name is declared under a switch where its question was reached and nothing in it is undeclared"

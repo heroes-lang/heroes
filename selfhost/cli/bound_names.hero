@@ -11,6 +11,7 @@ use token
 use source
 use emit/externs as emit_externs
 use emit/macro_guard
+use emit/c_words
 use parse
 
 # A name the unit's C writes from a group: the header that group names, its
@@ -114,7 +115,7 @@ function with_name(@out: [Bound], @seen: {str: bool}, s: source.Source, span: to
 # called with one argument.
 function with_words(@out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64)
     words: {str: bool} @= {}
-    macro_guard.words_into(@words, text: source.span_text(s, span))
+    c_words.words_into(@words, text: source.span_text(s, span))
 
     for word in sort(keys(words))
         if seen[word].is_err()

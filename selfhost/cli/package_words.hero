@@ -102,6 +102,7 @@
 use cli/process
 use cli/link_flags
 use cli/strings
+use cli/package_macros
 
 # The flag clang reads with its value as the next word alone (clang's
 # `Separate`): `-framework <name>`.
@@ -187,13 +188,18 @@ function one_word(word: str) -> str?
     return fail(code: "none", msg: "not a word the list admits whole")
 
 # Whether `value`, written after `flag` or as the value of a `-Wl,` option, is a
-# value: not empty, not a flag, not a response file, and for `-l` not `:<file>`.
+# value: not empty, not a flag, not a response file, for `-l` not `:<file>`,
+# and for `-D` and `-U` no name the C this compiler writes
+# (`cli/package_macros.hero`, defect 2333).
 function is_value(flag: str, value: str) -> bool
     if value.len() == 0
         return false
     first = value.chars()[0]
 
     if first == "-" || first == "@"
+        return false
+
+    if package_macros.refused(flag: flag, value: value)
         return false
     return !(flag == "-l" && first == ":")
 
@@ -208,7 +214,8 @@ function told(flag: str, value: str) -> str
 
     if flag == "-l" && first == ":"
         return ": `-l:<file>` names a file, where `-l` names a library"
-    return ""
+
+    return package_macros.told(flag: flag, value: value)
 
 # The same, for a word refused whole: a joined value, or a `-Wl,` option's.
 function told_word(word: str, next: str) -> str
@@ -351,6 +358,21 @@ test "a value is a name: not empty, not a flag, not a file of words, and -l not 
     assert told_word(word: "-Wl,-framework,@r", next: "") != ""
     assert named(word: "-Wl,-rpath", next: "-Wl,@r") == "-Wl,-rpath -Wl,@r"
     assert named(word: "-Wl,-rpath", next: "-lz") == "-Wl,-rpath"
+
+# **A `-D` or `-U` naming a name the C this compiler writes is no value**
+# (defect 2333; `cli/package_macros.hero` holds which), joined or as the next
+# word, and its refusal says why; a switch a `.pc` sets stays one, and so does
+# a `-D` this compiler's own words hold.
+test "a -D or -U of a name the C this compiler writes is no value, joined or apart (defect 2333)"
+    for value in ["__builtin_add_overflow(a,b,r)=0", "main=SDL_main"]
+        assert !is_value(flag: "-D", value: value)
+        assert told(flag: "-D", value: value) == package_macros.told(flag: "-D", value: value)
+        assert strings.holds(text: told(flag: "-D", value: value), needle: "is a name the C this compiler writes")
+
+    assert !is_value(flag: "-U", value: "__has_feature")
+    assert one_word("-D__builtin_mul_overflow(a,b,r)=0").is_err()
+    assert is_value(flag: "-D", value: "_REENTRANT") && told(flag: "-D", value: "_REENTRANT") == ""
+    assert one_word("-D_USE_MATH_DEFINES").must() == "-D_USE_MATH_DEFINES"
 
 # Every option of `LINKED` is read whole or split and handed on as its own word,
 # so a new option without its own words fails here rather than reaching the line

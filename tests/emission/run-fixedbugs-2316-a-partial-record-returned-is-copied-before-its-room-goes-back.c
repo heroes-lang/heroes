@@ -321,7 +321,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a1000fd754c6386", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5057000919d7b38d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back\n");

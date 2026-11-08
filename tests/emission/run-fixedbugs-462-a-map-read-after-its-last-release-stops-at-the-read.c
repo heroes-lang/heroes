@@ -267,7 +267,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("729bce612551138a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08e2cd6e49dc6390", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs462amapreadafteritslastreleasestopsattheread\tfixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read\n");

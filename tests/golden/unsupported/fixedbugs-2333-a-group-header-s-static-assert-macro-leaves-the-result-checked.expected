@@ -1,0 +1,7 @@
+error[ffi_return_type]: `hero_2333_half` returns `double` in `fixedbugs-2333-checks.h`, not `i64` — clang read the header
+  at tests/golden/unsupported/fixedbugs-2333-a-group-header-s-static-assert-macro-leaves-the-result-checked.hero:9:5
+    |
+  9 |     function hero_2333_half(x: f64) -> i64  #~ ffi_return_type
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `hero_2333_half`
+  fix (guess): declare the result `f64`
