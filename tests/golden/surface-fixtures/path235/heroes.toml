@@ -1,0 +1,3 @@
+# `path` meant `json`, and names `decoy`.
+[dependencies.json]
+path = "decoy"

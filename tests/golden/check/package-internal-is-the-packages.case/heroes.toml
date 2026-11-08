@@ -1,0 +1,3 @@
+# The catalogue of the case beside it: one package of the author's own.
+[dependencies.lib]
+path = "lib"

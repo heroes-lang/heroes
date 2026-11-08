@@ -11,6 +11,14 @@
 # Anything else in the directory is ignored on purpose: `.fixed` and
 # `.applied` files belong to the certain-fix suite, and `.gitkeep` and editor droppings
 # are not cases.
+#
+# **A case may be a folder** (panel 235's R19, M-package-manager step 6): one
+# whose program reads files beside it no flat case can hold, a catalogue
+# `heroes.toml` and the trees `heroes fetch` places under `heroes.packages/`,
+# is a folder `<name>.case/` holding the file compiled, `main.hero`, and its
+# expectation, `main.expected`, with the rest. The pair rule binds it as it
+# binds a flat case: a folder missing either stops the harness by name. A
+# folder not named `.case` is a case's modules, as it always was.
 
 use shell
 use strings
@@ -72,7 +80,34 @@ function collect(scratch: str, dir: str) -> [Case]?
             if present[owner].is_err()
                 return fail(code: "orphan", msg: "orphan expectation: " + entry + " has no .hero source")
 
+    for folder in shell.list_directories(scratch: scratch, dir: dir)?
+        if strings.ends_with(text: folder, suffix: CASE)
+            cases @ cases.push(folder_case(scratch: scratch, folder: folder)?)
+
     return ok(cases)
+
+# The folder a case is, by its name's end.
+constant CASE: str
+    ".case"
+
+# A folder case's pair, or the failure naming the half it lacks.
+function folder_case(scratch: str, folder: str) -> Case?
+    inside: {str: bool} @= {}
+
+    for entry in shell.list_entries(scratch: scratch, dir: folder)?
+        inside[entry] @ true
+
+    source = folder + "/main.hero"
+    expected = folder + "/main.expected"
+
+    if inside[source].is_err()
+        return fail(code: "half_pair", msg: "golden case " + folder + " holds no main.hero, the file it compiles")
+
+    if inside[expected].is_err()
+        return fail(code: "half_pair", msg: "golden case " + source + " is missing its .expected file")
+    return ok(
+        Case(source: source, expected: expected, name: strings.base_name(path: strings.without_suffix(text: folder, suffix: CASE)))
+    )
 
 # The harness's third word: the cases whose NAME holds `only`, every case when
 # `only` is empty. Added 2026-09-29 for the gate of one repair (CLAUDE.md
@@ -292,6 +327,34 @@ test "the collector pairs, orders and refuses a half pair"
     assert found.must()[0].name == "a"
     assert found.must()[1].name == "b"
     assert found.must()[0].expected == tree + "/a.expected"
+    assert !shell.remove_tree(scratch).is_err()
+
+test "a folder named .case is one case, its main.hero and main.expected, and one missing either stops the harness"
+    scratch = shell.own_scratch()
+    tree = scratch + "/folders"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/b.case/heroes.packages/x").is_err()
+    assert !shell.mkdir_all(tree + "/modules").is_err()
+
+    for name in ["a.hero", "a.expected", "b.case/main.hero", "b.case/main.expected", "b.case/heroes.toml", "b.case/heroes.packages/x/m.hero", "modules/m.hero"]
+        assert !write_file(path: tree + "/" + name, text: "").is_err()
+
+    found = collect(scratch: scratch, dir: tree)
+    assert !found.is_err()
+    assert found.must().len() == 2
+    assert found.must()[1].name == "b"
+    assert found.must()[1].source == tree + "/b.case/main.hero"
+    assert found.must()[1].expected == tree + "/b.case/main.expected"
+
+    # Either half missing is the broken test the flat pair rule refuses.
+    assert !shell.mkdir_all(tree + "/c.case").is_err()
+    assert !write_file(path: tree + "/c.case/main.hero", text: "").is_err()
+
+    code = match collect(scratch: scratch, dir: tree)
+        .ok _  => "ok"
+        .err e => e.code
+
+    assert code == "half_pair"
     assert !shell.remove_tree(scratch).is_err()
 
 test "a source with no expectation stops the harness by name"

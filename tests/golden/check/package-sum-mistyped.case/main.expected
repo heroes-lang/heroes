@@ -1,0 +1,1 @@
+tests/golden/check/package-sum-mistyped.case/main.hero:8:5: error[package_unread]: `<json>` cannot be read: the package `json` is in the catalogue and not placed: `heroes fetch` places it at `tests/golden/check/package-sum-mistyped.case/heroes.packages/json@1.4.2-b393654c66b84e43/`

@@ -1,0 +1,12 @@
+# Fixed defect 2327, 2026-11-08, lane pm-use (found by panel 235's
+# compiler-engineer): a module `_0opt.hero` spelt its C names inside the
+# namespace the emitter keeps for its own, `h_0opt_<hash>`, so `--emit-c`
+# printed C clang refuses (*redefinition of 'h_0opt_f87774a'*), while the
+# build, its units apart, ran. A component of the program's own led by a
+# digit is led by `m` now (panel 235's R17), and the program builds and runs
+# whole either way.
+use _0opt
+
+function main()
+    print(_0opt.f87774a())
+    print(_0opt.maybe(3).default(0))

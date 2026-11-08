@@ -1,0 +1,9 @@
+# M-package-manager step 6, panel 235's R16 (2026-11-07): a package's
+# `internal` folder is its own, held by the compiler, since no harness reads a
+# stranger's tree. `<lib>/strings` names `<lib>/internal/scan`, its private
+# module, from the package's own root (R4); the program may not.
+use <lib>/strings
+use <lib>/internal/scan  #~ private_module
+
+function main()
+    print(strings.count(1) + scan.twice(1))

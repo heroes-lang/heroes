@@ -1,0 +1,8 @@
+# The falsifier's one exemption (panel 235's R6 and R12, W4 restated
+# 2026-11-07): a `path` entry mistyped to name another folder of the same
+# module names compiles that folder's code, and every compilation that reads
+# it says so on stderr, naming the folder as unverified.
+use <json>/parse
+
+function main()
+    print(parse.value())

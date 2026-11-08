@@ -1,0 +1,1 @@
+tests/golden/check/package-catalogue-deleted.case/main.hero:9:5: error[unknown_entry]: `<json>` names no entry: there is no catalogue `tests/golden/check/package-catalogue-deleted.case/heroes.toml` beside `tests/golden/check/package-catalogue-deleted.case/main.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add json` writes one

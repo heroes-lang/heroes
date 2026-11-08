@@ -1,0 +1,12 @@
+# M-package-manager step 6, panel 235's falsifier (R12, W4 as restated
+# 2026-11-07): deleting the catalogue, deleting one of its entries, or
+# mistyping a field of one never changes which module compiles, only whether
+# the program builds, and a fetched copy left behind compiles nothing.
+#
+# The catalogue deleted, its placed tree and the program's own
+# `json/parse.hero` left: the bracketed `use` reads neither, and taking the
+# brackets off is a `guess` (R18), the own module being another module.
+use <json>/parse  #~ unknown_entry
+
+function main()
+    print(parse.value())
