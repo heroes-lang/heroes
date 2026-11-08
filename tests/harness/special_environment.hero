@@ -19,6 +19,9 @@
 #   builds and prints `true`: a tie goes to the platform.
 # - **A linker's edit through `CCC_OVERRIDE_OPTIONS`**, `-Wl,-S`, builds and
 #   runs: every other edit goes through.
+# - **An edit that changes the level or takes a warning away goes through**,
+#   and **one that takes a probe's own word away** stops at exit 2, the
+#   variable named (defect 2355).
 # - **An edit that fires only at `-O2`**, `s/-O2/-D<a kept name>/`, which the
 #   `-###` question asked at `-O0` does not show, is refused from the job the
 #   listing's `-v` prints; and the program built at `-O2` with no edit after
@@ -51,6 +54,13 @@ constant TRUE_PROGRAM: str
 constant PAST_THE_TOP: str
     "function main()\n    big: i64 = 9223372036854775807\n    print(big + args().len())\n"
 
+# A group's constant, whose probe carries `-fsyntax-only`.
+constant GROUP_PROGRAM: str
+    "extern \"lib.h\"\n    constant BUFSIZ: i64\n\nfunction main()\n    print(BUFSIZ)\n"
+
+constant GROUP_HEADER: str
+    "#include <stdio.h>\n"
+
 constant KEPT_DEFINE: str
     "-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)"
 
@@ -70,7 +80,7 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
     if !laid.is_err()
         laid @ shell.mkdir_all(home + "/rl/readline")
 
-    for pair in [["/readline.hero", READLINE_PROGRAM], ["/true.hero", TRUE_PROGRAM], ["/sum.hero", PAST_THE_TOP]]
+    for pair in [["/readline.hero", READLINE_PROGRAM], ["/true.hero", TRUE_PROGRAM], ["/sum.hero", PAST_THE_TOP], ["/group.hero", GROUP_PROGRAM], ["/lib.h", GROUP_HEADER]]
         if !laid.is_err()
             laid @ write_file(path: home + pair[0], text: pair[1])
 
@@ -110,6 +120,30 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
     if !strings.starts_with(text: clean, prefix: "panic: integer overflow")
         wrong @ wrong.push("    the same program at `-O2` with no edit, after it: " + clean + ", where it panics")
 
+    # An edit that only changes the level, or takes a warning away, goes
+    # through, and the program means what it says (defect 2355).
+    for one in [["CCC_OVERRIDE_OPTIONS=#s/-O2/-O3/", "-O2", "/sum", "panic: integer overflow"], ["CCC_OVERRIDE_OPTIONS=#x-Wall", "-O0", "/true", "true"]]
+        said = printed(scratch: scratch, compiler: compiler, variable: one[0], source: home + one[2], level: one[1])
+
+        if !strings.starts_with(text: said, prefix: one[3])
+            wrong @ wrong.push(
+                "    `" + one[0] + "` over `" + one[2] + ".hero`: " + said + ", where it prints " + one[3]
+            )
+
+    # An edit that takes a probe's own word away breaks that probe, which no
+    # line asked of clang can show as a word added: the failure, at exit 2,
+    # names the variable, never the compiler's alone (defect 2355).
+    broken = shell.run(
+        scratch: scratch,
+        program: ENV,
+        words: [ENV, "CCC_OVERRIDE_OPTIONS=#s/-fsyntax-only/-DHERO_2355_NOTHING/", compiler, "build", home + "/group.hero", "-o", home + "/group" + shell.exe_suffix()]
+    )
+
+    if broken.is_err() || broken.must().code != 2 || !strings.contains(text: broken.must().err, needle: "note: `CCC_OVERRIDE_OPTIONS` is set, and it edits every clang job this compiler starts")
+        wrong @ wrong.push(
+            "    an edit taking a probe's `-fsyntax-only` away: " + shell.ending(broken) + ", where it exits 2 naming the variable"
+        )
+
     if wrong.len() > 0
         report.keep_failure(@r, label: label, detail: "  " + wrong.join("\n"))
         return
@@ -119,7 +153,9 @@ function the_environment_lets_through_what_it_must(@r: report.Report, scratch: s
 # or none, given to its compiler alone: its first line, or how the build or
 # the run ended.
 function printed(scratch: str, compiler: str, variable: str, source: str, level: str) -> str
-    binary = source + "-" + level.slice(from: 1, to: level.len()) + shell.exe_suffix()
+    # Named by the level's digit alone, so no edit of a level's word, `-O2`,
+    # matches the binary's own name and moves it.
+    binary = source + "-at" + level.slice(from: 2, to: level.len()) + shell.exe_suffix()
     words: [str] @= [ENV]
 
     if variable.len() > 0

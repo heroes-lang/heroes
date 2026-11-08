@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2355-a-folder-an-edit-adds-to-the-probes-alone.case/envdir` is searched before the system's by some of the clang jobs this compiler starts and not by the others, through `CCC_OVERRIDE_OPTIONS`'s `-I`: a header of one name would be read from it by some jobs and from the system by the rest, and no listing of what a unit reads can say which
+  at tests/golden/unsupported/fixedbugs-2355-a-folder-an-edit-adds-to-the-probes-alone.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: take the edit that writes `-I tests/golden/unsupported/fixedbugs-2355-a-folder-an-edit-adds-to-the-probes-alone.case/envdir` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset

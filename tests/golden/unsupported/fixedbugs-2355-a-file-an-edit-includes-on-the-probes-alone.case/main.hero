@@ -1,0 +1,9 @@
+#~ shadowed_header
+# fixedbugs, defect 2355 (a shape beside it): `CCC_OVERRIDE_OPTIONS` rewrites
+# the `-ferror-limit=0` only the compiler's probes carry into `-include` of a
+# file defining `stdbool.h`'s guard and `true` as 0, read before every line
+# of those probes alone. Refused before any job runs; this line is its mark.
+
+function main()
+    b = true
+    print(b)

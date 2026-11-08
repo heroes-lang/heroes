@@ -205,6 +205,15 @@ function exit_of(failed: produce.Produced?) -> cli_table.Exit
             if e.code == "diagnostics"
                 return .diagnostics_exit
             io.eprint(text: "error: " + e.msg)
+
+            # Under `CCC_OVERRIDE_OPTIONS` a failed clang job may be the edit's,
+            # which no line this compiler asks can show where it matches a job's
+            # own file (`cli/clang_jobs.hero`): the variable is named, never the
+            # compiler blamed alone (defect 2355).
+            if process.is_set("CCC_OVERRIDE_OPTIONS")
+                io.eprint(
+                    text: "  note: `CCC_OVERRIDE_OPTIONS` is set, and it edits every clang job this compiler starts: build with it unset to tell whether this failure is the compiler's or the edit's"
+                )
             return .failed_exit
 
 ## Tests

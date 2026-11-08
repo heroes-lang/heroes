@@ -25,9 +25,12 @@
 # its two `-D` are this compiler's own switches, so every folder, file and
 # kept name the job holds came from outside the compiler.
 #
-# **What it does not see, said**: an edit that fires only on a word the
-# question does not carry (`CCC_OVERRIDE_OPTIONS`'s `s/<word>/<word>/`), and a
-# sysroot the environment moves, which moves the platform's folders with it.
+# **An edit that fires on some jobs alone is asked of them too** (defect
+# 2355): `CCC_OVERRIDE_OPTIONS`'s `s/<pattern>/<word>/`, `x` and `X` edit the
+# words of each job they match, so `cli/clang_jobs.hero` asks clang of a line
+# holding every word the compiler's jobs carry, and `minus` keeps what the
+# edits added to it. **What it does not see, said**: a sysroot the
+# environment moves, which moves the platform's folders with it.
 
 use cli/deps
 use cli/process
@@ -72,7 +75,11 @@ constant PLATFORM_FLAGS: [str]
 # What `answer`, clang's answer to `-###`, adds: nothing where it holds no
 # `-cc1` job.
 function edits(answer: str) -> Edits
-    words = cc1_words(answer)
+    return of_words(cc1_words(answer))
+
+# What a line of words holds of the kinds this module reads: a job's, or
+# the line the compiler itself passed, which `minus` takes away.
+function of_words(words: [str]) -> Edits
     out: Edits @= Edits(folders: [], forced: [], macros: [], platform: [])
     prefix: str @= ""
     at: i64 @= 0
@@ -121,6 +128,48 @@ function edits(answer: str) -> Edits
             else if flag == "-D" || flag == "-U"
                 out.macros @ kept(out.macros, flag: flag, value: word.slice(from: 2, to: word.len()))
         at @ at + took
+
+    return out
+
+# **What `edited` holds that `own` does not**: its folders, read lexically,
+# its forced files and its kept names, each of the edits' alone where `own` is
+# what the compiler passed; `edited`'s platform kept.
+function minus(edited: Edits, own: Edits) -> Edits
+    out: Edits @= Edits(folders: [], forced: [], macros: [], platform: edited.platform)
+    folders: {str: bool} @= {}
+
+    for one in own.folders
+        folders[package_reads.lexical(one.value)] @ true
+
+    for one in edited.folders
+        if folders[package_reads.lexical(one.value)].is_err()
+            out.folders @ out.folders.push(one)
+
+    for one in edited.forced
+        if !holds(own.forced, one)
+            out.forced @ out.forced.push(one)
+
+    for one in edited.macros
+        if !holds(own.macros, one)
+            out.macros @ out.macros.push(one)
+
+    return out
+
+# `first`'s words and then `second`'s, each kind on its own.
+function joined(first: Edits, second: Edits) -> Edits
+    out: Edits @= first
+
+    for one in second.folders
+        out.folders @ out.folders.push(one)
+
+    for one in second.forced
+        out.forced @ out.forced.push(one)
+
+    for one in second.macros
+        out.macros @ out.macros.push(one)
+
+    for dir in second.platform
+        out.platform @ out.platform.push(dir)
 
     return out
 
@@ -310,6 +359,22 @@ test "the -cc1 job's words are read as clang quotes them, and what it adds is fo
     seen = edits(printed)
     assert seen.macros.len() == 1 && seen.macros[0].value == "true=0"
     assert seen.folders.len() == 2 && seen.folders[0].value == "envdir" && seen.folders[1].value == "/a b"
+
+# **What an edit added is what the job holds and the line given did not**
+# (defect 2355): a folder read lexically, a forced file and a kept name the
+# line already held are the compiler's own, and the job's platform is kept.
+test "what an edit added is what the job holds over the words it was given (defect 2355)"
+    own = of_words(["-I", "./rt", "-D_USE_MATH_DEFINES", "-include", "/own.h", "-fsyntax-only"])
+    job = of_words(
+        ["-Irt", "-I", "/evil", "-D", "true=0", "-include", "/own.h", "-include", "/f.h", "-internal-isystem", "/sdk"]
+    )
+    got = minus(edited: job, own: own)
+    assert got.folders.len() == 1 && got.folders[0].value == "/evil"
+    assert got.forced.len() == 1 && got.forced[0].value == "/f.h"
+    assert got.macros.len() == 1 && got.macros[0].value == "true=0"
+    assert got.platform == ["/sdk"]
+    both = joined(first: got, second: own)
+    assert both.folders.len() == 2 && both.forced.len() == 2
 
 test "a variable's elements are its parts between the separator, an empty one naming the folder clang runs in"
     assert parts(text: "/a::b", separator: ':') == ["/a", "", "b"]

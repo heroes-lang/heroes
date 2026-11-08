@@ -1,0 +1,16 @@
+#~ shadowed_macro
+# fixedbugs, defect 2355: `CCC_OVERRIDE_OPTIONS` rewrites the `-fsyntax-only`
+# only the compiler's probes carry into a `-D` of `__builtin_add_overflow`,
+# and neither line the refusal asked of clang held that word: the constants'
+# probe failed to link and the build stopped at exit 2 as the compiler's own
+# failure. A line holding every word the compiler's jobs carry is asked of
+# clang before any job runs (`cli/clang_jobs.hero`), and the `-D` it shows is
+# refused; this line is its mark.
+
+extern "lib.h"
+    constant BUFSIZ: i64
+    function lib_buffer() -> i64
+
+function main()
+    print(BUFSIZ)
+    print(lib_buffer())

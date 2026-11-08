@@ -1,0 +1,10 @@
+#~ shadowed_header
+# fixedbugs, defect 2355 (a shape beside it): `CCC_OVERRIDE_OPTIONS` rewrites
+# the `-ferror-limit=0` only the compiler's probes carry into an `-I` of a
+# folder holding a `stdbool.h` that defines `true` as 0: the probes would read
+# it and the units the system's, and no listing of what a unit reads can say
+# what the probes read. Refused before any job runs; this line is its mark.
+
+function main()
+    b = true
+    print(b)

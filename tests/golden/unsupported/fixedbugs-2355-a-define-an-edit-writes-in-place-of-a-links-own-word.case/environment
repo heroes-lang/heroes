@@ -1,0 +1,1 @@
+CCC_OVERRIDE_OPTIONS=#s/^-lm$/-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)/

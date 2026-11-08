@@ -1,0 +1,1 @@
+CCC_OVERRIDE_OPTIONS=#s/-ferror-limit=0/-Itests\/golden\/unsupported\/fixedbugs-2355-a-folder-an-edit-adds-to-the-probes-alone.case\/envdir/

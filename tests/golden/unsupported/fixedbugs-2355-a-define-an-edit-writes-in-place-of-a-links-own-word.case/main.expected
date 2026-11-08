@@ -1,0 +1,6 @@
+error[shadowed_macro]: `-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)` reaches clang jobs this compiler starts, through `CCC_OVERRIDE_OPTIONS`, and `__builtin_add_overflow` is a name the C this compiler writes: a `-D` stands before every header and every guard, so nothing undoes it
+  at tests/golden/unsupported/fixedbugs-2355-a-define-an-edit-writes-in-place-of-a-links-own-word.case/main.hero:1:1
+    |
+  1 | #~ shadowed_macro
+    | ^
+  note: take the edit that writes `-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset

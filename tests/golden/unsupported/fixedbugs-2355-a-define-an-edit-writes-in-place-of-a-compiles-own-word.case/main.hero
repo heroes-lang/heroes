@@ -1,0 +1,9 @@
+#~ shadowed_macro
+# fixedbugs, defect 2355 (a shape beside it): `CCC_OVERRIDE_OPTIONS` rewrites
+# a compile's `-c`, a word some of the compiler's jobs carry and others do not,
+# into a `-D` of `__builtin_add_overflow`. The line of every job's words
+# shows it before any job runs, and it is refused; this line is its mark.
+
+function main()
+    big: i64 = 9223372036854775807
+    print(big + args().len())
