@@ -1,0 +1,128 @@
+# A path on this machine as a `file://` source names it (panel 235's R9, its
+# C4): made whole as text, asked whether it stands inside the program's own
+# repository, and handed to curl and git as an address (`fetch/address.hero`
+# is the judge that asks).
+#
+# **Inside the repository is asked of the path, part by part.** The path is
+# made whole (`.` dropped, `..` taking the part before it) and must stand at
+# or under the root git gives, which git has already resolved through every
+# link; and it may pass through no link below that root, since a link there
+# names a place outside it under a name inside it. A path above the root is
+# never asked about its links: the root's own spelling is git's, so a path
+# written through `/tmp` where git answers `/private/tmp` is refused as
+# outside, the safe direction.
+#
+# Windows writes an absolute path with a drive, `C:/…`, and git answers a root
+# so; the drive is kept as the path's root here. Unrun on Windows: every
+# measurement of this file is this Mac's.
+
+use cli/files
+use cli/process
+use fetch/url_bytes
+use cli/strings
+
+# Whether `path` opens with a drive, `C:/`.
+function drive_lettered(path: str) -> bool
+    return path.len() >= 3 && (path[0] >= 'a' && path[0] <= 'z' || path[0] >= 'A' && path[0] <= 'Z') && path[1] == ':' && path[2] == '/'
+
+# `path` made whole as text: its empty and `.` parts dropped and each `..`
+# taking the part before it. A `..` with nothing before it would climb above
+# the root, `/` or a drive, and is refused, as a path that is not absolute is.
+function normalised(path: str) -> str?
+    head: str @= "/"
+    body: str @= path
+
+    if drive_lettered(path)
+        head @ path.slice(from: 0, to: 3)
+        body @ path.slice(from: 3, to: path.len())
+    else if !strings.starts_with(text: path, prefix: "/")
+        return fail(code: "source_refused", msg: "names `" + path + "`, which is no absolute path")
+    kept: [str] @= []
+
+    for part in parts_of(body)
+        if part == ".."
+            if kept.len() == 0
+                return fail(code: "source_refused", msg: "climbs above the root of the machine's folders with `..`")
+            kept @ kept.slice(from: 0, to: kept.len() - 1)
+        else if part.len() > 0 && part != "."
+            kept @ kept.push(part)
+
+    return ok(head + kept.join("/"))
+
+# A path's parts between its `/`s, empty ones included.
+function parts_of(path: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: path.len() + 1)
+        if at == path.len() || path[at] == '/'
+            out @ out.push(path.slice(from: from, to: at))
+            from @ at + 1
+
+    return out
+
+# Whether `path`, made whole, is `top` or stands under it.
+function within(path: str, top: str) -> bool
+    if path == top
+        return true
+
+    if strings.ends_with(text: top, suffix: "/")
+        return strings.starts_with(text: path, prefix: top)
+    return strings.starts_with(text: path, prefix: top + "/")
+
+# The first folder or file below `top` on the way to `path`, a path `within`
+# it and made whole, that is a link, or "" where none is. Each step is the
+# path cut at its next `/`, an ASCII byte, so no cut falls inside a character.
+function linked_part(path: str, top: str) -> str
+    for at in range(from: top.len() + 1, to: path.len() + 1)
+        if at == path.len() || path[at] == '/'
+            so_far = path.slice(from: 0, to: at)
+
+            match files.entry(so_far)
+                .link                                            => return so_far
+                .absent | .file | .directory | .other | .unknown => _ = 0
+
+    return ""
+
+# The `file://` address of an absolute path made whole, percent-encoded.
+function url_of(path: str) -> str
+    if drive_lettered(path)
+        return "file:///" + url_bytes.encoded(path)
+    return "file://" + url_bytes.encoded(path)
+
+## Tests
+
+test "a path is made whole as text, and a `..` above its root is refused"
+    assert normalised("/r/app/./../idx//x/").must() == "/r/idx/x"
+    assert normalised("/").must() == "/"
+    assert normalised("C:/r/app/../idx").must() == "C:/r/idx"
+    assert normalised("/r/../..").is_err()
+    assert normalised("C:/..").is_err()
+    assert normalised("r/app").is_err()
+    assert parts_of("a//b") == ["a", "", "b"]
+
+test "inside the root is the root itself or a path under it, never a sibling sharing its prefix"
+    assert within(path: "/r/repo", top: "/r/repo")
+    assert within(path: "/r/repo/idx", top: "/r/repo")
+    assert !within(path: "/r/repository", top: "/r/repo")
+    assert !within(path: "/r", top: "/r/repo")
+    assert within(path: "/anything", top: "/")
+    assert url_of("/r/a b") == "file:///r/a%20b"
+    assert url_of("C:/r/x") == "file:///C:/r/x"
+    assert drive_lettered("c:/x")
+    assert !drive_lettered("/c:/x")
+
+# A link made under a real folder is found on the way to a path through it,
+# and a path through none answers "". Windows makes a link only with a
+# privilege an account may lack, and then has only the second half to ask.
+test "a link below the root on the way to a path is found, and the folder it names is not walked"
+    dir = "build/selftest-fetch-links"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/real/inner").is_err()
+    made = files.symbolic_link(target: "real", name: dir + "/linked")
+
+    if !made.is_err()
+        assert linked_part(path: dir + "/linked/inner", top: dir) == dir + "/linked"
+    assert linked_part(path: dir + "/real/inner", top: dir) == ""
+    assert linked_part(path: dir + "/real/absent/deeper", top: dir) == ""
+    assert !process.remove_tree(dir).is_err()

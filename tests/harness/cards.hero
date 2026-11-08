@@ -82,6 +82,7 @@ constant AREAS: [str]
         "check"
         "cli"
         "emit"
+        "fetch"
         "ir"
         "measure"
         "module"
