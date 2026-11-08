@@ -1,0 +1,14 @@
+# fixedbugs, defect 2335, 2026-11-08: a record of the program's own with one
+# field `a`, built `R(a: 1, a: 2)`, was told it is built with every field,
+# named `a:`, all of them, always: false, since the construction names `a`
+# and misses nothing, while a group's record given a field twice was told
+# that, at the second label. A construction giving another count of values
+# than its fields was told that rule alone (`check/walk.hero`). Now each
+# label at fault is told as a group's is (`check/group_fields.hero`'s
+# `short`), and the rule only where a field goes unnamed.
+record R
+    a: i64
+
+function main()
+    r = R(a: 1, a: 2)  #~ wrong_label
+    print(r.a)

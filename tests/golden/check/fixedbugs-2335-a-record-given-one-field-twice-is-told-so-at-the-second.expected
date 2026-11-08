@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2335-a-record-given-one-field-twice-is-told-so-at-the-second.hero:13:17: error[wrong_label]: `R` is given `a` twice, and a construction names each field once

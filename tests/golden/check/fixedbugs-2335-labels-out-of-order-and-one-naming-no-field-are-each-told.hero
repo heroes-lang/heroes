@@ -1,0 +1,11 @@
+# fixedbugs, defect 2335, 2026-11-08: both fields named, out of the declared
+# order, and a third label naming no field. It was told the rule of naming
+# every field, which it does; each label at fault is told instead, `a` after
+# `b` and `c`, which names nothing.
+record R
+    a: i64
+    b: i64
+
+function main()
+    r = R(b: 2, a: 1, c: 3)  #~ wrong_label wrong_label
+    print(r.a)

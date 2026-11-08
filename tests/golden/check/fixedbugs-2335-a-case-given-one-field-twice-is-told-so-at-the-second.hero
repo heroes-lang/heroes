@@ -1,0 +1,15 @@
+# fixedbugs, defect 2335, 2026-11-08: a variant's case is a small record
+# (design.md §4.2), and one with a field `x` built `.dot(x: 1, x: 2)` was
+# told the rule of naming every field, as a record was. Its second label is
+# told instead, given twice, the holder named as the case.
+variant Shape
+    dot
+        x: i64
+    none
+
+function main()
+    s: Shape = .dot(x: 1, x: 2)  #~ wrong_label
+
+    match s
+        .dot d => print(d.x)
+        .none  => print(0)

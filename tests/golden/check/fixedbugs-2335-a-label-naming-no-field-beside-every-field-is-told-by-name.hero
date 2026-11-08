@@ -1,0 +1,9 @@
+# fixedbugs, defect 2335, 2026-11-08: every field named and one label more,
+# naming none. It was told the rule of naming every field, which it does;
+# the label is told instead, with the fields the record has.
+record R
+    a: i64
+
+function main()
+    r = R(a: 1, b: 2)  #~ wrong_label
+    print(r.a)

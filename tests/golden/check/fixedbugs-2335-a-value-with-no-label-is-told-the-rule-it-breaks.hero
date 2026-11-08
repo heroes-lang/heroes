@@ -1,0 +1,10 @@
+# fixedbugs, defect 2335, 2026-11-08: the shape beside the repair that keeps
+# the rule, pinned. Every field named and one value more with no label: the
+# rule of naming every field, named, is the one it breaks, so it is told that
+# and nothing more.
+record R
+    a: i64
+
+function main()
+    r = R(a: 1, 2)  #~ missing_fields
+    print(r.a)

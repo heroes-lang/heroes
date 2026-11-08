@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2335-a-field-given-twice-and-others-missing-is-told-both.hero:10:9: error[missing_fields]: `R` is built with every field, named: a:, b:, c: — all of them, always
+tests/golden/check/fixedbugs-2335-a-field-given-twice-and-others-missing-is-told-both.hero:10:17: error[wrong_label]: `R` is given `a` twice, and a construction names each field once

@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2335-labels-out-of-order-and-one-naming-no-field-are-each-told.hero:10:17: error[wrong_label]: `R` declares `a` before `b`, and a construction names its fields in the order the record declares them
+tests/golden/check/fixedbugs-2335-labels-out-of-order-and-one-naming-no-field-are-each-told.hero:10:23: error[wrong_label]: `R` has nothing called `c`: its fields are `a` and `b`

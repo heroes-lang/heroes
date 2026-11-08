@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2335-a-value-with-no-label-is-told-the-rule-it-breaks.hero:9:9: error[missing_fields]: `R` is built with every field, named: a: — all of them, always

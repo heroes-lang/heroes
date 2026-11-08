@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2335-a-label-naming-no-field-beside-every-field-is-told-by-name.hero:8:17: error[wrong_label]: `R` has nothing called `b`: its fields are `a`

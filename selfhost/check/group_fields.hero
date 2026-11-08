@@ -17,10 +17,19 @@
 # sends here every construction of a group's record whose count differs from
 # its field count; one naming every field keeps §4.9's own check, the order
 # its position.
+#
+# **And so is every other record's, and a case's** (defect 2335), where the
+# count differs (`short`): each label at fault is told as what it is, and the
+# rule of naming every field, all of them, only where it is broken, a field
+# no label names or a value with no label. That rule was all a program's own
+# record was told until 2026-11-08, so `R(a: 1, a: 2)`, which misses no
+# field, was told it must name `a:`.
 
 use diag
 use ast
 use source
+use token
+use data_errors
 use label_errors
 use check/state
 use check/labels
@@ -49,8 +58,10 @@ function fields_named(s: source.Source, names: [str], given: [ast.Arg]) -> [i64]
 # What is wrong with the labels, one diagnostic per argument at fault: no
 # label, a label naming no field, a field named twice, a field named after
 # one the record declares after it. `types` are the fields' types, which say
-# what else an argument could be.
-function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], given: [ast.Arg], at: [i64]) -> [diag.Diagnostic]
+# what else an argument could be. A value with no label is told here only
+# `in_part`, where the construction may name only some fields; a record that
+# names every one leaves it to `short`'s rule, which it breaks.
+function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], given: [ast.Arg], at: [i64], in_part: bool) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     taken = labels.written_labels(s, given)
     seen: [i64] @= []
@@ -61,42 +72,10 @@ function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl],
         field = at[k]
 
         if arg.name.is_err()
-            # The fields this one could be stand between the field named
-            # before it and the one named after it, in the declared order.
-            front = label_errors.argument_front(
-                s.text,
-                value_start: a.exprs[arg.value].span.start,
-                mutable: arg.mutable
-            )
-            open: [str] @= fitting(
-                c,
-                a,
-                decls,
-                names: names,
-                types: types,
-                from: last + 1,
-                to: next_named(at, from: k + 1, beyond: names.len()),
-                value: arg.value,
-                taken: taken
-            )
-
-            # None there: the labels are out of order too, and any field no
-            # label writes is a reading.
-            if open.len() == 0
-                open @ fitting(
-                    c,
-                    a,
-                    decls,
-                    names: names,
-                    types: types,
-                    from: 0,
-                    to: names.len(),
-                    value: arg.value,
-                    taken: taken
+            if in_part
+                out @ out.push(
+                    unnamed(c, a, s, decls, holder: holder, names: names, types: types, at: at, arg: arg, k: k, last: last, taken: taken)
                 )
-            out @ out.push(
-                label_errors.unnamed_in_part(holder: holder, candidates: open, span: a.exprs[arg.value].span, at: front)
-            )
         else if field < 0
             written = source.span_text(s, arg.name.must())
             open = fitting(
@@ -126,6 +105,74 @@ function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl],
             if field > last
                 last @ field
         k @ k + 1
+
+    return out
+
+# A value with no label, the `k`th, in a construction that may name only
+# some fields: the fields it could be stand between the field named before
+# it, `last`, and the one named after it, in the declared order.
+function unnamed(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], at: [i64], arg: ast.Arg, k: i64, last: i64, taken: [str]) -> diag.Diagnostic
+    front = label_errors.argument_front(s.text, value_start: a.exprs[arg.value].span.start, mutable: arg.mutable)
+    open: [str] @= fitting(
+        c,
+        a,
+        decls,
+        names: names,
+        types: types,
+        from: last + 1,
+        to: next_named(at, from: k + 1, beyond: names.len()),
+        value: arg.value,
+        taken: taken
+    )
+
+    # None there: the labels are out of order too, and any field no label
+    # writes is a reading.
+    if open.len() == 0
+        open @ fitting(
+            c,
+            a,
+            decls,
+            names: names,
+            types: types,
+            from: 0,
+            to: names.len(),
+            value: arg.value,
+            taken: taken
+        )
+    return label_errors.unnamed_in_part(holder: holder, candidates: open, span: a.exprs[arg.value].span, at: front)
+
+# A construction of a record of the program's own, or of a case, that gives
+# another count of values than the fields it declares (defect 2335): each
+# label at fault told as `told` tells a group's, and the rule of naming every
+# field, all of them, told only where it is broken, by a field no label
+# names or by a value with no label. `declared_at` and `span` are where that
+# rule's message stands and what it cites.
+function short(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], given: [ast.Arg], at: [i64], declared_at: str, span: token.Span) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    named: [bool] @= []
+
+    for _ in names
+        named @ named.push(false)
+
+    broken: bool @= false
+    k: i64 @= 0
+
+    for arg in given
+        if arg.name.is_err()
+            broken @ true
+        else if at[k] >= 0
+            named[at[k]] @ true
+        k @ k + 1
+
+    for one in named
+        if !one
+            broken @ true
+
+    if broken
+        out @ out.push(data_errors.missing_fields(holder: holder, fields: names, declared_at: declared_at, span: span))
+
+    for d in told(c, a, s, decls, holder: holder, names: names, types: types, given: given, at: at, in_part: false)
+        out @ out.push(d)
 
     return out
 

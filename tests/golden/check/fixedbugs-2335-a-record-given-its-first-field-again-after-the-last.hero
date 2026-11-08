@@ -1,0 +1,10 @@
+# fixedbugs, defect 2335, 2026-11-08: the shape padded, two fields and the
+# first given again after the second. It was told the rule of naming every
+# field, which it does; the third label is told instead, given twice.
+record Pair
+    a: i64
+    b: i64
+
+function main()
+    p = Pair(a: 1, b: 2, a: 3)  #~ wrong_label
+    print(p.a + p.b)

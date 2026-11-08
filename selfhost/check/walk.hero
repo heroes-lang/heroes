@@ -1908,7 +1908,7 @@ function built_from_some(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
             _ = synth(@c, a, r, s, decls, arg.value)
         k @ k + 1
 
-    for d in group_fields.told(c, a, s, decls, holder: label, names: names, types: types, given: given, at: at)
+    for d in group_fields.told(c, a, s, decls, holder: label, names: names, types: types, given: given, at: at, in_part: true)
         state.push_diagnostic(@c, d)
 
 # .num(v: 12) in ⇐ position: the expected type says which variant, and
@@ -2065,28 +2065,27 @@ function construction(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
 function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], label: str, declared_at: str, expected: [FieldSpec], given: [ast.Arg], span: token.Span)
     if given.len() != expected.len()
         names: [str] @= []
+        types: [i64] @= []
 
         for f in expected
             names @ names.push(f.name)
+            types @ types.push(lower.lower_ty(@c, a, r, f.ty))
 
-        state.push_diagnostic(
-            @c,
-            data_errors.missing_fields(holder: label, fields: names, declared_at: declared_at, span: span)
-        )
+        at = group_fields.fields_named(s, names: names, given: given)
+        k: i64 @= 0
 
         # A value whose label names a field is checked against that field, so a
         # case or an empty literal takes its type from it and the one mistake
         # is the field missing (defect 2275); any other value is synthesised.
         for arg in given
-            at: i64 @= -1
-
-            if !arg.name.is_err()
-                at @ labels_in_place.position_of(s.text, label: arg.name.must(), names: names)
-
-            if at < 0
+            if at[k] < 0
                 _ = synth(@c, a, r, s, decls, arg.value)
             else
-                check(@c, a, r, s, decls, id: arg.value, expected: lower.lower_ty(@c, a, r, expected[at].ty))
+                check(@c, a, r, s, decls, id: arg.value, expected: types[at[k]])
+            k @ k + 1
+
+        for d in group_fields.short(c, a, s, decls, holder: label, names: names, types: types, given: given, at: at, declared_at: declared_at, span: span)
+            state.push_diagnostic(@c, d)
 
         return
     index: i64 @= 0

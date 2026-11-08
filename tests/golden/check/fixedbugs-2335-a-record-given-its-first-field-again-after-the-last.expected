@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2335-a-record-given-its-first-field-again-after-the-last.hero:9:26: error[wrong_label]: `Pair` is given `a` twice, and a construction names each field once

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2335-a-case-given-one-field-twice-is-told-so-at-the-second.hero:11:27: error[wrong_label]: `Shape.dot` is given `x` twice, and a construction names each field once
