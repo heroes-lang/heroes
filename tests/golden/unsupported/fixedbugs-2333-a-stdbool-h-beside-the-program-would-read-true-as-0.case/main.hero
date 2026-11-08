@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2333 (panel 237's R5, the compiler-engineer's harmful
+# stand-in): a `stdbool.h` beside `main.hero` reads the library's and then
+# defines `true` as 0, and the program's own folder is searched before the
+# system's, so the runtime's `<stdbool.h>` would read it and `print(true)`
+# print `false` at exit 0, measured with the refusal's call taken out. The
+# guard gives back no `true` the unit takes from the library, so this case,
+# unlike `special`'s two whose stand-in the reserved pair undoes, holds the
+# class and not only the message. Refused at the program's first byte, the
+# note naming the program's own folder; this line is its mark.
+
+function main()
+    b = true
+    print(b)
