@@ -2367,7 +2367,11 @@ for byte, the root as `"file"`, how many rounds wrote as `"rounds"`, and as `"no
 certain fixes in another module, which a file named alone never writes, each `file:line` once. Every answer names
 under `"read"` each file it read, every round's, once, with the SHA-256 of its bytes as first read,
 so the root's before any round wrote, and `null` for a file holding a byte that is not UTF-8, which
-is never lexed and takes no fix. Every fix says where it applies, in the text as checked: its
+is never lexed and takes no fix. Every answer holds `"notes"` after `"read"`, an array of the
+sentences stderr says after `note: ` outside any diagnostic, each once, `[]` where none is owed:
+today the one panel 235's R6 (ratified 2026-11-07) owes at every compilation that reads a `path`
+entry, naming its folder as unverified; it was added with `"schema"` staying 2, so an answer
+without it was written before it and says nothing either way. Every fix says where it applies, in the text as checked: its
 `file`, always; `line` and `col`, `end_line` and `end_col`, lines from 1 split at `\n` alone and
 columns from 1 in characters, the unit of the diagnostic's own, a `\r\n`'s line feed at its
 carriage return's column; `byte_start` and `byte_end`, from 0 in that file's own bytes as stored,
