@@ -1,0 +1,90 @@
+# The words of a git source a catalogue controls, besides its address: the
+# tag and the commit (panel 235's R6: a git entry is read by `git`, `tag` and
+# `commit`, the commit the tag named when the entry was written, so a moved
+# tag is refused, not followed). Each is judged before git is handed it, and
+# handed after `--` all the same (R9's C4).
+#
+# **A tag is held to a narrower rule than git's own** (`git check-ref-format`):
+# letters, digits, `.`, `_`, `-`, `+` and `/` between parts, no part opening
+# with `.` or `-`, no `..`, no empty part and no ending `.` or `.lock`. git's
+# rule admits `~` and `@` in places, and each is a word of its revision
+# syntax, `v1~1` the commit before; a tag is read here as the name of one ref,
+# so no byte of it may be read as anything else. A version's tag, `v1.2.3`,
+# `release/2.0`, `1.0.0+build.5`, passes.
+#
+# **A commit is its whole object name**, forty hex digits, or sixty-four for a
+# repository that names its objects by SHA-256, in small letters as git
+# prints them: an abbreviation names whatever object it later resolves to,
+# and a catalogue pins one.
+
+use cli/strings
+
+# What is wrong with `tag`, or "" where nothing is.
+function tag_said(tag: str) -> str
+    if tag.len() == 0
+        return "an empty tag names no commit"
+
+    if tag.len() > 255
+        return "a tag of " + tag.len().to_str() + " bytes is longer than the 255 a tag here may be"
+    opening: bool @= true
+
+    for at in range(from: 0, to: tag.len())
+        b = tag[at]
+
+        if b == '/'
+            if opening
+                return "`" + tag + "` has an empty part, a `/` at its start or two together"
+            opening @ true
+        else if !tag_byte(b)
+            return "`" + tag + "` holds a byte that is not a letter, a digit, `.`, `_`, `-`, `+` or `/`, which is all a tag here holds"
+        else if opening && (b == '.' || b == '-')
+            return "`" + tag + "` has a part opening with `.` or `-`, which git reads as no tag or as an option"
+        else
+            opening @ false
+
+        if b == '.' && at + 1 < tag.len() && tag[at + 1] == '.'
+            return "`" + tag + "` holds `..`, which git reads as a range of commits and no tag"
+
+    if opening || tag[tag.len() - 1] == '.' || strings.ends_with(text: tag, suffix: ".lock")
+        return "`" + tag + "` ends with `/`, `.` or `.lock`, which no tag's name does"
+    return ""
+
+function tag_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '.' || b == '_' || b == '-' || b == '+'
+
+# What is wrong with `commit`, or "" where nothing is.
+function commit_said(commit: str) -> str
+    if commit.len() != 40 && commit.len() != 64
+        return "`" + commit + "` is no commit's whole name: forty hex digits, or sixty-four where a repository names its objects by SHA-256"
+
+    for at in range(from: 0, to: commit.len())
+        if !(commit[at] >= '0' && commit[at] <= '9' || commit[at] >= 'a' && commit[at] <= 'f')
+            return "`" + commit + "` holds a byte that is not a hex digit in small letters, which is how git names a commit"
+
+    return ""
+
+## Tests
+
+test "a tag is a ref's plain name, and every byte git's revision syntax reads as more is refused"
+    for good in ["v1.2.3", "release/2.0", "1.0.0+build.5", "v1_0-rc1"]
+        assert tag_said(good) == ""
+
+    assert tag_said("") == "an empty tag names no commit"
+    assert tag_said("-v1") == "`-v1` has a part opening with `.` or `-`, which git reads as no tag or as an option"
+    assert tag_said("a/.hidden") == "`a/.hidden` has a part opening with `.` or `-`, which git reads as no tag or as an option"
+    assert tag_said("v1..2") == "`v1..2` holds `..`, which git reads as a range of commits and no tag"
+    assert tag_said("/v1") == "`/v1` has an empty part, a `/` at its start or two together"
+    assert tag_said("a//b") == "`a//b` has an empty part, a `/` at its start or two together"
+    assert tag_said("v1/") == "`v1/` ends with `/`, `.` or `.lock`, which no tag's name does"
+    assert tag_said("v1.lock") == "`v1.lock` ends with `/`, `.` or `.lock`, which no tag's name does"
+
+    for odd in ["v1~1", "v1^{}", "v1:x", "v 1", "v1@{0}", "v1*"]
+        assert tag_said(odd) == "`" + odd + "` holds a byte that is not a letter, a digit, `.`, `_`, `-`, `+` or `/`, which is all a tag here holds"
+
+    assert tag_said("v".repeat(256)) == "a tag of 256 bytes is longer than the 255 a tag here may be"
+
+test "a commit is its whole name in small hex, forty digits or sixty-four"
+    assert commit_said("702d504597a407345915dd4447bdeba86c79a9fc") == ""
+    assert commit_said("a".repeat(64)) == ""
+    assert commit_said("702d504") == "`702d504` is no commit's whole name: forty hex digits, or sixty-four where a repository names its objects by SHA-256"
+    assert commit_said("702D504597A407345915DD4447BDEBA86C79A9FC") == "`702D504597A407345915DD4447BDEBA86C79A9FC` holds a byte that is not a hex digit in small letters, which is how git names a commit"

@@ -1,0 +1,121 @@
+# A git repository a test makes on the fly, under `build/`, so the verbs that
+# fetch are tested against a source on this machine and never the network
+# (panel 235's R19: the goldens need no network, a git source being a local
+# repository the test makes). Nothing here is reached by a command; only the
+# `test` blocks of `fetch/` call it.
+#
+# **A test's git asks nothing of the person running it.** Every command names
+# its own identity, signs nothing and runs no hook, whatever the user's
+# configuration says (`commit.gpgsign`, a global `core.hooksPath`), since a
+# case that fails on one machine's settings tests the machine. The dates are
+# fixed too, through the environment every git this process starts inherits,
+# so a commit's name is the same on every run.
+
+use cli/process
+use cli/read_back
+use cli/strings
+
+# `runtime/hero_compiler.h`: this process's environment, which every program
+# it starts inherits.
+extern "hero_compiler.h"
+    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
+
+# The date every commit a test makes carries.
+constant DATE: str
+    "2026-11-08T00:00:00Z"
+
+# The settings every test's git command carries, before its own words.
+function settings(dir: str) -> [str]
+    return [
+        "git"
+        "-C"
+        dir
+        "-c"
+        "user.name=heroes"
+        "-c"
+        "user.email=heroes@example.invalid"
+        "-c"
+        "commit.gpgsign=false"
+        "-c"
+        "tag.gpgsign=false"
+        "-c"
+        "core.hooksPath=" + dir + "/.git/no-hooks"
+        "-c"
+        "core.autocrlf=false"
+        "-c"
+        "init.defaultBranch=main"
+    ]
+
+# git run in `dir` with `words`, at exit 0 or the failure saying what it said.
+function git(dir: str, words: [str]) -> ()?
+    said = dir + "-git-said.txt"
+    ran = process.run(
+        program: "git",
+        words: strings.with_all(list: settings(dir), more: words),
+        out: process.discard(),
+        err: said
+    )
+
+    if !ran.started || ran.code != 0
+        return fail(
+            code: "git",
+            msg: "`git " + words.join(" ") + "` in " + dir + " failed: " + read_back.words(said).default("")
+        )
+    return ok()
+
+# A new repository at `dir`, whatever stood there removed first.
+function made(dir: str) -> ()?
+    _ = hero_env_put(name: "GIT_AUTHOR_DATE".cstr(), value: DATE.cstr())
+    _ = hero_env_put(name: "GIT_COMMITTER_DATE".cstr(), value: DATE.cstr())
+    process.remove_tree(dir)?
+    process.mkdir_all(dir)?
+    git(dir, words: ["init", "-q"])?
+    return ok()
+
+# `files`, each a path and its text in turn, written and committed in `dir`
+# at the fixed date; the commit's whole name.
+function committed(dir: str, files: [str], message: str) -> str?
+    paths: [str] @= []
+    at: i64 @= 0
+
+    while at + 1 < files.len()
+        path = dir + "/" + files[at]
+        parent = path.slice(from: 0, to: last_slash(path))
+        process.mkdir_all(parent)?
+        write_file(path: path, text: files[at + 1])?
+        paths @ paths.push(files[at])
+        at @ at + 2
+
+    git(dir, words: strings.with_all(list: ["add", "--"], more: paths))?
+    git(dir, words: strings.with_all(list: ["commit", "-q", "-m", message, "--"], more: paths))?
+    return head(dir)
+
+# `tag` set on `dir`'s HEAD: an annotated tag, an object of its own that
+# names the commit, where `annotated`, else a name for the commit alone.
+# `-f` moves a tag that is there, as a publisher who moves one does.
+function tagged(dir: str, tag: str, annotated: bool) -> ()?
+    if annotated
+        return git(dir, words: ["tag", "-f", "-a", "-m", "the release " + tag, "--", tag])
+    return git(dir, words: ["tag", "-f", "--", tag])
+
+# The commit `dir`'s HEAD names.
+function head(dir: str) -> str?
+    out = dir + "-git-head.txt"
+    ran = process.run(
+        program: "git",
+        words: strings.with_all(list: settings(dir), more: ["rev-parse", "HEAD"]),
+        out: out,
+        err: process.discard()
+    )
+
+    if !ran.started || ran.code != 0
+        return fail(code: "git", msg: "`git rev-parse HEAD` in " + dir + " failed")
+    return ok(strings.trimmed(read_back.words(out).default("")))
+
+function last_slash(path: str) -> i64
+    at: i64 @= path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return at
