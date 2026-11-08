@@ -1,0 +1,18 @@
+extern "xheld.h"
+    record Held tag heroes_held partial
+        first: i64
+    function held_make(n: i64) -> Held
+    function apply_ret(cb: (function(i64) -> Held), n: i64) -> i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function pick(n: i64) -> (function(i64) -> Held)
+    if n > 0
+        return held_make
+    return make
+
+function main()
+    f = pick(n: 1)
+    print(apply_ret(cb: f, n: 2))
+    print(apply_ret(cb: held_make, n: 3))

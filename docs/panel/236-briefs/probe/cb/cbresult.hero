@@ -1,0 +1,10 @@
+extern "cbheld.h"
+    record Held tag heroes_held partial
+        first: i64
+    function apply_ret(cb: (function(i64) -> Held), n: i64) -> i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function main()
+    print(apply_ret(cb: make, n: 1))

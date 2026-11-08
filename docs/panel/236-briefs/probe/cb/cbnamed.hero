@@ -1,0 +1,10 @@
+extern "cbheld.h"
+    record BigNamed tag big_named
+        a: i64[600]
+    function apply_named(cb: (function(BigNamed) -> i64), n: i64) -> i64
+
+function first(b: BigNamed) -> i64
+    return b.a[0]
+
+function main()
+    print(apply_named(cb: first, n: 1))

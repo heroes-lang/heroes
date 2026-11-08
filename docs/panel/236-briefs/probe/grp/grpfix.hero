@@ -1,0 +1,15 @@
+# critic 236: a fixed array of defect 2253's record, returned by a Heroes function.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function make(n: i64) -> Held[1]
+    return [Held(first: n, rest: zero)]
+
+function go()
+    hs = make(n: 7)
+    print(hs[0].first)
+
+function main()
+    print("before")
+    go()

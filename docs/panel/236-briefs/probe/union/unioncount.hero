@@ -1,0 +1,16 @@
+# critic 236: a group record naming both members of one union, held by a program record.
+extern "ub.h"
+    record Ub tag ub
+        a: i64[300]
+        b: i64[300]
+
+record W
+    tag: i64
+    inner: Ub
+
+function make(n: i64) -> W
+    return W(tag: n, inner: Ub(rest: zero))
+
+function main()
+    w = make(n: 3)
+    print(w.tag + w.inner.a[0])

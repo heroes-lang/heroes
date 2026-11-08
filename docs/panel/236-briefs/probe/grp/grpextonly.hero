@@ -1,0 +1,13 @@
+# critic 236: grpret's extern call alone, the record built in go with no Heroes function returning it.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function go()
+    h = Held(first: 7, rest: zero)
+    print(heroes_held_first(h: h))
+
+function main()
+    print("before")
+    go()

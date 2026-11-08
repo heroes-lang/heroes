@@ -1,0 +1,20 @@
+# critic's probe, panel 233: a PROGRAM record holding defect 2253's 128 MiB group record.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+record Wrap
+    tag: i64
+    inner: Held
+
+function make_wrap(n: i64) -> Wrap
+    return Wrap(tag: n, inner: Held(first: n + 1, rest: zero))
+
+function go()
+    w = make_wrap(n: 6)
+    print(w.tag + w.inner.first)
+
+function main()
+    print("before")
+    go()

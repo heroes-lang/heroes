@@ -1,0 +1,16 @@
+# critic's probe, panel 233: a Heroes function returning defect 2253's 128 MiB group record.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function go()
+    h = make(n: 7)
+    print(heroes_held_first(h: h))
+
+function main()
+    print("before")
+    go()
