@@ -1,0 +1,15 @@
+#~ shadowed_header
+# fixedbugs, defect 2343 (panel 237's completeness critic, `viaown`): the
+# program's own `lib.h` includes `<stdio.h>`, and a `stdio.h` beside it reads
+# the library's and redefines `SEEK_END` as 7, so `lib.h` and the binding
+# read 7 where the library says 2, at exit 0. A file of a named folder whose
+# name a platform folder also holds is refused, whoever includes it; the
+# note offers the quoted form where `lib.h` means a header of its own.
+
+extern "lib.h"
+    constant SEEK_END: i64
+    function lib_end() -> i64
+
+function main()
+    print(SEEK_END)
+    print(lib_end())

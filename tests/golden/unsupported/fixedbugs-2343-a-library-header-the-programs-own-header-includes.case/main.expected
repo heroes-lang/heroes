@@ -1,0 +1,7 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2343-a-library-header-the-programs-own-header-includes.case/stdio.h` stands in for the C library's `<stdio.h>`, which `tests/golden/unsupported/fixedbugs-2343-a-library-header-the-programs-own-header-includes.case/lib.h` includes: a folder this build names is searched before the system's, so its file is read in the library's place
+  at tests/golden/unsupported/fixedbugs-2343-a-library-header-the-programs-own-header-includes.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2343-a-library-header-the-programs-own-header-includes.case`: the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers, and every `#include <stdio.h>` of the build reads what it holds
+  note: or, where `tests/golden/unsupported/fixedbugs-2343-a-library-header-the-programs-own-header-includes.case/lib.h` means its own `stdio.h` beside it, include it as `#include "stdio.h"`: C reads a quoted name from the including header's own folder first, where `<stdio.h>` asks the system's places, which hold a `stdio.h` of their own

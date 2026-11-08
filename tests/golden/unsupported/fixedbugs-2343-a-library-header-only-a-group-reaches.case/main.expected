@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2343-a-library-header-only-a-group-reaches.case/_stdio.h` stands in for the C library's `<_stdio.h>`, which the C library's `<stdio.h>` includes: a folder this build names is searched before the system's, so its file is read in the library's place
+  at tests/golden/unsupported/fixedbugs-2343-a-library-header-only-a-group-reaches.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2343-a-library-header-only-a-group-reaches.case`: the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers, and every `#include <_stdio.h>` of the build reads what it holds

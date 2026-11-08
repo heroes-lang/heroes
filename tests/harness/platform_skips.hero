@@ -101,11 +101,15 @@ function with_skips(list: [Skip], more: [Skip]) -> [Skip]
 constant EMPTY_CPATH_IS_APPLES: str
     "Apple clang 21 reads a `CPATH` set and empty as `.`, the folder clang runs in, and searches it before the platform's, where upstream clang adds nothing for an empty value (Debian clang 22.1.8's `clang -###`, panel 237's compiler-engineer, 2026-11-08): the shape is Darwin's, and its empty elements, `:` and a trailing separator, are judged everywhere (defect 2344)"
 
-# The cases whose shape only Apple's clang holds, skipped on every other
-# machine by name.
+constant UNDERSCORE_STDIO_IS_DARWINS: str
+    "Darwin's `stdio.h` includes `<_stdio.h>`, where glibc's and the UCRT's read no header of that name, so a program's own `_stdio.h` stands in for nothing there and the program builds; the shape is the SDK's (panel 237's compiler-engineer, 2026-11-08), and a library header the program's own header includes is judged everywhere (defect 2343)"
+
+# The cases whose shape only Apple's clang or the SDK holds, skipped on every
+# other machine by name.
 function darwin_alone() -> [Skip]
     return [
         Skip(name: "fixedbugs-2344-an-empty-cpath", why: EMPTY_CPATH_IS_APPLES)
+        Skip(name: "fixedbugs-2343-a-library-header-only-a-group-reaches", why: UNDERSCORE_STDIO_IS_DARWINS)
     ]
 
 # **And an emission that names the platform's own C is compared where it was
@@ -191,7 +195,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     for one in darwin_alone()
         assert shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
 
-    assert darwin_alone().len() == 1
+    assert darwin_alone().len() == 2
 
 # On a machine that is not Windows nothing is skipped by name but the cases
 # whose words are Windows' alone, and on Windows those are judged.

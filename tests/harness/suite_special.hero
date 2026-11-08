@@ -18,6 +18,7 @@ use shell
 use spec_text
 use strings
 use special_environment
+use special_groups
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
@@ -33,6 +34,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     a_runtime_named_header_in_a_search_path_is_never_read(@r, scratch: scratch, compiler: compiler)
     a_library_header_in_a_named_folder_is_refused(@r, scratch: scratch, compiler: compiler)
     special_environment.the_environment_lets_through_what_it_must(@r, scratch: scratch, compiler: compiler)
+    special_groups.a_groups_own_headers_build(@r, scratch: scratch, compiler: compiler)
     one_bad_argument_does_not_kill_the_other_two(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 

@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2343 (panel 237's ruling on `sibutil-angled`): the
+# program's own `money.h` writes `#include <time.h>` for its own `time.h`
+# beside it, a name every platform's C library holds. The angle form asks
+# the system's places for that name, and no rule tells this file from one
+# standing in for the library's (the `lib.h` case beside this one), so it is
+# refused, its note naming the quoted form, `#include "time.h"`, which C
+# reads from `money.h`'s own folder first and which builds (CERT C's PRE04-C).
+
+extern "money.h"
+    constant MONEY_CENTS: i64
+
+function main()
+    print(MONEY_CENTS)

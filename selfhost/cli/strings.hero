@@ -45,19 +45,27 @@ function without_returns(text: str) -> str
     parts @ parts.push(rest)
     return parts.join("")
 
+# `text` without its spaces, tabs and line feeds at either end, asked of its
+# bytes: each is one byte of its own in UTF-8, so the cut falls between
+# characters, where reading every character as a text of its own cost a line
+# of a clang listing about a hundred instructions a byte (defect 2343).
 function trimmed(text: str) -> str
-    cs = text.chars()
     head: i64 @= 0
 
-    while head < cs.len() && (cs[head] == " " || cs[head] == "\t" || cs[head] == "\n")
+    while head < text.len() && blank(text[head])
         head @ head + 1
 
-    tail: i64 @= cs.len()
+    tail: i64 @= text.len()
 
-    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t" || cs[tail - 1] == "\n")
+    while tail > head && blank(text[tail - 1])
         tail @ tail - 1
 
-    return cs.slice(from: head, to: tail).join("")
+    if head == 0 && tail == text.len()
+        return text
+    return text.slice(from: head, to: tail)
+
+function blank(byte: u8) -> bool
+    return byte == ' ' || byte == '\t' || byte == '\n'
 
 # Whether a path names anything. It asked `test -e` through a shell
 # until M-argv-execution, because `read_file` refuses a directory and
@@ -97,16 +105,17 @@ function with_all(list: [str], more: [str]) -> [str]
 # caller's (cli_libraries, the next crossing): what arrives here is
 # already flags.
 
+# Whether `text` opens with `prefix`, asked of the bytes: UTF-8 writes one
+# text's characters as the same bytes wherever they stand, so a byte prefix
+# is a character prefix, and reading both texts a character at a time cost
+# every directory a path was held to (defect 2343's cost).
 function starts_with(text: str, prefix: str) -> bool
-    cs = text.chars()
-    ps = prefix.chars()
-
-    if ps.len() > cs.len()
+    if prefix.len() > text.len()
         return false
     index: i64 @= 0
 
-    for p in ps
-        if cs[index] != p
+    while index < prefix.len()
+        if text[index] != prefix[index]
             return false
         index @ index + 1
 
@@ -180,3 +189,14 @@ test "clang's CRLF is normalised, and a multibyte character survives the walk"
     assert without_returns("wire\rbyte") == "wire\rbyte"
     assert without_returns("") == ""
     assert without_returns("clean\nalready") == "clean\nalready"
+
+# **A text is trimmed of its blanks by its bytes, and a character above ASCII
+# at either end stays whole** (defect 2343's cost): a space, a tab and a line
+# feed are each one byte, so the cut never falls inside a character.
+test "a text is trimmed of its blanks by its bytes, and a character above ASCII stays whole"
+    assert trimmed(" \t é€😀 x \n") == "é€😀 x"
+    assert trimmed("😀") == "😀"
+    assert trimmed(" \n\t") == ""
+    assert trimmed("") == ""
+    assert trimmed("\r a \r") == "\r a \r"
+    assert starts_with(text: "é€😀", prefix: "é€") && !starts_with(text: "é", prefix: "é€") && starts_with(text: "x", prefix: "")

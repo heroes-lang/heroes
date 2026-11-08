@@ -1,0 +1,1 @@
+#define MONEY_UNIT 1250

@@ -1,0 +1,258 @@
+# Who included each file a unit reads, for the refusal of a file standing in
+# for a header of the C library that only a group's header reaches (design.md
+# §4.19, §1.12; panel 237's R2, defect 2343, 2026-11-08).
+#
+# **What it closes, measured on this Mac.** The refusal listed the runtime's
+# opening alone (`cli/shadowed.hero`), so a library header that only a
+# group's header reaches was read from a folder the build names unrefused: a
+# program binding `stdio.h`'s `BUFSIZ` beside its own `_stdio.h`, which the
+# SDK's `stdio.h` includes, printed 7 where the SDK says 1024; and a program's
+# own `lib.h` including `<stdio.h>`, beside the program's own `stdio.h`,
+# printed 7 and 14.
+#
+# **The refusal's one clang run lists the runtime's opening and then the
+# program's groups inside the guard** (`text`), with `-H`, which prints each
+# file clang enters with its depth in dots, and `-MG`, so a group's missing
+# header costs the listing nothing. The opening comes first, so a library
+# header the runtime reads is entered beneath the runtime, and one only a
+# group reaches beneath that group. A file of a folder the build names is
+# then (`shadows`, the compiler-engineer's route):
+#
+# - **the program's own where the unit includes it for a group**: the header a
+#   group names is the program's choice, read from where the program put it,
+#   even one named like the library's (a `stdio.h` beside a group naming
+#   `stdio.h`, the sitting's ruling); every other file the unit includes is
+#   the runtime's, and one found in a named folder stands in for it;
+# - **refused where a header that is no named folder's includes it**, the
+#   platform's or the runtime's: `_stdio.h` beneath the SDK's `stdio.h`;
+# - **refused where a platform folder holds a file of its name**, whoever
+#   includes it: `stdio.h` beneath the program's `lib.h`; unless the includer
+#   names it in quotes and it stands beside the includer, C's own rule for a
+#   header's sibling. The angle form asks the system's places for a name the
+#   platform holds, so a program's `money.h` writing `#include <util.h>` for
+#   its own `util.h` is refused, its note naming the quoted form (panel 237's
+#   ruling; CERT C's PRE04-C);
+# - and a file `-M` lists and `-H` does not, found by `__has_include` alone, is
+#   refused wherever a named folder found it, the landed rule.
+
+use module/reading as file_reading
+use cli/order_trial
+use cli/package_reads
+use cli/process
+use cli/deps
+use cli/strings
+use cli/stand_in
+use emit/c_text
+use emit/clang_place
+use emit/macro_guard
+
+# The words the refusal's run adds where it lists a group's headers.
+constant WORDS: [str]
+    ["-H", "-MG"]
+
+# The runtime's opening, then every group's header inside the guard, as a
+# unit reads them, the opening first.
+function text(headers: [str]) -> str
+    no_names: {str: bool} = {}
+    lines: [str] @= [order_trial.opening([], question: "")]
+
+    for line in macro_guard.around(c_text.includes(headers), bound: no_names)
+        lines @ lines.push(line)
+
+    return lines.join("\n") + "\n"
+
+# One line of clang's `-H`: how deep the file was included, and its path as
+# clang wrote it.
+record Entry
+    depth: i64
+    path: str
+
+# The `-H` lines of what clang said: one or more dots, a space, a path.
+function entries(said: str) -> [Entry]
+    out: [Entry] @= []
+
+    for line in deps.lines(said)
+        dots: i64 @= 0
+
+        while dots < line.len() && line[dots] == '.'
+            dots @ dots + 1
+
+        if dots > 0 && dots + 1 < line.len() && line[dots] == ' '
+            out @ out.push(Entry(depth: dots, path: line.slice(from: dots + 1, to: line.len())))
+
+    return out
+
+# **Each file of a named folder the tree reads in another header's place**,
+# by the rule above; `groups` the headers the groups name, `named` and
+# `others` as `stand_in.finder` reads them, `others[0]` the runtime's.
+function shadows(said: str, paths: [str], groups: [str], named: [str], others: [str]) -> [stand_in.Shadow]
+    out: [stand_in.Shadow] @= []
+    seen: {str: bool} @= {}
+
+    # The file each depth's last entry is, the unit's own at depth 0, so a
+    # file's includer is the entry one level up.
+    chain: [str] @= [""]
+
+    for one in entries(said)
+        while chain.len() > one.depth
+            chain @ chain.slice(from: 0, to: chain.len() - 1)
+
+        reader = chain[chain.len() - 1]
+        chain @ chain.push(one.path)
+        path = package_reads.lexical(one.path)
+        folder = stand_in.finder(path: path, named: named, others: others)
+
+        if folder.len() > 0 && seen[path].is_err()
+            seen[path] @ true
+            name = stand_in.relative(path: path, dir: folder)
+            told = refused(one, reader: reader, name: name, groups: groups, named: named, others: others)
+
+            if !told.is_err()
+                out @ out.push(
+                    stand_in.Shadow(path: one.path, folder: folder, named: name, reader: told.must().reader, beside: told.must().beside)
+                )
+
+    for written in paths
+        path = package_reads.lexical(written)
+        folder = stand_in.finder(path: path, named: named, others: others)
+
+        if folder.len() > 0 && seen[path].is_err() && process.path_exists(written)
+            seen[path] @ true
+            out @ out.push(
+                stand_in.Shadow(path: written, folder: folder, named: stand_in.relative(path: path, dir: folder), reader: "", beside: false)
+            )
+
+    return out
+
+# What a refusal says of a file's includer: who it is, "" for the C this
+# compiler writes, and whether the file stands beside it, found by the angle
+# form where the quoted one would mean it.
+record Reader
+    reader: str
+    beside: bool
+
+# Why a file `name` of a named folder, included by `reader`, is refused, or
+# none where it is the program's own.
+function refused(one: Entry, reader: str, name: str, groups: [str], named: [str], others: [str]) -> Reader?
+    if one.depth == 1
+        if of_group(path: one.path, groups: groups)
+            return fail(code: "own", msg: "the header a group names")
+        return ok(Reader(reader: "", beside: false))
+    from = package_reads.lexical(reader)
+    by_named = stand_in.finder(path: from, named: named, others: others).len() > 0
+
+    if !by_named
+        return ok(Reader(reader: told_reader(from, others: others), beside: false))
+
+    if !twin(others, name: name)
+        return fail(code: "own", msg: "a name the platform does not hold")
+    beside = folder_of(from) == folder_of(package_reads.lexical(one.path))
+
+    if beside && quoted(reader: reader, name: name)
+        return fail(code: "own", msg: "the includer's own sibling, named in quotes")
+    return ok(Reader(reader: "`" + clang_place.slashed(reader) + "`", beside: beside))
+
+# **Whether a file the unit includes is a group's header**, by the path clang
+# printed: the folder that found it, as written, then `/` and the header as
+# the group wrote it, so `<./x.h>` and `<sub/x.h>` are their groups' as `<x.h>`
+# is (defect 158's `./fixedbugs-158-angle.h` was refused as the runtime's when
+# its name was read from its folder).
+function of_group(path: str, groups: [str]) -> bool
+    written = clang_place.slashed(path)
+
+    for header in groups
+        if written == header || strings.ends_with(text: written, suffix: "/" + header)
+            return true
+
+    return false
+
+# An includer as a refusal names it: "" for the runtime's, which the landed
+# sentence tells, a platform header by the name it has there, `<stdio.h>`.
+function told_reader(from: str, others: [str]) -> str
+    if package_reads.holds(dir: others[0], path: from)
+        return ""
+
+    for dir in others
+        if package_reads.holds(dir: dir, path: from)
+            return "the C library's `<" + stand_in.relative(path: from, dir: dir) + ">`"
+
+    return "`" + from + "`"
+
+# Whether a platform folder, any of `others` but the runtime's, holds a file
+# `name` names.
+function twin(others: [str], name: str) -> bool
+    at: i64 @= 1
+
+    while at < others.len()
+        if process.path_exists(others[at] + "/" + name)
+            return true
+        at @ at + 1
+
+    return false
+
+# Whether `reader` includes `name` in quotes, `#include "name"`, any spaces
+# after the `#`: what clang's `-H` cannot say, so the includer's text is read.
+function quoted(reader: str, name: str) -> bool
+    read = file_reading.source_text(reader)
+
+    if read.is_err()
+        return false
+
+    for line in deps.lines(read.must().text)
+        written = strings.trimmed(line)
+
+        if strings.starts_with(text: written, prefix: "#")
+            rest = strings.trimmed(written.slice(from: 1, to: written.len()))
+
+            if strings.starts_with(text: rest, prefix: "include") && strings.holds(text: rest, needle: "\"" + name + "\"")
+                return true
+
+    return false
+
+# The folder a lexical path stands in: `.` for a bare name.
+function folder_of(path: str) -> str
+    at: i64 @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
+
+## Tests
+
+# **A file of a named folder is told by who included it**: beneath a platform
+# header, as the library's header that includes it; beneath a group's header
+# of the program's, where the platform holds its name, as that header's, its
+# note to offer the quoted form; never the header a group names, nor a
+# sibling its includer names in quotes; and a file the unit includes for no
+# group, from a named folder, as the runtime's.
+test "a file of a named folder is told by who included it, and a group's own header and a quoted sibling are not"
+    root = "build/selftest-shadowed-tree"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/rt", "/sdk", "/src"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    for pair in [["/sdk/stdio.h", ""], ["/sdk/time.h", ""], ["/sdk/string.h", ""], ["/src/_stdio.h", ""], ["/src/time.h", ""], ["/src/string.h", ""], ["/src/heroes_unit.h", ""], ["/src/money.h", "#include <time.h>\n"], ["/src/quoted.h", "#  include \"string.h\"\n"]]
+        assert !write_file(path: root + pair[0], text: pair[1]).is_err()
+
+    said = [". " + root + "/src/heroes_unit.h", ". " + root + "/src/money.h", ".. " + root + "/src/time.h", ". " + root + "/sdk/stdio.h", ".. " + root + "/src/_stdio.h", ". " + root + "/src/quoted.h", ".. " + root + "/src/string.h"].join("\n") + "\n"
+    got = shadows(
+        said: said,
+        paths: [],
+        groups: ["money.h", "stdio.h", "quoted.h"],
+        named: [root + "/src"],
+        others: [root + "/rt", root + "/sdk"]
+    )
+    assert got.len() == 3
+    assert got[0].named == "heroes_unit.h" && got[0].reader == ""
+    assert got[1].named == "time.h" && got[1].reader == "`" + root + "/src/money.h`" && got[1].beside
+    assert got[2].named == "_stdio.h" && got[2].reader == "the C library's `<stdio.h>`" && !got[2].beside
+    assert entries("x\n.. a/b.h\n.\n...c\n")[0].depth == 2 && entries("x\n.. a/b.h\n").len() == 1
+    assert of_group(path: "inc/./x.h", groups: ["./x.h"]) && of_group(path: "inc/sub/x.h", groups: ["sub/x.h"]) && !of_group(path: "inc/ax.h", groups: ["x.h"])
+    assert !process.remove_tree(root).is_err()
