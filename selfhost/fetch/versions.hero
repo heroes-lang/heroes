@@ -1,0 +1,65 @@
+# How two versions of one package are ordered, for minimal version selection
+# (panel 235's R2, ratified 2026-11-07, Go's modules copied: of every version
+# the build's requirements name for a package, the highest is the one built).
+# An index's version is three numbers with no leading zero
+# (`module/sums.hero`); a git source's version is its tag, ordered as three
+# numbers where both tags are written so, a `v` before them allowed, and
+# ordered by nothing otherwise: two tags of one source that are not both
+# versions are refused by the caller, never guessed between.
+#
+# `newer` and `numbers` are the compiler-engineer's prototype for panel 235
+# (`235-compiler-engineer-scratch/mvs/main.hero`), taken whole but for the
+# `v` a tag may open with: a number of nine digits or more is refused rather
+# than read past what an `i64` holds.
+
+# Whether `a` is newer than `than`, each three numbers apart by dots.
+function newer(a: str, than: str) -> bool?
+    x = numbers(a)?
+    y = numbers(than)?
+    at: i64 @= 0
+
+    while at < 3
+        if x[at] != y[at]
+            return ok(x[at] > y[at])
+        at @ at + 1
+
+    return ok(false)
+
+# The three numbers of `v`, a `v` before them allowed.
+function numbers(v: str) -> [i64]?
+    out: [i64] @= []
+    current: i64 @= 0
+    digits: i64 @= 0
+    start: i64 @= 0
+
+    if v.len() > 0 && v[0] == 'v'
+        start @ 1
+
+    for at in range(from: start, to: v.len())
+        if v[at] == '.'
+            if digits == 0
+                return fail(code: "version", msg: "`" + v + "` is not three numbers")
+            out @ out.push(current)
+            current @ 0
+            digits @ 0
+        else if v[at] >= '0' && v[at] <= '9' && digits < 9
+            current @ current * 10 + (v[at] - '0').to_i64().must()
+            digits @ digits + 1
+        else
+            return fail(code: "version", msg: "`" + v + "` is not three numbers")
+
+    if digits == 0 || out.len() != 2
+        return fail(code: "version", msg: "`" + v + "` is not three numbers")
+    out @ out.push(current)
+    return ok(out)
+
+## Tests
+
+test "versions compare as three numbers, a tag's `v` allowed, and a version not three numbers is told"
+    assert newer(a: "1.10.0", than: "1.9.9").must()
+    assert !newer(a: "1.4.2", than: "1.4.2").must()
+    assert newer(a: "v0.4.0", than: "v0.3.9").must()
+    assert newer(a: "2.0.0", than: "v1.99.99").must()
+    assert newer(a: "1.10", than: "1.9.0").is_err()
+    assert newer(a: "main", than: "v1.0.0").is_err()
+    assert numbers("1234567890.0.0").is_err()

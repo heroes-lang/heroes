@@ -1,0 +1,109 @@
+# What `heroes add` and `heroes fetch` share (panel 235's R11, ratified
+# 2026-11-07): the program's folder, `-C <folder>` or the current one; the
+# `heroes.packages/` folder taken away again where a verb left nothing in it;
+# the version an index lists that `add` picks; and the readers of a failure.
+
+use cli/argv
+use cli/process
+use module/sums
+use fetch/index_source
+use fetch/versions
+
+# The program's folder as a prefix of its files' paths: "" for the current
+# folder, else `-C`'s folder with a `/` after it; refused where `-C` names no
+# folder.
+function program_of(inv: argv.Invocation) -> str?
+    folder = argv.value_of(inv, spelling: "-C")
+
+    if folder.is_err()
+        return ok("")
+
+    if !process.is_directory(folder.must())
+        return fail(code: "bad_usage", msg: "`-C " + folder.must() + "` names no folder on this machine")
+
+    if folder.must()[folder.must().len() - 1] == '/'
+        return ok(folder.must())
+    return ok(folder.must() + "/")
+
+# The program's folder as git is handed it.
+function dot_if_empty(program: str) -> str
+    if program.len() == 0
+        return "."
+    return program
+
+# `heroes.packages/` taken away where a verb placed nothing in it, so a
+# program a verb found nothing to place for is left as it was.
+function unused_dropped(program: str)
+    folder = program + "heroes.packages"
+    walked = process.walk(folder)
+
+    if !walked.is_err() && walked.must().files.len() == 0 && walked.must().unnamed.len() == 0
+        _ = process.remove_tree(folder).is_err()
+
+# Where `@` stands in `asked`, `json@1.4.2`, or its length where it holds none.
+function at_of(asked: str) -> i64
+    for at in range(from: 0, to: asked.len())
+        if asked[at] == '@'
+            return at
+
+    return asked.len()
+
+# The version of `asked` an index lists: the one written after its `@`, or,
+# with none written, the highest it lists.
+function version_picked(listed: [index_source.Listed], asked: str, at: i64, index: str) -> index_source.Listed?
+    if listed.len() == 0
+        return fail(code: "absent", msg: "the index `" + index + "` lists no version of `" + asked + "`")
+
+    if at < asked.len()
+        version = asked.slice(from: at + 1, to: asked.len())
+
+        if !sums.version_shape(version)
+            return fail(
+                code: "bad_usage",
+                msg: "`" + version + "` is no version: a version is exact, three numbers with no leading zero, `1.4.2`"
+            )
+
+        for one in listed
+            if one.version == version
+                return ok(one)
+
+        return fail(
+            code: "absent",
+            msg: "the index `" + index + "` lists no " + asked + ": it lists " + listed_said(listed)
+        )
+    best: index_source.Listed @= listed[0]
+
+    for one in listed
+        if versions.newer(a: one.version, than: best.version).default(false)
+            best @ one
+
+    return ok(best)
+
+function listed_said(listed: [index_source.Listed]) -> str
+    out: [str] @= []
+
+    for one in listed
+        out @ out.push(one.version)
+
+    return out.join(", ")
+
+# An answer, as the failure of nothing where it failed.
+function unit_of<T>(answer: T?) -> ()?
+    match answer
+        .ok _  => return ok()
+        .err e => return fail(code: e.code, msg: e.msg)
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.code
+
+function why(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+function reason(failed: str?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg

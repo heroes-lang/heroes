@@ -1,0 +1,254 @@
+# `heroes fetch` (panel 235's R11, R7 and R8, ratified 2026-11-07; design.md
+# §3.5): every entry of the program's catalogue placed where the compiler
+# reads it and held to its sum, nothing written into the catalogue. A tree
+# already placed at its sum is kept; one missing, or edited since it was
+# placed, is fetched again from its source; a `path` entry is read where it
+# stands and said so. Every entry is tried, and the exit is the worst any
+# earned: a sum that does not match exit 1, a source the network does not
+# answer exit 2 (the compiler-engineer's § 12, R19).
+#
+# `build`, `check` and `run` never fetch (R8): a package missing or not
+# matching its sum is told by the compiler with `heroes fetch` named, and
+# this verb is what that names.
+
+use cli/argv
+use cli/io
+use cli/process
+use cli/strings
+use cli/table as cli_table
+use module/catalogue
+use module/fingerprint
+use module/placed
+use fetch/catalogue_edit
+use fetch/made_index
+use fetch/made_repo
+use fetch/placing
+use fetch/staging
+use fetch/told
+use fetch/transport
+use fetch/verb_place
+
+# The command: one line on stdout for each entry placed, kept or read where
+# it stands, and each refusal on stderr at the catalogue's line.
+function run(inv: argv.Invocation) -> cli_table.Exit
+    worst: i64 @= 0
+
+    for one in outcome(inv, tools: transport.path_tools())
+        if one.code.len() == 0
+            print(one.said)
+        else
+            io.eprint(text: told.line(at: one.at, code: one.code, said: one.said))
+
+            if told.exit_of(one.code) > worst
+                worst @ told.exit_of(one.code)
+
+    if worst == 2
+        return .failed_exit
+
+    if worst == 1
+        return .diagnostics_exit
+    return .ok_exit
+
+# One line the command says: what it printed, or a refusal with its place.
+record Said
+    code: str
+    at: str
+    said: str
+
+# What `heroes fetch` says for the program `inv` names, each entry in its
+# catalogue's order.
+function outcome(inv: argv.Invocation, tools: transport.Tools) -> [Said]
+    program = verb_place.program_of(inv)
+
+    if program.is_err()
+        return [refused(failure: verb_place.unit_of(program), at: "")]
+    folder = program.must()
+    c = catalogue.read(opened: folder, named: folder)
+
+    if c.problem.len() > 0
+        return [Said(code: "catalogue_refused", at: "", said: c.problem)]
+
+    if c.file.len() == 0
+        return [
+            Said(code: "no_catalogue", at: "", said: "there is no catalogue `" + folder + catalogue.FILE + "`, so there is nothing to fetch: `heroes add` writes one")
+        ]
+    scratch = staging.opened(folder)
+
+    if scratch.is_err()
+        return [refused(failure: verb_place.unit_of(scratch), at: "")]
+    root = transport.root_of(tools, folder: verb_place.dot_if_empty(folder), scratch: scratch.must().folder)
+    staging.dropped(scratch.must())
+
+    if root.is_err()
+        return [refused(failure: verb_place.unit_of(root), at: "")]
+    text = read_file(c.file).default("")
+    out: [Said] @= []
+
+    for e in c.entries
+        tree = placing.placed_tree(tools, e: e, program: folder, root: root.must(), index: c.index)
+
+        if tree.is_err()
+            line = catalogue_edit.place_of(
+                text: text,
+                name: e.name,
+                key: key_of(e, code: verb_place.code_of(verb_place.unit_of(tree)))
+            )
+            out @ out.push(refused(failure: verb_place.unit_of(tree), at: place_said(c.file, line: line)))
+        else if e.path.len() > 0
+            out @ out.push(
+                Said(code: "", at: "", said: "path " + e.name + " " + e.path + ", read where it stands and unverified")
+            )
+        else if tree.must().fetched
+            out @ out.push(
+                Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
+            )
+        else
+            out @ out.push(
+                Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
+            )
+
+    verb_place.unused_dropped(folder)
+    return out
+
+# The line of an entry's a refusal points at: the field the refusal is
+# about, else the entry's table.
+function key_of(e: catalogue.Entry, code: str) -> str
+    if code == "source_refused"
+        if e.git.len() > 0
+            return "git"
+        return "index"
+
+    if code == "tag_refused" || code == "tag_moved"
+        return "tag"
+
+    if code == "commit_refused"
+        return "commit"
+
+    if code == "sum_mismatch"
+        return "sum"
+    return ""
+
+# A place in the catalogue as a refusal is told at: its file and line, or
+# the file alone where the refusal has no line, the Heroes index's address
+# being written in none.
+function place_said(file: str, line: i64) -> str
+    if line > 0
+        return file + ":" + line.to_str()
+    return file
+
+function refused(failure: ()?, at: str) -> Said
+    match failure
+        .ok _  => return Said(code: "internal", at: at, said: "a refusal was asked of what did not fail")
+        .err e => return Said(code: e.code, at: at, said: e.msg)
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-fetch-all"
+
+function asked(words: [str]) -> argv.Invocation
+    return argv.parse(words, dir_probe: process.is_directory).must()
+
+# A program whose catalogue names `json` from an index beside it, a git
+# source and a folder of its own; the sum of `json` and of the git source.
+record Made
+    json: str
+    lib: str
+    commit: str
+
+function program_made() -> Made
+    made_repo.made(SCRATCH).must()
+    process.mkdir_all(SCRATCH + "/app").must()
+    process.mkdir_all(SCRATCH + "/mine").must()
+    json = made_index.published(
+        idx: SCRATCH + "/idx",
+        name: "json",
+        version: "1.4.2",
+        files: ["parse.hero", "function x() -> i64\n    return 1\n"],
+        raw: []
+    ).must()
+    made_repo.made(SCRATCH + "/src").must()
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["lib.hero", "function y() -> i64\n    return 3\n"],
+        message: "one"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1.0.0", annotated: false).must()
+    process.mkdir_all(SCRATCH + "/pub").must()
+    write_file(path: SCRATCH + "/pub/lib.hero", text: "function y() -> i64\n    return 3\n").must()
+    lib = fingerprint.of(SCRATCH + "/pub").must()
+    commit = made_repo.head(SCRATCH + "/src").must()
+    write_file(path: SCRATCH + "/app/heroes.toml", text: catalogue_of(json: json, lib: lib, commit: commit)).must()
+    return Made(json: json, lib: lib, commit: commit)
+
+function catalogue_of(json: str, lib: str, commit: str) -> str
+    return "index = \"file://../idx\"\n\n[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + json + "\"\n\n[dependencies.lib]\ngit = \"file://../src\"\ntag = \"v1.0.0\"\ncommit = \"" + commit + "\"\nsum = \"" + lib + "\"\n\n[dependencies.mine]\npath = \"../mine\"\n"
+
+function said(words: [Said]) -> [str]
+    out: [str] @= []
+
+    for one in words
+        out @ out.push(one.code + "|" + one.at + "|" + one.said)
+
+    return out
+
+test "every entry is placed at its sum, kept the second time, and placed again once edited"
+    m = program_made()
+    app = SCRATCH + "/app/"
+    json = catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: m.json)
+    lib = catalogue.Entry(
+        name: "lib",
+        version: "",
+        git: "file://../src",
+        tag: "v1.0.0",
+        commit: m.commit,
+        path: "",
+        sum: m.lib
+    )
+    json_at = app + "heroes.packages/" + placed.key(json, index: "file://../idx")
+    lib_at = app + "heroes.packages/" + placed.key(lib, index: "file://../idx")
+    first = said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools()))
+    assert first == ["||placed json 1.4.2 " + json_at, "||placed lib v1.0.0 " + lib_at, "||path mine ../mine, read where it stands and unverified"]
+    second = said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools()))
+    assert second == ["||kept json 1.4.2 " + json_at, "||kept lib v1.0.0 " + lib_at, "||path mine ../mine, read where it stands and unverified"]
+    assert !write_file(path: json_at + "/parse.hero", text: "edited\n").is_err()
+    third = said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools()))
+    assert third[0] == "||placed json 1.4.2 " + json_at
+    assert read_file(json_at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# The compiler-engineer's § 12: a sum that does not match is exit 1, told at
+# its catalogue line; the other entries are still placed.
+test "a sum that does not match is told at its line with exit 1, and the entries beside it are placed"
+    m = program_made()
+    wrong = "sha256-" + "0".repeat(64.to_u64().must())
+    assert !write_file(path: SCRATCH + "/app/heroes.toml", text: catalogue_of(json: wrong, lib: m.lib, commit: m.commit)).is_err()
+    got = outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools())
+    assert got[0].code == "sum_mismatch"
+    assert got[0].at == SCRATCH + "/app/heroes.toml:5"
+    assert told.exit_of(got[0].code) == 1
+    assert strings.starts_with(text: got[1].said, prefix: "placed lib v1.0.0 ")
+
+    # A moved tag is told at its `tag` line.
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["lib.hero", "function y() -> i64\n    return 4\n"],
+        message: "two"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1.0.0", annotated: false).must()
+    assert !process.remove_tree(SCRATCH + "/app/heroes.packages").is_err()
+    moved = outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools())
+    assert moved[1].code == "tag_moved"
+    assert moved[1].at == SCRATCH + "/app/heroes.toml:9"
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a folder with no catalogue has nothing to fetch, and one that does not read is told"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH).is_err()
+    none = outcome(asked(["fetch", "-C", SCRATCH]), tools: transport.path_tools())
+    assert none.len() == 1 && none[0].code == "no_catalogue"
+    assert !write_file(path: SCRATCH + "/heroes.toml", text: "[dependencies.json]\nversion = 1\n").is_err()
+    broken = outcome(asked(["fetch", "-C", SCRATCH]), tools: transport.path_tools())
+    assert broken.len() == 1 && broken[0].code == "catalogue_refused"
+    assert !process.path_exists(SCRATCH + "/heroes.packages")
+    assert !process.remove_tree(SCRATCH).is_err()
