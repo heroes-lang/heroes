@@ -1,0 +1,246 @@
+# What `CCC_OVERRIDE_OPTIONS` adds to any clang job this compiler starts,
+# asked of clang before any job runs (design.md §4.19, §1.12; panel 237's
+# R2, defect 2355, 2026-11-08).
+#
+# **What it closes, measured on this Mac.** That variable's `s/<pattern>/<word>/`
+# rewrites each word of a job its pattern matches, so an edit written against
+# a word only some jobs carry acted where neither line the refusal asked of
+# clang held it, the `-###` every build asks and the listing's `-v`:
+# `s/-fno-crash-diagnostics/-D__builtin_add_overflow(...)/` reached the units
+# alone and an `i64` sum past the top printed `-9223372036854775808` at exit
+# 0, and `s/-fsyntax-only/-D.../` broke the constants' probe, told at exit 2 as
+# the compiler's own failure, the variable never named.
+#
+# **One line holding every word**: clang edits each word of the line it is
+# given and `-###` runs no job, so a line holding every word a job of the
+# compiler carries (`WORDS`: a probe's `-fsyntax-only`, `-E`, `-dM`, `-M`, a
+# unit's `-c`, a link's own words), the build's level and search, and the
+# runtime's `runtime.c` as its file, shows in its `-cc1` job every word an
+# edit adds to any job, and `clang_added.minus` keeps the ones the line did
+# not hold. Asked where `CCC_OVERRIDE_OPTIONS` is set alone: `CPATH` and
+# `C_INCLUDE_PATH` add the same words to every job, which the build's own
+# `-###` shows (`cli/clang_added.hero`). The list is held to the modules that
+# hand clang its words by the test below, so a word a new job carries fails
+# it rather than going unasked.
+#
+# **What it does not see, said**: an edit whose pattern matches only a value
+# no line here holds, a job's own file name (`s/dump-[0-9a-f]*\.c/.../`),
+# which takes that job's input or output, so the job fails and the failure,
+# at exit 2, names the variable (`cli/verbs.hero`'s `exit_of`); and an edit
+# that only takes words away, `x-fsigned-char`, which adds nothing the class
+# reads.
+
+use cli/process
+use cli/deps
+use cli/strings
+use cli/toolchain
+use cli/clang_floor
+use cli/clang_added
+use emit/value_probe
+
+# Every word a clang job of the compiler carries but its level's words
+# (`flags.level_words`), its search (`compiling.search_words`) and its files'
+# names; a word built of a flag and a value, `-ast-dump-filter=` and its
+# prefix, as one job writes it.
+constant WORDS: [str]
+    [
+        "-c"
+        "-E"
+        "-fsyntax-only"
+        "-S"
+        "-emit-llvm"
+        "-M"
+        "-MD"
+        "-MG"
+        "-MT"
+        "dep"
+        "-MF"
+        "build/jobs.d"
+        "-H"
+        "-v"
+        "-dM"
+        "-dD"
+        "-P"
+        "-w"
+        "-g0"
+        "-O0"
+        "-std=gnu11"
+        "-ffunction-sections"
+        "-fdata-sections"
+        "-fno-crash-diagnostics"
+        "-ferror-limit=0"
+        "-fno-caret-diagnostics"
+        "-fno-color-diagnostics"
+        "-Xclang"
+        "-fno-diagnostics-use-presumed-location"
+        "-Werror=gnu-folding-constant"
+        "-Werror=shift-sign-overflow"
+        "-Wmicrosoft-redeclare-static"
+        "-Xclang"
+        "-ast-dump=json"
+        "-Xclang"
+        "-ast-dump-filter=hero_constant_"
+        "-Xclang"
+        "-ast-dump"
+        "-Xclang"
+        "-ast-list"
+        "-Xclang"
+        "-fdump-record-layouts"
+        "-Wl,-dead_strip"
+        "-Wl,--gc-sections"
+        "-Wl,/FORCE:UNRESOLVED"
+        "-lm"
+        "--rsp-quoting=posix"
+        "-x"
+        "cpp-output"
+        "-x"
+        "c"
+    ]
+
+# What the edits add to a line of every job's words over `words`, the
+# build's level and search, beside the runtime's `runtime.c`: nothing where
+# `CCC_OVERRIDE_OPTIONS` is unset, or where clang gives no job for the line.
+function added(t: toolchain.Toolchain, words: [str]) -> clang_added.Edits
+    none = clang_added.Edits(folders: [], forced: [], macros: [], platform: [])
+
+    if !process.is_set("CCC_OVERRIDE_OPTIONS")
+        return none
+    line = strings.with_all(list: strings.with_all(list: words, more: WORDS), more: written(t))
+    own = clang_added.of_words(strings.with_all(list: line, more: ["-c", t.runtime + "/runtime.c", "-o", "identity.o"]))
+    answer = said(clang_floor.identity(build_dir: t.build, runtime: t.runtime, words: line))
+    return clang_added.minus(edited: clang_added.edits(answer), own: own)
+
+# The words a job takes from the function that writes them, as it writes
+# them: an object's (`toolchain.object_words`, the MSVC target's two among
+# them) and the value probe's checks (`emit/value_probe.hero`'s `CHECKS`).
+function written(t: toolchain.Toolchain) -> [str]
+    checks = [
+        "-fno-sanitize=all"
+        "-fsanitize=" + value_probe.CHECKS
+        "-fsanitize-trap=" + value_probe.CHECKS
+        "-fno-wrapv"
+    ]
+    return strings.with_all(list: toolchain.object_words(t, named: "jobs.o"), more: checks)
+
+# What clang said of the line, its jobs printed even where an edit left it a
+# word it refuses (`s/^-M$/.../` takes the `-M` a `-MG` needs, and clang
+# still prints the job it would run); nothing where it could not start.
+function said(answer: str?) -> str
+    match answer
+        .ok text => return text
+        .err e   => return e.msg
+
+## Tests
+
+# **Every flag a module that hands clang its words writes is one `WORDS`
+# holds**, or a word that is no job's (`NOT_WORDS`): a job given a word the
+# line does not hold would be edited unseen, so a new word fails here and is
+# added before it ships. Read from the modules' code under `selfhost/cli` and
+# `selfhost/emit`, their tests and comments left out.
+test "every word a module hands clang is on the line the edits are asked of (defect 2355)"
+    files: [str] @= process.files_under("selfhost/cli").must()
+
+    for one in process.files_under("selfhost/emit").must()
+        files @ files.push(one)
+
+    unlisted: [str] @= []
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero")
+            code = code_of(read_file(path).must())
+
+            if strings.holds(text: code, needle: "\"clang\"") || strings.holds(text: code, needle: "mode: [\"-")
+                for word in flag_literals(code)
+                    if !listed(word)
+                        unlisted @ unlisted.push(path + ": " + word)
+
+    assert unlisted == []
+
+# The words a module writes that `written` takes from their writers, and
+# those no job carries: the question itself, a
+# search flag whose value is the build's (`-I`, `-F`, `-L`, `-l`, `-o`, the
+# level's own list), another program's words (git, `uname`,
+# `xcode-select`), a file's suffix, a word clang prints rather than reads,
+# and a prefix a module tests a word against.
+constant NOT_WORDS: [str]
+    [
+        "-object-file-name="
+        "-gno-codeview-command-line"
+        "-mno-incremental-linker-compatible"
+        "-fno-sanitize=all"
+        "-fsanitize="
+        "-fsanitize-trap="
+        "-fno-wrapv"
+        "-"
+        "-###"
+        "--"
+        "--add"
+        "--cacheinfo"
+        "--version"
+        "-C"
+        "-I"
+        "-F"
+        "-L"
+        "-l"
+        "-o"
+        "-W"
+        "-Wgnu-folding-constant"
+        "-Wshift-sign-overflow"
+        "-a"
+        "-f"
+        "-m"
+        "-p"
+        "-q"
+        "-s"
+        "-blob.txt"
+        "-git-answer.txt"
+        "-git-head.txt"
+        "-git-said.txt"
+        "-fdepfile-entry="
+    ]
+
+function listed(word: str) -> bool
+    for one in NOT_WORDS
+        if one == word
+            return true
+
+    for one in WORDS
+        if one == word || strings.ends_with(text: word, suffix: "=") && strings.starts_with(text: one, prefix: word)
+            return true
+
+    return false
+
+# A module's text without its comments and its test blocks.
+function code_of(text: str) -> str
+    out: [str] @= []
+    inside: bool @= false
+
+    for line in deps.lines(text)
+        if strings.starts_with(text: line, prefix: "test \"")
+            inside @ true
+        else if inside && line.len() > 0 && line[0] != ' ' && line[0] != '#'
+            inside @ false
+
+        if !inside && !strings.starts_with(text: strings.trimmed(line), prefix: "#")
+            out @ out.push(line)
+
+    return out.join("\n")
+
+# Every literal of `code` that opens with `-`, as far as its closing quote.
+function flag_literals(code: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + 1 < code.len()
+        if code[at] == '"' && code[at + 1] == '-'
+            close: i64 @= at + 1
+
+            while close < code.len() && code[close] != '"' && code[close] != ' ' && code[close] != '\\'
+                close @ close + 1
+
+            if close < code.len() && code[close] == '"'
+                out @ out.push(code.slice(from: at + 1, to: close))
+            at @ close
+        at @ at + 1
+
+    return out

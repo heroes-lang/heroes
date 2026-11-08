@@ -1,0 +1,10 @@
+#~ shadowed_macro
+# fixedbugs, defect 2355 (found beside it): `CCC_OVERRIDE_OPTIONS` rewrites the
+# `-fno-crash-diagnostics` only a unit's compile carries into a `-D` of
+# `__builtin_add_overflow` reporting nothing, so the units alone read it and
+# an `i64` sum past the top printed `-9223372036854775808` at exit 0, the
+# refusal unaware. Refused before any job runs; this line is its mark.
+
+function main()
+    big: i64 = 9223372036854775807
+    print(big + args().len())

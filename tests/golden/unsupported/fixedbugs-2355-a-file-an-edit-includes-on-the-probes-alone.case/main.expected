@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2355-a-file-an-edit-includes-on-the-probes-alone.case/envdir/force.h` is read before the first line of the C the clang jobs it reaches compile, through `CCC_OVERRIDE_OPTIONS`'s `-include`: what it defines stands before the C library's headers and every guard, so nothing undoes it
+  at tests/golden/unsupported/fixedbugs-2355-a-file-an-edit-includes-on-the-probes-alone.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: take the edit that writes `-include tests/golden/unsupported/fixedbugs-2355-a-file-an-edit-includes-on-the-probes-alone.case/envdir/force.h` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset

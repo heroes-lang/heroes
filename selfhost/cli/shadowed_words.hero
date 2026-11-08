@@ -113,7 +113,18 @@ function named_by(origin: Origin, folder: str) -> str
 function forced(one: clang_added.Added) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: CODE,
-        message: "`" + clang_place.slashed(one.value) + "` is read before the first line of every unit this build compiles, through " + source_of(one) + "'s `" + one.flag + "`: what it defines stands before the C library's headers and every guard, so nothing undoes it",
+        message: "`" + clang_place.slashed(one.value) + "` is read before the first line of the C the clang jobs it reaches compile, through " + source_of(one) + "'s `" + one.flag + "`: what it defines stands before the C library's headers and every guard, so nothing undoes it",
+        span: token.Span(start: 0, end: 0)
+    )
+    d.notes @ d.notes.push(remedy(one, word: one.flag + " " + one.value))
+    return d
+
+# A folder an edit of the environment adds to some of the clang jobs this
+# build runs and not to every one (defect 2355).
+function unlisted(one: clang_added.Added) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: "`" + clang_place.slashed(one.value) + "` is searched before the system's by some of the clang jobs this compiler starts and not by the others, through " + source_of(one) + "'s `" + one.flag + "`: a header of one name would be read from it by some jobs and from the system by the rest, and no listing of what a unit reads can say which",
         span: token.Span(start: 0, end: 0)
     )
     d.notes @ d.notes.push(remedy(one, word: one.flag + " " + one.value))
@@ -125,7 +136,7 @@ function macro(one: clang_added.Added) -> diag.Diagnostic
     name = package_macros.macro_of(one.value)
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: MACRO_CODE,
-        message: "`" + one.flag + one.value + "` reaches every clang this build runs through " + source_of(one) + ", and `" + name + "` is a name the C this compiler writes: a `" + one.flag + "` stands before every header and every guard, so nothing undoes it",
+        message: "`" + one.flag + one.value + "` reaches clang jobs this compiler starts, through " + source_of(one) + ", and `" + name + "` is a name the C this compiler writes: a `" + one.flag + "` stands before every header and every guard, so nothing undoes it",
         span: token.Span(start: 0, end: 0)
     )
     d.notes @ d.notes.push(remedy(one, word: one.flag + one.value))
@@ -140,4 +151,4 @@ function source_of(one: clang_added.Added) -> str
 function remedy(one: clang_added.Added, word: str) -> str
     if one.variable == clang_added.OWN
         return "take `" + word + "` out of clang's configuration file, which adds it to every compile"
-    return "take `" + word + "` out of `" + one.variable + "`, or build with `" + one.variable + "` unset"
+    return "take the edit that writes `" + word + "` out of `" + one.variable + "`, or build with `" + one.variable + "` unset"

@@ -1,0 +1,1 @@
+CCC_OVERRIDE_OPTIONS=#s/-ferror-limit=0/-includetests\/golden\/unsupported\/fixedbugs-2355-a-file-an-edit-includes-on-the-probes-alone.case\/envdir\/force.h/

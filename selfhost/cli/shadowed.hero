@@ -75,15 +75,26 @@ use cli/stand_in
 use cli/shadowed_words
 use cli/shadowed_tree
 use cli/named_folders
+use cli/clang_jobs
+use cli/flags
 use cli/settled
 use emit/externs as emit_externs
 
-# The build stopped, its refusals told, where the environment hands every
-# clang a file or a kept name, before any clang compiles: `cli/produce.hero`
-# asks it before the runtime's object.
-function environment_stopped(t: toolchain.Toolchain, s: source.Source, permissive: bool) -> ()?
+# The build stopped, its refusals told, where the environment hands a clang
+# job a file or a kept name, or some jobs a folder others do not search,
+# before any clang compiles: `cli/produce.hero` asks it before the runtime's
+# object. The words of every job are asked of clang (`cli/clang_jobs.hero`,
+# defect 2355), beside the `-###` every build asks.
+function environment_stopped(t: toolchain.Toolchain, options: compile.Options, s: source.Source) -> ()?
     none = clang_added.Edits(folders: [], forced: [], macros: [], platform: [])
-    stop = compile.stage(words_told(edits: clang_added.edits(t.asked_answer), before: none), s, permissive: permissive)
+    asked = clang_added.edits(t.asked_answer)
+    level = flags.level_words(level: options.level, sanitize: options.sanitize)
+    jobs = clang_jobs.added(t, words: strings.with_all(list: level, more: ["-I", t.runtime]))
+    refused = followed(
+        list: words_told(edits: asked, before: none),
+        more: followed(list: words_told(edits: jobs, before: asked), more: unlisted(jobs: jobs, asked: asked, compilers: [package_reads.lexical(t.runtime)]))
+    )
+    stop = compile.stage(refused, s, permissive: options.permissive)
 
     if stop.is_err()
         return ok()
@@ -137,6 +148,13 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str],
     job = clang_added.edits(got.must().said)
     out @ words_told(edits: job, before: asked)
     first = named_folders.searched_first(under)
+
+    # What an edit adds to the jobs over this build's own search alone, its
+    # packages' and the program's folders (defect 2355): the level's and the
+    # runtime's were asked before any clang compiled.
+    jobs = clang_jobs.added(t, words: compiling.unit_words(under))
+    out @ followed(list: out, more: words_told(edits: jobs, before: clang_added.joined(first: asked, second: job)))
+    out @ followed(list: out, more: unlisted(jobs: jobs, asked: asked, compilers: first))
     named: [str] @= named_folders.named_folders(under)
     environment = named_folders.of_environment(
         platform: strings.with_all(list: asked.platform, more: job.platform),
@@ -173,6 +191,40 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str],
             compilers[one.folder].default(shadowed_words.Origin(kind: "", name: ""))
         )
         out @ out.push(shadowed_words.header(one, origin: origin, runtime: runtime))
+
+    return out
+
+# **A folder an edit adds to some jobs and not to every one** (defect 2355):
+# every folder of `jobs` that the `-###` every build asks (`asked`) does not
+# hold, the compiler's own and clang's own left out. Such a folder is
+# searched for a header of one name by some jobs and not by the others, and
+# the listing of what a unit reads cannot say what the others read, so it is
+# refused, the variable named.
+function unlisted(jobs: clang_added.Edits, asked: clang_added.Edits, compilers: [str]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    known: {str: bool} @= {}
+
+    for dir in strings.with_all(list: strings.with_all(list: jobs.platform, more: asked.platform), more: compilers)
+        known[dir] @ true
+
+    for one in asked.folders
+        known[package_reads.lexical(one.value)] @ true
+
+    for one in jobs.folders
+        dir = package_reads.lexical(one.value)
+
+        if known[dir].is_err()
+            known[dir] @ true
+            out @ out.push(shadowed_words.unlisted(one))
+
+    return out
+
+# `list` and then `more`.
+function followed(list: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= list
+
+    for one in more
+        out @ out.push(one)
 
     return out
 

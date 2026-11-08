@@ -1,0 +1,2 @@
+# The edit fires on the probes' own word alone.
+CCC_OVERRIDE_OPTIONS=#s/-fsyntax-only/-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)/

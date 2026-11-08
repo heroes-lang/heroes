@@ -1,6 +1,6 @@
-error[shadowed_macro]: `-Dtrue=0` reaches every clang this build runs through `CCC_OVERRIDE_OPTIONS`, and `true` is a name the C this compiler writes: a `-D` stands before every header and every guard, so nothing undoes it
+error[shadowed_macro]: `-Dtrue=0` reaches clang jobs this compiler starts, through `CCC_OVERRIDE_OPTIONS`, and `true` is a name the C this compiler writes: a `-D` stands before every header and every guard, so nothing undoes it
   at tests/golden/unsupported/fixedbugs-2344-a-harmless-define-of-a-kept-name-is-refused-as-strictly.case/main.hero:1:1
     |
   1 | #~ shadowed_macro
     | ^
-  note: take `-Dtrue=0` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset
+  note: take the edit that writes `-Dtrue=0` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset

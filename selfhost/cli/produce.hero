@@ -126,7 +126,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # Told before the runtime or a unit compiles: a binding of a name the runtime's own
     # header declares (defect 2256), a kept name or a file the environment gives clang (defect 2344).
     runtime_bound.stopped(s, art.must().decls, runtime: t.runtime, permissive: options.permissive)?
-    shadowed.environment_stopped(t, s, permissive: options.permissive)?
+    shadowed.environment_stopped(t, options, s)?
 
     # Where the binary lands is the round's to learn, from the link line it
     # runs (`link.link_objects`), and the C of every unit is written where
