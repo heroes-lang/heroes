@@ -161,7 +161,9 @@ test "every word a module hands clang is on the line the edits are asked of (def
 # search flag whose value is the build's (`-I`, `-F`, `-L`, `-l`, `-o`, the
 # level's own list), another program's words (git, `uname`,
 # `xcode-select`), a file's suffix, a word clang prints rather than reads,
-# and a prefix a module tests a word against.
+# and a prefix a module tests a word against (`-fdepfile-entry=` and
+# `-fsanitize-system-ignorelist=`, the files `cli/package_reads.hero` reads
+# off clang's own line as the toolchain's, defect 2351).
 constant NOT_WORDS: [str]
     [
         "-object-file-name="
@@ -197,6 +199,7 @@ constant NOT_WORDS: [str]
         "-git-head.txt"
         "-git-said.txt"
         "-fdepfile-entry="
+        "-fsanitize-system-ignorelist="
     ]
 
 function listed(word: str) -> bool
