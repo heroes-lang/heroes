@@ -66,9 +66,9 @@ function added(inv: argv.Invocation, tools: transport.Tools) -> [str]?
     c = catalogue.read(opened: program, named: program)
 
     if c.problem.len() > 0
-        return fail(code: "catalogue_refused", msg: c.problem)
+        return fail(code: c.code, msg: c.problem)
     line = index_line(inv, c: c)?
-    held = catalogue.Catalogue(file: c.file, index: line, entries: c.entries, problem: "")
+    held = catalogue.Catalogue(file: c.file, index: line, entries: c.entries, problem: "", code: "", at: "", said: "")
     scratch = staging.opened(program)?
     root = transport.root_of(tools, folder: verb_place.dot_if_empty(program), scratch: scratch.folder)
     picks = chosen(inv, tools: tools, program: program, root: root, c: held, scratch: scratch)

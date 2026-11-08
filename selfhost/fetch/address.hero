@@ -61,74 +61,134 @@ constant REFUSED: str
 constant NO_GIT: str
     "git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH"
 
-# `written` judged for a program standing at `root`.
+# `written` judged for a program standing at `root`: its shape first, which
+# its text alone answers (`shaped`), then a `file://` path's place in the
+# program's own repository.
 function judged(written: str, root: Root) -> Address?
+    shape = shaped(written)
+
+    if shape.is_err()
+        return refused(unit_reason(shape))
+
+    if strings.starts_with(text: written, prefix: "https://")
+        return ok(Address(written: written, url: written, local: ""))
+    return on_machine(written, root: root)
+
+# What `judged` refuses of `written` by its text alone, before any repository
+# is asked: every refusal but the repository's. **The catalogue's reader asks
+# it of every address a catalogue writes** (`module/catalogue.hero`), so a
+# build refuses at the address's line what `heroes fetch` refuses there, with
+# the same code and the same words: one rule, two callers (M-package-manager
+# step 3b; lane pm-fetch's finding of 2026-11-08, `git =
+# "file://packages/yaml"` read by the build, which said *not placed, run
+# `heroes fetch`*, and refused by the verb).
+function shaped(written: str) -> ()?
     if written.len() == 0
-        return refused("an empty address names no source: " + scheme_told.SHAPES)
+        return refusal("an empty address names no source: " + scheme_told.SHAPES)
     odd = url_bytes.first_unplain(written)
 
     if odd >= 0
-        return refused(
+        return refusal(
             "`" + url_bytes.shown(written) + "` holds " + url_bytes.byte_said(written, at: odd) + " at byte " + (odd + 1).to_str() + ", and an address is ASCII with no space or control character, anything else percent-encoded (`%20` for a space)"
         )
 
     if strings.starts_with(text: written, prefix: "https://")
-        return on_network(written)
+        return network_shape(written)
 
     if strings.starts_with(text: written, prefix: "file://")
-        return on_machine(written, root: root)
-    return refused(scheme_told.other(written))
+        return machine_shape(written)
+    return refusal(scheme_told.other(written))
 
-# The failure every refusal is.
+# The failure every refusal is, of an address and of a shape.
 function refused(said: str) -> Address?
+    return fail(code: REFUSED, msg: said)
+
+function refusal(said: str) -> ()?
     return fail(code: REFUSED, msg: said)
 
 # An `https://` address: a host, a port if one is written, and a path of the
 # bytes RFC 3986 lets a path hold. No account and no password, since a
 # catalogue is a shared file and git's own credential helper holds those; no
 # query and no fragment, which name no repository or index here.
-function on_network(written: str) -> Address?
+function network_shape(written: str) -> ()?
     rest = written.slice(from: 8, to: written.len())
-    end: i64 @= 0
-
-    while end < rest.len() && rest[end] != '/'
-        end @ end + 1
-
+    end = path_start(rest)
     authority = rest.slice(from: 0, to: end)
 
     if strings.holds(text: authority, needle: "@")
-        return refused(
+        return refusal(
             "`" + written + "` names an account: a catalogue is shared, so it holds no account and no password, and git's credential helper is where they live"
         )
     host = url_bytes.host_said(authority)
 
     if host.len() > 0
-        return refused("`" + written + "` " + host + ": " + scheme_told.SHAPES)
+        return refusal("`" + written + "` " + host + ": " + scheme_told.SHAPES)
     path = url_bytes.path_said(rest.slice(from: end, to: rest.len()))
 
     if path.len() > 0
-        return refused("`" + written + "` " + path)
-    return ok(Address(written: written, url: written, local: ""))
+        return refusal("`" + written + "` " + path)
+    return ok()
+
+# Where the path of an address starts, `rest` being what follows its scheme:
+# at its first `/`, or at its end.
+function path_start(rest: str) -> i64
+    end: i64 @= 0
+
+    while end < rest.len() && rest[end] != '/'
+        end @ end + 1
+
+    return end
+
+# What a `file://` address's text names: a path from the program's folder or
+# an absolute one, its `%XX` read back.
+record MachinePath
+    relative: bool
+    path: str
 
 # A `file://` address: an absolute path, `file:///…`, or one from the
-# program's folder, `file://./…` or `file://../…`, inside the program's own
-# repository and through no link below its root.
-function on_machine(written: str, root: Root) -> Address?
+# program's folder, `file://./…` or `file://../…`, holding a path's bytes;
+# an absolute one climbs above no root.
+function machine_shape(written: str) -> ()?
+    read = machine_path(written)?
+
+    if !read.relative
+        made = absolute_of(read.path)
+
+        if made.is_err()
+            return refusal("`" + written + "` " + reason(made))
+    return ok()
+
+# The path a `file://` address writes, or the refusal of its text.
+function machine_path(written: str) -> MachinePath?
     rest = written.slice(from: 7, to: written.len())
     relative = rest == "." || rest == ".." || strings.starts_with(text: rest, prefix: "./") || strings.starts_with(text: rest, prefix: "../")
 
     if !relative && !strings.starts_with(text: rest, prefix: "/")
-        return refused(
-            "`" + written + "` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./" + rest + "`, and an absolute one `file:///` and the path"
+        return fail(
+            code: REFUSED,
+            msg: "`" + written + "` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./" + rest + "`, and an absolute one `file:///` and the path"
         )
     wrong = url_bytes.path_said(rest)
 
     if wrong.len() > 0
-        return refused("`" + written + "` " + wrong)
+        return fail(code: REFUSED, msg: "`" + written + "` " + wrong)
     path = url_bytes.decoded(rest)
 
     if path.is_err()
-        return refused("`" + written + "` " + reason(path))
+        return fail(code: REFUSED, msg: "`" + written + "` " + reason(path))
+    return ok(MachinePath(relative: relative, path: path.must()))
+
+# The path an absolute `file:///…` address's path names, made whole as text,
+# a drive kept as its root.
+function absolute_of(path: str) -> str?
+    if path.len() > 0 && local_path.drive_lettered(path.slice(from: 1, to: path.len()))
+        return local_path.normalised(path.slice(from: 1, to: path.len()))
+    return local_path.normalised(path)
+
+# A `file://` address inside the program's own repository and through no
+# link below its root.
+function on_machine(written: str, root: Root) -> Address?
+    read = machine_path(written)?
 
     if root.top.len() == 0 && root.why == NO_GIT
         return fail(code: "no_git", msg: "`" + written + "` cannot be read: " + NO_GIT)
@@ -137,13 +197,12 @@ function on_machine(written: str, root: Root) -> Address?
         return refused(
             "`" + written + "` is read only from inside the program's own repository, and the program's folder is in none: " + root.why
         )
-    whole: str @= path.must()
+    made: str? @= fail(code: REFUSED, msg: "no path yet")
 
-    if relative
-        whole @ root.here + "/" + whole
-    else if local_path.drive_lettered(whole.slice(from: 1, to: whole.len()))
-        whole @ whole.slice(from: 1, to: whole.len())
-    made = local_path.normalised(whole)
+    if read.relative
+        made @ local_path.normalised(root.here + "/" + read.path)
+    else
+        made @ absolute_of(read.path)
 
     if made.is_err()
         return refused("`" + written + "` " + reason(made))
@@ -174,6 +233,11 @@ function under(base: Address, inside: str) -> Address
     return Address(written: base.written, url: base.url + slash + url_bytes.encoded(inside), local: path)
 
 function reason(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+function unit_reason(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
@@ -245,6 +309,27 @@ test "a file address is a path from the program's folder or an absolute one insi
     match judged("file://./x", root: outside)
         .ok _  => assert false
         .err e => assert e.msg == "`file://./x` is read only from inside the program's own repository, and the program's folder is in none: git said: not a git repository"
+
+# M-package-manager step 3b: the shape is the text's alone, so a catalogue's
+# reader asks it with no repository, and its refusal is `judged`'s word for
+# word; what only the repository answers, `shaped` admits.
+test "an address's shape is asked of its text alone, and refused in judged's words"
+    for written in ["file://packages/yaml", "file:///../../..", "https://user@h/x", "http://h/x", "", "file:///a/%0A"]
+        shape = shaped(written)
+        assert shape.is_err()
+        assert unit_reason(shape) == reason_of(judged(written, root: nowhere()))
+
+        match shape
+            .ok    => assert false
+            .err e => assert e.code == REFUSED
+
+    for fine in ["file://../../elsewhere", "file://./x", "file:///anywhere/at/all", "https://git.example.org/ana/yaml"]
+        assert !shaped(fine).is_err()
+
+function reason_of(judged_one: Address?) -> str
+    match judged_one
+        .ok _  => return ""
+        .err e => return e.msg
 
 test "an address of no scheme this command reads is refused, told what it looks like"
     for bad in ["", "http://h/x", "ssh://h/x", "git@h:x/y.git", "ext::sh -c x", "../json", "HTTPS://h/x", "ftp://h/x"]

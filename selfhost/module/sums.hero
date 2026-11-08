@@ -50,18 +50,6 @@ function lower_hex(text: str) -> bool
 
     return text.len() > 0
 
-# What is wrong with an address a catalogue holds, "" where nothing is: the
-# verbs fetch from `https://`, and from `file://` inside the program's own
-# repository, and every other scheme is refused (R9's C4, the coordinator's
-# ruling of 2026-11-07), here where the catalogue is read, so a scheme no verb
-# takes is never written down as a source.
-function address_scheme(address: str) -> str
-    for scheme in ["https://", "file://"]
-        if address.len() > scheme.len() && address.slice(from: 0, to: scheme.len()) == scheme
-            return ""
-
-    return "is no address the verbs fetch from: a source is `https://`, or `file://` inside the program's own repository"
-
 # A folder's path with its `.` and `..` parts taken out where a part before
 # them answers them, lexically: `a/../b/./c` is `b/c`, and `../x` stays.
 function folded(path: str) -> str
@@ -99,11 +87,6 @@ test "a catalogue's values are asked their shape, and nothing else"
     assert !version_shape("1..2")
     assert commit_shape("0123456789abcdef0123456789abcdef01234567")
     assert !commit_shape("0123456789abcdef")
-    assert address_scheme("https://git.example.org/ana/yaml") == ""
-    assert address_scheme("file://packages/yaml") == ""
-    assert address_scheme("ssh://git@example.org/yaml").len() > 0
-    assert address_scheme("--upload-pack=touch /tmp/x").len() > 0
-    assert address_scheme("https://").len() > 0
     assert folded("a/../b/./c") == "b/c"
     assert folded("../x") == "../x"
     assert folded("heroes.packages/k/../../x/") == "x"

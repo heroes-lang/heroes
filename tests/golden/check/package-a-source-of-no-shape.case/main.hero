@@ -1,0 +1,11 @@
+# M-package-manager step 3b (lane pm-fetch's finding, 2026-11-08): the
+# catalogue's `git = "file://packages/yaml"` writes a path where `file://`
+# reads a host, and `heroes fetch` refuses it, `source_refused`; the build read
+# the line and said the package was not placed, *`heroes fetch` places it*,
+# sending the author to the verb that refuses it. The reader asks the address
+# the rule the verb asks, `fetch/address.hero`'s `shaped`, and the build
+# refuses the line with that rule's code and words, as the verb does.
+use <yaml>/load  #~ source_refused
+
+function main()
+    print(load.size())
