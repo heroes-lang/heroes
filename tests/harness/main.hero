@@ -20,7 +20,8 @@
 # suite runs only that one.
 #
 # The third word narrows a suite that walks cases: to the cases whose name
-# holds it (and `records` to one path, the one check that can judge a file
+# holds it (`emission` to the programs whose label holds it, `run/loop`, and
+# `records` to one path, the one check that can judge a file
 # alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `lldb` or a
 # golden form, its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
@@ -314,14 +315,15 @@ function main()
 
     # The blessed emissions: the differential's successor, and the one
     # suite that can WRITE into the repository — under UPDATE_EMISSION=1
-    # and nothing else.
+    # and nothing else, and narrowed by the third word to the programs it
+    # names, which is how one new program is blessed (defect 2341).
     if only == "" || only == "emission"
-        got = suite_emission.run_all(scratch: scratch, compiler: compiler)
+        got = suite_emission.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
             print("harness: the emission suite could not run" + why(got))
             exit(2)
-        print("  emission: " + report.counted(got.must()))
+        print("  " + shown(name: "emission", pick: pick) + ": " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -668,12 +670,13 @@ function main()
         exit(1)
 
 # The suites the third word may narrow: the ones that walk cases (the six
-# golden forms, `run`, `fixes`, `annotations`, `lldb`), `layout`, which walks
-# modules and is asked about one file by the write-time hook, and `records`,
-# asked by the same hook about one issue file or one file the code cites a
-# defect in (`credit.hero`).
+# golden forms, `run`, `fixes`, `annotations`, `lldb`), `emission`, to the
+# programs whose label holds it since its walk became `cases.programs`
+# (defect 2341), `layout`, which walks modules and is asked about one file by
+# the write-time hook, and `records`, asked by the same hook about one issue
+# file or one file the code cites a defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch", "emission"]
         if name == suite
             return true
 
@@ -1053,7 +1056,11 @@ test "the third word binds the suites that walk cases, records narrowed to a pat
     # cases and takes no shard.
     assert takes_cases("records")
     assert !takes_shards("records")
-    assert !takes_cases("emission")
+
+    # `emission` takes a word since defect 2341, the programs whose label
+    # holds it: refused until then as a suite that walks no cases, its walk
+    # having been its own and not the cases'.
+    assert takes_cases("emission")
     assert !takes_cases("spec")
     assert !takes_cases("")
 
@@ -1067,8 +1074,9 @@ test "a shard binds the suites whose cases are one list, and says why a word nam
         assert takes_shards(name)
         assert takes_cases(name)
 
-    # A suite that takes a filter and walks more than one list takes no shard.
-    for name in ["annotations", "fixes", "layout", "records", ""]
+    # A suite that takes a filter and walks more than one list takes no shard:
+    # `emission` walks four groups and the examples.
+    for name in ["annotations", "fixes", "layout", "records", "emission", ""]
         assert !takes_shards(name)
 
     assert unsharded(cases.shard_of("5/4")) == "`5/4` names no shard: a shard is `<i>/<n>`, the i-th of n, with 1 <= i <= n"

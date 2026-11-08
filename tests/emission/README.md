@@ -17,10 +17,18 @@ these bytes:
 
     UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission
 
+and to bless the programs whose label holds a third word alone, a new program's
+first of all, which is what a program with nothing blessed is told to run:
+
+    UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission run/loop
+
 CLAUDE.md §9 follows the bytes: a regeneration that turns a red suite green has
 its diff read and quoted in the commit body. What changed here is what changed
 for every Heroes program in the world, so it is worth the minute.
 
 The name of each file is its program's path, flattened — `run-loop.c` is
 `tests/golden/run/loop.hero`, and `examples-json-main.c` is
-`examples/json/main.hero`. A file no program claims is a failure, not a leftover.
+`examples/json/main.hero`. A case that is a folder is named by its folder:
+`run-package-one-index-written-two-ways.c` is
+`tests/golden/run/package-one-index-written-two-ways.case/main.hero`. A file no
+program claims is a failure, not a leftover.

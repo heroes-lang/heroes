@@ -19,6 +19,11 @@
 # expectation, `main.expected`, with the rest. The pair rule binds it as it
 # binds a flat case: a folder missing either stops the harness by name. A
 # folder not named `.case` is a case's modules, as it always was.
+#
+# **One walk reads a golden directory, `programs`** (defect 2341): `collect`
+# is that walk with the pair rule laid on it, and a suite whose cases carry no
+# expectation asks the walk alone, so a form of case this file learns reaches
+# every suite at once.
 
 use shell
 use strings
@@ -47,67 +52,100 @@ function shown(path: str) -> Shown?
     return ok(Shown(text: got.slice(from: marks, to: got.len()), is_text: status == HERO_OS_OK))
 
 # One golden case: its source, its expectation, and the name a failure
-# message says.
+# message says. The expectation is "" where `programs` found none beside the
+# source: `collect` refuses that, and a suite whose cases carry none reads it.
 record Case
     source: str
     expected: str
     name: str
 
+# The cases of `dir`, each paired with its expectation, or the failure naming
+# the first half pair: `programs`, under the pair rule.
 function collect(scratch: str, dir: str) -> [Case]?
     entries = shell.list_entries(scratch: scratch, dir: dir)?
 
     # Membership is asked of the listing rather than of the filesystem:
     # one walk answers every question, and a `test -e` per case would be
     # 200 more processes for an answer already in hand.
-    present: {str: bool} @= {}
+    present = listed(entries)
 
     for entry in entries
-        present[entry] @ true
-
-    cases: [Case] @= []
-
-    for entry in entries
-        if strings.ends_with(text: entry, suffix: ".hero")
-            stem = strings.without_suffix(text: entry, suffix: ".hero")
-            expectation = stem + ".expected"
-
-            if present[expectation].is_err()
-                return fail(code: "half_pair", msg: "golden case " + entry + " is missing its .expected file")
-            cases @ cases.push(Case(source: entry, expected: expectation, name: strings.base_name(path: stem)))
-        else if strings.ends_with(text: entry, suffix: ".expected")
+        if strings.ends_with(text: entry, suffix: ".expected")
             owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
 
             if present[owner].is_err()
                 return fail(code: "orphan", msg: "orphan expectation: " + entry + " has no .hero source")
 
+    found = programs(scratch: scratch, dir: dir)?
+
+    for item in found
+        if item.expected == ""
+            return fail(code: "half_pair", msg: "golden case " + item.source + " is missing its .expected file")
+
+    return ok(found)
+
+# **Every program of the golden directory `dir`, the one walk of it**: each
+# `.hero` file in it, then the `main.hero` of each folder named `.case`, each
+# list sorted, every one with its expectation where one is beside it and ""
+# where none is. `collect` lays the pair rule on this walk; `suite_emission`
+# asks it alone, its `fixedbugs/` carrying no expectation. Until defect 2341
+# that suite walked each directory by hand and took its `.hero` files, so the
+# folders this file learned to read at M-package-manager step 6 had no
+# blessed emission.
+#
+# A folder named `.case` holding no `main.hero` stops the harness by name,
+# whoever asks: it is a case that stopped running, which the pair rule exists
+# to name.
+function programs(scratch: str, dir: str) -> [Case]?
+    entries = shell.list_entries(scratch: scratch, dir: dir)?
+    present = listed(entries)
+    found: [Case] @= []
+
+    for entry in entries
+        if strings.ends_with(text: entry, suffix: ".hero")
+            stem = strings.without_suffix(text: entry, suffix: ".hero")
+            found @ found.push(
+                Case(source: entry, expected: beside(present: present, path: stem + ".expected"), name: strings.base_name(path: stem))
+            )
+
     for folder in shell.list_directories(scratch: scratch, dir: dir)?
         if strings.ends_with(text: folder, suffix: CASE)
-            cases @ cases.push(folder_case(scratch: scratch, folder: folder)?)
+            found @ found.push(folder_case(scratch: scratch, folder: folder)?)
 
-    return ok(cases)
+    return ok(found)
 
 # The folder a case is, by its name's end.
 constant CASE: str
     ".case"
 
-# A folder case's pair, or the failure naming the half it lacks.
+# A folder case: its source, `main.hero`, its expectation, `main.expected`
+# where the folder holds one, and its name, the folder's less `.case`; or the
+# failure naming a folder that holds no `main.hero`, the file it compiles.
 function folder_case(scratch: str, folder: str) -> Case?
-    inside: {str: bool} @= {}
-
-    for entry in shell.list_entries(scratch: scratch, dir: folder)?
-        inside[entry] @ true
-
+    inside = listed(shell.list_entries(scratch: scratch, dir: folder)?)
     source = folder + "/main.hero"
-    expected = folder + "/main.expected"
 
     if inside[source].is_err()
         return fail(code: "half_pair", msg: "golden case " + folder + " holds no main.hero, the file it compiles")
-
-    if inside[expected].is_err()
-        return fail(code: "half_pair", msg: "golden case " + source + " is missing its .expected file")
     return ok(
-        Case(source: source, expected: expected, name: strings.base_name(path: strings.without_suffix(text: folder, suffix: CASE)))
+        Case(source: source, expected: beside(present: inside, path: folder + "/main.expected"), name: strings.base_name(path: strings.without_suffix(text: folder, suffix: CASE)))
     )
+
+# The entries of a listing as a set, so membership is asked of the listing in
+# hand.
+function listed(entries: [str]) -> {str: bool}
+    present: {str: bool} @= {}
+
+    for entry in entries
+        present[entry] @ true
+
+    return present
+
+# `path` where `present` lists it, "" where it does not.
+function beside(present: {str: bool}, path: str) -> str
+    if present[path].is_err()
+        return ""
+    return path
 
 # The harness's third word: the cases whose NAME holds `only`, every case when
 # `only` is empty. Added 2026-09-29 for the gate of one repair (CLAUDE.md
@@ -355,6 +393,49 @@ test "a folder named .case is one case, its main.hero and main.expected, and one
         .err e => e.code
 
     assert code == "half_pair"
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2341, held as a test (2026-11-08): the walk under the pair rule is the
+# one `suite_emission` asks of `fixedbugs/`, whose sources carry no
+# expectation, so it reads a source and a folder case with none, and leaves a
+# folder of modules alone; and a folder named `.case` with no `main.hero`
+# directly inside stops it by name, as it stops `collect`.
+test "fixedbugs: the walk under the pair rule reads every program, an expectation or none, and stops at a folder case with no main.hero (defect 2341)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/programs"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/b.case").is_err()
+    assert !shell.mkdir_all(tree + "/modules").is_err()
+
+    for name in ["a.hero", "a.expected", "c.hero", "b.case/main.hero", "b.case/heroes.toml", "modules/m.hero"]
+        assert !write_file(path: tree + "/" + name, text: "").is_err()
+
+    found = programs(scratch: scratch, dir: tree)
+    assert !found.is_err()
+    assert found.must().len() == 3
+    assert found.must()[0].expected == tree + "/a.expected"
+    assert found.must()[1].name == "c"
+    assert found.must()[1].expected == ""
+    assert found.must()[2].name == "b"
+    assert found.must()[2].source == tree + "/b.case/main.hero"
+    assert found.must()[2].expected == ""
+
+    # What the walk reads, the pair rule refuses.
+    code = match collect(scratch: scratch, dir: tree)
+        .ok _  => "ok"
+        .err e => e.code
+
+    assert code == "half_pair"
+
+    # The file it compiles one folder too deep is no `main.hero` of the case.
+    assert !shell.mkdir_all(tree + "/d.case/inner").is_err()
+    assert !write_file(path: tree + "/d.case/inner/main.hero", text: "").is_err()
+
+    said = match programs(scratch: scratch, dir: tree)
+        .ok _  => "ok"
+        .err e => e.msg
+
+    assert said == "golden case " + tree + "/d.case holds no main.hero, the file it compiles"
     assert !shell.remove_tree(scratch).is_err()
 
 test "a source with no expectation stops the harness by name"
