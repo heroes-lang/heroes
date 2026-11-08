@@ -172,12 +172,12 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 10 "tests/golden/run/place-a-fixed-array-element-past-its-length-names-its-place.hero"
-void h_placeafixedarrayelementpastitslengthnamesitsplace_main(void) { struct nums h0_n; int64_t h1_at; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t11, t12, t13, t14, t15, t18, t19; HERO_NODEBUG struct nums t7, t9, t16; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_placeafixedarrayelementpastitslengthnamesitsplace_main(void) { struct nums h0_n; int64_t h1_at; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG struct nums t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = INT64_C(4); t6 = INT64_C(99); t7 = (struct nums){.a = {t1, t2, t3, t4}, .after = t6}; h0_n = t7; hero_pad_fill(&h0_n, sizeof(struct nums), 1, hero_pad_g_0, hero_pad_n_0);
     t8 = INT64_C(3); h1_at = t8;
-    t9 = h0_n; t11 = h1_at; t12 = t9.a[((uint64_t)(t11) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 13, 11), (int64_t)0) : (t11))]; hero_print_int(t12); hero_print_end();
-    t13 = h1_at; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 14, 10); h1_at = t15;
-    t16 = h0_n; t18 = h1_at; t19 = t16.a[((uint64_t)(t18) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 15, 11), (int64_t)0) : (t18))]; hero_print_int(t19); hero_print_end(); return;
+    t9 = h1_at; t10 = h0_n.a[((uint64_t)(t9) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 13, 11), (int64_t)0) : (t9))]; hero_print_int(t10); hero_print_end();
+    t11 = h1_at; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 14, 10); h1_at = t13;
+    t14 = h1_at; t15 = h0_n.a[((uint64_t)(t14) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 15, 11), (int64_t)0) : (t14))]; hero_print_int(t15); hero_print_end(); return;
 #line 182 "placeafixedarrayelementpastitslengthnamesitsplace.c"
 }
 HERO_TU_LOCAL bool h_placeafixedarrayelementpastitslengthnamesitsplace_0Nums_eq(const struct nums *a, const struct nums *b) {
@@ -294,7 +294,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5461cbb82784a8da", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("20b1afee27ac7d5f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("placeafixedarrayelementpastitslengthnamesitsplace\tplace-a-fixed-array-element-past-its-length-names-its-place\n");

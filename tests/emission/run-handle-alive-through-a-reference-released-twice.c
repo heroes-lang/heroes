@@ -294,7 +294,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("43c457ce12030535", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("10143c04122ad9ba", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlealivethroughareferencereleasedtwice\thandle-alive-through-a-reference-released-twice\n");

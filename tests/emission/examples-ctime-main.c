@@ -221,12 +221,17 @@ HERO_TU_QUIET static const HeroDesc h_main_0Broken_desc = {
 };
 
 int64_t h_main_C_EPOCH_YEAR(void);
-int64_t h_main_year_of(struct tm h0_b);
-int64_t h_main_month_of(struct tm h0_b);
-int64_t h_main_day_of(struct tm h0_b);
-int64_t h_main_hour_of(struct tm h0_b);
+int64_t h_main_year_of(const struct tm *hero_in_h0_b);
+__attribute__((unused)) int64_t hero_value_h_main_year_of(struct tm h0_b);
+int64_t h_main_month_of(const struct tm *hero_in_h0_b);
+__attribute__((unused)) int64_t hero_value_h_main_month_of(struct tm h0_b);
+int64_t h_main_day_of(const struct tm *hero_in_h0_b);
+__attribute__((unused)) int64_t hero_value_h_main_day_of(struct tm h0_b);
+int64_t h_main_hour_of(const struct tm *hero_in_h0_b);
+__attribute__((unused)) int64_t hero_value_h_main_hour_of(struct tm h0_b);
 void h_main_made(h_0opt_13b8cf25 *hero_out, int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour);
-HeroStr h_main_shown(struct tm h0_b);
+HeroStr h_main_shown(const struct tm *hero_in_h0_b);
+__attribute__((unused)) HeroStr hero_value_h_main_shown(struct tm h0_b);
 HeroStr h_main_padded(int64_t h0_n);
 void h_main_main(void);
 void *hero_pad_nowhere(void);
@@ -274,67 +279,99 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 66 "examples/ctime/main.hero"
 int64_t h_main_C_EPOCH_YEAR(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1900); return t1;
-#line 278 "main.c"
+#line 283 "main.c"
 }
 
 #line 69 "examples/ctime/main.hero"
-int64_t h_main_year_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_main_year_of(const struct tm *hero_in_h0_b) {
+#line 69
+#define h0_b (*hero_in_h0_b)
+#line 69
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_year; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = h_main_C_EPOCH_YEAR(); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.year_of", 70, 12);
-#line 284 "main.c"
+#line 293 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
 bb2:
 #line 70 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 291 "main.c"
+#line 300 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.year_of", 70, 12);
     hero_unreachable();
 }
+#undef h0_b
+__attribute__((unused)) int64_t hero_value_h_main_year_of(struct tm h0_b) {
+    return h_main_year_of(&h0_b);
+}
 
 #line 73 "examples/ctime/main.hero"
-int64_t h_main_month_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_main_month_of(const struct tm *hero_in_h0_b) {
+#line 73
+#define h0_b (*hero_in_h0_b)
+#line 73
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t13, t14; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_mon; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t13 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t13); t14 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow_at("main.hero", "main.month_of", 74, 12);
-#line 299 "main.c"
+#line 316 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
 bb2:
 #line 74 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 306 "main.c"
+#line 323 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.month_of", 74, 12);
     hero_unreachable();
 }
+#undef h0_b
+__attribute__((unused)) int64_t hero_value_h_main_month_of(struct tm h0_b) {
+    return h_main_month_of(&h0_b);
+}
 
 #line 76 "examples/ctime/main.hero"
-int64_t h_main_day_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_main_day_of(const struct tm *hero_in_h0_b) {
+#line 76
+#define h0_b (*hero_in_h0_b)
+#line 76
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_mday; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok;
-#line 314 "main.c"
+#line 339 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
 bb2:
 #line 77 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 321 "main.c"
+#line 346 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.day_of", 77, 12);
     hero_unreachable();
 }
+#undef h0_b
+__attribute__((unused)) int64_t hero_value_h_main_day_of(struct tm h0_b) {
+    return h_main_day_of(&h0_b);
+}
 
 #line 79 "examples/ctime/main.hero"
-int64_t h_main_hour_of(struct tm h0_b) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_main_hour_of(const struct tm *hero_in_h0_b) {
+#line 79
+#define h0_b (*hero_in_h0_b)
+#line 79
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t2, t3, t7, t9, t11, t12; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t4, t5, t10; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_b.tm_hour; t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t1}; t11 = h2_own2; h2_own2 = t2; h_0opt_e201354_release(&t11); t12 = h1_f0; h_0opt_e201354_retain(&t2); h1_f0 = t2; h_0opt_e201354_release(&t12); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok;
-#line 329 "main.c"
+#line 362 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
 bb2:
 #line 80 "examples/ctime/main.hero"
     t7 = h1_f0; t8 = t7.as.err;
-#line 336 "main.c"
+#line 369 "main.c"
     hero_panic_must_at(t8, "main.hero", "main.hour_of", 80, 12);
     hero_unreachable();
+}
+#undef h0_b
+__attribute__((unused)) int64_t hero_value_h_main_hour_of(struct tm h0_b) {
+    return h_main_hour_of(&h0_b);
 }
 
 #line 82 "examples/ctime/main.hero"
@@ -390,10 +427,10 @@ void h_main_made(h_0opt_13b8cf25 *hero_out, int64_t h0_year, int64_t h1_month, i
 #line 85
     t33 = h8_f2; t34 = t33.as.err; hero_failure_retain(&t34); t35 = *(h_0opt_13b8cf25 *)__builtin_memset(&t35, 0, sizeof t35); t35.tag = INT64_C(1); t35.as.err = t34; t66 = h19_own19; h19_own19 = t35; h_0opt_13b8cf25_release(&t66); h12_ret0 = t35; goto bb9; bb7:
     t47 = h10_f3; t48 = t47.as.ok; h11_h = t48;
-    t49 = h5_y; t50 = h7_m; t51 = h9_d; t52 = h11_h; t53 = (struct tm){.tm_year = t49, .tm_mon = t50, .tm_mday = t51, .tm_hour = t52}; t54 = *(h_0opt_13b8cf25 *)__builtin_memset(&t54, 0, sizeof t54); t54.tag = INT64_C(0); t54.as.ok = t53; t67 = h20_own20; h20_own20 = t54; h_0opt_13b8cf25_release(&t67); h12_ret0 = t54; goto bb9; bb8:
+    t49 = h5_y; t50 = h7_m; t51 = h9_d; t52 = h11_h; t53 = *(struct tm *)__builtin_memset(&t53, 0, sizeof t53); t53.tm_year = t49; t53.tm_mon = t50; t53.tm_mday = t51; t53.tm_hour = t52; t54 = *(h_0opt_13b8cf25 *)__builtin_memset(&t54, 0, sizeof t54); t54.tag = INT64_C(0); t54.as.ok = t53; t67 = h20_own20; h20_own20 = t54; h_0opt_13b8cf25_release(&t67); h12_ret0 = t54; goto bb9; bb8:
 #line 86
     t44 = h10_f3; t45 = t44.as.err; hero_failure_retain(&t45); t46 = *(h_0opt_13b8cf25 *)__builtin_memset(&t46, 0, sizeof t46); t46.tag = INT64_C(1); t46.as.err = t45; t68 = h21_own21; h21_own21 = t46; h_0opt_13b8cf25_release(&t68); h12_ret0 = t46; goto bb9; bb9:
-#line 397 "main.c"
+#line 434 "main.c"
     t55 = h12_ret0;
     h_0opt_13b8cf25_retain(&t55);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -450,7 +487,9 @@ void h_main_made(h_0opt_13b8cf25 *hero_out, int64_t h0_year, int64_t h1_month, i
 #undef t68
 
 #line 89 "examples/ctime/main.hero"
-HeroStr h_main_shown(struct tm h0_b) {
+HeroStr h_main_shown(const struct tm *hero_in_h0_b) {
+#line 89
+#define h0_b (*hero_in_h0_b)
 #line 89
 #define t1 (*hero_big_t1)
 #line 89
@@ -461,8 +500,8 @@ HeroStr h_main_shown(struct tm h0_b) {
 #define t18 (*hero_big_t18)
 #line 89
     HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t3, t4, t5, t8, t9, t10, t11, t14, t15, t16, t17, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG struct tm *const hero_big_t1 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG int64_t t2, t7, t13, t19; HERO_NODEBUG struct tm *const hero_big_t6 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t12 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t18 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_b; t2 = h_main_year_of(t1); t3 = hero_int_to_str(t2); t24 = h1_own1; h1_own1 = t3; hero_str_decref(t24); t4 = HERO_STR_LIT(hero_str_2d); t5 = hero_str_concat(t3, t4); t25 = h2_own2; h2_own2 = t5; hero_str_decref(t25); t6 = h0_b; t7 = h_main_month_of(t6); t8 = h_main_padded(t7); t26 = h3_own3; h3_own3 = t8; hero_str_decref(t26); t9 = hero_str_concat(t5, t8); t27 = h4_own4; h4_own4 = t9; hero_str_decref(t27); t10 = HERO_STR_LIT(hero_str_2d); t11 = hero_str_concat(t9, t10); t28 = h5_own5; h5_own5 = t11; hero_str_decref(t28); t12 = h0_b; t13 = h_main_day_of(t12); t14 = h_main_padded(t13); t29 = h6_own6; h6_own6 = t14; hero_str_decref(t29); t15 = hero_str_concat(t11, t14); t30 = h7_own7; h7_own7 = t15; hero_str_decref(t30); t16 = HERO_STR_LIT(hero_str_20); t17 = hero_str_concat(t15, t16); t31 = h8_own8; h8_own8 = t17; hero_str_decref(t31); t18 = h0_b; t19 = h_main_hour_of(t18); t20 = h_main_padded(t19); t32 = h9_own9; h9_own9 = t20; hero_str_decref(t32); t21 = hero_str_concat(t17, t20); t33 = h10_own10; h10_own10 = t21; hero_str_decref(t33); t22 = HERO_STR_LIT(hero_str_f48ca); t23 = hero_str_concat(t21, t22); t34 = h11_own11; h11_own11 = t23; hero_str_decref(t34);
-#line 466 "main.c"
+    t1 = h0_b; t2 = h_main_year_of(&t1); t3 = hero_int_to_str(t2); t24 = h1_own1; h1_own1 = t3; hero_str_decref(t24); t4 = HERO_STR_LIT(hero_str_2d); t5 = hero_str_concat(t3, t4); t25 = h2_own2; h2_own2 = t5; hero_str_decref(t25); t6 = h0_b; t7 = h_main_month_of(&t6); t8 = h_main_padded(t7); t26 = h3_own3; h3_own3 = t8; hero_str_decref(t26); t9 = hero_str_concat(t5, t8); t27 = h4_own4; h4_own4 = t9; hero_str_decref(t27); t10 = HERO_STR_LIT(hero_str_2d); t11 = hero_str_concat(t9, t10); t28 = h5_own5; h5_own5 = t11; hero_str_decref(t28); t12 = h0_b; t13 = h_main_day_of(&t12); t14 = h_main_padded(t13); t29 = h6_own6; h6_own6 = t14; hero_str_decref(t29); t15 = hero_str_concat(t11, t14); t30 = h7_own7; h7_own7 = t15; hero_str_decref(t30); t16 = HERO_STR_LIT(hero_str_20); t17 = hero_str_concat(t15, t16); t31 = h8_own8; h8_own8 = t17; hero_str_decref(t31); t18 = h0_b; t19 = h_main_hour_of(&t18); t20 = h_main_padded(t19); t32 = h9_own9; h9_own9 = t20; hero_str_decref(t32); t21 = hero_str_concat(t17, t20); t33 = h10_own10; h10_own10 = t21; hero_str_decref(t33); t22 = HERO_STR_LIT(hero_str_f48ca); t23 = hero_str_concat(t21, t22); t34 = h11_own11; h11_own11 = t23; hero_str_decref(t34);
+#line 505 "main.c"
     hero_str_incref(t23);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -481,15 +520,19 @@ HeroStr h_main_shown(struct tm h0_b) {
     hero_frame_give(hero_big_t1);
     return t23;
 }
+#undef h0_b
 #undef t1
 #undef t6
 #undef t12
 #undef t18
+__attribute__((unused)) HeroStr hero_value_h_main_shown(struct tm h0_b) {
+    return h_main_shown(&h0_b);
+}
 
 #line 92 "examples/ctime/main.hero"
 HeroStr h_main_padded(int64_t h0_n) { HERO_NODEBUG HeroStr h1_r0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t7, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t5, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = INT64_C(10); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1: t10 = h1_r0;
-#line 493 "main.c"
+#line 536 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -505,7 +548,7 @@ bb2:
     t8 = h0_n; t9 = hero_int_to_str(t8); t14 = h4_own4; h4_own4 = t9; hero_str_decref(t14);
 #line 93
     t15 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t15); goto bb1;
-#line 509 "main.c"
+#line 552 "main.c"
 }
 
 #line 98 "examples/ctime/main.hero"
@@ -576,10 +619,10 @@ void h_main_main(void) {
     HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_h0_f0 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); __builtin_memset(hero_big_h0_f0, 0, sizeof(h_0opt_13b8cf25)); struct tm *const hero_big_h1_landing = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_h2_f1 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); __builtin_memset(hero_big_h2_f1, 0, sizeof(h_0opt_13b8cf25)); struct tm *const hero_big_h3_millennium = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_h4_f2 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); __builtin_memset(hero_big_h4_f2, 0, sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_h5_own5 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); __builtin_memset(hero_big_h5_own5, 0, sizeof(h_0opt_13b8cf25)); HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, t15, t39, t60, t63; HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_h7_own7 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); __builtin_memset(hero_big_h7_own7, 0, sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_h9_own9 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); __builtin_memset(hero_big_h9_own9, 0, sizeof(h_0opt_13b8cf25)); HERO_NODEBUG int64_t t1, t2, t3, t4, t7, t8, t17, t19, t21, t25, t26, t27, t28, t31, t32, t40, t41, t43, t44, t46, t47, t49, t50, t51, t52, t55, t56; HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t5 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t6 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG bool t9, t33, t57; HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t10 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG HeroFailure t11, t35; HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t12 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG struct tm *const hero_big_t13 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t14 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t16 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t18 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t20 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG int32_t t22, t23, t24; HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t29 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t30 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t34 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t36 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG struct tm *const hero_big_t37 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG struct tm *const hero_big_t38 = (struct tm *)hero_frame_take(sizeof(struct tm)); HERO_NODEBUG double t42, t45, t48; HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t53 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t54 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t58 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t59 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t61 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t62 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t64 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_NODEBUG h_0opt_13b8cf25 *const hero_big_t65 = (h_0opt_13b8cf25 *)hero_frame_take(sizeof(h_0opt_13b8cf25)); HERO_ENTRY_STOP; goto bb0; bb0:
 #line 100
     t1 = INT64_C(1969); t2 = INT64_C(7); t3 = INT64_C(20); t4 = INT64_C(20); h_main_made(&t5, t1, t2, t3, t4); t58 = h5_own5; h5_own5 = t5; h_0opt_13b8cf25_release(&t58); t59 = h0_f0; h_0opt_13b8cf25_retain(&t5); h0_f0 = t5; h_0opt_13b8cf25_release(&t59); t6 = h0_f0; t7 = t6.tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto bb1; else goto bb2; bb1: t12 = h0_f0; t13 = t12.as.ok; h1_landing = t13; hero_pad_fill(&h1_landing, sizeof(struct tm), 1, hero_pad_g_0, hero_pad_n_0);
-    t14 = h1_landing; t15 = h_main_shown(t14); t60 = h6_own6; h6_own6 = t15; hero_str_decref(t60); hero_print_str(t15); hero_print_end();
-    t16 = h1_landing; t17 = h_main_year_of(t16); hero_print_int(t17); hero_print_end();
-    t18 = h1_landing; t19 = h_main_month_of(t18); hero_print_int(t19); hero_print_end();
-    t20 = h1_landing; t21 = h_main_day_of(t20); hero_print_int(t21); hero_print_end();
+    t14 = h1_landing; t15 = h_main_shown(&t14); t60 = h6_own6; h6_own6 = t15; hero_str_decref(t60); hero_print_str(t15); hero_print_end();
+    t16 = h1_landing; t17 = h_main_year_of(&t16); hero_print_int(t17); hero_print_end();
+    t18 = h1_landing; t19 = h_main_month_of(&t18); hero_print_int(t19); hero_print_end();
+    t20 = h1_landing; t21 = h_main_day_of(&t20); hero_print_int(t21); hero_print_end();
 #line 108
     t22 = h1_landing.tm_year; hero_print_int(t22); hero_print_end();
     t23 = h1_landing.tm_mon; hero_print_int(t23); hero_print_end();
@@ -588,20 +631,20 @@ void h_main_main(void) {
     t25 = INT64_C(2000); t26 = INT64_C(1); t27 = INT64_C(1); t28 = INT64_C(0); h_main_made(&t29, t25, t26, t27, t28); t61 = h7_own7; h7_own7 = t29; h_0opt_13b8cf25_release(&t61); t62 = h2_f1; h_0opt_13b8cf25_retain(&t29); h2_f1 = t29; h_0opt_13b8cf25_release(&t62); t30 = h2_f1; t31 = t30.tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto bb3; else goto bb4; bb2:
 #line 100
     t10 = h0_f0; t11 = t10.as.err;
-#line 592 "main.c"
+#line 635 "main.c"
     hero_panic_must_at(t11, "main.hero", "main.main", 100, 15);
     hero_unreachable();
 bb3:
 #line 112 "examples/ctime/main.hero"
     t36 = h2_f1; t37 = t36.as.ok; h3_millennium = t37; hero_pad_fill(&h3_millennium, sizeof(struct tm), 1, hero_pad_g_0, hero_pad_n_0);
-    t38 = h3_millennium; t39 = h_main_shown(t38); t63 = h8_own8; h8_own8 = t39; hero_str_decref(t63); hero_print_str(t39); hero_print_end();
+    t38 = h3_millennium; t39 = h_main_shown(&t38); t63 = h8_own8; h8_own8 = t39; hero_str_decref(t63); hero_print_str(t39); hero_print_end();
 #line 116
     t40 = INT64_C(3600); t41 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 116, 11}; t42 = difftime(t40, t41); } hero_print_f64(t42); hero_print_end();
     t43 = INT64_C(0); t44 = INT64_C(3600); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 117, 11}; t45 = difftime(t43, t44); } hero_print_f64(t45); hero_print_end();
     t46 = INT64_C(0); t47 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 118, 11}; t48 = difftime(t46, t47); } hero_print_f64(t48); hero_print_end();
 #line 121
     t49 = INT64_C(3000000000); t50 = INT64_C(1); t51 = INT64_C(1); t52 = INT64_C(0); h_main_made(&t53, t49, t50, t51, t52); t64 = h9_own9; h9_own9 = t53; h_0opt_13b8cf25_release(&t64); t65 = h4_f2; h_0opt_13b8cf25_retain(&t53); h4_f2 = t53; h_0opt_13b8cf25_release(&t65); t54 = h4_f2; t55 = t54.tag; t56 = INT64_C(1); t57 = t55 == t56; hero_print_bool(t57); hero_print_end();
-#line 605 "main.c"
+#line 648 "main.c"
     h_0opt_13b8cf25_release(hero_slot_escape(&h0_f0));
     h_0opt_13b8cf25_release(hero_slot_escape(&h2_f1));
     h_0opt_13b8cf25_release(hero_slot_escape(&h4_f2));
@@ -645,7 +688,7 @@ bb3:
 bb4:
 #line 112 "examples/ctime/main.hero"
     t34 = h2_f1; t35 = t34.as.err;
-#line 649 "main.c"
+#line 692 "main.c"
     hero_panic_must_at(t35, "main.hero", "main.main", 112, 18);
     hero_unreachable();
 }
@@ -849,7 +892,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("03beb0271a495b6b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("500e945c1a712ff0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

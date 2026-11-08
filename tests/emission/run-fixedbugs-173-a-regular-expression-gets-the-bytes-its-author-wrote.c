@@ -250,7 +250,7 @@ bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr 
 #define t2 (*hero_big_t2)
 #line 26
     regex_t *const hero_lend_h2_re = (regex_t *)hero_lend_local(sizeof(regex_t), "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.matches", "re"); int64_t h3_rc; HERO_NODEBUG bool h4_ret0, t8, t11, t20, t21; HERO_NODEBUG uint64_t t1, t14; HERO_NODEBUG regex_t *const hero_big_t2 = (regex_t *)hero_frame_take(sizeof(regex_t)); HERO_NODEBUG HeroStr t3, t9, t10, t12; HERO_NODEBUG const char *t4, *t13; HERO_NODEBUG int32_t t5, t16; HERO_NODEBUG int64_t t6, t7, t17, t18, t19; HERO_NODEBUG void *t15; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(0); t2 = (regex_t){.re_nsub = t1}; h2_re = t2; hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1);
+    t1 = UINT64_C(0); t2 = *(regex_t *)__builtin_memset(&t2, 0, sizeof t2); t2.re_nsub = t1; h2_re = t2; hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1);
 #line 29
     t3 = h0_pattern; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 29, 21}; t4 = hero_str_lend_at(t3, &hero_here); } t5 = h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero", "fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.matches", 29, 8}; hero_lend_local_name(hero_lend_h2_re, "regcomp", "preg"); hero_pad_fill(&h2_re, sizeof(regex_t), 1, hero_pad_g_1, hero_pad_n_1); t6 = regcomp(&h2_re, hero_cstr_nonnull_at(t4, &hero_here), t5); } t7 = INT64_C(0); t8 = t6 != t7; if (t8) goto bb2; else goto bb3; bb1:
 #line 32
@@ -393,7 +393,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("76426ca7730314df", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("429250dd732ae964", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs173aregularexpressiongetsthebytesitsauthorwrote\tfixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote\n");

@@ -211,7 +211,7 @@ void h_fixedbugs396sha256finalintoonecellaborts_main(void) {
 #define t2 (*hero_big_t2)
 #line 16
     struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalintoonecellaborts.main", "c"); uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396sha256finalintoonecellaborts.main", "m"); HERO_NODEBUG uint32_t t1; HERO_NODEBUG struct SHA256state_st *const hero_big_t2 = (struct SHA256state_st *)hero_frame_take(sizeof(struct SHA256state_st)); HERO_NODEBUG uint8_t t3, t12; HERO_NODEBUG int32_t t4, t9, t10; HERO_NODEBUG HeroStr t5, t6, t11; HERO_NODEBUG const char *t7; HERO_NODEBUG uint64_t t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(0); t2 = (struct SHA256state_st){.num = t1}; h0_c = t2; hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0);
+    t1 = UINT64_C(0); t2 = *(struct SHA256state_st *)__builtin_memset(&t2, 0, sizeof t2); t2.num = t1; h0_c = t2; hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = UINT64_C(0); h1_m = t3;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 19, 11}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t4 = SHA256_Init(&h0_c); } t5 = HERO_STR_LIT(hero_str_20); t6 = HERO_STR_LIT(hero_str_1998f2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 19, 57}; t7 = hero_str_lend_at(t6, &hero_here); } t8 = UINT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 19, 33}; hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t9 = SHA256_Update(&h0_c, hero_cstr_nonnull_at(t7, &hero_here), t8); } hero_print_int(t4); hero_print_str(t5); hero_print_int(t9); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-sha256-final-into-one-cell-aborts.hero", "fixedbugs-396-sha256-final-into-one-cell-aborts.main", 20, 11}; hero_lend_local_name(hero_lend_h1_m, "SHA256_Final", "md"); hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c"); hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0); t10 = SHA256_Final((void *)&h1_m, &h0_c); } hero_print_int(t10); hero_print_end();
@@ -326,7 +326,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("10606adc4eb4bcbe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5cb04f114edc9143", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396sha256finalintoonecellaborts\tfixedbugs-396-sha256-final-into-one-cell-aborts\n");

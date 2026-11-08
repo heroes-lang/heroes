@@ -269,7 +269,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("14812d232ef397d7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("60d111582f1b6c5c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo\tfixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too\n");

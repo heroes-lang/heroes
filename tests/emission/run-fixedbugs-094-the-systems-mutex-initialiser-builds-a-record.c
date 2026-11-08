@@ -167,7 +167,8 @@ HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
 HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
-hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void);
+void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(hero_mutex *hero_out);
+__attribute__((unused)) hero_mutex hero_value_h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void);
 void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("__opaque")
@@ -191,8 +192,8 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
-hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void) {
-#line 196 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(hero_mutex *hero_out) {
+#line 197 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -204,9 +205,10 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     static hero_mutex hero_constant_value = HERO_MUTEX_INIT;
-#line 208 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 209 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic pop
-    return hero_constant_value;
+    if (hero_out != NULL) *hero_out = hero_constant_value;
+    return;
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -220,6 +222,11 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+__attribute__((unused)) hero_mutex hero_value_h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void) {
+    HERO_NODEBUG hero_mutex hero_result;
+    h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(&hero_result);
+    return hero_result;
+}
 
 #line 16 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
@@ -229,11 +236,11 @@ void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
 #define t1 (*hero_big_t1)
 #line 16
     hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m"); HERO_NODEBUG hero_mutex *const hero_big_t1 = (hero_mutex *)hero_frame_take(sizeof(hero_mutex)); HERO_NODEBUG int32_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(); h0_m = t1; hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0);
+    h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(&t1); h0_m = t1; hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_m.id; hero_print_int(t2); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero", "fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.main", 19, 11}; hero_lend_local_name(hero_lend_h0_m, "hero_lock", "h"); hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0); t3 = hero_lock(&h0_m); } hero_print_int(t3); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero", "fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.main", 20, 11}; hero_lend_local_name(hero_lend_h0_m, "hero_unlock", "h"); hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0); t4 = hero_unlock(&h0_m); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_m); hero_frame_give(hero_big_t1); return;
-#line 237 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 244 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 }
 #undef h0_m
 #undef t1
@@ -342,7 +349,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("68db164d696d3396", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("352afa836995081b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094thesystemsmutexinitialiserbuildsarecord\tfixedbugs-094-the-systems-mutex-initialiser-builds-a-record\n");

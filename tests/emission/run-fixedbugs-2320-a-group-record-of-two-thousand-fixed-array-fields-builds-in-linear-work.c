@@ -4271,11 +4271,11 @@ struct fixedbugs_2320_gb h_fixedbugs2320agrouprecordoftwothousandfixedarrayfield
 }
 
 #line 4116 "tests/golden/run/fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero"
-void h_fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork_main(void) { struct fixedbugs_2320_gb h0_g; HERO_NODEBUG uint8_t t1, t6, t10, t14; HERO_NODEBUG struct fixedbugs_2320_gb t2, t3, t7, t11; HERO_NODEBUG int64_t t5, t9, t13; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork_main(void) { struct fixedbugs_2320_gb h0_g; HERO_NODEBUG uint8_t t1, t4, t6, t8; HERO_NODEBUG struct fixedbugs_2320_gb t2; HERO_NODEBUG int64_t t3, t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(7); t2 = h_fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork_build(t1); h0_g = t2; hero_pad_fill(&h0_g, sizeof(struct fixedbugs_2320_gb), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = h0_g; t5 = INT64_C(0); t6 = t3.f0[((uint64_t)(t5) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.main", 4118, 11), (int64_t)0) : (t5))]; hero_print_int(t6); hero_print_end();
-    t7 = h0_g; t9 = INT64_C(1); t10 = t7.f1[((uint64_t)(t9) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.main", 4119, 11), (int64_t)0) : (t9))]; hero_print_int(t10); hero_print_end();
-    t11 = h0_g; t13 = INT64_C(1); t14 = t11.f2047[((uint64_t)(t13) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.main", 4120, 11), (int64_t)0) : (t13))]; hero_print_int(t14); hero_print_end(); return;
+    t3 = INT64_C(0); t4 = h0_g.f0[((uint64_t)(t3) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.main", 4118, 11), (int64_t)0) : (t3))]; hero_print_int(t4); hero_print_end();
+    t5 = INT64_C(1); t6 = h0_g.f1[((uint64_t)(t5) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.main", 4119, 11), (int64_t)0) : (t5))]; hero_print_int(t6); hero_print_end();
+    t7 = INT64_C(1); t8 = h0_g.f2047[((uint64_t)(t7) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.hero", "fixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work.main", 4120, 11), (int64_t)0) : (t7))]; hero_print_int(t8); hero_print_end(); return;
 #line 4280 "fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork_0GB_eq(const struct fixedbugs_2320_gb *a, const struct fixedbugs_2320_gb *b) {
@@ -10529,7 +10529,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("577182d02c8e0b14", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a08661251412f9f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2320agrouprecordoftwothousandfixedarrayfieldsbuildsinlinearwork\tfixedbugs-2320-a-group-record-of-two-thousand-fixed-array-fields-builds-in-linear-work\n");

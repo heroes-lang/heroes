@@ -294,7 +294,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("35021dd8084a6fdd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0152020e08724462", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2333agroupheadersmuloverflowmacroleavestheproductchecked\tfixedbugs-2333-a-group-header-s-mul-overflow-macro-leaves-the-product-checked\n");

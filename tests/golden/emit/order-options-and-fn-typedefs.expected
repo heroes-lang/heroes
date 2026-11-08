@@ -394,7 +394,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ae946e93b5ebd1c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("37392b1f3b8691a1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("orderoptionsandfntypedefs\torder-options-and-fn-typedefs\n");

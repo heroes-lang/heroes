@@ -315,7 +315,7 @@ HERO_TU_LOCAL void h_0show_6936ea81(HeroShow *o, const void *p) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a7b08922dd85e62", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("16caecc82e0032e7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs016anassertonavariantwriteseachcase\tfixedbugs-016-an-assert-on-a-variant-writes-each-case\n");

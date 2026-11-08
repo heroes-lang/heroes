@@ -309,7 +309,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12d6d47145d2991d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f26b8a645fa6da2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugstwomarksononecallaretwoobligations\tfixedbugs-two-marks-on-one-call-are-two-obligations\n");

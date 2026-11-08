@@ -189,11 +189,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
-void h_ffiachararraymember_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t10, t11, t15, t17, t23, t24, t28, t30, t34, t35, t39, t41, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int8_t t1, t2, t3, t4, t22; HERO_NODEBUG int32_t t6, t9, t33; HERO_NODEBUG Tag t7, t8, t19; HERO_NODEBUG int64_t t12, t13, t18, t21, t25, t26, t31, t36, t37, t42; HERO_NODEBUG bool t14, t27, t38; HERO_NODEBUG HeroFailure t16, t29, t40; HERO_NODEBUG HeroStr t32; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_ffiachararraymember_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t10, t11, t15, t17, t21, t22, t26, t28, t32, t33, t37, t39, t41, t42, t43, t44, t45, t46; HERO_NODEBUG int8_t t1, t2, t3, t4, t20; HERO_NODEBUG int32_t t6, t9, t31; HERO_NODEBUG Tag t7, t8; HERO_NODEBUG int64_t t12, t13, t18, t19, t23, t24, t29, t34, t35, t40; HERO_NODEBUG bool t14, t25, t36; HERO_NODEBUG HeroFailure t16, t27, t38; HERO_NODEBUG HeroStr t30; HERO_ENTRY_STOP; goto bb0; bb0:
 #line 42
     t1 = INT64_C(68); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t6 = INT64_C(7); t7 = (Tag){.name = {t1, t2, t3, t4}, .id = t6}; h0_t = t7; hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
-    t8 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 43, 11}; t9 = tag_first(t8); } t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t9}; t43 = h4_own4; h4_own4 = t10; h_0opt_e201354_release(&t43); t44 = h1_f0; h_0opt_e201354_retain(&t10); h1_f0 = t10; h_0opt_e201354_release(&t44); t11 = h1_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t17 = h1_f0; t18 = t17.as.ok; hero_print_int(t18); hero_print_end();
-    t19 = h0_t; t21 = INT64_C(0); t22 = t19.name[((uint64_t)(t21) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 44, 11), (int64_t)0) : (t21))]; t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t22}; t45 = h5_own5; h5_own5 = t23; h_0opt_e201354_release(&t45); t46 = h2_f1; h_0opt_e201354_retain(&t23); h2_f1 = t23; h_0opt_e201354_release(&t46); t24 = h2_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb3; else goto bb4; bb2:
+    t8 = h0_t; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 43, 11}; t9 = tag_first(t8); } t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t9}; t41 = h4_own4; h4_own4 = t10; h_0opt_e201354_release(&t41); t42 = h1_f0; h_0opt_e201354_retain(&t10); h1_f0 = t10; h_0opt_e201354_release(&t42); t11 = h1_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t17 = h1_f0; t18 = t17.as.ok; hero_print_int(t18); hero_print_end();
+    t19 = INT64_C(0); t20 = h0_t.name[((uint64_t)(t19) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 44, 11), (int64_t)0) : (t19))]; t21 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t20}; t43 = h5_own5; h5_own5 = t21; h_0opt_e201354_release(&t43); t44 = h2_f1; h_0opt_e201354_retain(&t21); h2_f1 = t21; h_0opt_e201354_release(&t44); t22 = h2_f1; t23 = t22.tag; t24 = INT64_C(0); t25 = t23 == t24; if (t25) goto bb3; else goto bb4; bb2:
 #line 43
     t15 = h1_f0; t16 = t15.as.err;
 #line 200 "ffiachararraymember.c"
@@ -201,13 +201,13 @@ void h_ffiachararraymember_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_e201354 h1
     hero_unreachable();
 bb3:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t30 = h2_f1; t31 = t30.as.ok; t32 = HERO_STR_LIT(hero_str_20); t33 = h0_t.id; t34 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t33}; t47 = h6_own6; h6_own6 = t34; h_0opt_e201354_release(&t47); t48 = h3_f2; h_0opt_e201354_retain(&t34); h3_f2 = t34; h_0opt_e201354_release(&t48); t35 = h3_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb5; else goto bb6; bb4: t28 = h2_f1; t29 = t28.as.err;
+    t28 = h2_f1; t29 = t28.as.ok; t30 = HERO_STR_LIT(hero_str_20); t31 = h0_t.id; t32 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t31}; t45 = h6_own6; h6_own6 = t32; h_0opt_e201354_release(&t45); t46 = h3_f2; h_0opt_e201354_retain(&t32); h3_f2 = t32; h_0opt_e201354_release(&t46); t33 = h3_f2; t34 = t33.tag; t35 = INT64_C(0); t36 = t34 == t35; if (t36) goto bb5; else goto bb6; bb4: t26 = h2_f1; t27 = t26.as.err;
 #line 206 "ffiachararraymember.c"
-    hero_panic_must_at(t29, "ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 44, 11);
+    hero_panic_must_at(t27, "ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 44, 11);
     hero_unreachable();
 bb5:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t41 = h3_f2; t42 = t41.as.ok; hero_print_int(t31); hero_print_str(t32); hero_print_int(t42); hero_print_end();
+    t39 = h3_f2; t40 = t39.as.ok; hero_print_int(t29); hero_print_str(t30); hero_print_int(t40); hero_print_end();
 #line 212 "ffiachararraymember.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
@@ -218,9 +218,9 @@ bb5:
     return;
 bb6:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t39 = h3_f2; t40 = t39.as.err;
+    t37 = h3_f2; t38 = t37.as.err;
 #line 223 "ffiachararraymember.c"
-    hero_panic_must_at(t40, "ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 44, 43);
+    hero_panic_must_at(t38, "ffi-a-char-array-member.hero", "ffi-a-char-array-member.main", 44, 43);
     hero_unreachable();
 }
 HERO_TU_LOCAL bool h_ffiachararraymember_0Tag_eq(const Tag *a, const Tag *b) {
@@ -337,7 +337,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a836b2309bf67a2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36d34f5909e73c27", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiachararraymember\tffi-a-char-array-member\n");

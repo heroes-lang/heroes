@@ -176,10 +176,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
-void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) { Pair h0_p; HERO_NODEBUG float t1, t2, t8, t12, t13, t15; HERO_NODEBUG Pair t4, t5, t9, t14; HERO_NODEBUG int64_t t7, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) { Pair h0_p; HERO_NODEBUG float t1, t2, t6, t8, t9, t11; HERO_NODEBUG Pair t4, t10; HERO_NODEBUG int64_t t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = 0x1.8p+0; t2 = 0x1.2p+1; t4 = (Pair){.weights = {t1, t2}}; h0_p = t4; hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_1, hero_pad_n_1);
-    t5 = h0_p; t7 = INT64_C(0); t8 = t5.weights[((uint64_t)(t7) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 14, 11), (int64_t)0) : (t7))]; t9 = h0_p; t11 = INT64_C(1); t12 = t9.weights[((uint64_t)(t11) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 14, 26), (int64_t)0) : (t11))]; t13 = t8 + t12; hero_print_f32(t13); hero_print_end();
-    t14 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 15, 11}; t15 = sum_of(t14); } hero_print_f32(t15); hero_print_end(); return;
+    t5 = INT64_C(0); t6 = h0_p.weights[((uint64_t)(t5) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 14, 11), (int64_t)0) : (t5))]; t7 = INT64_C(1); t8 = h0_p.weights[((uint64_t)(t7) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 14, 26), (int64_t)0) : (t7))]; t9 = t6 + t8; hero_print_f32(t9); hero_print_end();
+    t10 = h0_p; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.main", 15, 11}; t11 = sum_of(t10); } hero_print_f32(t11); hero_print_end(); return;
 #line 184 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_0Pair_eq(const Pair *a, const Pair *b) {
@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("44f55652797839f4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11453a8879a00e79", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline\tfixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line\n");

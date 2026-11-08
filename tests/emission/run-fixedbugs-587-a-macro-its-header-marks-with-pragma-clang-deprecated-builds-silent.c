@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("645fbc15066710cb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("30afa04b068ee550", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent\tfixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent\n");

@@ -272,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("73b5e44e42a96422", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4005c88442d138a7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("cfreesaleaseandtheruntimenamesit\tc-frees-a-lease-and-the-runtime-names-it\n");

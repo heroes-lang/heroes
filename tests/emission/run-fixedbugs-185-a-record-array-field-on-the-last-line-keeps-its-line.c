@@ -195,10 +195,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
-void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) { Holder h0_h; HERO_NODEBUG int32_t t1, t2, t4, t12, t17, t18, t20; HERO_NODEBUG Cell t3, t5, t11, t16; HERO_NODEBUG Holder t7, t8, t13, t19; HERO_NODEBUG int64_t t10, t15; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) { Holder h0_h; HERO_NODEBUG int32_t t1, t2, t4, t9, t11, t12, t14; HERO_NODEBUG Cell t3, t5; HERO_NODEBUG Holder t7, t13; HERO_NODEBUG int64_t t8, t10; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(2); t2 = INT64_C(3); t3 = (Cell){.v = t2}; t4 = INT64_C(4); t5 = (Cell){.v = t4}; t7 = (Holder){.count = t1, .cells = {t3, t5}}; h0_h = t7; hero_pad_fill(&h0_h, sizeof(Holder), 1, hero_pad_g_3, hero_pad_n_3); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h) + hero_pad_k0 * sizeof(Holder) + __builtin_offsetof(Holder, cells), sizeof(Cell), sizeof(((Holder *)0)->cells) / sizeof(Cell), hero_pad_g_2, hero_pad_n_2); }
-    t8 = h0_h; t10 = INT64_C(0); t11 = t8.cells[((uint64_t)(t10) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 11), (int64_t)0) : (t10))]; t12 = t11.v; t13 = h0_h; t15 = INT64_C(1); t16 = t13.cells[((uint64_t)(t15) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 26), (int64_t)0) : (t15))]; t17 = t16.v; if (__builtin_add_overflow(t12, t17, &t18)) hero_panic_overflow_at("fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 11); hero_print_int(t18); hero_print_end();
-    t19 = h0_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 11, 11}; t20 = total(t19); } hero_print_int(t20); hero_print_end(); return;
+    t8 = INT64_C(0); t9 = h0_h.cells[((uint64_t)(t8) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 11), (int64_t)0) : (t8))].v; t10 = INT64_C(1); t11 = h0_h.cells[((uint64_t)(t10) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 26), (int64_t)0) : (t10))].v; if (__builtin_add_overflow(t9, t11, &t12)) hero_panic_overflow_at("fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 10, 11); hero_print_int(t12); hero_print_end();
+    t13 = h0_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero", "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.main", 11, 11}; t14 = total(t13); } hero_print_int(t14); hero_print_end(); return;
 #line 203 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_0Cell_eq(const Cell *a, const Cell *b) {
@@ -325,7 +325,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("70ccb35661a93aca", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d1c978c61d10f4f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs185arecordarrayfieldonthelastlinekeepsitsline\tfixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line\n");

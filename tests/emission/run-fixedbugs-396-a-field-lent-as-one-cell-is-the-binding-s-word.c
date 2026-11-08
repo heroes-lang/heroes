@@ -190,9 +190,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) { struct cell h0_b; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t14, t19; HERO_NODEBUG int64_t t10, t18, t21; HERO_NODEBUG struct cell t11, t16; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13, t15, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) { struct cell h0_b; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t14, t17; HERO_NODEBUG int64_t t10, t16, t19; HERO_NODEBUG struct cell t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13, t15, t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0); t10 = INT64_C(7); t11 = (struct cell){.m = t1, .rest = {t2, t3, t4, t5, t6, t7, t8}, .after = t10}; h0_b = t11; hero_pad_fill(&h0_b, sizeof(struct cell), 1, hero_pad_g_0, hero_pad_n_0);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.main", 21, 11}; t12 = digest_cell((void *)&h0_b.m); } t13 = HERO_STR_LIT(hero_str_20); t14 = h0_b.m; t15 = HERO_STR_LIT(hero_str_20); t16 = h0_b; t18 = INT64_C(6); t19 = t16.rest[((uint64_t)(t18) >= UINT64_C(7) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.main", 21, 45), (int64_t)0) : (t18))]; t20 = HERO_STR_LIT(hero_str_20); t21 = h0_b.after; hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_str(t15); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); return;
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.main", 21, 11}; t12 = digest_cell((void *)&h0_b.m); } t13 = HERO_STR_LIT(hero_str_20); t14 = h0_b.m; t15 = HERO_STR_LIT(hero_str_20); t16 = INT64_C(6); t17 = h0_b.rest[((uint64_t)(t16) >= UINT64_C(7) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero", "fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.main", 21, 45), (int64_t)0) : (t16))]; t18 = HERO_STR_LIT(hero_str_20); t19 = h0_b.after; hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_str(t15); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_end(); return;
 #line 197 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_0Cell_eq(const struct cell *a, const struct cell *b) {
@@ -314,7 +314,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("12181a5251c98947", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e67fe8751f15dcc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396afieldlentasonecellisthebindingsword\tfixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word\n");

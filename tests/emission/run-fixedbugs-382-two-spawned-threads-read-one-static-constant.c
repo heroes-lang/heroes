@@ -264,7 +264,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("06be13a06733d3d5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("530df7d5675ba85a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382twospawnedthreadsreadonestaticconstant\tfixedbugs-382-two-spawned-threads-read-one-static-constant\n");

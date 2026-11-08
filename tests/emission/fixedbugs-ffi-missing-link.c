@@ -264,7 +264,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1758774830890bf1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("63a85b7d30b0e076", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffimissinglink\tffi-missing-link\n");

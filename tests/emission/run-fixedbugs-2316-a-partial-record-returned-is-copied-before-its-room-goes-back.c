@@ -151,7 +151,8 @@ HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e2013
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_helper(int64_t h0_n);
-struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(int64_t h0_n);
+void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, int64_t h0_n);
+__attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(int64_t h0_n);
 void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("first")
@@ -178,13 +179,13 @@ int64_t h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_helpe
     struct fixedbugs_2316_held *const hero_big_h1_h = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 182 "fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback.c"
+#line 183 "fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_h
 #undef t2
 
 #line 21 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.hero"
-struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(int64_t h0_n) {
+void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, int64_t h0_n) {
 #line 21
 #define h1_out (*hero_big_h1_out)
 #line 21
@@ -192,15 +193,20 @@ struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnediscopiedbeforeit
 #line 21
 #define t7 (*hero_big_t7)
 #line 21
-    struct fixedbugs_2316_held *hero_big_h1_out __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3, t4, t5, t6; HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t2 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t7 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
+    struct fixedbugs_2316_held *const hero_big_h1_out = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3, t4, t5, t6; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t7 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_out = t2; hero_pad_fill(&h1_out, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.make", 23, 21); t6 = h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_helper(t5); hero_print_int(t6); hero_print_end();
-    t7 = h1_out; return t7;
-#line 200 "fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback.c"
+    t7 = h1_out; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_out); return;
+#line 201 "fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_out
 #undef t2
 #undef t7
+__attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(int64_t h0_n) {
+    HERO_NODEBUG struct fixedbugs_2316_held hero_result;
+    h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(&hero_result, h0_n);
+    return hero_result;
+}
 
 #line 26 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.hero"
 void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_main(void) {
@@ -210,9 +216,9 @@ void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_main(voi
 #define t2 (*hero_big_t2)
 #line 26
     struct fixedbugs_2316_held *const hero_big_h0_h = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); t2 = h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(t1); h0_h = t2; hero_pad_fill(&h0_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
+    t1 = INT64_C(7); h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(&t2, t1); h0_h = t2; hero_pad_fill(&h0_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_h.first; hero_print_int(t3); hero_print_end(); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_h); return;
-#line 216 "fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback.c"
+#line 222 "fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback.c"
 }
 #undef h0_h
 #undef t2
@@ -321,7 +327,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5057000919d7b38d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ca6e43f19ff8812", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back\n");

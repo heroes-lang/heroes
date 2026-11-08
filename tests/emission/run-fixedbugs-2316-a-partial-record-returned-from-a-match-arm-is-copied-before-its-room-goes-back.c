@@ -162,7 +162,8 @@ HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e2013
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 int64_t h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_helper(int64_t h0_n);
-struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n);
+void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n);
+__attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n);
 void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("first")
@@ -189,13 +190,13 @@ int64_t h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomg
     struct fixedbugs_2316_held *const hero_big_h1_h = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h1_h = t2; hero_pad_fill(&h1_h, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h1_h.first; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_h); return t3;
-#line 193 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 194 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
 }
 #undef h1_h
 #undef t2
 
 #line 25 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero"
-struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n) {
+void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n) {
 #line 25
 #define h2_out (*hero_big_h2_out)
 #line 25
@@ -213,7 +214,7 @@ struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnedfromamatcharmisc
 #line 25
 #define t20 (*hero_big_t20)
 #line 25
-    struct fixedbugs_2316_held *hero_big_h2_out __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); struct fixedbugs_2316_held *hero_big_h3_other __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h4_s0, t7, t8; HERO_NODEBUG struct fixedbugs_2316_held *hero_big_h5_ret0 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3, t4, t5, t9, t10, t11, t12, t13, t15, t16, t17, t18; HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t2 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t6 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t14 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t19 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *hero_big_t20 __attribute__((__cleanup__(hero_frame_give_at))) = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
+    struct fixedbugs_2316_held *const hero_big_h2_out = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); struct fixedbugs_2316_held *const hero_big_h3_other = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h4_s0, t7, t8; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_h5_ret0 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG int64_t t1, t3, t4, t5, t9, t10, t11, t12, t13, t15, t16, t17, t18; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t2 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t6 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t14 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t19 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t20 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_n; t2 = *(struct fixedbugs_2316_held *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.first = t1; h2_out = t2; hero_pad_fill(&h2_out, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h1_n; t4 = INT64_C(10); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.make", 27, 25); t6 = *(struct fixedbugs_2316_held *)__builtin_memset(&t6, 0, sizeof t6); __builtin_memset(&t6, 0, sizeof t6); t6.first = t5; h3_other = t6; hero_pad_fill(&h3_other, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0);
 #line 29
@@ -224,9 +225,18 @@ struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnedfromamatcharmisc
 #line 34
     t15 = h1_n; t16 = INT64_C(2); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero", "fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.make", 34, 29); t18 = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_helper(t17); hero_print_int(t18); hero_print_end();
     t19 = h3_other; h5_ret0 = t19; hero_pad_fill(&h5_ret0, sizeof(struct fixedbugs_2316_held), 1, hero_pad_g_0, hero_pad_n_0); goto bb4; bb4:
-#line 228 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+#line 229 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
     t20 = h5_ret0;
-    return t20;
+    if (hero_out != NULL) *hero_out = t20;
+    hero_frame_give(hero_big_t20);
+    hero_frame_give(hero_big_t19);
+    hero_frame_give(hero_big_t14);
+    hero_frame_give(hero_big_t6);
+    hero_frame_give(hero_big_t2);
+    hero_frame_give(hero_big_h5_ret0);
+    hero_frame_give(hero_big_h3_other);
+    hero_frame_give(hero_big_h2_out);
+    return;
 }
 #undef h2_out
 #undef h3_other
@@ -236,6 +246,11 @@ struct fixedbugs_2316_held h_fixedbugs2316apartialrecordreturnedfromamatcharmisc
 #undef t14
 #undef t19
 #undef t20
+__attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n) {
+    HERO_NODEBUG struct fixedbugs_2316_held hero_result;
+    h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(&hero_result, h0_w, h1_n);
+    return hero_result;
+}
 
 #line 37 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero"
 void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_main(void) {
@@ -245,9 +260,9 @@ void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoes
 #define t7 (*hero_big_t7)
 #line 37
     HERO_NODEBUG h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which t1, t5; HERO_NODEBUG int64_t t2, t4, t6, t8; HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t3 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_NODEBUG struct fixedbugs_2316_held *const hero_big_t7 = (struct fixedbugs_2316_held *)hero_frame_take(sizeof(struct fixedbugs_2316_held)); HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which){.tag = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Which_tag_left}; t2 = INT64_C(7); t3 = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(t1, t2); t4 = t3.first; hero_print_int(t4); hero_print_end();
-    t5 = (h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which){.tag = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Which_tag_right}; t6 = INT64_C(7); t7 = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(t5, t6); t8 = t7.first; hero_print_int(t8); hero_print_end(); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t3); return;
-#line 251 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
+    t1 = (h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which){.tag = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Which_tag_left}; t2 = INT64_C(7); h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(&t3, t1, t2); t4 = t3.first; hero_print_int(t4); hero_print_end();
+    t5 = (h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which){.tag = h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_0Which_tag_right}; t6 = INT64_C(7); h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(&t7, t5, t6); t8 = t7.first; hero_print_int(t8); hero_print_end(); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t3); return;
+#line 266 "fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback.c"
 }
 #undef t3
 #undef t7
@@ -376,7 +391,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("311bca1d2595af89", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d6bae5225bd840e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back\n");

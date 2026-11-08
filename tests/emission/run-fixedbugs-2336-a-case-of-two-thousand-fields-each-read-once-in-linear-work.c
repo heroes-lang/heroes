@@ -10550,7 +10550,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0acc01f64af26ed2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7da12dcf00193e4c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork\tfixedbugs-2336-a-case-of-two-thousand-fields-each-read-once-in-linear-work\n");

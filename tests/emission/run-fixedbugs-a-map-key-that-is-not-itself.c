@@ -297,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("55de91762ed5244b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("222e75ac2efcf8d0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsamapkeythatisnotitself\tfixedbugs-a-map-key-that-is-not-itself\n");

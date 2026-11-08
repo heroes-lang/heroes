@@ -371,7 +371,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6a56ce8f08125f3c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36a6b2c5083a33c1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroanestedgrouprecord\tffi-rest-zero-a-nested-group-record\n");

@@ -428,7 +428,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ab82d086997258a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3708113e69befa0f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs395acountincsownunitruns\tfixedbugs-395-a-count-in-c-s-own-unit-runs\n");

@@ -277,7 +277,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("15da3adb70e8e48d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("622a1f107110b912", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396alocalisnamedbythecallthatoverrunsit\tfixedbugs-396-a-local-is-named-by-the-call-that-overruns-it\n");
