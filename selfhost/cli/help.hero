@@ -22,6 +22,18 @@
 
 use cli/table as cli_table
 
+# The verbs a row of the chain schedules: the footer names those the table
+# does not hold yet, computed, so a verb that lands leaves the footer in the
+# commit that gives it its row. It was a literal until defect 2345: `add` and
+# `fetch` took their rows at M-package-manager step 12 and the footer went on
+# saying they were not built, under the rows that described them.
+constant SCHEDULED: [str]
+    [
+        "add"
+        "fetch"
+        "lsp"
+    ]
+
 # What this compiler was compiled from (panel 222's R1): its modules, its
 # library and its runtime, keyed by the compiler that built it and defined
 # beside its `main` (`emit/provenance.hero`). Bound from `heroes_runtime.h`
@@ -64,8 +76,35 @@ function help() -> str
     rows @ rows.push("         2 the tool could not run. `run` forwards the program's own status.\n")
     rows @ rows.push("env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n")
     rows @ rows.push("         under the working directory or beside the compiler.\n\n")
-    rows @ rows.push("Commands not built yet: add · fetch · lsp\n")
+    built: [str] @= []
+
+    for command in cli_table.commands()
+        built @ built.push(command.name)
+
+    rows @ rows.push(footer(unbuilt(scheduled: SCHEDULED, built: built)))
     return rows.join("")
+
+# The scheduled verbs no row of the table holds, in the order scheduled.
+function unbuilt(scheduled: [str], built: [str]) -> [str]
+    left: [str] @= []
+
+    for name in scheduled
+        held: bool @= false
+
+        for one in built
+            if one == name
+                held @ true
+
+        if !held
+            left @ left.push(name)
+
+    return left
+
+# The help's last line, or nothing once every scheduled verb is built.
+function footer(left: [str]) -> str
+    if left.len() == 0
+        return ""
+    return "Commands not built yet: " + left.join(" · ") + "\n"
 
 ## Tests
 
@@ -122,5 +161,15 @@ test "the help is the table spoken, contract and env channel included"
     )
     assert has(
         text: text,
-        needle: "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n         under the working directory or beside the compiler.\n\nCommands not built yet: add · fetch · lsp\n"
+        needle: "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n         under the working directory or beside the compiler.\n\nCommands not built yet: lsp\n"
     )
+
+# Defect 2345: a scheduled verb the table holds is never named as not built,
+# and the footer goes once nothing is left.
+test "the footer names only the scheduled verbs the table does not hold"
+    assert unbuilt(scheduled: ["add", "fetch", "lsp"], built: ["check", "add", "fetch"]) == ["lsp"]
+    assert unbuilt(scheduled: ["lsp"], built: ["lsp"]).len() == 0
+    assert footer(["lsp"]) == "Commands not built yet: lsp\n"
+    assert footer([]) == ""
+    assert !has(text: help(), needle: "not built yet: add")
+    assert !has(text: help(), needle: "· fetch")
