@@ -47,9 +47,9 @@ constant ROOT: str
     "tests/golden/fetch"
 
 # Ten cases on 2026-11-08, the day the suite landed (M-package-manager step
-# 13).
+# 13), and eleven the same day, a catalogue whose lines end `\r\n`.
 constant LEAST: i64
-    10
+    11
 
 # The identity and the date every git source of a case is committed with.
 constant IDENTITY: [str]
