@@ -164,7 +164,10 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str],
         both: [asked, job]
     )
 
-    for dir in keys(environment)
+    # ORDER: by the folder's path, as `sort` orders a `str`; the tree route
+    # reads `named` in this order, so which stand-in a refusal names first
+    # observes it, and two machines tell one environment in one order.
+    for dir in sort(keys(environment))
         named @ named.push(dir)
 
     others: [str] @= [first[0]]
