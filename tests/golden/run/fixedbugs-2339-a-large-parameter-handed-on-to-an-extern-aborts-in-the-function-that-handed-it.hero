@@ -1,0 +1,18 @@
+# fixedbugs, defect 2339, 2026-11-08: a function handing its own large
+# parameter on to an `extern` by value takes no room of its own, the parameter
+# being its caller's copy, and its frame holds the copy C's convention makes.
+# At `-O2` clang inlined `pass` into `main`, and the abort named `main`
+# with `before` lost, where `-O0` printed it and named `pass`; kept out of
+# line, every level prints `before` and names `pass`. Windows' guard names no
+# function (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function pass(h: Held) -> i64
+    return heroes_held_first(h: h)
+
+function main()
+    print("before")
+    print(pass(h: Held(first: 7, rest: zero)))

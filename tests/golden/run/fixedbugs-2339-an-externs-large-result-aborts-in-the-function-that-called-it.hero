@@ -1,0 +1,22 @@
+# fixedbugs, defect 2339, 2026-11-08: a function calling an `extern` that
+# returns defect 2253's 128 MiB record by value holds the result's copy on its
+# own frame, C's convention keeping it there, and that frame passes the stack.
+# At `-O2` clang inlined `go` into `main`, whose frame then held the copy and
+# was probed at its entry: `before` was never printed and the abort named
+# `main`, where `-O0` printed it and named `go` (panel 236's ffi-pragmatist's
+# report, § 5). A function whose frame may not be had is kept out of line now
+# (`selfhost/emit/out_of_line.hero`), so every level prints `before` and names
+# `go`. Windows' guard names no function, so this case is judged where a name
+# is said (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_make(n: i64) -> Held
+
+function go()
+    h = heroes_held_make(n: 7)
+    print(h.first)
+
+function main()
+    print("before")
+    go()

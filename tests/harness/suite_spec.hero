@@ -96,7 +96,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    123
+    124
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -110,7 +110,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    8327
+    8335
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -171,7 +171,7 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    10904
+    10915
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -222,7 +222,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "718d0e076deb36a5"
+    "56829dc6542fb732"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live
@@ -1425,7 +1425,7 @@ function fragments() -> [Fragment]
         Fragment(section: 7, text: "arithmetic   + - * / %          (both sides one numeric type — never mixed)\n             +                  (str with str: concatenation)\ncomparison   == != < <= > >=    (`< <= > >=`: a number only)\nboolean      && || !            (bool only; && and || short-circuit)\nbitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)\n", why: "the table of the operators, words in columns and not a program; the `rejected` check reads its words")
         Fragment(section: 8, text: "value = match e\n    .num n  => n.v\n    .sum s  => sum_of(s.children)\n", why: "a statement naming `e` and `sum_of`, which nothing declares, and binding `value`, which nothing reads")
         Fragment(section: 12, text: "test \"3-4-5 triangle\"\n    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25\n", why: "a test of `dist2` and `Point`, which spec § 4's fence declares and this one does not; `tests/golden/run/spec-the-documents-own-example.hero` holds it with them and runs it")
-        Fragment(section: 13, text: "extern \"sqlite3.h\" link \"sqlite3\"\n    constant SQLITE_OK: i64\n    record Db tag sqlite3\n    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64\n    function sqlite3_close(db: Db consumes) -> i64\n", why: "a binding of sqlite3, which the `special` suite builds and runs with a `main` that opens a database, skipped by name where the machine lacks the library")
+        Fragment(section: 13, text: "extern \"sqlite3.h\" link \"sqlite3\"\n    constant SQLITE_OK: i64\n    record Db tag sqlite3\n    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64\n    function sqlite3_close(db: Db consumes) -> i64 when 0\n", why: "a binding of sqlite3, which the `special` suite builds and runs with a `main` that opens a database, skipped by name where the machine lacks the library")
     ]
 
 function fences(@r: report.Report, scratch: str, compiler: str, spec: str)

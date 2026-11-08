@@ -1,0 +1,159 @@
+# A function whose frame may not be had at its entry is kept out of line
+# (defect 2339): one whose prologue takes a room off the frame, or whose C
+# frame holds a value C's convention puts there (`emit/large_value.hero`).
+#
+# **WHY.** Both bounds are met at a function's entry, and both are told by
+# naming the function that met them: the stack guard names the function whose
+# prologue probed the guard page, walking the frames (`runtime/parts/stack.c`),
+# and the room names the function whose prologue asked for it, by the address
+# its take returns to (`runtime/parts/frame.c`). A function clang inlines into
+# its caller has neither a frame nor a prologue of its own, so at `-O2` both
+# named the caller. Measured on panel 236's ffi-pragmatist's program (its
+# report's § 5): `go()` calling an `extern` that returns defect 2253's 128 MiB
+# `partial` record by value, after `main` printed `before`, was inlined into
+# `main`, whose frame then held the result's copy and was probed at `main`'s
+# entry, so nothing was printed and the guard said `stack exhausted in
+# xextresult.main`, where `-O0` printed `before` and named `go`. The room's
+# bound read the same: a function holding a record of 1 GiB said `main` at
+# `-O2` and itself at `-O0`. Kept out of line, the frame is the function's own
+# at every level: what the program printed before the call is printed, and the
+# function told is the one whose frame ran out, as `-O0` always told it.
+#
+# **WHICH FUNCTIONS.** One whose prologue takes a room, which the prologue
+# answers (`emit/prologue.hero`'s `off_frame`), and one making a call by C's
+# convention that hands or receives by value a type kept off the frame: an
+# `extern` always, a function value for a group's record
+# (`large_value.called_in_place` says which calls take such a value in place).
+# C's ABI keeps a by-value aggregate's storage on its CALLER's frame on every
+# target, an argument's copy and a result's `sret` slot alike (the same
+# report's § 3 and § 5), so the calling function's frame holds it, and no
+# room is asked where the value is the function's own parameter handed on or
+# a result it drops. A built-in is expanded and never handed a record.
+#
+# **WHAT IT COSTS.** Only such a function loses clang's inlining into its
+# callers, and each one already holds or copies a value of 4 KiB or more, or a
+# `partial` record whose bytes only C knows; every other function's C is what
+# it was, byte for byte. The word is spelled as C reserves it, so no group's
+# header can define it as a macro (`emit/guarded_names.hero`'s list).
+
+use ir
+use ir/containers
+use emit/ctype
+use emit/large_value
+use parse
+use resolve
+use checker
+use check/state
+use source
+use ir/lower
+use emit/large_size
+
+# The attribute, written before the definition's signature.
+constant WORD: str
+    "__attribute__((__noinline__)) "
+
+# What a definition's signature is preceded by: the word where `f` is kept out
+# of line, nothing elsewhere. `takes_room` is whether its prologue takes one.
+function attribute(f: containers.Function, names: ctype.Names, takes_room: bool) -> str
+    if takes_room || crosses_by_value(f, names)
+        return WORD
+    return ""
+
+# Whether a call in `f` hands or receives by C's convention a value kept off
+# the frame.
+function crosses_by_value(f: containers.Function, names: ctype.Names) -> bool
+    # No type is kept off the frame in most programs, and then no call is asked.
+    if names.large.len() == 0
+        return false
+
+    for blk in f.blocks
+        for one in blk.insts
+            match one.op
+                .call cl =>
+                    if by_value(f, names, callee: cl.callee, run: cl.arguments, result: one.ty)
+                        return true
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .func_ref  => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    return false
+
+# Whether one call takes by C's convention its result or a by-value argument of
+# a type kept off the frame. An `@` argument is a pointer to its place.
+function by_value(f: containers.Function, names: ctype.Names, callee: ir.Callee, run: ir.Run, result: i64) -> bool
+    match callee
+        .extern_fn | .indirect   => _ = 0
+        .heroes_fn | .builtin_fn => return false
+
+    if c_copy(names, callee: callee, ty: result)
+        return true
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg v =>
+                if c_copy(names, callee: callee, ty: containers.value_type(f, v.value))
+                    return true
+            .inout_arg => continue
+
+    return false
+
+# Whether the call copies a value of `ty` onto its caller's C frame: a type
+# kept off the frame that the callee does not take in place.
+function c_copy(names: ctype.Names, callee: ir.Callee, ty: i64) -> bool
+    return large_value.off_frame(names, ty: ty) && !large_value.called_in_place(names, callee: callee, ty: ty)
+
+## Tests
+
+# The program lowered, and its names knowing which types are kept off the
+# frame, as `emit/members.hero` builds them for a unit.
+record Lowered
+    program: containers.Program
+    names: ctype.Names
+
+function lowered(text: str) -> Lowered
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    names: ctype.Names @= ctype.new_names(s, p.decls)
+    names.large @ large_size.large_types(c, p.decls)
+    return Lowered(program: lower.lower(p.tree, out, c, s, p.decls).program, names: names)
+
+# The function named `name`.
+function named(l: Lowered, name: str) -> containers.Function
+    for f in l.program.functions
+        if f.name == name
+            return f
+
+    assert false
+    return l.program.functions[0]
+
+# The shapes of panel 236's ffi-pragmatist's report § 5, a `partial` record
+# crossing an `extern` as a result, a parameter and both, and the same record
+# handed on as the function's own parameter and through a function value;
+# none of them asks the caller, and nothing is asked of a program whose types
+# all live on the frame.
+test "a call by C's convention handing or receiving a value kept off the frame keeps its caller out of line"
+    group = "extern \"x.h\"\n    record Held tag heroes_held partial\n        first: i64\n    function first_of(h: Held) -> i64\n    function make(n: i64) -> Held\n    function bump(h: Held, by: i64) -> Held\n\n"
+    text = group + "function result()\n    h = make(n: 7)\n    print(h.first)\n\nfunction param(h: Held) -> i64\n    return first_of(h: h)\n\nfunction both()\n    h = bump(h: Held(first: 7, rest: zero), by: 1)\n    print(h.first)\n\nfunction through(f: (function(i64) -> Held)) -> i64\n    h = f(7)\n    return h.first\n\nfunction caller()\n    print(\"before\")\n    result()\n\nfunction main()\n    caller()\n    print(through(f: make))\n"
+    l = lowered(text)
+
+    for name in ["result", "param", "both", "through"]
+        assert crosses_by_value(named(l, name: name), l.names)
+        assert attribute(named(l, name: name), l.names, takes_room: false) == WORD
+
+    for name in ["caller", "main"]
+        assert !crosses_by_value(named(l, name: name), l.names)
+        assert attribute(named(l, name: name), l.names, takes_room: false) == ""
+
+    # A room taken is enough on its own.
+    assert attribute(named(l, name: "caller"), l.names, takes_room: true) == WORD
+
+    # A group's record that is neither partial nor past the threshold lives on
+    # the frame, so its call by C's convention keeps nothing apart.
+    small = lowered(
+        "extern \"x.h\"\n    record Pair\n        a: i64\n        b: i64\n    function make(n: i64) -> Pair\n\nfunction go()\n    p = make(n: 7)\n    print(p.a)\n\nfunction main()\n    go()\n"
+    )
+    assert small.names.large.len() == 0
+    assert attribute(named(small, name: "go"), small.names, takes_room: false) == ""

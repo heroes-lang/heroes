@@ -390,7 +390,7 @@ extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
     record Db tag sqlite3
     function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
-    function sqlite3_close(db: Db consumes) -> i64
+    function sqlite3_close(db: Db consumes) -> i64 when 0
 ```
 Where C writes several, `@md: [u8] counted_by N lent` hands C `N` elements, the
 array's own then zeros, and leaves the array exactly those `N`: numbers, the
@@ -439,7 +439,7 @@ and one past the field is refused; a group's record lent whole with `@` may say 
 C writes back through the lend only where the binding is a `@` name. A lend
 lives for its call and no longer: a parameter, `@` or not, is taken to keep what
 it is handed unless declared `lent`, and a lend reaches only one so declared; a
-group's record declared `lent` without `@` is a pointer to const, the place C
+group's record that is no handle, declared `lent` without `@`, is a pointer to const, the place C
 reads and never writes.
 `x: cstr @= s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a

@@ -1,0 +1,3 @@
+before
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2339-a-large-parameter-handed-on-to-an-extern-aborts-in-the-function-that-handed-it.pass

@@ -1,0 +1,2 @@
+before
+!panic: stack exhausted in fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level.go: the room large values take off the stack is full
