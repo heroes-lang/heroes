@@ -1,0 +1,15 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A program binding a header of its own beside a fetched package that binds
+# the header it ships. Each unit reads its own header from its own root
+# (panel 235's R9, its C1), and the one file `--emit-c` writes reads both
+# together, asked under the program's words with the package's root after
+# them: under the program's words alone it did not find the package's
+# header, and `--emit-c` refused, `ffi_one_file`, a program `build` builds.
+use <pk>/pk
+
+extern "mine.h"
+    constant MINE: i64
+
+function main()
+    print(pk.limit() + MINE)

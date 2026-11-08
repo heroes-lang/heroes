@@ -1,0 +1,8 @@
+# The package `b` of the case two folders up: a module binding the header it
+# ships, named as the package `a` names its own (defect 2351).
+extern "same.h"
+    constant B_V: i64
+    constant SAME: i64
+
+function v() -> i64
+    return B_V + SAME

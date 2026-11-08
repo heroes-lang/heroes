@@ -26,6 +26,7 @@
 
 use ast
 use source
+use diag
 use check/state
 use ir/containers
 use emit/members
@@ -41,6 +42,7 @@ use cli/pointee_wants
 use cli/layout
 use cli/strings
 use cli/libraries
+use cli/package_units
 use emit/membership
 
 # The modules whose units read one header list: the list, the modules, the
@@ -48,7 +50,12 @@ use emit/membership
 # the group records their units read the headers of, the probe of those
 # headers, absent where none of them has anything to ask, and the words their
 # units compile under, whose packages are those of the groups naming the
-# list's headers (panel 205's R3, defect 572).
+# list's headers (panel 205's R3, defect 572). **A fetched package's modules
+# are a list of their own** (panel 235's R9, defect 2351): `root` is its
+# root, `""` for the program's own, `under` its words
+# (`package_units.unit_under`), and `reach` C2's verdict on what its headers
+# read, asked before any probe of them compiles, its probe absent where it
+# refuses.
 record Probing
     headers: [str]
     modules: [str]
@@ -56,6 +63,8 @@ record Probing
     records: {i64: bool}
     probe: compiling.Probe?
     under: compiling.Compiling
+    root: str
+    reach: ()?
 
 # What a build settles before any round runs: the shared tables every unit
 # is rendered from, each module's plan, and the probes of their headers.
@@ -84,18 +93,22 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
     keys_seen: {str: i64} @= {}
     lists: [[str]] @= []
     packages: [[str]] @= []
+    roots: [str] @= []
     group_of: [i64] @= []
 
     # A header list's packages are those of the groups naming its headers
     # (`emit/header_packages.hero`, defect 572), so one list is one set of
-    # words, and its probe compiles under them.
+    # words, and its probe compiles under them; and a fetched package's
+    # modules search its own root, so one list under two roots is two.
     for plan in plans
-        key = plan.headers.join("\n")
+        root = package_units.root_of(s, component: plan.module).default("")
+        key = root + "\n\n" + plan.headers.join("\n")
 
         if keys_seen[key].is_err()
             keys_seen[key] @ lists.len()
             lists @ lists.push(plan.headers)
             packages @ packages.push(header_packages.of(by_header, listed: plan.headers))
+            roots @ roots.push(root)
         group_of @ group_of.push(keys_seen[key].must())
 
     out: [Probing] @= []
@@ -123,7 +136,7 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
         unasked: compiling.Probe? = fail(code: "none", msg: "nothing to ask of these headers")
         probe: compiling.Probe? @= unasked
 
-        words = compiling.Compiling(
+        words: compiling.Compiling @= compiling.Compiling(
             level: under.level,
             sanitize: under.sanitize,
             search_include: under.search_include,
@@ -131,11 +144,20 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
             runtime: under.runtime,
             source_dir: under.source_dir
         )
+        reach: ()? @= ok()
 
-        if asks(program, c, s, decls, records: records) || binds(program, decls)
+        # A fetched package's list compiles under its own root (C1), and what
+        # its headers read is judged before anything of it compiles (C2).
+        if roots[group] != ""
+            words @ compiling.of_package(words, root: roots[group])
+
+            if headers.len() > 0
+                reach @ package_units.reached(t.build, under: words, headers: headers, memo: @memo)
+
+        if !reach.is_err() && (asks(program, c, s, decls, records: records) || binds(program, decls))
             probe @ ok(compiling.probe_with(t.build, under: words, headers: headers, memo: @memo))
         out @ out.push(
-            Probing(headers: headers, modules: modules, program: program, records: records, probe: probe, under: words)
+            Probing(headers: headers, modules: modules, program: program, records: records, probe: probe, under: words, root: roots[group], reach: reach)
         )
         group @ group + 1
 
@@ -219,6 +241,19 @@ function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Check
                 return Checked(verdict: laid, modules: one.modules, unread: unread, unread_modules: unread_modules)
 
     return Checked(verdict: ok(), modules: none, unread: unread, unread_modules: unread_modules)
+
+# C2's refusals (panel 235's R9; defect 2351): each fetched package's list
+# whose headers read outside where a package may read, or could not be
+# listed, told on its modules' first binding; told before any probe or unit
+# of the build compiles, so none of them reads a file of the machine's.
+function outside(probings: [Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for one in probings
+        if one.reach.is_err()
+            out @ out.push(package_units.refusal(s, decls, modules: one.modules, root: one.root, failed: one.reach))
+
+    return out
 
 # Every module of the program, the modules a refusal no one unit made is
 # asked of (a link's).

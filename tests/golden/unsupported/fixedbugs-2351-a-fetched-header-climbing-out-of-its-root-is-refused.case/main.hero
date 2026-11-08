@@ -1,0 +1,12 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A fetched package's header reaching a file of the program's by a relative
+# climb out of its root, `../../outside.h`. Every file a fetched package's
+# unit reads lies under its root, the runtime, the toolchain's own folders or
+# those its own `package` groups' answer names (panel 235's R9, its C2):
+# judged on clang's `-M` listing before anything of the package compiles, the
+# file named, and no compile reads it. Until the repair no build judged it.
+use <pk>/pk
+
+function main()
+    print(pk.v())

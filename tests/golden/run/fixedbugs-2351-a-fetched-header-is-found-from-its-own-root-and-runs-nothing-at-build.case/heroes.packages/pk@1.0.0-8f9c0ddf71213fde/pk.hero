@@ -1,0 +1,25 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places it:
+# a module binding the header it ships beside it (defect 2351).
+extern "pk.h"
+    constant PK_LIMIT: i64
+    constant PK_TOP: u64
+    constant PK_ON: bool
+    function pk_twice(x: i64) -> i64
+    function pk_witnessed() -> i64
+
+function limit() -> i64
+    return PK_LIMIT
+
+function top() -> u64
+    return PK_TOP
+
+function on() -> bool
+    return PK_ON
+
+function twice(x: i64) -> i64
+    return pk_twice(x)
+
+# How many times the header's code ran before this was asked: the program's
+# own start, once, and nothing else.
+function witnessed() -> i64
+    return pk_witnessed()

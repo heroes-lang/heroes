@@ -8,10 +8,12 @@
 # Everything a round needs and does not decide rides in `Site`, so two rounds
 # cannot differ in anything but the tags they learn (`cli/rounds.hero`).
 
+use source
 use cli/compile
 use cli/toolchain
 use cli/compiling
 use cli/libraries
+use cli/package_units
 use emit/header_packages
 use emit/unit_plan
 
@@ -74,9 +76,16 @@ function unit_words(site: Site, headers: [str]) -> [str]
         packages: header_packages.of(site.by_header, listed: headers)
     )
 
-# The words a unit's value probe compiles it under, its own compile's
-# (`cli/value_run.hero`).
-function probe_words(t: toolchain.Toolchain, options: compile.Options, site: Site, plan: unit_plan.Plan) -> [str]
+# What one module's unit compiles under: the build's words with its own
+# groups' packages (`unit_words`), and a fetched package's root in place of
+# the program's folders where the module is a fetched package's (panel 235's
+# R9, its C1; defect 2351: until then every unit took the program's).
+function unit_under(t: toolchain.Toolchain, options: compile.Options, site: Site, s: source.Source, plan: unit_plan.Plan) -> compiling.Compiling
     under: compiling.Compiling @= compiled_under(t, options, site)
     under.package_flags @ unit_words(site, headers: plan.headers)
-    return compiling.unit_words(under)
+    return package_units.unit_under(under, s, component: plan.module)
+
+# The words a unit's value probe compiles it under, its own compile's
+# (`cli/value_run.hero`).
+function probe_words(t: toolchain.Toolchain, options: compile.Options, site: Site, s: source.Source, plan: unit_plan.Plan) -> [str]
+    return compiling.unit_words(unit_under(t, options, site, s: s, plan: plan))

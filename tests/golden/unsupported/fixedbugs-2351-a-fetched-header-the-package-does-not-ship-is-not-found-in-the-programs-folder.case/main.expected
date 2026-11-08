@@ -1,0 +1,6 @@
+error[ffi_missing_header]: `not-shipped.h` is not found where a unit of the fetched package at `tests/golden/unsupported/fixedbugs-2351-a-fetched-header-the-package-does-not-ship-is-not-found-in-the-programs-folder.case/heroes.packages/pk@1.0.0-7d223842fbbf958f` looks for a header: the package's own root, the runtime's directory, the toolchain's own and the folders its `package` groups' answer names
+  at tests/golden/unsupported/fixedbugs-2351-a-fetched-header-the-package-does-not-ship-is-not-found-in-the-programs-folder.case/heroes.packages/pk@1.0.0-7d223842fbbf958f/pk.hero:4:5
+    |
+  4 |     constant PK_V: i64  #~ ffi_missing_header
+    |     ^^^^^^^^^^^^^^^^^^
+  note: a fetched package's unit searches the runtime's directory, the folders its own `package` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `package` group names, installed with its development files

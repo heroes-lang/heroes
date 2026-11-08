@@ -1,0 +1,15 @@
+# The package `a` of the case two folders up: it reads the package `b`
+# through its own catalogue, and a module in a folder of its own (defect
+# 2351).
+use <b>/bv
+use inner/deep
+
+extern "same.h"
+    constant A_V: i64
+    constant SAME: i64
+
+function v() -> i64
+    return A_V + SAME + bv.v()
+
+function area() -> i64
+    return deep.side() * deep.side()

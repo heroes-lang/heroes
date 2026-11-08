@@ -1,0 +1,11 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places it: a
+# module binding constants of the header it ships (defect 2351).
+extern "pk.h"
+    constant PK_HALF: f64  #~ ffi_constant_type
+    constant PK_GREEN: i64  #~ ffi_constant_type
+    constant PK_MINDIV: i64  #~ ffi_constant_type
+    constant PK_OBJECT: i32  #~ ffi_constant_type
+    constant PK_FINE: i64
+
+function sum() -> f64
+    return PK_HALF + PK_GREEN.to_f64() + PK_MINDIV.to_f64() + PK_OBJECT.to_f64() + PK_FINE.to_f64()

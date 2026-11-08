@@ -118,10 +118,11 @@ function search_words(c: Compiling) -> [str]
 # program's or of another package. A header the package ships beside its
 # modules is found there without `--include`, a file at its root named
 # like the runtime's is never read, and no file of the program's stands in
-# for one of the package's. `root` is where the package's tree is placed,
-# which nothing places yet: lane pm-use passes it, for each unit of a
-# fetched module, where `settled.compiled_under` gives the program's units
-# theirs.
+# for one of the package's. `root` is where the package's tree is placed:
+# `package_units.unit_under` passes it for each unit of a fetched module, and
+# every probe of its headers takes the same words (`probing.probings_of`),
+# since defect 2351; until then no build called this, and every unit took
+# the program's words (`settled.compiled_under`).
 function of_package(under: Compiling, root: str) -> Compiling
     none: [str] = []
     return Compiling(

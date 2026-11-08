@@ -1,0 +1,19 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A package placed by `heroes fetch` whose module binds a header it ships
+# beside it. Its unit searched the program's folders and not its own root, so
+# the build was refused `ffi_missing_header` unless `--include` named the
+# placed folder; and with it, the constant's value was read by the probe that
+# compiles and RUNS the package's unit, so the header's constructor ran twice
+# during the build (panel 235's R9, its C1 and C5, called by no build). Now
+# its unit searches the runtime, then its own root, and its constants are
+# read from clang's front end with nothing run: the program counts one run of
+# the header's code, its own start, and a build that ran it counts more.
+use <pk>/pk
+
+function main()
+    print(pk.limit())
+    print(pk.top())
+    print(pk.on())
+    print(pk.twice(21))
+    print(pk.witnessed())

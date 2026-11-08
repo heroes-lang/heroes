@@ -20,7 +20,10 @@
 # `-I` of the program's or the package's, the toolchain's and the platform's
 # own (the C library, clang's resource directory, a `CPATH` the machine
 # sets); the files clang adds to every listing itself (`-fdepfile-entry`,
-# the SDK's `SDKSettings.json` on this Mac); and the `-I` and `-F` folders of
+# the SDK's `SDKSettings.json` on this Mac, and under the sanitizers
+# `-fsanitize-system-ignorelist`, its resource directory's
+# `asan_ignorelist.txt`, which the `run` suite's `--sanitize` leg met on
+# defect 2351's cases); and the `-I` and `-F` folders of
 # the `pkg-config` answer for the package's own `package` groups, which are
 # the machine's (the coordinator's ruling). Nothing else: not the program's
 # root, not an `--include` directory, not another package.
@@ -35,12 +38,13 @@
 # cannot see, said: a symbolic link inside the root names a file the listing
 # does not, which the fetch refuses before anything is placed (C3).
 #
-# **Nothing calls it yet**: no build places a package. Lane pm-use judges
-# each listing of a fetched package's unit with `compiling.within_root`, the
-# probes' (`compiling.probe_with`'s `reads`) and its opening's
-# (`compiling.unit_reach`), before anything compiles. Measured on this Mac
-# alone; the Linux and Windows legs are unrun, a Windows listing's `\` read
-# as `/` (`lexical`) among what they owe.
+# **Every build asks it since defect 2351** (`package_units.reached`, through
+# `compiling.within_root`): two listings of each fetched package's header
+# list, the lines its probes open with and its unit's opening, judged before
+# any probe or unit of the build compiles and told on the package's first
+# binding (`cli/rounds.hero`). Until then no build called it. Measured on this
+# Mac alone; the Linux and Windows legs are unrun, a Windows listing's `\`
+# read as `/` (`lexical`) among what they owe.
 
 use cli/deps
 use cli/process
@@ -69,8 +73,13 @@ constant ENDS: str
 constant FRAMEWORK: str
     " (framework directory)"
 
-constant DEPFILE_ENTRY: str
-    "-fdepfile-entry="
+# The words of clang's own line whose value is a file it adds to every
+# listing itself.
+constant ADDED: [str]
+    [
+        "-fdepfile-entry="
+        "-fsanitize-system-ignorelist="
+    ]
 
 # The toolchain's own under `words`, asked of `clang -E -v` over an empty
 # file in `build`; absent where clang did not start or said nothing.
@@ -94,7 +103,7 @@ function toolchain_own(build: str, words: [str]) -> Own?
     return ok(own)
 
 # What `clang -E -v` said, read: the directories between its two lines, and
-# every value of `-fdepfile-entry=` on the line it ran.
+# every value of a word of `ADDED` on the line it ran.
 function own_of(said: str) -> Own
     dirs: [str] @= []
     files: [str] @= []
@@ -114,25 +123,26 @@ function own_of(said: str) -> Own
                 dir @ dir.slice(from: 0, to: dir.len() - FRAMEWORK.len())
             dirs @ dirs.push(lexical(dir))
         else
-            for entry in entries(line)
-                files @ files.push(lexical(entry))
+            for word in ADDED
+                for entry in entries(line: line, word: word)
+                    files @ files.push(lexical(entry))
 
     return Own(dirs: dirs, files: files)
 
-# Each value of `-fdepfile-entry=` on a line clang printed: up to the next
-# space, or up to the closing quote where clang quoted the word because its
-# value holds one.
-function entries(line: str) -> [str]
+# Each value of `word` on a line clang printed: up to the next space, or up
+# to the closing quote where clang quoted the word because its value holds
+# one.
+function entries(line: str, word: str) -> [str]
     out: [str] @= []
     at: i64 @= 0
     n = line.len()
 
-    while at + DEPFILE_ENTRY.len() <= n
-        if line.slice(from: at, to: at + DEPFILE_ENTRY.len()) != DEPFILE_ENTRY
+    while at + word.len() <= n
+        if line.slice(from: at, to: at + word.len()) != word
             at @ at + 1
             continue
         quoted = at > 0 && line[at - 1] == '"'
-        start = at + DEPFILE_ENTRY.len()
+        start = at + word.len()
         stop: i64 @= start
 
         while stop < n && (quoted && line[stop] != '"' || !quoted && line[stop] != ' ')
@@ -376,10 +386,10 @@ test "a directory holds a path by its parts, never by a prefix of a part"
     assert !holds(dir: ".", path: "/b.h")
 
 test "what clang -E -v says is read into the toolchain's own directories and files"
-    said = "clang version 21\n \"/usr/bin/clang\" -cc1 -triple arm64 \"-fdepfile-entry=/Applications/X Y.app/SDK/SDKSettings.json\" -fdepfile-entry=/SDK/Other.json -E -x c e.c\n#include \"...\" search starts here:\n#include <...> search starts here:\n /usr/lib/clang/21/include\n /SDK/usr/include\n /SDK/System/Library/Frameworks (framework directory)\nEnd of search list.\n"
+    said = "clang version 21\n \"/usr/bin/clang\" -cc1 -triple arm64 \"-fdepfile-entry=/Applications/X Y.app/SDK/SDKSettings.json\" -fdepfile-entry=/SDK/Other.json -fsanitize-system-ignorelist=/usr/lib/clang/21/share/asan_ignorelist.txt -E -x c e.c\n#include \"...\" search starts here:\n#include <...> search starts here:\n /usr/lib/clang/21/include\n /SDK/usr/include\n /SDK/System/Library/Frameworks (framework directory)\nEnd of search list.\n"
     own = own_of(said)
     assert own.dirs == ["/usr/lib/clang/21/include", "/SDK/usr/include", "/SDK/System/Library/Frameworks"]
-    assert own.files == ["/Applications/X Y.app/SDK/SDKSettings.json", "/SDK/Other.json"]
+    assert own.files == ["/Applications/X Y.app/SDK/SDKSettings.json", "/SDK/Other.json", "/usr/lib/clang/21/share/asan_ignorelist.txt"]
 
 test "a package's own pkg-config folders are read from its compile words, joined or the next word"
     assert answered(["-DX=1", "-I/opt/ray/include", "-I", "/opt/b", "-F/opt/f", "-lz"]) == ["/opt/ray/include", "/opt/b", "/opt/f"]

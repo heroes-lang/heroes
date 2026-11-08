@@ -1,0 +1,14 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A fetched package's constants are read from clang's front end, its constant
+# evaluator's value of each as an enumerator under `-fsyntax-only`, and never
+# by the probe that compiles and runs the package's unit, which ran its
+# header's constructors at build (panel 235's R9, its C5). What that reading
+# cannot value is refused, never run: a float, which no enumerator holds; an
+# enumerator, whose own initialiser it folds unjudged; a division C leaves
+# undefined; an object, which is no integer constant expression. `PK_FINE`,
+# an integer constant expression C defines, is read and told nothing.
+use <pk>/pk
+
+function main()
+    print(pk.sum())

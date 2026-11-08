@@ -1,9 +1,9 @@
 # A header constant's integer value read from clang's front end, nothing run
 # (panel 235's R9, its C5, provisional until measured on the four CI legs;
-# design.md §4.19, §1.12). The build does not take this route: panel 216's
-# probe still runs a unit's accessors to judge its constants
-# (`cli/value_ask.hero`). It is the route a fetched package's unit is to take,
-# since R9 refuses to run a fetched header's code at build.
+# design.md §4.19, §1.12). A fetched package's unit takes this route since
+# defect 2351 (`cli/value_fetched.hero`), since R9 refuses to run a fetched
+# header's code at build; a program's own unit keeps panel 216's probe, which
+# runs its accessors to judge its constants (`cli/value_ask.hero`).
 #
 # **The route** (the critic's of panel 235, its finding 11, made strict). The
 # unit's opening, as its compile reads its headers, and after it one
@@ -39,14 +39,15 @@
 # one is a pointer, and 12 are refused, values C defines that need the probe
 # (three floats, two comma expressions, two statement expressions,
 # `(int)(1000.0 / 60)` and four read through an object or an initialiser),
-# and 13 record constants are not asked. **What it does not judge yet**, which is why the build does
-# not take it: a value that reads a declaration, an enumerator or an object,
-# is read as that declaration's initialiser made it, and no diagnostic on the
-# constant's line sees what C left undefined there. Five constants defect
-# 2109's case refuses read here at exit 0 (`enum { EA = 1 << 31 }` read
-# through `EB = EA + 1`, among them), so each answer names the declarations
-# its value reads (`Read.refers`), which a fetched header's route must judge
-# or refuse.
+# and 13 record constants are not asked. **What it does not judge yet**,
+# which is why a fetched constant reading a declaration is refused
+# (`cli/value_fetched.hero`): a value that reads a declaration, an enumerator
+# or an object, is read as that declaration's initialiser made it, and no
+# diagnostic on the constant's line sees what C left undefined there. Five
+# constants defect 2109's case refuses read here at exit 0 (`enum { EA = 1
+# << 31 }` read through `EB = EA + 1`, among them), so each answer names the
+# declarations its value reads (`Read.refers`), which a fetched header's
+# route refuses.
 
 use cli/clang_tree
 use cli/deps

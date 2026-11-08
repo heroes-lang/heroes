@@ -1,0 +1,16 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# Two fetched packages, `a` reading `b`, each shipping a header named
+# `same.h` that defines `SAME` its own way, and a module in a folder of `a`
+# naming its header from the package's root. Each package's unit searches
+# the runtime, then its own root, and nothing of the program's or of the
+# other package's (panel 235's R9, its C1): `a` reads 1000 from its own
+# `same.h` and `b` 100 from its, where until the repair neither header was
+# found without `--include`, and with both folders named the first answered
+# for both units, the other package's constant refused as a name its header
+# lacks (`ffi_unknown_name`, measured on batch 24's compiler).
+use <a>/av
+
+function main()
+    print(av.v())
+    print(av.area())

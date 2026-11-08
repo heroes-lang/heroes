@@ -43,6 +43,7 @@ use cli/clang_first
 use cli/caret_bytes
 use cli/header_refused
 use cli/headers_together
+use cli/package_units
 
 # The refusal of `text`, the one file, or none where it means what the units
 # do.
@@ -62,7 +63,15 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 
     if differing.len() == 0
         return none
-    ran = order_trial.compiled_once(t, words: compiling.unit_words(under), text: text)
+
+    # The one file reads a fetched package's headers beside the program's, so
+    # it is asked with each package's root searched after the program's
+    # places, and each module's own reading under its own unit's words
+    # (panel 235's R9, its C1; defect 2351): under the program's words alone
+    # a package's header was not found, and a program `build` builds was
+    # refused its one file.
+    whole_under = package_units.with_roots(under, s)
+    ran = order_trial.compiled_once(t, words: compiling.unit_words(whole_under), text: text)
 
     if !ran.asked
         return none
@@ -79,23 +88,34 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
     if asked.len() == 0
         return none
     memo: {str: str} @= {}
-    one = compiling.probe_with(t.build, under: under, headers: whole, memo: @memo)
+    one = compiling.probe_with(t.build, under: whole_under, headers: whole, memo: @memo)
     theirs = two_ways_ask.answers(t, one, names: asked)
-    fused_read = header_meaning.read_of(t, under: under, headers: fused, names: asked)
-    fused_dump = dump_meaning.read_of(t, under: under, headers: fused, names: asked)
+    fused_read = header_meaning.read_of(t, under: whole_under, headers: fused, names: asked)
+    fused_dump = dump_meaning.read_of(t, under: whole_under, headers: fused, names: asked)
 
     for plan in differing
         names = by_module[plan.module].default([])
 
         if names.len() > 0
-            own = compiling.probe_with(t.build, under: under, headers: plan.headers, memo: @memo)
+            own_under = package_units.unit_under(under, s, component: plan.module)
+            own = compiling.probe_with(t.build, under: own_under, headers: plan.headers, memo: @memo)
             mine = two_ways_ask.answers(t, own, names: names)
             read: [str] @= []
-            own_read = header_meaning.read_of(t, under: under, headers: order_trial.theirs(plan.headers), names: names)
+            own_read = header_meaning.read_of(
+                t,
+                under: own_under,
+                headers: order_trial.theirs(plan.headers),
+                names: names
+            )
 
             if !own_read.is_err() && !fused_read.is_err()
                 read @ header_meaning.differing(one: own_read.must(), two: fused_read.must(), names: names)
-            own_dump = dump_meaning.read_of(t, under: under, headers: order_trial.theirs(plan.headers), names: names)
+            own_dump = dump_meaning.read_of(
+                t,
+                under: own_under,
+                headers: order_trial.theirs(plan.headers),
+                names: names
+            )
 
             if !own_dump.is_err() && !fused_dump.is_err()
                 for name in header_meaning.differing(one: own_dump.must(), two: fused_dump.must(), names: names)
