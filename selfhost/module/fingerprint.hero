@@ -1,0 +1,95 @@
+# A package's fingerprint (spec § 1; panel 235's R6 and R7, ratified
+# 2026-11-07): `sha256-` then 64 hexadecimal digits, the SHA-256 of a listing
+# of every regular file under the package's root, one line per file, its
+# SHA-256 in hexadecimal, two spaces, its name relative to the root with `/`
+# between its parts, and a newline, the lines sorted by the names' bytes. That
+# is Go's `h1` (`golang.org/x/mod/sumdb/dirhash`, `Hash1`), spelt in
+# hexadecimal where Go writes base64, and with no `name@version/` before each
+# name, so one tree has one fingerprint whichever source, version or alias
+# names it (the sitting left the prefix to the landing, R7).
+#
+# Every file is hashed over its bytes, in C (`hero_file_sha256`,
+# `runtime/parts/sha256.c`), `.hero` or not, since a header a package's
+# `extern` reads is code the program trusts and a file that is not UTF-8 is
+# no `str`; the listing, which is text, is hashed by the same door.
+#
+# **Checked at every build that reads the tree** (R7): a tree inside the
+# program is a folder anything can edit, and an edited tree compiling at
+# exit 0 is the outcome robustness refuses (`module/packages.hero`).
+
+use cli/process
+use cli/sha256
+
+extern "hero_compiler.h"
+    function hero_file_sha256(path: cstr lent, @status: i64) -> str
+    function hero_text_sha256(text: str) -> str
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+
+# The fingerprint of the tree at `root`, opened as the compiler opens files,
+# or a failure naming the file that could not be read or named.
+function of(root: str) -> str?
+    return ok("sha256-" + hero_text_sha256(text: listing(root)?))
+
+# The listing the fingerprint hashes: one line per regular file under `root`.
+function listing(root: str) -> str?
+    base = without_slash(root)
+    walked = process.walk(base)?
+
+    if walked.unnamed.len() > 0
+        return fail(code: "not_text", msg: process.unnamed_said(walked.unnamed[0]))
+    names: [str] @= []
+
+    for path in walked.files
+        names @ names.push(path.slice(from: base.len() + 1, to: path.len()))
+
+    lines: [str] @= []
+
+    for name in sort(names)
+        status: i64 @= 0
+        sum = hero_file_sha256(path: (base + "/" + name).cstr(), status: @status)
+
+        if status != HERO_OS_OK
+            return fail(code: "unreadable", msg: "`" + base + "/" + name + "` cannot be read")
+        lines @ lines.push(sum + "  " + name + "\n")
+
+    return ok(lines.join(""))
+
+function without_slash(root: str) -> str
+    if root.len() > 1 && root[root.len() - 1] == '/'
+        return root.slice(from: 0, to: root.len() - 1)
+    return root
+
+## Tests
+
+# FIPS 180-4's own vectors, an empty message, one block and one whose padding
+# takes a second, and the door held to `cli/sha256.hero`, the compiler's
+# SHA-256 in Heroes, over texts of every padding length's neighbours.
+test "the door's SHA-256 is the standard's, and the compiler's own over texts"
+    assert hero_text_sha256(text: "abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    assert hero_text_sha256(text: "") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert hero_text_sha256(text: "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+
+    for n in [0, 1, 55, 56, 63, 64, 65, 119, 128, 1000]
+        text = "é".repeat(n.to_u64().must())
+        assert hero_text_sha256(text: text) == sha256.of(text)
+
+# A fixed tree's fingerprint, its listing and its hash computed apart by
+# `shasum -a 256` (2026-11-08): `parse.hero` and `sub/note.txt`.
+test "a tree's fingerprint is the SHA-256 of its sorted listing, Go's h1 in hexadecimal"
+    dir = "build/selftest-fingerprint"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(path: dir)
+    assert !process.mkdir_all(dir + "/sub").is_err()
+    assert !write_file(path: dir + "/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: dir + "/sub/note.txt", text: "deep\n").is_err()
+    assert listing(dir + "/").must() == "9adaec0145d1bd2f6d78116a4199a93545840cdfeafba792d2f0e68406d22521  parse.hero\n64896f89fd11190013b70103e603a1c5826e56b7fb7d2197ab279b0690043599  sub/note.txt\n"
+    assert of(dir + "/").must() == "sha256-9f01a7eb6e9a9cf4537051b2084f3fc1995c33764b1fe8628f4db71c132a70b8"
+
+    # Any byte of any file moves it, and so does a file added.
+    assert !write_file(path: dir + "/sub/note.txt", text: "deep!\n").is_err()
+    assert of(dir + "/").must() != "sha256-9f01a7eb6e9a9cf4537051b2084f3fc1995c33764b1fe8628f4db71c132a70b8"
+    assert !write_file(path: dir + "/sub/note.txt", text: "deep\n").is_err()
+    assert !write_file(path: dir + "/extra", text: "").is_err()
+    assert of(dir + "/").must() != "sha256-9f01a7eb6e9a9cf4537051b2084f3fc1995c33764b1fe8628f4db71c132a70b8"
+    assert !process.remove_tree(dir).is_err()
