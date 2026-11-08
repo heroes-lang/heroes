@@ -1,0 +1,153 @@
+# An address in the one form two catalogues are compared in, so one source
+# written two ways is one package (panel 235's R3: a package is one identity,
+# `module/catalogue.hero`'s `source_of`, which the build's alias mapping and
+# `heroes add`'s build list both ask). M-package-manager step 3b, lane
+# pm-fetch's finding of 2026-11-08: a program whose catalogue reads the index
+# `file://../idx` was refused a package whose own catalogue reads
+# `file://./../idx`, `requirement_refused` by `heroes add` and an entry the
+# program lacks by the build, one folder written two ways.
+#
+# **Only what is one address on every machine is made one.** An `https://`
+# address takes RFC 3986's equivalences that hold for every such address
+# (§ 6.2.2 and § 6.2.3): its host in lowercase, no `:443`, each `%XX` of a byte
+# the RFC calls unreserved read back and every other written in capitals, its
+# path's `.` and `..` parts taken out (§ 5.2.4), and `/` for an empty path. A
+# `file://` path is read back from its `%XX`, its `.`, `..` and empty parts
+# taken out as text, and written again as `fetch/url_bytes.hero` hands a path
+# on; one from the program's folder stays one, `file://../idx`.
+#
+# **Two addresses of one folder, one absolute and one from the program's
+# folder, stay two**, and so do `/a` and `/a/`, which RFC 3986 reads as two
+# paths: which folder a relative path names is the repository's to answer
+# (`fetch/address.hero`'s `judged`), and two kept apart are refused, where
+# two made one wrongly would build one package for two, the direction
+# robustness refuses.
+
+use module/sums
+use fetch/address
+use fetch/local_path
+use fetch/url_bytes
+use cli/strings
+use bytes
+
+# `written` in its one form. An address `address.shaped` refuses is its own
+# text: no catalogue that reads holds one.
+function canonical(written: str) -> str
+    if address.shaped(written).is_err()
+        return written
+
+    if strings.starts_with(text: written, prefix: "https://")
+        return on_network(written)
+
+    match address.machine_path(written)
+        .ok read => return on_machine(read, written: written)
+        .err _   => return written
+
+# An `https://` address in its one form.
+function on_network(written: str) -> str
+    rest = written.slice(from: 8, to: written.len())
+    end = address.path_start(rest)
+    host: str @= lowered(rest.slice(from: 0, to: end))
+
+    if strings.ends_with(text: host, suffix: ":443")
+        host @ host.slice(from: 0, to: host.len() - 4)
+    path = without_dots(percent_normal(rest.slice(from: end, to: rest.len())))
+    return "https://" + host + path
+
+# A `file://` path in its one form: from the program's folder, `file://.`,
+# `file://./a` or `file://../a`; absolute, as `local_path.url_of` writes it.
+function on_machine(read: address.MachinePath, written: str) -> str
+    if read.relative
+        folded = sums.folded(read.path)
+
+        if folded.len() == 0
+            return "file://."
+
+        if folded == ".." || strings.starts_with(text: folded, prefix: "../")
+            return "file://" + url_bytes.encoded(folded)
+        return "file://./" + url_bytes.encoded(folded)
+
+    match address.absolute_of(read.path)
+        .ok made => return local_path.url_of(made)
+        .err _   => return written
+
+# `text` with its ASCII letters in lowercase: a host's bytes are ASCII, the
+# shape asks it.
+function lowered(text: str) -> str
+    out: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        out @ out.push(bytes.lower(text[at]))
+
+    return out.validated_bytes().default(text)
+
+# A path with each `%XX` of a byte RFC 3986 calls unreserved read back, and
+# every other `%XX` written in capitals (§ 6.2.2.1 and § 6.2.2.2).
+function percent_normal(path: str) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < path.len()
+        if path[at] == '%' && at + 2 < path.len() && url_bytes.hex_digit(path[at + 1]) && url_bytes.hex_digit(path[at + 2])
+            value = (url_bytes.hex_value(path[at + 1]) * 16 + url_bytes.hex_value(path[at + 2])).to_u8().must()
+
+            if unreserved(value)
+                out @ out.push(value)
+            else
+                pair = url_bytes.hex_pair(value)
+                out @ out.push('%').push(pair[0]).push(pair[1])
+            at @ at + 3
+        else
+            out @ out.push(path[at])
+            at @ at + 1
+
+    return out.validated_bytes().default(path)
+
+# Whether RFC 3986 calls `b` unreserved: a letter, a digit, `-`, `.`, `_`, `~`.
+function unreserved(b: u8) -> bool
+    return bytes.is_alnum(b) || b == '-' || b == '.' || b == '_' || b == '~'
+
+# An absolute path's `.` and `..` parts taken out as RFC 3986 § 5.2.4 does,
+# its empty parts and a last `/` kept; `/` for an empty path (§ 6.2.3).
+function without_dots(path: str) -> str
+    if path.len() == 0
+        return "/"
+    parts = local_path.parts_of(path.slice(from: 1, to: path.len()))
+    kept: [str] @= []
+
+    for at in range(from: 0, to: parts.len())
+        part = parts[at]
+        last = at == parts.len() - 1
+
+        if part == "." || part == ".."
+            if part == ".." && kept.len() > 0
+                kept @ kept.slice(from: 0, to: kept.len() - 1)
+
+            if last
+                kept @ kept.push("")
+        else
+            kept @ kept.push(part)
+
+    return "/" + kept.join("/")
+
+## Tests
+
+test "one address written two ways has one form, and two addresses keep two"
+    assert canonical("file://./../idx") == "file://../idx"
+    assert canonical("file://../idx") == "file://../idx"
+    assert canonical("file://./idx/../shared/./x/") == "file://./shared/x"
+    assert canonical("file://.") == "file://."
+    assert canonical("file://./a/..") == "file://."
+    assert canonical("file://./a%20b") == "file://./a%20b"
+    assert canonical("file:///r/app/../idx") == "file:///r/idx"
+    assert canonical("https://Git.Example.ORG:443/ana/%7eyaml/./x/../") == "https://git.example.org/ana/~yaml/"
+    assert canonical("https://h/a%2fb") == "https://h/a%2Fb"
+    assert canonical("https://h") == "https://h/"
+    assert canonical("https://h:8443/x") == "https://h:8443/x"
+
+    # Kept two: a trailing `/`, another port, a relative path and an absolute
+    # one, and an address no catalogue that reads holds.
+    assert canonical("https://h/a") != canonical("https://h/a/")
+    assert canonical("file://../idx") != canonical("file:///r/idx")
+    assert canonical("file://packages/yaml") == "file://packages/yaml"
+    assert canonical("") == ""

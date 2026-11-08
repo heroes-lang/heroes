@@ -29,6 +29,7 @@
 
 use module/catalogue
 use fetch/address
+use fetch/address_form
 use fetch/placing
 use fetch/transport
 use fetch/versions
@@ -102,7 +103,7 @@ function required_id(r: catalogue.Entry, own: catalogue.Catalogue, of: catalogue
             msg: "the catalogue of `" + of.name + "` names the local folder `" + r.path + "` for `" + r.name + "`, and only the program's own catalogue holds a `path`, while a package is developed"
         )
 
-    if r.version.len() > 0 && own.index != c.index
+    if r.version.len() > 0 && address_form.canonical(own.index) != address_form.canonical(c.index)
         return fail(
             code: "requirement_refused",
             msg: "the catalogue of `" + of.name + "` reads `" + r.name + "` from the index `" + index_index(own.index) + "`, and the program's reads `" + index_index(c.index) + "`: a program reads one index, which its catalogue's `index` line names"
@@ -178,3 +179,21 @@ function index_of(picks: [Pick], identity: str) -> i64
             return at
 
     return -1
+
+## Tests
+
+# M-package-manager step 3b (lane pm-fetch's finding, 2026-11-08): a
+# dependency's catalogue writing the program's index another way reads the
+# program's index, and one naming another index is refused.
+test "a requirement read from the program's index written another way is the program's"
+    sum = "sha256-" + "a".repeat(64.to_u64().must())
+    text = catalogue.Entry(name: "text", version: "2.0.0", git: "", tag: "", commit: "", path: "", sum: sum)
+    json = catalogue.Entry(name: "json", version: "1.0.0", git: "", tag: "", commit: "", path: "", sum: sum)
+    program = catalogue.parsed(file: "p", text: "index = \"file://../idx\"\n")
+    same = catalogue.parsed(file: "own", text: "index = \"file://./../idx\"\n")
+    other = catalogue.parsed(file: "own", text: "index = \"file://../other\"\n")
+    assert required_id(r: text, own: same, of: json, program: "app/", c: program).must() == catalogue.source_of(text, index: "file://../idx", folder: "app/")
+
+    match required_id(r: text, own: other, of: json, program: "app/", c: program)
+        .ok _  => assert false
+        .err e => assert e.code == "requirement_refused"

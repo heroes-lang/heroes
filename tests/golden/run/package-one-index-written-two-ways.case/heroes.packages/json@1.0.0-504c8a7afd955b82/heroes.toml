@@ -1,0 +1,6 @@
+# The catalogue of the package `json`: the program's index, written another way.
+index = "file://./../idx"
+
+[dependencies.text]
+version = "2.0.0"
+sum = "sha256-94409801997101fb944f7c8b59402aa96a63b01a33ef281af82c7ac164843088"

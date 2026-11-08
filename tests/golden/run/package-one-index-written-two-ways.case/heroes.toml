@@ -1,0 +1,11 @@
+# One index, written `file://../idx` here and `file://./../idx` in the
+# catalogue of the package `json`.
+index = "file://../idx"
+
+[dependencies.json]
+version = "1.0.0"
+sum = "sha256-cbe4c8a4d2e5362243248d5fe3282fbefbb48e022f627c103a587b79b521bd4f"
+
+[dependencies.text]
+version = "2.0.0"
+sum = "sha256-94409801997101fb944f7c8b59402aa96a63b01a33ef281af82c7ac164843088"

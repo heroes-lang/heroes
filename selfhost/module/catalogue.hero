@@ -34,6 +34,7 @@
 use module/sums
 use module/toml_line
 use fetch/address
+use fetch/address_form
 
 # One entry: its name, the alias its program's `use` lines write between the
 # brackets, and its source, one of three (R6): the Heroes index by `version`;
@@ -106,13 +107,15 @@ function entry(c: Catalogue, name: str) -> Entry?
 # The package an entry names, whatever the catalogue calls it (R3): the
 # index's address and the package's name there, a git address, or a folder
 # read from `folder`, the directory the catalogue stands in, its `.` and `..`
-# taken out. Two entries naming one package give one text.
+# taken out. Two entries naming one package give one text: each address in
+# its one form (`fetch/address_form.hero`, M-package-manager step 3b), so one
+# index or one repository written two ways is one.
 function source_of(e: Entry, index: str, folder: str) -> str
     if e.version.len() > 0
-        return "index " + index + " " + e.name
+        return "index " + address_form.canonical(index) + " " + e.name
 
     if e.git.len() > 0
-        return "git " + e.git
+        return "git " + address_form.canonical(e.git)
     return "path " + sums.folded(folder + e.path)
 
 # An entry's source as a message names it.
@@ -333,7 +336,7 @@ function one_package_twice(entries: [Entry]) -> str
             a = entries[earlier]
             b = entries[at]
 
-            if a.git.len() > 0 && a.git == b.git || a.path.len() > 0 && a.path == b.path
+            if a.version.len() == 0 && b.version.len() == 0 && source_of(a, index: "", folder: "") == source_of(b, index: "", folder: "")
                 return "the entries `" + a.name + "` and `" + b.name + "` name one package, and a program holds one version of each package under one name"
             earlier @ earlier + 1
 
@@ -421,6 +424,16 @@ test "every other TOML form is refused with its line, and a refused line names n
     assert clear.code == "source_refused" && clear.at == "h:1"
     assert parsed(file: "h", text: "[dependencies.json]\n[dependencies.json]\n").code == "catalogue_refused"
     assert parsed(file: "h", text: "index = \"file://../idx\"\n").problem == ""
+
+    # One package written two ways is one (M-package-manager step 3b).
+    json = Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: sum)
+    assert source_of(json, index: "file://../idx", folder: "") == source_of(json, index: "file://./../idx", folder: "")
+    assert source_of(json, index: "file://../idx", folder: "") != source_of(json, index: "file://../other", folder: "")
+    spelt = parsed(
+        file: "h",
+        text: "[dependencies.a]\ngit = \"https://Git.Example.org/ana/yaml\"\ntag = \"v1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum + "\"\n\n[dependencies.b]\ngit = \"https://git.example.org:443/ana/./yaml\"\ntag = \"v1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum + "\"\n"
+    )
+    assert spelt.problem == "h: the entries `a` and `b` name one package, and a program holds one version of each package under one name"
 
     # The lines read before the refused one are never used (R5).
     broken = parsed(file: "h", text: "[dependencies.core]\npath = \"../core\"\nversion = 1\n")
