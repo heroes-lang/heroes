@@ -12,8 +12,10 @@ reader-facing half, a diagnostic class and a line of the specification.
    stands in for the library's header, and the build is refused at exit 1, naming the
    file, the folder and the library header, the fix said in a note (rename the file or move
    it out of the folder), with no `Fix`.
-2. **A package's `-D` or `-U` of a name the guard keeps** (`emit/guarded_names.hero`) is
-   refused as `ffi_package`, landed with it; the compiler's own two `-D` switches excepted.
+2. **A package's `-D` or `-U` of a name the guard keeps** (`emit/guarded_names.hero`: every word the
+   runtime's headers and the library's standard headers write, and the names C reserves that the
+   compiler's C writes; decision 2342 calls them *a name C reserves*) is refused as `ffi_package`,
+   landed with it; the compiler's own two `-D` switches excepted.
 3. **Spec § 13's first fenced block binds `function sqlite3_close(db: Db consumes) -> i64
    when 0`**, held out of the round at `ebdc8a28c` (defect 2322, repaired at `37fb22678`),
    and design.md §4.19's copy of the example the same.

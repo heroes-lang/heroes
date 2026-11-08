@@ -9,7 +9,8 @@ is `.claude/worktrees/237-historian/` if you need the tree; you need no compiler
 
 1. **Header search and a project's file standing in for a system header** (questions 1 and 3): what
    the C compilers' search orders are and were for (GCC's and clang's `-I`, `-iquote`, `-isystem`,
-   `-idirafter`, `#include_next`), and how build systems and languages that compile C for a user
+   `-idirafter`, `#include_next`, and the `CPATH` family of environment variables), and how build
+   systems and languages that compile C for a user
    meet a project's file named like a library header: refused, reordered, warned, or left (CMake,
    Meson, Go's cgo, Rust's `cc` crate, Zig's `@cImport` and its build system, Nim, any other you
    find). Dates where the change was a correction.
@@ -18,7 +19,9 @@ is `.claude/worktrees/237-historian/` if you need the tree; you need no compiler
    advisory, read); what it allows of `-D` and `-U`; and any other system that judges a package's
    `-D`.
 3. **SQLite's own word on closing** (question 7): what SQLite's documentation says `sqlite3_close`
-   and `sqlite3_close_v2` do with a statement still prepared, and for whom `_v2` was made; and how
+   and `sqlite3_close_v2` do with a statement still prepared, and for whom `_v2` was made; how other
+   C libraries whose close can refuse are bound by the languages that mark a handle's end (a close
+   that succeeds only sometimes, with no `_v2` beside it); and how
    mature bindings bind the close (Python's `sqlite3` module, Go's `mattn/go-sqlite3`, Rust's
    `rusqlite`, Node's `better-sqlite3`), each read in its source or documentation.
 4. **Error messages that name a file standing in**: a compiler or build tool whose diagnostic says

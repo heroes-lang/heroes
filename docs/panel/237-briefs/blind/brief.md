@@ -8,16 +8,16 @@ is an experiment, not an opinion: **write the code, don't opine.**
 
 The files in this directory are your whole input. Read no other file, and do not ask for one.
 
-- `heroes-spec.md`: the language's specification, the whole language.
-- `variant-1.md`, `variant-2.md`, `variant-3.md`: three readings of the first code block of the
-  specification's section 13, each the two lines that would stand in that block. One of them is what
-  the block says today; you are not told which, and it does not matter: judge the three as equals.
-- `task-1.md` and `task-2.md`: two programming tasks.
+- `heroes-spec.md`: the language's specification, the whole language. In the first code block of its
+  section 13, one line marks where the lines of a variant stand.
+- `variant-1.md` to `variant-4.md`: four readings of those lines. Judge the four as equals.
+- `task-1.md`, `task-2.md` and `task-3.md`: three programming tasks.
 
 ## Your method
 
-For `task-1.md`, write the program three times, once under each variant (the specification with that
-variant's two lines in its section 13 block). For `task-2.md`, write the repair once. For every
+For `task-1.md` and `task-3.md`, write the program four times each, once under each variant (the
+specification with that variant's lines in its section 13 block). For `task-2.md`, write the repair
+once. For every
 place where the specification left you a choice, say the choice you made and what the other choice
 would produce: a program the compiler refuses, a program that stops with an error when run, or a
 program that runs and gives a different answer than intended. A plausible mistake that compiles and
@@ -33,9 +33,9 @@ plus the enclosing declaration.
 - `choice_points`: every place the specification left you a choice, the choice you made, and what the
   other would produce (refused, stops loudly, or runs silently wrong).
 - `argument`: at most 120 words.
-- `prediction`: a falsifiable rate, for each variant, of first-try programs for task 1 that run and
-  count a refused close as the connection given back without saying so; checkable by running many
-  first tries.
+- `prediction`: a falsifiable rate, for each variant, of first-try programs for tasks 1 and 3 that
+  run, exit 0 and leave the connection or the store open without saying so; checkable by running
+  many first tries.
 - `condition`: what result of that run would change your verdict.
 - `context`: whether any instruction, rule, contract, memory or document other than the files in
   this directory reached your context, and which.
