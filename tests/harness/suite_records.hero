@@ -18,6 +18,7 @@ use issue_pace
 use issue_wire
 use item_shape
 use md_links
+use placed_trees
 use portable
 use records_github
 use report
@@ -890,7 +891,7 @@ function run_all(scratch: str, only: str) -> report.Report?
     # the world: a gitignored TLS key in `site/.cache/` was read as `M3KN` on
     # 2026-08-19 — a milestone identifier, in a file nobody wrote and git already
     # knew to ignore.
-    walked = shell.project_files(scratch)?
+    walked = project_walk(shell.project_files(scratch)?)
 
     # **Narrowed to the tag check, the push guard's question** (defect 2198):
     # `m-thesis-harness` was placed over two defects that its own placing aged,
@@ -1840,6 +1841,27 @@ test "the shapes beside a ratification row, one at a time"
     assert !is_ratification(row: "- [ ] **panel twelve** | a word, not a number | x")
     assert !is_ratification(row: "- [ ] **panel -5** | a sign is not a sitting | x")
     assert !is_ratification(row: "- [ ] **panel 118 R5** | a resolution, not a sitting | x")
+
+# The files of the project this suite reads: every one git names but those in a
+# tree a package fetch placed, any folder named `heroes.packages` (panel 235's
+# R7, ratified 2026-11-07; `placed_trees.hero`). A placed tree is the package
+# author's, held to its fingerprint and never written here, so its documents are
+# judged where the package's source is written, the index its programs read,
+# and every check below reads the walk without it. Left out once, here, for
+# the reason the quoting files are: a filter inside one check is a filter the
+# next check forgets.
+function project_walk(listed: [str]) -> [str]
+    return placed_trees.outside(listed)
+
+test "the walk leaves a placed tree out by its folder's name, and keeps the package's source and every file beside it"
+    listed = [
+        "examples/index/core/0.1.0/files/strings.md"
+        "examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.md"
+        "examples/ini/heroes.packagesx/notes.md"
+        "examples/ini/main.hero"
+        "heroes.packages/k/x.md"
+    ]
+    assert project_walk(listed) == ["examples/index/core/0.1.0/files/strings.md", "examples/ini/heroes.packagesx/notes.md", "examples/ini/main.hero"]
 
 # Whether this path is one of the dated records — the pruning `find` used to do
 # with `-not -path`, done here now that the listing comes from git. Same rule as

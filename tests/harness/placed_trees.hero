@@ -1,0 +1,77 @@
+# The folder a package fetch places packages in, `heroes.packages/` beside a
+# program's catalogue, and whether a path stands in it (panel 235's R7,
+# ratified 2026-11-07).
+#
+# WHY THIS EXISTS. A placed tree is code the program fetched: the compiler holds
+# it to its fingerprint at every build, the `packages` suite holds it to the
+# index it came from, and nobody in this repository writes it. R7 rules that the
+# suites that walk the tree, `corpus`, `packages`, `records` and `unseen`, leave
+# that folder out by its NAME, whatever program it stands in and however deep:
+# a module in it is not the program's own, and a document in it is the package
+# author's, judged where the package's source is written. The rule is the name
+# and never a list of the trees placed today, so a program that fetches a
+# package joins the exemption by existing, and this module is its one home in
+# the net.
+#
+# What the rule asks is a FOLDER's name, each part of the path but its last,
+# so a file named `heroes.packages` or a folder whose name only holds the word,
+# `my.heroes.packages`, is the program's like any other.
+
+use strings
+
+# The folder's name: the compiler's `PLACED` (`selfhost/module/packages.hero`),
+# a part holding a `.`, which no `use` can spell.
+constant FOLDER: str
+    "heroes.packages"
+
+# Whether `path` stands in a placed tree: one of its folders, never its own
+# last part, is named `heroes.packages`. A path in the shape both walks give,
+# `/` between its parts, relative or absolute.
+function within(path: str) -> bool
+    parts = strings.split_on(text: path, byte: '/')
+
+    for part in parts.slice(from: 0, to: parts.len() - 1)
+        if part == FOLDER
+            return true
+
+    return false
+
+# The paths of `paths` that stand in no placed tree, in their order.
+function outside(paths: [str]) -> [str]
+    out: [str] @= []
+
+    for path in paths
+        if !within(path)
+            out @ out.push(path)
+
+    return out
+
+## Tests
+
+test "a path stands in a placed tree when one of its folders is named heroes.packages, at any depth"
+    assert within("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
+    assert within("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings/internal/scan.hero")
+    assert within("heroes.packages/core@0.1.0-0123456789abcdef/strings.md")
+    assert within("/abs/app/heroes.packages/x")
+
+    # Widened by none: a sibling, a name only holding the word, a file of
+    # that name, the index's source and a program's own module.
+    assert !within("examples/ini/heroes.packagesx/strings.hero")
+    assert !within("examples/ini/my.heroes.packages/strings.hero")
+    assert !within("examples/ini/heroes.packages")
+    assert !within("examples/index/core/0.1.0/files/strings.hero")
+    assert !within("examples/ini/main.hero")
+    assert !within("")
+
+test "the paths outside every placed tree keep their order"
+    assert outside(["a/main.hero", "a/heroes.packages/k/x.hero", "b/x.md", "heroes.packages/k/y"]) == ["a/main.hero", "b/x.md"]
+    nothing: [str] = []
+    assert outside(nothing).len() == 0
+
+# The name is a premise about the compiler, so a test reads the compiler's own
+# constant: a rename there that left this mirror behind would exempt a folder
+# no fetch writes and walk every tree one does.
+test "the folder's name is the compiler's PLACED"
+    source = read_file("selfhost/module/packages.hero")
+    assert !source.is_err()
+    assert strings.contains(text: source.must(), needle: "constant PLACED: str\n    \"" + FOLDER + "\"\n")

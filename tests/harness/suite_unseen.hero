@@ -29,7 +29,12 @@
 # committed) that decodes as UTF-8, but the trees whose bytes are a case's on
 # purpose: `tests/golden/`, where a program the compiler must refuse holds
 # the raw character, and `tests/emission/` and `seed/`, C the compiler wrote.
-# A file that is not UTF-8 is a picture or a font, not a document.
+# A file that is not UTF-8 is a picture or a font, not a document. **And a
+# tree a package fetch placed**, any folder named `heroes.packages` (panel
+# 235's R7, `placed_trees.hero`): its files are the package author's, held
+# to their fingerprint and never edited here, so a character in one is read
+# where the package's source is written, the index its programs read, which
+# this walk reads.
 #
 # A record is never rewritten (`.claude/rules/records.md`), so a character
 # already in one stays, its correction underneath: `known` lists each by its
@@ -38,6 +43,7 @@
 
 use report
 use floors
+use placed_trees
 use shell
 use strings
 
@@ -264,6 +270,9 @@ function named(code: i64) -> str
     return "U+" + out
 
 function exempt(path: str) -> bool
+    if placed_trees.within(path)
+        return true
+
     for tree in EXEMPT
         if strings.starts_with(text: path, prefix: tree)
             return true
@@ -382,3 +391,13 @@ test "a case's tree is exempt and a document is not"
     assert exempt("seed/heroes.c")
     assert !exempt("docs/panel/192-reports/historian.md")
     assert !exempt("tests/harness/suite_unseen.hero")
+
+# Panel 235's R7: the folder is left out by its name, at any depth, and
+# nothing beside it is, the package's own source least of all.
+test "a placed tree is exempt by its folder's name, and the package's source beside it is not"
+    assert exempt("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.md")
+    assert exempt("heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
+    assert !exempt("examples/index/core/0.1.0/files/strings.md")
+    assert !exempt("examples/ini/heroes.packagesx/strings.md")
+    assert !exempt("examples/ini/my.heroes.packages/strings.md")
+    assert !exempt("examples/ini/main.hero")
