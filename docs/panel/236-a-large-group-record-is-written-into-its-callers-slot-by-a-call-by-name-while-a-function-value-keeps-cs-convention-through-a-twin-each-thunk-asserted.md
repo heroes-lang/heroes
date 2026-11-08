@@ -226,3 +226,8 @@ run, no credential printed, no write to GitHub by a seat.
 ## Author's verdict
 
 Pending, asked by decision 2340 (https://github.com/heroes-lang/heroes/issues/2340). A yes settles R1 to R9 as adopted and lets the landing close defects 2286, 2334, 2337 and 2338; it does not settle R3's lifting route, which a later sitting builds before it is adopted.
+
+**Ratified, 2026-11-08, about 20:10**, by the author's reading of the sitting, given in the conversation
+in Italian and meant as: *I ratify the sitting*. R1 to R9 stand as adopted. The landing's defects 2286,
+2334, 2337 and 2338 were closed at batch 24's push (a789691f1), before this reading; R3's lifting
+route stays for a later sitting to build before it is adopted, as the line above says.
