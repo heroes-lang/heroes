@@ -1,0 +1,82 @@
+# What a group's own headers may still be, beside the refusal of a file
+# standing in for a header of the C library that a group's header reaches,
+# asked of the compiler by `suite_special.hero` (panel 237's R2, defect 2343,
+# 2026-11-08; the compiler-engineer's matrix).
+#
+# The refusal's listing holds the groups, with who included each file, and a
+# file of a folder the build names is refused where a platform or runtime
+# header includes it, or where a platform folder holds a file of its name
+# (`tests/golden/unsupported/fixedbugs-2343-*`). What must still build:
+#
+# - **a group naming the program's own header with a platform's name**,
+#   `util.h` on this Mac: the header a group names is the program's;
+# - **a group naming `stdio.h` beside the program's own `stdio.h`**, which
+#   reads the library's and changes `SEEK_END`: the sitting's ruling, the
+#   program's choice read from where the program put it;
+# - **the program's own `lib.h` including `<stdio.h>` with no file of that
+#   name beside it**, the platform's read;
+# - **a header including its own sibling**, by angle where the platform holds
+#   no such name (`money_types.h`), and by the quoted form where it does
+#   (`#include "time.h"`), C's own rule for a header's sibling.
+
+use report
+use shell
+use strings
+
+record Program
+    name: str
+    files: [[str]]
+    prints: str
+
+function programs() -> [Program]
+    return [
+        Program(name: "util-own", files: [["main.hero", "extern \"util.h\"\n    constant HERO_UTIL: i64\n\nfunction main()\n    print(HERO_UTIL)\n"], ["util.h", "#define HERO_UTIL 7\n"]], prints: "7")
+        Program(name: "stdio-group", files: [["main.hero", "extern \"stdio.h\"\n    constant SEEK_END: i64\n\nfunction main()\n    print(SEEK_END)\n"], ["stdio.h", "#include_next <stdio.h>\n#undef SEEK_END\n#define SEEK_END 99\n"]], prints: "99")
+        Program(name: "lib-clean", files: [["main.hero", "extern \"lib.h\"\n    constant SEEK_END: i64\n    function lib_end() -> i64\n\nfunction main()\n    print(SEEK_END)\n    print(lib_end())\n"], ["lib.h", "#include <stdio.h>\nstatic inline long long lib_end(void) { return SEEK_END * 2; }\n"]], prints: "2\n4")
+        Program(name: "sibling", files: [["main.hero", MONEY], ["money.h", "#include <money_types.h>\n#define MONEY_CENTS ((long long)MONEY_UNIT * 100)\n"], ["money_types.h", "#define MONEY_UNIT 1250\n"]], prints: "125000")
+        Program(name: "sibling-quoted", files: [["main.hero", MONEY], ["money.h", "#include \"time.h\"\n#define MONEY_CENTS ((long long)MONEY_UNIT * 100)\n"], ["time.h", "#define MONEY_UNIT 1250\n"]], prints: "125000")
+    ]
+
+constant MONEY: str
+    "extern \"money.h\"\n    constant MONEY_CENTS: i64\n\nfunction main()\n    print(MONEY_CENTS)\n"
+
+function a_groups_own_headers_build(@r: report.Report, scratch: str, compiler: str)
+    label = "special/a group's own headers build beside the refusal of a header a group reaches"
+    home = scratch + "/groups-2343"
+    wrong: [str] @= []
+
+    for program in programs()
+        dir = home + "/" + program.name
+        laid: ()? @= shell.remove_tree(dir)
+
+        if !laid.is_err()
+            laid @ shell.mkdir_all(dir)
+
+        for pair in program.files
+            if !laid.is_err()
+                laid @ write_file(path: dir + "/" + pair[0], text: pair[1])
+
+        if laid.is_err()
+            wrong @ wrong.push("    cannot lay `" + program.name + "` out under " + dir)
+            continue
+        binary = dir + "/bin" + shell.exe_suffix()
+        made = shell.run(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "build", dir + "/main.hero", "-o", binary]
+        )
+
+        if made.is_err() || made.must().code != 0
+            wrong @ wrong.push("    `" + program.name + "` did not build: " + shell.ending(made))
+            continue
+        ran = shell.run(scratch: scratch, program: binary, words: [binary])
+
+        if ran.is_err() || ran.must().code != 0 || strings.trimmed(ran.must().out) != program.prints
+            wrong @ wrong.push(
+                "    `" + program.name + "` printed " + shell.ending(ran) + ", where it prints " + program.prints
+            )
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: "  " + wrong.join("\n"))
+        return
+    report.keep_pass(@r)

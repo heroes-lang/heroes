@@ -168,8 +168,13 @@ function answered(package_flags: [str]) -> [str]
 # but a leading `/`'s, each `..` taking off the part before it, and one that
 # climbs past a relative path's first part kept, since it names a file no
 # directory under the current one holds. An absolute path does not climb
-# past its root.
+# past its root. **A path already so is its own answer, asked of its bytes**
+# (`already`): clang prints most paths that way, and reading each as
+# characters to split it cost the refusal of a header a group reaches about
+# a hundred thousand instructions a path, several times a path (defect 2343).
 function lexical(path: str) -> str
+    if already(path)
+        return path
     p = clang_place.slashed(path)
     rooted = p.len() > 0 && p[0] == '/'
     kept: [str] @= []
@@ -192,6 +197,32 @@ function lexical(path: str) -> str
     if kept.len() == 0
         return "."
     return kept.join("/")
+
+# Whether `path` is lexical as written: not empty, no `\\`, and no part empty,
+# `.` or `..` but the empty one before a leading `/`, asked a byte at a time.
+function already(path: str) -> bool
+    n = path.len()
+
+    if n == 0 || n == 1 && path[0] == '/'
+        return n == 1
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= n
+        if at == n || path[at] == '/'
+            size = at - start
+
+            if size == 0 && start != 0 || size == 0 && at == n
+                return false
+
+            if size == 1 && path[start] == '.' || size == 2 && path[start] == '.' && path[start + 1] == '.'
+                return false
+            start @ at + 1
+        else if path[at] == '\\'
+            return false
+        at @ at + 1
+
+    return true
 
 # Every part of `parts` but its last.
 function without_last(parts: [str]) -> [str]
@@ -297,6 +328,40 @@ test "a path is read a part at a time, `..` taking off the part before it and ne
     assert lexical("/../x") == "/x"
     assert lexical("C:\\pkg\\vec\\..\\x.h") == "C:/pkg/x.h"
     assert lexical("a/..") == "."
+
+    # A path asked as written is one the slow reading leaves as it is, and
+    # every path answers as the slow reading does.
+    for path in ["/usr/include/stdio.h", "a/b.h", "a", "/", "", ".", "..", "./a", "a/", "/a//b", "a/./b", "a/../b", "a\\b", "/x/.hidden/..h"]
+        if already(path)
+            assert slow(path) == path
+        assert lexical(path) == slow(path)
+
+    assert already("/usr/include/stdio.h") && already("a/b.h") && already("/x/.hidden/..h") && !already("./a") && !already("a\\b")
+
+# The reading `lexical` makes of a path not asked as written, for the test.
+function slow(path: str) -> str
+    p = clang_place.slashed(path)
+    rooted = p.len() > 0 && p[0] == '/'
+    kept: [str] @= []
+
+    for part in pieces(p)
+        if part == "" || part == "."
+            continue
+
+        if part == ".."
+            if kept.len() > 0 && kept[kept.len() - 1] != ".."
+                kept @ without_last(kept)
+            else if !rooted
+                kept @ kept.push("..")
+            continue
+        kept @ kept.push(part)
+
+    if rooted
+        return "/" + kept.join("/")
+
+    if kept.len() == 0
+        return "."
+    return kept.join("/")
 
 test "a directory holds a path by its parts, never by a prefix of a part"
     assert holds(dir: "heroes.packages/vec", path: "heroes.packages/vec/a.h")

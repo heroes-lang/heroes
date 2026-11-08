@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2343 (panel 237's compiler-engineer): a group binding
+# `stdio.h`'s `BUFSIZ` beside the program's own `_stdio.h`, which the SDK's
+# `stdio.h` includes, printed 7 where the SDK says 1024: the refusal listed
+# only what the runtime's opening reads. Its listing now holds the groups,
+# with who included each file, and a file of a named folder that a platform
+# header includes is refused. `_stdio.h` is Darwin's, so the case is judged
+# there alone (`platform_skips.hero`).
+
+extern "stdio.h"
+    constant BUFSIZ: i64
+
+function main()
+    print(BUFSIZ)

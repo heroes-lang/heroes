@@ -48,10 +48,12 @@
 # drops). An edit firing on a word only a probe's own line carries,
 # `-fsyntax-only`, is still unseen, and stopped a group's probe at exit 2.
 #
-# **What it does not see, said**: a file of the library reached only under a
-# switch a group's header sets, which this opening, with no group, does not
-# set; of such a file the reserved pair gives back what the compiler writes of
-# the names C reserves, and the rest is the program's own folder.
+# **And a header read through a group's** (panel 237's R2, defect 2343): where
+# the program binds a group, the same run lists the opening and then the
+# groups, with who included each file (`cli/shadowed_tree.hero` holds the
+# rule), so a library header only a group's header reaches is judged too; a
+# listing the groups' headers cost is asked again of the opening alone, so the
+# landed refusal never waits on a group's header.
 
 use source
 use diag
@@ -72,6 +74,9 @@ use cli/strings
 use cli/clang_added
 use cli/stand_in
 use cli/shadowed_words
+use cli/shadowed_tree
+use cli/settled
+use emit/externs as emit_externs
 
 # The build stopped, its refusals told, where the environment hands every
 # clang a file or a kept name, before any clang compiles: `cli/produce.hero`
@@ -87,10 +92,13 @@ function environment_stopped(t: toolchain.Toolchain, s: source.Source, permissiv
 
 # The words a build's units compile under, once nothing of a folder the
 # program, a package or the environment names stands in for a header of the
-# library; the build stopped, its refusals told, otherwise. `cli/produce.hero`
-# asks it where the words are settled, before any probe compiles.
-function checked(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, permissive: bool) -> compiling.Compiling?
-    stop = compile.stage(told(t, under: under), s, permissive: permissive)
+# library or the runtime, the opening's or a group's; the build stopped, its
+# refusals told, otherwise. `cli/produce.hero` asks it where the site is
+# settled, before any probe compiles.
+function checked(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, art: compile.Artifact, s: source.Source) -> compiling.Compiling?
+    under = settled.compiled_under(t, options, site)
+    groups = order_trial.theirs(emit_externs.headers(art.program, s, art.decls))
+    stop = compile.stage(told(t, under: under, groups: groups), s, permissive: options.permissive)
 
     if stop.is_err()
         return ok(under)
@@ -101,9 +109,23 @@ function checked(t: toolchain.Toolchain, under: compiling.Compiling, s: source.S
 # environment's folders among the named, and per word of the unit's own job
 # the `-###` answer did not hold; none where clang gives no listing or no
 # directories.
-function told(t: toolchain.Toolchain, under: compiling.Compiling) -> [diag.Diagnostic]
+function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
-    got = listed(build: t.build, words: compiling.probe_words(under), text: order_trial.opening([], question: ""))
+    opening = order_trial.opening([], question: "")
+    words = compiling.probe_words(under)
+    tree: bool @= groups.len() > 0
+    got: Listing? @= fail(code: "unread", msg: "not asked")
+
+    if tree
+        got @ listed(
+            build: t.build,
+            words: strings.with_all(list: words, more: shadowed_tree.WORDS),
+            text: shadowed_tree.text(groups)
+        )
+
+    if got.is_err()
+        tree @ false
+        got @ listed(build: t.build, words: words, text: opening)
 
     if got.is_err()
         return out
@@ -127,7 +149,20 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling) -> [diag.Diagn
         more: clangs_own(searched: unnamed(got.must().searched, origins: origins), first: first)
     )
 
-    for one in stand_in.shadows(paths: got.must().paths, named: named, others: others)
+    found: [stand_in.Shadow] @= []
+
+    if tree
+        found @ shadowed_tree.shadows(
+            said: got.must().said,
+            paths: got.must().paths,
+            groups: groups,
+            named: named,
+            others: others
+        )
+    else
+        found @ stand_in.shadows(paths: got.must().paths, named: named, others: others)
+
+    for one in found
         runtime = process.path_exists(t.runtime + "/" + one.named)
         out @ out.push(shadowed_words.header(one, origin: origins[one.folder].default(""), runtime: runtime))
 
@@ -353,7 +388,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
     )
     named: {str: bool} @= {}
 
-    for d in told(t, under: under)
+    for d in told(t, under: under, groups: [])
         assert d.code == shadowed_words.CODE
 
         for name in ["stdint.h", "stdbool.h", "math.h", "stddef.h"]
@@ -369,7 +404,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         runtime: t.runtime,
         source_dir: root + "/plain"
     )
-    assert told(t, under: plain).len() == 0
+    assert told(t, under: plain, groups: []).len() == 0
 
     # And every directory clang searches on its own named by `--include` as
     # well: each is printed among clang's, so nothing is told.
@@ -388,5 +423,48 @@ test "each file of a named folder the runtime's opening reads in the library's p
         runtime: t.runtime,
         source_dir: root + "/plain"
     )
-    assert told(t, under: everything).len() == 0
+    assert told(t, under: everything, groups: []).len() == 0
+    assert !process.remove_tree(root).is_err()
+
+# **Asked of clang with the groups, a library header a group's header reaches
+# is told by who included it, and the group's own header is not** (defect
+# 2343): the program's `lib.h` includes `<stdio.h>`, and a `stdio.h` beside it
+# reads the library's; the same program with no `stdio.h` of its own is told
+# nothing, and so is one whose group names that `stdio.h` itself.
+test "a header a group's header reaches is told by who included it, and a group's own header is not (defect 2343)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    root = "build/selftest-shadowed-groups"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/evil", "/clean"]
+        assert !process.mkdir_all(root + dir).is_err()
+        assert !write_file(path: root + dir + "/lib.h", text: "#include <stdio.h>\n").is_err()
+
+    assert !write_file(path: root + "/evil/stdio.h", text: "#include_next <stdio.h>\n#undef SEEK_END\n#define SEEK_END 7\n").is_err()
+
+    for pair in [["/evil", "1"], ["/clean", "0"]]
+        under = compiling.Compiling(
+            level: "-O0",
+            sanitize: false,
+            search_include: [],
+            package_flags: [],
+            runtime: t.runtime,
+            source_dir: root + pair[0]
+        )
+        said = told(t, under: under, groups: ["lib.h"])
+        assert said.len().to_str() == pair[1]
+
+        if said.len() == 1
+            assert strings.holds(text: said[0].message, needle: "`<stdio.h>`, which `" + root + "/evil/lib.h` includes")
+            assert said[0].notes.len() == 2
+
+    own = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [],
+        package_flags: [],
+        runtime: t.runtime,
+        source_dir: root + "/evil"
+    )
+    assert told(t, under: own, groups: ["stdio.h"]).len() == 0
     assert !process.remove_tree(root).is_err()

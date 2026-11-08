@@ -210,7 +210,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         version: version,
         sources: sources
     )
-    under = shadowed.checked(t, under: settled.compiled_under(t, options, site), s, permissive: options.permissive)?
+    under = shadowed.checked(t, options, site, art.must(), s)?
 
     # THE ROUNDS (`cli/rounds.hero`; defect 037, panel 152 R1): each asks every
     # module's headers its questions, then compiles and links, and runs again

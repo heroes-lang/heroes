@@ -14,11 +14,16 @@ use cli/package_reads
 
 # One file of a named folder read in the library's place: the path clang
 # listed, the folder that held it, and the name the library's header has
-# there.
+# there; who included it, as a refusal names it, "" for the C this compiler
+# writes (`cli/shadowed_tree.hero`); and whether it stands beside a named
+# folder's includer that asked for it by the angle form, where the quoted one
+# would mean the includer's own file.
 record Shadow
     path: str
     folder: str
     named: str
+    reader: str
+    beside: bool
 
 # The folder of `named` that found `path`, read lexically: the longest
 # directory holding it among `named` and `others`, "" where that is one of
@@ -49,7 +54,9 @@ function shadows(paths: [str], named: [str], others: [str]) -> [Shadow]
         folder = finder(path: path, named: named, others: others)
 
         if folder.len() > 0
-            out @ out.push(Shadow(path: written, folder: folder, named: relative(path: path, dir: folder)))
+            out @ out.push(
+                Shadow(path: written, folder: folder, named: relative(path: path, dir: folder), reader: "", beside: false)
+            )
 
     return out
 
