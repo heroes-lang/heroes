@@ -43,6 +43,18 @@ HeroStr hero_file_key(const char *path, int64_t *status);
  * holds it, keyed where it is rather than read from the disk again. */
 HeroStr hero_text_key(HeroStr text);
 
+/* The SHA-256 of the bytes of the file at `path`, whatever they are, as 64
+ * lower-case hexadecimal digits (panel 235's R6, `parts/sha256.c`, bound by
+ * `selfhost/module/fingerprint.hero`): a package's fingerprint covers every
+ * file of its tree, a header or an image as well as a module, and a file that
+ * is not UTF-8 is no `str` to hash in Heroes. `*status` is HERO_OS_OK, or the
+ * read's HERO_OS_NOT_FOUND or HERO_OS_FAILED with "". */
+HeroStr hero_file_sha256(const char *path, int64_t *status);
+
+/* The same over a text in hand: the listing of a tree's files the
+ * fingerprint is the SHA-256 of. */
+HeroStr hero_text_sha256(HeroStr text);
+
 /* 1 where this machine's clang probes a frame larger than a page only when a
  * compile asks it to, with `-fstack-clash-protection`, and 0 where its
  * prologue probes unasked (defect 2253, `parts/run.c`, bound by

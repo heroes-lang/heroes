@@ -30,6 +30,7 @@
 use module/reached
 use module/catalogue
 use module/placed
+use module/fingerprint
 use cli/process
 
 constant PLACED: str
@@ -122,14 +123,25 @@ function rooted(b: Book, e: catalogue.Entry) -> reached.Package
     return reached.Package(alias: e.name, root: b.named + tree, opened: b.opened + tree, problem: "", unverified: false)
 
 # Why a package's modules cannot be read, "" where they can: its tree not
-# placed, its own catalogue not reading, or naming a package the program's
-# catalogue does not hold (R3).
+# placed, not matching its fingerprint (R7), its own catalogue not reading,
+# or naming a package the program's catalogue does not hold (R3).
 function problem_of(@b: Book, package: reached.Package, e: catalogue.Entry) -> str
     if !process.is_directory(path: package.opened)
         if package.unverified
             return "the folder `" + package.root + "` its `path` names is not there"
         return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`"
 
+    # The tree is a folder of the program anything can edit, so it is held to
+    # its fingerprint at every build that reads it (R7): a tree changed since
+    # it was placed compiles nothing.
+    if !package.unverified
+        tree = fingerprint.of(package.opened)
+
+        if tree.is_err()
+            return "the tree placed at `" + package.root + "` cannot be read whole: " + failure_of(tree) + " — `heroes fetch` places it again"
+
+        if tree.must() != e.sum
+            return "the tree placed at `" + package.root + "` is `" + tree.must() + "`, and the catalogue's `sum` for it is `" + e.sum + "`: a file of it was changed, added or taken out since it was placed — `heroes fetch` places it again"
     own = catalogue.read(opened: package.opened, named: package.root)
 
     if own.problem.len() > 0
@@ -166,6 +178,11 @@ function with_slash(folder: str) -> str
         return folder
     return folder + "/"
 
+function failure_of(got: str?) -> str
+    match got
+        .ok _  => return ""
+        .err e => return e.msg
+
 ## Tests
 
 test "a package's module is read through its entry, from its placed tree or its folder, and nowhere else"
@@ -189,10 +206,24 @@ test "a package's module is read through its entry, from its placed tree or its 
     key_folder = PLACED + "/" + placed.key(catalogue.entry(b.program, name: "json").must(), index: "") + "/"
     assert b.reached[1].root == dir + key_folder
 
-    # Placed, it is read from its tree; an entry no catalogue gives is no file.
-    assert !process.mkdir_all(dir + key_folder).is_err()
+    # Placed at the key its real sum names, it is read from its tree; edited
+    # after it was placed, it compiles nothing (R7). An entry no catalogue
+    # gives is no file.
+    staged = dir + "staged/"
+    assert !process.mkdir_all(staged).is_err()
+    assert !write_file(path: staged + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    real = fingerprint.of(staged).must()
+    assert !write_file(path: dir + "heroes.toml", text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + real + "\"\n\n[dependencies.mine]\npath = \"local\"\n").is_err()
+    placed_at = dir + PLACED + "/" + placed.key(catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: real), index: "") + "/"
+    assert !process.mkdir_all(placed_at).is_err()
+    assert !write_file(path: placed_at + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
     c: Book @= book(named: dir, opened: dir)
-    assert file_of(@c, "<json>/parse").must().opened == dir + key_folder + "parse.hero"
+    assert file_of(@c, "<json>/parse").must().opened == placed_at + "parse.hero"
+    assert !write_file(path: placed_at + "parse.hero", text: "function x() -> i64\n    return 2\n").is_err()
+    edited: Book @= book(named: dir, opened: dir)
+    assert file_of(@edited, "<json>/parse").is_err()
+    assert edited.reached[0].problem.len() > 0
+    assert !write_file(path: placed_at + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
     assert file_of(@c, "<yaml>/load").is_err()
     assert file_of(@c, "geom").must().named == dir + "geom.hero"
 

@@ -1,0 +1,2 @@
+note: the package `lib` is read from the folder `tests/golden/check/package-internal-is-the-packages.case/lib/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/package-internal-is-the-packages.case/main.hero:6:5: error[private_module]: `<lib>/internal/scan` is private to `<lib>`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `<lib>` offers instead

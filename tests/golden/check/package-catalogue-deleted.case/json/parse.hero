@@ -1,0 +1,3 @@
+# The program's own module of the path `json/parse`, which no bracketed `use` reads.
+function value() -> i64
+    return 1

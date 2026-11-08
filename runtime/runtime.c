@@ -241,6 +241,9 @@
  * text to hash. After `os.c`, whose file read and shown-read walk it shares,
  * and `str.c`'s one judge of a sequence; nothing needs it. */
 #include "parts/key.c"
+/* The SHA-256 of a file's bytes, for a package's fingerprint (panel 235's
+ * R6): after `os.c`, whose `hero_file_bytes` it reads through. */
+#include "parts/sha256.c"
 
 /* What an `f32` literal holds, read once (defect 2276): the compiler's door,
  * after `hero_compiler.h` declares it and after `f64.c`, whose locale window

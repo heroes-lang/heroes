@@ -1,0 +1,9 @@
+# Fixed defect 2327: a module led by `_` and a digit, its function named as
+# the emitter names its own option types.
+function f87774a() -> i64
+    return 7
+
+function maybe(n: i64) -> i64?
+    if n > 0
+        return ok(n)
+    return fail(code: "none", msg: "no number")

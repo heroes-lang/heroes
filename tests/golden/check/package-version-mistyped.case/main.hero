@@ -1,0 +1,10 @@
+# M-package-manager step 6, panel 235's falsifier (R12, W4 as restated
+# 2026-11-07): deleting the catalogue, deleting one of its entries, or
+# mistyping a field of one never changes which module compiles, only whether
+# the program builds, and a fetched copy left behind compiles nothing.
+#
+# The entry's `version` mistyped: the tree it names is not placed.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

@@ -1,0 +1,3 @@
+# A private module of the package `lib`, its `strings`'s and no one else's.
+function twice(n: i64) -> i64
+    return n * 2
