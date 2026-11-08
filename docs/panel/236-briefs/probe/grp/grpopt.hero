@@ -1,0 +1,16 @@
+# critic 236: defect 2253's record returned inside a `T?`, a program type that holds a `partial` record.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function make(n: i64) -> Held?
+    if n < 0
+        return fail(code: "negative", msg: "below zero")
+    return ok(Held(first: n, rest: zero))
+
+function go()
+    print(make(n: 7).must().first)
+
+function main()
+    print("before")
+    go()

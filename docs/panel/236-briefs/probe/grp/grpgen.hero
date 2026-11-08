@@ -1,0 +1,15 @@
+# critic 236: defect 2253's record returned through a generic function's instance.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function same<T>(x: T) -> T
+    return x
+
+function go()
+    h = same(x: Held(first: 7, rest: zero))
+    print(h.first)
+
+function main()
+    print("before")
+    go()

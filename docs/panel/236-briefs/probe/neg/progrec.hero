@@ -1,0 +1,11 @@
+extern "cb.h"
+    function apply(cb: (function(E0) -> i64), n: i64) -> i64
+
+record E0
+    x: i64
+
+function first(e: E0) -> i64
+    return e.x
+
+function main()
+    print(apply(cb: first, n: 1))

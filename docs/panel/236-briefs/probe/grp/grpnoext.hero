@@ -1,0 +1,16 @@
+# critic 236: grpret without the by-value extern call; the result of make read in Heroes.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function go()
+    h = make(n: 7)
+    print(h.first)
+
+function main()
+    print("before")
+    go()
