@@ -82,6 +82,24 @@ function in_pointer_param(f: containers.Function, names: ctype.Names, slot_id: i
 
     return is_large(names, ty: declared.ty)
 
+# Whether C could be handed `f`: neither its result nor a plain parameter is a
+# large program record, which the function takes in place and which no
+# callback type can name, the checker refusing a program record there (the
+# first test below). A function that cannot cross gets no thunk and no table
+# row (defect 2337): a thunk is written for every function whose address is
+# taken once the program binds any callback (`emit/callback_guard.hero`, a
+# superset on purpose), and it forwarded C's by-value arguments to a function
+# taking them in place, which clang refused, exit 2.
+function crosses(names: ctype.Names, f: containers.Function) -> bool
+    if is_large(names, ty: f.result)
+        return false
+
+    for slot_id in f.params
+        if in_pointer_param(f, names, slot_id: slot_id)
+            return false
+
+    return true
+
 # The pointer a large slot or temporary is reached through, and the pointer a
 # large parameter arrives as.
 function pointer(name: str) -> str

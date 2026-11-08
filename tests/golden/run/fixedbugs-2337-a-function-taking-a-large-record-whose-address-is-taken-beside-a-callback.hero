@@ -1,0 +1,76 @@
+# fixedbugs, defect 2337, 2026-11-08: a function taking a record of the
+# program's own past 4,096 bytes takes it as a pointer (panel 233's route), and
+# its address is taken in a program that binds a callback, so it stood in the
+# set a thunk is written for (`emit/callback_guard.hero`, a superset on
+# purpose). The thunk forwarded C's by-value argument to the pointer the
+# function takes: `heroes check` exit 0, `heroes build` exit 2, clang's
+# `passing 'h_..._E4' to parameter of incompatible type 'const h_..._E4 *'`.
+# No callback type can name a program record, so such a function now gets no
+# thunk and no table row (`large_value.crosses`). Panel 236 found it.
+
+extern "fixedbugs-2337-callback.h"
+    function fixedbugs_2337_apply(cb: (function(i64) -> i64), n: i64) -> i64
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+# 8,192 counted bytes, past `LARGE`: a function takes it as a pointer and
+# returns it through its caller's slot (panel 233's R2).
+record E4
+    a: E3
+    b: E3
+
+function e1(n: i64) -> E1
+    z = E0(x: n)
+    return E1(a: z, b: z, c: z, d: z, e: z, f: z, g: z, h: z)
+
+function e2(n: i64) -> E2
+    z = e1(n: n)
+    return E2(a: z, b: z, c: z, d: z, e: z, f: z, g: z, h: z)
+
+function e3(n: i64) -> E3
+    z = e2(n: n)
+    return E3(a: z, b: z, c: z, d: z, e: z, f: z, g: z, h: z)
+
+function one(n: i64) -> i64
+    return n + 1
+
+function weigh(e: E4) -> i64
+    return e.a.a.a.a.x + e.b.h.h.h.x
+
+function main()
+    f = weigh
+    e = E4(a: e3(n: 2), b: e3(n: 3))
+    print(weigh(e))
+    print(f(e))
+    print(fixedbugs_2337_apply(cb: one, n: 1))

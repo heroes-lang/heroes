@@ -52,6 +52,7 @@ use emit/mangle
 use emit/ctype
 use emit/signature
 use emit/callback_guard
+use emit/large_value
 use emit/writer
 use parse
 use resolve
@@ -73,7 +74,7 @@ function thunk_name(real: str) -> str
 # left alone: C cannot call a function that takes one, and a Heroes call
 # through a value never arrives here.
 function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
-    if guarded_decls[f.decl].is_err()
+    if guarded_decls[f.decl].is_err() || !large_value.crosses(names, f)
         return
     real = signature.as_value(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
@@ -123,8 +124,9 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
 # and `ctype.c_result` under the thunk's name. That is the function's own
 # signature for every function C can be handed: one whose direct signature
 # takes a large value in place (`emit/large_value.hero`) names a program record,
-# which the checker refuses inside an `extern`'s callback type, so it is never
-# thunked (`large_value`'s test holds that rule, panel 233).
+# which the checker refuses inside an `extern`'s callback type (`large_value`'s
+# test holds that rule, panel 233), so it gets no thunk (`large_value.crosses`,
+# defect 2337).
 function header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
     real = signature.as_value(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
@@ -169,7 +171,7 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
     for at in callbacks.functions
         f = p.functions[at]
 
-        if !is_ordinary(f)
+        if !is_ordinary(f) || !large_value.crosses(names, f)
             continue
         signature.prototype(@w, f, c, names, s, decls)
 
@@ -184,7 +186,7 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
     for at in callbacks.functions
         f = p.functions[at]
 
-        if !is_ordinary(f)
+        if !is_ordinary(f) || !large_value.crosses(names, f)
             continue
         real = signature.as_value(f, c, s, decls)
         writer.line(
