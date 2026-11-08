@@ -160,10 +160,10 @@ test "every word a module hands clang is on the line the edits are asked of (def
 # those no job carries: the question itself, a
 # search flag whose value is the build's (`-I`, `-F`, `-L`, `-l`, `-o`, the
 # level's own list), another program's words (git, `uname`,
-# `xcode-select`), a file's suffix, a word clang prints rather than reads,
-# and a prefix a module tests a word against (`-fdepfile-entry=` and
-# `-fsanitize-system-ignorelist=`, the files `cli/package_reads.hero` reads
-# off clang's own line as the toolchain's, defect 2351).
+# `xcode-select`), a file's suffix, a word clang prints on its own line
+# rather than reads (`-fdepfile-entry=`, and `-fsanitize-system-ignorelist=`,
+# which `cli/package_reads.hero` reads since defect 2351 and this test met at
+# batch 25's merge), and a prefix a module tests a word against.
 constant NOT_WORDS: [str]
     [
         "-object-file-name="
