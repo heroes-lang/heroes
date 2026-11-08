@@ -189,7 +189,7 @@ Under the decision issue, from `237-reports/historian.md` § Candidate lines, ea
 
 ## Author's verdict
 
-**Pending**, asked by decision decision 2349 (https://github.com/heroes-lang/heroes/issues/2349). A yes settles R1 to R9 as written, the landing then owing R9's list before M-package-manager's tag; it does not settle the payment's run (R6), which is the author's to allow at the landing, nor the conservative alternatives listed above, which stay the author's to choose instead.
+**Ratified, 2026-11-08, about 13:57**, by the author's reading of the sitting's results as the coordinator set them out in the conversation (R1 to R9, the measurements each rests on, the case `sibutil-angled` that R2's group route refuses, the conservative alternatives and the costs), in the author's words, meant as: *ok, I ratify, and ok to 10 dollars of extra spending*. Asked by decision 2349 (https://github.com/heroes-lang/heroes/issues/2349). The yes settles R1 to R9 as written; the landing owes R9's list before M-package-manager's tag. **The extra 10 USD** are the author's yes to paid runs beyond the sitting's cap of 25: R6's payment, R4 run again on the landed specification (about 4.3 USD), is allowed within them.
 
 ## Process notes
 
