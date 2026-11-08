@@ -14,7 +14,7 @@
 # The codes that blame the input, exit 1: a source refused by its shape, a
 # word a catalogue wrote, a source that answers that what was asked for is not
 # there, a file past its bound, a tree holding a name no package may, a tag
-# that moved, a sum that does not match.
+# that moved, a sum that does not match, an index's file in no shape it has.
 constant INPUT_CODES: [str]
     [
         "source_refused"
@@ -25,6 +25,7 @@ constant INPUT_CODES: [str]
         "name_refused"
         "tag_moved"
         "sum_mismatch"
+        "index_refused"
     ]
 
 # The codes that blame the tool or the machine, exit 2: a program this command
