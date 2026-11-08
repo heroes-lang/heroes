@@ -96,11 +96,23 @@ constant RAISED: [str]
 # On the command line with no limit to the errors told: clang stops telling
 # them at its twentieth by default, and a constant past it read its value
 # with nothing said (measured on this file's own test of fourteen shapes).
+#
+# **And C's own meaning of a signed shift, `-fno-wrapv`, on every target**
+# (defect 2360, as panel 218's R3 gives the probe the same word): clang 23's
+# MSVC target adds `-fwrapv`, under which a shift into the sign bit is
+# defined and `-Wshift-sign-overflow` says nothing, so on the Windows box
+# `(1 << 31)` read `-2147483648`, and `(1LL << 63)`, `(1i64 << 63)` and
+# `((__int64)1 << 63)` read `-9223372036854775808`, each at exit 0 where
+# this Mac's clang refuses them (measured 2026-11-08, clang 23.1.1 there,
+# Apple clang 21 here, which falls as silent under `-fwrapv`). It is the last
+# word, so it wins over one the unit's own words carry, and it changes no
+# header's reading, only what C computes.
 constant STRICT: [str]
     [
         "-Werror=gnu-folding-constant"
         "-Werror=shift-sign-overflow"
         "-ferror-limit=0"
+        "-fno-wrapv"
     ]
 
 # The probe's text: the opening, then each constant asked twice, each time
@@ -368,13 +380,15 @@ test "a header constant's integer value is read from clang's dump with nothing r
 # each was read at exit 0 by the critic's form, or is no integer at all, and
 # each is refused here. A header that closes its region and silences the two
 # warnings, and a `_Pragma` inside a value, are measured shapes the raising
-# before each enumerator holds against (`text_of`).
+# before each enumerator holds against (`text_of`). And a shift into the sign
+# bit of an `int` or a `long long` under the words of a target that defines
+# it, `-fwrapv`, clang 23's MSVC target's (defect 2360).
 test "a value C leaves undefined, one that is no integer constant expression or no integer, and one that moves have no value from the dump (panel 235's C5)"
     dir = "build/selftest-constant-dump-refused"
     assert !process.remove_tree(dir).is_err()
     assert !process.mkdir_all(dir).is_err()
     hostile = "#pragma clang diagnostic push\n#pragma clang diagnostic pop\n#pragma clang diagnostic pop\n#pragma clang diagnostic ignored \"-Wgnu-folding-constant\"\n#pragma clang diagnostic ignored \"-Wshift-sign-overflow\"\n#pragma clang diagnostic push\n"
-    opening = "#include <stdint.h>\n#include <limits.h>\n" + hostile + "static const int hero_k = 5;\nint hero_f(void);\n#define HERO_MINDIV (INT64_MIN / -1)\n#define HERO_SIGN (1 << 31)\n#define HERO_PAST (1 << 40)\n#define HERO_CAST ((int)1e20)\n#define HERO_OVER (INT_MAX + 1)\n#define HERO_SILENCED (_Pragma(\"clang diagnostic ignored \\\"-Wgnu-folding-constant\\\"\") INT64_MIN / -1)\n#define HERO_AFTER (INT64_MIN / -1)\n#define HERO_FLOAT 1.5\n#define HERO_STR \"abc\"\n#define HERO_CALL hero_f()\n#define HERO_OBJECT hero_k\n#define HERO_COMMA (1, 2)\n#define HERO_COUNTED (__COUNTER__ + 1)\n#define HERO_LINE __LINE__\n"
+    opening = "#include <stdint.h>\n#include <limits.h>\n" + hostile + "static const int hero_k = 5;\nint hero_f(void);\n#define HERO_MINDIV (INT64_MIN / -1)\n#define HERO_SIGN (1 << 31)\n#define HERO_PAST (1 << 40)\n#define HERO_CAST ((int)1e20)\n#define HERO_OVER (INT_MAX + 1)\n#define HERO_SILENCED (_Pragma(\"clang diagnostic ignored \\\"-Wgnu-folding-constant\\\"\") INT64_MIN / -1)\n#define HERO_AFTER (INT64_MIN / -1)\n#define HERO_FLOAT 1.5\n#define HERO_STR \"abc\"\n#define HERO_CALL hero_f()\n#define HERO_OBJECT hero_k\n#define HERO_COMMA (1, 2)\n#define HERO_COUNTED (__COUNTER__ + 1)\n#define HERO_LINE __LINE__\n#define HERO_LL63 (1LL << 63)\n"
     names = [
         "HERO_MINDIV"
         "HERO_SIGN"
@@ -390,17 +404,28 @@ test "a value C leaves undefined, one that is no integer constant expression or 
         "HERO_COMMA"
         "HERO_COUNTED"
         "HERO_LINE"
+        "HERO_LL63"
     ]
     asked: [Asked] @= []
 
     for name in names
         asked @ asked.push(Asked(name: name, unsigned: false))
 
-    got = values(build: dir, words: DIALECT, opening: opening, asked: asked).must()
-    assert got.len() == names.len()
+    # Under the unit's words, and under words carrying `-fwrapv`, which clang
+    # 23's MSVC target adds and under which a shift into the sign bit read a
+    # value on the Windows box (defect 2360): this Mac's clang falls as silent
+    # given it, so the second ask is the one that fails here too without the
+    # reading's own `-fno-wrapv`. Each constant that has a value is named.
+    for words in [DIALECT, strings.with_all(list: DIALECT, more: ["-fwrapv"])]
+        got = values(build: dir, words: words, opening: opening, asked: asked).must()
+        assert got.len() == names.len()
+        valued: [str] @= []
 
-    for one in got
-        assert one.value.is_err()
+        for one in got
+            if !one.value.is_err()
+                valued @ valued.push(one.name)
+
+        assert valued.join(" ") == ""
 
     assert !process.remove_tree(dir).is_err()
 
