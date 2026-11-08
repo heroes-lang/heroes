@@ -29,6 +29,7 @@ use cli/strings
 use cli/shell_split
 use cli/package_answer
 use cli/package_words
+use cli/package_macros
 
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's
@@ -213,9 +214,15 @@ function link_words(package_flags: [str]) -> [str]
 # refusal's note names the list word for word* holds it to them (panel 198's
 # R3: the note is the rule's only statement a reader meets).
 function refused(package: str, said: str, told: str) -> [str]?
+    head = "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told
+
+    # A kept name's `-D` or `-U`, a word the list admits refused for its value,
+    # is told with notes of its own (defect 2348).
+    if package_macros.refused_said(said)
+        return fail(code: "failed", msg: head + package_macros.notes(package))
     return fail(
         code: "failed",
-        msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told + "\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F` and `-isystem`, each with its value joined or as the next word (`-isystem <dir>` handed on as `-I<dir>`), `-pthread`, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted, as are `-Wl,--enable-new-dtags` and `-Wl,--export-dynamic`, which are not sent to the linker because this compiler's own link line says both already: everything else is refused, because a word the list does not name could be one that runs code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+        msg: head + "\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F` and `-isystem`, each with its value joined or as the next word (`-isystem <dir>` handed on as `-I<dir>`), `-pthread`, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted, as are `-Wl,--enable-new-dtags` and `-Wl,--export-dynamic`, which are not sent to the linker because this compiler's own link line says both already: everything else is refused, because a word the list does not name could be one that runs code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
     )
 
 function tail_after(word: str, prefix: str) -> str?
@@ -804,3 +811,21 @@ function has_text(text: str, needle: str) -> bool
         start @ start + 1
 
     return false
+
+test "a package's define of a kept name is refused with notes of its own, joined or apart (defect 2348)"
+    # **Its own reason and a repair that keeps the package's folders** (panel
+    # 237's R3), never the allow-list's notes, which said `-D` is accepted, gave
+    # Go's CVE as the reason and advised `link`, which drops the package's
+    # `-I`; a word the list does not name keeps them.
+    for said in ["-I/inc -Dmain=SDL_main", "-I/inc -D main=SDL_main", "-U__has_feature -I/inc"]
+        match filter_words(package: "p2348", said: said)
+            .ok => assert false
+            .err e =>
+                assert strings.holds(text: e.msg, needle: "is a name the C this compiler writes")
+                assert strings.holds(text: e.msg, needle: "\n  a `-D` or `-U` stands before every header")
+                assert strings.holds(text: e.msg, needle: "pkg-config --variable=pcfiledir p2348")
+                assert !strings.holds(text: e.msg, needle: "CVE-2018-6574") && !strings.holds(text: e.msg, needle: "directly with `link`")
+
+    match filter_words(package: "p", said: "-fplugin=x.so")
+        .ok    => assert false
+        .err e => assert strings.holds(text: e.msg, needle: "CVE-2018-6574")

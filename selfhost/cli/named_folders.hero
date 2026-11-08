@@ -1,0 +1,146 @@
+# The folders a build searches before the platform's, and who named each:
+# the program's own, `--include`, a package by its name, a variable of the
+# environment by its name, or clang's own configuration (design.md §4.19,
+# §4.17; panel 237's R2 and R3). The refusal of a file standing in for a
+# header (`cli/shadowed.hero`) counts every one of them as named, and its
+# note says who named the folder, so its reader knows which of the program,
+# a flag, a package or the environment to change without opening another
+# file. Moved out of `cli/shadowed.hero` when its note learned the four.
+
+use cli/compiling
+use cli/libraries
+use cli/package_reads
+use cli/strings
+use cli/clang_added
+use cli/shadowed_words
+
+# The folders a unit's words search before clang's own, in their order
+# (`compiling.search_words`), read lexically: the runtime's, each
+# `--include`, each `-I` and `-F` of the packages' words, the source's own.
+function searched_first(under: compiling.Compiling) -> [str]
+    out: [str] @= [package_reads.lexical(under.runtime)]
+
+    for one in under.search_include
+        out @ out.push(package_reads.lexical(one))
+
+    out @ strings.with_all(list: out, more: package_reads.answered(libraries.compile_flags(under.package_flags)))
+
+    if under.source_dir.len() > 0
+        out @ out.push(package_reads.lexical(under.source_dir))
+
+    return out
+
+# The folders the program and its packages name: every one of
+# `searched_first` but the runtime's.
+function named_folders(under: compiling.Compiling) -> [str]
+    first = searched_first(under)
+    out: [str] @= []
+    at: i64 @= 1
+
+    while at < first.len()
+        out @ out.push(first[at])
+        at @ at + 1
+
+    return out
+
+# **Who the compiler's own words say named each folder**, in the order a unit
+# searches them, so a folder named twice is told by the first that names it:
+# each `--include`, each package by its name, its `-I` and `-F` read from its
+# own words (`packages`, `settled.Site.package_words`), the program's own.
+function of_compiler(under: compiling.Compiling, packages: {str: [str]}) -> {str: shadowed_words.Origin}
+    out: {str: shadowed_words.Origin} @= {}
+
+    for one in under.search_include
+        out @ taken(
+            out,
+            dir: package_reads.lexical(one),
+            origin: shadowed_words.Origin(kind: shadowed_words.INCLUDE, name: "")
+        )
+
+    for name in sort(keys(packages))
+        for dir in package_reads.answered(libraries.compile_flags(packages[name].default([])))
+            out @ taken(out, dir: dir, origin: shadowed_words.Origin(kind: shadowed_words.PACKAGE, name: name))
+
+    if under.source_dir.len() > 0
+        out @ taken(
+            out,
+            dir: package_reads.lexical(under.source_dir),
+            origin: shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
+        )
+    return out
+
+# `found` with `dir` named by `origin`, where nothing named it before.
+function taken(found: {str: shadowed_words.Origin}, dir: str, origin: shadowed_words.Origin) -> {str: shadowed_words.Origin}
+    if !found[dir].is_err()
+        return found
+    out: {str: shadowed_words.Origin} @= found
+    out[dir] @ origin
+    return out
+
+# **The folders the environment added, each with what named it** (defect
+# 2344): every folder of `both` that is none of clang's own, where a tie goes
+# to the platform as `stand_in.finder` gives it (`CPATH` naming the SDK's own
+# folder builds), and none the compiler searches on its own words
+# (`compilers`, the runtime's and the named), whose origin is theirs; the
+# variable that named it, or clang's own configuration where none did.
+function of_environment(platform: [str], compilers: [str], both: [clang_added.Edits]) -> {str: shadowed_words.Origin}
+    out: {str: shadowed_words.Origin} @= {}
+    taken_dirs: {str: bool} @= {}
+
+    for dir in strings.with_all(list: platform, more: compilers)
+        taken_dirs[dir] @ true
+
+    for edits in both
+        for one in edits.folders
+            dir = package_reads.lexical(one.value)
+
+            if taken_dirs[dir].is_err() && out[dir].is_err()
+                kind: str @= shadowed_words.VARIABLE
+
+                if one.variable == clang_added.OWN
+                    kind @ shadowed_words.CLANG
+                out[dir] @ shadowed_words.Origin(kind: kind, name: one.variable)
+
+    return out
+
+# `searched` without the folders the environment added, so the folders matched
+# to the compiler's own words are the compiler's: a folder prepended before
+# the runtime's (`CCC_OVERRIDE_OPTIONS='^-I<dir>'`) left every named folder
+# among clang's own, where a tie gives it away.
+function unnamed(searched: [str], origins: {str: shadowed_words.Origin}) -> [str]
+    out: [str] @= []
+
+    for dir in searched
+        if origins[dir].is_err()
+            out @ out.push(dir)
+
+    return out
+
+## Tests
+
+# **Each folder is told by the first of the compiler's words that names it**,
+# in the order a unit searches them, and the environment's by its variable,
+# none the compiler's own or the platform's.
+test "a folder is told by the first word that names it, the compiler's before the environment's (panel 237's R3)"
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: ["inc", "./both"],
+        package_flags: ["-Ipkg", "-Iboth"],
+        runtime: "runtime",
+        source_dir: "src"
+    )
+    origins = of_compiler(under, packages: {"zlib": ["-Ipkg", "-Iboth", "-DZ=1"]})
+    assert origins["inc"].must().kind == shadowed_words.INCLUDE && origins["both"].must().kind == shadowed_words.INCLUDE
+    assert origins["pkg"].must().kind == shadowed_words.PACKAGE && origins["pkg"].must().name == "zlib"
+    assert origins["src"].must().kind == shadowed_words.PROGRAM && origins["runtime"].is_err()
+    assert searched_first(under) == ["runtime", "inc", "both", "pkg", "both", "src"]
+    added = clang_added.Edits(
+        folders: [clang_added.Added(flag: "-I", value: "/env", variable: "CPATH"), clang_added.Added(flag: "-I", value: "src", variable: "CPATH"), clang_added.Added(flag: "-I", value: "/usr/local/include", variable: clang_added.OWN)],
+        forced: [],
+        macros: [],
+        platform: ["/sdk"]
+    )
+    env = of_environment(platform: added.platform, compilers: searched_first(under), both: [added])
+    assert sort(keys(env)) == ["/env", "/usr/local/include"]
+    assert env["/env"].must().kind == shadowed_words.VARIABLE && env["/usr/local/include"].must().kind == shadowed_words.CLANG

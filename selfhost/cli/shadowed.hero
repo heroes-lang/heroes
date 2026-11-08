@@ -61,7 +61,6 @@ use module/reading as file_reading
 use cli/toolchain
 use cli/compile
 use cli/compiling
-use cli/libraries
 use cli/process
 use cli/order_trial
 use cli/package_reads
@@ -75,6 +74,7 @@ use cli/clang_added
 use cli/stand_in
 use cli/shadowed_words
 use cli/shadowed_tree
+use cli/named_folders
 use cli/settled
 use emit/externs as emit_externs
 
@@ -98,7 +98,11 @@ function environment_stopped(t: toolchain.Toolchain, s: source.Source, permissiv
 function checked(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, art: compile.Artifact, s: source.Source) -> compiling.Compiling?
     under = settled.compiled_under(t, options, site)
     groups = order_trial.theirs(emit_externs.headers(art.program, s, art.decls))
-    stop = compile.stage(told(t, under: under, groups: groups), s, permissive: options.permissive)
+    stop = compile.stage(
+        told(t, under: under, groups: groups, packages: site.package_words),
+        s,
+        permissive: options.permissive
+    )
 
     if stop.is_err()
         return ok(under)
@@ -109,7 +113,7 @@ function checked(t: toolchain.Toolchain, options: compile.Options, site: settled
 # environment's folders among the named, and per word of the unit's own job
 # the `-###` answer did not hold; none where clang gives no listing or no
 # directories.
-function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str]) -> [diag.Diagnostic]
+function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], packages: {str: [str]}) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     opening = order_trial.opening([], question: "")
     words = compiling.probe_words(under)
@@ -132,22 +136,23 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str])
     asked = clang_added.edits(t.asked_answer)
     job = clang_added.edits(got.must().said)
     out @ words_told(edits: job, before: asked)
-    first = searched_first(under)
-    named: [str] @= named_folders(under)
-    origins = environment_folders(
+    first = named_folders.searched_first(under)
+    named: [str] @= named_folders.named_folders(under)
+    environment = named_folders.of_environment(
         platform: strings.with_all(list: asked.platform, more: job.platform),
         compilers: first,
         both: [asked, job]
     )
 
-    for dir in keys(origins)
+    for dir in keys(environment)
         named @ named.push(dir)
 
     others: [str] @= [first[0]]
     others @ strings.with_all(
         list: others,
-        more: clangs_own(searched: unnamed(got.must().searched, origins: origins), first: first)
+        more: clangs_own(searched: named_folders.unnamed(got.must().searched, origins: environment), first: first)
     )
+    compilers = named_folders.of_compiler(under, packages: packages)
 
     found: [stand_in.Shadow] @= []
 
@@ -164,7 +169,10 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str])
 
     for one in found
         runtime = process.path_exists(t.runtime + "/" + one.named)
-        out @ out.push(shadowed_words.header(one, origin: origins[one.folder].default(""), runtime: runtime))
+        origin = environment[one.folder].default(
+            compilers[one.folder].default(shadowed_words.Origin(kind: "", name: ""))
+        )
+        out @ out.push(shadowed_words.header(one, origin: origin, runtime: runtime))
 
     return out
 
@@ -180,40 +188,6 @@ function words_told(edits: clang_added.Edits, before: clang_added.Edits) -> [dia
     for one in edits.forced
         if !clang_added.holds(before.forced, one)
             out @ out.push(shadowed_words.forced(one))
-
-    return out
-
-# **The folders the environment added, each with the variable that named it**:
-# every folder of `both` that is none of clang's own, where a tie goes to the
-# platform as `shadows` gives it (`CPATH` naming the SDK's own folder builds),
-# and none the compiler searches on its own words (`compilers`, the runtime's
-# and the named), whose origin is theirs.
-function environment_folders(platform: [str], compilers: [str], both: [clang_added.Edits]) -> {str: str}
-    out: {str: str} @= {}
-    taken: {str: bool} @= {}
-
-    for dir in strings.with_all(list: platform, more: compilers)
-        taken[dir] @ true
-
-    for edits in both
-        for one in edits.folders
-            dir = package_reads.lexical(one.value)
-
-            if taken[dir].is_err() && out[dir].is_err()
-                out[dir] @ one.variable
-
-    return out
-
-# `searched` without the folders the environment added, so the folders matched
-# to the compiler's own words are the compiler's: a folder prepended before
-# the runtime's (`CCC_OVERRIDE_OPTIONS='^-I<dir>'`) left every named folder
-# among clang's own, where a tie gives it away.
-function unnamed(searched: [str], origins: {str: str}) -> [str]
-    out: [str] @= []
-
-    for dir in searched
-        if origins[dir].is_err()
-            out @ out.push(dir)
 
     return out
 
@@ -295,35 +269,6 @@ function clangs_own(searched: [str], first: [str]) -> [str]
 
     return out
 
-# The folders a unit's words search before clang's own, in their order
-# (`compiling.search_words`), read lexically: the runtime's, each
-# `--include`, each `-I` and `-F` of the packages' words, the source's own.
-function searched_first(under: compiling.Compiling) -> [str]
-    out: [str] @= [package_reads.lexical(under.runtime)]
-
-    for one in under.search_include
-        out @ out.push(package_reads.lexical(one))
-
-    out @ strings.with_all(list: out, more: package_reads.answered(libraries.compile_flags(under.package_flags)))
-
-    if under.source_dir.len() > 0
-        out @ out.push(package_reads.lexical(under.source_dir))
-
-    return out
-
-# The folders the program and its packages name: every one of
-# `searched_first` but the runtime's.
-function named_folders(under: compiling.Compiling) -> [str]
-    first = searched_first(under)
-    out: [str] @= []
-    at: i64 @= 1
-
-    while at < first.len()
-        out @ out.push(first[at])
-        at @ at + 1
-
-    return out
-
 ## Tests
 
 # **The environment's words are told once, and its folders are the ones that
@@ -339,9 +284,9 @@ test "the environment's words are told once, and its folders are neither the pla
     first = words_told(edits: edits, before: none)
     assert first.len() == 2 && first[0].code == shadowed_words.MACRO_CODE && first[1].code == shadowed_words.CODE
     assert words_told(edits: edits, before: edits).len() == 0
-    origins = environment_folders(platform: edits.platform, compilers: ["runtime", "."], both: [edits, edits])
+    origins = named_folders.of_environment(platform: edits.platform, compilers: ["runtime", "."], both: [edits, edits])
     assert sort(keys(origins)) == ["/env", "/pre"]
-    searched = unnamed(["/pre", "runtime", ".", "/env", "/sdk"], origins: origins)
+    searched = named_folders.unnamed(["/pre", "runtime", ".", "/env", "/sdk"], origins: origins)
     assert searched == ["runtime", ".", "/sdk"]
     assert clangs_own(searched: searched, first: ["runtime", "."]) == ["/sdk"]
 
@@ -360,7 +305,9 @@ test "clang's own directories are the ones it printed after the -I it kept, a na
 # folder holding only the program's own headers is told nothing**: the
 # source's folder holds a `stdint.h` and a `stdbool.h`, an `--include` folder a
 # `math.h` and a package's folder a `stddef.h`, each reading the real one with
-# `#include_next`; each is told with the library's name it took, and the same
+# `#include_next`; each is told with the library's name it took and who named
+# its folder, the program, `--include` or the package by its name (panel 237's
+# R3), and the same
 # program with a folder holding `mine.h` alone is told nothing, and so is it
 # with every directory clang searches on its own named as well. The four are
 # the ones the runtime names on every platform; a file the library's own
@@ -387,13 +334,20 @@ test "each file of a named folder the runtime's opening reads in the library's p
         source_dir: root + "/src"
     )
     named: {str: bool} @= {}
+    whose = {
+        "stdint.h": "this program's own"
+        "stdbool.h": "this program's own"
+        "math.h": "`--include` names"
+        "stddef.h": "the package `p2333` names"
+    }
 
-    for d in told(t, under: under, groups: [])
+    for d in told(t, under: under, groups: [], packages: {"p2333": ["-I" + root + "/pkg"]})
         assert d.code == shadowed_words.CODE
 
         for name in ["stdint.h", "stdbool.h", "math.h", "stddef.h"]
             if strings.holds(text: d.message, needle: "`<" + name + ">`")
                 named[name] @ true
+                assert strings.holds(text: d.notes[0], needle: whose[name].must())
 
     assert sort(keys(named)) == ["math.h", "stdbool.h", "stddef.h", "stdint.h"]
     plain = compiling.Compiling(
@@ -404,7 +358,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         runtime: t.runtime,
         source_dir: root + "/plain"
     )
-    assert told(t, under: plain, groups: []).len() == 0
+    assert told(t, under: plain, groups: [], packages: {}).len() == 0
 
     # And every directory clang searches on its own named by `--include` as
     # well: each is printed among clang's, so nothing is told.
@@ -413,7 +367,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         words: compiling.probe_words(plain),
         text: order_trial.opening([], question: "")
     ).must()
-    clangs = clangs_own(searched: seen.searched, first: searched_first(plain))
+    clangs = clangs_own(searched: seen.searched, first: named_folders.searched_first(plain))
     assert clangs.len() > 0
     everything = compiling.Compiling(
         level: "-O0",
@@ -423,7 +377,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         runtime: t.runtime,
         source_dir: root + "/plain"
     )
-    assert told(t, under: everything, groups: []).len() == 0
+    assert told(t, under: everything, groups: [], packages: {}).len() == 0
     assert !process.remove_tree(root).is_err()
 
 # **Asked of clang with the groups, a library header a group's header reaches
@@ -451,7 +405,7 @@ test "a header a group's header reaches is told by who included it, and a group'
             runtime: t.runtime,
             source_dir: root + pair[0]
         )
-        said = told(t, under: under, groups: ["lib.h"])
+        said = told(t, under: under, groups: ["lib.h"], packages: {})
         assert said.len().to_str() == pair[1]
 
         if said.len() == 1
@@ -466,5 +420,5 @@ test "a header a group's header reaches is told by who included it, and a group'
         runtime: t.runtime,
         source_dir: root + "/evil"
     )
-    assert told(t, under: own, groups: ["stdio.h"]).len() == 0
+    assert told(t, under: own, groups: ["stdio.h"], packages: {}).len() == 0
     assert !process.remove_tree(root).is_err()

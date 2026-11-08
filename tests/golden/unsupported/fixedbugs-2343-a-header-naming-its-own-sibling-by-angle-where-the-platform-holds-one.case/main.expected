@@ -3,5 +3,5 @@ error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2343-a-header-naming
     |
   1 | #~ shadowed_header
     | ^
-  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2343-a-header-naming-its-own-sibling-by-angle-where-the-platform-holds-one.case`: the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers, and every `#include <time.h>` of the build reads what it holds
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2343-a-header-naming-its-own-sibling-by-angle-where-the-platform-holds-one.case`: the folder is this program's own, which every unit searches before the system's, and every `#include <time.h>` of the build reads what it holds
   note: or, where `tests/golden/unsupported/fixedbugs-2343-a-header-naming-its-own-sibling-by-angle-where-the-platform-holds-one.case/money.h` means its own `time.h` beside it, include it as `#include "time.h"`: C reads a quoted name from the including header's own folder first, where `<time.h>` asks the system's places, which hold a `time.h` of their own
