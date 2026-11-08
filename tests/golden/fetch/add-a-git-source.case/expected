@@ -1,0 +1,14 @@
+$ heroes add file://../git/yaml --tag v0.3.1 -C <work>/app
+exit 0
+stdout:
+added yaml v0.3.1
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+[dependencies.yaml]
+git = "file://../git/yaml"
+tag = "v0.3.1"
+commit = "e45e574b74a1bb7f8a2ba6185f3785fd62409e37"
+sum = "sha256-bfddac11fb7fb73050fbf32002d8bd27031fb4441d191e019eeef29e34957207"
+heroes.packages:
+yaml@v0.3.1-0ee71d7abaa6570f

@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fetch-places-and-keeps.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-c5e937500d7206bbee6d9fae216773d604f937abe1bc776b704a6fa48fceb463"

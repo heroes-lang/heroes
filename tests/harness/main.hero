@@ -115,6 +115,7 @@ use suite_wholes
 use suite_seed
 use suite_determinism
 use suite_emission
+use suite_fetch
 use suite_fixes
 use suite_generated
 use suite_golden
@@ -559,6 +560,20 @@ function main()
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
+    # The package manager's interface (panel 235's R19, task 2312): what
+    # `heroes add` and `heroes fetch` print, exit with and write, each case a
+    # folder of `tests/golden/fetch/`, an index read from a folder and a git
+    # source made on the fly, so no case reaches the network.
+    if only == "" || only == "fetch"
+        got = suite_fetch.run_all(scratch: scratch, compiler: compiler, only: pick)
+
+        if got.is_err()
+            print("harness: the fetch suite could not run" + why(got))
+            exit(2)
+        print("  " + shown(name: "fetch", pick: pick) + ": " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
     # The formatter's probe: every comment placement the skeptic seats made
     # by hand, formatted and judged twice in one process (panel 179).
     if only == "" || only == "probe"
@@ -658,7 +673,7 @@ function main()
 # asked by the same hook about one issue file or one file the code cites a
 # defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records", "generated", "fetch"]
         if name == suite
             return true
 

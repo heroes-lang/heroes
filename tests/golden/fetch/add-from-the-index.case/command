@@ -1,0 +1,1 @@
+add json --index file://../../../../../tests/golden/fetch/add-from-the-index.case/idx -C <work>/app

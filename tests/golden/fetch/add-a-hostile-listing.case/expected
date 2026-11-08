@@ -1,0 +1,9 @@
+$ heroes add evil --index file://../../../../../tests/golden/fetch/add-a-hostile-listing.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[name_refused]: `../../escaped.txt` holds `..`, which names a place above the package
+heroes.toml:
+(none)
+heroes.packages:
+(none)

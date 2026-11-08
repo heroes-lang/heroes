@@ -215,10 +215,15 @@ function root_of(tools: Tools, folder: str, scratch: str) -> address.Root?
     )
 
     # A local failure is `absent`: git ran and found no repository here. A
-    # git that could not be started is the machine's, and stays its own.
+    # git that could not be started leaves no root either, and is said so: a
+    # program reading its index over `https://` needs curl alone (R10), and
+    # only a `file://` source, which the root admits, is refused for it.
     if asked.is_err()
         if code_of(asked) == "absent"
             return ok(address.Root(top: "", here: "", why: reason(asked)))
+
+        if code_of(asked) == "no_git"
+            return ok(address.Root(top: "", here: "", why: address.NO_GIT))
         return fail(code: code_of(asked), msg: reason(asked))
     lines = parts(read_back.words(out).default(""))
 
@@ -376,6 +381,20 @@ test "a git or a curl that cannot be started is told by name, and the exit is th
             assert told.exit_of(e.code) == 2
 
     file = address.judged("file://../src/a.txt", root: root).must()
+
+    # With no git, the root is unknown and said so: a `file://` source is
+    # refused as the tool's, and an `https://` one, which needs curl alone,
+    # is judged as ever.
+    unknown = root_of(missing, folder: SCRATCH + "/app", scratch: SCRATCH).must()
+    assert unknown.top == "" && unknown.why == address.NO_GIT
+
+    match address.judged("file://../src", root: unknown)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "no_git"
+            assert told.exit_of(e.code) == 2
+
+    assert address.judged("https://git.example.org/ana/yaml", root: unknown).must().url == "https://git.example.org/ana/yaml"
 
     match got(missing, at: file, into: SCRATCH + "/got.txt", cap: 1024, scratch: SCRATCH)
         .ok _ => assert false

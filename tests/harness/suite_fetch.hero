@@ -1,0 +1,315 @@
+# The interface `heroes add` and `heroes fetch` keep from the package
+# manager's first version to its second (panel 235's R19, ratified
+# 2026-11-07; task 2312): what each verb prints and exits with, the catalogue
+# each writes byte for byte, its error codes and texts, the placement folder,
+# and the sum of a fixed tree holding a file that is not text. The second
+# version, over the core packages, replaces the transport alone and passes
+# these unchanged.
+#
+# **One folder, a case a folder**: `tests/golden/fetch/<name>.case/`, as
+# pm-use's step 6 made a `check` case a folder (`cases.hero`). A case holds:
+#
+#     command        one `heroes` invocation a line, `<work>` standing for the
+#                    case's scratch folder, whose `app/` is the program's
+#     before.toml    the program's catalogue before the first command
+#     local/         a folder copied beside the program, for `--path`
+#     git/<name>/    a git source's files, made a repository here and tagged
+#                    by the lines of `git/<name>.tags`
+#     idx/           a static index, read where it stands and never copied,
+#                    so its file that is not text needs no copy
+#     expected       the transcript, byte for byte
+#
+# **No case reaches the network**: an index is a folder of this repository,
+# read over `file://`, and a git source a repository made on the fly; the
+# program's folder is under `build/`, inside this repository, which is what
+# admits a `file://` source (R9's C4). So the suite runs in a checkout.
+#
+# **The transcript**: each command as `$ heroes <words>`, `exit <code>`,
+# `stdout:` and its lines, `stderr:` and its lines; then `heroes.toml:` and
+# the catalogue the commands left, and `heroes.packages:` and the folders
+# placed. The case's scratch folder is written `<work>` and the repository's
+# root `<root>`, so one transcript holds on every machine. **A commit is the
+# same on every machine**: every source is made with one name, one address
+# and one date, through the environment every git this process starts
+# inherits, and with `core.autocrlf=false`.
+
+use floors
+use report
+use shell
+use strings
+
+# `runtime/hero_compiler.h`: this process's environment, which every git it
+# starts inherits.
+extern "hero_compiler.h"
+    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
+
+constant ROOT: str
+    "tests/golden/fetch"
+
+# Ten cases on 2026-11-08, the day the suite landed (M-package-manager step
+# 13).
+constant LEAST: i64
+    10
+
+# The identity and the date every git source of a case is committed with.
+constant IDENTITY: [str]
+    [
+        "GIT_AUTHOR_NAME=heroes"
+        "GIT_AUTHOR_EMAIL=heroes@example.invalid"
+        "GIT_AUTHOR_DATE=2026-11-08T00:00:00Z"
+        "GIT_COMMITTER_NAME=heroes"
+        "GIT_COMMITTER_EMAIL=heroes@example.invalid"
+        "GIT_COMMITTER_DATE=2026-11-08T00:00:00Z"
+    ]
+
+# `only` narrows the suite to the cases whose name holds it, its floor then
+# left to the whole suite.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    r: report.Report @= report.empty()
+    found: [str] @= []
+
+    for dir in shell.list_directories(scratch: scratch, dir: ROOT)?
+        if strings.ends_with(text: dir, suffix: ".case") && (only == "" || strings.contains(text: last_part(dir), needle: only))
+            found @ found.push(dir)
+
+    if only == ""
+        floors.check(@r, label: "fetch", found: found.len(), floor: LEAST, what: "cases in " + ROOT)
+
+    if found.len() == 0
+        return ok(r)
+
+    for pair in IDENTITY
+        cut = strings.index_of(text: pair, needle: "=").must()
+        _ = hero_env_put(
+            name: pair.slice(from: 0, to: cut).cstr(),
+            value: pair.slice(from: cut + 1, to: pair.len()).cstr()
+        )
+
+    asked = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--show-toplevel"])?
+
+    if asked.code != 0
+        return fail(
+            code: "no_repository",
+            msg: "the suite runs in a checkout, since a case's `file://` sources are read inside the program's own repository, and git answers no root here: " + asked.err
+        )
+    root = strings.trimmed(asked.out)
+
+    for dir in found
+        one_case(@r, scratch: scratch, compiler: compiler, dir: dir, root: root)
+
+    return ok(r)
+
+# One case, its transcript held to its `expected`.
+function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root: str)
+    name = last_part(dir)
+    work = scratch + "/fetch/" + name.slice(from: 0, to: name.len() - 5)
+    label = "fetch/" + name
+    made = made_work(scratch: scratch, dir: dir, work: work)
+
+    if made.is_err()
+        report.keep_failure(@r, label: label, detail: "  the case's folders could not be made: " + why(made))
+        return
+    got = transcript(scratch: scratch, compiler: compiler, dir: dir, work: work)
+
+    if got.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + why_text(got))
+        return
+    actual = replaced(text: got.must(), work: work, root: root)
+    expected = read_file(dir + "/expected")
+
+    if expected.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + dir + "/expected cannot be read, and a case owes its transcript; it wrote:\n" + actual
+        )
+    else if expected.must() != actual
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the transcript is not `expected`, first apart at line " + apart(one: expected.must(), two: actual).to_str() + "; it wrote:\n" + actual
+        )
+    else
+        report.keep_pass(@r)
+    _ = shell.remove_tree(work).is_err()
+
+# The case's scratch folder: the program's folder, its catalogue, a `local/`
+# beside it, and each git source made a repository and tagged.
+function made_work(scratch: str, dir: str, work: str) -> ()?
+    shell.remove_tree(work)?
+    shell.mkdir_all(work + "/app")?
+    before = read_file(dir + "/before.toml")
+
+    if !before.is_err()
+        write_file(path: work + "/app/heroes.toml", text: before.must())?
+
+    if shell.is_directory(dir + "/local")
+        copied(from: dir + "/local", to: work + "/local")?
+
+    if shell.is_directory(dir + "/git")
+        for source in shell.list_directories(scratch: scratch, dir: dir + "/git")?
+            at = work + "/git/" + last_part(source)
+            copied(from: source, to: at)?
+            tags = read_file(source + ".tags").default("")
+            committed(scratch: scratch, at: at, tags: lines_of(tags))?
+
+    return ok()
+
+# Every file under `from` written under `to`, each a text.
+function copied(from: str, to: str) -> ()?
+    nothing: [str] = []
+
+    for path in shell.walk_into(from, skip: nothing)?
+        target = to + path.slice(from: from.len(), to: path.len())
+        shell.mkdir_all(target.slice(from: 0, to: last_slash(target)))?
+        write_file(path: target, text: read_file(path)?)?
+
+    return ok()
+
+# The folder `at` made a repository, every file committed once and `tags`
+# set on the commit.
+function committed(scratch: str, at: str, tags: [str]) -> ()?
+    git(scratch: scratch, at: at, words: ["init", "-q"])?
+    files: [str] @= []
+
+    for path in shell.walk_into(at, skip: [".git"])?
+        files @ files.push(path.slice(from: at.len() + 1, to: path.len()))
+
+    git(scratch: scratch, at: at, words: both(first: ["add", "--"], second: files))?
+    git(scratch: scratch, at: at, words: both(first: ["commit", "-q", "-m", "the source", "--"], second: files))?
+
+    for tag in tags
+        git(scratch: scratch, at: at, words: ["tag", "--", tag])?
+
+    return ok()
+
+function git(scratch: str, at: str, words: [str]) -> ()?
+    settings = [
+        "git"
+        "-C"
+        at
+        "-c"
+        "core.autocrlf=false"
+        "-c"
+        "commit.gpgsign=false"
+        "-c"
+        "tag.gpgsign=false"
+        "-c"
+        "core.hooksPath=" + at + "/.git/no-hooks"
+        "-c"
+        "init.defaultBranch=main"
+    ]
+    ran = shell.run(scratch: scratch, program: "git", words: both(first: settings, second: words))?
+
+    if ran.code != 0
+        return fail(
+            code: "git",
+            msg: "`git " + words.join(" ") + "` in " + at + " exited " + ran.code.to_str() + ": " + ran.err
+        )
+    return ok()
+
+# What the case's commands print, and what they leave.
+function transcript(scratch: str, compiler: str, dir: str, work: str) -> str?
+    out: [str] @= []
+
+    for line in lines_of(read_file(dir + "/command")?)
+        words: [str] @= [compiler]
+
+        for word in strings.split_on(text: line, byte: 32)
+            words @ words.push(swapped(text: word, old: "<work>", new: work))
+
+        ran = shell.attempted(scratch: scratch, program: compiler, words: words)?
+        out @ out.push("$ heroes " + line + "\n")
+        out @ out.push("exit " + ran.code.to_str() + "\n")
+        out @ out.push("stdout:\n")
+        out @ out.push(ran.out)
+        out @ out.push("stderr:\n")
+        out @ out.push(ran.err)
+
+    out @ out.push("heroes.toml:\n")
+    out @ out.push(read_file(work + "/app/heroes.toml").default("(none)\n"))
+    out @ out.push("heroes.packages:\n")
+
+    if shell.is_directory(work + "/app/heroes.packages")
+        for placed in shell.list_directories(scratch: scratch, dir: work + "/app/heroes.packages")?
+            out @ out.push(last_part(placed) + "\n")
+    else
+        out @ out.push("(none)\n")
+    return ok(out.join(""))
+
+# `text` with the case's scratch folder written `<work>` and the repository's
+# root `<root>`, the absolute form of the folder first.
+function replaced(text: str, work: str, root: str) -> str
+    once = swapped(text: text, old: root + "/" + work, new: "<work>")
+    twice = swapped(text: once, old: work, new: "<work>")
+    return swapped(text: twice, old: root, new: "<root>")
+
+# `text` with every `old` written `new`.
+function swapped(text: str, old: str, new: str) -> str
+    if old.len() == 0
+        return text
+    return strings.split_text(text: text, separator: old).join(new)
+
+# One list of words after another.
+function both(first: [str], second: [str]) -> [str]
+    out: [str] @= first
+
+    for one in second
+        out @ out.push(one)
+
+    return out
+
+# The first line, counted from 1, where two texts differ.
+function apart(one: str, two: str) -> i64
+    a = lines_of(one)
+    b = lines_of(two)
+    at: i64 @= 0
+
+    while at < a.len() && at < b.len() && a[at] == b[at]
+        at @ at + 1
+
+    return at + 1
+
+# A text's lines, each without its line end.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: from, to: at))
+            from @ at + 1
+
+    if from < text.len()
+        out @ out.push(text.slice(from: from, to: text.len()))
+    return out
+
+function last_part(path: str) -> str
+    return path.slice(from: last_slash(path) + 1, to: path.len())
+
+function last_slash(path: str) -> i64
+    at: i64 @= path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return at
+
+function why(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+function why_text(failed: str?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+test "a transcript holds no machine's paths, and two texts are told apart at their first differing line"
+    assert replaced(text: "at /r/build/h-1/fetch/x/app and build/h-1/fetch/x/app and /r/tests", work: "build/h-1/fetch/x", root: "/r") == "at <work>/app and <work>/app and <root>/tests"
+    assert apart(one: "a\nb\nc\n", two: "a\nb\nd\n") == 3
+    assert apart(one: "a\n", two: "a\nb\n") == 2
+    assert lines_of("one\ntwo") == ["one", "two"]
+    assert last_part("tests/golden/fetch/add.case") == "add.case"

@@ -54,6 +54,13 @@ record Root
 constant REFUSED: str
     "source_refused"
 
+# What a root that could not be asked says, `git` not being on the machine:
+# an index over `https://` needs `curl` alone (R10), so the verbs go on
+# without a root, and a `file://` source, which only the root admits, is
+# refused as the tool's, exit 2.
+constant NO_GIT: str
+    "git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH"
+
 # `written` judged for a program standing at `root`.
 function judged(written: str, root: Root) -> Address?
     if written.len() == 0
@@ -122,6 +129,9 @@ function on_machine(written: str, root: Root) -> Address?
 
     if path.is_err()
         return refused("`" + written + "` " + reason(path))
+
+    if root.top.len() == 0 && root.why == NO_GIT
+        return fail(code: "no_git", msg: "`" + written + "` cannot be read: " + NO_GIT)
 
     if root.top.len() == 0
         return refused(
