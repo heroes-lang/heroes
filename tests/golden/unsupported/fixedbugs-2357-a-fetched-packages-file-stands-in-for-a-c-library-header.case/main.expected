@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2357-a-fetched-packages-file-stands-in-for-a-c-library-header.case/heroes.packages/pk@1.0.0-084ef0e25d23ede7/stdint.h` stands in for the C library's `<stdint.h>`, which the C this compiler writes reads: a folder this build names is searched before the system's, so its file is read in the library's place
+  at tests/golden/unsupported/fixedbugs-2357-a-fetched-packages-file-stands-in-for-a-c-library-header.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2357-a-fetched-packages-file-stands-in-for-a-c-library-header.case/heroes.packages/pk@1.0.0-084ef0e25d23ede7`: the package `pk` is placed in that folder, which its own units and every unit reading one of its group records search before the system's, and every `#include <stdint.h>` of the build reads what it holds

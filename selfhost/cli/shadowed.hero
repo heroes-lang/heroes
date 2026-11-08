@@ -99,7 +99,7 @@ function checked(t: toolchain.Toolchain, options: compile.Options, site: settled
     under = settled.compiled_under(t, options, site)
     groups = order_trial.theirs(emit_externs.headers(art.program, s, art.decls))
     stop = compile.stage(
-        told(t, under: under, groups: groups, packages: site.package_words),
+        told(t, under: under, groups: groups, packages: site.package_words, places: {}),
         s,
         permissive: options.permissive
     )
@@ -112,8 +112,10 @@ function checked(t: toolchain.Toolchain, options: compile.Options, site: settled
 # One diagnostic per file of a named folder the runtime's opening reads, the
 # environment's folders among the named, and per word of the unit's own job
 # the `-###` answer did not hold; none where clang gives no listing or no
-# directories.
-function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], packages: {str: [str]}) -> [diag.Diagnostic]
+# directories. `places` names the folders of the catalogue's packages that
+# `under` searches (`cli/package_stand_in.hero`, defect 2357), each told as
+# its package's, before any other word that names it.
+function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], packages: {str: [str]}, places: {str: shadowed_words.Origin}) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     opening = order_trial.opening([], question: "")
     words = compiling.probe_words(under)
@@ -170,7 +172,7 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str],
     for one in found
         runtime = process.path_exists(t.runtime + "/" + one.named)
         origin = environment[one.folder].default(
-            compilers[one.folder].default(shadowed_words.Origin(kind: "", name: ""))
+            places[one.folder].default(compilers[one.folder].default(shadowed_words.Origin(kind: "", name: "")))
         )
         out @ out.push(shadowed_words.header(one, origin: origin, runtime: runtime))
 
@@ -341,7 +343,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         "stddef.h": "the package `p2333` names"
     }
 
-    for d in told(t, under: under, groups: [], packages: {"p2333": ["-I" + root + "/pkg"]})
+    for d in told(t, under: under, groups: [], packages: {"p2333": ["-I" + root + "/pkg"]}, places: {})
         assert d.code == shadowed_words.CODE
 
         for name in ["stdint.h", "stdbool.h", "math.h", "stddef.h"]
@@ -358,7 +360,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         runtime: t.runtime,
         source_dir: root + "/plain"
     )
-    assert told(t, under: plain, groups: [], packages: {}).len() == 0
+    assert told(t, under: plain, groups: [], packages: {}, places: {}).len() == 0
 
     # And every directory clang searches on its own named by `--include` as
     # well: each is printed among clang's, so nothing is told.
@@ -377,7 +379,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         runtime: t.runtime,
         source_dir: root + "/plain"
     )
-    assert told(t, under: everything, groups: [], packages: {}).len() == 0
+    assert told(t, under: everything, groups: [], packages: {}, places: {}).len() == 0
     assert !process.remove_tree(root).is_err()
 
 # **Asked of clang with the groups, a library header a group's header reaches
@@ -405,7 +407,7 @@ test "a header a group's header reaches is told by who included it, and a group'
             runtime: t.runtime,
             source_dir: root + pair[0]
         )
-        said = told(t, under: under, groups: ["lib.h"], packages: {})
+        said = told(t, under: under, groups: ["lib.h"], packages: {}, places: {})
         assert said.len().to_str() == pair[1]
 
         if said.len() == 1
@@ -420,5 +422,5 @@ test "a header a group's header reaches is told by who included it, and a group'
         runtime: t.runtime,
         source_dir: root + "/evil"
     )
-    assert told(t, under: own, groups: ["stdio.h"], packages: {}).len() == 0
+    assert told(t, under: own, groups: ["stdio.h"], packages: {}, places: {}).len() == 0
     assert !process.remove_tree(root).is_err()

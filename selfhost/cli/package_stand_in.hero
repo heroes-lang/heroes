@@ -1,0 +1,176 @@
+# What a package's units, and a unit reaching a package's group record, may
+# read, judged before any probe or unit of the build compiles (design.md
+# §4.19, §1.12; panel 235's R9, its C2; panel 237's R2 and R3; defect 2357,
+# 2026-11-08, the coordinator's ruling).
+#
+# **Three refusals, in order, each before anything compiles.** First C2's,
+# a fetched package's headers reading outside its places
+# (`probing.outside`). Then, for every search the program's own does not
+# make, a fetched package's unit, a `path` entry's and one reaching another
+# package's record (`package_units.unit_under`), panel 237's tree route under
+# that search's own words (`shadowed.told`): a package's folder is searched
+# before the system's, so a file in it named like a header of the C library
+# or the runtime stands in for it, and the note names the package as who
+# named the folder. Measured on this Mac before the repair: a package
+# shipping a `stdint.h` that redefines `INT64_MAX` as 7 had its own unit read
+# it, and `PK_TOP` bound as `INT64_MAX` printed 7 at exit 0. Last, a file of
+# one of a unit's own folders, the program's or one `--include` names, read
+# for a header another package's group names (`stood_in`): that package's
+# folder is searched after them, so a `pt.h` beside `main.hero` would be read
+# where `pt`'s own unit reads its own, and one record laid out two ways.
+#
+# The program's own search is judged where the build settles it
+# (`shadowed.checked`), once; a refusal told by two searches is told once.
+
+use ast
+use source
+use diag
+use cli/toolchain
+use cli/compile
+use cli/settled
+use cli/compiling
+use cli/probing
+use cli/package_units
+use cli/package_reads
+use cli/shadowed
+use cli/shadowed_words
+use cli/named_folders
+use cli/stand_in
+use cli/order_trial
+use cli/deps
+
+# The build stopped, its refusals told, where a package's search reads where
+# it may not (`told`); ok where nothing does.
+function stopped(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], site: settled.Site) -> ()?
+    found = told(t, probings, s: s, decls: decls, packages: site.package_words, program: site.source_dir)
+
+    if found.len() == 0
+        return ok()
+    _ = compile.stage(found, s, permissive: false).is_err()
+    return fail(code: "diagnostics", msg: "a package's search reads where it may not")
+
+# Every refusal of the build's packages' searches: C2's alone where it
+# refuses, since a header reading outside its places is not listed again.
+# `program` is the program's own folder, told as the program's where a unit
+# names it among its `-I` words (`package_units.searching_after`).
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], packages: {str: [str]}, program: str) -> [diag.Diagnostic]
+    outside = probing.outside(probings, s: s, decls: decls)
+
+    if outside.len() > 0
+        return outside
+    out: [diag.Diagnostic] @= []
+    memo: {str: str} @= {}
+
+    for one in probings
+        if one.own.folder.len() > 0 || one.reached.len() > 0
+            places = origins(one, program: program)
+            groups = order_trial.theirs(one.headers)
+
+            for d in shadowed.told(t, under: one.under, groups: groups, packages: packages, places: places)
+                out @ once(out, d: d)
+
+            for d in stood_in(t, one: one, places: places, packages: packages, @memo)
+                out @ once(out, d: d)
+
+    return out
+
+# The folders of the catalogue's packages `one`'s units search, each by its
+# package's alias: its own package's, and each whose record it reaches; and
+# the program's own folder, which its words may name among their `-I`.
+function origins(one: probing.Probing, program: str) -> {str: shadowed_words.Origin}
+    out: {str: shadowed_words.Origin} @= {}
+
+    if program.len() > 0
+        out[package_reads.lexical(program)] @ shadowed_words.Origin(kind: shadowed_words.PROGRAM, name: "")
+
+    if one.own.folder.len() > 0
+        out[package_reads.lexical(one.own.folder)] @ origin_of(one.own)
+
+    for reach in one.reached
+        out[package_reads.lexical(reach.place.folder)] @ origin_of(reach.place)
+
+    return out
+
+function origin_of(place: package_units.Place) -> shadowed_words.Origin
+    if place.fetched
+        return shadowed_words.Origin(kind: shadowed_words.FETCHED, name: place.alias)
+    return shadowed_words.Origin(kind: shadowed_words.PATH, name: place.alias)
+
+# **Each header `one` reaches through another package's group record, read
+# from another folder than that package's** (defect 2357): its `-M` listing
+# holds no file of that name in the package's folder, and does hold one of
+# that name in a folder its words name before it, which is told as standing
+# in. A listing clang could not make is no verdict: the compile says what it
+# says.
+function stood_in(t: toolchain.Toolchain, one: probing.Probing, places: {str: shadowed_words.Origin}, packages: {str: [str]}, @memo: {str: str}) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    if one.reached.len() == 0
+        return out
+    listing = compiling.reads(t.build, words: compiling.probe_words(one.under), headers: one.headers, @memo)
+
+    if listing.is_err()
+        return out
+    paths = rows(listing.must())
+    named = named_folders.named_folders(one.under)
+    others = [package_reads.lexical(one.under.runtime)]
+    compilers = named_folders.of_compiler(one.under, packages: packages)
+
+    for reach in one.reached
+        header = package_reads.lexical(reach.header)
+        own = package_reads.lexical(reach.place.folder + "/" + reach.header)
+
+        if !listed(paths, path: own)
+            for path in paths
+                folder = stand_in.finder(path: path, named: named, others: others)
+
+                if folder.len() > 0 && folder != package_reads.lexical(reach.place.folder) && stand_in.relative(path: path, dir: folder) == header
+                    origin = places[folder].default(
+                        compilers[folder].default(shadowed_words.Origin(kind: "", name: ""))
+                    )
+                    out @ out.push(
+                        shadowed_words.package_header(path: path, folder: folder, wanted: reach.header, package: reach.place.alias, origin: origin)
+                    )
+
+    return out
+
+# The paths of a listing's rows, `<digest> <path>` after the digest of them
+# all, each read lexically.
+function rows(listing: str) -> [str]
+    out: [str] @= []
+    first: bool @= true
+
+    for row in deps.lines(listing)
+        if first
+            first @ false
+            continue
+        space: i64 @= 0
+
+        while space < row.len() && row[space] != ' '
+            space @ space + 1
+
+        if space < row.len()
+            out @ out.push(package_reads.lexical(row.slice(from: space + 1, to: row.len())))
+
+    return out
+
+function listed(paths: [str], path: str) -> bool
+    for one in paths
+        if one == path
+            return true
+
+    return false
+
+# `found` with `d`, unless a diagnostic of its words is in it already.
+function once(found: [diag.Diagnostic], d: diag.Diagnostic) -> [diag.Diagnostic]
+    for other in found
+        if other.code == d.code && other.message == d.message
+            return found
+
+    return found.push(d)
+
+## Tests
+
+test "a listing's rows are read for their paths, each lexically, the digest line left out"
+    assert rows("0123\naaaa ./pt.h\nbbbb heroes.packages/pt@1.0.0-k/../pt@1.0.0-k/pt.h\n") == ["pt.h", "heroes.packages/pt@1.0.0-k/pt.h"]
+    assert listed(["a.h", "b/c.h"], path: "b/c.h") && !listed(["a.h"], path: "c.h")

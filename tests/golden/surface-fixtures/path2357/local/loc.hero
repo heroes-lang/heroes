@@ -1,0 +1,11 @@
+# The package `loc`, a folder of the author's own that the program's
+# catalogue names by `path`: a module binding the header beside it and
+# holding the fetched package `pt`'s record by value (defect 2357).
+use <pt>/pt
+
+extern "loc.h"
+    constant LOC_V: i64
+
+function v() -> i64
+    p: pt.Point = pt.make(x: 3, y: 4)
+    return LOC_V + p.x + p.y

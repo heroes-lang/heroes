@@ -1,0 +1,8 @@
+# The package `a` of the case two folders up: it holds the package `pt`'s
+# record by value, so its unit reads `pt.h` from `pt`'s folder, after its
+# own (defect 2357).
+use <pt>/pt
+
+function sum() -> i64
+    p: pt.Point = pt.make(x: 1, y: 2)
+    return p.x + p.y

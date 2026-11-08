@@ -503,13 +503,14 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
 # since the compiler's own warning words are its build's to hold and a
 # second copy of them here would drift; a group's `package` is asked of
 # `pkg-config`, as the compiler asks it, and the root of each package a fetch
-# placed beside the program is searched after the program's folder, as the
-# compiler asks the one file (defect 2351, `package_units.with_roots`), so a
-# fetched package's own header is never told as one this machine lacks. The link and the two routes are
-# the generator's oracle 4, the task's other half. Its captures and listings
-# go under the run's own `scratch`, which the harness removes as it ends:
-# until defect 2305 they went under the net's own tests' directory, one
-# left behind by every run of this suite.
+# placed beside the program, and each folder a `path` entry of its
+# catalogue names, is searched after the program's folder, as the compiler
+# asks the one file (defects 2351 and 2357, `package_units.with_roots`), so a
+# package's own header is never told as one this machine lacks. The link and
+# the two routes are the generator's oracle 4, the task's other half. Its
+# captures and listings go under the run's own `scratch`, which the harness
+# removes as it ends: until defect 2305 they went under the net's own tests'
+# directory, one left behind by every run of this suite.
 function compiles(@r: report.Report, scratch: str, one: Program)
     words: [str] @= [
         "clang"
@@ -579,14 +580,34 @@ function directory_of(path: str) -> str
     return "."
 
 # Each tree a fetch placed beside the program, `heroes.packages/<key>/`, in
-# the order its folder lists them; none where no fetch placed one.
+# the order its folder lists them, then each folder a `path` entry of the
+# program's catalogue names, from the program's folder (defect 2357); none
+# where the program has neither.
 function placed_roots(scratch: str, source: str) -> [str]
     none: [str] = []
-    folder = directory_of(source) + "/" + placed_trees.FOLDER
+    dir = directory_of(source)
+    folder = dir + "/" + placed_trees.FOLDER
+    out: [str] @= []
 
-    if !shell.is_directory(folder)
-        return none
-    return shell.list_directories(scratch: scratch, dir: folder).default(none)
+    if shell.is_directory(folder)
+        out @ shell.list_directories(scratch: scratch, dir: folder).default(none)
+    catalogue = read_file(dir + "/heroes.toml")
+
+    if catalogue.is_err()
+        return out
+
+    for row in strings.lines(catalogue.must())
+        line = strings.trimmed(row)
+
+        if strings.starts_with(text: line, prefix: "path = \"")
+            named = strings.split_text(text: line, separator: "\"")[1]
+
+            if strings.starts_with(text: named, prefix: "/")
+                out @ out.push(named)
+            else
+                out @ out.push(dir + "/" + named)
+
+    return out
 
 # The `pkg-config --cflags` of every `package` a module beside the program
 # names, its own directory being where its modules are; a package
@@ -1282,18 +1303,21 @@ test "a narrowed sweep compares and blesses only the programs whose label holds 
 
 # The blessed one file of a program that fetched a package includes the
 # package's own header, which its build finds at the package's root: the
-# compile here searches each placed tree, and a program that placed none
-# searches none (defect 2351).
-test "fixedbugs: the compile of a blessed one file searches each tree a fetch placed beside its program (defect 2351)"
+# compile here searches each placed tree, and each folder a `path` entry
+# names (defect 2357), and a program that has neither searches none (defect
+# 2351).
+test "fixedbugs: the compile of a blessed one file searches each tree a fetch placed beside its program and each `path` folder (defects 2351 and 2357)"
     scratch = shell.own_scratch()
     root = scratch + "/emission-placed/"
     files = [
         "app/main.hero"
         "app/heroes.packages/a@1.0.0-k/a.hero"
         "app/heroes.packages/b@2.0.0-k/b.h"
+        "app/local/loc.h"
         "lone/main.hero"
     ]
     assert !planted(root: root, files: files).is_err()
-    assert placed_roots(scratch: scratch, source: root + "app/main.hero") == [root + "app/heroes.packages/a@1.0.0-k", root + "app/heroes.packages/b@2.0.0-k"]
+    assert !write_file(path: root + "app/heroes.toml", text: "[dependencies.loc]\npath = \"local\"\n").is_err()
+    assert placed_roots(scratch: scratch, source: root + "app/main.hero") == [root + "app/heroes.packages/a@1.0.0-k", root + "app/heroes.packages/b@2.0.0-k", root + "app/local"]
     assert placed_roots(scratch: scratch, source: root + "lone/main.hero").len() == 0
     assert !shell.remove_tree(scratch).is_err()

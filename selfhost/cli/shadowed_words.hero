@@ -26,7 +26,10 @@ constant MACRO_CODE: str
 # **Who named a folder** (panel 237's R3): the program, its own folder;
 # `--include`; a package, by its name; a variable of the environment, by its
 # name; clang's own configuration, Apple clang's `-I/usr/local/include` or a
-# configuration file; "" where none is known, which no build reaches.
+# configuration file; a package of the catalogue, fetched or a `path`
+# entry's, by its alias, whose folder its own units and every unit reading
+# its group records search (defect 2357); "" where none is known, which no
+# build reaches.
 record Origin
     kind: str
     name: str
@@ -45,6 +48,12 @@ constant VARIABLE: str
 
 constant CLANG: str
     "clang"
+
+constant FETCHED: str
+    "fetched"
+
+constant PATH: str
+    "path"
 
 # The refusal, at the program's first byte, since no line of it reads the
 # file: the file named, the folder, and the library's header it stands in for;
@@ -101,6 +110,12 @@ function named_by(origin: Origin, folder: str) -> str
     if origin.kind == CLANG
         return "clang's own configuration searches that folder in every compile"
 
+    if origin.kind == FETCHED
+        return "the package `" + origin.name + "` is placed in that folder, which its own units and every unit reading one of its group records search before the system's"
+
+    if origin.kind == PATH
+        return "the `path` entry `" + origin.name + "` of the catalogue names that folder, which its own units and every unit reading one of its group records search before the system's"
+
     if origin.kind == VARIABLE
         told: str @= "`" + origin.name + "` names that folder for every clang this build runs"
 
@@ -108,6 +123,23 @@ function named_by(origin: Origin, folder: str) -> str
             told @ told + ", an empty element of it naming `.`, the folder clang runs in"
         return told
     return "the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers"
+
+# **A file read for a header a package's group names, from a folder searched
+# before that package's own** (defect 2357): a unit reading another
+# package's group record searches the package's folder after its own route,
+# so a file of the same name in one of its own folders is read in the
+# package's place, and C's record is laid out from another header than the
+# package's own unit reads.
+function package_header(path: str, folder: str, wanted: str, package: str, origin: Origin) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: "`" + clang_place.slashed(path) + "` stands in for the package `" + package + "`'s `" + wanted + "`, which a unit reads for that package's group record: a folder this build names is searched before the package's own folder, so its file is read in the package's place",
+        span: token.Span(start: 0, end: 0)
+    )
+    d.notes @ d.notes.push(
+        "rename the file, or move it out of `" + folder + "`: " + named_by(origin, folder: folder) + ", and every unit reading the package's record reads what it holds"
+    )
+    return d
 
 # A file the environment has every clang read before a unit's first line.
 function forced(one: clang_added.Added) -> diag.Diagnostic

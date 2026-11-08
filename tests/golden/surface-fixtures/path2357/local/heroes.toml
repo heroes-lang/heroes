@@ -1,0 +1,5 @@
+# The catalogue of the package `loc`: the package `pt`, as the program lists it.
+
+[dependencies.pt]
+version = "1.0.0"
+sum = "sha256-56711fd52a3b8861c91f66017a9cd757ccf84cfdca6495271e8783186fe66013"

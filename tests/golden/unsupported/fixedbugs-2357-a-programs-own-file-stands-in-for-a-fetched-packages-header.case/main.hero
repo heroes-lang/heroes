@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2357, lane b25-pkgc, 2026-11-08.
+#
+# A program holding a fetched package's record by value, beside a `pt.h` of
+# its own with another layout. The program's unit searches the package's
+# folder after its own route (the coordinator's ruling), so its own `pt.h`
+# would be read where `pt`'s own unit reads the package's, and one record
+# laid out two ways across the call: it is refused before anything compiles,
+# panel 237's R2, its note naming the program as who named the folder.
+use <pt>/pt
+
+function main()
+    p: pt.Point = pt.make(x: 3, y: 4)
+    print(p.x + p.y)

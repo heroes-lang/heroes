@@ -1,0 +1,13 @@
+# Defect 2357, lane b25-pkgc, 2026-11-08: a program holding a fetched
+# package's record by value, and a folder `inc/` holding a `pt.h` of another
+# layout. Built plainly, the program's unit reads `pt.h` from the package's
+# folder, searched after its own route, and runs. With `--include` naming
+# `inc/`, that folder is searched before the package's, so its file would be
+# read in the package's place: refused before anything compiles (panel 237's
+# R2), its note naming `--include` as who named the folder. No mark: the
+# refusal is the flag's, and a plain build of this file refuses nothing.
+use <pt>/pt
+
+function main()
+    p: pt.Point = pt.make(x: 3, y: 4)
+    print(p.x + p.y)

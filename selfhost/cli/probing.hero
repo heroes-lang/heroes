@@ -50,10 +50,11 @@ use emit/membership
 # the group records their units read the headers of, the probe of those
 # headers, absent where none of them has anything to ask, and the words their
 # units compile under, whose packages are those of the groups naming the
-# list's headers (panel 205's R3, defect 572). **A fetched package's modules
-# are a list of their own** (panel 235's R9, defect 2351): `root` is its
-# root, `""` for the program's own, `under` its words
-# (`package_units.unit_under`), and `reach` C2's verdict on what its headers
+# list's headers (panel 205's R3, defect 572). **Modules whose units search
+# otherwise are a list of their own** (panel 235's R9, defects 2351 and
+# 2357): `under` is their words (`package_units.unit_under`), `own` their
+# package's place, `reached` the headers they read through another package's
+# group record, and `reach` C2's verdict on what a fetched package's headers
 # read, asked before any probe of them compiles, its probe absent where it
 # refuses.
 record Probing
@@ -63,7 +64,8 @@ record Probing
     records: {i64: bool}
     probe: compiling.Probe?
     under: compiling.Compiling
-    root: str
+    own: package_units.Place
+    reached: [package_units.Reach]
     reach: ()?
 
 # What a build settles before any round runs: the shared tables every unit
@@ -92,23 +94,32 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan], package_words: {str: [str]}, by_header: {str: [str]}) -> [Probing]
     keys_seen: {str: i64} @= {}
     lists: [[str]] @= []
-    packages: [[str]] @= []
-    roots: [str] @= []
+    unders: [compiling.Compiling] @= []
+    owns: [package_units.Place] @= []
     group_of: [i64] @= []
 
     # A header list's packages are those of the groups naming its headers
     # (`emit/header_packages.hero`, defect 572), so one list is one set of
-    # words, and its probe compiles under them; and a fetched package's
-    # modules search its own root, so one list under two roots is two.
+    # words, and its probe compiles under them; and a package's modules, and
+    # a unit reaching another package's record, search their own folders, so
+    # one list under two searches is two.
     for plan in plans
-        root = package_units.root_of(s, component: plan.module).default("")
-        key = root + "\n\n" + plan.headers.join("\n")
+        base = compiling.Compiling(
+            level: under.level,
+            sanitize: under.sanitize,
+            search_include: under.search_include,
+            package_flags: libraries.words_of(package_words, packages: header_packages.of(by_header, listed: plan.headers)),
+            runtime: under.runtime,
+            source_dir: under.source_dir
+        )
+        words = package_units.unit_under(base, s, decls, plan: plan)
+        key = libraries.key_text(compiling.search_words(words)) + "\n\n" + plan.headers.join("\n")
 
         if keys_seen[key].is_err()
             keys_seen[key] @ lists.len()
             lists @ lists.push(plan.headers)
-            packages @ packages.push(header_packages.of(by_header, listed: plan.headers))
-            roots @ roots.push(root)
+            unders @ unders.push(words)
+            owns @ owns.push(package_units.place_of(s, component: plan.module))
         group_of @ group_of.push(keys_seen[key].must())
 
     out: [Probing] @= []
@@ -119,6 +130,7 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
         modules: [str] @= []
         kept: {i64: bool} @= {}
         records: {i64: bool} @= {}
+        reached: [package_units.Reach] @= []
         at: i64 @= 0
 
         for plan in plans
@@ -130,34 +142,34 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
 
                 for decl in keys_of(plan.records)
                     records[decl] @ true
+
+                for one in package_units.reached_of(s, decls, plan: plan)
+                    if !package_units.holds(reached, one: one)
+                        reached @ reached.push(one)
             at @ at + 1
 
         program = members.tu_program(p, keep: sort(keys_of(kept)))
         unasked: compiling.Probe? = fail(code: "none", msg: "nothing to ask of these headers")
         probe: compiling.Probe? @= unasked
 
-        words: compiling.Compiling @= compiling.Compiling(
-            level: under.level,
-            sanitize: under.sanitize,
-            search_include: under.search_include,
-            package_flags: libraries.words_of(package_words, packages: packages[group]),
-            runtime: under.runtime,
-            source_dir: under.source_dir
-        )
+        words = unders[group]
         reach: ()? @= ok()
 
-        # A fetched package's list compiles under its own root (C1), and what
-        # its headers read is judged before anything of it compiles (C2).
-        if roots[group] != ""
-            words @ compiling.of_package(words, root: roots[group])
-
-            if headers.len() > 0
-                reach @ package_units.reached(t.build, under: words, headers: headers, memo: @memo)
+        # What a fetched package's headers read is judged before anything of
+        # it compiles (C2).
+        if owns[group].fetched && headers.len() > 0
+            reach @ package_units.read_within(
+                build: t.build,
+                under: words,
+                root: owns[group].folder,
+                headers: headers,
+                memo: @memo
+            )
 
         if !reach.is_err() && (asks(program, c, s, decls, records: records) || binds(program, decls))
             probe @ ok(compiling.probe_with(t.build, under: words, headers: headers, memo: @memo))
         out @ out.push(
-            Probing(headers: headers, modules: modules, program: program, records: records, probe: probe, under: words, root: roots[group], reach: reach)
+            Probing(headers: headers, modules: modules, program: program, records: records, probe: probe, under: words, own: owns[group], reached: reached, reach: reach)
         )
         group @ group + 1
 
@@ -251,7 +263,9 @@ function outside(probings: [Probing], s: source.Source, decls: [ast.Decl]) -> [d
 
     for one in probings
         if one.reach.is_err()
-            out @ out.push(package_units.refusal(s, decls, modules: one.modules, root: one.root, failed: one.reach))
+            out @ out.push(
+                package_units.refusal(s, decls, modules: one.modules, root: one.own.folder, failed: one.reach)
+            )
 
     return out
 

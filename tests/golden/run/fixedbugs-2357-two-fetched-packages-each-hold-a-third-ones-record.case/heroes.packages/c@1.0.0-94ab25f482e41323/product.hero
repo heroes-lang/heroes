@@ -1,0 +1,7 @@
+# The package `c` of the case two folders up: it holds the package `pt`'s
+# record by value too, read the same way as `a` reads it (defect 2357).
+use <pt>/pt
+
+function product() -> i64
+    p: pt.Point = pt.make(x: 10, y: 20)
+    return p.x * p.y

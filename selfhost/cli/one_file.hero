@@ -97,7 +97,7 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
         names = by_module[plan.module].default([])
 
         if names.len() > 0
-            own_under = package_units.unit_under(under, s, component: plan.module)
+            own_under = package_units.unit_under(under, s, decls, plan: plan)
             own = compiling.probe_with(t.build, under: own_under, headers: plan.headers, memo: @memo)
             mine = two_ways_ask.answers(t, own, names: names)
             read: [str] @= []

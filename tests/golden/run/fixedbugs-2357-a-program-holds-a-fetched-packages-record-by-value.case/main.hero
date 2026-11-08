@@ -1,0 +1,17 @@
+# fixedbugs, defect 2357, lane b25-pkgc, 2026-11-08.
+#
+# A program holding a fetched package's group record by value: its unit
+# spells the record's C type, so it includes the header the package's group
+# names, and after defect 2351 only the package's own unit searched the
+# package's folder, so the program was refused `ffi_missing_header` at the
+# package's line unless `--include` named that folder. Now a unit reaching
+# another package's record searches that package's folder after its own
+# route (the coordinator's ruling): this module's unit and the one of
+# `geo/shape` each read `pt.h` from `pt`'s folder.
+use <pt>/pt
+use geo/shape
+
+function main()
+    p: pt.Point = pt.make(x: 3, y: 4)
+    print(p.x + p.y)
+    print(shape.sum())
