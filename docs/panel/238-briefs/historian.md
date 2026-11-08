@@ -30,11 +30,22 @@ date it does not give is cut.
    - Swift (`swift-format`'s `OrderedImports`), Zig (`zig fmt`), Deno (`deno fmt`), Elm
      (`elm-format`), Haskell (`stylish-haskell` or `ormolu`), and any other formatter you find that
      takes a position, for or against sorting.
+   - C and C++: `clang-format`'s `SortIncludes`, `IncludeBlocks` (`Preserve`, `Merge`, `Regroup`)
+     and `IncludeCategories`, and what its documentation says about an include whose order matters.
+     The critic measured that the written order of `use` lines orders the C headers of Heroes'
+     one-file emission and the libraries of its link line, and that sorting turned an accepted
+     `--emit-c` into a refusal (`00-shared.md` F20), so a C formatter's position on sorting headers is
+     the nearest precedent.
    - **Any formatter that refuses to reorder imports, and why**: the Heroes formatter refused until
      now (`00-shared.md` F2: *reordering is where a formatter starts deleting the author's
      remarks*). A documented case of a sorting formatter moving or losing a comment, or changing a
      program's meaning by reordering (an import with a side effect, an init order), is the
      strongest objection the sitting could record.
+   - **A language that made the import order immaterial in the compiler**: whether Go's
+     specification defines package initialization order independently of the order imports are
+     written (the Go 1.21 release notes and the specification's *Package initialization*, read), and
+     any other language that did the same; this is the precedent for the route `00-shared.md` § A
+     names, the premise made true in the compiler.
 2. **The key** (question A): where a tool documents why it sorts by bytes, case-insensitively, or by
    path segments, and what it does with uppercase letters and digits.
 3. **A repository's own static index or vendored registry folder** (question D): where other
@@ -47,7 +58,8 @@ date it does not give is cut.
    rule a tool enforces.
 4. **What would make `packages/` the wrong name later**: an ecosystem where a root `packages/`
    folder means something else by convention (a monorepo's workspace members, for example), read on
-   the page that says so.
+   the page that says so. The repository's root already holds `vendor/`, five files, the tokenisers
+   (`00-shared.md` F18), a word several ecosystems give the folder of item 3.
 
 Your report: `docs/panel/238-reports/historian.md` in your worktree, written as you go, in the
 structure of `.claude/agents/historian.md` (verdict, precedents, argument, condition, search), and

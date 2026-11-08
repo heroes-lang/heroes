@@ -21,9 +21,10 @@ folder at the program's project root. The synthesis states it as the alternative
 would decide between them; the coordinator's reading is adopted unless a seat measures it impossible
 or unsound.
 
-As a spec diff: **none expected**. `spec/heroes-spec.md` says nothing about the formatter
-(`00-shared.md` § What was measured, F16); the rule lands in design.md §4.15, in
-`selfhost/print/`, and in the tree reformatted. A seat that finds the specification must move says
-so, and the spec-warden then sits.
+As a spec diff: **none expected when the briefs were first written**. `spec/heroes-spec.md` says
+nothing about the formatter (`00-shared.md` F16); the rule lands in design.md §4.15, in
+`selfhost/print/`, and in the tree reformatted. The critic's first pass made it a question (a
+comment's two meanings in spec section 1, and the reader-facing half), so the spec-warden sits on
+it, on the vendored tables only.
 
 The questions are `00-shared.md` § The questions, A to E.
