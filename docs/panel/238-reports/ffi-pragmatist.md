@@ -373,11 +373,130 @@ written today):
    and the record-only groups after (`emit/externs.hero:213-255`), so a record-only group's library
    stands after every function group's whatever their written order. A question, not a finding.
 
+## 8. The group words, built (after the critic's second pass)
+
+The coordinator's request of the same evening, on the critic's second pass (findings 5 and 6,
+`238-critic/docs/panel/238-reports/critic-reports.md`): the synthesis adopts item 6's group words
+only if built. The critic measured in C on GNU ld 2.44 that **one** group around the package words
+and the `link` names together links `dep` both ways, that a package's own group nested inside it is
+accepted, and that two groups side by side do not resolve across.
+
+**The change** (`build/238/group/group.diff`, written by `build/238/group/apply.py` into two
+**copies** of the sources, never this worktree's own `selfhost/`; each file then `heroes-next fmt
+--in-place`d and canonical by `cmp`):
+
+- `selfhost/cli/link_flags.hero`: `groups_libraries(target)`, true where the triple clang names
+  holds `-linux`, asked of the target as `target_words` asks it, never of the host; its comment
+  carries the measurements (GNU ld once, lld takes the words, ld64 refuses them and needs none, MSVC
+  unasked). Plus a test: two Linux triples true, an Apple, an MSVC and the empty triple false.
+- `selfhost/cli/link.hero`, `link_line`: the package's link words and the `-l<name>` words are
+  gathered as one list; where it is not empty and the target groups its libraries, the line takes
+  `-Wl,--start-group`, the list, `-Wl,--end-group`; else the list as before, so **a line with no
+  library, and every Apple or MSVC line, holds the same words as today**. Plus a test: a Linux line
+  ends `["-Wl,--start-group", "-lp", "-ltop", "-lbase", "-Wl,--end-group"]`, an Apple line ends
+  `["a.o", "-lp", "-ltop", "-lbase"]`, a Linux line with no library holds no group word.
+- **By module**: `cli/link.hero` +55 -4 lines (`wc -l` 688 to 739; the `layout` suite's code lines,
+  non-blank outside `test` blocks, 269 to 281), `cli/link_flags.hero` +18 -0 (192 to 210; code
+  lines 145 to 155); both under the 300 threshold, neither in `DECIDED`. Of `link.hero`'s 12,
+  **six are code** (the list's declaration, the branch, its three pushes, its `return`), five the
+  comment above the branch and one the doc comment's extra line; of `link_flags.hero`'s 10, **two
+  are code** (the function) and eight its comment.
+- The same two files are byte-identical in the base copy and the route copy (`diff -q`), the
+  prototype touching neither.
+
+**The compilers**, four on each platform, each built by its platform's base (`build/238/group/build-
+*.log`, `build/238/linux/group.out`):
+
+| compiler | sources | Mac build, instructions retired | Linux arm64 |
+|---|---|---|---|
+| base | `62dba14251e6eafb` | 746,325,266,354 (item 0) | built there, same key |
+| route | `01116def3a2e944c` | 777,795,358,889 (item 0) | built there, same key |
+| **base + groups** | **`02ffeda04877ee3b`** | 755,300,876,297 | built there, **same key** |
+| **route + groups** | **`50edfd92476704cb`** | 744,434,281,712 | built there, **same key** |
+
+**Its own tests**: `heroes-group-walk test build/238/group/walk/selfhost/main.hero --only "(panel
+238)"`: **2 tests, all passed** on this Mac (998,424,042,787 instructions retired, the whole
+compiler built as a test binary) and **2 tests, all passed** in the container
+(`build/238/linux/group-test.out`). The compiler's other 1,910 tests were **not run** with the
+change (its test asserting an exact Linux line is the second of these two; the three existing tests
+that call `link_line`, `cli/link.hero:491, 539, 628`, pass no library word, so the branch leaves
+their lines as they were, read in the code, unrun).
+
+**Every program, both ways, four compilers, each built from an empty `build/`**
+(`build/238/link/run-all.sh`; outputs `group-darwin-*.txt`, `build/238/linux/group.out`). The words
+are every `-l`, package `-L` and group word of the program's own `link-words.rsp`, in order: (`--start-group` and `--end-group` below stand for the words `-Wl,--start-group` and
+`-Wl,--end-group`, `-L...` for a package's `-L` with its path cut)
+
+*Linux arm64, GNU ld 2.44:*
+
+| program | base | route | base + groups | route + groups |
+|---|---|---|---|---|
+| `dep_written` | `41 2` | exit 2 | `41 2`, `--start-group -ltop -lbase --end-group` | `41 2`, `--start-group -lbase -ltop --end-group` |
+| `dep_sorted` | exit 2 | exit 2 | **`41 2`**, `--start-group -lbase -ltop --end-group` | **`41 2`**, the same |
+| `pp_written` | `41 2` | exit 2 | `41 2`, `--start-group -L... -ltop -L... -lbase --end-group` | **`41 2`**, `--start-group -L... -lbase -L... -ltop --end-group` |
+| `pp_sorted` | exit 2 | exit 2 | **`41 2`** | **`41 2`** |
+| `lp_written` | exit 2 | exit 2 | **`41 2`**, `--start-group -L... -lbase -ltop --end-group` | **`41 2`**, the same |
+| `lp_sorted` | exit 2 | exit 2 | **`41 2`** | **`41 2`** |
+| `dup_written`, static and shared | `1` | `2` | `1`, `--start-group -la -lb --end-group` | `2`, `--start-group -lb -la --end-group` |
+| `dup_sorted`, static and shared | `2` | `2` | `2` | `2` |
+| `sig_written` | `1 30` | SIGSEGV, 139 | `1 30` | **SIGSEGV, 139** |
+| `sig_sorted` | SIGSEGV, 139 | SIGSEGV, 139 | **SIGSEGV, 139** | **SIGSEGV, 139** |
+| `only_top` | exit 2 | exit 2 | **exit 2**, `--start-group -ltop --end-group` | **exit 2** |
+
+(every exit 2 is `internal error: linking failed:`, then GNU ld's `undefined reference to
+'base_helper'`; every other build's stderr is its own `wrote <path>` line and nothing else, under
+the grouped compilers as under base.)
+
+*This Mac, ld64:* **base + groups gives exactly base's words and outputs, and route + groups
+exactly the route's**, on all thirteen builds of each (`group-darwin-base.txt`, `group-darwin-walk.txt`): no
+group word on any line; `dep_*`, `pp_*`, `lp_*` `41 2` under all four; `dup` `1`/`2` under base and
+base + groups, `2`/`2` under the route and route + groups; `sig_sorted` Bus error 138 under all four
+and `sig_written` under the two route compilers; `only_top` exit 2 under all four. And **the whole
+`link-words.rsp` is byte-identical** between base and base + groups for `dep_written` and
+`pp_written`, the object paths under `build/` normalised (`build/238/link/rsp-darwin/`):
+`... "-O0" "-g" "-rdynamic" "-Wl,-reproducible" "-L" "../out-darwin/lib" <5 objects>
+"-L.../link/out-darwin/lib" "-ltop" "-L.../link/out-darwin/lib" "-lbase"`.
+
+**Read**: the group words, built, **close the link half on Linux whatever the order**: `dep`, `pp`
+and `lp` link in both orders under both group compilers, the six exit 2s of the route and the four
+of base among them; the route + groups compiler gives every one of these programs the same words,
+verdict and output in both written orders. The Mac line does not move. The words change nothing
+else: which `pick` binds still follows the order or the key, and the critic's nesting result was not
+re-run here (no package of mine answers with a group).
+
+**What stays open**, each measured above or unrun:
+
+- **7.1, `dup` and `sig`**: one name two libraries define binds the first one inside the group as
+  outside it; under route + groups `sig_written` crashes in both orders on both platforms (139
+  Linux, 138 Mac). Its closing route is the refusal of item 6.3, a new diagnostic class, a sitting's.
+- **7.2, `two_others`**: untouched by link words (a header order inside a unit).
+- **7.3, `only_top`**: exit 2 `internal error` under all four compilers on both platforms; the
+  library its group needs is on no line, so no group finds it. Its order half (`dep_sorted`'s exit
+  2) is closed by the words. Its repair is the message (the linker named `libtop.a`, which the
+  program links), a change of who is blamed on defect 360's precedent.
+- **7.4, `lp`**: **closed** by the group words (both orders link on Linux under both group
+  compilers).
+- **Windows `lld-link`**: unasked and unrun; `groups_libraries` is false for an MSVC triple, so its
+  line is unchanged.
+- **The CI's Linux x86-64 leg** (GNU ld there unread): unrun. The predicate asks `-linux` of the
+  triple, so it takes the words there.
+
+**What `blocking` does to the tag** (the critic's finding 6): `records/tagged` refuses
+M-package-manager's tag over an open `blocking` defect (CLAUDE.md § Verification). 7.1 is a memory
+fault, 7.2 a correct program refused with a false message, 7.3 an exit 2 where the author can be
+told: each is `blocking` by `.claude/rules/verification.md` § Bounded discovery's own list, and each
+is older than the proposal and than the milestone. The class follows that list; which milestone owns
+them, and whether the tag waits, is the coordinator's and the author's, and this seat does not bend
+the class to free it. 7.4 needs no filing if the words land.
+
 ## Verdict
 
-- `verdict`: **veto** on the rule landing without the route; with the route in the same push,
-  **object** until the GNU ld group words land with it; **approve** once they do and items 7.1 and
-  7.2 are filed `blocking`.
+(Updated after section 8: the group words are built and measured. What changed is marked.)
+
+- `verdict`: **veto** on the rule landing without the route (unchanged). **Changed**: with the
+  route **and the group words, now built** (section 8), in the same push, **approve**; items 7.1,
+  7.2 and 7.3 filed with the class the rule's list gives them, `blocking`, whatever that does to the
+  tag (section 8, last paragraph).
 - `section`: design.md §1.12 (*"A Heroes program must not segfault and must not corrupt memory"*)
   and §4.19 as design.md:606 states its thesis at the boundary; §1.11 for whose programs these are.
   **The document does not cover the libraries' order**: §4.19 and spec section 13 order a module's
@@ -390,27 +509,31 @@ written today):
   refuses `-lbase -ltop` and links it in a group; lld links both; every linker binds the first
   `pick`, silently, and `-lw -la` segfaults on both. The same libraries bound by two Heroes modules
   (`hero/`, `hero-pkg/`, `hero-sqlite/`), base and route, Mac and Linux arm64: item 3's table.
-  Over the tree: 763 roots, **12** reach two modules with groups (all `tests/golden/run`, 0
-  `examples/`), **0** `run` outputs move, **1** `--emit-c` verdict moves (563, refused to
-  accepted), 7 of 7 moved `examples/` programs identical; releases `v0.2.0` to `v0.6.0`: 0 such
-  programs; the compiler's own headers do not move and it links no library.
+  **Added**: the group words built into base and route (`build/238/group/group.diff`, `cli/link.hero`
+  +55 -4, `cli/link_flags.hero` +18 -0, six and two lines of code), keys `02ffeda04877ee3b` and
+  `50edfd92476704cb` on both platforms, their two tests passing on both: on Linux `dep`, `pp`, `lp`
+  link in both orders, on this Mac the `link-words.rsp` is byte-identical to base's; `dup`, `sig`
+  and `only_top` as before. Over the tree: 763 roots, **12** reach two modules with groups (all
+  `tests/golden/run`, 0 `examples/`), **0** `run` outputs move, **1** `--emit-c` verdict moves (563,
+  refused to accepted), 7 of 7 moved `examples/` programs identical; releases `v0.2.0` to `v0.6.0`:
+  0 such programs; the compiler's own headers do not move and it links no library.
 - `argument`: The written order of `use` lines is today the only lever over the link line, and it is
   written nowhere. The rule hands it to `fmt`: measured, one `fmt --in-place` turns a program printing
   `1 30` into one that builds silently and segfaults, on both platforms, and a Linux link into an
   `internal error`. A formatter must not produce a memory fault at the boundary. The route removes
-  that power and installs a key as blind to libraries as the order was, regressing shapes the tree
-  does not hold. Two link words on GNU ld make archive order immaterial; refusing a bound name
-  another library supplied closes the rest whatever the order.
-- `prediction`: on the CI's Linux x86-64 and `macos-26` legs, unrun here, `build/238/link/`'s
-  programs do what they did on this Mac and Linux arm64: under any compiler carrying the route and
-  no group words, `dep_written` exits 2 `internal error` on x86-64 and links on macOS; `sig_written`
-  builds at exit 0 and dies by a signal on both; the SQLite pair of `hero-sqlite/` links and prints
-  `3` `true` in both orders, shared and static, on x86-64. Scored by the landing lane's run of those
-  programs on the CI's legs at M-package-manager's push; a link of `dep_written` on x86-64 GNU ld, or
-  a `sig_written` that does not crash, falsifies it.
+  that power; the group words, now built, make archive order immaterial on Linux and leave the Mac
+  line byte-identical. One name two libraries define still binds whichever comes first, and only a
+  refusal closes that.
+- `prediction`: **changed** to the built compiler. Under route + groups (`50edfd92476704cb`) on the
+  CI's Linux x86-64 leg, unrun here, `build/238/link/`'s `dep_*`, `pp_*` and `lp_*` link and print
+  `41 2` in both written orders, as on arm64; `sig_written` still dies by SIGSEGV and `only_top`
+  still exits 2; on `macos-26` every `link-words.rsp` equals base's. Scored by the landing lane's run
+  of these programs on the CI's legs at M-package-manager's push; an x86-64 GNU ld that refuses a
+  grouped `dep_sorted`, or a `sig_written` that does not crash there, falsifies it.
 - `condition`: the veto lifts when the rule and the route travel in one push and, under the landing
   compiler, `cside`, `link/hero/` and `units/two_others/` give the same link words, verdicts and
-  outputs in both written orders. The objection lifts with `-Wl,--start-group`/`--end-group` around
-  the libraries on the Linux link line in the same landing (`dep_*`, `pp_*`, `lp_*` linking in both
-  orders on GNU ld) and items 7.1 and 7.2 filed `blocking` with these reproducers. I would withdraw
-  the group-words condition if the CI's x86-64 GNU ld links `dep_sorted` bare.
+  outputs in both written orders. **Changed**: the objection's condition is met by section 8's build
+  if those six code lines travel in the same push; I would return to **object** if the CI's x86-64
+  leg refuses the words or a package's own group nested inside them, or if 7.1 to 7.3 are filed under
+  a class their reproducers do not support. I would withdraw the group words as needed if the
+  x86-64 GNU ld links `dep_sorted` bare.

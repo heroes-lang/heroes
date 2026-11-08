@@ -755,12 +755,119 @@ file's header: the same place, read differently, and nothing moves on the second
 files, item 3). The clash pair's lost fix (2c, item 2) is the one message-quality finding,
 `adjacent`.
 
+## 8. The heading refinement (after the critic's second pass)
+
+Asked by the coordinator on the critic's second pass, finding 9 (rustfmt issue 6241): *a comment
+run glued above the first line of a run of two or more `use` lines with no blank between them,
+other than the file's header, is that run's heading and rises above the block; a comment glued
+above a run of one still travels with it.* Built in this worktree on `heroes-fix`
+(`build/238/heroes-head`), the shapes copied into `build/238/r6241/` (the critic's three) and
+`build/238/swshapes/` (the spec-warden's eight).
+
+**The rule as it stood reproduces 6241**: `heroes-fix fmt` of `run_heading.hero` and `tight.hero`
+writes `# the two modules that print the report` glued above `use alpha` at the top, then `use
+beta`, `use delta`, `use gamma`, exit 0 both; `trailing3720.hero` keeps each trailing remark on
+its line.
+
+**The refinement does not stand alone: it needed three companion rules, each found by a fixpoint
+failure, before it held.** Built as specified, its own output was not a fixpoint (`fmt` exit 2,
+*"is not a fixpoint on its own output"*), three times over:
+
+1. **A commented line must stand apart below too.** `shapes/hdr.hero`: the pass moves `# about
+   alpha` with `use alpha` into the sorted block, where `use zeta` follows it directly; the next
+   reading takes the comment for a heading of two lines and lifts it. Repaired: a blank line under
+   a commented line when another line of its group follows (`block_lines`).
+2. **A moved comment that opens the file is the header at once.** `shapes/late_between.hero`,
+   `swshapes/s1.hero`, `s8.hero`: the moved comment lands at the very top, the next reading takes
+   it for the header (the existing exception), its line loses it, and the blank of repair 1 goes.
+   Repaired: when nothing but blank lines stands above the block, its first moved comment is
+   treated as the header from the first pass (`opens_file`).
+3. **A comment indented before the first declaration is read as the printer writes it.** Found
+   by the probe, not by any shape: `selfhost/cli/response_file.hero`'s variant `O39_4`, cut by the
+   probe to five lines (`# file's name ...`, a blank, `    # zq_o39_4`, `use cli/process`, `use
+   cli/publish`): indented, it is no column-0 comment on the first pass and stays; the printer
+   writes it at column 0; on the second pass it heads two lines and rises. Repaired: before the
+   first declaration every comment is top level, so an indented one reads as column 0
+   (`INDENTED`); pinned as a test of the pass.
+
+(Under `heroes-fix` the same two readings of 3 happened to print the same text, which is why the
+5,055 variants of item 3g all held.)
+
+**The final build** (`build/238/heroes-head`): `./heroes build selfhost/main.hero -o
+build/238/heroes-head`, exit 0, **569,363,929,243 instructions retired**, `sources
+0daf40043c1364eb` (`build/238/head-build.log`). `print/use_order.hero` 324 to **364** by the `layout`
+count (+40), 96 diff lines against `heroes-fix`'s (`build/238/heading-refinement.diff`).
+
+- **The shapes** (each formatted, then its output formatted again and compared by `cmp`): all 19
+  (the critic's three, the probe's `o39_4`, item 7's six and `hdr`, the spec-warden's eight) **exit
+  0 and are fixpoints**. Against `heroes-fix`, 4 differ: `run_heading` and `tight` (the heading
+  rises: `# the two modules that print the report`, a blank, then `use alpha` ... `use gamma`),
+  `o39_4` (the same, from the indented comment), and `hdr` (a blank line now under `use alpha`,
+  repair 1). `trailing3720` and the other 14 are byte for byte `heroes-fix`'s
+  (`build/238/headcmp4/`).
+- **The census delta against `heroes-fix`** over the 3,564 committed files (`git archive HEAD` into
+  `build/238/headtree/`, `build/238/hcensus2/rows.txt`): exit codes identical (3,076 at 0, 488 at 1,
+  no 2); **2 files format differently**, `selfhost/emit.hero` and `selfhost/emit/members.hero`, each
+  by one blank line between the file's header and its block (the header is glued above `use ast`,
+  the first of a run, so it now rises as a heading; under `heroes-fix` it travelled with `use ast`,
+  which sorts first, so it stood glued at the top); both fixpoints. `examples/shapes/render/ascii.hero`
+  is unchanged: its `# use scale ...` stands above a run of one, which still travels. In both
+  changed files every declaration moves down one line, so the compiler's own C moves by their
+  `#line`s (unrun as a count).
+- **The probe**, `heroes-head probe build/238/probeseeds --family single`, the 15 seeds of item 3g
+  plus the critic's three and `o39_4`: **19 seeds, 5,139 variants, 5,139 held, 0 refused by the
+  guard, 0 by the reader**, exit 0, 1,949,064,178,340 instructions retired
+  (`build/238/suites/probe-single-head2.txt`). Before repair 3 the same run read 5,124 and 5,123
+  held, 1 refused by the guard, exit 2 (`probe-single-head.txt`).
+- **The permutation classes** (item 1's 361 files): exit 0 on all 361, and **the one-text property
+  is lost**. Under `heroes-fix` the 241 files of the first two layouts and the late variant gave
+  one text; under the refinement they give **two**: 144 one text (the comment travels with
+  `lib/beta as b2`) and 97 another (it rises as a heading), decided by whether the order written
+  happens to put another `use` line directly under `lib/beta`. The glued-header layout goes from two
+  texts to three (72, 24, 24).
+
+**So the refinement builds and holds, and loses one thing**: two files holding the same `use` lines
+and comments in different orders no longer format to one text, because whether a glued comment
+heads one line or a run is read from the line that follows it, which is the written order's. That
+is design.md §4.15's *exactly one correct way* given up for a reading the text cannot settle, at
++40 lines and three companion rules, each of which was a fixpoint failure first.
+
+**What I would adopt instead: the rule as `heroes-fix` builds it, and the heading spelled as §4.1
+spells a remark.** A comment with a blank line under it is a remark (design.md §4.1), and the rule
+already lifts every remark of the block above it: `r6241/spelled_heading.hero` (`use beta`, `use
+delta`, a blank, `# the two modules that print the report`, **a blank**, `use alpha`, `use gamma`)
+formats under `heroes-fix` to exactly the refinement's text for `run_heading` and `tight`, exit 0,
+a fixpoint. So the reading 6241 asks for has a spelling, the one-text property stays, and the cost of
+6241's reading is a comment a writer glued where §4.1 says glue means *this line*: 0 files of the
+tree by the critic's `awk`. Record it as the rule's reading, and **drop 6241 as *Taken from***: the
+rule does by choice what that page reports as a bug. If the author prefers the refinement, it is
+built (`build/238/use_order.head.hero`), with its three companions, and the record says the one-text
+property was traded for it.
+
+**Owed to the record, my slip**: while setting up these comparisons one command of mine redirected a
+`heroes-fix fmt` output to `/tmp/x`, outside the repository, which the rules forbid. The file (163
+bytes, the formatted text of a spec-warden shape, written at 22:08) was found and removed with `rm
+/tmp/x` at once; nothing else was written outside the repository.
+
+**Re-run on the critic's finding 2, because it bears on my verdict's condition** (`build/238/link/`,
+the ffi-pragmatist's sources and scripts copied from the critic's folder, run here): C alone, `-la
+-lw` prints `pick=1 10`, `-lw -la` segfaults (139). Heroes, `hero/build` set aside between
+compilers: under the baseline `sig_written` builds and prints **`1 30`**, exit 0, and `sig_sorted`
+dies by a **bus error, 138**; under the route **both** die by a bus error, 138; `dup_written` prints
+`1 10 20` under the baseline and **`2 10 20`** under the route (the other library's `pick`, no
+message), static and shared. And **`heroes-fix fmt sig_written.hero` is byte for byte
+`sig_sorted.hero`** (`cmp`). So the rule **alone** turns that working program into a memory fault
+at the author's `fmt --in-place`, and the route does it at the landing: withdrawing the route
+saves no such program. The class needs the ffi-pragmatist's item 7.1 (a name two linked libraries
+both supply refused, *blocking*), and my condition below is restated over shapes, not the tree.
+
 ## Verdict
 
 - `verdict`: **object** (no veto: the rule adds no core construct, and the ceiling holds).
 - `section`: design.md §4.15, the canonical-formatter bullet (line 2252): *"exactly one correct
   way to write any program"* and *"it makes any textual difference between two versions
-  semantic"*; §1.1 and §1.7 for the cost. The objection is the second clause read backwards: a
+  semantic"*; §1.12 (*a Heroes program must not segfault*) since section 8's re-run of the
+  critic's finding 2; §1.1 and §1.7 for the cost. The objection is the second clause read backwards: a
   formatter whose rewrite changes what the compiler says breaks the promise the formatter exists
   for, and the document does not say so in those words; it is my reading of §4.15, stated as one.
 - `implementation_cost`: **the rule, +361 lines** by the `layout` suite's measure: `selfhost/print/
@@ -779,25 +886,35 @@ files, item 3). The clash pair's lost fix (2c, item 2) is the one message-qualit
   (`checkIndex()` called directly and `packages/**` in `deploy-site.yml`, without which the site's
   build is falsely green; `INDEX_LINE` in `suite_packages.hero`), the walks that reached the index
   through `examples` (`canonical`, `probe`, `corpus`, `compat`, `cards`) told to name it, and the
-  name's collision with 13 `packages/<check>` labels that `records/citations` refuses (6b).
+  name's collision with 13 `packages/<check>` labels that `records/citations` refuses (6b). **The
+  heading refinement** (section 8): built, holds after three companion rules, +40 lines, and gives
+  up the one-text property; priced and not recommended.
 - `needed_for_self_hosting`: **no** (Principle 0: the compiler compiles itself today in either
   order; the rule serves the canonical form, design.md §4.15, not the closure list).
 - `argument`: The author's premise is false in this compiler today. The written order of `use`
-  lines is the module walk's, so a sorting `fmt` changes the diagnostics' and holes' order, the
-  link line, the one-file emission, which line a clash blames, and whether `--emit-c` accepts a
-  program (c453: exit 0 written, exit 1 sorted). A formatter that changes what the compiler says
-  breaks §4.15's promise in reverse, unseen by its guard. The rule is cheap, not core, and fits one
-  person. The robust route makes the premise true by construction: one key (`use_key.hero`, 90
-  lines) read by the walk, the binding loop and the cycle walk; measured, both orders then emit one
-  program. Land the rule only with it.
+  lines is the module walk's, so a sorting `fmt` changes the diagnostics' order, the link line, the
+  one-file emission, which line a clash blames, whether `--emit-c` accepts a program, and, where two
+  libraries supply one name, what it calls: `fmt` turns `sig_written`'s `1 30` into a bus error. The
+  rule is cheap, not core, and fits one person. The route makes the written order immaterial by
+  construction: one key (`use_key.hero`, 90 lines) read by the walk, the binding loop and the cycle
+  walk. Land the rule with the route and the ffi-pragmatist's refusal of a name two libraries supply
+  (7.1), never alone.
 - `prediction`: at the landing commit's gate (M-package-manager, once batch 25 has blessed the
   runtime's key), the `emission` suite with the rule and the route reads red on **exactly the nine
   programs of item 3b** (`interpreter`, `ledger`, `shapes`, `adventure`, `markdown`, `query`, `todo`,
   defects 2030 and 2286) before their re-blessing, and on no other. A tenth falsifies my reading that
   the walk, the binding loop and the cycle walk are the whole route.
-- `condition`: I approve the rule **without** the route if the author rules that the six outputs of
-  item 2a are outside *"the order does not matter"*, accepting that `fmt --in-place` may turn an
-  `--emit-c`-accepted program into a refused one and move a multi-module program's emission, link
-  line and first diagnostic. I withdraw the route as the recommendation, and ask for its own sitting,
-  if a program in the tree or in a release's corpus is found whose `build` or `run` output, not its
-  `--emit-c` verdict or its messages' order, changes under the route.
+- `condition`: **restated after the critic's second pass** (section 8's re-run of finding 2): my
+  first condition, *a program in the tree or in a release's corpus whose `build` or `run` output
+  changes under the route*, is met outside the tree (`sig_written`, `dup_written`), and the rule
+  alone meets it too, at `fmt`. So it no longer separates the route from the rule alone; what it
+  separates is landing with or without 7.1. **I approve** when the rule, the route and 7.1's
+  refusal land together (`build/238/link/hero/`'s programs then refused or giving one output in both
+  written orders), the ffi-pragmatist's own conditions for the link line aside, which are its seat's.
+  **I approve the rule without the route** only if the author rules that the outputs of item 2a are
+  outside *"the order does not matter"*, accepting that `fmt --in-place` may move a multi-module
+  program's emission, link line, first diagnostic and `--emit-c` verdict; even then not without 7.1,
+  since `fmt` alone turns `sig_written` into a memory fault. **I would recommend the heading
+  refinement** (section 8) if a measurement showed the one-text property costs more than the
+  refinement's reading saves: a tracked file whose glued comment heads a run of two or more and is
+  not its file's header, which the critic's `awk` found none of.

@@ -229,9 +229,14 @@ sentence of § 13 to price then.
 
 ## Verdict
 
-- `verdict`: **approve**: the specification does not move. **Veto held** on D1 (the order stated in
+- `verdict`: **approve**: the specification does not move, **with the GNU ld group words in the same
+  push as the route** (section 5). **Object** to the route landing without them: line 375 (*`link` a
+  library when the symbols need one*) is then false on GNU ld for `dep_*` and `pp_*` in every order,
+  and no sentence repairs it truthfully (5c). **Veto held** on D1 (the order stated in
   the spec) if it is proposed without payment, on Principle 0's burden. **Object** to D2, D2b, D3
-  and D4 as unpaid restatements of lines 28, 57 and 164. Not provisional: every count is on the
+  and D4 as unpaid restatements of lines 28, 57 and 164, to L1a and L1b as false today (5a), and to
+  L1c and N1 as defects written down as rules (panel 204's G1e). **Object** to the rule without the
+  route, seconding the ffi-pragmatist's veto (section 5, `condition`). Not provisional: every count is on the
   vendored tables, measured; the real row of a draft is unrun and no verdict rests on it.
 - `section`: design.md §1.6 (the payment rule, unconditional; the budget's discipline surviving the
   raise), §1.2 (real cost = tokens × (1 + rewrite rate)), §4.15 (*"it removes all style decisions
@@ -239,32 +244,159 @@ sentence of § 13 to price then.
   rest on §4.1's adjacency rule as `doc_comments.take_docs` implements it.
 - `spec_token_delta`: **0** (`claude-legacy 8188`, `cl100k_base 8335`, `real 10915` pinned,
   2026-11-08, before and after). Priced and not taken: D1 +28 / +30, D2 +7 / +7, D2b +4 / +4,
-  D3 +5 / +5, D4 +13 / +14 vendored; every real delta unrun.
+  D3 +5 / +5, D4 +13 / +14 vendored; after the link table, L1a +17 / +17, L1b +31 / +31, L1c
+  +31 / +31, N1 +17 / +17, N2 +10 / +10 (for the refusal's own sitting); every real delta unrun.
 - `removal`: none owed, since nothing is added. Had D1 been taken: nothing in the spec is displaced
   by it and no removal was found, and that would be a problem.
 - `needed_for_self_hosting`: **no**.
-- `argument`: The compiler refuses no `use` order (built, ran, checked an unsorted program, exit 0),
-  no verb refuses non-canonical form, and the thesis instrument never asks for it, so a spec
-  sentence stating the order buys §1.2 nothing and spends tokens on the style decision §4.15 removes
-  from the model. Its cost in this repository is a hook refusal naming its own one-call remedy,
-  already paid by CLAUDE.md's *format at the moment of writing*. No spec sentence becomes false:
-  across eight comment shapes the compiler's reading of docs is identical before and after the
-  reorder. The order-independence the route builds is already implied by lines 28, 57 and 164. Land
-  the route with the rule; the spec stays.
+- `argument`: No verb refuses a `use` order, and the thesis instrument never asks for canonical
+  form, so stating the order buys §1.2 nothing and spends tokens on the style decision §4.15
+  removes from the model. Across eight comment shapes the compiler reads every doc as before. The
+  link table does not change the answer: line 375 asks a reader only to link the libraries
+  the symbols need, and one GNU ld group around them makes that suffice in every order; a sentence
+  instead cannot be true today (a record-only group's library leaves the written order, run here)
+  without writing a defect down as a rule. A name two libraries define is older, unspecified, and a
+  refusal's sitting. The spec stays.
 - `prediction`: (1) **token**: at the commit that lands panel 238's rules, `git diff 27829fbba
   <landing> -- spec/heroes-spec.md` holds no hunk from this sitting and `heroes measure` reads
   `claude-legacy` and `cl100k_base` moved only by other sittings' rows of
   `docs/measurements/010-spec-budget-ledger.md`; if the synthesis takes a draft instead, its
-  vendored delta there is the one above to within 1 token, and and for D1 its real delta by the
+  vendored delta there is the one above to within 1 token, and for D1 its real delta by the
   landing's `--refresh` lies between +30 and +50 (`cl100k_base` +30, the document's ratio 1.31). (2) **rewrite rate**: on the
   first metric-2 run of the thesis instrument after the landing (`tests/harness/thesis.hero`), **0**
   correction turns in either arm are caused by the order of `use` lines (no turn whose triggering
   diagnostic is fixed by reordering `use` lines alone), with or without a spec sentence.
-- `condition`: I move to **object** to "the spec does not move" (and price a § 13 sentence) if a
-  correct program is measured whose `build` or `run` result, not its `--emit-c` verdict or its
-  messages' order, depends on its `use` order after the route; to **veto the rule without the
-  route** if such a program is found and the route does not land (the spec's implication false for
-  what a program means); and to **approve D1** only if `heroes build` is ruled to refuse
-  non-canonical source (the order then decides which programs are accepted, so it is language), or a
-  run shows readers of the spec making a compile error, not a style difference, for want of the
-  order.
+  (3) **link**: once the compiler carries the group words, `dep_*`, `pp_*` and `lp_*` link in
+  both written orders on GNU ld (the container's 2.44 and the CI's x86-64 leg), and line 375 stays
+  without a sentence; scored by the landing lane's run at M-package-manager's push. And if the
+  refusal's sitting states its refusal in § 13, its sentence costs within 5 vendored tokens of N2's
+  +10.
+- `condition`: I move to **object** to "the spec does not move" (and price a § 13 sentence then) if,
+  under the landing compiler with the route and the group words, a correct program that links every
+  library its symbols need still fails to link, or its `build` or `run` result depends on its `use`
+  order. **Met, so stated**: I **object to the rule without the route**, since the ffi-pragmatist's
+  `sig_written` and `dep_written` are programs whose `build` or `run` result depends on their `use`
+  order and `fmt` would choose it; its veto on design.md §1.12 is its seat's, which mine does not
+  hold, and I second it. I hold the **objection to
+  the route without the group words** until a compiler carrying them has run `dep_*`, `pp_*` and
+  `lp_*` on GNU ld, and withdraw it if the author rules the library order a reader's duty, in which
+  case L1b (+31 / +31) is owed once item 7.5 is repaired, unpaid, and I object to it on the payment
+  rule; and I **approve D1** only if `heroes build` is ruled to refuse non-canonical source, or a run
+  shows readers of the spec making a compile error, not a style difference, for want of the order.
+
+## 5. After the link table (the critic's second pass)
+
+Asked by the coordinator after the critic's second pass (finding 4: *"the spec-warden's own trigger
+fires on the ffi-pragmatist's table, and R7 rests on a report written before it"*). Read, read
+only: the ffi-pragmatist's report (416 lines, `wc -l`; items 3, 6, 7 and its Verdict) and the
+critic's second pass (344 lines; findings 4, 5, 6 and 11). Same rules: my worktree, vendored tables,
+no paid run.
+
+**The critic is right that my trigger fired.** Section 3 said: *"With the route, its outcome is
+fixed by the modules' names; if such a program could still fail to link, the spec would owe the
+reader how to fix it, and that is a sentence of § 13 to price then."* The ffi-pragmatist measured
+exactly that: under the route, `dep_written` and `pp_written` exit 2 (`internal error: linking
+failed`) on GNU ld 2.44 in both orders, and link on ld64 (its item 3). My condition as written in
+the Verdict (*a result that depends on its `use` order after the route*) did not fire, since under
+the route those results are the same in both orders; the sentence in section 3 did. I price it here.
+
+### 5a. One more fact, run here: a module's libraries do not follow its groups' written order
+
+The critic's `onemod` run shows, with two function groups, the libraries in the groups' written
+order. The ffi-pragmatist's item 7.5 read in the code, unrun, that a **record-only** group's library
+goes after every function group's. Run on this Mac with `heroes-next` (base, `sources
+62dba14251e6eafb`), `build/238/onemod/` (two archives built by clang: `libtop.a`'s `top_value` calls
+`libbase.a`'s `base_helper`), `heroes-next build <p>.hero --include . --library lib`, then
+`grep '"-l' build/*/link-words.rsp`:
+
+| program | groups as written | `-l` words | run |
+|---|---|---|---|
+| `fn_first.hero` | `base.h` (a function) then `top.h` (a function) | `"-lbase" "-ltop"` | `43` |
+| `rec_first.hero` | `base.h` (**a record only**) then `top.h` (a function) | **`"-ltop" "-lbase"`** | `42` |
+
+So item 7.5 reproduces: **inside one module, the libraries follow the written order only among
+function groups**. The route touches no line of `emit/externs.hero` (the compiler-engineer's item
+2c names three call sites, none there), so I expect the same under it; unrun with `heroes-walk` here.
+
+### 5b. With the group words: is a sentence owed by this sitting?
+
+**Link order: no.** Line 375 already says what a reader owes the link line: *"`link` a library when
+the symbols need one."* Measured in C by the ffi-pragmatist and the critic (finding 5), a library
+that needs another links in both orders on ld64 bare, on lld bare, and on GNU ld 2.44 inside **one**
+group around the package words and the `link` names together (two groups side by side fail; a
+package's own group nested inside is accepted). With that, a reader who links every library the
+symbols need gets a program that links whatever order anything is written in, which is what line
+375 promises and lines 28, 57 and 164 imply. **The group words do not add a sentence: they make an
+existing one true.** Without them, line 375 is false on GNU ld today for `lp` (a `link` beside the
+`package` it needs, both orders) and `dep_sorted`, and under the route for `dep_written` as well.
+
+This rests on a compiler nobody has built: the critic (finding 5) says the words are *"unmeasured as
+a compiler change"*, and `lld-link` on Windows and the CI's x86-64 GNU ld are unrun. My "no" holds
+only once that compiler links `dep_*`, `pp_*` and `lp_*` in both orders on GNU ld.
+
+**One C name two libraries define (`dup`, `sig`): no sentence owed by this sitting**, for four
+reasons:
+
+1. **The class is older than the proposal.** The ffi-pragmatist's item 6: one name two libraries
+   define *"binds whichever comes first, unrefused"*, on every linker measured; a group or lld
+   changes nothing. The base compiler already binds it by `use` order (`dup_sorted` prints `2`,
+   `sig_sorted` faults).
+2. **The spec never gave the reader a lever over it.** The written order that decides it today is
+   written nowhere (the ffi-pragmatist: *"it is written nowhere"*). The route moves the choice from
+   one unwritten order to another, the modules' names. No sentence of the spec is falsified by
+   either: § 13's *"clang checks every result type, constant and record field against that
+   header"* is true in `sig`, where the header verifies and the linker takes another library's
+   definition; the spec promises the check, not which library supplies the name.
+3. **Stating either choice writes the defect down as a rule.** That is the shape panel 204 refused
+   (its R4, *"G1e (it writes today's reordering down as a rule)"*; its spec-warden on G1e: *"True
+   today on everything, but it writes defect 1 down as a rule"*). `sig` is a memory fault behind a
+   verified header: design.md §1.12's class, which the synthesis files `blocking`.
+4. **The repair is a refusal, a new diagnostic class, and its own sitting** (the ffi-pragmatist's
+   item 6, third route). That sitting owes and prices its own sentence, after it rules the open
+   question (a library that overrides a name on purpose, an allocator). A sentence now would rule
+   that question in advance.
+
+**What the landing owes instead, and where**: the critic's finding 11 (`dup_written` calls `liba`'s
+`pick` today and `libb`'s after the landing, with no message) is a change a reader must be told
+(CLAUDE.md § 2: *a change that refuses a `0.x` program is told*; this one does not even refuse).
+The place is the decision issue and the release's notes, not the spec: the spec never stated the
+binding, so no sentence of it changes. A reading, not run: by `.claude/rules/records.md` § Release
+tags, an unchanged spec makes that release a `Z`, and that is right, since the behaviour was never
+specified; the telling is what carries it.
+
+### 5c. If the group words were not to land: the sentence that would be owed, priced
+
+Same method as 1b: one change to a copy of the spec, every substitution asserted to match exactly
+once (`build/238/drafts/make2.py`), measured by `./heroes-next measure build/238/drafts/<d>.md`
+from the worktree's root (`build/238/drafts/measured2.txt`); the real row unrun.
+
+| draft | where, and the text | claude-legacy | cl100k_base | true today? |
+|---|---|---|---|---|
+| **L1a** | § 13, after *one defining `_GNU_SOURCE` first.*: *Their libraries are linked in that order, one that needs another's before it.* | +17 | +17 | **no**: 5a's `rec_first` |
+| **L1b** | L1a, then *so a library that needs another module's belongs in that module.* | +31 | +31 | no, for 5a's reason |
+| **L1c** | L1a, then *and two modules' in the order of the modules' names.* | +31 | +31 | true under the route; **the key written down as a rule**, G1e's shape |
+| **N1** | § 13, after *wider than C's.*: *A C name two linked libraries define is bound from one of them, unchecked.* | +17 | +17 | true; **a `blocking` defect written into the language** |
+| **N2** | the same place: *A function two linked libraries define is refused.* | +10 | +10 | **false until the refusal's sitting lands it**; priced for that sitting |
+
+**What would be owed without the group words**: the reader needs to know how to order libraries on
+GNU ld, and **no sentence above is both true and useful today**:
+
+- across modules, under the route, the only lever is the modules' names (L1c, +31), which is G1e;
+- inside one module the written order holds only among function groups (5a), so L1a and L1b (+17,
+  +31) would state a falsehood, and a true version has to write the record-only exception down,
+  which is G1e again;
+- and inside one module the header rule of line 376 (*"one that needs another's names comes after
+  it"*) and GNU ld's library rule (a library that needs another comes **before** it, the
+  ffi-pragmatist's C table, `-ltop -lbase` links and `-lbase -ltop` does not) point opposite ways. A
+  group whose header and library both depend on another's has no written order that satisfies both
+  on GNU ld. That last is an **inference** from those two measured facts; no single program was run
+  for it here.
+
+So without the group words, my recommendation is **not a sentence**: line 375 stands as the rule,
+and a correct program that links every library its symbols need and fails on GNU ld is the
+compiler's defect against it (spec beats compiler, CLAUDE.md § 12), filed `blocking` as the
+ffi-pragmatist classes its items 7.3 and 7.4 for the coordinator to file. If the author rules instead that the order is the
+reader's duty, the cheapest owed text is **L1b at +31 / +31 vendored**, and only after item 7.5 is
+repaired so that it is true. It would be paid by no removal I can find and by no instrument that
+exists today, so it would be **unpaid**: I would object to it on the payment rule, not veto it, since
+the ceiling is far.
