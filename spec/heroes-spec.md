@@ -473,8 +473,7 @@ nothing began, it begins a life owed to the mark; either way the program owes on
 more release. `when 0` after a result names the result that means the call did
 what it was handed, and its `consumes`, `transfers` and `retains` count only then,
 so it needs one of them; the value is an integer within the result's type for an
-integer result, `true` or `false` for a `bool`, and a call returning nothing takes
-no clause. A value takes one of the five words, and they mark only a value
+integer result, `true` or `false` for a `bool`. A value takes one of the five words, and they mark only a value
 that reaches a handle, as itself or through a field or an array element; anywhere
 else they are errors.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
