@@ -46,6 +46,7 @@ function help() -> str
         match command.operand
             .file_operand     => operand @ " <file.hero>"
             .optional_operand => operand @ " [file]"
+            .package_operand  => operand @ " [package]"
             .no_operand       => operand @ operand
 
         rows @ rows.push("  " + command.name + operand + "\n      " + command.summary + "\n")

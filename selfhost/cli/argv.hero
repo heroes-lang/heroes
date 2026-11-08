@@ -120,6 +120,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 .run_cmd                                                        => take @ true
                 .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .test_cmd     => take @ take
                 .fmt_cmd | .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd => take @ take
+                .add_cmd | .fetch_cmd                                           => take @ take
                 .grammar_cmd | .probe_cmd                                       => take @ take
                 .version_cmd | .help_cmd                                        => take @ take
 
@@ -168,7 +169,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 if at + 1 >= given.len() || starts_with_dash(given[at + 1])
                     return fail(
                         code: "bad_usage",
-                        msg: "`" + arg + "` needs a " + wanted.placeholder + ": `heroes " + command.name + " <file.hero> " + arg + " <" + wanted.placeholder + ">`"
+                        msg: "`" + arg + "` needs a " + wanted.placeholder + ": `heroes " + command.name + operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
                     )
 
                 # An empty value names nothing, and is refused as a missing one
@@ -177,7 +178,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 if given[at + 1].len() == 0
                     return fail(
                         code: "bad_usage",
-                        msg: "`" + arg + "` needs a " + wanted.placeholder + ", and was given an empty one: `heroes " + command.name + " <file.hero> " + arg + " <" + wanted.placeholder + ">`"
+                        msg: "`" + arg + "` needs a " + wanted.placeholder + ", and was given an empty one: `heroes " + command.name + operand_said(command) + " " + arg + " <" + wanted.placeholder + ">`"
                     )
                 value @ ok(given[at + 1])
                 at @ at + 1
@@ -208,8 +209,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         no_operand: bool @= false
 
         match command.operand
-            .no_operand                       => no_operand @ true
-            .file_operand | .optional_operand => no_operand @ no_operand
+            .no_operand                                          => no_operand @ true
+            .file_operand | .optional_operand | .package_operand => no_operand @ no_operand
 
         if no_operand
             return fail(code: "bad_usage", msg: "`" + command.name + "` takes no file")
@@ -228,8 +229,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
     needs_file: bool @= false
 
     match command.operand
-        .file_operand                   => needs_file @ true
-        .no_operand | .optional_operand => needs_file @ needs_file
+        .file_operand                                      => needs_file @ true
+        .no_operand | .optional_operand | .package_operand => needs_file @ needs_file
 
     if needs_file && file.is_err()
         return fail(
@@ -238,6 +239,17 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         )
     return ok(Invocation(tag: command.tag, file: file, program_args: program_args, flags: flags))
 
+# The operand as a usage line shows it, the help's form: `<file.hero>` where
+# one is needed, `[file]` where it may be left out, `[package]` for what `add`
+# adds, and nothing for a command that takes none, whose usage line would
+# otherwise name a file it refuses.
+function operand_said(command: cli_table.Command) -> str
+    match command.operand
+        .file_operand     => return " <file.hero>"
+        .optional_operand => return " [file]"
+        .package_operand  => return " [package]"
+        .no_operand       => return ""
+
 # What an empty operand is told, in the form the help gives the operand:
 # `<file.hero>` where one is needed, `[file]` where it may be left out.
 function empty_operand(command: cli_table.Command) -> str
@@ -245,6 +257,7 @@ function empty_operand(command: cli_table.Command) -> str
         .file_operand => return "`" + command.name + "` needs a file, and was given an empty one: `heroes " + command.name + " <file.hero>`"
         .optional_operand | .no_operand =>
             return "`" + command.name + "` was given an empty file, which names none: `heroes " + command.name + " [file]`, or no file for its default"
+        .package_operand => return "`" + command.name + "` was given an empty package, which names none: `heroes " + command.name + " json`, or `--path` and a folder"
 
 # The enumerating error the llm-ergonomist asked for: every wrong flag
 # is one round trip, because the message carries the list.
@@ -337,7 +350,7 @@ test "strict against the table, and every refusal names what is accepted"
 
     match bad
         .ok    => assert false
-        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, doctor, mutate, probe, measure, grammar, this"
+        .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, doctor, mutate, probe, measure, grammar, this"
 
     old: [str] = ["fmt", "main.hero", "--write"]
 
@@ -409,7 +422,7 @@ test "an argument that is not UTF-8 is told by what it is to the command (defect
     searched: [str] = ["build", "x.hero", "--include", "inc<0xE9>"]
     assert unheld(searched, at: 3)[0] == "error: the value of `--include`, `inc<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
     command: [str] = ["<0xE9>"]
-    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, build, run, test, fmt, doctor, mutate, probe, measure, grammar, this"]
+    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, build, run, test, fmt, add, fetch, doctor, mutate, probe, measure, grammar, this"]
     flag: [str] = ["check", "x.hero", "--<0xE9>"]
     assert unheld(flag, at: 2) == ["error: `check` does not accept `--<0xE9>` — it accepts " + flag_list(name: "check")]
     program: [str] = ["run", "x.hero", "--", "-o", "<0xE9>"]
@@ -439,12 +452,22 @@ test "an empty value for a flag that takes one is refused, naming the flag (defe
     for c in cli_table.commands()
         for f in c.flags
             if f.value
-                given: [str] = [c.name, "x.hero", f.spelling, ""]
+                given: [str] @= [c.name, "x.hero", f.spelling, ""]
+
+                if operand_said(c).len() == 0
+                    given @ [c.name, f.spelling, ""]
                 asked @ asked + 1
 
                 match parse(given, dir_probe: yes_dir)
                     .ok _  => assert false
-                    .err e => assert e.msg == "`" + f.spelling + "` needs a " + f.placeholder + ", and was given an empty one: `heroes " + c.name + " <file.hero> " + f.spelling + " <" + f.placeholder + ">`"
+                    .err e => assert e.msg == "`" + f.spelling + "` needs a " + f.placeholder + ", and was given an empty one: `heroes " + c.name + operand_said(c) + " " + f.spelling + " <" + f.placeholder + ">`"
+
+    # A command that takes no file names none in its usage line.
+    fetched: [str] = ["fetch", "-C", ""]
+
+    match parse(fetched, dir_probe: yes_dir)
+        .ok _  => assert false
+        .err e => assert e.msg == "`-C` needs a folder, and was given an empty one: `heroes fetch -C <folder>`"
 
     assert asked > 0
 
@@ -474,8 +497,8 @@ test "an empty operand is refused, naming the command, before anything is read (
         taken: bool @= true
 
         match c.operand
-            .no_operand                       => taken @ false
-            .file_operand | .optional_operand => taken @ true
+            .no_operand                                          => taken @ false
+            .file_operand | .optional_operand | .package_operand => taken @ true
 
         if taken
             asked @ asked + 1

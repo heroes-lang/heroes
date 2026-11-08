@@ -45,8 +45,8 @@ use cli/mutate
 use cli/probe
 use cli/grammar
 use cli/unverified
-use fetch/git_source
-use fetch/index_source
+use fetch/add
+use fetch/fetch_all
 
 # The version, and the one place it lives (CLAUDE.md §14, release tags):
 # `heroes --version` prints it, `heroes build --emit-c` writes it as the
@@ -207,6 +207,8 @@ function command(_: i64) -> i64
         .measure_cmd => hero_exit(code: cli_table.exit_code(measure.run(inv)))
         .mutate_cmd  => hero_exit(code: cli_table.exit_code(mutate.run(inv)))
         .probe_cmd   => hero_exit(code: cli_table.exit_code(probe.run(inv)))
+        .add_cmd     => hero_exit(code: cli_table.exit_code(add.run(inv)))
+        .fetch_cmd   => hero_exit(code: cli_table.exit_code(fetch_all.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and
@@ -257,7 +259,7 @@ function command(_: i64) -> i64
             inv: inv
         )
         .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
-        .grammar_cmd | .probe_cmd                                                       => verdict @ verdict
+        .grammar_cmd | .probe_cmd | .add_cmd | .fetch_cmd                               => verdict @ verdict
 
     return cli_table.exit_code(verdict)
 
@@ -295,7 +297,7 @@ function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_tab
         .test_cmd => return verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
         .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
-        .grammar_cmd | .probe_cmd => return .ok_exit
+        .grammar_cmd | .probe_cmd | .add_cmd | .fetch_cmd => return .ok_exit
 
     return .ok_exit
 
@@ -318,13 +320,3 @@ function message_of_toolchain(failed: toolchain.Toolchain?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
-
-## Tests
-
-# What `heroes add` and `heroes fetch` run (panel 235's R10, R20 and R9's C3
-# and C4, M-package-manager steps 9 to 11) is compiled with the command before
-# its verbs are, so its cases run among the compiler's own; step 12's two arms
-# above replace this reach.
-test "the transport and the fetches from git and an index the verbs will run are part of the compiler"
-    assert git_source.SCRATCH == "build/selftest-fetch-git"
-    assert index_source.SCRATCH == "build/selftest-fetch-index"

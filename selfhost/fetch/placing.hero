@@ -1,0 +1,64 @@
+# One entry of a catalogue placed where the compiler reads it (panel 235's R6
+# and R7, ratified 2026-11-07): a tree under `heroes.packages/` kept where it
+# already sums to its entry's `sum`, and fetched from its source otherwise
+# (`fetch/git_source.hero`, `fetch/index_source.hero`), which also places
+# again a tree edited since it was placed; a `path` entry read where it
+# stands, never fetched and never summed, the folder of the author's own that
+# every build says is unverified. Both verbs place through here.
+#
+# The key a tree is placed under is `module/placed.hero`'s, the one discovery
+# reads it under, so what a verb places is what a build finds.
+
+use cli/process
+use module/catalogue
+use module/fingerprint
+use module/placed
+use fetch/address
+use fetch/git_source
+use fetch/index_source
+use fetch/transport
+
+# Where an entry's tree stands, and whether this call fetched it.
+record Placed
+    folder: str
+    fetched: bool
+
+# The entry `e` of the program whose folder is `program` ("" or a path ending
+# with `/`) placed, `index` its catalogue's `index` line.
+function placed_tree(tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> Placed?
+    if e.path.len() > 0
+        return ok(Placed(folder: program + e.path, fetched: false))
+    at = program + "heroes.packages/" + placed.key(e, index: index)
+
+    if process.is_directory(at) && fingerprint.of(at).default("") == e.sum
+        return ok(Placed(folder: at, fetched: false))
+
+    if e.git.len() > 0
+        return ok(
+            Placed(folder: git_source.fetched(tools, e: e, program: program, root: root, index: index)?, fetched: true)
+        )
+    return ok(
+        Placed(folder: index_source.fetched(tools, e: e, program: program, root: root, index: index)?, fetched: true)
+    )
+
+# The catalogue a placed tree holds, `catalogue.read`'s empty one where it
+# holds none; refused where it does not read.
+function own_catalogue(e: catalogue.Entry, folder: str) -> catalogue.Catalogue?
+    c = catalogue.read(opened: folder + "/", named: folder + "/")
+
+    if c.problem.len() > 0
+        return fail(
+            code: "catalogue_refused",
+            msg: "the catalogue of the package `" + e.name + "` does not read: " + c.problem
+        )
+    return ok(c)
+
+# What an entry is fetched at, as a line of the verbs' output names it: its
+# version, its tag, or its folder.
+function at_said(e: catalogue.Entry) -> str
+    if e.version.len() > 0
+        return e.version
+
+    if e.tag.len() > 0
+        return e.tag
+    return e.path

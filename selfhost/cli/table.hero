@@ -14,6 +14,10 @@ variant Operand
     file_operand
     no_operand
     optional_operand
+    # What `heroes add` adds, a package's name or address, which the help
+    # shows as `[package]` and never as a file; optional, since `--path`
+    # names a folder instead.
+    package_operand
 
 variant Tag
     lex_cmd
@@ -23,6 +27,8 @@ variant Tag
     run_cmd
     test_cmd
     fmt_cmd
+    add_cmd
+    fetch_cmd
     doctor_cmd
     mutate_cmd
     probe_cmd
@@ -128,6 +134,20 @@ function commands() -> [Command]
         plain(spelling: "--in-place", what: "rewrite the file instead of printing it; prints nothing, and refuses a file it cannot parse")
     ]
     no_flags: [Flag] = []
+
+    # The verbs that write a program's catalogue and place its packages
+    # (panel 235's R11): the program's folder each acts in, and `add`'s ways
+    # of naming a package.
+    add_flags: [Flag] = [
+        named(spelling: "--tag", what: "the tag a git address is added at; its commit is read and recorded beside it", placeholder: "tag")
+        named(spelling: "--path", what: "add the folder of a package being developed, read where it stands and never fetched", placeholder: "folder")
+        named(spelling: "--as", what: "the entry's name for a git address or a folder, where its last part will not do", placeholder: "name")
+        named(spelling: "--index", what: "the index a name is read from, written as the catalogue's `index` line where it has none", placeholder: "address")
+        named(spelling: "-C", what: "the program's folder, where its heroes.toml is (default: the current folder)", placeholder: "folder")
+    ]
+    fetch_flags: [Flag] = [
+        named(spelling: "-C", what: "the program's folder, where its heroes.toml is (default: the current folder)", placeholder: "folder")
+    ]
     mutate_flags: [Flag] = [
         plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
         valued(spelling: "--operator", what: "score this operator alone, by its id")
@@ -143,11 +163,12 @@ function commands() -> [Command]
         named(spelling: "--offset", what: "with --stride, start that many variants on, so the runs of each offset below the stride judge every variant once", placeholder: "count")
     ]
 
-    # The one flag in this table that reaches the network, and the only one
-    # anywhere in the tool. It PRINTS the constants for a person to paste and
-    # rewrites nothing (panel 123 R4): a check that needed a key would be red
-    # on every fork's pull request forever, because the repository is public
-    # and GitHub passes no secret to a fork.
+    # The one flag in this table that reaches the network, beside the two
+    # verbs that fetch packages (`add`, `fetch`, panel 235's R8), which reach
+    # it for an answer a sum pre-records. It PRINTS the constants for a person
+    # to paste and rewrites nothing (panel 123 R4): a check that needed a key
+    # would be red on every fork's pull request forever, because the
+    # repository is public and GitHub passes no secret to a fork.
     measure_flags: [Flag] = [
         plain(spelling: "--refresh", what: "ask the model's own tokeniser and print the constants to paste (needs ANTHROPIC_API_KEY and curl 8.3.0)")
     ]
@@ -159,6 +180,8 @@ function commands() -> [Command]
         Command(tag: .run_cmd, name: "run", operand: .file_operand, flags: run_flags, summary: "compile and execute (the dev loop, -O2); `-- a b` passes a and b to the program")
         Command(tag: .test_cmd, name: "test", operand: .file_operand, flags: test_flags, summary: "run the file's `test` blocks")
         Command(tag: .fmt_cmd, name: "fmt", operand: .file_operand, flags: fmt_flags, summary: "print the canonical form")
+        Command(tag: .add_cmd, name: "add", operand: .package_operand, flags: add_flags, summary: "add a package to the program's heroes.toml: a name from the index, a git address with --tag, or a folder with --path; writes every package of the build with its sum, and places each")
+        Command(tag: .fetch_cmd, name: "fetch", operand: .no_operand, flags: fetch_flags, summary: "place every package heroes.toml names under heroes.packages/, each checked against its sum; build, check and run never fetch")
         Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")
         Command(tag: .mutate_cmd, name: "mutate", operand: .optional_operand, flags: mutate_flags, summary: "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)")
         Command(tag: .probe_cmd, name: "probe", operand: .optional_operand, flags: probe_flags, summary: "put a comment at every place one can stand in each file, format every variant, and judge that `fmt` keeps each comment where it was (default: the formatter's fixture directories)")
@@ -235,7 +258,9 @@ test "the table is the pipeline's order and the flags carry their shapes"
     # it moves in the commit that adds one, beside the row.
     # **12 -> 13 on 2026-09-28**, `probe`, the formatter's probe (panel 179
     # item 1, the author's decision of 2026-09-26).
-    assert table.len() == 13
+    # **13 -> 15 on 2026-11-08**, `add` and `fetch`, design.md §3.5's two
+    # (panel 235's R11, ratified 2026-11-07).
+    assert table.len() == 15
     assert table[0].name == "lex"
     assert table[3].name == "build"
 
