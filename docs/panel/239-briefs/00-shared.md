@@ -7,9 +7,14 @@ ruled in its R3 that its formatter rule (R1) and the compiler walking modules by
 land in the round that repairs these two, and that each repair needs a sitting. **Full panel**: a new
 refusal is a diagnostic class (CLAUDE.md § 4). Seats: compiler-engineer, ffi-pragmatist,
 spec-warden, historian; a completeness critic over these briefs before any seat starts and over the
-reports after. **The llm-ergonomist's blind seat is a paid `claude -p` session, which the author has
-not allowed for this sitting**: it does not sit now; its brief is written at the synthesis and
-marked unrun.
+reports after. **The llm-ergonomist's blind seat is a paid `claude -p` session**: the author allowed
+10 USD more for paid runs at panel 237's ratification (`git show 5d9e832b2`, 2026-11-08), and this
+sitting's coordinator was told to start no paid run of any kind and to ask the author once; the
+author has not been asked yet. So the seat does not sit now: its brief and its size are written at
+the synthesis and marked unrun. **Repaired on the critic's first pass** (`239-reports/critic-briefs.md`,
+before any seat started): question 1's criterion said against route (A) alone, five shapes added,
+line 131 of the specification, the trace's other words, the trace on the author's screen, three
+routes nobody listed.
 
 ## The tree, frozen
 
@@ -68,7 +73,16 @@ the order of their two `use` lines.
 against `-lw -la`): GNU ld's `-Wl,--trace-symbol=pick` prints `liba.a(pick_a.o): definition of pick`
 or `libw.a(pick_w.o): definition of pick`; ld64's `-Wl,-map,<file>` lists `_pick` from `liba.a(pick_a.o)`
 or `libw.a(pick_w.o)`; for the shared pair `nm -m` of the Heroes binary prints `(undefined) external
-_pick (from liba)` against `(from libb)`.
+_pick (from liba)` against `(from libb)`. **The critic measured two more readings** (container,
+`repro/critic/c/trace.sh`): with `liba.a` then a shared `libb.so`, GNU ld's trace prints `liba.a(pick_a.o):
+definition of pick` **and `libb.so: reference to pick`**, naming the other definer under another word;
+and **`ld.lld` (Debian LLD 22.1.8) is in the Linux image** and prints `libb.so: shared definition of
+pick` for the same link, its `--why-extract=<file>` listing each member with the name that pulled it
+(no `ld.lld` or `ld64.lld` on this Mac, `which`). No linker names an archive member it did not load.
+**Where the trace goes**: GNU ld and ld64's `-why_load` write it on stderr, lld on stdout; and
+`cli/link_warning.hero:37-56` (`run_link`) prints every stderr line of the link to the author but
+glibc's section warnings, so a trace word added to the real link reaches the author's screen unless
+the mechanism takes its lines out.
 
 **Shapes beside, depth one, written for this sitting** (`repro/s2363/`):
 
@@ -92,6 +106,29 @@ _pick (from liba)` against `(from libb)`.
   definition, the one taken**: `ldexp` linked `-lm` prints `libm.so.6: definition of ldexp` and linked
   `-lc -lm` prints `libc.so.6: definition of ldexp`, one definition line each, though both libraries
   define it.
+- **The duplicate in the same member as a name the program needs from the other library** (the
+  critic, `repro/critic/s2363x/`: `libb2.a` holds one member, `b2.o`, defining `pick` and `b_only`;
+  `extra2.hero` links `"b2"` for `b_only`; `one_written` is `use picker` / `use extra2`, `one_sorted`
+  the swap). **GNU ld**: `one_written` exit 2, `internal error: linking failed:` over `multiple
+  definition of 'pick'`, the author's duplicate blamed on the compiler (2365's failure path met by a
+  duplicate); `one_sorted` built exit 0, `2 20`, `libb2`'s `pick`, silent. **ld64**: both built exit
+  0, `2 20`, so `liba`'s `pick` is reachable by no order; in C, renaming `b_only` to `z_only` turns
+  `-la -lz2` into ld64's `duplicate symbol '_pick'`, so on ld64 the names' spelling decides as well as
+  the line's order (the critic's inference from two runs that ld64 walks undefined names in name
+  order; unmeasured further). A weak `pick` in a member loaded for `b_only`: GNU ld takes `liba`'s
+  strong one or the weak one by order, ld64 the weak one in both orders (`repro/critic/c/trace.sh`).
+- **A name the runtime calls, which a linked library defines** (the critic, `runtime_name.hero`:
+  `loud.hero` links `"r"` for `r_only`, `libr.a` holds a member defining `int printf(const char *f,
+  ...) { return 0; }`, no group binds `printf`): **built exit 0 on both platforms and prints two empty
+  lines** where it should print `30` and `7`; the runtime's `printf` replaced. The runtime calls C
+  library names itself (`grep -rohE '\b(malloc|free|calloc|realloc|write|fwrite|printf|snprintf|memcpy)\('
+  runtime/ | sort | uniq -c`: `memcpy` 51, `snprintf` 30, `write` 19, `free` 11, `fwrite` 5, `printf`
+  2, `malloc` 1, `calloc` 1).
+- **The correct program on the other side: a library linked to replace a C library name on purpose**
+  (an allocator replacing `malloc` and `free`, a profiler, a test double), panel 238's own open
+  question for this sitting (`238-reports/ffi-pragmatist.md:334-335`). None is installed on either
+  machine (`ls /opt/homebrew/lib`, the container's `/usr/lib/aarch64-linux-gnu`, `pkg-config
+  --list-all`, grepped for `mimalloc`, `jemalloc`, `tcmalloc`: nothing), so a seat writes one.
 - Tracked `link` names (`git grep -h -oE 'link "[^"]*"' -- '*.hero' | sort | uniq -c`): `sqlite3` 36,
   `m` 20, `app` 7, `z` 5, `pthread` 4, the rest one or two each, most of them fixtures of refused
   names.
@@ -107,7 +144,7 @@ fields.
 |---|---|
 | `rs_first.hero` (`use rs` / `use pw`) | `9`, exit 0 |
 | `pw_first.hero` (`use pw` / `use rs`) | exit 1, ``error[ffi_field_type]: `Rs.a` is `long long` in `rs.h`, a signed 64-bit integer, not `i32` ``, at `rs.hero:3:9`, `fix (guess): declare `a` with `i64`` |
-| `fixguess/`, `a: i64`, both orders | exit 1, ``error[ffi_field_type]: `Rs.a` is `int` in `rs.h` ...`` |
+| `fixguess/`, `a: i64`, both orders | exit 1, ``error[ffi_field_type]: `Rs.a` is `int` in `rs.h` ...``, `fix (guess): declare `a` with `i32``: the guess walks in a circle (this Mac by `repro/mac.sh`; Linux by the critic, `repro/critic/run2364-linux.out`, `linux/repro.sh` having no `fixguess` line) |
 
 Where it comes from: `selfhost/emit/externs.hero:129-161` (`headers_for`): the unit's own groups'
 headers first, `sort(mine)`, then `sort(others)` (line 158), the headers of other modules' group
@@ -140,6 +177,29 @@ unit's (a question for the compiler-engineer to settle, not a premise).
   out wide under `RB_WIDE`; `rb.h` the mirror. Each module's unit reads its own alone (`i32` true
   there). `pa_first` exit 1 on ``Rb.a` is `long long` in `rb.h``; `rb_first` exit 1 on ``Pa.w` is
   `long long` in `pa.h``: no order of the two works in one unit.
+- **`pragma/`: a header of another module that leaves `#pragma pack(1)` set, with no macro at all**
+  (the critic, `repro/critic/s2364x/pragma/`: `pk.h` ends `#pragma pack(1)`, `rp.h` is a plain
+  `typedef struct Rp { char c; int b; } Rp;`). `pk_first` **exit 0, `4 1 -402653184`**, both
+  platforms; `rp_first` `4 1 1000`. `emit/header_state.hero:1-23` (defect 582) gives back the state a
+  header leaves set after all of a unit's group includes, never between two of them. The record's
+  tokens are the same in both units and no macro is involved, so a comparison of tokens or of macros
+  cannot see it.
+- **`partial/`: a `partial` record whose hidden member another module's macro adds** (the critic,
+  `repro/critic/s2364x/partial/`: `rx.h` lays `Rx` out `{ int a; int extra; int b; }` under
+  `TWO_OTHERS_WIDE` and `{ int a; int b; }` without; `rx.hero` binds `record Rx partial` with `a`, `b`
+  and `rx_sum(@r: Rx)`). `rx_first` `4 3 2 302`; **`pw_first` exit 0, `4 3 0 300`**, both platforms,
+  and under `heroes build --sanitize` **`4 3 -1094795586 300`** with no sanitizer word: bytes nobody
+  wrote. No field assertion can fail, since both fields are true in both layouts.
+- **Two shapes the critic wrote that do not reproduce, which narrow the class**: another module's
+  constant read across modules reads as its own unit reads it (`const/`, both orders `4 8 8`), and a
+  C function of another module called directly is refused in both orders, `extern_across_modules`
+  (`fn/`). So a unit reads another module's headers for the group records it spells.
+- **Where each unit's layout already meets** (the critic, read, unrun):
+  `selfhost/cli/probing.hero:236-251` runs the layout check per unit and pushes each unit's padding
+  membership of each record into one list keyed by declaration alone, and
+  `selfhost/emit/lend_type.hero:61-70` folds it into one map, the last unit's standing for every unit;
+  `emit/padding.hero:171` reads it to zero a lent record's padding (panel 215's R1). So each unit's
+  layout is computed already, and the padding writer of one unit may read another unit's layout.
 
 ## What else stands, read while writing
 
@@ -172,8 +232,13 @@ unit's (a question for the compiler-engineer to settle, not a premise).
   *"A group names its header, and `link` a library when the symbols need one; C reads a module's
   headers in the order its groups are written: one that needs another's names comes after it, and
   one defining `_GNU_SOURCE` first. clang checks every result type, constant and record field
-  against that header"*. It says nothing of the libraries' order or of another module's record in a
-  unit (read, lines 373-388; a question, not a ruling, until the spec-warden reads it again).
+  against that header"*. § 13 runs from line 373 to the file's end, 490 (`wc -l`). No sentence orders
+  the libraries (`grep -n -i '\border\b\|\blink\b'`), and none speaks of another module's record in a
+  unit; **but line 131 rules on order**: *"Declaration order never matters but a group's (section 13);
+  mutual recursion needs no forward declarations."*, and § 1 (lines 22 to 31) says what a `use`
+  binds and nothing of its order. Whether a `use` line is a declaration in line 131's sense decides
+  whether the document calls `pw_first`, `dup_sorted` and `sig_sorted` programs whose meaning the
+  order of two lines may not change: the spec-warden's to read.
 - **Panel 204** (`docs/panel/204-c-reads-a-module-s-headers-in-the-order-its-groups-are-written-and-the-spec-says-so.md`)
   ruled a module's own headers in written order (R1), refused a macro two headers define two ways
   (R2), and told a refused header the order that compiles (R3, `selfhost/cli/header_order.hero`, 342
@@ -199,7 +264,22 @@ unit's (a question for the compiler-engineer to settle, not a premise).
      what it refuses among glibc's and the platform's own pairs;
    - **(C)** the compiler orders the link line so that each bound name resolves to its group's
      library, refused where no order does;
-   - **(D)** a route this list does not name. What would have to be true for it to exist.
+   - **(D)** a whole-archive probe: a second link with every archive loaded whole
+     (`-Wl,--whole-archive` on GNU ld, `-Wl,-all_load` on ld64), where the linker itself refuses every
+     duplicate among archive members in both orders, naming both (the critic, in C); it sees no shared
+     library and no C library name, and refuses names no group binds unless filtered;
+   - **(E)** *the group's library* defined by a probe link of the group's own `link` and `package`
+     words alone, the platform's defaults with them, compared with the real link (the critic, unrun):
+     it answers (A)'s question for `pthread_create`, `sqrt` and `puts`, and alone inherits (A)'s order;
+   - **(F)** the link's own refusal where it already happens (`one_written` on GNU ld), told on the
+     binding instead of `internal error`: whatever closes the class owes it, since (A) to (C) assume
+     the link succeeds;
+   - **(G)** a route this list does not name. What would have to be true for it to exist.
+   **The criterion rules out (A) alone, and (A) is panel 238's direction** (`proposal.md`): it accepts
+   `dup_written` and refuses `dup_sorted` by construction. It is admissible only joined to a route that
+   fixes the answer for both orders ((B), (C) or (D)); a seat that judges the criterion wrong says so
+   with the program that shows it. (C) has no order to choose on ld64 where the duplicate shares a
+   member with a needed name (`one_*`).
    For each: the words or tools it needs (the compiler starts no symbol reader today), what it costs
    a build in instructions, on which platform it is unrun, and what Windows' `lld-link` would need.
 2. **2363, the words.** The code (a new one, or an existing one widened), the message, the notes and
@@ -208,10 +288,14 @@ unit's (a question for the compiler-engineer to settle, not a premise).
    to fix the mistake without opening another file.
 3. **2363's reach.** A name no group binds that two linked libraries define and a third needs (a
    library's own internal reference): reached by the robust reading, or a question for later, said
-   why. A name a library defines and the program's own objects define too (the runtime, a header's
-   external definition: `ffi_defined_twice` covers two units).
-4. **2364, the mechanism.** Which closes `pw_first`, `own`, `prefix`, `both` and the silent
-   `pack/pk_first`, with no correct program refused:
+   why. **A name no group binds that the runtime calls and a linked library defines** (`printf`, the
+   critic's `runtime_name`, measured silent), and **a library linked on purpose to replace one**
+   (an allocator): what the robust reading does with each, and how it tells the second from the
+   first. A name a library defines and the program's own objects define too (a header's external
+   definition: `ffi_defined_twice` covers two units).
+4. **2364, the mechanism.** Which closes `pw_first`, `own`, `prefix`, `both` and the three silent
+   members, `pack/pk_first`, `pragma/pk_first` and `partial/pw_first`, with no correct program
+   refused:
    - **(A)** the order search over the other modules' headers a unit reads (panel 238's critic,
      second pass, finding 7), one clang probe per order tried;
    - **(B)** a check that every group record a unit spells has, in that unit, the layout its own
@@ -221,13 +305,16 @@ unit's (a question for the compiler-engineer to settle, not a premise).
      owner's unit does not read;
    - **(E)** another.
    Their cost on a program that builds and on the failure path, in instructions; and which of them
-   `pack` needs, since a field-type assertion cannot see it.
+   the silent members need, since a field-type assertion cannot see them, and a comparison of the
+   record's tokens or of the headers' macros cannot see `pragma` (the critic: only a comparison of the
+   layout, or a unit that reads no foreign header before the record's, does).
 5. **2364, the words where no order works** (`both`): code, message, notes, fix; whether
    `ffi_field_type`'s *"in `rb.h`"* can be made true or another code is owed.
 6. **The order of landing.** Whether each repair depends on R2's walk by key, stands alone, or must
    land before it; how each meets R3's group words on GNU ld (inside one `--start-group` group: which
    definition binds, whether the group loads a member the bare line did not, a `multiple definition`
-   where there was none, and whether the mechanism reads a grouped link the same way).
+   where there was none, and whether the mechanism reads a grouped link the same way); and on ld64,
+   which decides by the names as well as the line (`one_*`), what R2's key changes there.
 7. **The cases each owes**, and in which form (`.claude/rules/verification.md` § What gates what),
    given that no golden case builds a library: on which platform each runs.
 8. **The text**: a spec sentence or none (the spec-warden counts with `heroes measure`, the vendored

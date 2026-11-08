@@ -14,10 +14,14 @@ states (`.claude/rules/records.md` § And the record says whose idea it was).
    archives or two shared libraries define (GNU ld, gold, lld, ld64 and its two-level namespace,
    Microsoft's `link.exe`), what each can be asked to report or refuse (`--trace-symbol`, `-Map`,
    `--warn-backrefs`, gold's `--detect-odr-violations`, ld64's warnings about duplicate libraries,
-   `LNK4006` and `LNK2005`), and when each appeared; ELF symbol interposition and why it is allowed
-   (the dynamic loader's search order, `-Bsymbolic`, version scripts, protected visibility).
+   `LNK4006` and `LNK2005`), and when each appeared; **whether any toolchain refuses by default a
+   name two archives or two shared libraries define** (what a whole-archive link does, and why it is
+   not the default); ELF symbol interposition and why it is allowed (the dynamic loader's search
+   order, `-Bsymbolic`, version scripts, protected visibility), and how allocators (jemalloc,
+   mimalloc, tcmalloc) document replacing `malloc` by linking: the correct program a refusal must not
+   catch.
 2. **How languages that link C for a user meet it**: Go's cgo (and its internal linker's *duplicate
-   symbol* errors), Rust's `#[link]` and `cargo`'s `links` key (which refuses two crates linking one
+   symbol* errors), Rust's `#[link]` and `cargo`'s `links` key (whether it refuses two crates linking one
    native library), Zig's build system, Nim, Swift Package Manager, Haskell's Cabal, and any build
    system that refuses or warns where two linked libraries define one name; dates where the change
    was a correction after a reported crash.

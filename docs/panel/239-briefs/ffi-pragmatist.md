@@ -14,14 +14,21 @@ cannot be written. **Your build is 2363's refusal**; the compiler-engineer build
    link and outside it (GNU ld `--trace-symbol`, `-Map`, `-t`; ld64 `-map`, `-t`, `-why_load`, `nm
    -m` of the output; `nm` and `ar t` of the libraries), for archives and shared libraries, in both
    orders and inside one `-Wl,--start-group ... --end-group` group (R3's words, panel 238's
-   `group.diff`). The brief measured that GNU ld's trace names only the definition taken (`ldexp`,
-   `00-shared.md`): say what reads the others, and at what cost.
+   `group.diff`); and **lld**, which is in the Linux image (`ld.lld`, Debian LLD 22.1.8, the family
+   Windows' `lld-link` belongs to) and names a shared definition it did not take. GNU ld's trace names
+   one `definition of` line, the one taken, and a shared definer after a static one only as `reference
+   to` (`00-shared.md`); no linker names an archive member it did not load: say what reads the
+   others, and at what cost. Run the critic's whole-archive probe (route D) and the padded member
+   (`repro/critic/s2363x/`, `repro/critic/c/`), where ld64 binds by the names as well as the line.
 2. **The false refusals of each route, on real libraries**: glibc's pairs (`ldexp` and five more in
    both `libc.so.6` and `libm.so.6`; `pthread_create` in `libc.so.6` behind an empty `libpthread.a`;
    `libm.so` a linker script), this Mac's re-exports (`libm.tbd` is `libSystem.tbd`), versioned and
    weak definitions, a library two modules both name, two folders each holding a library of one name,
-   SQLite static and shared, zlib, curl or OpenSSL through `package`, and any library on either machine
-   that bundles a copy of another's names. Count, per route, the tracked programs and the real
+   SQLite static and shared, zlib, curl or OpenSSL through `package`, any library on either machine
+   that bundles a copy of another's names, and **a library linked on purpose to replace a C library
+   name** (an allocator's `malloc` and `free`; none is installed on either machine, so write one),
+   which is panel 238's open question for this sitting: what each route does with it, and how a
+   route tells it from `interpose`. Count, per route, the tracked programs and the real
    bindings it would refuse; a route that refuses `link "m"` binding `sqrt` or `link "pthread"`
    binding `pthread_create` is refusing correct programs (the tree holds 20 `link "m"` and 4 `link "pthread"`
    lines, `00-shared.md`).
@@ -43,13 +50,16 @@ cannot be written. **Your build is 2363's refusal**; the compiler-engineer build
    on a real library pair (GLFW with a GL header, libjpeg after `stdio.h`, readline), where each is
    installed.
 6. **The shapes beside 2363, depth one, run**: a name no group binds that a linked library needs and
-   two define; a name a library defines and the runtime's object defines (`runtime/`, prefixed
-   `hero_`); a library `pkg-config` names twice; a `.so` whose own dependency defines the name; `-l`
-   resolving to a shared library on one platform and an archive on the other. A real defect of
+   two define; **a name the runtime calls that a linked library defines** (the critic's
+   `runtime_name`, `printf`, silent on both platforms) and a name the runtime's object defines
+   (`runtime/`, prefixed `hero_`); the duplicate in a member loaded for another name (`one_*`) and a
+   weak definition there; a library `pkg-config` names twice; a `.so` whose own dependency defines the
+   name; `-l` resolving to a shared library on one platform and an archive on the other. A real defect of
    another cause goes in your report with its reproducer, for the coordinator to file.
 
-Windows (`lld-link`) is unrun unless you say how it was reached; say what its `/VERBOSE` or
-`/MAP` would need, as a question.
+Windows (`lld-link`) is unrun unless you say how it was reached (`.claude/rules/platforms.md:98-101`:
+the box is paid by the hour, usually off, and only the author can start it); say what its
+`/VERBOSE` or `/MAP` would need, as a question, and what lld on Linux tells you about it.
 
 Your report: `docs/panel/239-reports/ffi-pragmatist.md` in your worktree, written as you go, ending
 as `00-shared.md` § Rules says.

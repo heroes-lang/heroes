@@ -22,7 +22,12 @@ the author has not allowed for this sitting; where a real count would decide, sa
    its groups are written ... clang checks every result type, constant and record field against that
    header"*): whether a reader of it can predict `sig_sorted`'s crash, `dup_*`'s two values,
    `pw_first`'s refusal and `pack/pk_first`'s wrong value (`00-shared.md`), and which of them the
-   document's own words call a correct program. A silence in the spec is often a ruling: grep
+   document's own words call a correct program. **Read line 131 first**, *"Declaration order never
+   matters but a group's (section 13); mutual recursion needs no forward declarations."*, and § 1's
+   `use` lines (22 to 31): whether a `use` line is a declaration in that sentence's sense decides
+   whether the document already promises that two `use` lines' order changes no program's meaning,
+   which `pw_first`, `dup_sorted` and `sig_sorted` break today. § 13 runs from line 373 to 490. A
+   silence in the spec is often a ruling: grep
    `docs/panel/` and search the issues for one before you call it a gap.
 2. **Whether either repair owes a sentence.** A refusal is no new form (CLAUDE.md § Precedence,
    ranks 3 and 4, panel 215: robustness decides that a measured class closes, Principle 0 how), but
