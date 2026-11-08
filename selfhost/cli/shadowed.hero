@@ -463,7 +463,12 @@ test "a header a group's header reaches is told by who included it, and a group'
         assert said.len().to_str() == pair[1]
 
         if said.len() == 1
+            # Each path in one form on every platform, the folder as the
+            # build named it and `/` between its parts: Windows' `-H` wrote
+            # `evil\\lib.h`, told as `evil//lib.h` until defect 2359.
+            assert strings.holds(text: said[0].message, needle: "`" + root + "/evil/stdio.h` stands in")
             assert strings.holds(text: said[0].message, needle: "`<stdio.h>`, which `" + root + "/evil/lib.h` includes")
+            assert !strings.holds(text: said[0].message, needle: "\\") && !strings.holds(text: said[0].message, needle: "//")
             assert said[0].notes.len() == 2
 
     own = compiling.Compiling(

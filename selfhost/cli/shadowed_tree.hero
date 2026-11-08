@@ -67,20 +67,42 @@ record Entry
     depth: i64
     path: str
 
-# The `-H` lines of what clang said: one or more dots, a space, a path.
+# The `-H` lines of what clang said: one or more dots, a space, a path,
+# written as a C string literal's text (`unwritten`).
 function entries(said: str) -> [Entry]
     out: [Entry] @= []
 
-    for line in deps.lines(said)
+    for row in deps.lines(said)
+        line = clang_place.without_return(row)
         dots: i64 @= 0
 
         while dots < line.len() && line[dots] == '.'
             dots @ dots + 1
 
         if dots > 0 && dots + 1 < line.len() && line[dots] == ' '
-            out @ out.push(Entry(depth: dots, path: line.slice(from: dots + 1, to: line.len())))
+            out @ out.push(Entry(depth: dots, path: unwritten(line.slice(from: dots + 1, to: line.len()))))
 
     return out
+
+# **A path as `-H` writes it, read back**: clang writes each path as a C
+# string literal's text (`Lexer::Stringify`), a `\` before a `\` or a `"`, so
+# on Windows `build\\evil\\lib.h` is `build\evil\lib.h`, which the refusal
+# named `build/evil//lib.h` and could not open to read its includes until
+# then (defect 2359, measured on the Windows box with clang 23.1.1).
+function unwritten(path: str) -> str
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < path.len()
+        if path[at] == '\\' && at + 1 < path.len() && (path[at + 1] == '\\' || path[at + 1] == '"')
+            pieces @ pieces.push(path.slice(from: start, to: at))
+            start @ at + 1
+            at @ at + 2
+        else
+            at @ at + 1
+
+    return pieces.push(path.slice(from: start, to: path.len())).join("")
 
 # **Each file of a named folder the tree reads in another header's place**,
 # by the rule above; `groups` the headers the groups name, `named` and
@@ -254,5 +276,10 @@ test "a file of a named folder is told by who included it, and a group's own hea
     assert got[1].named == "time.h" && got[1].reader == "`" + root + "/src/money.h`" && got[1].beside
     assert got[2].named == "_stdio.h" && got[2].reader == "the C library's `<stdio.h>`" && !got[2].beside
     assert entries("x\n.. a/b.h\n.\n...c\n")[0].depth == 2 && entries("x\n.. a/b.h\n").len() == 1
+
+    # Windows' paths come back as clang wrote them, each `\` once (defect 2359).
+    windows = entries(". build\\\\evil\\\\lib.h\r\n.. C:\\\\Program Files\\\\Kits\\\\stdio.h\r\n.. a\\\"b.h\n")
+    assert windows[0].path == "build\\evil\\lib.h" && windows[1].path == "C:\\Program Files\\Kits\\stdio.h" && windows[2].path == "a\"b.h"
+    assert clang_place.slashed(windows[0].path) == "build/evil/lib.h"
     assert of_group(path: "inc/./x.h", groups: ["./x.h"]) && of_group(path: "inc/sub/x.h", groups: ["sub/x.h"]) && !of_group(path: "inc/ax.h", groups: ["x.h"])
     assert !process.remove_tree(root).is_err()
