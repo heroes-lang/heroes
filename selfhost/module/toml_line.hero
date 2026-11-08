@@ -1,0 +1,54 @@
+# The values of the catalogue's TOML subset as a line holds them (spec § 1;
+# panel 235's R5, ratified 2026-11-07): a basic string on one line between
+# double quotes, no escape, no control character, nothing after it but spaces
+# and a comment. Read by `module/catalogue.hero`, whose concern is what the
+# lines hold; moved out of it at M-package-manager step 3b, when the address
+# rule it took on passed §11's 300 lines, along the seam between reading a
+# value and reading what it means.
+
+# A basic string on one line: `"` … `"`, no `\` and no control character, and
+# nothing after it but spaces and a comment.
+function quoted(row: str, at: i64) -> str?
+    if at >= row.len() || row[at] != '"'
+        return fail(code: "unquoted", msg: "a value is a string between double quotes: `version = \"1.4.2\"`")
+
+    if at + 2 < row.len() && row[at + 1] == '"' && row[at + 2] == '"'
+        return fail(code: "multi", msg: "a value is a string on its line, never a multi-line `\"\"\"` one")
+    probe: i64 @= at + 1
+
+    while probe < row.len() && row[probe] != '"'
+        if row[probe] == '\\'
+            return fail(code: "escape", msg: "a value holds no `\\`: the catalogue's strings have no escapes")
+
+        if row[probe] < 32 || row[probe] == 127
+            return fail(code: "control", msg: "a value holds no control character")
+        probe @ probe + 1
+
+    if probe >= row.len()
+        return fail(code: "unclosed", msg: "the string is not closed on its line")
+    rest = after_value(row, at: probe + 1)
+
+    if rest.len() > 0
+        return fail(code: "trailing", msg: rest)
+    return ok(row.slice(from: at + 1, to: probe))
+
+function failure_of(value: str?) -> str
+    match value
+        .ok _  => return ""
+        .err e => return e.msg
+
+# What stands after a value or a table's `]` but spaces and a comment.
+function after_value(row: str, at: i64) -> str
+    rest = past_spaces(row, at: at)
+
+    if rest >= row.len() || row[rest] == '#' || row[rest] == '\r' && rest + 1 == row.len()
+        return ""
+    return "only a comment may follow on the line, found `" + row.slice(from: rest, to: row.len()) + "`"
+
+function past_spaces(row: str, at: i64) -> i64
+    probe: i64 @= at
+
+    while probe < row.len() && (row[probe] == ' ' || row[probe] == '\t')
+        probe @ probe + 1
+
+    return probe

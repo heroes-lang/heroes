@@ -66,7 +66,7 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [Said]
     c = catalogue.read(opened: folder, named: folder)
 
     if c.problem.len() > 0
-        return [Said(code: "catalogue_refused", at: "", said: c.problem)]
+        return [Said(code: c.code, at: c.at, said: c.said)]
 
     if c.file.len() == 0
         return [

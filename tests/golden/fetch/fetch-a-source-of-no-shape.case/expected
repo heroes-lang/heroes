@@ -1,0 +1,14 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:3: error[source_refused]: `file://packages/yaml` names a host after `file://`, which is read here as no machine and no folder: a path from the program's folder is `file://./packages/yaml`, and an absolute one `file:///` and the path
+heroes.toml:
+# `git` means a repository of the program's own, and writes its path bare.
+[dependencies.yaml]
+git = "file://packages/yaml"
+tag = "v0.3.1"
+commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
+sum = "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"
+heroes.packages:
+(none)

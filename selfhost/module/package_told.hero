@@ -64,10 +64,10 @@ function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnos
     listed = catalogue.read(opened: base, named: base)
 
     if listed.problem.len() > 0
-        if said(told, code: "catalogue_refused", entry: "")
+        if said(told, code: listed.code, entry: "")
             return none
         return [
-            diag.new_diagnostic(code: "catalogue_refused", message: "`use " + written + "` reaches a package through the catalogue, and it does not read: " + listed.problem + " — a catalogue that does not read names no package, the lines above that one included", span: span)
+            diag.new_diagnostic(code: listed.code, message: "`use " + written + "` reaches a package through the catalogue, and it does not read: " + listed.problem + " — a catalogue that does not read names no package, the lines above that one included", span: span)
         ]
     return [no_entry(s, listed: listed, entry: entry, inside: placed.inside_of(name), span: span)]
 
