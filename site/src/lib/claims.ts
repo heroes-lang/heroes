@@ -926,7 +926,10 @@ function checkSpecLinesThreshold(text: string, pagePath: string): string[] {
  * (`site/CLAUDE.md` § The README follows the site), and a page that drops the
  * second, or spells either another way, is red here. The README's fixpoint
  * commands check out a release by hand where `project.html` writes
- * `v{{version}}`, so the release they name is held to the one `VERSION` says.
+ * `v{{version}}`, so the release they name is held to the one `VERSION` says,
+ * in the checkout and in the fetch a `--depth 1` clone needs first, since such
+ * a clone holds no tags (a fresh one refused `git checkout v0.6.0` until
+ * `git fetch --depth 1 origin tag v0.6.0`, 2026-11-08).
  */
 const STAGE_ONE = 'clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed';
 const STAGE_TWO = './heroes-seed build selfhost/main.hero -o heroes';
@@ -961,6 +964,9 @@ function checkTwoStageBuild(text: string, pagePath: string): string[] {
     const release = version();
     if (!new RegExp(`git checkout v${literally(release)}(?![\\w.])`).test(text)) {
       out.push(`${README}: its fixpoint commands do not check out v${release}, the release VERSION says and project.html writes as v{{version}}.`);
+    }
+    if (!new RegExp(`git fetch --depth 1 origin tag v${literally(release)}(?![\\w.])`).test(text)) {
+      out.push(`${README}: does not say \`git fetch --depth 1 origin tag v${release}\`, which a clone made with --depth 1 needs before it can check the release out.`);
     }
   }
   return out;

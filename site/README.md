@@ -830,7 +830,7 @@ Two things that are easy to get wrong and are therefore rules:
   of a title and never the reason for its placement.** The day a row says why a
   nod fits its heading, the rule above fires and the row comes out. Every nod
   links to its own row except the home page's, which stays inert because `Run
-  it` is the highest-intent heading on the site and the four commands a visitor
+  it` is the highest-intent heading on the site and the five commands a visitor
   might paste sit directly under it: the marketing and devex seats reached that
   independently, and the home footer carries the way in instead. **The chapter
   rule stopped being true and is true again**: `site/src/html/docs/errors.html`

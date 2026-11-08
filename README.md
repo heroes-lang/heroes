@@ -113,7 +113,9 @@ verdicts, the vetoes, and what lifted them.
 `seed/heroes.c` is the C it emits for its own source, refreshed at each release
 and, between two, only when the compiler it makes can no longer build today's
 source. On a release four commands check it, and `cmp` printing nothing is the
-whole proof:
+whole proof. A clone made with `--depth 1`, as *Build and try it* below makes
+one, holds no tags, so there the release is fetched first, with
+`git fetch --depth 1 origin tag v0.6.0`; a full clone already has it.
 
 ```sh
 git checkout v0.6.0                                    # a release, whose seed is its own C

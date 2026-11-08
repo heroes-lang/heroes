@@ -39,6 +39,21 @@ minutes apart:
 | 1 MB (default) | exit 127, silent | exit 127, silent | — |
 | 64 MB | exit 0 | exit 0 | **exit 0** |
 
+**Corrected 2026-11-08** (found by lane b25-seeddoc on defect 2352): *killed the
+first time it is pointed at a module of its own* is what the 1 MB row read on
+2026-08-31, and it is not what the CI shows since. The step *The documented
+line, without the Windows flag, still compiles a module* of
+`.github/workflows/ci.yml`, there since `dd69f1022` (2026-09-06), builds this
+file without the flag and runs `build selfhost/lexer.hero --dump-ir` at exit 0
+on the Windows leg: green in run 42423359224 at `5bd4cf3e4` and in run
+42483770687 at `a789691f1` (2026-11-07 and 2026-11-08, read with `gh run view`).
+The comment above that step records the author's Windows box at `7d5139ca` on
+2026-09-06 building `selfhost/main.hero --emit-c` without the flag at exit 0, and
+calls the flag headroom rather than what holds the build up. What no run has
+shown is a compiler made without the flag building stage 2, `build
+selfhost/main.hero -o heroes.exe`, so the documented line keeps the flag, as the
+CI's own stage 1 does.
+
 64 MB is the number that was run; 8 (POSIX parity) and 16 were not. On a 64-bit
 target `/STACK:` reserves address space rather than committing memory, so a
 large reserve costs nothing real, and bringing it down owes its own measurement.
