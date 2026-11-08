@@ -1,0 +1,19 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R2): the same record through
+# a generic function's instance, `same(x: Held(...))`: the instance's result is
+# the concrete `Held`, so it too is written through `hero_out`. On the base the
+# caller's frame held two copies, 268,435,600 bytes at `-O0`, and the program
+# aborted at both levels.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function same<T>(x: T) -> T
+    return x
+
+function go()
+    h = same(x: Held(first: 7, rest: zero))
+    print(h.first)
+
+function main()
+    print("before")
+    go()

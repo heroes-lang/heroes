@@ -1,0 +1,12 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R3): a value made from one
+# module's `extern` crosses to C through another module's. A value keeps C's
+# convention, so the `extern` stands as itself and no adapter has to be one
+# function across units; the proposal as first written refused this program at
+# build. `fixedbugs_2286_call_ret` reads the record's first word and its last.
+use holder
+use caller
+
+function main()
+    f = holder.maker()
+    print(caller.hand(cb: f, n: 5))
+    print(f(6).first)

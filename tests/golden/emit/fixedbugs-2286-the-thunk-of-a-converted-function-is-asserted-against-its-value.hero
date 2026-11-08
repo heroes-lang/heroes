@@ -1,0 +1,19 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R3 and R4): what C reads of
+# a function whose call by name and whose value take a group's record two ways.
+# `make` writes its `partial` record through `hero_out`; its twin,
+# `hero_value_...make`, keeps C's convention, calls it in place and is what
+# the value holds and what the table maps to the thunk; the thunk keeps C's
+# convention and calls the twin; and one `_Static_assert` beside the thunk ties
+# its type to the twin's, so a thunk written by the function's own convention
+# is refused at compile time instead of exiting 134 when C calls it. The typedef
+# C reads, `struct fixedbugs_2286_small (*)(int64_t)`, is the base's.
+extern "fixedbugs-2286-callback.h"
+    record Small tag fixedbugs_2286_small partial
+        first: i64
+    function fixedbugs_2286_apply(cb: (function(i64) -> Small), n: i64) -> i64
+
+function make(n: i64) -> Small
+    return Small(first: n, rest: zero)
+
+function main()
+    print(fixedbugs_2286_apply(cb: make, n: 3))

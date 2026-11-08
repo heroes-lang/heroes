@@ -1,0 +1,36 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R3 and R4): a 256 KiB
+# `partial` record taken and returned by functions C calls back. A call by name
+# takes it in place; a function VALUE keeps C's convention, through a twin the
+# value holds and the thunk calls, so C's view of every type is the base's, and
+# one assertion per converted thunk ties it to its value's type: without it a
+# thunk written by the function's own convention passed clang and exited 134.
+# An `extern` and a Heroes function stored in one function type are handed to
+# C and called through. The output is the same program's in C.
+extern "fixedbugs-2286-callbacks.h"
+    record Held tag fixedbugs_2286_held partial
+        first: i64
+    function fixedbugs_2286_call_param(cb: (function(Held) -> i64), n: i64) -> i64
+    function fixedbugs_2286_call_ret(cb: (function(i64) -> Held), n: i64) -> i64
+    function fixedbugs_2286_held_make(n: i64) -> Held
+
+function first(h: Held) -> i64
+    return h.first + 100
+
+function make(n: i64) -> Held
+    return Held(first: n + 1000, rest: zero)
+
+function pick(n: i64) -> (function(i64) -> Held)
+    if n > 0
+        return fixedbugs_2286_held_make
+    return make
+
+function main()
+    print(fixedbugs_2286_call_param(cb: first, n: 1))
+    print(fixedbugs_2286_call_ret(cb: make, n: 2))
+    f = pick(n: 1)
+    print(fixedbugs_2286_call_ret(cb: f, n: 3))
+    g = pick(n: 0)
+    print(fixedbugs_2286_call_ret(cb: g, n: 4))
+    print(f(5).first)
+    print(g(6).first)
+    print(first(h: g(7)))

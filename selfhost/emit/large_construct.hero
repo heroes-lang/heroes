@@ -1,0 +1,205 @@
+# A large value built in place: every byte of its destination zero, then each
+# field the construction names written into it, a variant's case and a `T?` the
+# same way (defect 2278; panel 233, the `wholes` suite's reading at its
+# landing; panel 236 for a group's record and a fixed array element by
+# element). Split out of `emit/large_value.hero`, which keeps how a large value
+# is held, passed and returned; this module is how one comes into existence.
+
+use ast
+use ir
+use check/state
+use emit/aggregate
+use emit/byte_copy
+use emit/ctype
+use emit/mangle
+use emit/writer
+use ir/layout
+use source
+
+# A large record built in place: every byte of `target` zero, then each field
+# the construction names written into it in the order it names them, so no
+# compound literal of the whole is built on the frame. A fixed array arrives as
+# its braced list, which C cannot assign, and is copied from a literal of the
+# member's own type; past `typeorder`'s depth a struct field keeps its byte copy
+# (`emit/byte_copy.hero`, defect 522). `fixed` says which arguments are such
+# lists.
+#
+# **WHY THE ZERO COMES FIRST, AND WHY IT IS A MEMSET** (panel 182's rule, the
+# `wholes` suite; found by it on ten of this route's own emissions, 2026-11-01).
+# Since panel 182 a temporary gets no initialiser, so the bytes a field store
+# does not name are whatever was there; and what was there, for a value of this
+# room, is the value that stood in the same bytes before, the room being a stack
+# given back last-taken-first (`runtime/parts/frame.c`). The store of the whole
+# that follows a construction, `*hero_out = t`, copies `sizeof` bytes and
+# carries the padding with them, and a record holding a group's `partial` record
+# is lent to C, where panel 215's R1 promises the padding is zero. So the
+# construction writes the whole first. It is written as `t = *(T *)memset(&t,
+# ...)` rather than `t = (T){0}`, for `emit/zeroed.hero`'s reason at its own
+# in-room arm: a `(T){0}` of a 128 MiB record would be a 128 MiB object of the
+# frame, and clang reaches the literal's first scalar by a brace elision as deep
+# as the records held by value, which died at 1,000 (defects 549 and 2058). The
+# assignment's left side is what makes it a definition the `wholes` walk reads;
+# the memset is what writes the bytes.
+#
+# A group's record is built the same way (panel 236), each member by the
+# header's own name and a `cstr` cast to the member's type
+# (`aggregate.written_as`), and a fixed array built from a list element by
+# element (`elements`, `storageless.element_stores`), so neither the record nor
+# its array is ever a compound literal of the frame: defect 2286's chains of
+# group records nested by copy are made of nothing else.
+function in_place(w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], fixed: [bool], elements: [[str]], target: str) -> [str]?
+    fields: [ast.Field] @= []
+    foreign: bool @= false
+
+    match decls[decl].kind
+        .record_decl rec =>
+            fields @ rec.fields
+            foreign @ !rec.header.is_err()
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
+
+    if given.len() != arguments.len() || given.len() != fixed.len() || given.len() != elements.len()
+        return fail(code: "none", msg: "a construction names a field for every argument, and this one does not")
+    holder = ctype.of(names, decl: decl)
+    out: [str] @= [zero_whole(name: holder, target: target)]
+    at: i64 @= 0
+
+    for k in given
+        if k < 0 || k >= fields.len()
+            return fail(code: "none", msg: "a construction names a field the record does not have")
+        named = mangle.field_of(foreign: foreign, name: source.span_text(s, fields[k].name))
+        member = target + "." + named
+
+        if fixed[at] && elements[at].len() > 0
+            out @ out.push(stored(member: member, elements: elements[at]))
+        else
+            argument = aggregate.written_as(
+                c,
+                value: arguments[at],
+                ty: fields[k].ty,
+                foreign: foreign,
+                holder: holder,
+                member: named
+            )
+            out @ out.push(
+                one_field(w, c, decls, ty: fields[k].ty, member: member, argument: argument, fixed: fixed[at])
+            )
+        at @ at + 1
+
+    return ok(out)
+
+# A fixed array written element by element into `member`, one store each.
+function stored(member: str, elements: [str]) -> str
+    out: [str] @= []
+
+    for one in elements
+        out @ out.push(member + one + ";")
+
+    return out.join(" ")
+
+# The one line that both DEFINES the value whole and writes every byte of it
+# zero, which the comment above `in_place` argues for at length.
+function zero_whole(name: str, target: str) -> str
+    return target + " = *(" + name + " *)__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
+
+# One field of a construction written into `member`. A fixed array is copied
+# from a literal of the member's own type, C having no array assignment; one of
+# the unit's own structs goes through its byte copy, which is what keeps clang
+# from splitting it (`emit/byte_copy.hero`, defect 522); anything else is
+# assigned, so clang still checks its type and its width.
+function one_field(w: writer.Writer, c: state.Checked, decls: [ast.Decl], ty: i64, member: str, argument: str, fixed: bool) -> str
+    if fixed
+        return "__builtin_memcpy(&" + member + ", &(__typeof__(" + member + "))" + argument + ", sizeof(" + member + "));"
+    written = state.written_type(c, ty)
+
+    if written.is_err()
+        return member + " = " + argument + ";"
+    owned = byte_copy.own_struct(c, decls, ty: written.must())
+    return byte_copy.copied(
+        w,
+        owned: owned,
+        held: layout.is_refcounted(c, written.must()),
+        target: member,
+        value: argument
+    )
+
+# A large variant case built in place, the tag then the payload's fields, for
+# `in_place`'s reasons and one more of its own: a case's payload shares its
+# bytes with every other case through the C union, so the bytes the widest case
+# holds and this one does not are no member's at all, and the zero is what
+# makes them something rather than whatever the room last held (panel 194's
+# reading of C11 §6.2.6.1p6 and p7, one level down).
+#
+# WHY IT IS HERE AT ALL. Panel 233's R1 counts a variant among the large types,
+# *the widest case plus its tag*, so its temporary already lives in the room;
+# R2 wrote only a record's construction in place, and the compound literal left
+# behind put the whole value back on the frame it had just left. Measured
+# 2026-11-01 on a 2 MiB case: `main`'s frame 4,194,624 bytes at `-O2`, and the
+# same recursion that runs at depth 5 holding a record aborted with `panic:
+# stack exhausted` holding a case.
+function case_in_place(w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64, arguments: [str], fixed: [bool], target: str) -> [str]?
+    both = aggregate.case_names(names, s, decls, decl: decl, at: at)
+
+    if both.is_err()
+        return fail(code: "none", msg: "not a case")
+
+    match decls[decl].kind
+        .variant_decl v =>
+            fields = v.cases[at].fields
+
+            if fields.len() > arguments.len() || fields.len() > fixed.len()
+                return fail(code: "none", msg: "fewer arguments than payload fields")
+            out: [str] @= [
+                zero_whole(name: both.must().holder, target: target)
+                target + ".tag = " + mangle.tag_of(ty: ctype.satellite(names, decl: decl), case_name: both.must().case_name) + ";"
+            ]
+            payload = target + ".as." + mangle.case_member(both.must().case_name)
+            index: i64 @= 0
+
+            # A variant is never a group member, so foreign is false for every
+            # case payload — stated rather than assumed, as `aggregate`'s own
+            # literal states it.
+            for one in fields
+                member = payload + "." + mangle.field_of(foreign: false, name: source.span_text(s, one.name))
+                out @ out.push(
+                    one_field(w, c, decls, ty: one.ty, member: member, argument: arguments[index], fixed: fixed[index])
+                )
+                index @ index + 1
+
+            return ok(out)
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "none", msg: "not a variant")
+
+    return fail(code: "none", msg: "unreached")
+
+# A large `T?` built in place, the same reasoning one type further: an option
+# is large when its payload is, its own C struct is a tag beside a union of the
+# payload and a failure, and the literal that filled it was an object of the
+# frame as wide as the payload. The payload of a large option is itself large,
+# so both sides of the store are already in the room.
+function option_in_place(names: ctype.Names, result: i64, shape: ir.Shape, arguments: [str], target: str) -> [str]?
+    out: [str] @= [zero_whole(name: ctype.option_of(names, ty: result), target: target)]
+
+    match shape
+        .ok_shape =>
+            out @ out.push(target + ".tag = INT64_C(0);")
+
+            # ok(()) — a unit payload has no member at all, so the tag is the
+            # whole value.
+            if arguments.len() > 0
+                out @ out.push(target + ".as.ok = " + arguments[0] + ";")
+
+            return ok(out)
+        .fail_shape =>
+            if arguments.len() < 2
+                return fail(code: "none", msg: "a fail without both sides")
+
+            return ok(
+                out.push(target + ".tag = INT64_C(1);").push(target + ".as.err.code = " + arguments[0] + ";").push(target + ".as.err.msg = " + arguments[1] + ";")
+            )
+        .err_shape =>
+            if arguments.len() < 1
+                return fail(code: "none", msg: "an err without its failure")
+
+            return ok(out.push(target + ".tag = INT64_C(1);").push(target + ".as.err = " + arguments[0] + ";"))
+        .record_shape | .case_shape | .array_shape | .map_shape => return fail(code: "none", msg: "not an option shape")
+
+    return fail(code: "none", msg: "unreached")

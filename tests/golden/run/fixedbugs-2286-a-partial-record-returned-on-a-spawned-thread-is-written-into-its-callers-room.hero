@@ -1,0 +1,25 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R9, the critic's `grpthread`):
+# the 128 MiB record returned by a call by name on a thread the runtime spawns.
+# A spawned thread's stack is smaller than `main`'s, and on the base the call's
+# hidden result on `worker`'s frame aborted it, `panic: stack exhausted in
+# ...worker`, at both levels; the result is now written into the caller's room,
+# which every thread has its own of (`runtime/parts/frame.c`).
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function worker(n: i64) -> i64
+    h = make(n)
+    return h.first
+
+function main()
+    print("before")
+    t = hero_thread_spawn(body: worker, arg: 7)
+    print(hero_thread_join(handle: t))

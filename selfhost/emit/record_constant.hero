@@ -57,6 +57,7 @@ use ir/containers
 use emit/ctype
 use emit/externs as emit_externs
 use emit/signature
+use emit/large_value
 use emit/writer
 use handles
 use parse
@@ -122,7 +123,15 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
     writer.line(@w, text: "    static " + spelled + " " + VALUE + " = " + source.span_text(s, name) + ";")
     writer.at_generated(@w)
     writer.line(@w, text: "#pragma clang diagnostic pop")
-    writer.line(@w, text: "    return " + VALUE + ";")
+
+    # A large record, a group's `partial` one or one past `LARGE`, is written
+    # into the caller's slot, as every function returning one writes it
+    # (`emit/large_value.hero`, panel 236).
+    if large_value.is_large(names, ty: f.result)
+        writer.line(@w, text: "    if (" + large_value.OUT + " != NULL) *" + large_value.OUT + " = " + VALUE + ";")
+        writer.line(@w, text: "    return;")
+    else
+        writer.line(@w, text: "    return " + VALUE + ";")
     writer.line(@w, text: "}")
 
 ## Tests

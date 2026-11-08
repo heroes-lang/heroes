@@ -164,7 +164,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             name = mangle.slot(index: index, name: slot.name)
             nodebug.whole(
                 @lines,
-                text: hidden(slot.kind) + large_value.region(names, result: f.result, spelled: spelled.must(), name: name)
+                text: hidden(slot.kind) + large_value.taken(spelled: spelled.must(), name: name)
             )
 
             if layout.is_refcounted(c, slot.ty)
@@ -289,7 +289,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                     name = mangle.value(value_at)
                     nodebug.whole(
                         @lines,
-                        text: nodebug.MARK + large_value.region(names, result: f.result, spelled: spelling, name: name)
+                        text: nodebug.MARK + large_value.taken(spelled: spelling, name: name)
                     )
                     defines @ defines.push(large_value.defined(name: name, through: large_value.pointer(name)))
                     off_frame @ off_frame.push(name)

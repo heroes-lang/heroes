@@ -48,6 +48,7 @@ use emit/c_main
 use emit/writer
 use emit/externs as emit_externs
 use emit/record_constant
+use emit/large_size
 use emit/ffi_lookup
 use parse
 use resolve
@@ -87,11 +88,14 @@ constant TRAPS: [i64]
     ]
 
 # One accessor the probe calls: its C name, its constant's declaration and
-# the type the program declares it.
+# the type the program declares it, and whether that type is written into the
+# caller's slot (`emit/large_value.hero`): a group's `partial` record or one
+# past `LARGE` (panel 236).
 record Accessor
     name: str
     decl: i64
     result: i64
+    in_place: bool
 
 # Whether `f`'s value is judged: the value check's integers and `bool`s, the
 # floating constants it leaves out (panel 216's critic, condition 1), and the
@@ -121,11 +125,22 @@ function judged(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contai
 function asked(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], defined: [i64]) -> [Accessor]
     out: [Accessor] @= []
 
+    # The large types, asked once and only of a unit with a record's constant:
+    # the same answer `ctype.Names.large` carries for the unit itself, a type
+    # PRESENT in it being written in place (`large_value.is_large`).
+    large: {i64: bool} @= {}
+    sized: bool @= false
+
     for index in defined
         f = p.functions[index]
 
         if judged(c, s, decls, f)
-            out @ out.push(Accessor(name: signature.instance_name(f, c, s, decls), decl: f.decl, result: f.result))
+            if !sized && record_constant.is_record_value(c, decls, f)
+                large @ large_size.large_types(c, decls)
+                sized @ true
+            out @ out.push(
+                Accessor(name: signature.instance_name(f, c, s, decls), decl: f.decl, result: f.result, in_place: !large[f.result].is_err())
+            )
 
     return out
 
@@ -177,12 +192,21 @@ function appended(accessors: [Accessor]) -> str
     cases: [str] @= []
 
     for one in accessors
-        cases @ cases.push(kept(one.name))
+        cases @ cases.push(kept(one))
 
     return dispatcher(cases)
 
-# A call whose value is kept and not compared.
-function kept(name: str) -> str
+# A call whose value is kept and not compared. An accessor that writes its
+# record into the caller's slot is called with none, which runs the same
+# initialisation and keeps no record of the probe's frame (panel 236); the
+# probe is appended to the unit preprocessed, so no macro is left to it and the
+# null pointer is spelled out.
+function kept(one: Accessor) -> str
+    if one.in_place
+        return "{ " + one.name + "((void *)0); return 0; }"
+    return kept_value(one.name)
+
+function kept_value(name: str) -> str
     return "{ volatile __typeof__(" + name + "()) hero_v = " + name + "(); (void)hero_v; return 0; }"
 
 # The two canaries, one division C leaves undefined and one it defines
@@ -197,8 +221,8 @@ function dispatcher(cases: [str]) -> str
         "int " + CANARY_DEFINED + "(void) { volatile int hero_a = 1000; volatile int hero_b = 60; return hero_a / hero_b; }"
         "int " + DISPATCH + "(int hero_i) {"
         "    switch (hero_i) {"
-        "    case 0: " + kept(CANARY_UNDEFINED)
-        "    case 1: " + kept(CANARY_DEFINED)
+        "    case 0: " + kept_value(CANARY_UNDEFINED)
+        "    case 1: " + kept_value(CANARY_DEFINED)
     ]
     index: i64 @= 2
 
@@ -340,7 +364,7 @@ test "the shim's main is named otherwise in the probe's text, and a header askin
         assert probe.len() == header.len() + shim.len() + HIDDEN_MAIN.len() - "main".len()
 
 test "the dispatcher calls the canaries first and every accessor by index at its own type, and the driver says when it finished"
-    one = Accessor(name: "h_m_K", decl: 0, result: 0)
+    one = Accessor(name: "h_m_K", decl: 0, result: 0, in_place: false)
     text = appended([one])
     assert ffi_lookup.has(
         text: text,

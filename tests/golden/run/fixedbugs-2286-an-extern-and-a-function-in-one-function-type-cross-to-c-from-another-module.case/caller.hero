@@ -1,0 +1,9 @@
+# Defect 2286's three modules, the second: it binds the `extern` that takes a
+# callback of the first module's record and hands C the value it is given.
+use holder
+
+extern "fixedbugs-2286-callbacks.h"
+    function fixedbugs_2286_call_ret(cb: (function(i64) -> holder.Held), n: i64) -> i64
+
+function hand(cb: (function(i64) -> holder.Held), n: i64) -> i64
+    return fixedbugs_2286_call_ret(cb: cb, n: n)

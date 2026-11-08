@@ -1,0 +1,18 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R2): a plain parameter of the
+# 128 MiB record is handed as a pointer to its caller's copy (plain parameters
+# are borrowed, never written), so the call copies nothing onto a frame; on the
+# base C's by-value convention made that copy and the program aborted at `-O0`.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function first(h: Held) -> i64
+    return h.first
+
+function go()
+    h = Held(first: 7, rest: zero)
+    print(first(h: h))
+
+function main()
+    print("before")
+    go()

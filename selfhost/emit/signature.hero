@@ -94,10 +94,21 @@ function signature(f: containers.Function, c: state.Checked, names: ctype.Names,
 # The parameters as a direct call hands them: a large plain one as a pointer to
 # its caller's copy, which the body names through `large_value.defined`.
 function direct_params(f: containers.Function, c: state.Checked, names: ctype.Names) -> [str]
+    return params_as(f, c, names, value: false)
+
+# The parameters as a call by name (`value` false) or through a value (`value`
+# true) hands them: the two differ at a group's large record, which a value
+# takes by C's convention (`large_value.value_large`, panel 236).
+function params_as(f: containers.Function, c: state.Checked, names: ctype.Names, value: bool) -> [str]
     params: [str] @= []
 
     for slot_id in f.params
-        if large_value.in_pointer_param(f, names, slot_id: slot_id)
+        in_place: bool @= large_value.in_pointer_param(f, names, slot_id: slot_id)
+
+        if value
+            in_place @ large_value.value_pointer_param(f, names, slot_id: slot_id)
+
+        if in_place
             spelled = ctype.c_type(names, c: c, ty: f.slots[slot_id].ty)
             name = mangle.slot(index: slot_id, name: f.slots[slot_id].name)
 
@@ -144,25 +155,32 @@ function value_name(f: containers.Function, c: state.Checked, s: source.Source, 
 function takes_caller(s: source.Source, f: containers.Function) -> bool
     return stop_place.in_library(s, f)
 
-# The name a function's address is taken by: its twin's for the library's.
-function as_value(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    if stop_place.in_library(s, f)
+# Whether `f` stands as a value through its twin: a function of the library,
+# which hands on its declaration's place, and one whose value takes a group's
+# large record by C's convention where its call by name takes it in place
+# (`large_value.converts`, panel 236).
+function has_twin(s: source.Source, names: ctype.Names, f: containers.Function) -> bool
+    return stop_place.in_library(s, f) || large_value.converts(names, f)
+
+# The name a function's address is taken by: its twin's where it has one.
+function as_value(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
+    if has_twin(s, names, f)
         return value_name(f, c, s, decls)
     return instance_name(f, c, s, decls)
 
-# The twin's signature: the function's own convention, a large result through
-# the caller's slot and a large parameter as a pointer, which is also what the
-# typedef of its function type spells (`emit/types.hero`), so its address
-# assigns to a value of that type.
+# The twin's signature: the convention of a value of its function type, a large
+# program record through the caller's slot or as a pointer and a group's record
+# by value, which is what the typedef of that type spells (`emit/types.hero`),
+# so its address assigns to a value of that type.
 function value_header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
     result: str @= ctype.c_result(names, c: c, ty: f.result)
     params: [str] @= []
 
-    if large_value.is_large(names, ty: f.result)
+    if large_value.value_large(names, ty: f.result)
         params @ params.push(result + " *" + large_value.OUT)
         result @ "void"
 
-    for one in direct_params(f, c, names)
+    for one in params_as(f, c, names, value: true)
         params @ params.push(one)
 
     return local_of(f) + "__attribute__((unused)) " + result + " " + value_name(f, c, s, decls) + "(" + listed(params) + ")"
@@ -174,31 +192,57 @@ function value_prototype(@w: writer.Writer, f: containers.Function, c: state.Che
 function value_twin(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
     writer.at_generated(@w)
     writer.line(@w, text: value_header(f, c, names, s, decls) + " {")
-    writer.line(
-        @w,
-        text: "    " + nodebug.MARK + "static const HeroPlace " + stop_place.HERE + " = {" + stop_place.literals(s, f, offset: f.span.start) + "};"
-    )
+    library = takes_caller(s, f)
+
+    if library
+        writer.line(
+            @w,
+            text: "    " + nodebug.MARK + "static const HeroPlace " + stop_place.HERE + " = {" + stop_place.literals(s, f, offset: f.span.start) + "};"
+        )
     forwarded: [str] @= []
+    result = ctype.c_result(names, c: c, ty: f.result)
     large = large_value.is_large(names, ty: f.result)
 
-    # Handed on as they arrived: the caller's slot first, a large parameter's
-    # pointer, an `@` one's pointer, the rest by value (`emit/large_value.hero`).
-    if large
+    # A group's large result, which the value returns by C's convention, is
+    # written by the function into the twin's own `hero_result` (panel 236).
+    held = large && !large_value.value_large(names, ty: f.result)
+
+    if held
+        writer.line(@w, text: "    " + nodebug.MARK + result + " " + HELD + ";")
+        forwarded @ forwarded.push("&" + HELD)
+    else if large
         forwarded @ forwarded.push(large_value.OUT)
 
+    # Handed on as the call by name takes them: a large parameter's pointer as
+    # it arrived, a group's record that arrived by value by its address, an
+    # `@` one's pointer, the rest by value (`emit/large_value.hero`).
     for slot_id in f.params
-        if large_value.in_pointer_param(f, names, slot_id: slot_id)
-            forwarded @ forwarded.push(large_value.in_pointer(mangle.slot(index: slot_id, name: f.slots[slot_id].name)))
+        name = mangle.slot(index: slot_id, name: f.slots[slot_id].name)
+
+        if large_value.value_pointer_param(f, names, slot_id: slot_id)
+            forwarded @ forwarded.push(large_value.in_pointer(name))
+        else if large_value.in_pointer_param(f, names, slot_id: slot_id)
+            forwarded @ forwarded.push("&" + name)
         else
             forwarded @ forwarded.push(argument_of(f, slot_id: slot_id))
 
-    call = instance_name(f, c, s, decls) + "(" + forwarded.push("&" + stop_place.HERE).join(", ") + ")"
+    if library
+        forwarded @ forwarded.push("&" + stop_place.HERE)
+    call = instance_name(f, c, s, decls) + "(" + forwarded.join(", ") + ")"
 
-    if large || ctype.c_result(names, c: c, ty: f.result) == "void"
+    if held
+        writer.line(@w, text: "    " + call + ";")
+        writer.line(@w, text: "    return " + HELD + ";")
+    else if large || result == "void"
         writer.line(@w, text: "    " + call + ";")
     else
         writer.line(@w, text: "    return " + call + ";")
     writer.line(@w, text: "}")
+
+# The twin's local for a result its function writes in place and its value
+# returns by C's convention.
+constant HELD: str
+    "hero_result"
 
 # A parameter as the twin hands it on: a `@` one is the pointer it arrived as.
 function argument_of(f: containers.Function, slot_id: i64) -> str
@@ -291,8 +335,8 @@ test "the signature spells the pair rule, and an instance carries its hash"
     assert takes_caller(ls, library)
     assert !takes_caller(s, f)
     assert signature(library, c, names, ls, parsed.decls) == "int64_t h_library_dist(int64_t h0_a, int64_t *ph1_b, const HeroPlace *hero_caller)"
-    assert as_value(library, c, ls, parsed.decls) == "hero_value_h_library_dist"
-    assert as_value(f, c, s, parsed.decls) == "h_t_dist"
+    assert as_value(library, c, names, ls, parsed.decls) == "hero_value_h_library_dist"
+    assert as_value(f, c, names, s, parsed.decls) == "h_t_dist"
     twin: writer.Writer @= writer.new_writer("t")
     value_twin(@twin, library, c, names, ls, parsed.decls)
     assert writer.finish(twin) == "#line 2 \"t.c\"\n__attribute__((unused)) int64_t hero_value_h_library_dist(int64_t h0_a, int64_t *ph1_b) {\n    HERO_NODEBUG static const HeroPlace hero_here = {\"<heroes library>\", \"library.dist\", 1, 1};\n    return h_library_dist(h0_a, ph1_b, &hero_here);\n}\n"

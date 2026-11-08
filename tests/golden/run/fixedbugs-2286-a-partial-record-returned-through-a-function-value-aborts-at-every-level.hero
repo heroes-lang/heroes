@@ -1,0 +1,21 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R3, its price written down):
+# a function VALUE keeps C's convention, so a 128 MiB result called through one
+# is a by-value return whose hidden result stands on the caller's frame, and
+# the program aborts with spec § 9's words at both levels (`xvalret`, the value
+# a local). The route that would lift it is named for a later sitting: one
+# adapter per `extern` used as a value, defined once for the whole program.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function go()
+    f = make
+    h = f(7)
+    print(h.first)
+
+function main()
+    print("before")
+    go()

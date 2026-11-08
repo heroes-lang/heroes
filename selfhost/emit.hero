@@ -271,7 +271,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         if emit_decls.emitted(p.functions[at], target: target)
             signature.prototype(@w, p.functions[at], c, names, s, decls)
 
-            if signature.takes_caller(s, p.functions[at])
+            if signature.has_twin(s, names, p.functions[at])
                 signature.value_prototype(@w, p.functions[at], c, names, s, decls)
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: callbacks)
@@ -284,7 +284,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         if emit_decls.emitted(p.functions[at], target: target)
             body.definition(@w, callees, c, names, s, decls, f: p.functions[at], guarded_decls: guarded_decls)
 
-            if signature.takes_caller(s, p.functions[at])
+            if signature.has_twin(s, names, p.functions[at])
                 signature.value_twin(@w, p.functions[at], c, names, s, decls)
 
     perfn.bodies(@w, c, names, s, decls, want: synth.everything())

@@ -27,6 +27,7 @@ use emit/zeroed
 use emit/writer
 use emit/byte_copy
 use emit/large_value
+use emit/large_construct
 use token
 use check/table
 use parse
@@ -134,10 +135,11 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
                 )
                 return
 
-            # A large record of the program's own is written field by field
-            # into its destination (`emit/large_value.hero`, defect 2278).
-            if large_value.is_large(names, ty: ty) && byte_copy.own_declaration(decls[rs.decl])
-                lines = large_value.in_place(
+            # A large record is written field by field into its destination
+            # (`emit/large_value.hero`, defect 2278), a group's record too, a
+            # fixed array element by element (panel 236).
+            if large_value.is_large(names, ty: ty)
+                lines = large_construct.in_place(
                     w,
                     c,
                     names,
@@ -147,6 +149,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
                     given: rs.given,
                     arguments: rendered,
                     fixed: fixed,
+                    elements: element_lists(c, s, decls, f, sites, run: run),
                     target: target.must()
                 )
 
@@ -162,7 +165,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
             # filled it was an object of the frame as wide as the whole
             # variant.
             if large_value.is_large(names, ty: ty)
-                lines = large_value.case_in_place(
+                lines = large_construct.case_in_place(
                     w,
                     c,
                     names,
@@ -222,6 +225,21 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
             text: "    " + byte_copy.copied(w, owned: owned, held: layout.is_refcounted(c, ty), target: target.must(), value: literal.must())
         )
 
+# Each argument's element stores where it is a fixed array built element by
+# element (`storageless.element_stores`), none for any other argument.
+function element_lists(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, sites: defined.Sites, run: ir.Run) -> [[str]]
+    out: [[str]] @= []
+    none: [str] = []
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg v => out @ out.push(
+                storageless.element_stores(c, s, decls, f, sites, value: v.value).default(none)
+            )
+            .inout_arg   => out @ out.push(none)
+
+    return out
+
 # An array literal is several statements, because each push releases
 # the array it grew from.
 function array(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, ty: i64, run: ir.Run, target: str?)
@@ -275,7 +293,7 @@ function option(@w: writer.Writer, names: ctype.Names, f: containers.Function, t
     # is, so the literal it would otherwise take was that payload's size on the
     # frame (`emit/large_value.hero`, defect 2278).
     if large_value.is_large(names, ty: ty)
-        written = large_value.option_in_place(
+        written = large_construct.option_in_place(
             names,
             result: ty,
             shape: shape,

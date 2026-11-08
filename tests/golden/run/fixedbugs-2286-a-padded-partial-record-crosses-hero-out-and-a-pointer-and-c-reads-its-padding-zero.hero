@@ -1,0 +1,30 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R2; panel 215's R1): a
+# `partial` record with padding returned through `hero_out`, then handed as a
+# pointer to a function that lends it to C read-only. C counts the padding
+# bytes it finds non-zero after the stack was scribbled: none either way. The
+# record is built zero whole before its fields (`emit/large_construct.hero`),
+# the write through `hero_out` copies those bytes, and a lend through a
+# parameter taken in place zeroes the padding through the parameter's pointer
+# (`large_value.writable`, defect 2338).
+extern "fixedbugs-2338-padded.h"
+    record Padded tag fixedbugs_2338_padded partial
+        a: i8
+        b: i64
+        c: i8
+    function fixedbugs_2338_dirty(p: Padded lent) -> i64
+    function fixedbugs_2338_scribble()
+
+function make(n: i64) -> Padded
+    fixedbugs_2338_scribble()
+    return Padded(a: 1, b: n, c: 2, rest: zero)
+
+function inspect(p: Padded) -> i64
+    fixedbugs_2338_scribble()
+    return fixedbugs_2338_dirty(p)
+
+function main()
+    fixedbugs_2338_scribble()
+    p = make(n: 7)
+    print(fixedbugs_2338_dirty(p))
+    print(inspect(p: p))
+    print(p.b)

@@ -147,12 +147,15 @@ function sizes_of(c: state.Checked, decls: [ast.Decl]) -> Sizes
     return sizes
 
 # The program's large types, found once per build and carried in
-# `ctype.Names.large`: `true` for each of its own whose bytes pass `LARGE` or
-# that holds a `partial` record, kept off the frame and passed in place;
-# `false` for a group's record that is or holds a `partial` one, kept off the
-# frame alone, since its C convention is the header's and an `extern` takes it
-# by value as C says. Defect 2253's 128 MiB `Held` built as a temporary for a
-# record that holds it is the case (panel 233's critic, `grpwrap`).
+# `ctype.Names.large`, each kept off the frame and passed in place by a call by
+# name: `true` for one of its own whose bytes pass `LARGE` or that holds a
+# `partial` record, which a function value takes in place too; `false` for a
+# group's record that is or holds a `partial` one or whose named fields pass
+# `LARGE`, which a function value and an `extern` take by C's convention, its
+# function type being one an `extern` may take as a callback (panel 236,
+# `emit/large_value.hero`). Defect 2253's 128 MiB `Held` returned by a Heroes
+# function is the case (`grpnoext`), and a chain of group records nested by
+# copy (defect 2286's part (a)).
 function large_types(c: state.Checked, decls: [ast.Decl]) -> {i64: bool}
     sizes = sizes_of(c, decls)
     out: {i64: bool} @= {}
@@ -162,11 +165,16 @@ function large_types(c: state.Checked, decls: [ast.Decl]) -> {i64: bool}
         if byte_copy.own_struct(c, decls, ty: ty)
             if bytes_of(c, sizes, ty: ty) > LARGE || holds_partial(c, sizes, ty: ty)
                 out[ty] @ true
-        else if group_named(c, ty: ty) && holds_partial(c, sizes, ty: ty)
+        else if group_named(c, ty: ty) && group_large(c, sizes, ty: ty)
             out[ty] @ false
         ty @ ty + 1
 
     return out
+
+# Whether a group's record is in the set: it is or holds a `partial` record,
+# whose bytes the count cannot know, or its named fields pass `LARGE`.
+function group_large(c: state.Checked, sizes: Sizes, ty: i64) -> bool
+    return holds_partial(c, sizes, ty: ty) || bytes_of(c, sizes, ty: ty) > LARGE
 
 function group_named(c: state.Checked, ty: i64) -> bool
     return match table.get(c.types, ty)

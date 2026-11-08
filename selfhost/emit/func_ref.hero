@@ -31,6 +31,7 @@ use source
 use ast
 use check/state
 use emit/signature
+use emit/ctype
 use emit/writer
 
 # The name a callee has when it stands as a value, or an error where the form
@@ -42,7 +43,7 @@ use emit/writer
 # symbol — and `.indirect` is already a pointer in a temporary, so its
 # reference would be the address of an address, which `ir.hero`'s own comment
 # refuses.
-function designator(p: instances.Held, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, instance: [i64]) -> str?
+function designator(p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, instance: [i64]) -> str?
     match callee
         .heroes_fn h =>
             found = instances.function_at(p, decl: h.decl, instance: instance)
@@ -51,8 +52,9 @@ function designator(p: instances.Held, c: state.Checked, s: source.Source, decls
                 return fail(code: "no_function", msg: "a Heroes function the program does not hold")
 
             # A function of the library stands through its twin, whose type is
-            # the one the program wrote (panel 230's R1).
-            return ok(signature.as_value(p.program.functions[found.must()], c, s, decls))
+            # the one the program wrote (panel 230's R1), and so does one whose
+            # value takes a group's large record by C's convention (panel 236).
+            return ok(signature.as_value(p.program.functions[found.must()], c, names, s, decls))
         .extern_fn e  => return ok(source.span_text(s, decls[e.decl].name))
         .builtin_fn _ => return fail(code: "builtin", msg: "a built-in is expanded, never named")
         .indirect _   => return fail(code: "indirect", msg: "the address of an address")
@@ -62,10 +64,10 @@ function designator(p: instances.Held, c: state.Checked, s: source.Source, decls
 # written — the same reasoning `emit/unread.hero` applies everywhere else.
 # `at` is the instruction's span end, where the type arguments are kept;
 # `p` the program held with its index (defect 492).
-function emit(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, at: i64, target: str?)
+function emit(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, at: i64, target: str?)
     if target.is_err()
         return
-    named = designator(p, c, s, decls, callee: callee, instance: instances.named_at(f, c, at: at))
+    named = designator(p, c, names, s, decls, callee: callee, instance: instances.named_at(f, c, at: at))
 
     if named.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* a function value with no C name */")

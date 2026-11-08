@@ -1,0 +1,22 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R2): a group record holding a
+# fixed array of the 128 MiB `partial` record, built and returned. It holds a
+# `partial` record by value, so it lives off the frame and is returned through
+# `hero_out`, and its construction is written in place, the array element by
+# element (`emit/large_construct.hero`, `storageless.element_stores`): the
+# array's literal had put 128 MiB back on `make`'s frame at `-O0`.
+extern "fixedbugs-2286-held-array.h"
+    record Held tag heroes_held partial
+        first: i64
+    record HeldArray tag fixedbugs_2286_held_array
+        hs: Held[1]
+
+function make(n: i64) -> HeldArray
+    return HeldArray(hs: [Held(first: n, rest: zero)])
+
+function go()
+    a = make(n: 7)
+    print(a.hs[0].first)
+
+function main()
+    print("before")
+    go()

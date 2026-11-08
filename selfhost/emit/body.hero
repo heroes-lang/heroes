@@ -134,12 +134,11 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     released: [str] @= lend_local.releases(c, names, f)
 
     # The large values' regions go back after the lent locals', the last taken
-    # first (`emit/large_value.hero`); a function returning its value out of
-    # one goes back by `cleanup`, after the return's copy (defect 2316).
+    # first (`emit/large_value.hero`), every large result having been written
+    # through `hero_out` before (panel 236; until then a group's record was
+    # returned out of a region by C's convention and its regions went back by
+    # `cleanup`, after the return's copy, defect 2316).
     back: i64 @= entry.off_frame.len() - 1
-
-    if large_value.returned_from_room(names, ty: f.result)
-        back @ -1
 
     while back >= 0
         released @ released.push(large_value.given_back(entry.off_frame[back]))

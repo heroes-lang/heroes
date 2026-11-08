@@ -1,0 +1,21 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R2): a Heroes function
+# returning a header's `partial` record, defect 2253's 128 MiB `Held`, past
+# every leg's stack. Panel 233's route kept such a record off the frame but
+# returned it by C's convention, so the call's hidden result was a temporary of
+# the caller's frame: `go`'s frame 134,217,840 bytes at `-O0`, `panic: stack
+# exhausted in ...go` at both levels. A call by name now writes it into its
+# caller's room through `hero_out` (`emit/large_value.hero`), and no frame holds it.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function go()
+    h = make(n: 7)
+    print(h.first)
+
+function main()
+    print("before")
+    go()

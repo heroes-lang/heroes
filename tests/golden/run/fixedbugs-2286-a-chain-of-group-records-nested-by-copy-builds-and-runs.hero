@@ -1,0 +1,101 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R1 and R2): defect 2278's
+# chain of records nested by copy, rebuilt over a header's records, each level
+# two halves of the one below in an array, 1 MiB at the top. None is `partial`,
+# so panel 233's route left every level on the frame: clang `-O2` read
+# 460,606,411,427 instructions and 7.0 GB on its unit, and the `-O0` binary
+# aborted in `make16`. A group record whose named fields pass 4,096 bytes now
+# lives off the frame, is returned through `hero_out` and built in place, its
+# array element by element: the same unit reads 0.83 billion instructions and
+# 16 MB, and the program runs at both levels.
+extern "fixedbugs-2286-chain.h"
+    record G0 tag fixedbugs_2286_g0
+        v: i64[2]
+    record G1 tag fixedbugs_2286_g1
+        h: G0[2]
+    record G2 tag fixedbugs_2286_g2
+        h: G1[2]
+    record G3 tag fixedbugs_2286_g3
+        h: G2[2]
+    record G4 tag fixedbugs_2286_g4
+        h: G3[2]
+    record G5 tag fixedbugs_2286_g5
+        h: G4[2]
+    record G6 tag fixedbugs_2286_g6
+        h: G5[2]
+    record G7 tag fixedbugs_2286_g7
+        h: G6[2]
+    record G8 tag fixedbugs_2286_g8
+        h: G7[2]
+    record G9 tag fixedbugs_2286_g9
+        h: G8[2]
+    record G10 tag fixedbugs_2286_g10
+        h: G9[2]
+    record G11 tag fixedbugs_2286_g11
+        h: G10[2]
+    record G12 tag fixedbugs_2286_g12
+        h: G11[2]
+    record G13 tag fixedbugs_2286_g13
+        h: G12[2]
+    record G14 tag fixedbugs_2286_g14
+        h: G13[2]
+    record G15 tag fixedbugs_2286_g15
+        h: G14[2]
+    record G16 tag fixedbugs_2286_g16
+        h: G15[2]
+
+function make0(n: i64) -> G0
+    return G0(v: [n, n + 1])
+
+function make1(n: i64) -> G1
+    return G1(h: [make0(n), make0(n + 1)])
+
+function make2(n: i64) -> G2
+    return G2(h: [make1(n), make1(n + 1)])
+
+function make3(n: i64) -> G3
+    return G3(h: [make2(n), make2(n + 1)])
+
+function make4(n: i64) -> G4
+    return G4(h: [make3(n), make3(n + 1)])
+
+function make5(n: i64) -> G5
+    return G5(h: [make4(n), make4(n + 1)])
+
+function make6(n: i64) -> G6
+    return G6(h: [make5(n), make5(n + 1)])
+
+function make7(n: i64) -> G7
+    return G7(h: [make6(n), make6(n + 1)])
+
+function make8(n: i64) -> G8
+    return G8(h: [make7(n), make7(n + 1)])
+
+function make9(n: i64) -> G9
+    return G9(h: [make8(n), make8(n + 1)])
+
+function make10(n: i64) -> G10
+    return G10(h: [make9(n), make9(n + 1)])
+
+function make11(n: i64) -> G11
+    return G11(h: [make10(n), make10(n + 1)])
+
+function make12(n: i64) -> G12
+    return G12(h: [make11(n), make11(n + 1)])
+
+function make13(n: i64) -> G13
+    return G13(h: [make12(n), make12(n + 1)])
+
+function make14(n: i64) -> G14
+    return G14(h: [make13(n), make13(n + 1)])
+
+function make15(n: i64) -> G15
+    return G15(h: [make14(n), make14(n + 1)])
+
+function make16(n: i64) -> G16
+    return G16(h: [make15(n), make15(n + 1)])
+
+function main()
+    print("before")
+    r = make16(1)
+    print(r.h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].h[0].v[0])
+    print(r.h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].h[1].v[1])

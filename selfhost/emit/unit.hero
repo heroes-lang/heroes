@@ -179,7 +179,7 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
         if emit_decls.emitted(f, target: plan.target)
             signature.prototype(@w, f, c, names, s, decls)
 
-            if signature.takes_caller(s, f)
+            if signature.has_twin(s, names, f)
                 signature.value_prototype(@w, f, c, names, s, decls)
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: whole.callbacks)
@@ -210,8 +210,9 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
                 body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
 
             # A function of the library is reached as a value through its twin
-            # (panel 230's R1, `emit/signature.hero`).
-            if signature.takes_caller(s, f)
+            # (panel 230's R1, `emit/signature.hero`), and so is one whose value
+            # takes a group's large record by C's convention (panel 236).
+            if signature.has_twin(s, names, f)
                 signature.value_twin(@w, f, c, names, s, decls)
 
     perfn.bodies(@w, c, names, s, decls, want: want)

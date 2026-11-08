@@ -138,6 +138,67 @@ function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
     # abort names `where` (panel 230's R1).
     return ok(places.subscript(base: base_text, index: mangle.value(index), length: length, where: where))
 
+# A fixed value built element by element, as the stores that write it into a
+# place, each its index path and its value: `[0] = t2`, `[1] = t6`, a nested
+# list's `[1][0] = t9`. A construction in place writes these rather than a
+# compound literal of the whole array, which is an object of the frame as large
+# as the field (panel 236; defect 2286's array chain). A fixed value read from
+# another value's field is no list of elements and fails, so its place copies it
+# whole.
+function element_stores(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, sites: defined.Sites, value: i64) -> [str]?
+    match table.get(c.types, containers.value_type(f, value))
+        .fixed                                                    => _ = 0
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a fixed value")
+        .array | .map | .fallible | .function_ty | .named         => return fail(code: "none", msg: "not a fixed value")
+        .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a fixed value")
+
+    op = defined.op_of(f, sites, value)
+
+    if op.is_err()
+        return fail(code: "none", msg: "no instruction produces this value")
+
+    match op.must()
+        .construct con =>
+            match con.shape
+                .array_shape                             => _ = 0
+                .record_shape | .case_shape | .map_shape => return fail(code: "none", msg: "not an array")
+                .ok_shape | .fail_shape | .err_shape     => return fail(code: "none", msg: "not an array")
+
+            out: [str] @= []
+            at: i64 @= 0
+
+            for arg in containers.args_of(f, con.arguments)
+                match arg
+                    .value_arg v =>
+                        index = "[" + at.to_str() + "]"
+                        nested = element_stores(c, s, decls, f, sites, value: v.value)
+
+                        if !nested.is_err()
+                            for one in nested.must()
+                                out @ out.push(index + one)
+                        else if !fixed_text(c, s, decls, f, sites, value: v.value).is_err()
+                            return fail(code: "none", msg: "an element read from a field")
+                        else
+                            out @ out.push(index + " = " + mangle.value(v.value))
+                        at @ at + 1
+                    .inout_arg => continue
+
+            return ok(out)
+        .field | .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return fail(
+            code: "none",
+            msg: "not built element by element"
+        )
+        .index | .map_get | .len_of | .tag_of | .payload => return fail(
+            code: "none",
+            msg: "not built element by element"
+        )
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return fail(
+            code: "none",
+            msg: "not built element by element"
+        )
+
+    return fail(code: "none", msg: "unreached")
+
 ## Tests
 
 test "a fixed literal renders braced at the use site, a field read stays an lvalue"

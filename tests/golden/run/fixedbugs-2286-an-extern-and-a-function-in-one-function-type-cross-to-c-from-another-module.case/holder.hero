@@ -1,0 +1,9 @@
+# Defect 2286's three modules, the first: it binds the record and an `extern`
+# returning it, and hands the `extern` out as a function value.
+extern "fixedbugs-2286-callbacks.h"
+    record Held tag fixedbugs_2286_held partial
+        first: i64
+    function fixedbugs_2286_held_make(n: i64) -> Held
+
+function maker() -> (function(i64) -> Held)
+    return fixedbugs_2286_held_make

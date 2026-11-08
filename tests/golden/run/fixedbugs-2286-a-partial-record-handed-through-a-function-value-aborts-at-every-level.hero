@@ -1,0 +1,28 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R3, its price written down;
+# the critic's `grpvalparam`): the 128 MiB record handed BY VALUE through a
+# function value, which keeps C's convention, so the caller copies it onto its
+# frame and aborts with spec § 9's words. The function is chosen at run time,
+# from the arguments' count, so clang cannot fold the call at `-O2`, where a
+# callee it knew it would have read in place and the program would have run.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function first(h: Held) -> i64
+    return h.first
+
+function second(h: Held) -> i64
+    return h.first + 1
+
+function pick(n: i64) -> (function(Held) -> i64)
+    if n > 100
+        return second
+    return first
+
+function go(f: (function(Held) -> i64))
+    h = Held(first: 7, rest: zero)
+    print(f(h))
+
+function main()
+    print("before")
+    go(f: pick(n: args().len()))

@@ -1,0 +1,17 @@
+# fixedbugs, defect 2286, 2026-11-08 (panel 236's R3, its price written down):
+# the same through a function value handed in as a parameter (`grpval`). At
+# `-O2` clang inlines `go` into `main`, whose frame then holds the result, so
+# nothing is printed before the abort at either level.
+extern "fixedbugs-2253-held.h"
+    record Held tag heroes_held partial
+        first: i64
+
+function make(n: i64) -> Held
+    return Held(first: n, rest: zero)
+
+function go(f: (function(i64) -> Held))
+    h = f(7)
+    print(h.first)
+
+function main()
+    go(f: make)
