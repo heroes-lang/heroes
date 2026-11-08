@@ -1,0 +1,2 @@
+# The case runs where no folder of its PATH holds git.
+PATH=<root>/build/no-tools

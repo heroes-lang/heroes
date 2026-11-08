@@ -205,7 +205,14 @@ test "every answer says its schema and kind, names what it read, and a clean one
 # silenced it.
 test "a document holds the notes the compilation owes, each once"
     s: source.Source @= source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
-    folder = reached.Package(alias: "json", root: "vendor/json/", opened: "vendor/json/", problem: "", unverified: true)
+    folder = reached.Package(
+        alias: "json",
+        root: "vendor/json/",
+        opened: "vendor/json/",
+        problem: "",
+        code: "",
+        unverified: true
+    )
     aliases: [reached.Alias] = []
     s.reached @ reached.Reached(packages: [folder], aliases: aliases)
     got = head_of(kind: "diagnostics", readings: [s, s])

@@ -1,0 +1,1 @@
+tests/golden/check/package-a-file-source-with-no-git.case/main.hero:6:5: error[no_git]: `<yaml>` cannot be read: `file://./packages/yaml` cannot be read: git could not be started on this machine, so the program's repository is not known, and a `file://` source is read only inside it: install git, or put it on the PATH

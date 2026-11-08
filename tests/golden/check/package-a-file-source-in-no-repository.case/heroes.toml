@@ -1,0 +1,6 @@
+# A repository's source inside the program's, for a program git places in none.
+[dependencies.yaml]
+git = "file://./packages/yaml"
+tag = "v0.3.1"
+commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
+sum = "sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9"

@@ -1,0 +1,10 @@
+# M-package-manager step 5b (the coordinator's ruling of 2026-11-08): the
+# entry's `git` names `file:///elsewhere/yaml`, a folder outside the program's
+# own repository, and its tree is not placed. The build told *not placed:
+# `heroes fetch` places it*, and the verb refuses the address, which no fetch
+# can read; the build asks git for the program's root on this error path and
+# tells the verb's refusal, its code and its words.
+use <yaml>/load  #~ source_refused
+
+function main()
+    print(load.size())

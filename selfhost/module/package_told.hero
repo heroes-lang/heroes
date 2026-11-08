@@ -25,6 +25,7 @@ use ast
 use diag
 use source
 use module/catalogue
+use module/reached
 use module/placed
 use module/packages
 use module/paths
@@ -49,10 +50,10 @@ function unknown(s: source.Source, used: ast.Use, name: str, told: [diag.Diagnos
 
     for p in s.reached.packages
         if p.alias == entry && p.problem.len() > 0
-            if said(told, code: "package_unread", entry: entry)
+            if said(told, code: told_code(p), entry: entry)
                 return none
             return [
-                diag.new_diagnostic(code: "package_unread", message: "`<" + entry + ">` cannot be read: " + p.problem, span: span)
+                diag.new_diagnostic(code: told_code(p), message: "`<" + entry + ">` cannot be read: " + p.problem, span: span)
             ]
 
         if p.alias == entry
@@ -132,6 +133,14 @@ function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str
         diag.Fix(title: "write `use " + marked + "`", replacement: marked, span: used.name, certainty: certainty)
     )
     return d
+
+# The code a package's problem is told with: the verb's, where the build
+# tells the refusal `heroes fetch` would give (`module/unplaced.hero`), else
+# the graph's own.
+function told_code(p: reached.Package) -> str
+    if p.code.len() > 0
+        return p.code
+    return "package_unread"
 
 function head_of(name: str) -> str
     at: i64 @= 0
