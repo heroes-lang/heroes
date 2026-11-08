@@ -171,6 +171,9 @@ function with_slash(folder: str) -> str
 test "a package's module is read through its entry, from its placed tree or its folder, and nowhere else"
     dir = "build/selftest-packages/"
     sum = "sha256-" + "a".repeat(64.to_u64().must())
+
+    # A clean start: a tree an earlier run placed would read as placed here.
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(path: dir)
     assert !process.mkdir_all(dir + "local").is_err()
     assert !write_file(path: dir + "heroes.toml", text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + sum + "\"\n\n[dependencies.mine]\npath = \"local\"\n").is_err()
     b: Book @= book(named: dir, opened: dir)

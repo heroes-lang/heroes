@@ -44,6 +44,7 @@ use cli/measure
 use cli/mutate
 use cli/probe
 use cli/grammar
+use cli/unverified
 
 # The version, and the one place it lives (CLAUDE.md §14, release tags):
 # `heroes --version` prints it, `heroes build --emit-c` writes it as the
@@ -230,6 +231,7 @@ function command(_: i64) -> i64
         io.eprint(text: "error: " + message_of_source(read))
         exit(code: 2)
     s: source.Source = read.must()
+    unverified.say(s, inv)
     verdict: cli_table.Exit @= .ok_exit
 
     match inv.tag

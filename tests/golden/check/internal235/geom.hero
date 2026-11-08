@@ -1,0 +1,5 @@
+# The owner of `internal235/geom/internal/`, which names its private module.
+use internal235/geom/internal/scan
+
+function area(n: i64) -> i64
+    return scan.twice(n)
