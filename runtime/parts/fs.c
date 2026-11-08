@@ -192,7 +192,10 @@ int64_t hero_fs_newer_than(const char *path, const char *reference) {
  * paths a retry-by-hand then removed cleanly. Ten tries over ~1.3 s is far
  * past both causes; a file still held after that is genuinely held, and the
  * caller hears it. POSIX never retries: a busy file there deletes anyway
- * (the name goes, the inode lingers), so the loop would be dead code. */
+ * (the name goes, the inode lingers), so the loop would be dead code.
+ *
+ * **AND WINDOWS REMOVES A READ-ONLY ENTRY, as POSIX does** (defect 2350):
+ * `hero_fs_wide_writable` below says how, and why it matters. */
 #if defined(_WIN32)
 /* Is there a directory at this wide path, and anything at all: `hero_fs_remove`'s
  * two questions, asked of the name it was handed once widened. */
@@ -205,9 +208,46 @@ static int hero_fs_wide_exists(const wchar_t *wide) {
     return GetFileAttributesW(wide) != INVALID_FILE_ATTRIBUTES;
 }
 
+/* The read-only attribute cleared from the entry at `wide`, answering the
+ * attributes it carried before, so they can be put back, or 0 where it was
+ * not read-only or could not be changed.
+ *
+ * WHY A REMOVAL NEEDS IT (defect 2350). POSIX decides a removal by the
+ * directory holding the name, so `rm -rf` removes a file whose mode is 0444;
+ * Windows refuses to delete a file or a directory carrying
+ * FILE_ATTRIBUTE_READONLY, `_wremove` with EACCES and `RemoveDirectoryW` with
+ * ERROR_ACCESS_DENIED. git writes every object file 0444 (measured 2026-11-08
+ * on this Mac, git 2.56.0: 8 of 8 under a repository's `objects/` and a bare
+ * one's after a `fetch`), which git for Windows carries as that attribute, so
+ * a tree holding a repository could not be removed there: 14 of the
+ * compiler's own tests red on the CI's Windows leg (run 42483770687), each at
+ * its scratch folder's removal, and `heroes fetch` leaving its staging folder
+ * behind. The cause is read from the code and the log, NOT RUN on a Windows
+ * machine: the box was off, and the CI's Windows leg is the judge.
+ *
+ * ON THE NAME ITSELF, NEVER ON WHAT A LINK NAMES. `GetFileAttributesW` and
+ * `SetFileAttributesW` act on a symbolic link and not on its target, as
+ * Microsoft's *Symbolic Link Effects on File Systems Functions* documents
+ * (read, not run), so a link the walk lists is cleared as the link and what
+ * it names keeps its attribute (defect 345); a junction is a name surrogate
+ * as a symbolic link is, and is held to be read the same way, an inference.
+ * The rest of the word is written back as it was read, the pattern
+ * `hero_fs_set_mode` (parts/replace.c) runs on the Windows leg; a word left
+ * empty is FILE_ATTRIBUTE_NORMAL, the one value that says "none". */
+static DWORD hero_fs_wide_writable(const wchar_t *wide) {
+    DWORD attrs = GetFileAttributesW(wide);
+    if (attrs == INVALID_FILE_ATTRIBUTES || (attrs & FILE_ATTRIBUTE_READONLY) == 0) return 0;
+    DWORD wanted = attrs & ~(DWORD)FILE_ATTRIBUTE_READONLY;
+    if (!SetFileAttributesW(wide, wanted == 0 ? FILE_ATTRIBUTE_NORMAL : wanted)) return 0;
+    return attrs;
+}
+
 static int64_t hero_fs_remove_wide(const wchar_t *wide) {
     if (_wremove(wide) == 0) return HERO_OS_OK;
     hero_fs_why_code = (int64_t)errno;
+    /* EACCES is also a sharing violation, which the retries below are for;
+     * the attribute is asked before it is changed. */
+    int refused_access = errno == EACCES;
     if (!hero_fs_wide_exists(wide)) {
         hero_fs_why_code = 0;
         return HERO_OS_OK;
@@ -219,16 +259,29 @@ static int64_t hero_fs_remove_wide(const wchar_t *wide) {
      * and the first delete-then-recreate (`cache/`, `units/`) was the first
      * time a directory unlink actually executed. Measured 2026-08-31: five
      * checks red as `cannot lay the program out`, all of them this line. */
-    if (hero_fs_wide_is_directory(wide)) {
+    int directory = hero_fs_wide_is_directory(wide);
+    if (directory) {
         if (RemoveDirectoryW(wide)) {
             hero_fs_why_code = 0;
             return HERO_OS_OK;
         }
-        hero_fs_why_code = (int64_t)GetLastError();
+        DWORD why = GetLastError();
+        hero_fs_why_code = (int64_t)why;
+        refused_access = why == ERROR_ACCESS_DENIED;
+    }
+    /* Refused for access and read-only: the attribute goes, once, and the
+     * removal is asked again before any wait (`hero_fs_wide_writable`). */
+    DWORD was = refused_access ? hero_fs_wide_writable(wide) : 0;
+    if (was != 0) {
+        if (directory ? RemoveDirectoryW(wide) != 0 : _wremove(wide) == 0) {
+            hero_fs_why_code = 0;
+            return HERO_OS_OK;
+        }
+        hero_fs_why_code = directory ? (int64_t)GetLastError() : (int64_t)errno;
     }
     for (int wait_ms = 5; wait_ms <= 320; wait_ms *= 2) {
         Sleep((DWORD)wait_ms);
-        int directory = hero_fs_wide_is_directory(wide);
+        directory = hero_fs_wide_is_directory(wide);
         if (directory ? RemoveDirectoryW(wide) != 0 : _wremove(wide) == 0) {
             hero_fs_why_code = 0;
             return HERO_OS_OK;
@@ -240,6 +293,9 @@ static int64_t hero_fs_remove_wide(const wchar_t *wide) {
             return HERO_OS_OK;
         }
     }
+    /* An entry that stays is left as it was found, read-only again; the
+     * refusal reported is the removal's, not this. */
+    if (was != 0) (void)SetFileAttributesW(wide, was);
     return HERO_OS_FAILED;
 }
 #endif

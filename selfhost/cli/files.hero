@@ -217,3 +217,64 @@ function made(answer: i64, what: str) -> bool?
     if answer != HERO_OS_OK
         return fail(code: "not_made", msg: "could not " + what + process.because())
     return ok(true)
+
+# Defect 2350: a read-only entry goes with its tree, as `rm -rf` removes it on
+# POSIX, where the directory holding a name decides its removal. Windows
+# refuses to delete a file or a directory carrying the read-only attribute,
+# and git writes every object file 0444, so on the CI's Windows leg 14 of the
+# compiler's own tests failed at the removal of a scratch folder holding a
+# repository. The modes are set by the runtime's own setter, the attribute on
+# Windows: a file deep in a tree and one at its root, an empty directory (one
+# holding a name is refused on POSIX, as `rm -rf` refuses it, so only an
+# empty one is the same everywhere), a path that is itself a read-only file,
+# by `remove_tree` and by `remove_file`, and a link to a read-only file,
+# removed as the link while the file it names keeps its text and its mode
+# (defect 345), where this machine makes a link (Windows grants one to an
+# administrator or in developer mode). POSIX passes it with no repair; the
+# Windows leg is the one that judges it.
+test "a read-only file or directory is removed with its tree as `rm -rf` removes it, and a link's file keeps its mode (defect 2350)"
+    dir = "build/selftest-remove-readonly"
+    windows = process.exe_suffix() == ".exe"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/tree/objects/ab").is_err()
+    assert !process.mkdir_all(dir + "/tree/empty").is_err()
+    assert !write_file(path: dir + "/tree/objects/ab/cdef", text: "blob").is_err()
+    assert !write_file(path: dir + "/tree/HEAD", text: "head").is_err()
+    assert !write_file(path: dir + "/alone", text: "alone").is_err()
+    assert !write_file(path: dir + "/single", text: "single").is_err()
+    assert !write_file(path: dir + "/kept", text: "kept").is_err()
+
+    for file in [dir + "/tree/objects/ab/cdef", dir + "/tree/HEAD", dir + "/alone", dir + "/single", dir + "/kept"]
+        assert !set_mode(path: file, mode: 0o444).is_err()
+        assert mode_of(file) == 0o444
+
+    assert !set_mode(path: dir + "/tree/empty", mode: 0o555).is_err()
+    assert mode_of(dir + "/tree/empty") & 0o222 == 0
+
+    # The link's text is the platform's: a Windows link reads `\`.
+    up: str @= "../kept"
+
+    if windows
+        up @ "..\\kept"
+    in_tree = !symbolic_link(target: up, name: dir + "/tree/link").is_err()
+    beside = !symbolic_link(target: "kept", name: dir + "/link").is_err()
+
+    # The link itself read-only where the setter reaches it, Windows's
+    # attribute; POSIX's `chmod` follows it to `kept`, already 0444.
+    if in_tree
+        _ = set_mode(path: dir + "/tree/link", mode: 0o444).is_err()
+
+    if beside
+        _ = set_mode(path: dir + "/link", mode: 0o444).is_err()
+    assert !process.remove_tree(dir + "/tree").is_err()
+    assert !process.path_exists(dir + "/tree")
+    assert !process.remove_tree(dir + "/alone").is_err()
+    assert !process.path_exists(dir + "/alone")
+    assert !process.remove_file(dir + "/single").is_err()
+    assert !process.path_exists(dir + "/single")
+    assert !process.remove_tree(dir + "/link").is_err()
+    assert !process.path_exists(dir + "/link")
+    assert read_file(dir + "/kept").must() == "kept"
+    assert mode_of(dir + "/kept") == 0o444
+    assert !process.remove_tree(dir).is_err()
+    assert !process.path_exists(dir)
