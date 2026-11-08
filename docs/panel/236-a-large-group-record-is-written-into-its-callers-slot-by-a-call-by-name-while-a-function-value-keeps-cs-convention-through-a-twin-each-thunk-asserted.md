@@ -72,6 +72,32 @@ on the frame.
 | ffi-pragmatist | `gn16` past 40 billion, at least 85 % of it in `-fsyntax-only`, whatever the route | the critic read 51.0 billion and 92.5 % on the route: holds as registered |
 | ffi-pragmatist | on the Windows box, the R7c model right for both directions under Microsoft x64 at both levels | the landing's Windows leg (the box timed out from 03:20; unrun) |
 
+## Scored at the landing, read 2026-11-08 at M-package-manager's close
+
+The landing is `658251be4` (with defect 2334's in-place read at `523809fe7`), merged into batch 24's
+round and gated at `a789691f1`. Each row of the table above, by lane pm-close on this Mac.
+
+- **The compiler-engineer's `emission` exactly 16: held, read and not re-run here.** The landing's
+  commit body reads *741 blessed files that do not match, of which 725 the round's own compiler
+  emits identically and 16 this route moves, exactly the compiler-engineer's predicted 16*, and
+  names the 16; the gate's (`a789691f1`) reads *16 by panel 236's route (the 16 its
+  compiler-engineer predicted)*. The count was taken on the round's corpus, which held batch 24's
+  other lanes' cases beside the sitting's base, and the 16 are the files the sitting's § 9 names.
+- **clang `-O2` on the 1 MiB array chain under 1.0 billion instructions and 20 MB: held, re-run
+  here.** `tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero`
+  emitted by the stage 2 compiler of `a789691f1` (`sources 669ffd2449ebed18`), its unit compiled by
+  `/usr/bin/time -l clang -fintegrated-cc1` with `flags()`'s words, `-O2 -gline-tables-only`, four
+  runs: 826,093,782 to 832,109,420 instructions retired, peak memory footprint 16,417,200 to
+  16,695,728 bytes (Apple clang 21.0.0). The landing's own reading was 833,413,130 and 16,859,544.
+- **The ffi-pragmatist's `gn16` past 40 billion, 85 % in the front end**: held as registered at the
+  sitting, and filed at the landing as defect 2346, as R7 asks.
+- **The ffi-pragmatist's R7c model on Windows: not scored yet.** The landing's Windows leg is the
+  CI's run 42483770687 at `a789691f1`, and it stopped at *The compiler's own tests*, 1900 and 14
+  failed (defect 2350, the package manager's tests removing a tree that holds a git repository), so
+  *The net, in Heroes*, where the four callback shapes run, was skipped (`gh run view 42483770687
+  --json jobs`, read on 2026-11-08 while the run was still going). The prediction is owed at the first Windows leg that runs the net
+  over the landed route.
+
 ## Disagreements, stated plainly
 
 **The route for a function value.** The ffi-pragmatist adopts the proposal with one typed crossing per

@@ -258,3 +258,18 @@ asked: they are **lapsed**, the halves scored at M-agreed-retention standing as
 issue 1390 records them, and the clauses they bought were re-argued on their
 merits under the removal branch (panel 046's R2) and **kept**, by the author's
 decision of 2026-10-24 filed with this close.
+
+**Registered predictions scored at M-package-manager's close, 2026-11-08.** Row 8327 was paid by
+two predictions this close scores, scored in panel 235's file under § *Scored at M-package-manager's
+close*, against `a789691f1`. **The spec-warden's W4, as restated: held**, every case exiting 1 with
+nothing compiled and the `path` exemption told on stderr. **The compiler-engineer's line counts:
+falsified as registered**, in the cheap direction: `selfhost/check/` moved 5 lines where 0 were
+registered (one helper's module renamed at its two calls, no rule of the checker), and
+`selfhost/parse/` gained 42 lines in `code_lines`' unit where 95 to 165 were registered, the mark's
+reader landing outside the folder in `selfhost/package_mark.hero`. So the row is paid by its W4 half,
+and by §1.6 the clause the other half bought, R13's text, is re-argued on its merits under the
+removal branch, as row 3541's false prediction was at M-separate-compilation's close. The same reading
+corrects one fact of the row: the specification's text landed at the milestone's step 3
+(`301ce606c`, `git show --stat` naming `spec/heroes-spec.md`), not at step 2 (`574e579c7`), which
+added the form to the compiler and touched no line of the specification; the count the row carries,
+10,904 real, is that text's.
