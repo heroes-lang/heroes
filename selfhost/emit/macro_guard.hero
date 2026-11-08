@@ -42,12 +42,29 @@
 # instruction: 4`). The probe units (`emit/layout_*`, `ffi_asked`,
 # `cli/header_types`) include the groups alone and ask about the header's own
 # names, so they are not guarded.
+#
+# **The second half of that paragraph was false of the compiler's own C, and
+# is corrected here** (defect 2333, 2026-11-08): a name C reserves for the
+# implementation that the C this compiler writes holds, a builtin, a keyword
+# or a predefined macro, is no header's to define. `#define
+# __builtin_add_overflow(a, b, r) ((*(r) = (a) + (b)), 0)` in the header a
+# group names turned an `i64` sum past the top into `-9223372036854775808` at
+# exit 0, and `#define _Static_assert(c, m)` let a `double` function bound
+# `-> i64` build and print `1`; in a probe, the same macros turned a record's
+# `ffi_field_type` into an internal error at exit 2. So those names, the list
+# `guarded_names.reserved` holds, are saved and given back around the groups
+# by the guard's two files, around the C library `heroes_standard.h` reads,
+# and around every probe's headers (`guarded_names.reserved_around`); the
+# tests below hold every emitter module and the runtime's headers to the
+# list. A system header defining one does so only where clang does not
+# compile C (`guarded_names.hero`, measured on this Mac's SDK and clang).
 
 use ast
 use token
 use source
 use parse
 use emit/guarded_names
+use emit/c_words
 use emit/externs as emit_externs
 use emit/checks_raised
 use emit/header_region
@@ -183,24 +200,9 @@ function bound_names(s: source.Source, decls: [ast.Decl]) -> {str: bool}
                 .constant_decl | .variant_decl | .test_decl => _ = 0
 
             for span in spans
-                words_into(@out, text: source.span_text(s, span))
+                c_words.words_into(@out, text: source.span_text(s, span))
 
     return out
-
-# Every identifier of `text` into `out`: a releaser set's names, one each.
-function words_into(@out: {str: bool}, text: str)
-    i: i64 @= 0
-
-    while i < text.len()
-        if starts_word(text[i])
-            start = i
-
-            while i < text.len() && in_word(text[i])
-                i @ i + 1
-
-            out[text.slice(from: start, to: i)] @ true
-            continue
-        i @ i + 1
 
 # The header a declaration's group named, or none.
 function header_of(decl: ast.Decl) -> token.Span?
@@ -211,12 +213,6 @@ function header_of(decl: ast.Decl) -> token.Span?
         .variant_decl | .test_decl => return fail(code: "none", msg: "no header")
 
     return fail(code: "none", msg: "no header")
-
-function starts_word(b: u8) -> bool
-    return b == 95 || b >= 65 && b <= 90 || b >= 97 && b <= 122
-
-function in_word(b: u8) -> bool
-    return starts_word(b) || b >= 48 && b <= 57
 
 ## Tests
 
@@ -246,8 +242,8 @@ test "the groups' includes stand between the guard's two, a bound name of the li
 # other name: a line added to one and not here is named.
 test "the runtime's guard files hold the list, the open saving and the close giving back"
     listed = guarded_names.names()
-    assert pragmas(text: read_file("runtime/heroes_guard_open.h").must(), word: "push_macro") == listed
-    assert pragmas(text: read_file("runtime/heroes_guard_close.h").must(), word: "pop_macro") == listed
+    assert c_words.pragmas(text: read_file("runtime/heroes_guard_open.h").must(), word: "push_macro") == listed
+    assert c_words.pragmas(text: read_file("runtime/heroes_guard_close.h").must(), word: "pop_macro") == listed
 
 # Every word the runtime's headers write is in the list, so a runtime macro's
 # expansion is guarded too; a word the runtime gains is named here.
@@ -260,7 +256,7 @@ test "the list holds every word the runtime's headers write"
     missing: [str] @= []
 
     for path in ["runtime/heroes_runtime.h", "runtime/hero_os.h"]
-        for word in sort(keys(used(read_file(path).must())))
+        for word in sort(keys(c_words.used(read_file(path).must())))
             if listed[word].is_err()
                 missing @ missing.push(word)
 
@@ -273,7 +269,7 @@ test "the list holds every word the runtime's headers write"
 # its names are owed to the list and the two runtime files.
 test "the headers read before the groups are clang's own two, and the library's come after"
     runtime = read_file("runtime/heroes_runtime.h").must()
-    assert includes_of(runtime) == ["<stdbool.h>", "<stddef.h>", "<stdint.h>"]
+    assert c_words.includes_of(runtime) == ["<stdbool.h>", "<stddef.h>", "<stdint.h>"]
 
     # `<stdint.h>` only for a unit that does not say it reads it after its
     # groups, a unit written before panel 205's R3; every unit this compiler
@@ -284,10 +280,10 @@ test "the headers read before the groups are clang's own two, and the library's 
     )
     first = read_file("runtime/heroes_unit.h").must()
     assert strings.holds(text: first, needle: "#define HERO_STANDARD_AFTER_GROUPS 1\n")
-    assert includes_of(first) == ["\"heroes_runtime.h\""]
-    assert includes_of(read_file("runtime/hero_os.h").must()) == ["\"heroes_runtime.h\""]
+    assert c_words.includes_of(first) == ["\"heroes_runtime.h\""]
+    assert c_words.includes_of(read_file("runtime/hero_os.h").must()) == ["\"heroes_runtime.h\""]
     assert emit_externs.SEEDS == ["heroes_unit.h", "hero_os.h"]
-    assert includes_of(read_file("runtime/heroes_standard.h").must()) == ["<stdint.h>", "<math.h>"]
+    assert c_words.includes_of(read_file("runtime/heroes_standard.h").must()) == ["\"heroes_reserved_open.h\"", "<stdint.h>", "<math.h>", "\"heroes_reserved_close.h\""]
 
 # The ten macros the unit writes from the library's standard headers (four
 # when defect 568 was repaired, defect 567's division guard six more) are
@@ -314,7 +310,7 @@ test "the unit's own C writes ten macros of the library's standard headers, each
 
     for path in files
         if strings.ends_with(text: path, suffix: ".hero") && !strings.ends_with(text: path, suffix: "guarded_names.hero")
-            quoted = quoted_words(read_file(path).must())
+            quoted = c_words.quoted_words(read_file(path).must())
 
             for name in guarded_names.left()
                 if !quoted[name].is_err()
@@ -344,152 +340,142 @@ test "the names a program's groups write are left to their header"
     )
     assert bound_names(library, parse.parse_source(library).decls)["HERO_OS_OK"].is_err()
 
-# Every identifier inside a string literal of `text`'s code, its comments
-# left out: what an emitter module writes into C.
-function quoted_words(text: str) -> {str: bool}
-    out: {str: bool} @= {}
-    n = text.len()
-    i: i64 @= 0
-    line_start: bool @= true
+# **The names C reserves that the compiler's own C writes are saved and given
+# back by the reserved pair, in the list's order** (defect 2333), around the
+# groups inside the guard's two files, around the library's headers
+# `heroes_standard.h` reads, and named by `runtime.c`, so the runtime's key
+# holds both.
+test "the reserved pair saves and gives back the reserved list, inside the guard and around the library's headers (defect 2333)"
+    listed = guarded_names.reserved()
+    assert c_words.pragmas(text: read_file("runtime/heroes_reserved_open.h").must(), word: "push_macro") == listed
+    assert c_words.pragmas(text: read_file("runtime/heroes_reserved_close.h").must(), word: "pop_macro") == listed
+    open = c_words.includes_of(read_file("runtime/heroes_guard_open.h").must())
+    close = c_words.includes_of(read_file("runtime/heroes_guard_close.h").must())
+    assert open == ["\"heroes_reserved_open.h\""]
+    assert close == ["\"heroes_reserved_close.h\""]
+    whole = c_words.includes_of(read_file("runtime/runtime.c").must())
+    named: {str: bool} @= {}
 
-    while i < n
-        b = text[i]
+    for one in whole
+        named[one] @ true
 
-        if line_start
-            at: i64 @= i
+    assert !named["\"heroes_reserved_open.h\""].is_err()
+    assert !named["\"heroes_reserved_close.h\""].is_err()
 
-            while at < n && text[at] == 32
-                at @ at + 1
+# **Every name C reserves for the implementation that the C this compiler
+# writes holds is in the reserved list** (defect 2333): each such word inside
+# an emitter module's string literals, the three overflow builtins
+# `emit/operator.hero` composes from `__builtin_`, and each the runtime's
+# four headers write. A word the emitter only reads of clang's own answers is
+# named here with its reason, and nowhere else: the qualifiers a header's
+# type may carry after a pointer (`emit/lend_type.hero` reads them off), and
+# the import prefix of a Windows linker's complaint (`emit/ffi_build.hero`),
+# and the parameter list of a variadic macro, which `emit/c_words.hero` names
+# to leave out of what it reads.
+test "every reserved name the emitter writes and the runtime's headers write is in the reserved list (defect 2333)"
+    listed: {str: bool} @= {}
 
-            if at < n && text[at] == 35
-                while i < n && text[i] != 10
-                    i @ i + 1
+    for name in guarded_names.reserved()
+        listed[name] @ true
 
-                continue
-        line_start @ b == 10
+    read_only = [
+        "_Nonnull"
+        "_Null_unspecified"
+        "_Nullable"
+        "_Nullable_result"
+        "__imp_"
+        "__restrict"
+        "__restrict__"
+        "__VA_ARGS__"
+    ]
+    exempt: {str: bool} @= {}
 
-        if b == 34
-            i @ i + 1
-            start = i
+    for name in read_only
+        exempt[name] @ true
 
-            while i < n && text[i] != 34 && text[i] != 10
-                if text[i] == 92
-                    i @ i + 1
-                i @ i + 1
+    missing: [str] @= []
+    files = process.files_under("selfhost/emit").must().push("selfhost/emit.hero")
 
-            words_into(@out, text: text.slice(from: start, to: i))
-        i @ i + 1
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero")
+            for word in sort(keys(c_words.quoted_words(c_words.without_tests(read_file(path).must()))))
+                composed = word == "__builtin_"
 
-    return out
+                # The prefix `operator.hero` composes the three overflow
+                # builtins from, and from nowhere else.
+                if composed && !strings.ends_with(text: path, suffix: "/operator.hero")
+                    missing @ missing.push(path + ": " + word)
+                else if !composed && c_words.is_reserved(word) && listed[word].is_err() && exempt[word].is_err()
+                    missing @ missing.push(path + ": " + word)
 
-# The names of a guard file's `#pragma <word>("...")` lines, in order.
-function pragmas(text: str, word: str) -> [str]
-    out: [str] @= []
-    prefix = "#pragma " + word + "(\""
-    start: i64 @= 0
-    i: i64 @= 0
+    for name in ["__builtin_add_overflow", "__builtin_sub_overflow", "__builtin_mul_overflow"]
+        if listed[name].is_err()
+            missing @ missing.push("operator.hero: " + name)
 
-    while i <= text.len()
-        if i == text.len() || text[i] == 10
-            line = text.slice(from: start, to: i)
+    for path in ["runtime/heroes_runtime.h", "runtime/hero_os.h", "runtime/heroes_unit.h", "runtime/heroes_standard.h"]
+        for word in sort(keys(c_words.reserved_used(read_file(path).must())))
+            if listed[word].is_err()
+                missing @ missing.push(path + ": " + word)
 
-            if line.len() > prefix.len() + 2 && holds_at(text: line, at: 0, word: prefix)
-                out @ out.push(line.slice(from: prefix.len(), to: line.len() - 2))
-            start @ i + 1
-        i @ i + 1
+    assert missing.join(" ") == ""
 
-    return out
+# **A header's macro over a reserved name the unit writes is given back after
+# the groups** (defect 2333), asked of clang: a group's header defines
+# `__builtin_add_overflow` and `_Static_assert` to nothing the compiler
+# means, and after the guard's close the unit's own C reads both as C's own;
+# the same header after the close, where nothing gives them back, is refused,
+# so the test is not blind.
+test "a group header's macro over a builtin or a keyword the unit writes is given back after the guard (defect 2333)"
+    dir = "build/selftest-reserved-guard"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    planted = "#define __builtin_add_overflow(a, b, r) hero_planted_no_such_name\n#define _Static_assert(c, m) extern int hero_planted_no_such_name\n"
+    assert !write_file(path: dir + "/planted.h", text: planted).is_err()
+    body = "static int hero_sum(int a) { int r; return __builtin_add_overflow(a, 1, &r) ? -1 : r; }\n_Static_assert(sizeof(int) >= 2, \"the keyword is C's\");\nint hero_reserved_probe(void) { return hero_sum(1); }\n"
+    no_names: {str: bool} = {}
+    guarded = strings.with_all(list: [FIRST_LINE], more: around(["#include <planted.h>"], bound: no_names)).push(STANDARD_LINE).join("\n") + "\n" + body
+    bare = [FIRST_LINE, STANDARD_LINE, "#include <planted.h>"].join("\n") + "\n" + body
 
-# The targets of a header's `#include` lines, as written, in order.
-function includes_of(text: str) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
+    for pair in [[guarded, "true"], [bare, "false"]]
+        unit = dir + "/unit-" + pair[1] + ".c"
+        assert !write_file(path: unit, text: pair[0]).is_err()
+        said = process.run(
+            program: "clang",
+            words: ["clang", "-std=gnu11", "-Werror", "-fsyntax-only", "-I", "runtime", "-I", dir, unit],
+            out: process.discard(),
+            err: process.discard()
+        )
+        assert said.started
+        assert said.code == 0 == (pair[1] == "true")
 
-    while i <= text.len()
-        if i == text.len() || text[i] == 10
-            line = text.slice(from: start, to: i)
-            at: i64 @= 0
+    assert !process.remove_tree(dir).is_err()
 
-            while at < line.len() && line[at] == 32
-                at @ at + 1
+# **Every probe that writes a reserved name after a group's headers reads them
+# between the reserved pair** (defect 2333): in each writer named here, every
+# `c_text.includes` of its headers stands inside `reserved_around`, so a
+# header's macro over `_Static_assert` or a builtin leaves its questions as the
+# compiler wrote them. A writer gaining a bare one is named, and so is one
+# whose count moved, so the list is looked at again.
+test "every probe that writes a reserved name after its headers reads them between the reserved pair (defect 2333)"
+    sites = [
+        ["selfhost/emit/ffi_asked.hero", "1"]
+        ["selfhost/emit/layout_screen.hero", "2"]
+        ["selfhost/emit/layout_check.hero", "1"]
+        ["selfhost/emit/lock_screen.hero", "1"]
+        ["selfhost/emit/layout_text.hero", "1"]
+        ["selfhost/cli/header_types.hero", "2"]
+        ["selfhost/cli/two_ways_ask.hero", "1"]
+        ["selfhost/cli/switch_ask.hero", "1"]
+        ["selfhost/cli/unswitch_ask.hero", "1"]
+    ]
+    wrong: [str] @= []
 
-            if holds_at(text: line, at: at, word: "#include ")
-                out @ out.push(line.slice(from: at + 9, to: line.len()))
-            start @ i + 1
-        i @ i + 1
+    for site in sites
+        code = c_words.without_tests(read_file(site[0]).must())
+        wrapped = c_words.occurrences(text: code, word: "reserved_around(c_text.includes(")
+        every = c_words.occurrences(text: code, word: "c_text.includes(")
 
-    return out
+        if wrapped.to_str() != site[1] || every != wrapped
+            wrong @ wrong.push(site[0] + " " + wrapped.to_str() + " of " + every.to_str())
 
-# Whether `text` holds `word` at `at`, byte for byte, with no slice that could
-# split a character where `at` falls inside one: a header's comment holds
-# `é` and an em dash.
-function holds_at(text: str, at: i64, word: str) -> bool
-    if at + word.len() > text.len()
-        return false
-    k: i64 @= 0
-
-    while k < word.len()
-        if text[at + k] != word[k]
-            return false
-        k @ k + 1
-
-    return true
-
-# Every identifier of the C in `text`, once each: a string or character
-# literal and a comment passed over, a number's letters too, and what C
-# reserves for the implementation, and `defined`, left out.
-function used(text: str) -> {str: bool}
-    out: {str: bool} @= {}
-    n = text.len()
-    i: i64 @= 0
-
-    while i < n
-        b = text[i]
-
-        if b == 34 || b == 39
-            i @ i + 1
-
-            while i < n && text[i] != b
-                if text[i] == 92
-                    i @ i + 1
-                i @ i + 1
-
-            i @ i + 1
-            continue
-
-        if b == 47 && i + 1 < n && text[i + 1] == 42
-            i @ i + 2
-
-            while i + 1 < n && !(text[i] == 42 && text[i + 1] == 47)
-                i @ i + 1
-
-            i @ i + 2
-            continue
-
-        if b == 47 && i + 1 < n && text[i + 1] == 47
-            while i < n && text[i] != 10
-                i @ i + 1
-
-            continue
-
-        if starts_word(b)
-            start = i
-
-            while i < n && in_word(text[i])
-                i @ i + 1
-
-            word = text.slice(from: start, to: i)
-
-            if !(text[start] == 95 && word.len() > 1 && (text[start + 1] == 95 || text[start + 1] >= 65 && text[start + 1] <= 90)) && word != "defined"
-                out[word] @ true
-            continue
-
-        if b >= 48 && b <= 57
-            while i < n && (in_word(text[i]) || text[i] == 46)
-                i @ i + 1
-
-            continue
-        i @ i + 1
-
-    return out
+    assert wrong.join(" ") == ""

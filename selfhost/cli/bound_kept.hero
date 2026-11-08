@@ -35,6 +35,7 @@ use diag
 use emit/c_text
 use emit/externs as emit_externs
 use emit/macro_guard
+use emit/c_words
 use emit/guarded_names
 use cli/toolchain
 use cli/compiling
@@ -214,7 +215,7 @@ test "the unit's own C writes no function of <math.h> the guard holds (defect 20
     runtime: {str: bool} @= {}
 
     for path in ["runtime/heroes_runtime.h", "runtime/hero_os.h"]
-        for word in keys(macro_guard.used(read_file(path).must()))
+        for word in keys(c_words.used(read_file(path).must()))
             runtime[word] @ true
 
     written: [str] @= []
@@ -269,10 +270,10 @@ function called_words(text: str) -> {str: bool}
 
             if b == 34
                 quoted @ !quoted
-            else if quoted && macro_guard.starts_word(b)
+            else if quoted && c_words.starts_word(b)
                 start = at
 
-                while at < line.len() && macro_guard.in_word(line[at])
+                while at < line.len() && c_words.in_word(line[at])
                     at @ at + 1
 
                 if at < line.len() && line[at] == 40

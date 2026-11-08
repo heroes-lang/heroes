@@ -30,7 +30,11 @@
  * the runtime's headers to it.
  *
  * `runtime.c` includes both, which compiles them with the runtime and puts
- * them under the key every cached object answers to. */
+ * them under the key every cached object answers to.
+ *
+ * And the names C reserves for the implementation that the compiler's own C
+ * writes, which this list leaves out, the last line gives back
+ * (`heroes_reserved_open.h`, `heroes_reserved_close.h`; defect 2333). */
 #pragma pop_macro("HEROES_RUNTIME_H")
 #pragma pop_macro("HERO_ARRAY_LIT")
 #pragma pop_macro("HERO_ARRAY_STATIC")
@@ -637,3 +641,4 @@
 #pragma pop_macro("where")
 #pragma pop_macro("why")
 #pragma pop_macro("word")
+#include "heroes_reserved_close.h"

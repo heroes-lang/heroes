@@ -308,7 +308,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ca7042c3c9b7331", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("72ee03386126c337", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiaconstructionnamesonememberofauniontype\tffi-a-construction-names-one-member-of-a-union-type\n");

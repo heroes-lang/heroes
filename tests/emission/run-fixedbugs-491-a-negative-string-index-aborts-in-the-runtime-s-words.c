@@ -214,7 +214,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b6bcc501ec1223e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("11b2cb5d434c7244", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs491anegativestringindexabortsintheruntimeswords\tfixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words\n");

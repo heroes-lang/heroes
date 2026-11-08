@@ -16,6 +16,7 @@ use bytes
 use emit/ffi_asked
 use emit/clang_place
 use emit/c_text
+use emit/guarded_names
 use cli/toolchain
 use cli/compiling
 use cli/process
@@ -131,7 +132,7 @@ function answers(t: toolchain.Toolchain, probe: compiling.Probe, names: [str]) -
 
 # The question unit: the headers, then two questions per name.
 function unit(headers: [str], names: [str]) -> str
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
     lines @ lines.push("struct hero_c1 { char hero_c; };")
     index: i64 @= 0
 

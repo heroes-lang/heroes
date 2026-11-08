@@ -33,6 +33,7 @@ use cli/pointee_ask
 use cli/clang_floor
 use cli/artifact
 use cli/settled
+use cli/shadowed
 use cli/rounds
 use cli/probing
 use cli/units
@@ -208,7 +209,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         version: version,
         sources: sources
     )
-    under = settled.compiled_under(t, options, site)
+    under = shadowed.checked(t, under: settled.compiled_under(t, options, site), s, permissive: options.permissive)?
 
     # THE ROUNDS (`cli/rounds.hero`; defect 037, panel 152 R1): each asks every
     # module's headers its questions, then compiles and links, and runs again

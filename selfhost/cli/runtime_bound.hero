@@ -18,7 +18,7 @@
 # **The runtime's names are the words its header's C writes in the compiler's
 # own forms** (`own_names.reserved`: `h_`, `hero_`, `Hero`, `HERO_`,
 # `HEROES_`, `main`), its comments and literals passed over
-# (`macro_guard.used`), forms panel 214's R4 holds every name and macro of
+# (`c_words.used`), forms panel 214's R4 holds every name and macro of
 # the runtime's headers to (`cli/own_names.hero`'s test). A word of another
 # form the header writes, a parameter's `text` or C's own `int64_t`, is no
 # binding's business, and a third party's `hero_jump` the runtime does not
@@ -30,7 +30,7 @@ use source
 use token
 use diag
 use module/reading
-use emit/macro_guard
+use emit/c_words
 use cli/own_names
 use check/runtime_header
 use cli/compile
@@ -54,7 +54,7 @@ function told(s: source.Source, decls: [ast.Decl], runtime: str) -> [diag.Diagno
 
     if read.is_err()
         return out
-    own = macro_guard.used(read.must().text)
+    own = c_words.used(read.must().text)
 
     for decl in decls
         named = bound(decl)

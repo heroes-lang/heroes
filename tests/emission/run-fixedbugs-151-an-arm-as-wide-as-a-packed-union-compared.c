@@ -297,7 +297,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("753504bf537c695f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0b7c03cc7807b965", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs151anarmaswideasapackedunioncompared\tfixedbugs-151-an-arm-as-wide-as-a-packed-union-compared\n");

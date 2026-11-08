@@ -1,0 +1,12 @@
+# fixedbugs, defect 2333, lane pm-cbound, 2026-11-08: the header a group names
+# defines `_Bool` as `int`. Before the repair the build stopped at exit 2,
+# *internal error*, clang refusing the check of `HERO_2333_TWO`'s type, whose
+# `_Generic` names `_Bool` and `int` both; the reserved pair now gives `_Bool`
+# back after the group, and the program builds and prints as written.
+
+extern "fixedbugs-2333-bool.h"
+    constant HERO_2333_TWO: i64
+
+function main()
+    print(HERO_2333_TWO)
+    print(HERO_2333_TWO == 2)

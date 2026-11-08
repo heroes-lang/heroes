@@ -37,6 +37,7 @@ use emit/ffi_read_only
 use emit/ffi_past_prototype
 use cli/pointee_ask
 use emit/c_text
+use emit/guarded_names
 
 constant PREFIX: str
     "hero_ty_"
@@ -47,7 +48,7 @@ constant PREFIX: str
 # per extern asked about — one per NAME, because two parameters of one
 # function are read from one declaration.
 function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
 
     named: [str] @= []
 
@@ -74,7 +75,7 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
 # C11 arithmetic; for a float pointee the two sides agree and only
 # `sizeof` decides, which is the right question for a float.
 function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}, open: {str: i64}) -> str
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
 
     for one in answered(wanted, types: types, sugar: sugar)
         header_type = one.header_type
@@ -388,7 +389,7 @@ test "the check unit asserts width and sign at the author's line, with the marke
     headers: [str] = ["stdio.h", "math.h"]
     none: {str: [str]} = {}
     unit = check_unit(headers, wanted, types: types, sugar: none, open: {})
-    assert unit.slice(from: 0, to: 18) == "#include <stdio.h>"
+    assert unit.slice(from: 0, to: 106) == "#include \"heroes_reserved_open.h\"\n#include <stdio.h>\n#include <math.h>\n#include \"heroes_reserved_close.h\"\n"
     assert bytes.locate(text: unit, needle: "#line 2 \"t.hero\"", from: 0).must() > 0
     assert bytes.locate(text: unit, needle: "_Static_assert(!(!(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0))) && sizeof(size_t) * 8 == 64), \"heroes-ffi-pointee-bits getline n int32_t 64 size_t\");", from: 0).must() > 0
     assert bytes.locate(text: unit, needle: "sizeof(size_t) * 8 == 128, \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0

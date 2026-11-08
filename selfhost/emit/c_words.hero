@@ -1,0 +1,274 @@
+# The words of C text, as the guard's lists and the runtime's own names are
+# held to them (design.md §4.19; defects 361 and 2333): an identifier's
+# bounds (`starts_word`, `in_word`, `words_into`), every identifier of a C
+# text's code but the names C reserves for the implementation (`used`) and
+# those alone (`reserved_used`), the identifiers inside an emitter module's
+# string literals (`quoted_words`), a guard file's pragmas (`pragmas`) and a
+# header's include lines (`includes_of`). Split out of `emit/macro_guard.hero`
+# on 2026-11-08, when defect 2333's repair took that file past §11's 300
+# lines: that file writes the guard, this one reads C.
+
+# Every identifier of `text` into `out`: a releaser set's names, one each.
+function words_into(@out: {str: bool}, text: str)
+    i: i64 @= 0
+
+    while i < text.len()
+        if starts_word(text[i])
+            start = i
+
+            while i < text.len() && in_word(text[i])
+                i @ i + 1
+
+            out[text.slice(from: start, to: i)] @ true
+            continue
+        i @ i + 1
+
+function starts_word(b: u8) -> bool
+    return b == 95 || b >= 65 && b <= 90 || b >= 97 && b <= 122
+
+function in_word(b: u8) -> bool
+    return starts_word(b) || b >= 48 && b <= 57
+
+# Every identifier inside a string literal of `text`'s code, its comments
+# left out: what an emitter module writes into C.
+function quoted_words(text: str) -> {str: bool}
+    out: {str: bool} @= {}
+    n = text.len()
+    i: i64 @= 0
+    line_start: bool @= true
+
+    while i < n
+        b = text[i]
+
+        if line_start
+            at: i64 @= i
+
+            while at < n && text[at] == 32
+                at @ at + 1
+
+            if at < n && text[at] == 35
+                while i < n && text[i] != 10
+                    i @ i + 1
+
+                continue
+        line_start @ b == 10
+
+        if b == 34
+            i @ i + 1
+            start = i
+
+            while i < n && text[i] != 34 && text[i] != 10
+                if text[i] == 92
+                    i @ i + 1
+                i @ i + 1
+
+            words_into(@out, text: text.slice(from: start, to: i))
+        i @ i + 1
+
+    return out
+
+# The names of a guard file's `#pragma <word>("...")` lines, in order.
+function pragmas(text: str, word: str) -> [str]
+    out: [str] @= []
+    prefix = "#pragma " + word + "(\""
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i <= text.len()
+        if i == text.len() || text[i] == 10
+            line = text.slice(from: start, to: i)
+
+            if line.len() > prefix.len() + 2 && holds_at(text: line, at: 0, word: prefix)
+                out @ out.push(line.slice(from: prefix.len(), to: line.len() - 2))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# A module's text with every `test` block taken out, each from its `test "`
+# line to the next line that stands at the margin: the code alone, which is
+# what an emitter module writes into C.
+function without_tests(text: str) -> str
+    out: [str] @= []
+    inside: bool @= false
+
+    for line in lines_of(text)
+        if holds_at(text: line, at: 0, word: "test \"")
+            inside @ true
+            continue
+
+        if inside && line.len() > 0 && line[0] != 32
+            inside @ false
+
+        if !inside
+            out @ out.push(line)
+
+    return out.join("\n")
+
+# `text` cut at each line end.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i <= text.len()
+        if i == text.len() || text[i] == 10
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# The targets of a header's `#include` lines, as written, in order.
+function includes_of(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i <= text.len()
+        if i == text.len() || text[i] == 10
+            line = text.slice(from: start, to: i)
+            at: i64 @= 0
+
+            while at < line.len() && line[at] == 32
+                at @ at + 1
+
+            if holds_at(text: line, at: at, word: "#include ")
+                out @ out.push(line.slice(from: at + 9, to: line.len()))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# Whether `text` holds `word` at `at`, byte for byte, with no slice that could
+# split a character where `at` falls inside one: a header's comment holds
+# `é` and an em dash.
+function holds_at(text: str, at: i64, word: str) -> bool
+    if at + word.len() > text.len()
+        return false
+    k: i64 @= 0
+
+    while k < word.len()
+        if text[at + k] != word[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# Every identifier of the C in `text`, once each: a string or character
+# literal and a comment passed over, a number's letters too, and what C
+# reserves for the implementation, and `defined`, left out.
+function used(text: str) -> {str: bool}
+    return code_words(text, reserved: false)
+
+# The identifiers of the C in `text` that C reserves for the implementation,
+# once each, but `__VA_ARGS__`, a macro's parameter list rather than a name:
+# what the runtime's headers write that `guarded_names.reserved` must hold
+# (defect 2333).
+function reserved_used(text: str) -> {str: bool}
+    return code_words(text, reserved: true)
+
+# Whether C reserves `word` for the implementation: two underscores, or one
+# and a capital letter, at its start (C11 7.1.3).
+function is_reserved(word: str) -> bool
+    return word.len() > 1 && word[0] == 95 && (word[1] == 95 || word[1] >= 65 && word[1] <= 90)
+
+# The identifiers of the C in `text` that C reserves, or those it does not,
+# as `reserved` asks; `defined` and `__VA_ARGS__` in neither.
+function code_words(text: str, reserved: bool) -> {str: bool}
+    out: {str: bool} @= {}
+    n = text.len()
+    i: i64 @= 0
+
+    while i < n
+        b = text[i]
+
+        if b == 34 || b == 39
+            i @ i + 1
+
+            while i < n && text[i] != b
+                if text[i] == 92
+                    i @ i + 1
+                i @ i + 1
+
+            i @ i + 1
+            continue
+
+        if b == 47 && i + 1 < n && text[i + 1] == 42
+            i @ i + 2
+
+            while i + 1 < n && !(text[i] == 42 && text[i + 1] == 47)
+                i @ i + 1
+
+            i @ i + 2
+            continue
+
+        if b == 47 && i + 1 < n && text[i + 1] == 47
+            while i < n && text[i] != 10
+                i @ i + 1
+
+            continue
+
+        if starts_word(b)
+            start = i
+
+            while i < n && in_word(text[i])
+                i @ i + 1
+
+            word = text.slice(from: start, to: i)
+
+            if is_reserved(word) == reserved && word != "defined" && word != "__VA_ARGS__"
+                out[word] @ true
+            continue
+
+        if b >= 48 && b <= 57
+            while i < n && (in_word(text[i]) || text[i] == 46)
+                i @ i + 1
+
+            continue
+        i @ i + 1
+
+    return out
+
+## Tests
+
+test "a C text's reserved names are read apart from its others, its literals, comments and macro parameters left out"
+    text = "#define HERO_LIT(t, ...) __builtin_strlen(t) + f(__VA_ARGS__)\n/* __attribute__ in a comment */\nstatic const char *s = \"_Bool\";\n_Static_assert(defined_twice > 0, \"x\");\nint _private; long _Plain; int __x__;\n"
+    reserved = reserved_used(text)
+    assert sort(keys(reserved)) == ["_Plain", "_Static_assert", "__builtin_strlen", "__x__"]
+    others = used(text)
+    assert !others["HERO_LIT"].is_err()
+    assert !others["_private"].is_err()
+    assert others["__builtin_strlen"].is_err()
+    assert others["__VA_ARGS__"].is_err()
+    assert is_reserved("__a") && is_reserved("_A") && !is_reserved("_a") && !is_reserved("_") && !is_reserved("a_")
+
+test "a module's test blocks are taken out and its code kept"
+    text = "function f()\n    g(\"__a\")\n\ntest \"t\"\n    assert x(\"__b\")\n\n    y()\nfunction h()\n"
+    kept = without_tests(text)
+    assert found(text: kept, word: "__a") && !found(text: kept, word: "__b") && found(text: kept, word: "function h()")
+
+# How many times `word` stands in `text`, none overlapping.
+function occurrences(text: str, word: str) -> i64
+    count: i64 @= 0
+    at: i64 @= 0
+
+    while at + word.len() <= text.len() && word.len() > 0
+        if holds_at(text: text, at: at, word: word)
+            count @ count + 1
+            at @ at + word.len()
+        else
+            at @ at + 1
+
+    return count
+
+# Whether `word` stands anywhere in `text`.
+function found(text: str, word: str) -> bool
+    at: i64 @= 0
+
+    while at + word.len() <= text.len()
+        if holds_at(text: text, at: at, word: word)
+            return true
+        at @ at + 1
+
+    return false

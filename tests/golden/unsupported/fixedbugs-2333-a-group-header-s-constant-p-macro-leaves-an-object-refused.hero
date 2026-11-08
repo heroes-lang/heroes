@@ -1,0 +1,12 @@
+# fixedbugs, defect 2333, lane pm-cbound, 2026-11-08: the header a group names
+# defines `__builtin_constant_p` as `1`, and a constant bound to `stdout`, an
+# object rather than a value. Before the repair the program built at exit 0,
+# reading a mutable global through a constant; the reserved pair now gives
+# the builtin back after the group, and the constant is refused as it is
+# without the macro.
+
+extern "fixedbugs-2333-checks.h"
+    constant HERO_2333_OUT: ptr  #~ ffi_not_constant
+
+function main()
+    print(HERO_2333_OUT == nullptr)

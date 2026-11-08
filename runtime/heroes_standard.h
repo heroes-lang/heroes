@@ -46,8 +46,16 @@
  * groups, which is what it would read with no such header, and the builtin
  * is given back after it.
  *
+ * NO LIBRARY HEADER READ HERE REDEFINES A NAME C RESERVES THAT THE
+ * COMPILER'S OWN C WRITES (defect 2333). The two lines below read the C
+ * library after the groups, and a group's header can set a switch that makes
+ * them reach a file no other unit reads; whatever such a file defines of a
+ * builtin, a keyword or a predefined macro the compiler writes is given back
+ * by `heroes_reserved_close.h` (the list is `heroes_reserved_open.h`'s).
+ *
  * `runtime.c` includes this header, which compiles it with the runtime and
  * puts it under the key every cached object answers to. */
+#include "heroes_reserved_open.h"
 #if defined(HERO_FLT_EVAL_METHOD)
 #  pragma push_macro("__FLT_EVAL_METHOD__")
 #  pragma clang diagnostic push
@@ -61,6 +69,7 @@
 #if defined(HERO_FLT_EVAL_METHOD)
 #  pragma pop_macro("__FLT_EVAL_METHOD__")
 #endif
+#include "heroes_reserved_close.h"
 
 #undef HERO_STANDARD_PASTED
 #undef HERO_STANDARD_PASTE

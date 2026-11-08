@@ -38,6 +38,7 @@ use bytes
 use emit/c_text
 use emit/externs as emit_externs
 use emit/macro_guard
+use emit/c_words
 use cli/toolchain
 use cli/compiling
 use cli/probing
@@ -158,7 +159,7 @@ function with_name(@out: [Asked], @seen: {str: bool}, s: source.Source, span: to
 # ORDER: by name, as `sort` orders a `str`, which the question unit's lines follow; each releaser a mark's span names, onto `out`, each called with one argument.
 function with_words(@out: [Asked], @seen: {str: bool}, s: source.Source, span: token.Span, header: str)
     words: {str: bool} @= {}
-    macro_guard.words_into(@words, text: source.span_text(s, span))
+    c_words.words_into(@words, text: source.span_text(s, span))
 
     for word in sort(keys(words))
         if seen[word].is_err()

@@ -46,6 +46,7 @@ use emit/ctype
 use emit/layout_rows
 use emit/c_text
 use bytes
+use emit/guarded_names
 
 # A group record the dump is asked about: its declaration and its C type.
 record Asked
@@ -108,7 +109,7 @@ function asked(s: source.Source, decls: [ast.Decl]) -> [Asked]
     return out
 
 function dump_unit(headers: [str], wanted: [Asked]) -> str
-    lines: [str] @= c_text.includes(headers)
+    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
 
     for one in wanted
         wrap = "struct " + layout_rows.PREFIX + one.decl.to_str()

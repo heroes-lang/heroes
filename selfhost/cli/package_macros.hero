@@ -1,0 +1,101 @@
+# Which `-D` and `-U` words a package's answer may carry: none that names a name
+# the C this compiler writes (design.md §4.19, §1.12; defect 2333, 2026-11-08).
+# `cli/package_words.hero` asks it of every `-D` and `-U` value, joined or as
+# the next word, beside its other questions of a value.
+#
+# **Why a package's word and not a header's.** A group's header is read between
+# `heroes_guard_open.h` and `heroes_guard_close.h`, which save every name the
+# compiler's C writes and give back at the close what stood at the open, so a
+# header's `#define main SDL_main` or `#define __builtin_add_overflow` is undone
+# before the unit's own C. A `-D` stands before every header and every guard:
+# the guard saves it at its open and gives it back at its close, so nothing
+# undoes it. A `.pc` answering
+# `-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)` turned an `i64` sum past
+# the top into `-9223372036854775808` at exit 0, and `-Dmain=SDL_main` renames
+# the program's entry point where the guard undoes a header's same `#define`
+# (both measured on this Mac, the second with `clang -E`).
+#
+# **The names** are the guard's, every word the runtime's headers and the
+# library's standard headers write, and the names C reserves that the
+# compiler's own C writes (`emit/guarded_names.hero`). A switch a `.pc` sets,
+# `_REENTRANT` or `_XOPEN_SOURCE`, is none of them. **And a `-D` this compiler's
+# own words hold defines nothing new**: `flags.flags()` passes
+# `-D_USE_MATH_DEFINES` and `-D_CRT_SECURE_NO_WARNINGS` to every unit, so a
+# package's same word, or the `=1` clang reads a bare `-D` as, is that switch
+# again; with another value it is a name kept, which clang refuses as well under
+# `-Werror=macro-redefined` (measured 2026-11-08 on this Mac: the same word
+# twice exit 0, `=0` after it exit 1).
+
+use cli/flags
+use emit/guarded_names
+
+# Whether a `-D` or `-U` word, its value `value`, names a name the guard keeps,
+# a `-D` this compiler's own words already hold being none; false for any other
+# flag.
+function refused(flag: str, value: str) -> bool
+    if flag != "-D" && flag != "-U"
+        return false
+
+    if flag == "-D" && own_switch(value)
+        return false
+    return kept_name(macro_of(value))
+
+# What a refusal owes its reader after the word it names, or "" where `refused`
+# says no.
+function told(flag: str, value: str) -> str
+    if !refused(flag: flag, value: value)
+        return ""
+    return ": `" + macro_of(value) + "` is a name the C this compiler writes, and no package's answer defines or undefines one: it would stand before every header and every guard"
+
+# Whether `-D<value>` is one of this compiler's own words, as written or with
+# the `=1` a bare `-D` means.
+function own_switch(value: str) -> bool
+    for word in flags.flags()
+        if word == "-D" + value || word + "=1" == "-D" + value
+            return true
+
+    return false
+
+# Whether the guard keeps `name`: one of its own names, or a name C reserves
+# that the compiler's C writes.
+function kept_name(name: str) -> bool
+    for one in guarded_names.names()
+        if one == name
+            return true
+
+    for one in guarded_names.reserved()
+        if one == name
+            return true
+
+    return false
+
+# The macro a `-D` or `-U` value names: its text before an `=` or a `(`.
+function macro_of(value: str) -> str
+    at: i64 @= 0
+
+    while at < value.len() && value[at] != '=' && value[at] != '('
+        at @ at + 1
+
+    return value.slice(from: 0, to: at)
+
+## Tests
+
+# **A name the C this compiler writes is refused, and a switch is not**: a
+# builtin, a keyword, a predefined macro the unit reads, a word of the runtime's
+# or the library's headers and `main`, and the `-U` of one; a switch a `.pc`
+# sets, with or without its value, is none, and nor are this compiler's own two
+# `-D`s, as written or `=1`, where another value or their `-U` is refused.
+test "a -D or -U of a name the C this compiler writes is refused, and a switch is not (defect 2333)"
+    for value in ["__builtin_add_overflow(a,b,r)=0", "_Static_assert", "__OPTIMIZE__=1", "true=0", "INT64_C(c)=c", "main=SDL_main", "_USE_MATH_DEFINES=0"]
+        assert refused(flag: "-D", value: value)
+        assert told(flag: "-D", value: value) == ": `" + macro_of(value) + "` is a name the C this compiler writes, and no package's answer defines or undefines one: it would stand before every header and every guard"
+
+    for value in ["__has_feature", "_CRT_SECURE_NO_WARNINGS", "main"]
+        assert refused(flag: "-U", value: value)
+
+    for value in ["_REENTRANT", "_XOPEN_SOURCE=600", "NCURSES_WIDECHAR=1", "_GNU_SOURCE", "_USE_MATH_DEFINES", "_CRT_SECURE_NO_WARNINGS=1"]
+        assert !refused(flag: "-D", value: value)
+        assert told(flag: "-D", value: value) == ""
+
+    assert !refused(flag: "-I", value: "main")
+    assert macro_of("F(x)=x") == "F" && macro_of("A=1") == "A" && macro_of("B") == "B"

@@ -30,6 +30,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     a_search_path_is_one_word(@r, scratch: scratch, compiler: compiler)
     a_search_path_that_names_nothing(@r, scratch: scratch, compiler: compiler)
     a_runtime_named_header_in_a_search_path_is_never_read(@r, scratch: scratch, compiler: compiler)
+    a_library_header_in_a_named_folder_is_refused(@r, scratch: scratch, compiler: compiler)
     one_bad_argument_does_not_kill_the_other_two(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
@@ -627,6 +628,78 @@ function a_runtime_named_header_in_a_search_path_is_never_read(@r: report.Report
             label: label,
             detail: "  a file named like the runtime's was read in its place: the program " + missed.must()
         )
+        return
+    report.keep_pass(@r)
+
+# A program with no `extern`, adding past `i64`'s top (defect 2333).
+constant NO_EXTERN_PAST_THE_TOP: str
+    "function main()\n    big: i64 = 9223372036854775807\n    n = args().len()\n    print(big + n)\n"
+
+# **A file of a folder the build names, read where the runtime asks for a
+# header of the C library, is refused before anything compiles** (defect
+# 2333). A `stdint.h` beside a program with no `extern`, reading the real one
+# and then defining `__builtin_add_overflow` to report nothing, and a
+# `math.h` in a folder `--include` names: each build is refused at exit 1,
+# `shadowed_header`, naming the library's header the file stood in for; until
+# the repair each built and the sum printed `-9223372036854775808` at exit 0.
+# A header of the program's own with a name the library does not use, in an
+# `--include` folder and named by a group, still builds.
+function a_library_header_in_a_named_folder_is_refused(@r: report.Report, scratch: str, compiler: str)
+    label = "special/a header of the C library in a folder the build names is refused"
+    home = scratch + "/library-shadowed"
+    laid: ()? @= shell.remove_tree(home)
+
+    for dir in ["/beside", "/included/inc", "/own/inc"]
+        if !laid.is_err()
+            laid @ shell.mkdir_all(home + dir)
+
+    evil = "#define __builtin_add_overflow(a, b, r) ((*(r) = (a) + (b)), 0)\n"
+    own = "extern \"mine2333.h\"\n    constant MINE_2333: i64\n\nfunction main()\n    print(MINE_2333)\n"
+    files = [
+        ["/beside/main.hero", NO_EXTERN_PAST_THE_TOP]
+        ["/beside/stdint.h", "#include_next <stdint.h>\n" + evil]
+        ["/included/main.hero", NO_EXTERN_PAST_THE_TOP]
+        ["/included/inc/math.h", "#include_next <math.h>\n" + evil]
+        ["/own/main.hero", own]
+        ["/own/inc/mine2333.h", "#define MINE_2333 2333\n"]
+    ]
+
+    for pair in files
+        if !laid.is_err()
+            laid @ write_file(path: home + pair[0], text: pair[1])
+
+    if laid.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the programs out under " + home)
+        return
+    wrong: [str] @= []
+
+    for pair in [["/beside", "stdint.h"], ["/included", "math.h"]]
+        words: [str] @= [
+            compiler
+            "build"
+            home + pair[0] + "/main.hero"
+            "-o"
+            home + pair[0] + "/bin" + shell.exe_suffix()
+        ]
+
+        if pair[0] == "/included"
+            words @ words.push("--include").push(home + "/included/inc")
+        said = shell.run(scratch: scratch, program: compiler, words: words)
+
+        if said.is_err() || said.must().code != 1 || !strings.contains(text: said.must().err, needle: "error[shadowed_header]") || !strings.contains(text: said.must().err, needle: "`<" + pair[1] + ">`")
+            wrong @ wrong.push("    `build` of " + pair[0] + " with its `" + pair[1] + "`: " + shell.ending(said))
+
+    kept = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", home + "/own/main.hero", "--include", home + "/own/inc", "-o", home + "/own/bin" + shell.exe_suffix()]
+    )
+
+    if kept.is_err() || kept.must().code != 0
+        wrong @ wrong.push("    a header of the program's own in an `--include` folder: " + shell.ending(kept))
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: "  " + wrong.join("\n"))
         return
     report.keep_pass(@r)
 
