@@ -1,0 +1,7 @@
+[dependencies.zzz_gone]
+version = "1.4.2"
+sum = "sha256-7570077f56251e78fba7f364a6401afc934267a5078d0e2796fd914c811eff29"
+
+[dependencies.yaml]
+version = "0.3.1"
+sum = "sha256-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"

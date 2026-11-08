@@ -1,0 +1,22 @@
+# M-package-manager step 2, panel 235's R1 and R18 (2026-11-07): a package's
+# mark, `use <json>/parse`, and each habit beside it a model brings from
+# another language, refused where the line is read with the message that
+# names it. A repair is `certain` where the line it writes is the one meant
+# whatever the catalogue holds: the whole path inside the brackets, a dot for
+# the slash, a quoted name, the mark's parts apart. An address goes in the
+# catalogue and never in a `use`, so its repair is a `guess`, the address's
+# last part; a package with no module, an unclosed mark and an empty one have
+# none.
+use <json>/parse  #~ package_mark_holds_a_path
+use <json>/text  #~ package_wants_a_slash
+use <json>/lines  #~ package_name_quoted
+use <json>/words  #~ package_mark_apart
+use <json>  #~ package_wants_a_module
+use <github.com/acme/yaml>/load  #~ use_holds_an_address
+use <github.com/acme/yaml/dump>  #~ use_holds_an_address
+use github.com/acme/toml/read  #~ use_holds_an_address
+use <json  #~ package_mark_unclosed
+use <>/x  #~ package_wants_a_name
+
+function main()
+    print(0)

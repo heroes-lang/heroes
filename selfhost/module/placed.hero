@@ -1,0 +1,143 @@
+# What a package's module is called inside one compilation (spec § 1; panel
+# 235's R1, ratified 2026-11-07).
+#
+# A package's module keeps its mark in the compilation, `<json>/parse`, so no
+# module of the program's own, a path of names, can ever be one, and the mark
+# decides where its file is read from: a bracketed `use` resolves through the
+# catalogue alone and a bare one through the tree alone, with no fallback
+# either way (R1, the spec-warden's first condition). Every reader of a module
+# name asks here which of the two it holds, and none looks for a `<` itself.
+
+use module/reached
+use module/catalogue
+use module_text
+use cli/sha256
+
+# Whether `module` is a package's: its name opens with the mark.
+function is_package(module: str) -> bool
+    return module.len() > 0 && module[0] == '<'
+
+# `<json>/` for a module of the package `json`; "" for the program's own, and
+# for a name whose mark never closes, which no reader hands here.
+function package_of(module: str) -> str
+    if !is_package(module)
+        return ""
+    at: i64 @= 1
+
+    while at < module.len() && module[at] != '>'
+        at @ at + 1
+
+    if at + 1 >= module.len()
+        return ""
+    return module.slice(from: 0, to: at + 2)
+
+# The entry's name in a package's module: `json` for `<json>/parse`.
+function entry_of(module: str) -> str
+    owner = package_of(module)
+
+    if owner.len() < 3
+        return ""
+    return owner.slice(from: 1, to: owner.len() - 2)
+
+# The module's path inside its package: `parse` for `<json>/parse`, and the
+# whole name for a module of the program's own.
+function inside_of(module: str) -> str
+    return module.slice(from: package_of(module).len(), to: module.len())
+
+## The module a `use` names, in the compilation
+
+# The module `named`, as a file of the module `from` writes it, stands for in
+# the compilation (R3, R4): a bare `use` in a package's file names a module of
+# that package, from its own root; a bracketed one in a package's file names
+# the package its own catalogue gives that alias, by the program's alias for
+# it (`aliases`, which discovery fills); "" where no package of the build
+# answers it, a name no module has.
+function identity(aliases: [reached.Alias], from: str, named: str) -> str
+    owner = entry_of(from)
+
+    if !is_package(named)
+        if owner.len() == 0
+            return named
+        return "<" + owner + ">/" + named
+
+    if owner.len() == 0
+        return named
+    written = entry_of(named)
+
+    for one in aliases
+        if one.package == owner && one.written == written
+            return "<" + one.meant + ">/" + inside_of(named)
+
+    return ""
+
+# The folder under `heroes.packages/` a fetched entry's tree is placed in,
+# keyed by the package's identity and never by its alias (R3, R7): its name
+# and version, or its address's last part and tag, as a reader finds it, then
+# the first sixteen hexadecimal digits of the SHA-256 of every field that
+# names the package, so a field mistyped names a tree that is not there.
+function key(e: catalogue.Entry, index: str) -> str
+    if e.version.len() > 0
+        return e.name + "@" + e.version + "-" + sha256.of("index\n" + index + "\n" + e.name + "\n" + e.version + "\n" + e.sum + "\n").slice(from: 0, to: 16)
+    named: str @= module_text.address_entry(e.git)
+
+    if named.len() == 0
+        named @ "package"
+    return named + "@" + plain(e.tag) + "-" + sha256.of("git\n" + e.git + "\n" + e.tag + "\n" + e.commit + "\n" + e.sum + "\n").slice(from: 0, to: 16)
+
+# A tag as a folder's name may hold it: letters, digits, `.`, `-` and `_`
+# kept, any other character written `_`, at most 40.
+function plain(tag: str) -> str
+    out: [str] @= []
+
+    for ch in tag.chars()
+        b = ch[0]
+
+        if out.len() < 40
+            if ch.len() == 1 && (b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '.' || b == '-' || b == '_')
+                out @ out.push(ch)
+            else
+                out @ out.push("_")
+
+    return out.join("")
+
+## Tests
+
+test "a package's module keeps its mark, and the mark says whose it is"
+    assert is_package("<json>/parse")
+    assert !is_package("geom/area")
+    assert !is_package("")
+    assert package_of("<json>/a/b") == "<json>/"
+    assert package_of("geom/area") == ""
+    assert package_of("<json") == ""
+    assert entry_of("<json>/a/b") == "json"
+    assert entry_of("geom") == ""
+    assert inside_of("<json>/a/b") == "a/b"
+    assert inside_of("geom/area") == "geom/area"
+
+test "a dependency's bare use starts at its own root, and its brackets read its own catalogue"
+    aliases: [reached.Alias] = [reached.Alias(package: "json", written: "text", meant: "strings")]
+    assert identity(aliases, from: "main", named: "geom/area") == "geom/area"
+    assert identity(aliases, from: "main", named: "<json>/parse") == "<json>/parse"
+    assert identity(aliases, from: "<json>/parse", named: "internal/scan") == "<json>/internal/scan"
+    assert identity(aliases, from: "<json>/parse", named: "<text>/cut") == "<strings>/cut"
+    assert identity(aliases, from: "<json>/parse", named: "<yaml>/load") == ""
+    assert identity(aliases, from: "<yaml>/load", named: "<text>/cut") == ""
+
+test "a placed tree is keyed by the package's identity, and every field moves the key"
+    sum = "sha256-" + "a".repeat(64.to_u64().must())
+    e = catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: sum)
+    k = key(e, index: "")
+    assert k.slice(from: 0, to: 11) == "json@1.4.2-"
+    assert k.len() == 27
+    assert key(catalogue.Entry(name: "json", version: "1.4.3", git: "", tag: "", commit: "", path: "", sum: sum), index: "") != k
+    assert key(e, index: "https://index.example.org") != k
+    g = catalogue.Entry(
+        name: "y",
+        version: "",
+        git: "https://git.example.org/ana/yaml.git",
+        tag: "v0.3/rc 1",
+        commit: "c".repeat(40.to_u64().must()),
+        path: "",
+        sum: sum
+    )
+    assert key(g, index: "").slice(from: 0, to: 15) == "yaml@v0.3_rc_1-"

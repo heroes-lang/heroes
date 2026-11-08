@@ -391,6 +391,21 @@ test "the control arm still refuses what a thesis rule stood in front of"
     after_the_arm = "function main()\n    match 1\n        0 => x = 5\n        _ => print(2)\n    z = 4 )\n"
     assert run(source.new_source(name: "t.hero", text: after_the_arm), pinv) == .diagnostics_exit
 
+# Defect 2292: a module written as a qualifier, its file beside the file
+# compiled and no `use` of it, is told once, on the qualifier, with the line
+# the file lacks; the name after the dot is not told apart.
+test "a module used without its use line is told the line, once (defect 2292)"
+    assert !write_file(path: "build/selftest_strs2292.hero", text: "function holds(s: str, part: str) -> bool\n    return s.len() >= part.len()\n").is_err()
+    text = "function main()\n    print(selftest_strs2292.holds(s: \"abc\", part: \"b\"))\n"
+    s = modules.load_text(path: "build/selftest-2292.hero", root_text: text, library: library_source.text()).must()
+    parsed = parse.parse_source(s)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unknown_name"
+    assert has_text(text: out.diagnostics[0].message, needle: "`use selftest_strs2292`")
+    assert out.diagnostics[0].fixes[0].certainty == .guess
+    assert out.diagnostics[0].fixes[0].replacement == "use selftest_strs2292\n"
+
 test "the json schema leads with its version and escapes its strings"
     text = "function main()\n    n = 3\n    print(1)\n"
     s = source.new_source(name: "t.hero", text: text)

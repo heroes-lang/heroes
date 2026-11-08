@@ -1,0 +1,4 @@
+# The program's own module a case beside it names with a bracket added,
+# `use <usemark235>/area` (`use-a-package-with-no-catalogue.hero`).
+function y() -> i64
+    return 2

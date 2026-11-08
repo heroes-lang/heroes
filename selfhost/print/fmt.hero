@@ -1385,6 +1385,18 @@ test "fmt keeps an alias, and this is a fixed defect"
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
 
+test "fmt keeps a package's mark, alone, deep and renamed"
+    # A new surface form lands in every tool that re-prints a program
+    # (`.claude/rules/diagnostics-and-goldens.md`): `use <json>/parse` (panel
+    # 235's R1) is printed from the name's span, which the parser starts at the
+    # `<`, so a printer that took the path alone would turn a package's module
+    # into the program's own, the one change the bracket exists to refuse.
+    for text in ["use <json>/parse\n\nfunction main()\n    print(0)\n", "use <json>/a/b\nuse geom\n\nfunction main()\n    print(0)\n", "use <json>/a/b as near\n\nfunction main()\n    print(0)\n"]
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
 test "fmt keeps the words rest: zero where they end a list, on one line and broken"
     # A new surface form lands in every tool that re-prints a program, the
     # formatter first (`.claude/rules/diagnostics-and-goldens.md`): panel 194's

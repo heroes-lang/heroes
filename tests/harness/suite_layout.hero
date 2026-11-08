@@ -576,9 +576,24 @@ constant DECIDED: [str]
 # compiler-engineer predicted this row and this +2, the row standing at its
 # budget; `ir/flatten.hero`'s `DECIDED` row, the other it predicted, did not
 # move, its two argument loops merged into one.
+#
+# **Raised 2026-11-07, 8737 -> 8782, for panel 235's R1 at M-package-manager
+# step 2.** A package's module is named on the `use` line by a mark the
+# parser reads, `use <json>/parse`, the author's spelling, and the only one
+# of the sitting's three whose cost lands here (R1's price, written down by
+# the sitting): `parse/use_mark.hero`, which says the mark's reading and
+# moves the cursor past it (28), and `parse/use_line.hero`'s two calls, the
+# mark before the name and an address at the dot after it (+18); 46 in this
+# row's unit, measured by this suite's counter. What the mark holds and the
+# habits beside it are read from the line's tokens and never the cursor, so
+# they stand outside this directory along that seam (`package_mark.hero`,
+# 235), as `module_text.hero`'s questions do, and what reads the cursor stays
+# here. The compiler-engineer predicted 95 to 165 lines in this directory,
+# its prototype's reader of the mark being written inside it (103 lines with
+# the cursor's moves); the prediction is scored at the milestone's tag.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8737"
+        "selfhost/parse/ 8782"
     ]
 
 # The floor is the Rust's own idea —

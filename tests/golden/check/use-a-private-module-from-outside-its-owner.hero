@@ -1,0 +1,10 @@
+# M-package-manager step 4, panel 235's R16 (2026-11-07): a module under an
+# `internal` folder belongs to the module before the last `internal` part,
+# and only that module and the modules under it name it, Go's rule, held by
+# the compiler for a package's folders and the program's own alike. The
+# owner, `internal235/geom`, names its private module; this file may not.
+use internal235/geom
+use internal235/geom/internal/scan  #~ private_module
+
+function main()
+    print(geom.area(2) + scan.twice(1))

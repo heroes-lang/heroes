@@ -28,6 +28,7 @@ use resolve/unused_sweep
 use resolve/decls as resolve_decls
 use resolve/errors
 use module/diagnostics
+use module/placed
 
 function collect(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
     r.library @ builtin_names.of_library(s, decls)
@@ -113,7 +114,7 @@ function enter(@r: state.Resolver, s: source.Source, decls: [ast.Decl], index: i
 function read_uses(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
     for used in uses
         from = source.module_at(s, used.span.start)
-        named = source.span_text(s, used.name)
+        named = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
 
         if from == named
             # A module using itself. The module graph calls it a cycle,
@@ -185,7 +186,7 @@ function unused_uses(@r: state.Resolver, s: source.Source, uses: [ast.Use])
 
     for used in uses
         from = source.module_at(s, used.span.start)
-        named = source.span_text(s, used.name)
+        named = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
 
         if from == named
             continue

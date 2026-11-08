@@ -51,9 +51,9 @@
 # around a comment.
 
 use token
-use source
 use lexer
 use probe/seed
+use text_lines
 
 # One comment, placed: `owner` as this reader reads it, `canonical` where
 # the canonical form puts it (the run rule's block, for a block comment),
@@ -103,7 +103,7 @@ function listed(values: [i64], value: i64) -> bool
 # token after it) as a logical line.
 function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
     words = seed.placed(text, tokens: tokens)
-    starts = source.starts_of(text)
+    starts = text_lines.starts_of(text)
     keep = counted(words)
     norm: [i64] @= []
     depth: [i64] @= []

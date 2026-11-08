@@ -1,0 +1,12 @@
+# Fixed defect 2290, 2026-11-08, lane pm-use (found by panel 234's
+# compiler-engineer): on a volume that ignores case, this Mac's, `use
+# Fixedbugs2290/Strings` compiled against `fixedbugs2290/strings.hero`, and on
+# Linux the same line was `unknown_module`, one tree a different program on
+# the two machines. A module is read only where each part of its path is a
+# name its directory lists, so the line is refused on every machine with the
+# spelling the directory lists, repaired for certain: the line it writes
+# keeps what this file calls the module, `as Strings`, and compiles.
+use Fixedbugs2290/Strings  #~ unknown_module
+
+function main()
+    print(Strings.contains(s: "abc", part: "c"))

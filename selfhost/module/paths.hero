@@ -64,12 +64,19 @@ function uses_of(text: str) -> [str]
 # `use a / b` the same three tokens, and only the first is one module.
 # A comment cannot sit inside a path for the same reason — its span would
 # push the parts apart — so nothing here has to skip one.
+#
+# **A package's mark is read here too** (panel 235's R1): `<json>/parse` is
+# one name, `<` name `>` `/` and the path, every token touching the one
+# before, as `parse/use_mark.hero` reads it with diagnostics. A mark that is
+# not whole is no path here, and the parser tells it.
 function path_at(tokens: [token.Token], text: str, at: i64) -> str?
-    if at >= tokens.len() || tokens[at].kind != .ident
+    first = at + marked(tokens, at: at)
+
+    if first >= tokens.len() || tokens[first].kind != .ident
         return fail(code: "no_path", msg: "a use line whose name is missing or not a name")
     start = tokens[at].span.start
-    end: i64 @= tokens[at].span.end
-    probe: i64 @= at + 1
+    end: i64 @= tokens[first].span.end
+    probe: i64 @= first + 1
 
     while probe + 1 < tokens.len()
         slash = tokens[probe]
@@ -84,6 +91,21 @@ function path_at(tokens: [token.Token], text: str, at: i64) -> str?
         probe @ probe + 2
 
     return ok(text.slice(from: start, to: end))
+
+# The tokens a package's mark takes before its module's first name, `<` name
+# `>` `/`, each touching the one before and the first name touching the `/`:
+# 4, or 0 where there is no whole mark, which the parser tells.
+function marked(tokens: [token.Token], at: i64) -> i64
+    if at + 4 >= tokens.len() || tokens[at].kind != .lt || tokens[at + 1].kind != .ident || tokens[at + 2].kind != .gt || tokens[at + 3].kind != .slash
+        return 0
+    probe: i64 @= at + 1
+
+    while probe <= at + 4
+        if tokens[probe].span.start != tokens[probe - 1].span.end
+            return 0
+        probe @ probe + 1
+
+    return 4
 
 ## The directory a path starts at
 
@@ -100,6 +122,29 @@ function directory_text(path: str) -> str
 
     for ch in cs
         if ch == "/" || ch == "\\"
+            cut @ index
+        index @ index + 1
+
+    if cut == -1
+        return ""
+    kept: [str] @= []
+    index @ 0
+
+    while index <= cut
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+# The directory files are OPENED through — the "/" rule alone, which
+# is PathBuf::parent's answer on every machine the fixpoint runs on.
+function open_directory(path: str) -> str
+    cs = path.chars()
+    cut: i64 @= -1
+    index: i64 @= 0
+
+    for ch in cs
+        if ch == "/"
             cut @ index
         index @ index + 1
 
@@ -162,6 +207,14 @@ test "a use line's path is read whole, and adjacency is what makes it one"
     assert uses_of("use\n").len() == 0
     assert uses_of("use syntax/\n")[0] == "syntax"
 
+    # A package's mark is part of the name, and a mark that is not whole
+    # names nothing here: the parser tells it (panel 235's R1).
+    assert uses_of("use <json>/parse\n")[0] == "<json>/parse"
+    assert uses_of("use <json>/a/b as c\n")[0] == "<json>/a/b"
+    assert uses_of("use <json>\n").len() == 0
+    assert uses_of("use < json >/parse\n").len() == 0
+    assert uses_of("use <json/parse>\n").len() == 0
+
 # The parser's answer for the same text, as a list of module names — the
 # other side of the agreement test below.
 function parse_of(text: str) -> [str]
@@ -185,6 +238,10 @@ test "the two readers of one adjacency rule agree, and this test is why"
         "use a/b/c\n"
         "use a / b\n"
         "use lex/token\nuse util\n"
+        "use <json>/parse\n"
+        "use <json>/a/b as c\n"
+        "use < json >/parse\n"
+        "use <json/parse>\nuse <json>\nuse <json>.parse\n"
     ]
 
     for text in texts
@@ -224,3 +281,74 @@ test "a refused use line does not eat the next one, and this is a fixed defect"
     assert dotted.diagnostics.len() == 2
     assert dotted.diagnostics[0].code == "module_path_has_no_parts"
     assert dotted.diagnostics[1].code == "module_path_wants_a_part"
+
+# The parser's half of the mark (`parse/use_mark.hero`), asked here because
+# that module cannot reach the parser. Each habit is told by its own code, and
+# a repair is `certain` only where the line it writes is the one meant
+# whatever the catalogue holds (panel 235's R18).
+test "a package's mark: each habit is told, and only a sure repair is certain"
+    texts: [str] = [
+        "use <json/parse>\n"
+        "use <json>.parse\n"
+        "use <\"json\">/parse\n"
+        "use < json >/parse\n"
+        "use <json>\n"
+        "use <github.com/acme/json>/parse\n"
+        "use github.com/acme/json/parse\n"
+        "use <json\n"
+        "use <>/x\n"
+    ]
+    codes: [str] = [
+        "package_mark_holds_a_path"
+        "package_wants_a_slash"
+        "package_name_quoted"
+        "package_mark_apart"
+        "package_wants_a_module"
+        "use_holds_an_address"
+        "use_holds_an_address"
+        "package_mark_unclosed"
+        "package_wants_a_name"
+    ]
+    certain: [str] = ["<json>/parse", "/", "json", "<json>/parse", "", "", "", "", ""]
+    guessed: [str] = ["", "", "", "", "", "<json>", "<json>/parse", "", ""]
+    at: i64 @= 0
+
+    while at < texts.len()
+        p = parse.parse(texts[at] + "\nfunction main()\n    print(0)\n")
+        assert p.uses.len() == 0
+        assert p.diagnostics.len() == 1
+        d = p.diagnostics[0]
+        assert d.code == codes[at]
+
+        if certain[at].len() > 0
+            assert d.fixes.len() == 1 && d.fixes[0].certainty == .certain && d.fixes[0].replacement == certain[at]
+        else if guessed[at].len() > 0
+            assert d.fixes.len() == 1 && d.fixes[0].certainty == .guess && d.fixes[0].replacement == guessed[at]
+        else
+            assert d.fixes.len() == 0
+        at @ at + 1
+
+    # A repair is certain only where nothing but an `as` follows what it
+    # writes: `<json/parse>/more` and `<json>.parse.more` keep their message
+    # and lose the repair.
+    for odd in ["use <json/parse>/more\n", "use <json>.parse.more\n"]
+        q = parse.parse(odd)
+        assert q.diagnostics.len() == 1
+        assert q.diagnostics[0].fixes.len() == 0
+
+    renamed = parse.parse("use <json/parse> as p\n")
+    assert renamed.diagnostics[0].fixes.len() == 1
+
+# Defect 2308's promise held to the parser itself: every line a quoted `use`
+# is advised, and its certain repair writes, is one the parser reads, and a
+# shape with no such line is advised none.
+test "a quoted use is repaired only into a line the parser reads (defect 2308)"
+    for inner in ["geom", "shapes/geom", "geom.hero", "./lex/token", "<json>/parse", "", "let", "if", "int", "my-lib", "a b", "../x", "github.com/acme/csv", "<json>"]
+        p = parse.parse("use \"" + inner + "\"\n")
+        assert p.diagnostics.len() == 1
+
+        for fix in p.diagnostics[0].fixes
+            if fix.certainty == .certain
+                repaired = parse.parse("use " + fix.replacement + "\n")
+                assert repaired.diagnostics.len() == 0
+                assert repaired.uses.len() == 1

@@ -38,31 +38,18 @@ use source
 use module/names as module_names
 use module/paths
 use module/reading
+use module/spelling
+use module/packages
+use module/reached
+use module/placed as places
+use module/package_told
 use ast
 use parse
 
-# The directory files are OPENED through — the "/" rule alone, which
-# is PathBuf::parent's answer on every machine the fixpoint runs on.
+# The directory files are OPENED through (`paths.open_directory`, where it
+# moved at panel 235's landing): its callers outside discovery ask here.
 function open_directory(path: str) -> str
-    cs = path.chars()
-    cut: i64 @= -1
-    index: i64 @= 0
-
-    for ch in cs
-        if ch == "/"
-            cut @ index
-        index @ index + 1
-
-    if cut == -1
-        return ""
-    kept: [str] @= []
-    index @ 0
-
-    while index <= cut
-        kept @ kept.push(cs[index])
-        index @ index + 1
-
-    return kept.join("")
+    return paths.open_directory(path)
 
 # Every file of the compilation rooted at path, in load order, with
 # the library last. DEPTH-FIRST IN SOURCE ORDER, each module loaded
@@ -88,6 +75,8 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
     seen: [str] @= [module_names.stem_of(path)]
     pending: [i64] @= [0]
     each: [[source.Fault]] @= []
+    listed: spelling.Listed @= spelling.none()
+    book: packages.Book @= packages.book(named: paths.directory_text(path), opened: open_directory(path))
 
     while pending.len() > 0
         index = pending[pending.len() - 1]
@@ -95,8 +84,9 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
         named = paths.uses_of(files[index].text)
         added: [i64] @= []
 
-        for module in named
-            already: bool @= false
+        for written in named
+            module = packages.identity(book, from: files[index].module, written: written)
+            already: bool @= module.len() == 0
 
             for one in seen
                 if one == module
@@ -104,16 +94,25 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
 
             if already
                 continue
-            opened = open_directory(path) + module + ".hero"
-            found = reading.text_at(opened: opened, name: paths.directory_text(path) + module + ".hero", edited: edited)
             seen @ seen.push(module)
+
+            # A package's module through the catalogue alone, an own one from the tree alone (panel 235's R1); one neither answers is told on its `use` line.
+            at = packages.file_of(@book, module)
+
+            if at.is_err()
+                continue
+            found = reading.text_at(opened: at.must().opened, name: at.must().named, edited: edited)
 
             if found.is_err()
                 # Nothing there is told on the use line; a file there that cannot be read stops the load (defect 236).
-                reading.nothing_at(opened: opened, named: paths.directory_text(path) + module + ".hero")?
+                reading.nothing_at(opened: at.must().opened, named: at.must().named)?
+                continue
+
+            # Opened under a case its directory does not list it in, on a volume that ignores case: no module of that name (defect 2290).
+            if !spelling.spelt(@listed, opened: at.must().base, module: at.must().inside)
                 continue
             files @ files.push(
-                source.InputFile(name: paths.directory_text(path) + module + ".hero", module: module, text: found.must().text, is_library: false)
+                source.InputFile(name: at.must().named, module: module, text: found.must().text, is_library: false)
             )
             each @ each.push(found.must().faults)
             added @ reading.followed(added, file: found.must(), at: files.len() - 1)
@@ -130,7 +129,9 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
     files @ files.push(
         source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library, is_library: true)
     )
-    return ok(reading.placed(source.from_files(files), modules: each))
+    out: source.Source @= reading.placed(source.from_files(files), modules: each)
+    out.reached @ reached.Reached(packages: book.reached, aliases: book.aliases)
+    return ok(out)
 
 ## The graph's own errors — against the finished Source
 
@@ -142,6 +143,7 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
+    out @ package_told.private_reaches(s, uses, found: out)
 
     if out.len() == 0
         out @ cycles(s, uses, found: out)
@@ -185,12 +187,15 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
 # guessing.
 function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= found
-    base = paths.directory_text(s.name)
 
     for used in uses
         if source.is_library(s, used.span.start)
             continue
-        name = source.span_text(s, used.name)
+        name = places.identity(
+            s.reached.aliases,
+            from: source.module_at(s, used.span.start),
+            named: source.span_text(s, used.name)
+        )
         present: bool @= false
 
         for f in s.files
@@ -199,12 +204,13 @@ function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
 
         if present
             continue
-        d: diag.Diagnostic = diag.new_diagnostic(
-            code: "unknown_module",
-            message: "there is no module `" + name + "` — `use " + name + "` reads `" + base + name + ".hero`, from the directory of `" + s.name + "`, the file you compile, and that file is not there",
-            span: used.name
-        )
-        out @ out.push(d)
+
+        if name.len() == 0 || places.is_package(name)
+            for told in package_told.unknown(s, used, name: name, told: out)
+                out @ out.push(told)
+
+            continue
+        out @ out.push(package_told.own_unknown(s, uses, used: used, name: name))
 
     return out
 
@@ -279,7 +285,11 @@ function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> 
 
     for used in uses
         from_at = source.file_of(s, used.span.start)
-        name = source.span_text(s, used.name)
+        name = places.identity(
+            s.reached.aliases,
+            from: source.module_at(s, used.span.start),
+            named: source.span_text(s, used.name)
+        )
         to_at: i64 @= -1
         probe: i64 @= 0
 

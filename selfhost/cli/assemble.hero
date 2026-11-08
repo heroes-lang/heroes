@@ -242,7 +242,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         options,
         site,
         objects: objects,
-        module: root,
+        module: module_names.binary_of(s.name),
         modules: probing.every_module(planned.probings)
     )
 

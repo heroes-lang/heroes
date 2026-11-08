@@ -1,0 +1,1 @@
+tests/golden/check/package-entry-deleted.case/main.hero:8:5: error[unknown_entry]: `<json>` is no entry of the catalogue `tests/golden/check/package-entry-deleted.case/heroes.toml`, whose entries are `zzz_gone`, `yaml` — `heroes add json` writes one

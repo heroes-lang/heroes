@@ -1,0 +1,5 @@
+# A module of the package `lib`, which names its own private module.
+use internal/scan
+
+function count(n: i64) -> i64
+    return scan.twice(n)

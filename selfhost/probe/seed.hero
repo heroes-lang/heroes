@@ -18,7 +18,7 @@
 # the two counts agree there by what the value is.
 
 use token
-use source
+use text_lines
 
 # A token, placed: its kind, the 0-based line it starts on, and its start
 # and end as byte offsets into that line. A token never spans a line: a
@@ -76,7 +76,7 @@ function read(path: str, text: str, tokens: [token.Token]) -> Seed
 
 # Every token but the layout ones and the end, placed, in order.
 function placed(text: str, tokens: [token.Token]) -> [Word]
-    starts = source.starts_of(text)
+    starts = text_lines.starts_of(text)
     out: [Word] @= []
     at: i64 @= 0
 

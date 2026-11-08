@@ -66,6 +66,13 @@ function stem_of(path: str) -> str
 function module_of(path: str) -> str
     return component_of(stem_of(path))
 
+# The default binary's name for the file at `path`: its stem's letters and
+# digits, never led by the `m` a digit-led component takes (panel 235's R17):
+# the binary is the author's file, `00-first.hero` built as `00first`, and
+# the prefix only keeps the program out of the compiler's C names.
+function binary_of(path: str) -> str
+    return letters_of(stem_of(path))
+
 # The C component of a MODULE NAME, which since M-package-layout may be a
 # path: `syntax/decl` becomes `syntaxdecl`.
 #
@@ -80,6 +87,26 @@ function module_of(path: str) -> str
 # It is NOT the module's binding name — that is `binding_of`, the last part.
 # Two namespaces (C's and the program's) and this is C's.
 function component_of(module: str) -> str
+    kept = letters_of(module)
+
+    # **A component led by a digit is the compiler's own** (panel 235's R17,
+    # defect 2327): `0` leads the names the emitter invents (`emit/ctype.hero`'s
+    # `SYNTHETIC`, `h_0opt_<hash>`) and `1` a package's module, `<json>/parse`,
+    # so no module of the program's own can meet either in C. A program's
+    # component the filter leaves led by a digit, `_0opt.hero` or a root file
+    # `00-first.hero`, is led by `m` instead; until then `_0opt`'s functions
+    # were named inside the emitter's namespace and `--emit-c` printed C clang
+    # refuses.
+    if module.len() > 0 && module[0] == '<'
+        return "1" + kept
+
+    if bytes.is_digit(kept[0])
+        return "m" + kept
+    return kept
+
+# A module's letters and digits, its `/`, `_` and mark left out, or `anon`
+# for a name holding none.
+function letters_of(module: str) -> str
     letters: [str] @= []
     i: i64 @= 0
 
@@ -147,6 +174,16 @@ test "a module that is a path: the whole path in C, the last part as the name"
     assert component_of("a/b/c") == "abc"
     assert component_of("geom") == "geom"
     assert component_of("print_inst") == "printinst"
+
+    # Panel 235's R17 and defect 2327: a package's module is led by `1`, and
+    # a component of the program's own the filter leaves led by a digit, by
+    # `m`, the leading digit being the compiler's alone.
+    assert component_of("<json>/parse") == "1jsonparse"
+    assert component_of("json/parse") == "jsonparse"
+    assert component_of("_0opt") == "m0opt"
+    assert module_of("00-first.hero") == "m00first"
+    assert binary_of("examples/gallery/00-first.hero") == "00first"
+    assert binary_of("geom.hero") == "geom"
 
     # The qualifier is the last part, and a bare name is its own last part.
     assert binding_of("syntax/decl") == "decl"

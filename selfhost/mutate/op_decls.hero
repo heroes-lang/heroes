@@ -258,3 +258,32 @@ function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
     else
         return ok(false)
     return ok(true)
+
+## Tests
+
+# A package's mark (panel 235's R1) is text this family edits as it edits any
+# `use` line, never a form it declines: the dotted mutant writes the mark's
+# own `/` as a `.` too, `use <json>.parse`, one of the mistakes R18 tells, and
+# the quoted one quotes the mark with the path.
+test "the use family mutates a package's mark, and declines none of it"
+    text = "use <json>/parse\n"
+    toks = [
+        model.tok(kind: "kw_use", text: "use", row: 1, col: 1)
+        model.tok(kind: "lt", text: "<", row: 1, col: 5)
+        model.tok(kind: "ident", text: "json", row: 1, col: 6)
+        model.tok(kind: "gt", text: ">", row: 1, col: 10)
+        model.tok(kind: "slash", text: "/", row: 1, col: 11)
+        model.tok(kind: "ident", text: "parse", row: 1, col: 12)
+        model.tok(kind: "terminator", text: "", row: 1, col: 17)
+        model.tok(kind: "eof", text: "", row: 2, col: 1)
+    ]
+    p = model.modelled(text, toks: toks)
+    assert p.stmts[0].kind == "top-use"
+    dotted: [mutant.Mutant] @= []
+    use_dotted(p, @dotted)
+    assert dotted.len() == 1
+    assert dotted[0].hunks[0].lines == ["use <json>.parse"]
+    quoted: [mutant.Mutant] @= []
+    use_quoted(p, @quoted)
+    assert quoted.len() == 1
+    assert quoted[0].hunks[0].lines == ["use \"<json>/parse\""]

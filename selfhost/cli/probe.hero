@@ -66,6 +66,7 @@ constant FIXTURES: [str]
         "tests/golden/surface-fixtures/releaser108"
         "tests/golden/surface-fixtures/braces173"
         "tests/golden/surface-fixtures/escape251"
+        "tests/golden/surface-fixtures/mark235"
     ]
 
 # How many failures past the first the report names.
@@ -378,7 +379,9 @@ test "a family the probe does not make is named with the seven, and a path that 
     # read this test red and wrote the count.
     # 12 -> 13 on 2026-10-05: `escape251`, panel 192's R5 (defect 251), the
     # surface suite's `fmt` rows over `\u{1b}` in a string and an `f` literal.
-    assert FIXTURES.len() == 13
+    # 13 -> 14 on 2026-11-07: `mark235`, panel 235's R1, a package's mark on
+    # every shape a `use` line takes, the surface suite's `fmt` row over it.
+    assert FIXTURES.len() == 14
 
 test "a stride is a whole number from 1 up"
     assert judge.counted("2") == 2

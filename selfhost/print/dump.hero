@@ -237,6 +237,15 @@ test "the dump names every field the formatter can print"
     expected = "file t.hero\n  use geom\n  record Point\n    doc # A point in the plane.\n    field x: i64\n    field y: i64\n  extern \"raylib.h\" package \"raylib\" record Font tag FontT partial\n    field size: i64\n  extern \"raylib.h\" package \"raylib\" constant FLAG: i64\n  extern \"raylib.h\" package \"raylib\" function draw(f: Font, n: i64) -> ()\n  extern \"raylib.h\" package \"raylib\" function copy(s: cstr lent) -> cstr owned free\n  extern \"raylib.h\" package \"raylib\" function run(@e: cstr owned drop) -> i64\n  extern \"raylib.h\" package \"raylib\" function grab(h: Font consumes) -> Font acquires release\n  variant Shape\n    case dot\n    case box\n      field w: i64\n  function dist<T>(a: T, @b: i64) -> i64\n    mutate b @ (b + 1)\n    return b\n  test \"a title\"\n    assert (1 == 1)\n"
     assert got == expected
 
+# A package's mark (panel 235's R1) is part of the module's name, and the dump
+# prints it, so `fmt`'s self-check, which compares two dumps, sees a formatter
+# that drops it.
+test "the dump prints a package's mark with the module it names"
+    text = "use <json>/a/b as near\nuse <json>/parse\n\nfunction main()\n    print(0)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    assert dump_ast(parsed.tree, s, parsed.uses, parsed.decls) == "file t.hero\n  use <json>/a/b as near\n  use <json>/parse\n  function main() -> ()\n    expr print(0)\n"
+
 # Defect 290: an ESC in each place the dump prints the file's own text, a doc
 # comment, a string literal and a test's title, reaches the terminal by its
 # code, and the guard's dump keeps the byte.

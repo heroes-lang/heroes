@@ -64,8 +64,8 @@
       "name": "keyword.control.hero"
     },
     "use": {
-      "comment": "`as` is a contextual word (`selfhost/keywords.hero`'s `contextual()`), read by the parser only after a `use` line's path (spec § 1, `Use`), so it is painted only there: a column-0 `use`, its path, a space, then `as`. Anywhere else `as` is a name. A `use` line without `as` is painted by #keyword.",
-      "match": "^(use)\\s+([A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*)\\s+(as)\\b",
+      "comment": "`as` is a contextual word (`selfhost/keywords.hero`'s `contextual()`), read by the parser only after a `use` line's path (spec § 1, `Use`), so it is painted only there: a column-0 `use`, its path, a space, then `as`. The path may open with a package's mark, `<json>/`, every part touching (panel 235's R1), and is painted whole with it. Anywhere else `as` is a name. A `use` line without `as` is painted by #keyword.",
+      "match": "^(use)\\s+((?:<[A-Za-z_][A-Za-z0-9_]*>/)?[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*)\\s+(as)\\b",
       "captures": {
         "1": { "name": "keyword.control.use.hero" },
         "2": { "name": "entity.name.namespace.hero" },

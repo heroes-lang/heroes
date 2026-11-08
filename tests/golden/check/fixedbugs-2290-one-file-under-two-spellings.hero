@@ -1,0 +1,11 @@
+# Fixed defect 2290, 2026-11-08, lane pm-use: one file reached under two
+# spellings compiled twice on this Mac, `h_Fixedbugs2290Strings_contains`
+# beside `h_fixedbugs2290strings_contains` in one emission. The second
+# spelling is refused, and its repair is a `guess`, the file naming that
+# module already: written, the line would name one module twice.
+use fixedbugs2290/strings
+use Fixedbugs2290/Strings as other  #~ unknown_module
+
+function main()
+    print(strings.contains(s: "abc", part: "c"))
+    print(other.contains(s: "abc", part: "d"))

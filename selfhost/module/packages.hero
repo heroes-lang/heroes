@@ -1,0 +1,241 @@
+# The packages discovery reads (spec § 1; panel 235's R1 to R7, R12 and R16,
+# ratified 2026-11-07): where each `use <name>/…` is read from, through the
+# catalogue alone, and what is recorded of each package for the passes after
+# discovery, which tell it (`package_told.hero`).
+#
+# **A program with no bracketed `use` reads no catalogue** (R12): the
+# program's catalogue is read the first time a module of the program names a
+# package, and never otherwise.
+#
+# **Each module's `<x>` is read through the catalogue of the package that
+# holds it** (R3, the coordinator's ruling of 2026-11-07): the program's own
+# for its own modules, a package's own for its modules. Every alias maps to a
+# package's identity, and the program's catalogue is the build list: a
+# dependency's entry must name a package the program's catalogue holds, by its
+# source, or the package is refused, `build` refusing a catalogue that does
+# not hold the build list whole. A package's module is named in the
+# compilation by the program's alias for its package, `<json>/parse`, so two
+# aliases of one package compile once, and a package's own bare `use` lines
+# start at its own root (R4): `use internal/scan` in `<core>/strings` is
+# `<core>/internal/scan`.
+#
+# **A fetched package is placed inside the program, under a folder no `use`
+# can spell, one tree per package keyed by its identity, never by its alias**
+# (R7): `heroes.packages/<name>@<version>-<key>/`, the key the first sixteen
+# hexadecimal digits of the SHA-256 of the entry's source, version or tag and
+# commit, and fingerprint, so a field mistyped names a tree that is not
+# there, and nothing compiles in its place (W4). A `path` entry is read where
+# it names, a folder of the author's own, and told as unverified (R6).
+
+use module/reached
+use module/catalogue
+use module/placed
+use module/fingerprint
+use cli/process
+
+constant PLACED: str
+    "heroes.packages"
+
+# What discovery holds of the packages while it loads: the directory of the
+# file you compile, as the author spelt it and as files are opened; the
+# program's catalogue, once read; and every package reached, with the aliases
+# its own catalogue gives the program's packages.
+record Book
+    named: str
+    opened: str
+    asked: bool
+    program: catalogue.Catalogue
+    reached: [reached.Package]
+    aliases: [reached.Alias]
+
+function book(named: str, opened: str) -> Book
+    return Book(named: named, opened: opened, asked: false, program: catalogue.empty(), reached: [], aliases: [])
+
+# Where a module's file is, as a message names it and as it is opened, and
+# the directory it is read under with its path there, which its directory's
+# listing must spell (`spelling.spelt`, defect 2290).
+record Located
+    named: str
+    opened: str
+    base: str
+    inside: str
+
+# The module `written` in a file of the module `from` stands for, "" where
+# no package of the build list answers it (`placed.identity`).
+function identity(b: Book, from: str, written: str) -> str
+    return placed.identity(b.aliases, from: from, named: written)
+
+# The file of `module`: the program's own beside the file you compile; a
+# package's under its root, the package reached first. A failure where the
+# package is not read, its reason recorded in `reached` for the graph to tell.
+function file_of(@b: Book, module: str) -> Located?
+    if !placed.is_package(module)
+        return ok(
+            Located(named: b.named + module + ".hero", opened: b.opened + module + ".hero", base: b.opened, inside: module)
+        )
+    at = reach(@b, alias: placed.entry_of(module))
+
+    if at < 0 || b.reached[at].problem.len() > 0
+        return fail(code: "unread", msg: module)
+    inside = placed.inside_of(module)
+    return ok(
+        Located(named: b.reached[at].root + inside + ".hero", opened: b.reached[at].opened + inside + ".hero", base: b.reached[at].opened, inside: inside)
+    )
+
+# The package the program's catalogue names `alias`, reached once: its place
+# in `reached`, or -1 where the catalogue does not read or names no such
+# entry, which the graph tells on the `use` line.
+function reach(@b: Book, alias: str) -> i64
+    for at in range(from: 0, to: b.reached.len())
+        if b.reached[at].alias == alias
+            return at
+
+    if !b.asked
+        b.program @ catalogue.read(opened: b.opened, named: b.named)
+        b.asked @ true
+    found = catalogue.entry(b.program, name: alias)
+
+    if found.is_err()
+        return -1
+    e = found.must()
+    package: reached.Package @= rooted(b, e: e)
+    package.problem @ problem_of(@b, package: package, e: e)
+    b.reached @ b.reached.push(package)
+    return b.reached.len() - 1
+
+# Where an entry's modules are read from: a `path` entry's folder, from the
+# directory of the file you compile; the tree `heroes fetch` placed for any
+# other, under `heroes.packages/`.
+function rooted(b: Book, e: catalogue.Entry) -> reached.Package
+    if e.path.len() > 0
+        folder = with_slash(e.path)
+
+        if folder[0] == '/'
+            return reached.Package(alias: e.name, root: folder, opened: folder, problem: "", unverified: true)
+        return reached.Package(
+            alias: e.name,
+            root: b.named + folder,
+            opened: b.opened + folder,
+            problem: "",
+            unverified: true
+        )
+    tree = PLACED + "/" + placed.key(e, index: b.program.index) + "/"
+    return reached.Package(alias: e.name, root: b.named + tree, opened: b.opened + tree, problem: "", unverified: false)
+
+# Why a package's modules cannot be read, "" where they can: its tree not
+# placed, not matching its fingerprint (R7), its own catalogue not reading,
+# or naming a package the program's catalogue does not hold (R3).
+function problem_of(@b: Book, package: reached.Package, e: catalogue.Entry) -> str
+    if !process.is_directory(path: package.opened)
+        if package.unverified
+            return "the folder `" + package.root + "` its `path` names is not there"
+        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`"
+
+    # The tree is a folder of the program anything can edit, so it is held to
+    # its fingerprint at every build that reads it (R7): a tree changed since
+    # it was placed compiles nothing.
+    if !package.unverified
+        tree = fingerprint.of(package.opened)
+
+        if tree.is_err()
+            return "the tree placed at `" + package.root + "` cannot be read whole: " + failure_of(tree) + " — `heroes fetch` places it again"
+
+        if tree.must() != e.sum
+            return "the tree placed at `" + package.root + "` is `" + tree.must() + "`, and the catalogue's `sum` for it is `" + e.sum + "`: a file of it was changed, added or taken out since it was placed — `heroes fetch` places it again"
+    own = catalogue.read(opened: package.opened, named: package.root)
+
+    if own.problem.len() > 0
+        return "the package's own catalogue does not read: " + own.problem
+    return mapped(@b, alias: e.name, own: own, root: package.opened)
+
+# Each entry of the package's own catalogue mapped to the program's entry for
+# the same package (R3), the aliases kept for `identity`; what is wrong where
+# one is not in the program's.
+function mapped(@b: Book, alias: str, own: catalogue.Catalogue, root: str) -> str
+    for e in own.entries
+        meant = program_entry(
+            b.program,
+            wanted: catalogue.source_of(e, index: own.index, folder: root),
+            opened: b.opened
+        )
+
+        if meant.len() == 0
+            return "its catalogue names `" + e.name + "`, " + catalogue.said_source(e) + ", and the program's catalogue lists no entry for that package: the program's catalogue holds every package of the build — `heroes add` writes it whole"
+        b.aliases @ b.aliases.push(reached.Alias(package: alias, written: e.name, meant: meant))
+
+    return ""
+
+# The program's entry whose source is `source`, "" where none is.
+function program_entry(program: catalogue.Catalogue, wanted: str, opened: str) -> str
+    for e in program.entries
+        if catalogue.source_of(e, index: program.index, folder: opened) == wanted
+            return e.name
+
+    return ""
+
+function with_slash(folder: str) -> str
+    if folder.len() > 0 && folder[folder.len() - 1] == '/'
+        return folder
+    return folder + "/"
+
+function failure_of(got: str?) -> str
+    match got
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+test "a package's module is read through its entry, from its placed tree or its folder, and nowhere else"
+    dir = "build/selftest-packages/"
+    sum = "sha256-" + "a".repeat(64.to_u64().must())
+
+    # A clean start: a tree an earlier run placed would read as placed here.
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(path: dir)
+    assert !process.mkdir_all(dir + "local").is_err()
+    assert !write_file(path: dir + "heroes.toml", text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + sum + "\"\n\n[dependencies.mine]\npath = \"local\"\n").is_err()
+    b: Book @= book(named: dir, opened: dir)
+
+    # A folder of the author's own is read where its `path` names, unverified.
+    mine = file_of(@b, "<mine>/text")
+    assert mine.must().named == dir + "local/text.hero"
+    assert b.reached[0].unverified
+
+    # A fetched entry not placed yet is told so, with the folder it goes in.
+    assert file_of(@b, "<json>/parse").is_err()
+    assert b.reached[1].problem.len() > 0
+    key_folder = PLACED + "/" + placed.key(catalogue.entry(b.program, name: "json").must(), index: "") + "/"
+    assert b.reached[1].root == dir + key_folder
+
+    # Placed at the key its real sum names, it is read from its tree; edited
+    # after it was placed, it compiles nothing (R7). An entry no catalogue
+    # gives is no file.
+    staged = dir + "staged/"
+    assert !process.mkdir_all(staged).is_err()
+    assert !write_file(path: staged + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    real = fingerprint.of(staged).must()
+    assert !write_file(path: dir + "heroes.toml", text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + real + "\"\n\n[dependencies.mine]\npath = \"local\"\n").is_err()
+    placed_at = dir + PLACED + "/" + placed.key(catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: real), index: "") + "/"
+    assert !process.mkdir_all(placed_at).is_err()
+    assert !write_file(path: placed_at + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    c: Book @= book(named: dir, opened: dir)
+    assert file_of(@c, "<json>/parse").must().opened == placed_at + "parse.hero"
+    assert !write_file(path: placed_at + "parse.hero", text: "function x() -> i64\n    return 2\n").is_err()
+    edited: Book @= book(named: dir, opened: dir)
+    assert file_of(@edited, "<json>/parse").is_err()
+    assert edited.reached[0].problem.len() > 0
+    assert !write_file(path: placed_at + "parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    assert file_of(@c, "<yaml>/load").is_err()
+    assert file_of(@c, "geom").must().named == dir + "geom.hero"
+
+    # A package whose own catalogue names a package the program's lacks is
+    # refused, the build list not whole (R3); one naming a package the
+    # program holds maps its alias to the program's.
+    assert !write_file(path: dir + "local/heroes.toml", text: "[dependencies.js]\nversion = \"1.4.2\"\nsum = \"" + sum + "\"\n\n[dependencies.yaml]\nversion = \"0.3.1\"\nsum = \"" + sum + "\"\n").is_err()
+    e: Book @= book(named: dir, opened: dir)
+    assert file_of(@e, "<mine>/text").is_err()
+    assert e.reached[0].problem.len() > 0
+    assert !write_file(path: dir + "local/heroes.toml", text: "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"" + sum + "\"\n").is_err()
+    f: Book @= book(named: dir, opened: dir)
+    assert !file_of(@f, "<mine>/text").is_err()
+    assert f.aliases.len() == 1 && f.aliases[0].written == "json" && f.aliases[0].meant == "json"
+    assert !write_file(path: dir + "local/heroes.toml", text: "").is_err()
