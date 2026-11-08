@@ -1343,6 +1343,10 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             at = interning.intern(@b, source.span_text(s, f.name))
             return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
         .index ix =>
+            # An element of a fixed array a place holds is read from the place
+            # (defect 2334, `ir/in_place.hero`'s `element`).
+            if in_place.element(@b.names, a, r, c, s, decls, id: id)
+                return build.emit(@b, op: .load(place: place(@b, a, r, c, s, decls, id: id)), ty: ty, span: span)
             owner = c.expr_types[ix.base]
             base = expr(@b, a, r, c, s, decls, id: ix.base)
             key = expr(@b, a, r, c, s, decls, id: ix.index)

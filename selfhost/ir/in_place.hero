@@ -19,6 +19,19 @@
 # first build of it left fifteen programs naming a temporary nothing
 # declared, exit 2; such a read keeps the whole value's read and the field
 # of that copy, whose spelling `storageless.hero` knows.
+#
+# **But an ELEMENT of such an array is read from the place** (defect 2334,
+# panel 236's R6): `b.f0[i]`, the array a field of a place `read` accepts,
+# is one `load` of the place `b.f0[i]`, C's `h0_b.f0[<checked i>]` through
+# the one spelling of a fixed array's bound (`emit/places.hero`'s
+# `subscript`). Read the other way, each element read loaded the whole `b`
+# into a temporary first: 1,024 reads of an 8 KiB group record were 1,025
+# temporaries of it, past the stack at `-O0`, and in the room since panel
+# 236's rule B the same copies at about 23 times the base's work at `-O2`.
+# The element is read at that load, AFTER its index is computed, where the
+# copy was taken before: so the index is held to an expression that writes
+# no place (`pure`), and reading the place later reads what reading it
+# earlier would have.
 
 use ast
 use source
@@ -50,8 +63,67 @@ function read(@names: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, c: st
             if layout.field_index(@names, decls, c, s, owner: c.expr_types[f.base], name: f.name).is_err()
                 return false
             return read(@names, a, r, c, s, decls, id: f.base)
-        .field_name | .index | .int_lit | .float_lit | .str_lit | .interp | .char_lit => return false
-        .bool_lit | .null_ptr | .hole | .unary | .binary | .call | .method            => return false
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error   => return false
+        # A field of an element read in place, `a.hs[0].first`: the place
+        # reaches the field through the element, which is not copied whole.
+        .index => return element(@names, a, r, c, s, decls, id: id)
+        .field_name | .int_lit | .float_lit | .str_lit | .interp | .char_lit => return false
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call | .method => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
 
     return false
+
+# Whether `id` is an element of a fixed array a place holds, its index writing
+# no place: the read `place` spells whole, element and all (defect 2334).
+function element(@names: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    match a.exprs[id].kind
+        .index ix =>
+            match table.get(c.types, c.expr_types[ix.base])
+                .fixed                                                    => _ = 0
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+                .array | .map | .fallible | .function_ty | .named         => return false
+                .case_ty | .failure | .generic | .error                   => return false
+
+            if !pure(a, id: ix.index)
+                return false
+            return holds(@names, a, r, c, s, decls, id: ix.base)
+        .name | .field | .field_name | .int_lit | .float_lit | .str_lit | .interp => return false
+        .char_lit | .bool_lit | .null_ptr | .hole | .unary | .binary | .call      => return false
+        .method | .variant_case | .array | .map | .try_expr | .if_expr            => return false
+        .match_expr | .error                                                      => return false
+
+    return false
+
+# Whether the fixed array `id` is held by a place read in place: a field of a
+# path `read` accepts, or an element of an array of arrays held so.
+function holds(@names: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    match a.exprs[id].kind
+        .field f =>
+            match r.uses[f.base]
+                .module                                => return false
+                .local | .top | .builtin | .unresolved => _ = 0
+
+            if layout.field_index(@names, decls, c, s, owner: c.expr_types[f.base], name: f.name).is_err()
+                return false
+            return read(@names, a, r, c, s, decls, id: f.base)
+        .index => return element(@names, a, r, c, s, decls, id: id)
+        .name | .field_name | .int_lit | .float_lit | .str_lit | .interp | .char_lit => return false
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call | .method => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# Whether evaluating `id` writes no place: a literal, a name, a field, an
+# element, an operator over those. A call or a method may lend a place with
+# `@`, and anything else is not asked; an operator may abort, which writes
+# nothing.
+function pure(a: ast.Ast, id: i64) -> bool
+    return match a.exprs[id].kind
+        .int_lit | .float_lit | .char_lit | .bool_lit | .str_lit => true
+        .null_ptr | .name                                        => true
+        .field f                                                 => pure(a, id: f.base)
+        .unary u                                                 => pure(a, id: u.operand)
+        .binary bin                                              => pure(a, id: bin.left) && pure(a, id: bin.right)
+        .index ix                                                => pure(a, id: ix.base) && pure(a, id: ix.index)
+        .field_name | .interp | .hole                            => false
+        .call | .method | .variant_case | .array | .map          => false
+        .try_expr | .if_expr | .match_expr | .error              => false
