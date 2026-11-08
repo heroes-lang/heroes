@@ -1,0 +1,364 @@
+# A git entry fetched and placed (panel 235's R6, R7 and R9's C3, ratified
+# 2026-11-07): its tag asked of the source first and refused where it no
+# longer names the entry's commit; the commit's objects fetched shallow into a
+# repository of the staging folder's own; its tree read from git's own listing
+# of the commit and judged whole before anything is written
+# (`fetch/tree_names.hero`); each file written from its committed blob; and
+# the tree held to the entry's sum and moved into place (`fetch/staging.hero`).
+#
+# **The blobs, never a checkout**: the ffi-pragmatist measured a clone under
+# `core.autocrlf=true` writing 31 bytes where the commit holds 29, and a
+# repository's own `.gitattributes` (`* text eol=crlf`) moving a checkout and
+# `git archive` alike, where the blobs moved under neither (its § 4). So the
+# bytes a package's sum is taken over are the commit's on every machine.
+#
+# **A moved tag is refused, never followed** (R6; the ffi-pragmatist's § 5,
+# measured: `v1.0.0` moved by `git tag -f` gave another tree and another
+# sum). It is asked twice, of `git ls-remote` before anything is fetched and
+# of the fetched ref after it, since a tag can move between the two.
+
+use cli/process
+use cli/read_back
+use cli/strings
+use module/catalogue
+use module/placed
+use module/reading
+use not_text
+use source
+use module/fingerprint
+use fetch/address
+use fetch/git_words
+use fetch/made_repo
+use fetch/staging
+use fetch/transport
+use fetch/tree_names
+
+# One file of the commit's tree as git lists it.
+record Blob
+    mode: str
+    oid: str
+    path: str
+
+# The git entry `e` of the program whose folder is `program` ("" or a path
+# ending with `/`) fetched and placed under its key: the folder it now
+# stands in. `root` is where the program stands in its repository
+# (`transport.root_of`), `index` its catalogue's `index` line.
+function fetched(tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str) -> str?
+    s = staging.opened(program)?
+    done = written(tools, e: e, root: root, s: s)
+
+    if done.is_err()
+        staging.dropped(s)
+        return fail(code: code_of(done), msg: why(done))
+    return staging.placed(
+        s,
+        program: program,
+        key: placed.key(e, index: index),
+        sum: e.sum,
+        what: "the tree of `" + e.name + "`, `" + e.git + "` at `" + e.tag + "`,"
+    )
+
+# The tree of the git entry `e` written into `s`, every file from its blob,
+# once the tag, the commit and every name passed.
+function written(tools: transport.Tools, e: catalogue.Entry, root: address.Root, s: staging.Staging) -> ()?
+    at = address.judged(e.git, root: root)?
+    wrong = git_words.commit_said(e.commit)
+
+    if wrong.len() > 0
+        return fail(code: "commit_refused", msg: wrong)
+    now = transport.tag_commit(tools, source: at, tag: e.tag, scratch: s.folder)?
+
+    if now != e.commit
+        return fail(code: "tag_moved", msg: moved(e, now: now))
+    bare = s.folder + "/git"
+    away: str @= "unreachable"
+
+    if at.local.len() > 0
+        away @ "absent"
+    own(tools, words: ["init", "-q", "--bare", "--template=", "--", bare], out: process.discard(), s: s)?
+    transport.git_ran(tools, words: ["--git-dir=" + bare, "fetch", "-q", "--depth", "1", "--no-tags", "--", at.url, "refs/tags/" + e.tag + ":refs/heroes/fetched"], out: process.discard(), scratch: s.folder, failed_as: away)?
+    peeled = s.folder + "/fetched.txt"
+    own(tools, words: ["--git-dir=" + bare, "rev-parse", "--verify", "-q", "refs/heroes/fetched^{commit}"], out: peeled, s: s)?
+    got = strings.trimmed(read_back.words(peeled).default(""))
+
+    if got != e.commit
+        return fail(code: "tag_moved", msg: moved(e, now: got))
+    listed = s.folder + "/listing.txt"
+    own(tools, words: ["--git-dir=" + bare, "ls-tree", "-r", "-z", "--full-tree", "--", e.commit], out: listed, s: s)?
+
+    for one in blobs(listed)?
+        path = s.tree + "/" + one.path
+        made(process.mkdir_all(path.slice(from: 0, to: last_slash(path))))?
+        own(tools, words: ["--git-dir=" + bare, "cat-file", "blob", "--", one.oid], out: path, s: s)?
+
+    return ok()
+
+# git run on the staging folder's own repository: a failure there is git's or
+# the machine's, never the source's.
+function own(tools: transport.Tools, words: [str], out: str, s: staging.Staging) -> ()?
+    return transport.git_ran(tools, words: words, out: out, scratch: s.folder, failed_as: "git_failed")
+
+# What a moved tag is told.
+function moved(e: catalogue.Entry, now: str) -> str
+    return "the tag `" + e.tag + "` of `" + e.git + "` names the commit " + now + ", and the entry `" + e.name + "` was written when it named " + e.commit + ": a tag that moved is refused, never followed, and `heroes add` writes the entry again once the new commit is the one meant"
+
+# The files git's listing of the commit names, every one judged before any is
+# written: its mode a file's, its name UTF-8 and one a package may hold, and
+# no two names one where case is ignored.
+function blobs(listed: str) -> [Blob]?
+    read = reading.source_text(listed)
+
+    if read.is_err()
+        return fail(code: "git_failed", msg: "git's listing of the commit cannot be read back from `" + listed + "`")
+    text = read.must().text
+    faults = read.must().faults
+    out: [Blob] @= []
+    paths: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == 0
+            one = record_of(text.slice(from: from, to: at))?
+            start = at - one.path.len()
+
+            if faults.len() > 0 && faults[0].at >= start && faults[0].at < at
+                return fail(
+                    code: "name_refused",
+                    msg: "`" + not_text.bytes_written(one.path, faults: shifted(faults, by: start, before: at)) + "` is a name that is not UTF-8, which no file of a package's may be"
+                )
+            said = tree_names.mode_said(mode: one.mode, path: one.path) + tree_names.name_said(one.path)
+
+            if said.len() > 0
+                return fail(code: "name_refused", msg: said)
+            out @ out.push(one)
+            paths @ paths.push(one.path)
+            from @ at + 1
+
+    twice = tree_names.collision(paths)
+
+    if twice.len() > 0
+        return fail(code: "name_refused", msg: twice)
+    return ok(out)
+
+# One line of `git ls-tree -z`: `<mode> <type> <object>`, a tab, the path.
+function record_of(line: str) -> Blob?
+    tab: i64 @= 0
+
+    while tab < line.len() && line[tab] != '\t'
+        tab @ tab + 1
+
+    head = line.slice(from: 0, to: tab)
+    first = space_at(head, from: 0)
+    second = space_at(head, from: first + 1)
+
+    if tab == line.len() || first < 0 || second < 0
+        return fail(
+            code: "git_failed",
+            msg: "git listed the commit in a shape this compiler does not read: `" + head + "`"
+        )
+    return ok(
+        Blob(mode: head.slice(from: 0, to: first), oid: head.slice(from: second + 1, to: head.len()), path: line.slice(from: tab + 1, to: line.len()))
+    )
+
+function space_at(text: str, from: i64) -> i64
+    for at in range(from: from, to: text.len())
+        if text[at] == ' '
+            return at
+
+    return -1
+
+# The faults that stand between `by` and `before`, moved to count from `by`.
+function shifted(faults: [source.Fault], by: i64, before: i64) -> [source.Fault]
+    out: [source.Fault] @= []
+
+    for one in faults
+        if one.at >= by && one.at < before
+            out @ out.push(source.Fault(at: one.at - by, byte: one.byte))
+
+    return out
+
+function last_slash(path: str) -> i64
+    at: i64 @= path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return at
+
+# A folder that could not be made under the staging folder, told as the
+# machine's.
+function made(done: ()?) -> ()?
+    match done
+        .ok _  => return ok()
+        .err e => return fail(code: "cannot_place", msg: e.msg)
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.code
+
+function why(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+# The scratch these cases share: a repository standing for the program's
+# own, `app/` its folder, `src/` a git source beside it, and `pub/` the same
+# files written apart, whose fingerprint is the sum an honest entry holds.
+constant SCRATCH: str
+    "build/selftest-fetch-git"
+
+# A PNG's signature, then a byte no UTF-8 holds.
+constant PNG: str
+    "89504e470d0a1a0a0000000d49484452ff"
+
+record Made
+    root: address.Root
+    commit: str
+    sum: str
+
+# A program in a repository of its own and a source tagged `v1` beside it,
+# holding a module, a file deeper down and a file that is not text.
+function source_made() -> Made
+    made_repo.made(SCRATCH).must()
+    process.mkdir_all(SCRATCH + "/app").must()
+    made_repo.made(SCRATCH + "/src").must()
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["parse.hero", "function x() -> i64\n    return 1\n", "sub/note.txt", "deep\n"],
+        message: "one"
+    ).must()
+    made_repo.raw_file(path: SCRATCH + "/src/logo.png", hex: PNG).must()
+    made_repo.git(SCRATCH + "/src", words: ["add", "--", "logo.png"]).must()
+    made_repo.git(SCRATCH + "/src", words: ["commit", "-q", "-m", "logo", "--", "logo.png"]).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1", annotated: true).must()
+    process.mkdir_all(SCRATCH + "/pub/sub").must()
+    write_file(path: SCRATCH + "/pub/parse.hero", text: "function x() -> i64\n    return 1\n").must()
+    write_file(path: SCRATCH + "/pub/sub/note.txt", text: "deep\n").must()
+    made_repo.raw_file(path: SCRATCH + "/pub/logo.png", hex: PNG).must()
+    root = transport.root_of(transport.path_tools(), folder: SCRATCH + "/app", scratch: SCRATCH).must()
+    return Made(
+        root: root,
+        commit: made_repo.head(SCRATCH + "/src").must(),
+        sum: fingerprint.of(SCRATCH + "/pub").must()
+    )
+
+function entry(tag: str, commit: str, sum: str) -> catalogue.Entry
+    return catalogue.Entry(name: "src", version: "", git: "file://../src", tag: tag, commit: commit, path: "", sum: sum)
+
+test "a git entry is fetched from its blobs, held to its sum and placed under its key, a file that is not text among them"
+    m = source_made()
+    e = entry(tag: "v1", commit: m.commit, sum: m.sum)
+    at = fetched(transport.path_tools(), e: e, program: SCRATCH + "/app/", root: m.root, index: "").must()
+    assert at == SCRATCH + "/app/heroes.packages/" + placed.key(e, index: "")
+    assert read_file(at + "/parse.hero").must() == "function x() -> i64\n    return 1\n"
+    assert read_file(at + "/sub/note.txt").must() == "deep\n"
+    assert fingerprint.of(at).must() == m.sum
+    assert !process.path_exists(at + "/.git")
+
+    # Nothing of the staging folder is left beside the placed tree.
+    for one in process.walk(SCRATCH + "/app/heroes.packages").must().files
+        assert strings.starts_with(text: one, prefix: at + "/")
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a sum that is not the tree's places nothing, and a moved tag and a missing one are refused before a fetch"
+    m = source_made()
+
+    match fetched(transport.path_tools(), e: entry(tag: "v1", commit: m.commit, sum: "sha256-" + "0".repeat(64.to_u64().must())), program: SCRATCH + "/app/", root: m.root, index: "")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "sum_mismatch"
+            assert strings.starts_with(
+                text: e.msg,
+                prefix: "the tree of `src`, `file://../src` at `v1`, sums to `" + m.sum + "`"
+            )
+
+    assert !process.path_exists(SCRATCH + "/app/heroes.packages/" + placed.key(entry(tag: "v1", commit: m.commit, sum: "sha256-" + "0".repeat(64.to_u64().must())), index: ""))
+
+    # The publisher moves `v1` to a new commit: refused, never followed.
+    _ = made_repo.committed(
+        dir: SCRATCH + "/src",
+        files: ["parse.hero", "function x() -> i64\n    return 2\n"],
+        message: "two"
+    ).must()
+    made_repo.tagged(dir: SCRATCH + "/src", tag: "v1", annotated: false).must()
+    now = made_repo.head(SCRATCH + "/src").must()
+
+    match fetched(transport.path_tools(), e: entry(tag: "v1", commit: m.commit, sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "tag_moved"
+            assert e.msg == "the tag `v1` of `file://../src` names the commit " + now + ", and the entry `src` was written when it named " + m.commit + ": a tag that moved is refused, never followed, and `heroes add` writes the entry again once the new commit is the one meant"
+
+    match fetched(transport.path_tools(), e: entry(tag: "v9", commit: m.commit, sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
+        .ok _  => assert false
+        .err e => assert e.code == "absent"
+
+    match fetched(transport.path_tools(), e: entry(tag: "v1", commit: "abc", sum: m.sum), program: SCRATCH + "/app/", root: m.root, index: "")
+        .ok _  => assert false
+        .err e => assert e.code == "commit_refused"
+
+    assert !process.path_exists(SCRATCH + "/app/heroes.packages") || process.walk(SCRATCH + "/app/heroes.packages").must().files.len() == 0
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# C3: each shape a hostile tree can hold, made in the source's index alone
+# (git lets a repository hold every one of them, and its fsck at fetch passes
+# them, measured 2026-11-08 with git 2.56.0), a good file sorted before the
+# bad name so a write before the judgement would show; the staging tree holds
+# no file after any refusal.
+test "a tree holding a link, a submodule, a name one where case is ignored or a name no package may hold is refused before any file is written"
+    m = source_made()
+    good = made_repo.blob(dir: SCRATCH + "/src", text: "ok\n").must()
+    shapes = [
+        ["100644", good, "a.txt", "120000", good, "z-link"]
+        ["100644", good, "a.txt", "160000", m.commit, "z-sub"]
+        ["100644", good, "a.txt", "100644", good, "A.TXT"]
+        ["100644", good, "a.txt", "100644", good, "z:drive"]
+        ["100644", good, "a.txt", "100644", good, "z\\back"]
+        ["100644", good, "a.txt", "100644", good, "z..dots"]
+        ["100644", good, "a.txt", "100644", good, "z\nline"]
+    ]
+    at: i64 @= 0
+
+    for shape in shapes
+        tag = "bad" + at.to_str()
+        made_repo.git(SCRATCH + "/src", words: ["read-tree", "--empty"]).must()
+        commit = made_repo.tree_commit(dir: SCRATCH + "/src", listed: shape, tag: tag).must()
+        s = staging.opened(SCRATCH + "/app/").must()
+
+        match written(transport.path_tools(), e: entry(tag: tag, commit: commit, sum: m.sum), root: m.root, s: s)
+            .ok _  => assert false
+            .err e => assert e.code == "name_refused"
+
+        assert !process.path_exists(s.tree + "/a.txt")
+        staging.dropped(s)
+        at @ at + 1
+
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# A name that is not UTF-8 cannot be written by a `str`, so its tree object
+# is: `100644 caf<0xE9>.txt`, a zero and the blob's twenty bytes.
+test "a name that is not UTF-8 is refused, named by its bytes"
+    m = source_made()
+    good = made_repo.blob(dir: SCRATCH + "/src", text: "ok\n").must()
+    tree_file = SCRATCH + "/raw-tree.bin"
+    made_repo.raw_file(path: tree_file, hex: "31303036343420636166" + "e9" + "2e74787400" + good).must()
+    tree = made_repo.answered(
+        SCRATCH + "/src",
+        words: ["hash-object", "-t", "tree", "-w", "--literally", "--", "../raw-tree.bin"]
+    ).must()
+    commit = made_repo.answered(SCRATCH + "/src", words: ["commit-tree", "-m", "raw", tree]).must()
+    made_repo.git(SCRATCH + "/src", words: ["tag", "-f", "--", "raw", commit]).must()
+    s = staging.opened(SCRATCH + "/app/").must()
+
+    match written(transport.path_tools(), e: entry(tag: "raw", commit: commit, sum: m.sum), root: m.root, s: s)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "name_refused"
+            assert e.msg == "`caf<0xE9>.txt` is a name that is not UTF-8, which no file of a package's may be"
+
+    staging.dropped(s)
+    assert !process.remove_tree(SCRATCH).is_err()

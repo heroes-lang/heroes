@@ -1,0 +1,139 @@
+# A fetch's staging folder (panel 235's R9, its C3, and R7, ratified
+# 2026-11-07): every file of a package's tree is written into a folder inside
+# the program's own tree, beside the trees already placed, and the folder is
+# moved into place only when every file passed. The ffi-pragmatist's measured
+# fetch from an index had written 25 files when the 26th failed its listing
+# (its § 4): a tree half written is never one a build reads.
+#
+# **Where**: `heroes.packages/.fetching-<pid>-<serial>/` beside the file you
+# compile. Inside the program's tree, so the move into place is one rename on
+# one volume; under `heroes.packages/`, which no `use` can spell (R7); with a
+# leading `.` and no `@`, so no key a placed tree is read under
+# (`<name>@<version>-<key>`, `module/placed.hero`) is ever its name, and a
+# fetch cut short leaves a folder no build reads.
+#
+# **Into place**: the tree is fingerprinted where it was written, from the
+# disk (`module/fingerprint.hero`), so two names a volume merged into one, or a
+# byte a write lost, read as a sum that does not match and nothing moves. A
+# tree already placed under the key is then moved aside into the staging
+# folder, the new one renamed into place, and the staging folder removed with
+# the old tree in it; where the second rename fails, the old tree is put back.
+# Between the two renames the key names no folder, and a build then is told
+# the package is not placed, never handed half of one.
+
+use cli/process
+use cli/strings
+use module/fingerprint
+
+constant PLACED: str
+    "heroes.packages"
+
+record Staging
+    # The staging folder, from where the program's folder is opened.
+    folder: str
+
+    # Where the package's tree is written, inside `folder`.
+    tree: str
+
+# A new staging folder beside the placed trees of the program whose folder is
+# `program`: "" for the current one, or a path ending with `/`.
+function opened(program: str) -> Staging?
+    folder = program + PLACED + "/.fetching-" + process.pid().to_str() + "-" + process.serial().to_str()
+    written(process.remove_tree(folder))?
+    written(process.mkdir_all(folder + "/tree"))?
+    return ok(Staging(folder: folder, tree: folder + "/tree"))
+
+# The staged tree held to `sum` and moved into place under `key`; `what`
+# names the tree in a refusal ("`json` 1.4.2 from the index"). The staging
+# folder is removed whichever way it ends.
+function placed(s: Staging, program: str, key: str, sum: str, what: str) -> str?
+    got = fingerprint.of(s.tree)
+
+    if got.is_err()
+        dropped(s)
+        return fail(code: "cannot_place", msg: what + " was written and cannot be read back whole: " + reason(got))
+
+    if got.must() != sum
+        dropped(s)
+        return fail(
+            code: "sum_mismatch",
+            msg: what + " sums to `" + got.must() + "`, and the catalogue's `sum` for it is `" + sum + "`: the package is not the one its entry was written for, and nothing was placed"
+        )
+    at = program + PLACED + "/" + key
+    aside = s.folder + "/replaced"
+
+    if process.path_exists(at)
+        moved = process.rename_over(from: at, to: aside)
+
+        if moved.is_err()
+            dropped(s)
+            return fail(
+                code: "cannot_place",
+                msg: "the tree placed at `" + at + "` cannot be moved aside: " + why(moved)
+            )
+    landed = process.rename_over(from: s.tree, to: at)
+
+    if landed.is_err()
+        if process.path_exists(aside)
+            _ = process.rename_over(from: aside, to: at).is_err()
+        dropped(s)
+        return fail(code: "cannot_place", msg: "the tree cannot be moved to `" + at + "`: " + why(landed))
+    dropped(s)
+    return ok(at)
+
+# The staging folder removed, whatever stands in it.
+function dropped(s: Staging)
+    _ = process.remove_tree(s.folder).is_err()
+
+# A failure of the machine's, a folder that cannot be made or removed, told as
+# what could not be placed.
+function written(done: ()?) -> ()?
+    match done
+        .ok _  => return ok()
+        .err e => return fail(code: "cannot_place", msg: e.msg)
+
+function reason(failed: str?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+function why(failed: ()?) -> str
+    match failed
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+# A program's folder under `build/`: the staged tree held to its sum, moved
+# into place under its key, and nothing left of the staging folder either way.
+test "a staged tree moves into place only at its sum, over an edited one, and leaves no staging folder"
+    program = "build/selftest-fetch-staging/"
+    assert !process.remove_tree(program).is_err()
+    assert !process.mkdir_all(program + "pub").is_err()
+    assert !write_file(path: program + "pub/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    sum = fingerprint.of(program + "pub").must()
+
+    # A sum that is not the tree's moves nothing, and says both.
+    s = opened(program).must()
+    assert strings.starts_with(text: s.folder, prefix: program + "heroes.packages/.fetching-")
+    assert !write_file(path: s.tree + "/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+
+    match placed(s, program: program, key: "json@1.0.0-k", sum: "sha256-" + "0".repeat(64.to_u64().must()), what: "`json` 1.0.0")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "sum_mismatch"
+            assert e.msg == "`json` 1.0.0 sums to `" + sum + "`, and the catalogue's `sum` for it is `sha256-" + "0".repeat(64.to_u64().must()) + "`: the package is not the one its entry was written for, and nothing was placed"
+
+    assert !process.path_exists(program + "heroes.packages/json@1.0.0-k")
+    assert !process.path_exists(s.folder)
+
+    # At its sum it lands, over a tree edited since it was placed.
+    assert !process.mkdir_all(program + "heroes.packages/json@1.0.0-k").is_err()
+    assert !write_file(path: program + "heroes.packages/json@1.0.0-k/parse.hero", text: "edited\n").is_err()
+    again = opened(program).must()
+    assert !write_file(path: again.tree + "/parse.hero", text: "function x() -> i64\n    return 1\n").is_err()
+    assert placed(again, program: program, key: "json@1.0.0-k", sum: sum, what: "`json` 1.0.0").must() == program + "heroes.packages/json@1.0.0-k"
+    assert read_file(program + "heroes.packages/json@1.0.0-k/parse.hero").must() == "function x() -> i64\n    return 1\n"
+    assert fingerprint.of(program + "heroes.packages/json@1.0.0-k").must() == sum
+    assert !process.path_exists(again.folder)
+    assert !process.remove_tree(program).is_err()

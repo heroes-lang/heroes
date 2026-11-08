@@ -45,7 +45,8 @@ use cli/mutate
 use cli/probe
 use cli/grammar
 use cli/unverified
-use fetch/transport
+use fetch/git_source
+use fetch/index_source
 
 # The version, and the one place it lives (CLAUDE.md §14, release tags):
 # `heroes --version` prints it, `heroes build --emit-c` writes it as the
@@ -320,9 +321,10 @@ function message_of_toolchain(failed: toolchain.Toolchain?) -> str
 
 ## Tests
 
-# The transport `heroes add` and `heroes fetch` run (panel 235's R10, M-package-manager
-# step 9) is compiled with the command before its verbs are, so its cases run among
-# the compiler's own; step 12's two arms above replace this reach.
-test "the transport the verbs that fetch will run is part of the compiler"
-    assert transport.path_tools().git == "git"
-    assert transport.path_tools().curl == "curl"
+# What `heroes add` and `heroes fetch` run (panel 235's R10, R20 and R9's C3
+# and C4, M-package-manager steps 9 to 11) is compiled with the command before
+# its verbs are, so its cases run among the compiler's own; step 12's two arms
+# above replace this reach.
+test "the transport and the fetches from git and an index the verbs will run are part of the compiler"
+    assert git_source.SCRATCH == "build/selftest-fetch-git"
+    assert index_source.SCRATCH == "build/selftest-fetch-index"

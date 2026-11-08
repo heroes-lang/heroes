@@ -1,0 +1,173 @@
+# The names a fetched tree may hold, judged before any file of it is written
+# (panel 235's R9, its C3, ratified 2026-11-07): what git's listing of a
+# commit names (`git ls-tree -r -z`) and what an index's listing names are
+# both read here, whole, before the first byte lands in the staging folder.
+#
+# **Refused**: a symbolic link (git's mode 120000) and a submodule (160000),
+# and every mode but a file's (100644, 100755), since a link placed inside the
+# program could name a file outside it; a name that is not UTF-8 or holds a
+# control character, a newline among them; a name holding `..`, `\` or `:`, or
+# opening with `/`; an empty part or a `.` part; a part `.git` in any case,
+# which would make the package's folder a repository inside the program's;
+# and two names equal under case folding, or a file and a folder so equal,
+# which a volume that ignores case holds as one (APFS, NTFS by default).
+#
+# **Folding is ASCII's here**, and that is a floor and no ceiling: APFS also
+# folds the letters above ASCII and holds `é` and `e` + U+0301 as one name. A
+# pair this file passes and a volume merges is caught after the write, where
+# the staged tree's fingerprint is read from the disk and no longer equals the
+# entry's sum (`fetch/staging.hero`), so the tree is never placed; told then
+# as a sum that does not match, not as the two names.
+#
+# Every refusal is the input's, exit 1 (`fetch/told.hero`), and names the
+# first name refused.
+
+# What is wrong with one name of a package's tree, or "" where nothing is.
+function name_said(path: str) -> str
+    if path.len() == 0
+        return "an empty name"
+
+    if path[0] == '/'
+        return "`" + path + "` opens with `/`, which names a place outside the package"
+
+    for at in range(from: 0, to: path.len())
+        b = path[at]
+
+        if b < 32 || b == 127
+            return "a name holds a control character, a line end among them, which no file of a package's may"
+
+        if b == '\\' || b == ':'
+            return "`" + path + "` holds `" + path.slice(from: at, to: at + 1) + "`, which one system reads as a separator or a drive"
+
+    if holds_dots(path)
+        return "`" + path + "` holds `..`, which names a place above the package"
+    from: i64 @= 0
+
+    for at in range(from: 0, to: path.len() + 1)
+        if at == path.len() || path[at] == '/'
+            part = path.slice(from: from, to: at)
+
+            if part.len() == 0
+                return "`" + path + "` has an empty part, a `/` at its end or two together"
+
+            if part == "."
+                return "`" + path + "` has a part `.`"
+
+            if folded(part) == ".git"
+                return "`" + path + "` has a part `.git`, which would make the package's folder a repository inside the program's"
+            from @ at + 1
+
+    return ""
+
+function holds_dots(path: str) -> bool
+    for at in range(from: 0, to: path.len() - 1)
+        if path[at] == '.' && path[at + 1] == '.'
+            return true
+
+    return false
+
+# What is wrong with a git listing's mode, or "" where it is a file's.
+function mode_said(mode: str, path: str) -> str
+    if mode == "100644" || mode == "100755"
+        return ""
+
+    if mode == "120000"
+        return "`" + path + "` is a symbolic link, which could name a file outside the package once placed"
+
+    if mode == "160000"
+        return "`" + path + "` is a submodule, another repository the package does not hold"
+    return "`" + path + "` has git's mode " + mode + ", which is no file"
+
+# The first pair of `paths` one volume that ignores case would hold as one,
+# or "" where none is: two names, a file's or a folder's above it, that fold
+# to one spelling; a name that is a file and a folder at once; or a file named
+# twice. Each name and each folder above it is kept, folded, with its kind and
+# its spelling, and a second meeting with another of either is the pair.
+function collision(paths: [str]) -> str
+    seen: {str: str} @= {}
+
+    for path in paths
+        for at in range(from: 0, to: path.len() + 1)
+            if at == path.len() || path[at] == '/'
+                spelt = path.slice(from: 0, to: at)
+                kind: str @= "d"
+
+                if at == path.len()
+                    kind @ "f"
+                held = seen[folded(spelt)]
+
+                if held.is_err()
+                    seen[folded(spelt)] @ kind + spelt
+                else
+                    said = pair_said(held: held.must(), kind: kind, spelt: spelt)
+
+                    if said.len() > 0
+                        return said
+
+    return ""
+
+# What a second meeting of one folded name is, `held` the first's kind and
+# spelling: "" for a folder met again under its own spelling.
+function pair_said(held: str, kind: str, spelt: str) -> str
+    first = held.slice(from: 1, to: held.len())
+
+    if first != spelt
+        return "`" + first + "` and `" + spelt + "` are one name where case is ignored, as it is on macOS and Windows by default"
+
+    if held.slice(from: 0, to: 1) != kind
+        return "`" + spelt + "` is a file and a folder at once"
+
+    if kind == "f"
+        return "`" + spelt + "` is named twice"
+    return ""
+
+# `text` with its ASCII capitals made small.
+function folded(text: str) -> str
+    pieces: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] >= 'A' && text[at] <= 'Z'
+            if at > from
+                pieces @ pieces.push(text.slice(from: from, to: at))
+            pieces @ pieces.push(
+                "abcdefghijklmnopqrstuvwxyz".slice(from: (text[at] - 'A').to_i64().must(), to: (text[at] - 'A').to_i64().must() + 1)
+            )
+            from @ at + 1
+
+    pieces @ pieces.push(text.slice(from: from, to: text.len()))
+    return pieces.join("")
+
+## Tests
+
+# C3's refusals, each shape the brief names and the neighbours of each.
+test "a name a package may hold passes, and every shape C3 refuses is told by what it is"
+    assert name_said("parse.hero") == ""
+    assert name_said("sub/deeper/note.txt") == ""
+    assert name_said("données.hero") == ""
+    assert name_said("") == "an empty name"
+    assert name_said("/etc/passwd") == "`/etc/passwd` opens with `/`, which names a place outside the package"
+    assert name_said("../escaped.txt") == "`../escaped.txt` holds `..`, which names a place above the package"
+    assert name_said("g..h.txt") == "`g..h.txt` holds `..`, which names a place above the package"
+    assert name_said("c:d.txt") == "`c:d.txt` holds `:`, which one system reads as a separator or a drive"
+    assert name_said("e\\f.txt") == "`e\\f.txt` holds `\\`, which one system reads as a separator or a drive"
+    assert name_said("nl\nx.txt") == "a name holds a control character, a line end among them, which no file of a package's may"
+    assert name_said("tab\tx") == "a name holds a control character, a line end among them, which no file of a package's may"
+    assert name_said("a//b") == "`a//b` has an empty part, a `/` at its end or two together"
+    assert name_said("a/") == "`a/` has an empty part, a `/` at its end or two together"
+    assert name_said("./a") == "`./a` has a part `.`"
+    assert name_said("x/.Git/config") == "`x/.Git/config` has a part `.git`, which would make the package's folder a repository inside the program's"
+    assert mode_said(mode: "100644", path: "a") == ""
+    assert mode_said(mode: "100755", path: "a") == ""
+    assert mode_said(mode: "120000", path: "link") == "`link` is a symbolic link, which could name a file outside the package once placed"
+    assert mode_said(mode: "160000", path: "sub") == "`sub` is a submodule, another repository the package does not hold"
+    assert mode_said(mode: "040000", path: "d") == "`d` has git's mode 040000, which is no file"
+
+test "two names one where case is ignored are refused, a file and a folder among them, and distinct names pass"
+    assert collision(["a.hero", "b.hero", "sub/a.hero", "sub/deeper/x"]) == ""
+    assert collision(["A.hero", "a.hero"]) == "`A.hero` and `a.hero` are one name where case is ignored, as it is on macOS and Windows by default"
+    assert collision(["Sub/x", "sub/y"]) == "`Sub` and `sub` are one name where case is ignored, as it is on macOS and Windows by default"
+    assert collision(["doc", "Doc/x"]) == "`doc` and `Doc` are one name where case is ignored, as it is on macOS and Windows by default"
+    assert collision(["doc", "doc/x"]) == "`doc` is a file and a folder at once"
+    assert collision(["x", "x"]) == "`x` is named twice"
+    assert folded("ReadMe.MD") == "readme.md"

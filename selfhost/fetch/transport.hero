@@ -151,10 +151,12 @@ function settings(tools: Tools) -> [str]
         "transfer.fsckObjects=true"
     ]
 
-# git run with `words` after its settings, what it prints written into `out`.
-# A source on the network that fails is `unreachable`; a local one, which
-# has no network to fail, is `absent`, git's own words told either way.
-function git_ran(tools: Tools, words: [str], out: str, scratch: str, local: bool) -> ()?
+# git run with `words` after its settings, what it prints written into `out`;
+# a run that fails is told with git's own words under the code `failed_as`:
+# `unreachable` for a source on the network, `absent` for a local one, which
+# has no network to fail, and `git_failed` for the staging folder's own
+# repository, where a failure is git's or the machine's.
+function git_ran(tools: Tools, words: [str], out: str, scratch: str, failed_as: str) -> ()?
     _ = hero_env_put(name: "GIT_TERMINAL_PROMPT".cstr(), value: "0".cstr())
     _ = hero_env_put(name: "GCM_INTERACTIVE".cstr(), value: "never".cstr())
     said_path = scratch + "/git-said.txt"
@@ -174,11 +176,7 @@ function git_ran(tools: Tools, words: [str], out: str, scratch: str, local: bool
     if ran.code == 0
         return ok()
     git_said = strings.trimmed(read_back.words(said_path).default(""))
-    said_line = "`git " + verb_of(words) + "` exited " + ran.code.to_str() + ": " + git_said
-
-    if local
-        return fail(code: "absent", msg: said_line)
-    return fail(code: "unreachable", msg: said_line)
+    return fail(code: failed_as, msg: "`git " + verb_of(words) + "` exited " + ran.code.to_str() + ": " + git_said)
 
 # The command a run of git's `words` names: the first word after git's own
 # options, `-C <folder>` and `--git-dir=<folder>`.
@@ -213,7 +211,7 @@ function root_of(tools: Tools, folder: str, scratch: str) -> address.Root?
         words: ["-C", folder, "rev-parse", "--show-toplevel", "--show-prefix"],
         out: out,
         scratch: scratch,
-        local: true
+        failed_as: "absent"
     )
 
     # A local failure is `absent`: git ran and found no repository here. A
@@ -250,7 +248,11 @@ function tag_commit(tools: Tools, source: address.Address, tag: str, scratch: st
         return fail(code: "tag_refused", msg: wrong)
     out = scratch + "/git-tags.txt"
     ref = "refs/tags/" + tag
-    git_ran(tools, words: ["ls-remote", "--", source.url, ref, ref + "^{}"], out: out, scratch: scratch, local: source.local.len() > 0)?
+    away: str @= "unreachable"
+
+    if source.local.len() > 0
+        away @ "absent"
+    git_ran(tools, words: ["ls-remote", "--", source.url, ref, ref + "^{}"], out: out, scratch: scratch, failed_as: away)?
     plain: str @= ""
     peeled: str @= ""
 
