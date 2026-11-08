@@ -1,0 +1,12 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A fetched package's header naming one the package does not ship, which the
+# program has at its root. A fetched package's unit searches the runtime, its
+# own `package` groups' answer and its own root, never the program's folders
+# (panel 235's R9, its C1), so the program's file does not stand in for it:
+# the header clang did not find there is named, and where it was looked for,
+# before anything of the package compiles (C2), clang's own words unprinted.
+use <pk>/pk
+
+function main()
+    print(pk.v())

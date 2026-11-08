@@ -1,0 +1,10 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A fetched package's header asking whether a file of the program's exists,
+# `__has_include("../../outside.h")`, which reads it as `#include` would:
+# the file is a row of clang's `-M` listing, so it is judged by panel 235's
+# R9, its C2, as a climb is, the file named before anything compiles.
+use <pk>/pk
+
+function main()
+    print(pk.v())

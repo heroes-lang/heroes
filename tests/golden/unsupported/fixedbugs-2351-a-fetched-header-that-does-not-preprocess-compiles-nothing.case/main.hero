@@ -1,0 +1,10 @@
+# fixedbugs, defect 2351, lane b25-pkgc, 2026-11-08.
+#
+# A fetched package's header that stops the preprocessor: clang cannot list
+# what it reads, so nothing vouches that it reads only the package's own
+# files, and no compile of it runs (panel 235's R9, its C2), clang's words,
+# which could quote a file the header opened before it stopped, unprinted.
+use <pk>/pk
+
+function main()
+    print(pk.v())

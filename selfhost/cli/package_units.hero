@@ -1,0 +1,254 @@
+# Which units of a build are a fetched package's, the words each compiles
+# under, and what its headers may read (panel 235's R9, its C1 and C2,
+# ratified 2026-11-07; defect 2351, 2026-11-08; design.md §4.19, §1.12).
+#
+# **A fetched package's unit searches the runtime's directory, then the
+# folders its own `package` groups' answer names, then its own root, and
+# nothing of the program's** (`compiling.of_package`): every probe of its
+# headers and its compile alike, since the probes are planned per header list
+# and root (`cli/probing.hero`) and the units take their words here
+# (`cli/assemble.hero`, `cli/settled.hero`). Until defect 2351 no build asked
+# which units were a package's, and every unit compiled under the program's
+# words: a package placed by `heroes fetch` whose module binds a header it
+# ships beside it was refused `ffi_missing_header` at exit 1, and with
+# `--include` naming the placed folder it built, the program's folders
+# standing ahead of the package's root for every header it named. Measured
+# 2026-11-08 by lane pm-close and the coordinator on batch 24's compiler.
+#
+# **And everything such a unit reads lies where a package may read**
+# (`compiling.within_root`, C2): judged on clang's `-M` listing of the lines
+# its probes open with and of its unit's opening, before anything of it
+# compiles, so a header reaching the build machine's files by a relative
+# climb, `#embed` or `__has_include` stops the build with the path named and
+# no compile having read it. A listing clang could not make vouches for
+# nothing and stops the build too: a header not found from the package's
+# own places is told `ffi_missing_header`, naming where it was looked for,
+# and clang's own words are never printed, since a header may have read a
+# file of the machine's before it stopped.
+#
+# **A `path` entry is the author's own code** (panel 235's R6, *the author's
+# own source while a package is developed*; its C1, C2 and C5 *tell a
+# fetched unit apart*): its units keep the program's words, the program's
+# folders and `--include` among them, as the program's own modules and the
+# library do. Its headers resolve as the program's do, so a folder it names
+# beside its modules is found by `--include` or by a path from the program's
+# root, and its constants are read by panel 216's probe.
+
+use ast
+use source
+use diag
+use token
+use bytes
+use module/placed
+use cli/compiling
+use cli/digest
+use cli/order_trial
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/deps
+
+# The root a fetched package's module compiled to `component` searches, as
+# files are opened, with no `/` at its end; absent for a module of the
+# program's own, of the library and of a `path` entry, which keep the
+# program's words.
+function root_of(s: source.Source, component: str) -> str?
+    for entry in s.files
+        if entry.component == component && !entry.is_library && placed.is_package(entry.module)
+            alias = placed.entry_of(entry.module)
+
+            for p in s.reached.packages
+                if p.alias == alias && !p.unverified
+                    return ok(without_slash(p.opened))
+
+            return fail(code: "own", msg: "a `path` entry's module, the author's own")
+
+    return fail(code: "own", msg: "a module of the program's own")
+
+# What the unit of `component` compiles under: `under`, the program's, for a
+# module of its own, and its package's for a fetched package's (C1).
+function unit_under(under: compiling.Compiling, s: source.Source, component: str) -> compiling.Compiling
+    root = root_of(s, component)
+
+    if root.is_err()
+        return under
+    return compiling.of_package(under, root: root.must())
+
+# What the one file `--emit-c` writes is asked under (`cli/one_file.hero`):
+# the program's words, then the root of every fetched package the program
+# reaches, each after the program's own places, so a package's header the one
+# file reads is found where its unit finds it and none stands ahead of one of
+# the program's.
+function with_roots(under: compiling.Compiling, s: source.Source) -> compiling.Compiling
+    words: [str] @= under.package_flags
+
+    if under.source_dir.len() > 0
+        words @ words.push("-I" + under.source_dir)
+
+    for p in s.reached.packages
+        if !p.unverified && p.problem.len() == 0
+            words @ words.push("-I" + without_slash(p.opened))
+
+    return compiling.Compiling(
+        level: under.level,
+        sanitize: under.sanitize,
+        search_include: under.search_include,
+        package_flags: words,
+        runtime: under.runtime,
+        source_dir: ""
+    )
+
+# C2's verdict on a fetched package's unit whose headers are `headers`, under
+# `under`, its own (`unit_under`): the lines its probes open with and its
+# unit's opening, each listed by `clang -M` and judged, before any of them
+# compiles. A listing clang could not make fails `unread`, its message the
+# header clang did not find there, or `""`.
+function reached(build: str, under: compiling.Compiling, headers: [str], @memo: {str: str}) -> ()?
+    words = compiling.probe_words(under)
+
+    for text in [compiling.include_lines(headers), order_trial.opening(headers, question: "")]
+        listing = compiling.reads_text(build: build, words: words, text: text, @memo)
+
+        if listing.is_err()
+            return fail(code: "unread", msg: missing(build: build, words: words, text: text))
+        compiling.within_root(build: build, under: under, listing: listing)?
+
+    return ok()
+
+# The first header `clang -M` over `text` under `words` says it did not find,
+# `""` where it says none: what clang said is read for that name alone and
+# never printed, since a header may have opened a file of the machine's
+# before it stopped.
+function missing(build: str, words: [str], text: str) -> str
+    dir = build + "/package-reads"
+
+    if process.mkdir_all(dir).is_err()
+        return ""
+    unit = dir + "/listed-" + digest.digest(text) + ".c"
+
+    if publish.write_whole(path: unit, text: text, keyed: true).is_err()
+        return ""
+    err = publish.private_name(dir + "/missing.txt")
+    line = response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: dir)
+    _ = process.run(
+        program: "clang",
+        words: strings.with_all(list: line, more: ["-M", unit]),
+        out: process.discard(),
+        err: err
+    )
+    said = read_back.words(err).default("")
+    publish.discard(err)
+    return not_found(said)
+
+# The name a line of clang's says it did not find, `fatal error: 'X' file not
+# found`, the first such line's; `""` where none says it.
+function not_found(said: str) -> str
+    opener = "fatal error: '"
+    closer = "' file not found"
+
+    for line in deps.lines(said)
+        at = bytes.locate(text: line, needle: opener, from: 0)
+
+        if !at.is_err()
+            rest = line.slice(from: at.must() + opener.len(), to: line.len())
+            end = bytes.locate(text: rest, needle: closer, from: 0)
+
+            if !end.is_err() && end.must() > 0
+                return rest.slice(from: 0, to: end.must())
+
+    return ""
+
+# The refusal C2's verdict `failed` is, for the fetched package at `root`
+# whose modules' unit is `modules`: told on the first binding of theirs a
+# group names a header for, which is where the build tells a header it could
+# not open (`ffi_missing_header`). Never absent: a refusal nobody tells would
+# let the unit compile and read what was refused.
+function refusal(s: source.Source, decls: [ast.Decl], modules: [str], root: str, failed: ()?) -> diag.Diagnostic
+    at = first_binding(s, decls, modules: modules)
+    code = code_of(failed)
+    said = message_of(failed)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "package_reads_outside", message: said, span: at)
+
+    if code == "unread" && said.len() > 0
+        d @ diag.new_diagnostic(
+            code: "ffi_missing_header",
+            message: "`" + said + "` is not found where a unit of the fetched package at `" + root + "` looks for a header: the package's own root, the runtime's directory, the toolchain's own and the folders its `package` groups' answer names",
+            span: at
+        )
+    else if code == "unread"
+        d @ diag.new_diagnostic(
+            code: "package_reads_outside",
+            message: "the headers a unit of the fetched package at `" + root + "` names do not preprocess from its own places, so nothing vouches for the files they read, and no compile of it runs",
+            span: at
+        )
+    else if code != "package_reads_outside"
+        # The toolchain's own folders could not be asked of clang, so the
+        # listing could not be judged: still a refusal, never a pass.
+        d @ diag.new_diagnostic(
+            code: "package_reads_outside",
+            message: "the files a unit of the fetched package at `" + root + "` reads cannot be judged, since " + said + ", and no compile of it runs",
+            span: at
+        )
+    d.notes @ d.notes.push(NOTE)
+    return d
+
+# What every refusal of C2's says under it.
+constant NOTE: str
+    "a fetched package's unit searches the runtime's directory, the folders its own `package` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `package` group names, installed with its development files"
+
+# The span of the first declaration of `modules` a group names a header for;
+# of their first declaration where none is one, a unit reading a header of
+# another module's group record alone; and of the program's first where they
+# declare nothing.
+function first_binding(s: source.Source, decls: [ast.Decl], modules: [str]) -> token.Span
+    first: token.Span? @= fail(code: "none", msg: "no declaration of these modules")
+
+    for decl in decls
+        named: token.Span? @= fail(code: "none", msg: "no header")
+
+        match decl.kind
+            .function_decl fd          => named @ fd.value.header
+            .constant_decl k           => named @ k.header
+            .record_decl rec           => named @ rec.header
+            .variant_decl | .test_decl => continue
+
+        component = source.component_at(s, decl.span.start)
+
+        for module in modules
+            if module == component
+                if !named.is_err()
+                    return decl.span
+
+                if first.is_err()
+                    first @ ok(decl.span)
+
+    if first.is_err() && decls.len() > 0
+        return decls[0].span
+    return first.default(token.Span(start: 0, end: 0))
+
+function without_slash(path: str) -> str
+    if path.len() > 1 && path[path.len() - 1] == '/'
+        return path.slice(from: 0, to: path.len() - 1)
+    return path
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
+
+function message_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+## Tests
+
+test "clang's line naming a header it did not find is read for the name alone"
+    said = "In file included from build/package-reads/listed-1.c:2:\nheroes.packages/pk/pk.h:1:10: fatal error: 'secret.h' file not found\n    1 | #include \"secret.h\"\n"
+    assert not_found(said) == "secret.h"
+    assert not_found("x.h:1:2: error: something else\n") == ""
+    assert not_found("") == ""
+    assert without_slash("heroes.packages/pk@1.0.0-0123456789abcdef/") == "heroes.packages/pk@1.0.0-0123456789abcdef"
+    assert without_slash("/") == "/"

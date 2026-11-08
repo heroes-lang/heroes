@@ -1,0 +1,6 @@
+error[package_reads_outside]: the headers a unit of the fetched package at `tests/golden/unsupported/fixedbugs-2351-a-fetched-header-that-does-not-preprocess-compiles-nothing.case/heroes.packages/pk@1.0.0-5b9858d263c2a09c` names do not preprocess from its own places, so nothing vouches for the files they read, and no compile of it runs
+  at tests/golden/unsupported/fixedbugs-2351-a-fetched-header-that-does-not-preprocess-compiles-nothing.case/heroes.packages/pk@1.0.0-5b9858d263c2a09c/pk.hero:4:5
+    |
+  4 |     constant PK_V: i64  #~ package_reads_outside
+    |     ^^^^^^^^^^^^^^^^^^
+  note: a fetched package's unit searches the runtime's directory, the folders its own `package` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `package` group names, installed with its development files

@@ -148,6 +148,10 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             cut: {},
             marked: false
         )
+
+        # A fetched package's unit searches its own root and none of the
+        # program's folders (panel 235's R9, its C1; defect 2351).
+        under = settled.unit_under(t, options, site, s: s, plan: plan)
         made = units.tu_object(
             t,
             module: component,
@@ -155,9 +159,9 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             level: options.level,
             sanitize: options.sanitize,
             search: compile.search_key(headers_from: options.headers_from, library: options.library),
-            package_flags: settled.unit_words(site, headers: plan.headers),
-            source_dir: site.source_dir,
-            search_include: options.headers_from,
+            package_flags: under.package_flags,
+            source_dir: under.source_dir,
+            search_include: under.search_include,
             memo: @memo,
             opened: @opened,
             @told
@@ -181,7 +185,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         else
             objects @ objects.push(made.must())
             asked @ asked.push(
-                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: false, reads: made.must())
+                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, s: s, plan: plan), defined: plan.mine.defined, cut: false, reads: made.must())
             )
         at @ at + 1
 
@@ -201,7 +205,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
                 version: site.version,
                 sources: site.sources,
                 is_root: plan.module == root,
-                words: settled.probe_words(t, options, site, plan),
+                words: settled.probe_words(t, options, site, s: s, plan: plan),
                 reads: refused_reads[index]
             )
 

@@ -35,6 +35,8 @@ use cli/libraries
 use cli/value_run
 use cli/value_c2
 use cli/constant_dump
+use cli/value_fetched
+use cli/package_units
 use cli/value_told
 use cli/compile
 use cli/io
@@ -75,6 +77,23 @@ function told(t: toolchain.Toolchain, units: [value_run.Unit], level: str, p: co
         accessors = value_probe.asked(p, c, s, decls, defined: one.defined)
 
         if accessors.len() == 0
+            continue
+
+        # A fetched package's unit is never run: its constants are read from
+        # clang's front end (panel 235's R9, its C5; `cli/value_fetched.hero`,
+        # defect 2351).
+        if !package_units.root_of(s, component: one.module).is_err()
+            fetched = value_fetched.refusals(t, one: one, accessors: accessors, p: p, c: c, s: s, decls: decls)
+
+            match fetched
+                .ok found =>
+                    for d in found
+                        out @ out.push(d)
+                .err e => return Told(
+                    found: out,
+                    broken: ok("internal error: the constants of module `" + one.module + "` could not be read from clang's front end: " + e.msg)
+                )
+
             continue
         plain: str? @= fail(code: "unread", msg: "not preprocessed")
         verdict = asked(t, one: one, accessors: accessors, level: level, @plain)
@@ -157,7 +176,7 @@ function defined_text(dir: str, one: value_run.Unit, said: str) -> str?
 
 # **C5's dump route answers this probe's two canaries as the probe does**
 # (`cli/constant_dump.hero`; panel 235's R9, its C5: the route a fetched
-# package's unit is to take, since R9 runs none of its code at build): the
+# package's unit takes, since R9 runs none of its code at build): the
 # undefined canary's `(-2147483647 - 1) / -1` has no value from the dump, and
 # the defined one's `1000 / 60` reads 16, nothing run.
 test "the dump route a fetched header is to take refuses the probe's undefined canary and reads its defined one (panel 235's C5)"

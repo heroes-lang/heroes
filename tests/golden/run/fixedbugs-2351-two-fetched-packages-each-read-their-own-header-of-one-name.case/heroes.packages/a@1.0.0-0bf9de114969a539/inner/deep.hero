@@ -1,0 +1,8 @@
+# A module in a folder of the package `a`: its header is named from the
+# package's root, as a module of the program's own names one from the
+# program's (defect 2351).
+extern "inner/deep.h"
+    constant DEEP_SIDE: i64
+
+function side() -> i64
+    return DEEP_SIDE

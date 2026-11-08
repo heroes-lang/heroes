@@ -1,0 +1,5 @@
+# The package of defect 2351's case, placed in `heroes.packages/`.
+
+[dependencies.pk]
+version = "1.0.0"
+sum = "sha256-5bffe469b83974a9c78ede8875c24403a19d5e80857f8354acc4587ea3d724b6"

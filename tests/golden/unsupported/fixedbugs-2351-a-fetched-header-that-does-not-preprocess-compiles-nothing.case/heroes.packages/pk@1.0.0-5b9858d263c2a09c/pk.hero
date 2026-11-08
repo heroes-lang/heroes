@@ -1,0 +1,7 @@
+# The package `pk` of the case two folders up, as `heroes fetch` places
+# it: a module binding the header it ships (defect 2351).
+extern "pk.h"
+    constant PK_V: i64  #~ package_reads_outside
+
+function v() -> i64
+    return PK_V

@@ -1,0 +1,128 @@
+# A fetched package's header constants, read from clang's front end with
+# nothing run (panel 235's R9, its C5, provisional until measured on the four
+# CI legs; defect 2351, 2026-11-08; design.md §4.19, §1.12; spec § 13).
+#
+# **No code of a fetched package runs at build.** A program's own unit is run
+# in trap mode to judge its constants (panel 216's probe, `cli/value_ask.hero`,
+# and panel 218's C2, `cli/value_c2.hero`), and running it runs every
+# constructor its headers carry. Until defect 2351 a fetched package's unit was
+# run the same way: a header placed by `heroes fetch` with a
+# `__attribute__((constructor))` appending a line to a file grew it by two at
+# one build, the binary never run (measured 2026-11-08 by lane pm-close and the
+# coordinator). So a fetched unit's constants take C5's route
+# (`cli/constant_dump.hero`): the unit's own opening under its own words, each
+# constant asked as an enumerator, `-fsyntax-only`, the value clang's constant
+# evaluator folds read from its AST dump.
+#
+# **What that reading holds, and what it refuses.** An integer or a `bool`
+# whose expression is an integer constant expression C defines, under the two
+# warnings that make a GNU fold and a shift into the sign bit errors: its
+# value, nothing run. Every other constant is refused, never run, as R9 rules
+# until the route is measured on the four legs: a value C leaves undefined, one
+# that is no integer constant expression, one that moves with where it is
+# expanded, a float and a record (no enumerator holds either), and **a value
+# that reads a declaration**, an enumerator or an object, since the reading
+# folds that declaration's initialiser and no error on the constant's line sees
+# what C left undefined there (`constant_dump.Read.refers`; defect 2109's five
+# constants read so at exit 0): judging it is panel 218's C2, which runs.
+
+use ast
+use source
+use diag
+use check/state
+use check/table
+use emit/value_probe
+use emit/ffi_lookup
+use emit/record_constant
+use cli/constant_dump
+use cli/opening
+use cli/toolchain
+use cli/value_run
+use ir/containers
+
+# The refusals of the constants `accessors` asks of the fetched package's unit
+# `one`, a diagnostic for each the reading cannot value, in the order they
+# are bound; absent where clang wrote no dump, which is the compiler's failure.
+function refusals(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value_probe.Accessor], p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]?
+    asked: [constant_dump.Asked] @= []
+    why: [str] @= []
+
+    # Why each constant is refused, `""` for one asked of the dump, whose
+    # answer fills it below.
+    for accessor in accessors
+        kind = kind_of(accessor, p: p, c: c, decls: decls)
+
+        if kind == "integer" || kind == "unsigned"
+            asked @ asked.push(
+                constant_dump.Asked(name: source.span_text(s, decls[accessor.decl].name), unsigned: kind == "unsigned")
+            )
+            why @ why.push("")
+        else
+            why @ why.push("it is " + kind + ", which no enumerator holds")
+
+    if asked.len() > 0
+        read = constant_dump.values(build: t.build, words: one.words, opening: opening.of(one.text), asked: asked)?
+        at: i64 @= 0
+
+        for index in range(from: 0, to: why.len())
+            if why[index] == ""
+                why[index] @ unread(read[at])
+                at @ at + 1
+
+    out: [diag.Diagnostic] @= []
+
+    for index in range(from: 0, to: why.len())
+        if why[index] != ""
+            told = refused(accessors[index], why: why[index], s: s, decls: decls)
+
+            if !told.is_err()
+                out @ out.push(told.must())
+
+    return ok(out)
+
+# Why the dump's answer is no value the reading takes, `""` where it is one.
+function unread(answer: constant_dump.Read) -> str
+    match answer.value
+        .ok _ =>
+            if answer.refers.len() > 0
+                return "its value is read through `" + answer.refers.join("`, `") + "`, an enumerator or object whose own initialiser that reading folds without judging what C leaves undefined there"
+            return ""
+        .err e => return e.msg
+
+# What a constant is to the reading: `integer` or `unsigned`, which it asks
+# of the dump, `a bool` asked as a signed one, or what it is otherwise, named
+# for the refusal.
+function kind_of(accessor: value_probe.Accessor, p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> str
+    for f in p.functions
+        if f.decl == accessor.decl && record_constant.is_record_value(c, decls, f)
+            return "a record"
+
+    match table.get(c.types, accessor.result)
+        .int_ty ik =>
+            match ik.kind
+                .i8 | .i16 | .i32 | .i64 => return "integer"
+                .u8 | .u16 | .u32 | .u64 => return "unsigned"
+        .bool                                                  => return "integer"
+        .float_ty                                              => return "a float"
+        .str | .ptr | .cstr | .unit | .named | .array | .fixed => return "not a number"
+        .map | .fallible | .function_ty | .case_ty | .failure  => return "not a number"
+        .generic | .error                                      => return "not a number"
+
+    return "not a number"
+
+# The refusal of one constant, on its declaration: `ffi_constant_type`, the
+# class a constant whose header value C cannot read is told in (spec § 13).
+function refused(accessor: value_probe.Accessor, why: str, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
+    name = source.span_text(s, decls[accessor.decl].name)
+    known = ffi_lookup.declared_at(s, decls, index: accessor.decl)?
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_constant_type",
+        message: "`" + name + "` in `" + known.header + "` cannot be read without running its header's code, which a fetched package's header never does at build: " + why,
+        span: known.span
+    )
+    d.notes @ d.notes.push(NOTE)
+    return ok(d)
+
+# What every such refusal says under it.
+constant NOTE: str
+    "a group's `constant` is the value C computes from the header (§ 13), and a fetched package's is read by clang's front end alone, nothing of the package run (panel 235's R9, its C5): an integer or `bool` whose expression is an integer constant expression C defines and reads no enumerator or object. Write the value so in the package's header, or compute it in Heroes from constants that are"

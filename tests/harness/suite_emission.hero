@@ -64,6 +64,7 @@ use shell
 use strings
 use suite_descriptors
 use platform_skips
+use placed_trees
 
 constant STORE: str
     "tests/emission"
@@ -501,7 +502,10 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
 # parses and type-checks, `-std=gnu11 -fsigned-char`, its warnings off,
 # since the compiler's own warning words are its build's to hold and a
 # second copy of them here would drift; a group's `package` is asked of
-# `pkg-config`, as the compiler asks it. The link and the two routes are
+# `pkg-config`, as the compiler asks it, and the root of each package a fetch
+# placed beside the program is searched after the program's folder, as the
+# compiler asks the one file (defect 2351, `package_units.with_roots`), so a
+# fetched package's own header is never told as one this machine lacks. The link and the two routes are
 # the generator's oracle 4, the task's other half. Its captures and listings
 # go under the run's own `scratch`, which the harness removes as it ends:
 # until defect 2305 they went under the net's own tests' directory, one
@@ -518,6 +522,9 @@ function compiles(@r: report.Report, scratch: str, one: Program)
         "-I"
         directory_of(one.source)
     ]
+
+    for root in placed_roots(scratch: scratch, source: one.source)
+        words @ words.push("-I").push(root)
 
     for flag in package_flags(scratch: scratch, source: one.source)
         words @ words.push(flag)
@@ -570,6 +577,16 @@ function directory_of(path: str) -> str
         i @ i - 1
 
     return "."
+
+# Each tree a fetch placed beside the program, `heroes.packages/<key>/`, in
+# the order its folder lists them; none where no fetch placed one.
+function placed_roots(scratch: str, source: str) -> [str]
+    none: [str] = []
+    folder = directory_of(source) + "/" + placed_trees.FOLDER
+
+    if !shell.is_directory(folder)
+        return none
+    return shell.list_directories(scratch: scratch, dir: folder).default(none)
 
 # The `pkg-config --cflags` of every `package` a module beside the program
 # names, its own directory being where its modules are; a package
@@ -1261,4 +1278,22 @@ test "a narrowed sweep compares and blesses only the programs whose label holds 
     assert nothing.must().passed + nothing.must().failed + nothing.must().skips.len() == 0
     assert narrowed(programs: two.must(), only: "").len() == 2
     assert narrowed(programs: two.must(), only: "run/").len() == 2
+    assert !shell.remove_tree(scratch).is_err()
+
+# The blessed one file of a program that fetched a package includes the
+# package's own header, which its build finds at the package's root: the
+# compile here searches each placed tree, and a program that placed none
+# searches none (defect 2351).
+test "fixedbugs: the compile of a blessed one file searches each tree a fetch placed beside its program (defect 2351)"
+    scratch = shell.own_scratch()
+    root = scratch + "/emission-placed/"
+    files = [
+        "app/main.hero"
+        "app/heroes.packages/a@1.0.0-k/a.hero"
+        "app/heroes.packages/b@2.0.0-k/b.h"
+        "lone/main.hero"
+    ]
+    assert !planted(root: root, files: files).is_err()
+    assert placed_roots(scratch: scratch, source: root + "app/main.hero") == [root + "app/heroes.packages/a@1.0.0-k", root + "app/heroes.packages/b@2.0.0-k"]
+    assert placed_roots(scratch: scratch, source: root + "lone/main.hero").len() == 0
     assert !shell.remove_tree(scratch).is_err()

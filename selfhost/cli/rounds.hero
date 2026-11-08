@@ -67,6 +67,16 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
     # `cli/value_early.hero`).
     beside: [value_run.Unit] @= []
 
+    # A fetched package's header reading a file outside the package's root,
+    # the runtime and the machine's own, told before any probe or unit of the
+    # build compiles (panel 235's R9, its C2; defect 2351).
+    outside = probing.outside(planned.probings, s: s, decls: art.decls)
+
+    if outside.len() > 0
+        _ = compile.stage(outside, s, permissive: false).is_err()
+        held: ()? = fail(code: "diagnostics", msg: "a fetched package's header reads outside its root")
+        return Rounds(verdict: held, binary: "", struct_tags: struct_tags, asked: asked, kept: {})
+
     # A name a group binds whose meaning another group's header gives it, a
     # macro read before or after the group's own (`cli/bound_macro.hero`,
     # defect 2056), or the guard's close changes under a bound macro
