@@ -596,6 +596,24 @@ void hero_pad_fill(void *p, size_t size, size_t count, const size_t *gaps, size_
         for (size_t g = 0; g < ngaps; g++) memset(b + k * size + gaps[2 * g], 0, gaps[2 * g + 1]);
 }
 
+/* THE ZEROED RECORD A CONSTRUCTOR FINDS THE BIT-FIELD MASKS IN, off every
+ * stack (defect 2354). Until then the unit's constructor declared it on its own
+ * frame, `struct big hero_pad_o;`, before `main` and so before the stack guard
+ * exists (`parts/stack.c`): a group record of 128 MiB with one named bit-field,
+ * stored whole, killed its program at 139 with nothing said, at both levels.
+ * The constructor takes it here, runs `--` on each named bit-field through
+ * the pointer, hands it to `hero_pad_masks` and gives it straight back, so the
+ * record's size is asked of the machine's memory for that moment and never of
+ * a stack. A block the system cannot give is `out of memory`, an abort with a
+ * word, where a frame past the stack was a silent death. */
+void *hero_pad_object(size_t size) {
+    return hero_calloc_raw(size);
+}
+
+void hero_pad_object_give(void *object) {
+    hero_free_raw(object);
+}
+
 /* The bytes named bit-fields share with bits no named bit-field holds (panel
  * 223, defect 2099), as offset and bits-to-keep pairs into `masks`, and how
  * many. `object` is the `size` bytes of a zeroed record on which the unit's

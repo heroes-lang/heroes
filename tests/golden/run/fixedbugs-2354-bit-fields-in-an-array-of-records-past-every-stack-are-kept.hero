@@ -1,0 +1,20 @@
+# fixedbugs, defect 2354, 2026-11-08: beside the case of one bit-field, a
+# record of 128 MiB holding a fixed array of records, each with a named
+# bit-field. The masks are found once for the element, a record of a few
+# bytes, so this shape never held the outer record on a frame; it runs at
+# both levels before and after, and C reads each element's members as it
+# set them and the bits beside each bit-field zero.
+extern "fixedbugs-2354-array.h"
+    record El tag fixedbugs_2354_el partial
+        a: i8
+    record Array tag fixedbugs_2354_array partial
+        a: i64
+        e: El[4]
+    function fixedbugs_2354_array_dirty(@p: Array)
+    function fixedbugs_2354_array_check(@p: Array) -> i64
+
+function main()
+    print("before")
+    held: Array @= Array(a: 7, rest: zero)
+    fixedbugs_2354_array_dirty(@held)
+    print(fixedbugs_2354_array_check(@held))

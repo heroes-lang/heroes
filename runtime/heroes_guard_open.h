@@ -350,6 +350,8 @@
 #pragma push_macro("hero_pad_fill")
 #pragma push_macro("hero_pad_gaps")
 #pragma push_macro("hero_pad_masks")
+#pragma push_macro("hero_pad_object")
+#pragma push_macro("hero_pad_object_give")
 #pragma push_macro("hero_panic")
 #pragma push_macro("hero_panic_assert_at")
 #pragma push_macro("hero_panic_assert_shown_at")

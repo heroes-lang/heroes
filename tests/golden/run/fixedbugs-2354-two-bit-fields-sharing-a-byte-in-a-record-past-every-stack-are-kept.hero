@@ -1,0 +1,17 @@
+# fixedbugs, defect 2354, 2026-11-08: beside the case of one bit-field, a
+# record of 128 MiB with two named bit-fields sharing a byte, an unnamed one
+# after them and a third in the next byte. Its constructor's frame held the
+# whole record and died at 139 with nothing said; the record is the
+# runtime's now, and C reads the named bits as it set them and every other
+# bit of those bytes zero.
+extern "fixedbugs-2354-two.h"
+    record Two tag fixedbugs_2354_two partial
+        a: i64
+    function fixedbugs_2354_two_dirty(@p: Two)
+    function fixedbugs_2354_two_check(@p: Two) -> i64
+
+function main()
+    print("before")
+    held: Two @= Two(a: 7, rest: zero)
+    fixedbugs_2354_two_dirty(@held)
+    print(fixedbugs_2354_two_check(@held))

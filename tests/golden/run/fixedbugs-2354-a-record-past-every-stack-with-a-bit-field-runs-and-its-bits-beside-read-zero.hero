@@ -1,0 +1,19 @@
+# fixedbugs, defect 2354, 2026-11-08: the bits beside a named bit-field are
+# found before `main` by `--` on a zeroed record, and the unit's constructor
+# declared that record on its own frame, before the stack guard exists: a
+# group record of 128 MiB with one named bit-field, stored whole, died at 139
+# with nothing said at both levels. The record is the runtime's now
+# (`hero_pad_object`, `runtime/parts/lend.c`), so the program runs, and C,
+# lent the record after setting every byte around the bit-field, reads the
+# bits beside it and the padding zero and every member as it was set.
+extern "fixedbugs-2354-one.h"
+    record One tag fixedbugs_2354_one partial
+        a: i64
+    function fixedbugs_2354_one_dirty(@p: One)
+    function fixedbugs_2354_one_check(@p: One) -> i64
+
+function main()
+    print("before")
+    held: One @= One(a: 7, rest: zero)
+    fixedbugs_2354_one_dirty(@held)
+    print(fixedbugs_2354_one_check(@held))

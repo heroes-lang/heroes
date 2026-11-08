@@ -1,0 +1,17 @@
+# fixedbugs, defect 2354, 2026-11-08: beside the case of one bit-field, a
+# record of 128 MiB whose named bit-field is a member of a record it holds,
+# found through its path `in.b`. Its constructor's frame held the whole
+# record and died at 139 with nothing said; the record is the runtime's
+# now, and C reads the nested record's members as it set them and the bits
+# beside its bit-field zero.
+extern "fixedbugs-2354-nested.h"
+    record Nested tag fixedbugs_2354_nested partial
+        a: i64
+    function fixedbugs_2354_nested_dirty(@p: Nested)
+    function fixedbugs_2354_nested_check(@p: Nested) -> i64
+
+function main()
+    print("before")
+    held: Nested @= Nested(a: 7, rest: zero)
+    fixedbugs_2354_nested_dirty(@held)
+    print(fixedbugs_2354_nested_check(@held))
