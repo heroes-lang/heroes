@@ -9,8 +9,8 @@
 # The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
 # are skipped, which is what makes the sample readable.
 
-use core/strconv
-use core/strings
+use <core>/strconv
+use <core>/strings
 
 ## Error codes
 #

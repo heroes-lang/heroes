@@ -1,51 +1,62 @@
 # examples/packages/
 
 **The core packages, and the conventions every one of them follows.** A core
-package is a module a program carries in its own tree, as it carries its own
-modules: Go's names and Go's tree, under one directory `core/`, written in
-Heroes alone where Heroes can say it and over a C library where it cannot. The
-language ships its runtime and nothing else (`docs/design.md` §1.11), so these
-are not a standard library. They are source, verified the way any program is: by
-the checker, by their own `test` blocks and, where they bind C, by clang against
-the header they name.
+package is a module a program fetches into its own folder and carries there, as
+it carries its own modules: Go's names and Go's tree, published together as one
+package of the catalogue, `core`, written in Heroes alone where Heroes can say
+it and over a C library where it cannot. The language ships its runtime and
+nothing else (`docs/design.md` §1.11), so these are not a standard library. They
+are source, verified the way any program is: by the checker, by their own
+`test` blocks and, where they bind C, by clang against the header they name.
 
-This directory is the **canonical tree**. `core/` holds the packages, and
-`main.hero` beside it is their own program, the one whose `heroes test` runs
-every package's tests. A program that uses a package carries a copy of it, and
-the copy is this tree's, byte for byte.
+**Their source is one tree**, the newest version of `core` in the local static
+index beside this folder, `examples/index/core/<version>/files/` (panel 235's
+R15, ratified 2026-11-07). A program that uses a package, `main.hero` here among
+them, names it `use <core>/strings` and holds one entry, `core`, in its
+catalogue `heroes.toml`, which `heroes add core` writes; the verb places the
+version's files under the program's own `heroes.packages/`, the index's files
+byte for byte. `main.hero` is the packages' own program, the one whose `heroes
+test` runs every package's tests.
 
 Each rule below can be checked by reading a package, and each says what holds
 it: the compiler, the net's `packages` suite, or a reader's review.
 
 ## 1. Where a package lives
 
-1. **`use core/<path>` binds the path's last part**: `use core/strings` binds
-   `strings`, `use core/net/http` binds `http`, `use core/encoding/json` binds
-   `json`. A call into a package is always written qualified,
+1. **`use <core>/<path>` binds the path's last part**: `use <core>/strings`
+   binds `strings`, `use <core>/net/http` binds `http`, `use
+   <core>/encoding/json` binds `json`. A call into a package is always written qualified,
    `strings.has_prefix(s: line, prefix: "#")`, since a call never reaches
    across a module through its first argument (`needs_qualifying`).
-2. **A package is one module at its Go path**, `core/strings.hero`,
-   `core/net/http.hero`, and every name a program writes is declared in it: a
-   name is reached through the module that declares it, and nothing
+2. **A package is one module at its Go path** under `core`'s root,
+   `strings.hero`, `net/http.hero`, and every name a program writes is
+   declared in it: a name is reached through the module that declares it, and nothing
    re-exports. That module is the package's **face**. It declares only what a
    program calls, so the package's card, written from it, lists the face alone.
-3. **A package's private modules stand under `core/<package>/internal/`**,
-   Go's word for them, and no module outside the package `use`s one (the
-   `packages` suite).
-4. **A program carries the packages it uses** at `<program>/core/`, each file
-   byte-identical to this tree (the `packages` suite), until `heroes fetch`
-   places them. So a change to a package never breaks a program's build: a
-   program moves to it by taking the new copy.
+3. **A package's private modules stand under `<package>/internal/`**, Go's
+   word for them, and no module outside the package `use`s one: the compiler
+   refuses it, `error[private_module]` at the `use` line (panel 235's R16).
+   Inside `core` a `use` starts at its own root, so `strings.hero` writes `use
+   strings/internal/scan`.
+4. **A program fetches the packages it uses**: `heroes add core` in its folder
+   writes the entry `core` into its catalogue, with the version and the sum
+   the index publishes (`index = "file://../index"` for a program here), and
+   places the version's files under `heroes.packages/`, which the program
+   commits, so `build`, `check` and `run` never fetch (panel 235's R8). The
+   compiler holds the placed tree to the entry's `sum` at every build, and the
+   `packages` suite holds the sum to the index's. A published version is never
+   edited: a change to a package is a new version, so it never breaks a
+   program's build, and a program moves to it by `heroes add core` again.
 5. **No two module names differ only in case, and a `use` spells its file
    exactly.** On a case-insensitive volume a `use` in another case compiles one
    file twice under two spellings, and Linux refuses the same program (the
    `packages` suite; the compiler's own refusal is owed by
    [defect 2290](https://github.com/heroes-lang/heroes/issues/2290)).
-6. **A package that uses another cannot be tested alone**, because every `use`
-   starts at the directory of the file you compile. `main.hero` here reaches
-   every package that no other package uses, and names something from each,
-   since a `use` nothing names is `unused_binding`; `heroes test` on it runs the
-   `test` blocks of every module it reaches.
+6. **A package is tested through a program that reaches it**, the way a
+   program fetches it. `main.hero` here reaches every package that no other
+   package uses, and names something from each, since a `use` nothing names is
+   `unused_binding`; `heroes test` on it runs the `test` blocks of every module
+   it reaches, the placed package's among them (the `packages` suite).
 
 ## 2. Names
 
@@ -64,8 +75,8 @@ it: the compiler, the net's `packages` suite, or a reader's review.
 3. **No function and no `use` binding takes a built-in's name.** `find`,
    `join`, `repeat`, `sort`, `map`, `filter`, `keys` and `len` are refused as
    function names everywhere (`builtin_name_taken`), and no package is named
-   like one either: the sort by a caller's order lives in `core/slices`, and
-   there is no `core/sort` (the compiler's refusal of such a binding is owed by
+   like one either: the sort by a caller's order lives in `<core>/slices`, and
+   there is no `<core>/sort` (the compiler's refusal of such a binding is owed by
    [feature 2299](https://github.com/heroes-lang/heroes/issues/2299)).
 4. **A parameter is named for the call that reads it.** A call names the
    argument of every parameter that shares its type with another
@@ -97,7 +108,7 @@ it: the compiler, the net's `packages` suite, or a reader's review.
 ## 4. A package over C
 
 1. **Two layers: a thin floor and a thick face.** The floor is one module,
-   named for the header its group names (`core/database/sql/sqlite3.hero`),
+   named for the header its group names (`database/sql/sqlite3.hero`),
    thin by rule: one Heroes function per C function, in C's order, answering
    C's integer status, and published with a card of its own. The face is the
    package itself: every failure is a `T?`, and no status reaches a program
@@ -178,15 +189,21 @@ it: the compiler, the net's `packages` suite, or a reader's review.
 ## 9. What these packages do not promise
 
 The packages stand outside the language's `1.0.0` compatibility promise until a
-later milestone rules on them. A program carries its own copy, so a package's
-change never breaks a program's build: it reaches a program only when the
-program takes the new copy.
+later milestone rules on them. A program holds the version it fetched, and a
+published version is never edited, so a package's change never breaks a
+program's build: it reaches a program only when the program fetches the new
+version.
 
 ## Where these rules come from
 
 Panel 234, the opening sitting of M-core-packages, ratified by the author on
 2026-11-06:
 `docs/panel/234-the-core-packages-are-code-a-program-carries-in-gos-tree-under-core-a-thick-face-on-a-published-floor-a-card-that-shows-the-call-and-the-platforms-c-an-archive-beside-the-runtime.md`
-and decision [2304](https://github.com/heroes-lang/heroes/issues/2304). A
+and decision [2304](https://github.com/heroes-lang/heroes/issues/2304). Where
+the packages live and how a program names and reaches them, § 1's rules 1,
+3, 4 and 6, are panel 235's (R1, R4, R7, R15 and R16), ratified 2026-11-07 (decision
+[2329](https://github.com/heroes-lang/heroes/issues/2329)), which amended panel
+234's R2: until then each program carried a copy under its own `core/`, held
+byte for byte to a canonical tree here, and named it `use core/strings`. A
 package that breaks a rule here has a defect; a rule that turns out wrong is
 changed here first, with its date.

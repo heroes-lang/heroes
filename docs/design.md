@@ -562,11 +562,14 @@ expected to arrive via FFI:
 **The core packages do not change this: a package is code a program carries** (panel 234's R1 and
 R2, ratified 2026-11-06; the critic's G15). The rule above says every one of those needs comes from
 C, and the table's JSON row says *write it in Heroes*; both hold, because a package of
-M-core-packages is a module a program carries in its own tree, under `core/`, as it carries its own:
-written in Heroes alone where Heroes can say it, over a C library through a binding it carries where
-it cannot, and verified by the checker, by its own `test` blocks and, over C, by clang against the
-header it names. No package is compiled into the compiler or the runtime (panel 097's condition 5:
-such source is the standard library this section forbids), and none ships platform C of its own:
+M-core-packages is a module a program carries in its own tree, as it carries its own: fetched by
+`heroes add` into the program's `heroes.packages/`, a folder no `use` can spell, from the index its
+catalogue names, and reached as `use <core>/strings` (panel 235's R15, ratified 2026-11-07, which
+amended R2: until then a program kept a copy under its own `core/`); written in Heroes alone where
+Heroes can say it, over a C library through a binding it carries where it cannot, and verified by
+the checker, by its own `test` blocks and, over C, by clang against the header it names. No
+package is compiled into the compiler or the runtime (panel 097's condition 5: such source is the
+standard library this section forbids), and none ships platform C of its own:
 what a package needs of the platform is the runtime's `hero_os.h` or the platform layer archived
 beside the runtime (panel 234's R6, feature 2295). So the language still ships its runtime and
 nothing a program could carry instead.

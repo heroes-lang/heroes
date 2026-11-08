@@ -15,7 +15,7 @@
 # somebody typed would need `chars()` and a different function, which is
 # `examples/widths/`'s subject and not this one.
 
-use core/strings
+use <core>/strings
 use data/row
 use query/plan
 

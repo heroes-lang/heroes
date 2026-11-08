@@ -7,7 +7,7 @@
 # check the text never have to open a database.
 
 use book/entry
-use core/strings
+use <core>/strings
 
 constant BALANCE_HEADING: str
     "account  kind     entries      total"

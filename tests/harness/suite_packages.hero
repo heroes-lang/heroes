@@ -1,41 +1,62 @@
-# The core packages' trees, held to the conventions a reader cannot be trusted
-# to keep by eye: `examples/packages/README.md`, whose rules marked "(the
-# `packages` suite)" are held here (panel 234's R3, task 2293).
+# The core packages, held to the index they are published in and to the
+# conventions a reader cannot be trusted to keep by eye:
+# `examples/packages/README.md`, whose rules marked "(the `packages` suite)"
+# are held here (panel 234's R3, task 2293; panel 235's R15, ratified
+# 2026-11-07).
 #
-# WHY THIS EXISTS. A program carries the packages it uses as a copy under its
-# own `core/` (`examples/packages/README.md` § 1.4), so one package stands in many places,
-# and a copy can drift with nothing failing: the program builds on its stale
-# copy, its tests pass on it, and the repair made in the canonical tree never
-# reaches it. The compiler judges one program at a time, and none of these
-# rules is a fact of one program, so the net holds them.
+# WHY THIS EXISTS. The core packages are one catalogue entry, `core`, published
+# in a local static index inside the repository, `examples/index/`, and every
+# program that uses them fetches its version with `heroes add core`, placed
+# under its own `heroes.packages/` (R15, M-package-manager step 14). The
+# compiler holds each placed tree to the catalogue's `sum` at every build (R7);
+# nothing in the compiler asks whether that sum is the index's, whether a
+# version the index publishes is still the files it published, or whether the
+# package keeps its conventions. None of these is a fact of one program, so
+# the net holds them.
 #
-# WHAT IT WALKS: every `core/` tree under `examples/`, the canonical one,
-# `examples/packages/core/`, and each program's copy, `examples/<program>/core/`
-# (thirteen on 2026-11-06), and every module under `examples/` for the one rule
-# a program's own module can break. Each question is a label of its own, and
+# WHAT IT WALKS: the index's package folder, every version it publishes; the
+# newest version's `files/`, the package's source, one tree; and every
+# program's catalogue and placed trees under `examples/`. A placed tree is held
+# to its fingerprint and to the index here and to nothing else: it is the
+# package author's, and R7 has the walks of the tree leave it out by its
+# folder's name (`placed_trees.hero`). Each question is a label of its own, and
 # a failure names every file it found and how to repair it:
 #
-#   packages/copies    each file of a copy is its original's, byte for byte
-#   packages/reach     each module of the canonical tree is one the driver,
-#                      `examples/packages/main.hero`, reaches, so `heroes test`
-#                      on it runs every package's tests: asked of the
-#                      compiler, a reached module being named by a `#line` of
-#                      the driver's `--emit-c`
-#   packages/internal  a package's private module is named from its own package
-#                      alone, asked of every module under `examples/`
-#   packages/case      no two `.hero` paths of the project differ only in case,
-#                      and every part of a path under a `core/` is lower case
-#   packages/names     records and variants in PascalCase, constants in
-#                      SCREAMING_CASE
-#   packages/codes     every literal code a `fail` writes is snake_case
-#   packages/quiet     no `print(`, `exit(`, `args(` or `args_checked(` but in
-#                      `log` and `os`
-#   packages/docs      every top-level function has a doc comment
-#   packages/tests     every top-level function is called by a `test` block of
-#                      its own module
-#   packages/cards     each face's card is what `package_cards.hero -- write`
-#                      writes, within its budget, every call it writes
-#                      compiling as written (task 2294, `package_judge.hero`)
+#   packages/index    every version `versions` lists is its folder's files
+#                     byte for byte: its `list` is their listing and its sum
+#                     the SHA-256 of that `list`; no folder or file beside them
+#   packages/placed   every catalogue under `examples/` reads the local index
+#                     and names versions it publishes, with their sums, and
+#                     every tree under a `heroes.packages/` is one an entry
+#                     names, placed once, the index's files byte for byte
+#   packages/reach    every module of the package's source is one the driver,
+#                     `examples/packages/main.hero`, reaches, asked of the
+#                     compiler: a reached module is named by a `#line` of the
+#                     driver's `--emit-c`, in its placed tree; and the driver
+#                     holds the newest version
+#   packages/ran      every `test` block of the package's source passes in the
+#                     driver's `heroes test`, so the package's tests run in the
+#                     net (M-package-manager step 14's item 4)
+#   packages/case     no two `.hero` paths of the project differ only in case,
+#                     and every part of a path under the source is lower case
+#   packages/names    records and variants in PascalCase, constants in
+#                     SCREAMING_CASE
+#   packages/codes    every literal code a `fail` writes is snake_case
+#   packages/quiet    no `print(`, `exit(`, `args(` or `args_checked(` but in
+#                     `log` and `os`
+#   packages/docs     every top-level function has a doc comment
+#   packages/tests    every top-level function is called by a `test` block of
+#                     its own module
+#   packages/cards    each face's card is what `package_cards.hero -- write`
+#                     writes, within its budget, every call it writes
+#                     compiling as written (task 2294, `package_judge.hero`)
+#
+# **Retired with R15**: `packages/copies`, which held each program's copy under
+# `core/` to the canonical tree byte for byte, has nothing left to hold, the
+# copies having become placed trees `placed` holds; and `packages/internal`,
+# which held a private module to its own package, is the compiler's since R16,
+# `error[private_module]` at the `use` line (measured on a program writing
+# `use <core>/strings/internal/scan`, M-package-manager step 14).
 #
 # The rules are functions over text in `package_rules.hero`, each asked of
 # literal inputs by its tests, so a tree nobody has written yet is judged there
@@ -48,93 +69,113 @@
 
 use package_judge
 use package_rules
+use placed_trees
 use report
 use floors
 use shell
 use strings
+use thesis_sha256
 
 constant EXAMPLES: str
     "examples"
 
-# The canonical tree's own program (`examples/packages/README.md` § 1.6).
+# The package's own program (`examples/packages/README.md` § 1.6), a consumer
+# of `<core>` like every other.
 constant DRIVER: str
     "examples/packages/main.hero"
 
-# The floor: the `.hero` files the walk judged in every core tree. **28 on
-# 2026-11-06**, the day the suite landed: the canonical tree's two modules and
-# thirteen programs' copies of them. A walk that stops reaching the copies finds
-# the canonical tree's own few and is red, which a floor of that count would
-# pass. **38 the same day**, raised on purpose when `core/strconv` arrived with
-# its private module and four programs' copies of both (step 6 of
-# M-core-packages, merged into the lane before its gate): 4 canonical, 34 copies.
-constant LEAST: i64
-    38
+# The index line every catalogue under `examples/` writes: the index beside
+# the program's folder, read over `file://` from inside the repository (R9's
+# C4), for a program one folder below `examples/`.
+constant INDEX_LINE: str
+    "file://../index"
 
-# A file the walk read: where it stands, its core tree and its path under that
-# tree, or "" for both where it is a program's own module, and its text.
+# The floor of the source: the `.hero` files of the newest version's `files/`.
+# **4 on 2026-11-08**, M-package-manager step 14, the day the source became
+# the index's: `strings`, `strconv` and their two private modules. The suite's
+# floor until then, 38, counted thirteen programs' copies beside the canonical
+# tree, which are placed trees now and counted by `LEAST_PLACED`.
+constant LEAST: i64
+    4
+
+# The floor of the placed trees: every program under `examples/` that uses the
+# core packages holds one. **14 on 2026-11-08**, the day R15 placed them: the
+# thirteen programs that carried a copy and the driver.
+constant LEAST_PLACED: i64
+    14
+
+# A file of the package's source: where it stands, its path under the source's
+# root, and its text.
 record Held
     path: str
-    tree: str
     rel: str
     text: str
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
+    package = package_rules.INDEX + "/" + package_rules.PACKAGE
 
-    if !shell.is_directory(package_rules.CANONICAL)
-        return fail(code: "absent", msg: package_rules.CANONICAL + " is not there, and every copy is judged against it")
-    files = walked(scratch)?
-    cored: [Held] @= []
+    if !shell.is_directory(package)
+        return fail(code: "absent", msg: package + " is not there, and every program's catalogue reads it")
+    root = package_rules.source_root(scratch)?
+    source = held(scratch: scratch, root: root)?
     count: i64 @= 0
 
-    for h in files
-        if h.tree.len() > 0
-            cored @ cored.push(h)
-
-            if strings.ends_with(text: h.rel, suffix: ".hero")
-                count @ count + 1
+    for h in source
+        if strings.ends_with(text: h.rel, suffix: ".hero")
+            count @ count + 1
 
     floors.check(
         @r,
         label: "packages",
         found: count,
         floor: LEAST,
-        what: "`.hero` files in the core trees under " + EXAMPLES + "/"
+        what: "`.hero` files in " + root
     )
-    copies(@r, cored)
-    reach(@r, scratch: scratch, compiler: compiler, cored: cored)?
-    internal(@r, files)
-    spelled(@r, scratch: scratch, cored: cored)?
-    each_module(@r, cored)
-    cards(@r, scratch: scratch, compiler: compiler)?
+    indexed(@r, scratch: scratch, package: package)?
+    placed(@r, scratch: scratch)?
+    reach(@r, scratch: scratch, compiler: compiler, root: root, source: source)?
+    tests_ran(@r, scratch: scratch, compiler: compiler, source: source)?
+    spelled(@r, scratch: scratch, source: source)?
+    each_module(@r, root: root, source: source)
+    cards(@r, scratch: scratch, compiler: compiler, root: root)?
     return ok(r)
 
-# Every file of every core tree under `examples/`, and every module of the
-# programs beside them, read.
-function walked(scratch: str) -> [Held]?
+# Every file of the source, read as text.
+function held(scratch: str, root: str) -> [Held]?
     nothing: [str] = []
     out: [Held] @= []
 
-    for path in shell.list_tree(scratch: scratch, dir: EXAMPLES, skip: nothing)?
-        tree = package_rules.tree_of(path)
-
-        if tree.is_err() && !strings.ends_with(text: path, suffix: ".hero")
-            continue
+    for path in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
         text = read_file(path)
 
         if text.is_err()
             return fail(
                 code: "unreadable",
-                msg: "cannot read " + path + " as text, and every file of a core tree and every module is read"
+                msg: "cannot read " + path + " as text, and every file of the package's source is read"
             )
-        root = tree.default("")
-        rel: str @= ""
-
-        if root.len() > 0
-            rel @ strings.without_prefix(text: path, prefix: root + "/")
-        out @ out.push(Held(path: path, tree: root, rel: rel, text: text.must()))
+        out @ out.push(Held(path: path, rel: strings.without_prefix(text: path, prefix: root + "/"), text: text.must()))
 
     return ok(out)
+
+# The listing of the tree at `root`, as `fingerprint.listing` writes it:
+# every file's SHA-256 over its bytes, read as text, which every file of a
+# package here is.
+function listing_at(scratch: str, root: str) -> str?
+    nothing: [str] = []
+    files: [[str]] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
+        text = read_file(path)
+
+        if text.is_err()
+            return fail(
+                code: "unreadable",
+                msg: "cannot read " + path + " as text, and every file of a package is hashed"
+            )
+        files @ files.push([strings.without_prefix(text: path, prefix: root + "/"), thesis_sha256.of(text.must())])
+
+    return ok(package_rules.listing_of(files))
 
 # One label's verdict: a pass where nothing was found, else one failure naming
 # every finding under the rule it breaks and its repair.
@@ -144,33 +185,241 @@ function keep(@r: report.Report, label: str, found: [str], rule: str)
         return
     report.keep_failure(@r, label: label, detail: "  " + rule + "\n" + found.join("\n"))
 
-function copies(@r: report.Report, cored: [Held])
-    originals: {str: str} @= {}
+## The index and the placed trees
 
-    for h in cored
-        if h.tree == package_rules.CANONICAL
-            originals[h.path] @ h.text
+# The versions the package publishes, each with its sum, or the reason
+# `versions` does not read.
+function published(package: str) -> [package_rules.Listed]?
+    text = read_file(package + "/versions")
 
+    if text.is_err()
+        return fail(code: "absent", msg: package + "/versions is not there")
+    read = package_rules.versions_read(text.must())
+
+    if read.is_err()
+        return fail(code: "malformed", msg: package + "/versions " + reason(read))
+    return read
+
+# Every version `versions` lists is its folder's files, and nothing stands
+# beside them.
+function indexed(@r: report.Report, scratch: str, package: str) -> ()?
     found: [str] @= []
+    listed = published(package)
+    versions: [package_rules.Listed] @= []
 
-    for h in cored
-        if h.tree != package_rules.CANONICAL
-            at = package_rules.original_of(tree: h.tree, path: h.path)
-            said = package_rules.copy_said(copy: h.text, original: originals[at], at: at)
+    if listed.is_err()
+        found @ found.push("    " + reason(listed))
+    else
+        versions @ listed.must()
 
-            if said.len() > 0
-                found @ found.push("    " + h.path + " " + said)
+    for path in shell.list_entries(scratch: scratch, dir: package)?
+        if strings.base_name(path: path) != "versions"
+            found @ found.push(
+                "    " + path + " is no file of a package in an index, which holds `versions` and a folder per version"
+            )
+
+    for dir in shell.list_directories(scratch: scratch, dir: package)?
+        name = strings.base_name(path: dir)
+
+        if !lists(versions, version: name)
+            found @ found.push(
+                "    " + dir + " is a folder `versions` lists no line for: publish it by writing its line, or remove it"
+            )
+
+    for one in versions
+        dir = package + "/" + one.version
+
+        if !shell.is_directory(dir + "/files")
+            found @ found.push(
+                "    " + package + "/versions lists " + one.version + ", and " + dir + "/files is not there"
+            )
+            continue
+
+        for path in shell.list_entries(scratch: scratch, dir: dir)?
+            if strings.base_name(path: path) != "list"
+                found @ found.push("    " + path + " is no file of a version, which holds `list` and `files/`")
+
+        for path in shell.list_directories(scratch: scratch, dir: dir)?
+            if strings.base_name(path: path) != "files"
+                found @ found.push("    " + path + " is no folder of a version, which holds `list` and `files/`")
+
+        text = read_file(dir + "/list")
+
+        if text.is_err()
+            found @ found.push("    " + dir + "/list is not there")
+            continue
+        files = listing_at(scratch: scratch, root: dir + "/files")?
+
+        for moved in package_rules.moved(listed: text.must(), files: files)
+            found @ found.push("    " + dir + "/list: " + moved)
+
+        sum = "sha256-" + thesis_sha256.of(text.must())
+
+        if sum != one.sum
+            found @ found.push(
+                "    " + package + "/versions gives " + one.version + " the sum " + one.sum + ", and its list sums to " + sum
+            )
 
     keep(
         @r,
-        label: "packages/copies",
+        label: "packages/index",
         found: found,
-        rule: "every file of a program's `core/` is its original in " + package_rules.CANONICAL + "/, byte for byte (`examples/packages/README.md` § 1.4), so a repair made there reaches a program only when the program takes it. Fix: copy the original over the copy, `cp " + package_rules.CANONICAL + "/<path> examples/<program>/core/<path>`, and run the program's tests; a change a program needs is made in the canonical tree first, with its tests, then copied:"
+        rule: "every version an index lists is the files it published, byte for byte: its `list` is the listing `shasum -a 256` gives of its `files/`, sorted by the names' bytes, and its line of `versions` the SHA-256 of that `list` (panel 235's R6 and R20). A published version is never edited, so a change to the package is a NEW version. Fix: copy the newest version's folder to the next version's, make the change there with its tests, write its cards (`" + package_judge.WRITE + "`), write its `list` (`cd files && find . -type f | sed 's|^\\./||' | LC_ALL=C sort | xargs shasum -a 256 > ../list`), add `<version> sha256-<the shasum -a 256 of that list>` to `versions`, and run `heroes add " + package_rules.PACKAGE + "` in each program:"
     )
+    return ok()
 
-# Whether the driver reaches every module of the canonical tree, asked of the
-# compiler: the modules its emission names in a `#line`.
-function reach(@r: report.Report, scratch: str, compiler: str, cored: [Held]) -> ()?
+function lists(versions: [package_rules.Listed], version: str) -> bool
+    for one in versions
+        if one.version == version
+            return true
+
+    return false
+
+# The sum each published version of each package of the index has, and its
+# `list`, keyed `<name>@<version>`.
+record Index
+    sums: {str: str}
+    lists: {str: str}
+
+function index_read(scratch: str) -> Index?
+    sums: {str: str} @= {}
+    texts: {str: str} @= {}
+
+    for package in shell.list_directories(scratch: scratch, dir: package_rules.INDEX)?
+        listed = published(package)
+
+        if listed.is_err()
+            continue
+        name = strings.base_name(path: package)
+
+        for one in listed.must()
+            sums[name + "@" + one.version] @ one.sum
+            text = read_file(package + "/" + one.version + "/list")
+
+            if !text.is_err()
+                texts[name + "@" + one.version] @ text.must()
+
+    return ok(Index(sums: sums, lists: texts))
+
+# Every program's catalogue under `examples/` reads the local index and names
+# what it publishes, and every placed tree is the one an entry names, the
+# index's files byte for byte.
+function placed(@r: report.Report, scratch: str) -> ()?
+    index = index_read(scratch)?
+    found: [str] @= []
+    trees: i64 @= 0
+
+    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+        folder = dir + "/" + placed_trees.FOLDER
+        text = read_file(dir + "/heroes.toml")
+
+        if text.is_err()
+            if shell.is_directory(folder)
+                found @ found.push(
+                    "    " + folder + " stands in a program with no catalogue, so no entry names its trees: remove it"
+                )
+            continue
+        c = package_rules.catalogue_read(text.must())
+
+        if c.is_err()
+            found @ found.push("    " + dir + "/heroes.toml: " + reason(c) + "; write it with `heroes add`")
+            continue
+
+        if c.must().index != INDEX_LINE
+            found @ found.push(
+                "    " + dir + "/heroes.toml reads the index `" + c.must().index + "`, and a program here reads the local one, `" + INDEX_LINE + "`"
+            )
+        trees @ trees + entries_held(@found, index: index, dir: dir, entries: c.must().entries)
+        trees_found = trees_in(scratch: scratch, folder: folder)?
+
+        for tree in trees_found
+            name = strings.base_name(path: tree)
+            entry = package_rules.placed_named(name)
+
+            if entry.is_err() || !named_by(c.must().entries, entry: entry.must())
+                found @ found.push(
+                    "    " + tree + " is a tree no entry of " + dir + "/heroes.toml names, left behind: it compiles nothing, and no verb removes it, so remove it"
+                )
+                continue
+            key = entry.must().name + "@" + entry.must().version
+            listing = listing_at(scratch: scratch, root: tree)?
+
+            for moved in package_rules.moved(listed: index.lists[key].default(""), files: listing)
+                found @ found.push("    " + tree + ": " + moved)
+
+        for e in c.must().entries
+            count: i64 @= 0
+
+            for tree in trees_found
+                held_named = package_rules.placed_named(strings.base_name(path: tree))
+
+                if !held_named.is_err() && held_named.must().name == e.name && held_named.must().version == e.version
+                    count @ count + 1
+
+            if count == 0
+                found @ found.push(
+                    "    " + dir + " names " + e.name + " " + e.version + ", and no tree of it is placed: `heroes fetch -C " + dir + "`"
+                )
+            else if count > 1
+                found @ found.push(
+                    "    " + dir + " holds " + count.to_str() + " trees of " + e.name + " " + e.version + ", and the build reads one: remove them all and run `heroes fetch -C " + dir + "`, which places the one its entry names"
+                )
+
+    floors.check(
+        @r,
+        label: "packages/placed",
+        found: trees,
+        floor: LEAST_PLACED,
+        what: "entries of the index's packages in the catalogues under " + EXAMPLES + "/"
+    )
+    keep(
+        @r,
+        label: "packages/placed",
+        found: found,
+        rule: "a program's catalogue names versions the index publishes, each with the index's sum, and the tree `heroes add` placed for each is the index's files byte for byte, the one tree under `heroes.packages/` its entry names (panel 235's R7 and R15): the compiler holds a tree to the catalogue's `sum` alone, so a catalogue and a tree rewritten together would build what the index never published. Fix: `heroes add " + package_rules.PACKAGE + "` in the program's folder, which writes the entry from the index and places its tree, and commit both:"
+    )
+    return ok()
+
+# Every entry held to the index: a version it publishes, with its sum. The
+# count of entries held, the placed trees the floor counts.
+function entries_held(@found: [str], index: Index, dir: str, entries: [package_rules.Entry]) -> i64
+    count: i64 @= 0
+
+    for e in entries
+        sum = index.sums[e.name + "@" + e.version]
+
+        if sum.is_err()
+            found @ found.push(
+                "    " + dir + "/heroes.toml names " + e.name + " " + e.version + ", which the index " + package_rules.INDEX + " does not publish"
+            )
+        else if sum.must() != e.sum
+            found @ found.push(
+                "    " + dir + "/heroes.toml gives " + e.name + " " + e.version + " the sum " + e.sum + ", and the index's is " + sum.must()
+            )
+        count @ count + 1
+
+    return count
+
+function named_by(entries: [package_rules.Entry], entry: package_rules.Entry) -> bool
+    for e in entries
+        if e.name == entry.name && e.version == entry.version
+            return true
+
+    return false
+
+# The trees under a program's `heroes.packages/`, none where it has none.
+function trees_in(scratch: str, folder: str) -> [str]?
+    if !shell.is_directory(folder)
+        nothing: [str] = []
+        return ok(nothing)
+    return shell.list_directories(scratch: scratch, dir: folder)
+
+## The source
+
+# Whether the driver reaches every module of the source, asked of the
+# compiler: the modules its emission names in a `#line`, in the tree its
+# catalogue placed, which `placed` holds to be the index's files.
+function reach(@r: report.Report, scratch: str, compiler: str, root: str, source: [Held]) -> ()?
     ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", DRIVER, "--emit-c"])?
 
     if ran.code != 0
@@ -180,60 +429,88 @@ function reach(@r: report.Report, scratch: str, compiler: str, cored: [Held]) ->
             detail: "  the driver, " + DRIVER + ", does not build (exit " + ran.code.to_str() + "), so what it reaches cannot be asked: " + strings.trimmed(ran.err)
         )
         return ok()
+    newest = strings.base_name(path: strings.without_suffix(text: root, suffix: "/files"))
     named: {str: bool} @= {}
+    held_newest: bool @= false
+    prefix = strings.without_suffix(text: DRIVER, suffix: "main.hero") + placed_trees.FOLDER + "/"
 
     for path in package_rules.line_paths(ran.out)
-        named[path] @ true
+        if strings.starts_with(text: path, prefix: prefix)
+            rest = strings.without_prefix(text: path, prefix: prefix)
+            cut = strings.index_of(text: rest, needle: "/")
+
+            if !cut.is_err()
+                tree = package_rules.placed_named(rest.slice(from: 0, to: cut.must()))
+
+                if !tree.is_err() && tree.must().name == package_rules.PACKAGE && tree.must().version == newest
+                    held_newest @ true
+                    named[rest.slice(from: cut.must() + 1, to: rest.len())] @ true
 
     found: [str] @= []
 
-    for h in cored
-        if h.tree == package_rules.CANONICAL && strings.ends_with(text: h.rel, suffix: ".hero") && named[h.path].is_err()
+    if !held_newest
+        found @ found.push(
+            "    the driver reaches no module of " + package_rules.PACKAGE + " " + newest + ", the newest version: `heroes add " + package_rules.PACKAGE + "` in " + strings.without_suffix(text: DRIVER, suffix: "/main.hero")
+        )
+
+    for h in source
+        if held_newest && strings.ends_with(text: h.rel, suffix: ".hero") && named[h.rel].is_err()
             found @ found.push("    " + h.path)
 
     keep(
         @r,
         label: "packages/reach",
         found: found,
-        rule: "every module of " + package_rules.CANONICAL + "/ is reached by its driver, " + DRIVER + ", so that `heroes test` on the driver runs its tests (`examples/packages/README.md` § 1.6), and the driver's `--emit-c` names no `#line` in these. Fix: `use` the package from the driver and name something of it, or reach it from a package the driver reaches. A module that declares only records emits no `#line` (measured 2026-11-06), so one is told here though the driver reaches it:"
+        rule: "every module of " + root + "/ is reached by its driver, " + DRIVER + ", from the tree `heroes add` placed of the newest version, so that `heroes test` on the driver runs its tests (`examples/packages/README.md` § 1.6), and the driver's `--emit-c` names no `#line` in these. Fix: `use <" + package_rules.PACKAGE + ">/` the package from the driver and name something of it, or reach it from a package the driver reaches. A module that declares only records emits no `#line` (measured 2026-11-06), so one is told here though the driver reaches it:"
     )
     return ok()
 
-function internal(@r: report.Report, files: [Held])
+# Whether every `test` block of the source passes in the driver's `heroes
+# test`: the package's tests running in the net, asked of the run.
+function tests_ran(@r: report.Report, scratch: str, compiler: str, source: [Held]) -> ()?
+    run = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", DRIVER])?
+    passed = package_rules.passed_titles(run.out)
     found: [str] @= []
 
-    for h in files
-        if strings.ends_with(text: h.path, suffix: ".hero")
-            importer: str @= ""
+    for h in source
+        if strings.ends_with(text: h.rel, suffix: ".hero")
+            for title in package_rules.test_titles(h.text)
+                if passed[title].is_err()
+                    found @ found.push("    " + h.path + ": `test \"" + title + "\"`")
 
-            if h.tree.len() > 0
-                importer @ package_rules.module_path(tree: h.tree, path: h.path)
-
-            for said in package_rules.misplaced_uses(importer: importer, text: h.text)
-                found @ found.push("    " + h.path + ": " + said)
-
+    if run.code != 0 && found.len() == 0
+        found @ found.push(
+            "    `heroes test " + DRIVER + "` exited " + run.code.to_str() + ": " + strings.trimmed(run.err)
+        )
     keep(
         @r,
-        label: "packages/internal",
+        label: "packages/ran",
         found: found,
-        rule: "a package's private module, under `core/<package>/internal/`, is named only by the package's face, `core/<package>.hero`, and by the modules under `core/<package>/` (`examples/packages/README.md` § 1.3, Go's rule). Fix: call the package's face; what a program needs of a private module belongs on the face:"
+        rule: "every `test` block of the package passes in `heroes test " + DRIVER + "`, which runs the tests of every module a program reaches, a placed package's among them: the package's tests run in the net here and in every consumer's `corpus` run, and a package whose tests run nowhere is the regression this label refuses. Fix: make the driver reach the module, and the test pass:"
     )
+    return ok()
+
+# The `.hero` paths of the project the case rule asks: every one git names but
+# those in a placed tree, the package author's (panel 235's R7), whose names
+# the fetch judged under case folding before it placed them (R9's C3).
+function hero_paths(listed: [str]) -> [str]
+    out: [str] @= []
+
+    for path in placed_trees.outside(listed)
+        if strings.ends_with(text: path, suffix: ".hero")
+            out @ out.push(path)
+
+    return out
 
 # No two `.hero` paths of the project differ only in case, and every part of a
-# path under a core tree is lower case.
-function spelled(@r: report.Report, scratch: str, cored: [Held]) -> ()?
-    modules: [str] @= []
-
-    for path in shell.project_files(scratch)?
-        if strings.ends_with(text: path, suffix: ".hero")
-            modules @ modules.push(path)
-
+# path under the source is lower case.
+function spelled(@r: report.Report, scratch: str, source: [Held]) -> ()?
     found: [str] @= []
 
-    for twins in package_rules.case_twins(modules)
+    for twins in package_rules.case_twins(hero_paths(shell.project_files(scratch)?))
         found @ found.push("    " + twins + " differ only in case")
 
-    for h in cored
+    for h in source
         for part in package_rules.crooked_parts(h.rel)
             found @ found.push("    " + h.path + ": `" + part + "` is not lower case")
 
@@ -241,19 +518,19 @@ function spelled(@r: report.Report, scratch: str, cored: [Held]) -> ()?
         @r,
         label: "packages/case",
         found: found,
-        rule: "no two module paths differ only in case, and every part of a path under a `core/` is lower case (`examples/packages/README.md` § 1.5): a volume that folds case reads two spellings as one file, and a program that compiles there is refused on Linux. Fix: rename in lower case with `git mv`, and spell every `use` as the file is spelled:"
+        rule: "no two module paths differ only in case, and every part of a path under the package's source is lower case (`examples/packages/README.md` § 1.5): a volume that folds case reads two spellings as one file, and a program that compiles there is refused on Linux. Fix: rename in lower case with `git mv`, and spell every `use` as the file is spelled:"
     )
     return ok()
 
-# The rules asked of each module of a core tree alone.
-function each_module(@r: report.Report, cored: [Held])
+# The rules asked of each module of the source alone.
+function each_module(@r: report.Report, root: str, source: [Held])
     names: [str] @= []
     codes: [str] @= []
     quiet: [str] @= []
     docs: [str] @= []
     tests: [str] @= []
 
-    for h in cored
+    for h in source
         if !strings.ends_with(text: h.rel, suffix: ".hero")
             continue
         at = "    " + h.path + ": "
@@ -264,7 +541,7 @@ function each_module(@r: report.Report, cored: [Held])
         for said in package_rules.crooked_codes(h.text)
             codes @ codes.push(at + said)
 
-        for said in package_rules.noisy(module: package_rules.module_path(tree: h.tree, path: h.path), text: h.text)
+        for said in package_rules.noisy(module: package_rules.module_path(root: root, path: h.path), text: h.text)
             quiet @ quiet.push(at + said)
 
         for said in package_rules.undocumented(h.text)
@@ -277,7 +554,7 @@ function each_module(@r: report.Report, cored: [Held])
         @r,
         label: "packages/names",
         found: names,
-        rule: "under `core/`, a record or a variant is named in PascalCase and a constant in SCREAMING_CASE (`examples/packages/README.md` § 2.5). Fix: rename it, and every use of it:"
+        rule: "in a package, a record or a variant is named in PascalCase and a constant in SCREAMING_CASE (`examples/packages/README.md` § 2.5). Fix: rename it, and every use of it:"
     )
     keep(
         @r,
@@ -304,24 +581,31 @@ function each_module(@r: report.Report, cored: [Held])
         rule: "every top-level function of a package is called by a `test` block of its own module, the edges first (`examples/packages/README.md` § 6.2). Fix: add a `test` beside the module's others that calls it:"
     )
 
-# The cards of the canonical tree's faces, asked in-process as the card
-# program's `check` asks them (`package_judge.hero`).
-function cards(@r: report.Report, scratch: str, compiler: str) -> ()?
+# The cards of the source's faces, asked in-process as the card program's
+# `check` asks them (`package_judge.hero`).
+function cards(@r: report.Report, scratch: str, compiler: str, root: str) -> ()?
     keep(
         @r,
         label: "packages/cards",
-        found: package_judge.judged(scratch: scratch, compiler: compiler, root: package_rules.CANONICAL)?,
-        rule: "every face of " + package_rules.CANONICAL + "/ has its card beside it, `<path>.md`, written from the face by `" + package_judge.WRITE + "` and never by hand (`examples/packages/README.md` § 8.2); a card spends at most " + package_judge.MOST.to_str() + " tokens by `heroes measure`'s `maximum`, the face cards together no more than the specification itself (`examples/packages/README.md` § 8.3, panel 234's R5), and every call it writes compiles as written. Fix: run `write` and commit each card with its face; a face the card cannot say is told by name, and so is a card over its budget:"
+        found: package_judge.judged(scratch: scratch, compiler: compiler, root: root)?,
+        rule: "every face of " + root + "/ has its card beside it, `<path>.md`, written from the face by `" + package_judge.WRITE + "` and never by hand (`examples/packages/README.md` § 8.2); a card spends at most " + package_judge.MOST.to_str() + " tokens by `heroes measure`'s `maximum`, the face cards together no more than the specification itself (`examples/packages/README.md` § 8.3, panel 234's R5), and every call it writes compiles as written. Fix: run `write` and commit each card with its face, in a version not yet published; a face the card cannot say is told by name, and so is a card over its budget:"
     )
     return ok()
 
+function reason<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
 ## Tests
 
-test "the floor is under the count the walk found on the day it landed"
-    # 38 on 2026-11-06: the canonical tree's four modules and 34 copies; a walk
-    # reaching the canonical tree alone finds 4.
-    assert LEAST <= 38
-    assert LEAST > 4
+test "the floors are under the counts the walk found on the day the source became the index's"
+    # 4 `.hero` files in core 0.1.0's `files/`, and 14 placed trees, on
+    # 2026-11-08; a walk reaching no source or no program finds 0.
+    assert LEAST <= 4
+    assert LEAST > 0
+    assert LEAST_PLACED <= 14
+    assert LEAST_PLACED > 0
 
 test "a label passes on nothing found, and fails once naming everything found"
     r: report.Report @= report.empty()
@@ -331,3 +615,15 @@ test "a label passes on nothing found, and fails once naming everything found"
     keep(@r, label: "packages/y", found: ["    a", "    b"], rule: "the rule:")
     assert r.failed == 1
     assert r.failures == ["FAIL packages/y\n  the rule:\n    a\n    b"]
+
+# Panel 235's R7: the case rule's walk leaves a placed tree out by its
+# folder's name, and keeps the package's source and the programs' own.
+test "the case rule asks every module of the project but those in a placed tree"
+    listed = [
+        "examples/index/core/0.1.0/files/strings.hero"
+        "examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero"
+        "examples/ini/heroes.packagesx/strings.hero"
+        "examples/ini/main.hero"
+        "examples/ini/notes.md"
+    ]
+    assert hero_paths(listed) == ["examples/index/core/0.1.0/files/strings.hero", "examples/ini/heroes.packagesx/strings.hero", "examples/ini/main.hero"]

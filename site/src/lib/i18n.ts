@@ -40,6 +40,10 @@ const PHRASES: Record<string, Phrase> = {
   // A header a gallery file binds is shown beside it, and it is not input: it
   // is the other half of the program.
   theCSide: { en: 'The C side', it: 'Il lato C' },
+  // A program's catalogue and the trees `heroes add` placed, shown apart from
+  // the program's own modules: the package's code, never the program's.
+  thePackages: { en: 'The packages it fetches', it: 'I pacchetti che scarica' },
+  fetches: { en: 'fetches', it: 'scarica' },
   exit: { en: 'exit', it: 'exit' },
   next: { en: 'Next', it: 'Successivo' },
   previous: { en: 'Previous', it: 'Precedente' },

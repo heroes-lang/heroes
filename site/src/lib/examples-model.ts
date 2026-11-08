@@ -6,8 +6,18 @@
  * and everything a page states about one is derived here and nowhere else.
  * `examples/README.md` states the rule the discovery follows in its own words:
  * a directory holding a `main.hero` IS a program, so a program joins by
- * existing and cannot be forgotten. `gallery/` is the one directory that is not
- * a program directory, because each of its twelve files is its own program.
+ * existing and cannot be forgotten. Two directories are not program
+ * directories: `gallery/`, because each of its files is its own program, and
+ * `index/`, the local static index the programs' catalogues read the core
+ * packages from (panel 235's R15), which is checked for its shape and shown on
+ * no page of its own.
+ *
+ * A program that uses a package carries two more kinds of file, and each is
+ * read as what it is: `heroes.toml`, its catalogue, a document shown beside the
+ * program; and the files under `heroes.packages/`, the trees `heroes add`
+ * placed, the package's and never the program's own, so they count in no
+ * module, line or badge of the program and are shown apart, each tree under
+ * the entry of the catalogue that names it.
  *
  * Three things are worth knowing before changing anything here.
  *
@@ -34,18 +44,26 @@ import { splitExpectation, outputLines, type Expectation } from './expectation.t
 const EXAMPLES = 'examples';
 const GALLERY = 'examples/gallery';
 
+/** The local static index of the core packages (panel 235's R15). */
+const INDEX = 'examples/index';
+
+/** A program's catalogue, beside its `main.hero` (spec § 1). */
+const CATALOGUE = 'heroes.toml';
+
+/** The folder a fetch places packages in, which no `use` can spell (panel 235's R7). */
+const PLACED = 'heroes.packages';
+
 /** Files that are the harness's inputs rather than the program's own data. */
 const HARNESS_FILES = new Set(['main.args', 'main.expected', 'main.stdin']);
 
 /**
  * A file a program's folder holds for its readers and never opens: the folder's
- * own `README.md`, and a package's card, `core/<path>.md` beside the face module
- * `core/<path>.hero` it is written from. Shown under no heading.
+ * own `README.md`. Shown under no heading. A package's card, which stood here
+ * while each program kept a copy under `core/`, is a file of the package's tree
+ * now, shown with it.
  */
 function isDocument(path: string, dir: string): boolean {
-  const name = path.slice(dir.length + 1);
-  if (name === 'README.md') return true;
-  return name.startsWith('core/') && name.endsWith('.md') && isFile(`${path.slice(0, -'.md'.length)}.hero`);
+  return path.slice(dir.length + 1) === 'README.md';
 }
 
 /** The floor the corpus suite carries, and for the same reason: a walk that finds fewer programs than last time is a broken walk, not a smaller corpus. */
@@ -62,6 +80,17 @@ export interface SourceFile {
   html: string;
 }
 
+/** One tree `heroes add` placed under a program's `heroes.packages/`. */
+export interface FetchedPackage {
+  /** The catalogue's entry that names it, `core`. */
+  name: string;
+  version: string;
+  /** The tree's folder, repository-relative. */
+  dir: string;
+  /** Every file of the tree, bytewise: `.hero` coloured, any other escaped. */
+  files: SourceFile[];
+}
+
 export interface Example {
   /** `json`, or `gallery/03-fallible`. The URL is `/examples/<slug>/`. */
   slug: string;
@@ -72,6 +101,10 @@ export interface Example {
   modules: SourceFile[];
   /** The data files the program reads, and `main.stdin` where there is one. */
   inputs: SourceFile[];
+  /** The program's catalogue, `heroes.toml`, where it uses a package. */
+  catalogue: SourceFile | null;
+  /** The packages it fetched, each the package's files and never its own. */
+  fetched: FetchedPackage[];
   args: string[];
   stdinPath: string | null;
   expectation: Expectation | null;
@@ -148,7 +181,111 @@ function externGroups(text: string): { header: string; link: string | null; pkg:
   return groups;
 }
 
-function buildExample(slug: string, kind: 'program' | 'gallery', dir: string, heroPaths: string[], otherPaths: string[]): Example {
+/**
+ * The entries a catalogue names, each with its version, read for the trees they
+ * name: `heroes add` writes a table `[dependencies.<name>]` and its `version`.
+ * The catalogue's whole shape is the net's to hold (the `packages` suite); a
+ * tree no entry names is what this reader exists to refuse.
+ */
+function catalogueEntries(text: string): { name: string; version: string }[] {
+  const entries: { name: string; version: string }[] = [];
+  for (const line of text.split('\n')) {
+    const table = /^\[dependencies\.([a-z][a-z0-9_]*)\]$/.exec(line);
+    if (table !== null) {
+      entries.push({ name: table[1], version: '' });
+      continue;
+    }
+    const version = /^version = "([^"]*)"$/.exec(line);
+    if (version !== null && entries.length > 0) entries[entries.length - 1].version = version[1];
+  }
+  return entries;
+}
+
+/**
+ * The trees under a program's `heroes.packages/`, each under the entry of its
+ * catalogue that names it. A tree is named `<name>@<version>-<16 hex>` by the
+ * compiler (`selfhost/module/placed.hero`), so a folder of another shape, a
+ * file standing in the folder itself, a tree no entry names, or trees with no
+ * catalogue at all are each a build error naming the file, never a skip.
+ */
+function fetchedOf(dir: string, paths: string[], catalogue: string | null): FetchedPackage[] {
+  if (paths.length === 0) return [];
+  const folder = `${dir}/${PLACED}`;
+  if (catalogue === null) {
+    throw new Error(
+      `${folder} holds packages and ${dir} has no ${CATALOGUE}.\n` +
+        `  a tree there is placed by \`heroes add\` for an entry of the catalogue,\n` +
+        `  so one with no catalogue is left behind: remove it, or add the package.`
+    );
+  }
+  const entries = catalogueEntries(catalogue);
+  const trees = new Map<string, string[]>();
+  for (const path of paths) {
+    const rest = path.slice(folder.length + 1);
+    const cut = rest.indexOf('/');
+    if (cut < 0) {
+      throw new Error(`${path} stands in ${folder} itself, where a fetch places a folder per package and nothing else.`);
+    }
+    const tree = rest.slice(0, cut);
+    trees.set(tree, [...(trees.get(tree) ?? []), path]);
+  }
+  const out: FetchedPackage[] = [];
+  for (const tree of [...trees.keys()].sort(byBytes)) {
+    const named = /^([a-z][a-z0-9_]*)@([0-9]+\.[0-9]+\.[0-9]+)-[0-9a-f]{16}$/.exec(tree);
+    if (named === null) {
+      throw new Error(`${folder}/${tree} is not a tree a fetch places, \`<name>@<version>-<16 hex>\`.`);
+    }
+    if (!entries.some((entry) => entry.name === named[1] && entry.version === named[2])) {
+      throw new Error(
+        `${folder}/${tree} is a tree no entry of ${dir}/${CATALOGUE} names.\n` +
+          `  \`heroes add\` places a tree for an entry of the catalogue, and no verb removes\n` +
+          `  one left behind, which compiles nothing: remove it, or add the package it holds.`
+      );
+    }
+    const files = (trees.get(tree) ?? []).sort(byBytes);
+    out.push({
+      name: named[1],
+      version: named[2],
+      dir: `${folder}/${tree}`,
+      files: files.map((path) => (path.endsWith('.hero') ? sourceFile(path, dir) : inputFile(path, dir))),
+    });
+  }
+  return out;
+}
+
+/**
+ * The local static index, read for its shape: `<name>/versions`,
+ * `<name>/<version>/list` and `<name>/<version>/files/<path>`, the layout the
+ * fetch verb reads (`selfhost/fetch/index_source.hero`). It is shown on no page,
+ * since every program shows the tree it placed from it, and a file of another
+ * kind in it is a build error, never a skip.
+ */
+function checkIndex(): void {
+  const version = '[0-9]+\\.[0-9]+\\.[0-9]+';
+  const shapes = [
+    new RegExp('^[a-z][a-z0-9_]*/versions$'),
+    new RegExp(`^[a-z][a-z0-9_]*/${version}/list$`),
+    new RegExp(`^[a-z][a-z0-9_]*/${version}/files/.+$`),
+  ];
+  for (const path of walk(INDEX)) {
+    const rest = path.slice(INDEX.length + 1);
+    if (shapes.some((shape) => shape.test(rest))) continue;
+    throw new Error(
+      `${path} is in ${INDEX}, the local static index, and is none of its files.\n` +
+        `  an index holds <name>/versions, <name>/<version>/list and\n` +
+        `  <name>/<version>/files/<path> (examples/README.md § index/).`
+    );
+  }
+}
+
+function buildExample(
+  slug: string,
+  kind: 'program' | 'gallery',
+  dir: string,
+  heroPaths: string[],
+  otherPaths: string[],
+  fetchedPaths: string[] = []
+): Example {
   const modules = heroPaths.map((path) => sourceFile(path, dir));
   const sources = heroPaths.map((path) => readText(path));
   const text = sources.join('\n');
@@ -205,9 +342,13 @@ function buildExample(slug: string, kind: 'program' | 'gallery', dir: string, he
   // this module knows is a build error, never a skip.
   const named = new Set(args);
   const headers = new Set(groups.map((group) => `${dir}/${group.header}`));
+  const cataloguePath = `${dir}/${CATALOGUE}`;
+  const catalogue = kind === 'program' && otherPaths.includes(cataloguePath) ? inputFile(cataloguePath, dir) : null;
+  const fetched = fetchedOf(dir, fetchedPaths, catalogue === null ? null : readText(cataloguePath));
   const inputs: SourceFile[] = [];
   for (const path of otherPaths) {
     if (HARNESS_FILES.has(basename(path))) continue;
+    if (path === cataloguePath && catalogue !== null) continue;
     if (named.has(path) || headers.has(path)) {
       inputs.push(inputFile(path, dir));
       continue;
@@ -216,14 +357,14 @@ function buildExample(slug: string, kind: 'program' | 'gallery', dir: string, he
     throw new Error(
       `${path} is in ${dir} and the program does not read it.\n` +
         `  no line of main.args names it, no extern group names it as a header, and it\n` +
-        `  is neither the folder's README.md nor a package's card. A page lists under\n` +
-        `  Input only what its program reads (defect 2332): name the file in main.args,\n` +
-        `  or teach this module what kind of file it is.`
+        `  is neither the folder's README.md, its catalogue nor a file of a package it\n` +
+        `  fetched. A page lists under Input only what its program reads (defect 2332):\n` +
+        `  name the file in main.args, or teach this module what kind of file it is.`
     );
   }
   if (stdinPath !== null) inputs.push(inputFile(stdinPath, dir));
 
-  const allPaths = [...heroPaths, ...otherPaths].sort(byBytes);
+  const allPaths = [...heroPaths, ...otherPaths, ...fetchedPaths].sort(byBytes);
 
   return {
     slug,
@@ -231,6 +372,8 @@ function buildExample(slug: string, kind: 'program' | 'gallery', dir: string, he
     dir,
     modules,
     inputs,
+    catalogue,
+    fetched,
     args,
     stdinPath,
     expectation,
@@ -261,6 +404,10 @@ export function examples(): Example[] {
   const programs: Example[] = [];
   for (const dir of directoriesIn(EXAMPLES)) {
     if (dir === GALLERY) continue;
+    if (dir === INDEX) {
+      checkIndex();
+      continue;
+    }
     if (!isFile(`${dir}/main.hero`)) {
       throw new Error(
         `${dir} is under examples/ and holds no main.hero.\n` +
@@ -269,12 +416,24 @@ export function examples(): Example[] {
           `  does not know how to show. Either way it is not silently skipped.`
       );
     }
+    // A placed tree is the package's, so its files are none of the program's
+    // own modules, inputs or documents (panel 235's R7).
+    const placed = `${dir}/${PLACED}/`;
     const all = walk(dir);
-    const hero = all.filter((path) => path.endsWith('.hero'));
+    const fetchedPaths = all.filter((path) => path.startsWith(placed));
+    const own = all.filter((path) => !path.startsWith(placed));
+    const hero = own.filter((path) => path.endsWith('.hero'));
     const entry = `${dir}/main.hero`;
     const ordered = [entry, ...hero.filter((path) => path !== entry)];
     programs.push(
-      buildExample(dir.slice(EXAMPLES.length + 1), 'program', dir, ordered, all.filter((path) => !path.endsWith('.hero')))
+      buildExample(
+        dir.slice(EXAMPLES.length + 1),
+        'program',
+        dir,
+        ordered,
+        own.filter((path) => !path.endsWith('.hero')),
+        fetchedPaths
+      )
     );
   }
 

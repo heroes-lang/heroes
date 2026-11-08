@@ -34,6 +34,7 @@ use cli/process
 use library_source
 use modules
 use not_text
+use module/packages
 use module/reading
 use mutate/ops
 use mutate/score
@@ -111,11 +112,11 @@ function corpus(dir: str) -> Corpus?
     # A program named in bytes that are not UTF-8 cannot be opened, so the
     # corpus cannot be read (defect 239); a file of another kind is not one.
     for path in walked.must().unnamed
-        if ends_hero(path)
+        if ends_hero(path) && !in_placed_tree(dir: dir, path: path)
             return fail(code: "no_corpus", msg: process.unnamed_said(path))
 
     for path in walked.must().files
-        if ends_hero(path)
+        if ends_hero(path) && !in_placed_tree(dir: dir, path: path)
             paths @ paths.push(path)
 
     out: [score.Program] @= []
@@ -183,6 +184,33 @@ function checked_name(dir: str, path: str) -> str
         at @ parent_of(at)
 
     return path
+
+# Whether `path`, a file the walk of the corpus `dir` found, stands in a tree
+# a fetch placed: below `dir`, under a folder named `heroes.packages`, the
+# folder no `use` can spell (panel 235's R7, ratified 2026-11-07). A placed
+# package is compiled from its own root through the program's catalogue, never
+# as a module of the program it stands in, so checked under the program's root
+# its own `use` lines are read from the wrong folder and the whole corpus is
+# refused (measured 2026-11-08, M-package-manager step 14a: a consumer of
+# `core` with its tree placed, exit 2). So the walk leaves the folder out by
+# its name, as the net's walks of the tree do; a package is mutated where its
+# source is written, never once per program that fetched it. Every part of the
+# path below `dir` but the file's own name is asked, so a folder whose name
+# only holds the word, `my.heroes.packages`, is the program's.
+function in_placed_tree(dir: str, path: str) -> bool
+    start = with_slash(dir).len()
+
+    if start > path.len()
+        return false
+    from: i64 @= start
+
+    for at in range(from: start, to: path.len())
+        if path[at] == '/'
+            if path.slice(from: from, to: at) == packages.PLACED
+                return true
+            from @ at + 1
+
+    return false
 
 # `dir` as a directory prefix: one trailing `/`, added if the caller did not.
 # The last BYTE is compared, so a name ending in a multibyte character is
@@ -299,6 +327,41 @@ test "a corpus file is a program by its last five bytes, whatever comes before t
     assert !ends_hero("😀")
     assert !ends_hero(".her")
     assert !ends_hero("")
+
+# M-package-manager step 14a, measured before it on a consumer of `core`: the
+# placed face's `use strings/internal/scan` starts at the package's own root
+# (R4), so checked from the program's root it was `unknown_module`, and the
+# corpus was refused at exit 2 with it.
+test "a tree a fetch placed is left out of the corpus by its folder's name, and a folder only holding the word is kept"
+    dir = "build/selftest-mutate-placed"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(path: dir)
+    tree = dir + "/heroes.packages/core@0.1.0-0123456789abcdef"
+    assert !process.mkdir_all(tree + "/strings/internal").is_err()
+    assert !process.mkdir_all(dir + "/my.heroes.packages").is_err()
+    assert !write_file(path: dir + "/main.hero", text: "function main()\n    print(1)\n").is_err()
+    assert !write_file(path: tree + "/strings.hero", text: "use strings/internal/scan\n\nfunction f() -> i64\n    return scan.g()\n").is_err()
+    assert !write_file(path: tree + "/strings/internal/scan.hero", text: "function g() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: dir + "/my.heroes.packages/kept.hero", text: "function main()\n    print(2)\n").is_err()
+    found = corpus(dir).must()
+    names: [str] @= []
+
+    for one in found.programs
+        names @ names.push(one.name)
+
+    assert names == [dir + "/main.hero", dir + "/my.heroes.packages/kept.hero"]
+    assert refuse_a_corpus_that_does_not_compile(
+        sources: found.programs,
+        unread: found.unread,
+        library: library_source.text()
+    ).is_err()
+
+    # The parts below the corpus are asked, the file's own name never.
+    assert in_placed_tree(dir: dir, path: tree + "/strings.hero")
+    assert in_placed_tree(dir: dir + "/", path: dir + "//heroes.packages/x/a.hero")
+    assert !in_placed_tree(dir: dir, path: dir + "/heroes.packagesx/a.hero")
+    assert !in_placed_tree(dir: dir, path: dir + "/heroes.packages.hero")
+    assert !in_placed_tree(dir: tree, path: tree + "/strings.hero")
+    assert !process.remove_tree(dir).is_err()
 
 # An invocation of `mutate` holding these flags, each with its value or none.
 function flagged(words: [str], values: [str]) -> argv.Invocation

@@ -5,8 +5,9 @@
 #     heroes run tests/harness/package_cards.hero -- check
 #
 # from the repository's root. `write` writes the card of every face module of
-# the canonical tree, `examples/packages/core/<path>.md` beside its
-# `<path>.hero`, and then judges the tree as written; `check` judges it as it
+# the package's source, the newest version folder of the index's `core`
+# (`package_rules.source_root`), `<path>.md` beside its `<path>.hero`, and
+# then judges the tree as written; `check` judges it as it
 # stands, naming each stored card that differs from what `write` would write,
 # each over its budget, each whose calls do not compile as written, and each
 # face the card's form cannot say (`package_judge.hero`). The `packages` suite's
@@ -45,10 +46,16 @@ function main()
     if shell.mkdir_all(scratch).is_err()
         print("package_cards: cannot make " + scratch)
         exit(code: 2)
+    asked_root = package_rules.source_root(scratch)
+
+    if asked_root.is_err()
+        print("package_cards: " + said(asked_root))
+        exit(code: 2)
+    root = asked_root.must()
     lines: [str] @= []
 
     if asked.must() == "write"
-        wrote = package_judge.written(scratch: scratch, compiler: found.must(), root: package_rules.CANONICAL)
+        wrote = package_judge.written(scratch: scratch, compiler: found.must(), root: root)
 
         if wrote.is_err()
             print("package_cards: the cards could not be written: " + said(wrote))
@@ -59,7 +66,7 @@ function main()
 
         lines @ wrote.must().found
     else
-        judged = package_judge.judged(scratch: scratch, compiler: found.must(), root: package_rules.CANONICAL)
+        judged = package_judge.judged(scratch: scratch, compiler: found.must(), root: root)
 
         if judged.is_err()
             print("package_cards: the cards could not be judged: " + said(judged))
@@ -68,10 +75,10 @@ function main()
 
     if lines.len() == 0
         _ = shell.remove_tree(scratch).is_err()
-        print("package_cards: every card of " + package_rules.CANONICAL + " holds")
+        print("package_cards: every card of " + root + " holds")
         return
 
-    print("package_cards: " + package_rules.CANONICAL + "'s cards do not hold:")
+    print("package_cards: " + root + "'s cards do not hold:")
 
     for line in lines
         print(line)

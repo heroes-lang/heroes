@@ -9,7 +9,7 @@
 # count is reported, so "skipped" is a number the reader sees rather than a
 # silence.
 
-use core/strings
+use <core>/strings
 
 ## Error codes
 #

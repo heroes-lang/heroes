@@ -21,8 +21,8 @@
 # A line is `[label:] [mnemonic [operand, operand]] [; comment]`, and any part
 # may be missing.
 
-use core/strconv
-use core/strings
+use <core>/strconv
+use <core>/strings
 
 ## Error codes
 #

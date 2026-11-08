@@ -1,18 +1,32 @@
-# The rules the `packages` suite holds every core tree to, each a function over
-# text so that a test can ask it of a literal: whose private modules a module
-# may name, how a path and a declared name are spelled, what a code looks like,
-# what a package may not do, what every function owes, whether a copy is the
-# canonical tree's, and what the driver reaches. `suite_packages.hero` walks the
-# trees and asks these; the rules themselves are `examples/packages/README.md`'s,
+# The rules the `packages` suite holds the core packages to, each a function over
+# text so that a test can ask it of a literal: how a path and a declared name are
+# spelled, what a code looks like, what a package may not do, what every function
+# owes, what the driver reaches, and how the local static index the programs'
+# catalogues read is written. `suite_packages.hero` walks the index and the
+# programs and asks these; the conventions are `examples/packages/README.md`'s,
 # each marked there "(the `packages` suite)".
+#
+# **The source is one tree since panel 235's R15** (ratified 2026-11-07,
+# M-package-manager step 14): the core packages are one catalogue entry, `core`,
+# published in the index at `INDEX`, `<index>/core/<version>/files/`, and each
+# program fetches its version under its own `heroes.packages/`. The conventions
+# are held over the newest version's files, the one a version in preparation is
+# written in; every published version is held to its listing and its sum.
 
 use module_docs
 use module_text
+use shell
 use strings
 
-# The canonical tree, whose files every copy repeats (`examples/packages/README.md` § 1.4).
-constant CANONICAL: str
-    "examples/packages/core"
+# The local static index every program's catalogue under `examples/` reads, over
+# `file://../index` (panel 235's R15 and R9's C4).
+constant INDEX: str
+    "examples/index"
+
+# The one package the conventions hold, the catalogue entry every program names
+# the core packages by: `use <core>/strings`.
+constant PACKAGE: str
+    "core"
 
 # The calls no package makes, but `log` and `os`, whose work they are (the
 # conventions' § 5.2). `args_checked` reads what `args` reads (spec § 11), so a
@@ -31,89 +45,279 @@ constant LOUD: [str]
         "os"
     ]
 
-# The core tree a path under `examples/` stands in, `examples/<program>/core`,
-# or none: a program's own modules, and a `core` deeper in a program, belong to
-# no tree.
-function tree_of(path: str) -> str?
-    parts = strings.split_on(text: path, byte: '/')
+## The index
 
-    if parts.len() < 4 || parts[0] != "examples" || parts[2] != "core"
-        return fail(code: "not_found", msg: "`" + path + "` is in no core tree")
-    return ok(parts.slice(from: 0, to: 3).join("/"))
+# The package's source: the `files/` of the newest version folder of `PACKAGE`
+# in the index, published or in preparation, which is where a change is
+# written and where `package_cards.hero -- write` writes its cards.
+function source_root(scratch: str) -> str?
+    package = INDEX + "/" + PACKAGE
 
-# A module's path under its tree's `core/`: `strings/internal/scan` for
-# `examples/ini/core/strings/internal/scan.hero`.
-function module_path(tree: str, path: str) -> str
-    return strings.without_suffix(text: strings.without_prefix(text: path, prefix: tree + "/"), suffix: ".hero")
+    if !shell.is_directory(package)
+        return fail(code: "absent", msg: package + " is not there, and the core packages' source is its newest version")
+    versions: [str] @= []
 
-# Where a copy's original stands: `examples/ini/core/strings.hero` is
-# `examples/packages/core/strings.hero`'s copy.
-function original_of(tree: str, path: str) -> str
-    return CANONICAL + "/" + strings.without_prefix(text: path, prefix: tree + "/")
+    for dir in shell.list_directories(scratch: scratch, dir: package)?
+        name = strings.base_name(path: dir)
 
-# What is wrong with a copy, or "" where it is its original's bytes: `original`
-# is the text read at `at`, the path `original_of` names.
-function copy_said(copy: str, original: str?, at: str) -> str
-    if original.is_err()
-        return "has no original: " + at + " is not there, and every copy repeats " + CANONICAL
+        if version_shape(name)
+            versions @ versions.push(name)
 
-    if original.must() != copy
-        return "differs from its original, " + at
-    return ""
+    last = newest(versions)
 
-# The `use` lines of a module that name a package's private module from outside
-# that package. `use core/<pkg>/internal/<rest>` stands only in the package's
-# face, `core/<pkg>.hero`, and in the modules under `core/<pkg>/`: Go's rule for
-# `internal`, `examples/packages/README.md` § 1.3. `importer` is the module's path under its
-# tree's `core/`, or "" for a module in no tree, a program's own, which may name
-# none.
-function misplaced_uses(importer: str, text: str) -> [str]
+    if last.len() == 0
+        return fail(
+            code: "absent",
+            msg: package + " holds no version folder, and the core packages' source is its newest"
+        )
+    return ok(package + "/" + last + "/files")
+
+# One version an index lists: its number and the sum of its listing.
+record Listed
+    version: str
+    sum: str
+
+# An exact version, three numbers with no leading zero, the compiler's
+# `sums.version_shape`: `0.1.0`, never `v0.1.0`, `0.1` or `01.0.0`.
+function version_shape(version: str) -> bool
+    parts = strings.split_on(text: version, byte: '.')
+
+    if parts.len() != 3
+        return false
+
+    for part in parts
+        if !number_shape(part)
+            return false
+
+    return true
+
+function number_shape(text: str) -> bool
+    if text.len() == 0 || text.len() > 1 && text[0] == '0'
+        return false
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < '0' || text[at] > '9'
+            return false
+
+    return true
+
+# Whether version `a` comes before `b`, number by number; both in
+# `version_shape`.
+function earlier(a: str, b: str) -> bool
+    left = strings.split_on(text: a, byte: '.')
+    right = strings.split_on(text: b, byte: '.')
+
+    for at in range(from: 0, to: 3)
+        x = strings.to_number(left[at]).default(0)
+        y = strings.to_number(right[at]).default(0)
+
+        if x != y
+            return x < y
+
+    return false
+
+# The newest of `versions`, each in `version_shape`, or "" for none.
+function newest(versions: [str]) -> str
+    best: str @= ""
+
+    for one in versions
+        if best.len() == 0 || earlier(a: best, b: one)
+            best @ one
+
+    return best
+
+# `sha256-` then 64 lowercase hexadecimal digits, the compiler's
+# `sums.sum_shape`.
+function sum_shape(sum: str) -> bool
+    if sum.len() != 71 || !strings.starts_with(text: sum, prefix: "sha256-")
+        return false
+
+    for at in range(from: 7, to: 71)
+        b = sum[at]
+
+        if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f')
+            return false
+
+    return true
+
+# A package's `versions` file as the fetch verb reads it: one `<version> <sum>`
+# a line, each line ended, no version twice; or what is wrong, by its line.
+function versions_read(text: str) -> [Listed]?
+    if text.len() == 0 || !strings.ends_with(text: text, suffix: "\n")
+        return fail(code: "malformed", msg: "is empty or its last line has no end")
+    out: [Listed] @= []
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+        halves = strings.split_on(text: line, byte: ' ')
+
+        if halves.len() != 2 || !version_shape(halves[0]) || !sum_shape(halves[1])
+            return fail(
+                code: "malformed",
+                msg: "line " + number.to_str() + " is not `<version> sha256-<64 hex>`: `" + line + "`"
+            )
+
+        for one in out
+            if one.version == halves[0]
+                return fail(code: "malformed", msg: "lists " + halves[0] + " twice")
+
+        out @ out.push(Listed(version: halves[0], sum: halves[1]))
+
+    return ok(out)
+
+# The canonical listing a package's sum is taken over (the compiler's
+# `fingerprint.listing`, Go's `h1` in hexadecimal): one line per file, its
+# SHA-256, two spaces, its path under the package's root, the lines sorted by
+# the paths' bytes. `files` holds each path and its digest, in any order.
+function listing_of(files: [[str]]) -> str
+    sums: {str: str} @= {}
+    names: [str] @= []
+
+    for one in files
+        sums[one[0]] @ one[1]
+        names @ names.push(one[0])
+
+    lines: [str] @= []
+
+    for name in names.sort()
+        lines @ lines.push(sums[name].default("") + "  " + name + "\n")
+
+    return lines.join("")
+
+# What differs between the listing a version holds and the one its files give,
+# each file named once: changed, added since, or taken out since. Empty where
+# the two are the same text.
+function moved(listed: str, files: str) -> [str]
+    held = listing_map(listed)
+    found = listing_map(files)
     out: [str] @= []
-    line: i64 @= 0
 
-    for row in strings.lines(text)
-        line @ line + 1
+    for name in keys(found).sort()
+        before = held[name]
 
-        if !strings.starts_with(text: row, prefix: "use core/")
-            continue
-        owner = internal_owner(strings.words(row)[1])
+        if before.is_err()
+            out @ out.push("`" + name + "` is not in the listing")
+        else if before.must() != found[name].default("")
+            out @ out.push("`" + name + "` is not the file its listing names")
 
-        if !owner.is_err() && !inside(importer: importer, owner: owner.must())
-            out @ out.push("line " + line.to_str() + ": `" + row + "`")
+    for name in keys(held).sort()
+        if found[name].is_err()
+            out @ out.push("`" + name + "` is in the listing and not among the files")
+
+    if out.len() == 0 && listed != files
+        out @ out.push(
+            "the listing names its files, and is not written as `shasum -a 256` writes them, sorted by their names' bytes"
+        )
+    return out
+
+# A listing's lines as name and digest; a line of another shape is kept under
+# its own text, so `moved` names it.
+function listing_map(text: str) -> {str: str}
+    out: {str: str} @= {}
+
+    for line in strings.lines(text)
+        if line.len() > 66 && line[64] == ' ' && line[65] == ' '
+            out[line.slice(from: 66, to: line.len())] @ line.slice(from: 0, to: 64)
+        else
+            out[line] @ ""
 
     return out
 
-# The package a private module belongs to: `core/strings/internal/scan` is
-# `strings`'s, the part between `core/` and the LAST `internal`, so a package
-# kept inside another's private tree keeps its own; "" is the whole of `core/`.
-# A path with no `internal` part is nobody's private module.
-function internal_owner(named: str) -> str?
-    parts = strings.split_on(text: named, byte: '/')
-    last: i64 @= 0
-    found: bool @= false
+## A program's catalogue
 
-    for at in range(from: 0, to: parts.len())
-        if parts[at] == "internal"
-            last @ at
-            found @ true
+# One entry of a catalogue written by `heroes add` from an index: its name,
+# version and sum.
+record Entry
+    name: str
+    version: str
+    sum: str
 
-    if !found || parts[0] != "core"
-        return fail(code: "not_found", msg: "`" + named + "` is no private module")
-    return ok(parts.slice(from: 1, to: last).join("/"))
+# A catalogue as `heroes add` writes it for a program whose packages come from
+# an index: the `index` line, then one `[dependencies.<name>]` table each with
+# its `version` and `sum`. Anything else is refused by its line: a `path`, a
+# `git` source, a comment, so a catalogue of `examples/` is the verb's and never
+# a hand's (panel 235's R15: never `path` entries).
+record Catalogue
+    index: str
+    entries: [Entry]
 
-function inside(importer: str, owner: str) -> bool
-    if importer.len() == 0
-        return false
+function catalogue_read(text: str) -> Catalogue?
+    index: str @= ""
+    entries: [Entry] @= []
+    number: i64 @= 0
 
-    if owner.len() == 0
-        return true
-    return importer == owner || strings.starts_with(text: importer, prefix: owner + "/")
+    for line in strings.lines(text)
+        number @ number + 1
 
-# The parts of a path under a `core/` that are not lower case: each directory
-# `[a-z][a-z0-9_]*`, and the file's name the same before its one extension,
-# `[a-z0-9]+` (`examples/packages/README.md` § 1.5). On a volume that folds case, two
-# spellings are one file, and a module named in a capital compiles there and
-# nowhere else.
+        if line.len() == 0
+            continue
+
+        if strings.starts_with(text: line, prefix: "[dependencies.") && strings.ends_with(text: line, suffix: "]")
+            entries @ entries.push(Entry(name: line.slice(from: 14, to: line.len() - 1), version: "", sum: ""))
+            continue
+        value = quoted_value(line)
+
+        if value.is_err()
+            return fail(
+                code: "malformed",
+                msg: "line " + number.to_str() + " is not a line `heroes add` writes: `" + line + "`"
+            )
+        key = line.slice(from: 0, to: strings.index_of(text: line, needle: " = ").default(0))
+
+        if key == "index" && entries.len() == 0 && index.len() == 0
+            index @ value.must()
+        else if key == "version" && entries.len() > 0 && entries[entries.len() - 1].version.len() == 0
+            entries[entries.len() - 1].version @ value.must()
+        else if key == "sum" && entries.len() > 0 && entries[entries.len() - 1].sum.len() == 0
+            entries[entries.len() - 1].sum @ value.must()
+        else
+            return fail(
+                code: "malformed",
+                msg: "line " + number.to_str() + ", `" + line + "`, is not where `heroes add` writes it for an entry of the index: an `index` line first, then each entry's `version` and `sum`"
+            )
+
+    for e in entries
+        if e.version.len() == 0 || e.sum.len() == 0
+            return fail(code: "malformed", msg: "the entry `" + e.name + "` lacks its `version` or its `sum`")
+
+    return ok(Catalogue(index: index, entries: entries))
+
+# The text between the quotes of `<key> = "<text>"`, or a failure.
+function quoted_value(line: str) -> str?
+    at = strings.index_of(text: line, needle: " = \"")
+
+    if at.is_err() || !strings.ends_with(text: line, suffix: "\"") || line.len() < at.must() + 5
+        return fail(code: "malformed", msg: line)
+    return ok(line.slice(from: at.must() + 4, to: line.len() - 1))
+
+# The entry's name and version a placed tree's folder writes, `core@0.1.0-<key>`,
+# or a failure for a folder of another shape: the compiler names a tree
+# `<name>@<version>-<16 hex>` (`selfhost/module/placed.hero`'s `key`).
+function placed_named(folder: str) -> Entry?
+    at = strings.index_of(text: folder, needle: "@")
+
+    if at.is_err()
+        return fail(code: "malformed", msg: folder)
+    rest = folder.slice(from: at.must() + 1, to: folder.len())
+    dash = strings.index_of(text: rest, needle: "-")
+
+    if dash.is_err() || rest.len() - dash.must() - 1 != 16
+        return fail(code: "malformed", msg: folder)
+    return ok(Entry(name: folder.slice(from: 0, to: at.must()), version: rest.slice(from: 0, to: dash.must()), sum: ""))
+
+## The conventions
+
+# A module's path under its package's root, without `.hero`:
+# `strings/internal/scan` for `<root>/strings/internal/scan.hero`.
+function module_path(root: str, path: str) -> str
+    return strings.without_suffix(text: strings.without_prefix(text: path, prefix: root + "/"), suffix: ".hero")
+
+# The parts of a path under a package's root that are not lower case: each
+# directory `[a-z][a-z0-9_]*`, and the file's name the same before its one
+# extension, `[a-z0-9]+` (`examples/packages/README.md` § 1.5). On a volume that
+# folds case, two spellings are one file, and a module named in a capital
+# compiles there and nowhere else.
 function crooked_parts(rel: str) -> [str]
     out: [str] @= []
     parts = strings.split_on(text: rel, byte: '/')
@@ -263,7 +467,7 @@ function crooked_codes(text: str) -> [str]
 
 # The calls of `QUIET` a module makes, in its code and its tests, never in a
 # comment or a literal; none for a module of `log` or `os`. `module` is its path
-# under its tree's `core/`.
+# under its package's root.
 function noisy(module: str, text: str) -> [str]
     out: [str] @= []
 
@@ -325,36 +529,95 @@ function line_paths(c: str) -> [str]
 
     return out
 
+# The titles of a module's `test` blocks, as `heroes test` prints them between
+# their quotes: each line opening `test "` at column 0, read to its last quote.
+function test_titles(text: str) -> [str]
+    out: [str] @= []
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "test \"") && strings.ends_with(text: row, suffix: "\"") && row.len() > 7
+            out @ out.push(row.slice(from: 6, to: row.len() - 1))
+
+    return out
+
+# The titles a `heroes test` run printed as passed: each line `ok   "<title>"`.
+function passed_titles(said: str) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for row in strings.lines(said)
+        if strings.starts_with(text: row, prefix: "ok   \"") && strings.ends_with(text: row, suffix: "\"") && row.len() > 7
+            out[row.slice(from: 6, to: row.len() - 1)] @ true
+
+    return out
+
 ## Tests
 
-test "a core tree is `examples/<program>/core`, and a module's path is read under it"
-    assert tree_of("examples/ini/core/strings.hero").must() == "examples/ini/core"
-    assert tree_of("examples/packages/core/strings/internal/scan.hero").must() == CANONICAL
-    assert tree_of("examples/ini/main.hero").is_err()
-    assert tree_of("examples/ini/lib/core/x.hero").is_err()
-    assert module_path(tree: "examples/ini/core", path: "examples/ini/core/strings/internal/scan.hero") == "strings/internal/scan"
-    assert original_of(tree: "examples/ini/core", path: "examples/ini/core/strings.hero") == "examples/packages/core/strings.hero"
+test "a version is three numbers with no leading zero, and the newest is read number by number"
+    assert version_shape("0.1.0")
+    assert version_shape("10.20.3")
+    assert !version_shape("v0.1.0")
+    assert !version_shape("0.1")
+    assert !version_shape("01.0.0")
+    assert !version_shape("0.1.0.0")
+    assert !version_shape("0.1.x")
+    assert earlier(a: "0.9.0", b: "0.10.0")
+    assert !earlier(a: "0.10.0", b: "0.9.0")
+    assert !earlier(a: "1.0.0", b: "1.0.0")
+    assert newest(["0.1.0", "0.10.0", "0.9.3"]) == "0.10.0"
+    nothing: [str] = []
+    assert newest(nothing) == ""
 
-test "a copy is its original's bytes, and one with no original is told so"
-    at = "examples/packages/core/strings.hero"
-    assert copy_said(copy: "a\n", original: ok("a\n"), at: at) == ""
-    assert copy_said(copy: "a\n", original: ok("a\n\n"), at: at) == "differs from its original, examples/packages/core/strings.hero"
-    missing: str? = fail(code: "file_not_found", msg: "gone")
-    assert copy_said(copy: "a\n", original: missing, at: at) == "has no original: examples/packages/core/strings.hero is not there, and every copy repeats examples/packages/core"
+test "a versions file is one `<version> <sum>` a line, each ended, no version twice"
+    sum = "sha256-" + "0123456789abcdef".repeat(4.to_u64().must())
+    got = versions_read("0.1.0 " + sum + "\n0.2.0 " + sum + "\n").must()
+    assert got.len() == 2 && got[1].version == "0.2.0" && got[1].sum == sum
+    assert versions_read("").is_err()
+    assert versions_read("0.1.0 " + sum).is_err()
+    assert versions_read("0.1.0 " + sum + "\n0.1.0 " + sum + "\n").is_err()
+    assert versions_read("v0.1.0 " + sum + "\n").is_err()
+    assert versions_read("0.1.0 sha256-ABC\n").is_err()
+    assert versions_read("0.1.0  " + sum + "\n").is_err()
+    assert !sum_shape("sha256-" + "0123456789ABCDEF".repeat(4.to_u64().must()))
 
-test "a private module is named from its own package alone"
-    face = "use core/strings/internal/scan\n"
-    assert misplaced_uses(importer: "strings", text: face).len() == 0
-    assert misplaced_uses(importer: "strings/internal/scan", text: face).len() == 0
-    assert misplaced_uses(importer: "stringsx", text: face) == ["line 1: `use core/strings/internal/scan`"]
-    assert misplaced_uses(importer: "", text: "use core/strings\n" + face) == ["line 2: `use core/strings/internal/scan`"]
-    assert misplaced_uses(importer: "net/http", text: "use core/net/internal/wire\n").len() == 0
-    assert misplaced_uses(importer: "a/internal/b", text: "use core/a/internal/b/internal/c\n").len() == 0
-    assert misplaced_uses(importer: "a", text: "use core/a/internal/b/internal/c\n").len() == 1
-    assert internal_owner("core/strings").is_err()
-    assert internal_owner("core/internal/x").must() == ""
+test "a listing is sorted by the paths' bytes, and what moved is named once each"
+    a = "a".repeat(64.to_u64().must())
+    b = "b".repeat(64.to_u64().must())
+    listed = listing_of([["strings.hero", a], ["strconv.hero", b], ["strings/internal/scan.hero", a]])
+    assert listed == b + "  strconv.hero\n" + a + "  strings.hero\n" + a + "  strings/internal/scan.hero\n"
+    assert moved(listed: listed, files: listed).len() == 0
+    changed = listing_of([["strings.hero", b], ["strconv.hero", b], ["strings/internal/scan.hero", a], ["new.md", a]])
+    assert moved(listed: listed, files: changed) == ["`new.md` is not in the listing", "`strings.hero` is not the file its listing names"]
+    gone = listing_of([["strings.hero", a], ["strconv.hero", b]])
+    assert moved(listed: listed, files: gone) == ["`strings/internal/scan.hero` is in the listing and not among the files"]
 
-test "every part of a path under `core/` is lower case"
+    # The same lines in another order are the same files, written wrong.
+    unsorted = a + "  strings.hero\n" + b + "  strconv.hero\n" + a + "  strings/internal/scan.hero\n"
+    assert moved(listed: unsorted, files: listed).len() == 1
+
+test "a catalogue of the examples is the verb's: an index line, then each entry's version and sum"
+    sum = "sha256-" + "0123456789abcdef".repeat(4.to_u64().must())
+    c = catalogue_read(
+        "index = \"file://../index\"\n\n[dependencies.core]\nversion = \"0.1.0\"\nsum = \"" + sum + "\"\n"
+    ).must()
+    assert c.index == "file://../index"
+    assert c.entries.len() == 1 && c.entries[0].name == "core" && c.entries[0].version == "0.1.0" && c.entries[0].sum == sum
+    assert catalogue_read("[dependencies.core]\npath = \"../packages\"\n").is_err()
+    assert catalogue_read("index = \"file://../index\"\n# a comment\n").is_err()
+    assert catalogue_read("[dependencies.core]\nversion = \"0.1.0\"\n").is_err()
+    assert catalogue_read(
+        "[dependencies.core]\nversion = \"0.1.0\"\nversion = \"0.2.0\"\nsum = \"" + sum + "\"\n"
+    ).is_err()
+    assert quoted_value("sum = \"x\"").must() == "x"
+    assert quoted_value("sum = x").is_err()
+
+test "a placed tree's folder writes its entry's name and version, then sixteen hexadecimal digits"
+    got = placed_named("core@0.1.0-0123456789abcdef").must()
+    assert got.name == "core" && got.version == "0.1.0"
+    assert placed_named("core@0.1.0").is_err()
+    assert placed_named("core-0.1.0-0123456789abcdef").is_err()
+    assert placed_named("core@0.1.0-0123").is_err()
+
+test "every part of a path under a package's root is lower case"
     assert crooked_parts("strings/internal/scan.hero").len() == 0
     assert crooked_parts("strings.md").len() == 0
     assert crooked_parts("Strings.hero") == ["Strings.hero"]
@@ -362,6 +625,7 @@ test "every part of a path under `core/` is lower case"
     assert crooked_parts("a.b.hero") == ["a.b.hero"]
     assert crooked_parts("x/1st.hero") == ["1st.hero"]
     assert crooked_parts("x/a.Hero") == ["a.Hero"]
+    assert module_path(root: "examples/index/core/0.1.0/files", path: "examples/index/core/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
 
 test "two paths that differ only in case are named together"
     assert case_twins(["a/Strings.hero", "a/strings.hero", "b/x.hero"]) == ["`a/Strings.hero` and `a/strings.hero`"]
@@ -399,5 +663,11 @@ test "every top-level function has a doc and a test of its own module that calls
     assert untested(text) == ["`g`", "`h`"]
 
 test "the `#line` paths of an emission are read once each, in order"
-    c = "#line 65 \"main.c\"\n#line 9 \"examples/packages/main.hero\"\n#line 13\n#line 17 \"examples/packages/core/strings.hero\"\n#line 20 \"examples/packages/core/strings.hero\"\n"
-    assert line_paths(c) == ["main.c", "examples/packages/main.hero", "examples/packages/core/strings.hero"]
+    c = "#line 65 \"main.c\"\n#line 9 \"examples/packages/main.hero\"\n#line 13\n#line 17 \"examples/packages/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero\"\n#line 20 \"examples/packages/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero\"\n"
+    assert line_paths(c) == ["main.c", "examples/packages/main.hero", "examples/packages/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero"]
+
+test "a test's title is read as `heroes test` prints it, and only a passed one is passed"
+    assert test_titles("test \"a b\"\n    assert true\n\n# test \"not one\"\n    test \"nor this\"\n") == ["a b"]
+    passed = passed_titles("ok   \"a b\"\nFAIL \"c\"\n2 tests, 1 failed\n")
+    assert !passed["a b"].is_err()
+    assert passed["c"].is_err()

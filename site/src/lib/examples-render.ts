@@ -78,6 +78,10 @@ function badges(example: Example, lang: Lang): string {
     if (headers.length > 0) items.push(`${t('bindsC', lang)}: <code>${escape(headers.join(' '))}</code>`);
   }
   if (example.threads) items.push(t('threads', lang));
+  if (example.fetched.length > 0) {
+    const named = example.fetched.map((one) => `${one.name} ${one.version}`).join(' ');
+    items.push(`${t('fetches', lang)}: <code>${escape(named)}</code>`);
+  }
   if (example.usesArgs) items.push(t('commandLine', lang));
   if (example.readsFile) items.push(t('readsFile', lang));
   if (example.writesFile) items.push(t('writesFile', lang));
@@ -218,6 +222,26 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
         figure(module, lang) +
         `\n  </details>`
     );
+  }
+
+  // What the program fetched is shown apart from what it is: its catalogue,
+  // then each file of each tree `heroes add` placed, the package's and never
+  // the program's own (panel 235's R7), closed like a module.
+  if (example.catalogue !== null) {
+    parts.push(`  <h2>${t('thePackages', lang)}</h2>`);
+    parts.push(`  ${shared('fetched', lang)}`);
+    parts.push(inputFigure(example.catalogue, lang));
+    for (const one of example.fetched) {
+      for (const file of one.files) {
+        const unit = file.lines === 1 ? t('line', lang) : t('lines', lang);
+        parts.push(
+          `  <details class="module">\n` +
+            `    <summary><code>${escape(file.name)}</code> &middot; ${number(file.lines, lang)} ${unit}</summary>\n` +
+            (file.path.endsWith('.hero') ? figure(file, lang) : inputFigure(file, lang)) +
+            `\n  </details>`
+        );
+      }
+    }
   }
 
   // A C header the program names and that lives beside it is shown under its

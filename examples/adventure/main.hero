@@ -19,7 +19,7 @@
 # a game a corpus program at all. `game.play_all` is the same call the tests
 # make, so what is tested is what runs.
 
-use core/strings
+use <core>/strings
 use game
 use world
 

@@ -16,8 +16,8 @@
 # and every one of them is propagated with `?` (spec § Failure), so the
 # first bad byte in a five-thousand-line file stops the read and says where.
 
-use core/strconv
-use core/strings
+use <core>/strconv
+use <core>/strings
 use data/row
 
 constant ERR_HEADER: str
