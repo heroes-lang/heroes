@@ -1,0 +1,71 @@
+# A record's or a case's fields by name, made once and asked in constant
+# time (design.md §4.2, §4.9; defect 2336). The checker found a field by
+# walking its record's fields at every read (`check/access.hero`), and the
+# lowering named every field at every read (`ir/layout.hero`), so a record
+# of N fields, each read once, cost the square of N: `heroes check` read
+# 1.40, 4.02 and 13.22 billion instructions at 1,024, 2,048 and 4,096
+# fields. A holder's names are read into a table the first time one of its
+# fields is asked for, and every later read asks the table, as a variant's
+# cases are (`check/reach.hero`'s `case_named`, defects 512 and 513).
+#
+# **The tables share one map with the cases'**, keyed so no two meet: a
+# variant's cases and a record's fields under the declaration's index, a
+# declaration being one or the other, and a case's fields under `case_key`,
+# below zero, where no index is. The first field of a name wins, as a read
+# reached it and as the refusal of a second leaves it
+# (`check/declared_once.hero`, defects 2317 and 2321).
+
+use ast
+use source
+use token
+
+# The key a case's fields stand under: one less than minus where the case
+# is named, a place no other case is named at and below every index.
+function case_key(one_case: ast.Case) -> i64
+    return -1 - one_case.name.start
+
+# The index in `fields` of the field called `name`, or -1 where none is;
+# the holder's table read from `names` under `key`, or made there first.
+function index_of(@names: {i64: {str: i64}}, s: source.Source, key: i64, fields: [ast.Field], name: str) -> i64
+    found = names[key]
+    by_name: {str: i64} @= {}
+
+    if !found.is_err()
+        by_name @ found.must()
+    else
+        at: i64 @= 0
+
+        for one in fields
+            spelled = source.span_text(s, one.name)
+
+            if by_name[spelled].is_err()
+                by_name[spelled] @ at
+            at @ at + 1
+
+        names[key] @ by_name
+
+    return by_name[name].default(-1)
+
+## Tests
+
+test "a field is found in its holder's table, made at the first read, the first of a name winning"
+    s = source.new_source(name: "t.hero", text: "a b a c\n")
+    none: [token.Span] = []
+    fields = [
+        ast.Field(name: token.Span(start: 0, end: 1), ty: 0, doc: none)
+        ast.Field(name: token.Span(start: 2, end: 3), ty: 0, doc: none)
+        ast.Field(name: token.Span(start: 4, end: 5), ty: 0, doc: none)
+    ]
+    names: {i64: {str: i64}} @= {}
+    assert index_of(@names, s, key: 3, fields: fields, name: "b") == 1
+    assert index_of(@names, s, key: 3, fields: fields, name: "a") == 0
+    assert index_of(@names, s, key: 3, fields: fields, name: "c") == -1
+    assert names.len() == 1
+
+    # A case's key stands below every index, apart from any other case's.
+    one = ast.Case(name: token.Span(start: 6, end: 7), fields: fields, doc: none)
+    other = ast.Case(name: token.Span(start: 2, end: 3), fields: fields, doc: none)
+    assert case_key(one) == -7
+    assert case_key(one) != case_key(other)
+    assert index_of(@names, s, key: case_key(one), fields: [fields[2]], name: "a") == 0
+    assert names.len() == 2

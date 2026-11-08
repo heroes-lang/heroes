@@ -48,13 +48,14 @@ function copies(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
     based = bases(a)
     starts = initialisers(r)
     held_by_value = elements(a, r, s)
+    tables: {i64: {str: i64}} @= {}
     at: i64 @= 0
 
     while at < a.exprs.len() && at < c.expr_types.len()
         held = locked(s, decls, c, found: found, ty: c.expr_types[at], @why, depth: 0)
 
         if held.len() > 0 && written[at].is_err() && based[at].is_err()
-            lent = !into[at].is_err() && (leasing.marked_in(a, call: into[at].must(), value: at) || read_in_place(a, r, s, decls, c, call: into[at].must(), value: at))
+            lent = !into[at].is_err() && (leasing.marked_in(a, call: into[at].must(), value: at) || read_in_place(@tables, a, r, s, decls, c, call: into[at].must(), value: at))
             made = fresh(a, r, at: at) && (!starts[at].is_err() || constructs(a, r, decls, into: into, at: at))
 
             if !lent && !made
@@ -286,14 +287,15 @@ function initialisers(r: resolved.Resolved) -> {i64: bool}
 # An argument lent read-only in place (panel 217's R1 and R2, `read_lend.hero`): the
 # lowering hands its place, so nothing is copied. A dotted call whose
 # receiver holds a function in a field of that name calls the field, as the
-# lowering does (panel 079), and lends nothing.
-function read_in_place(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], c: state.Checked, call: i64, value: i64) -> bool
+# lowering does (panel 079), and lends nothing; `tables` holds the fields'
+# names, made once a pass (`named_fields.hero`, defect 2336).
+function read_in_place(@tables: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], c: state.Checked, call: i64, value: i64) -> bool
     if !read_lend.handed_in_place(a, r, s, decls, call: call, value: value) || to_a_letter(a, r, decls, c, call: call, value: value)
         return false
 
     match a.exprs[call].kind
         .method m =>
-            field = layout.field_type(decls, c, s, owner: c.expr_types[m.receiver], name: m.name)
+            field = layout.field_type(@tables, decls, c, s, owner: c.expr_types[m.receiver], name: m.name)
             return field.is_err() || !table.is_function_ty(c.types, field.must())
         .call | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return true
         .field_name | .null_ptr | .hole | .unary | .binary | .field | .index               => return true

@@ -24,6 +24,7 @@ use check/state
 use check/lower
 use check/contextual
 use value_errors
+use named_fields
 use data_errors
 use flow_errors
 use ffi_errors
@@ -40,10 +41,12 @@ function field_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved
         .named n =>
             match decls[n.decl].kind
                 .record_decl rec =>
-                    for candidate in rec.fields
-                        if source.span_text(s, candidate.name) == name
-                            return lower.lower_ty(@c, a, r, candidate.ty)
+                    # Asked of the record's table, made at its first read
+                    # (`named_fields.hero`, defect 2336).
+                    found = named_fields.index_of(@c.names, s, key: n.decl, fields: rec.fields, name: name)
 
+                    if found >= 0
+                        return lower.lower_ty(@c, a, r, rec.fields[found].ty)
                     known: [str] @= []
 
                     for f in rec.fields
@@ -69,11 +72,16 @@ function field_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved
             match decls[vc.decl].kind
                 .variant_decl v =>
                     one_case = v.cases[vc.at]
+                    found = named_fields.index_of(
+                        @c.names,
+                        s,
+                        key: named_fields.case_key(one_case),
+                        fields: one_case.fields,
+                        name: name
+                    )
 
-                    for candidate in one_case.fields
-                        if source.span_text(s, candidate.name) == name
-                            return lower.lower_ty(@c, a, r, candidate.ty)
-
+                    if found >= 0
+                        return lower.lower_ty(@c, a, r, one_case.fields[found].ty)
                     known: [str] @= []
 
                     for f in one_case.fields

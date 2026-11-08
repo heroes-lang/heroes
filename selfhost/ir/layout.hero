@@ -23,6 +23,7 @@
 use token
 use ast
 use source
+use named_fields
 use check/table
 use check/state
 use parse
@@ -39,19 +40,20 @@ constant FAILURE_FIELDS: [str]
 # `h.f(n)` where f holds a function value has NO expression node for the
 # field read — the parser saw a method call, and the field is
 # synthesised during lowering. The type is written in the record's own
-# declaration, and written_type has it (panel 068 F8).
-function field_type(decls: [ast.Decl], c: state.Checked, s: source.Source, owner: i64, name: token.Span) -> i64?
+# declaration, and written_type has it (panel 068 F8). The field is found
+# in its holder's table in `names` (`named_fields.hero`, defect 2336).
+function field_type(@names: {i64: {str: i64}}, decls: [ast.Decl], c: state.Checked, s: source.Source, owner: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
 
     match table.get(c.types, owner)
         .named n =>
             match decls[n.decl].kind
                 .record_decl rec =>
-                    for field in rec.fields
-                        if source.span_text(s, field.name) == wanted
-                            return state.written_type(c, field.ty)
+                    at = named_fields.index_of(@names, s, key: n.decl, fields: rec.fields, name: wanted)
 
-                    return fail(code: "absent", msg: "no such field")
+                    if at < 0
+                        return fail(code: "absent", msg: "no such field")
+                    return state.written_type(c, rec.fields[at].ty)
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(
                     code: "absent",
                     msg: "not a record"
@@ -59,11 +61,18 @@ function field_type(decls: [ast.Decl], c: state.Checked, s: source.Source, owner
         .case_ty vc =>
             match decls[vc.decl].kind
                 .variant_decl v =>
-                    for field in v.cases[vc.at].fields
-                        if source.span_text(s, field.name) == wanted
-                            return state.written_type(c, field.ty)
+                    one_case = v.cases[vc.at]
+                    at = named_fields.index_of(
+                        @names,
+                        s,
+                        key: named_fields.case_key(one_case),
+                        fields: one_case.fields,
+                        name: wanted
+                    )
 
-                    return fail(code: "absent", msg: "no such payload field")
+                    if at < 0
+                        return fail(code: "absent", msg: "no such payload field")
+                    return state.written_type(c, one_case.fields[at].ty)
                 .constant_decl | .function_decl | .record_decl | .test_decl => return fail(
                     code: "absent",
                     msg: "not a variant"
@@ -77,19 +86,14 @@ function field_type(decls: [ast.Decl], c: state.Checked, s: source.Source, owner
 # The index of a field within the type that holds it, or absent if that
 # type holds no such field — which by here means the checker reported
 # something and lowering should stay quiet.
-function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owner: i64, name: token.Span) -> i64?
+function field_index(@names: {i64: {str: i64}}, decls: [ast.Decl], c: state.Checked, s: source.Source, owner: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
 
     match table.get(c.types, owner)
         .named n =>
             match decls[n.decl].kind
                 .record_decl rec =>
-                    names: [str] @= []
-
-                    for field in rec.fields
-                        names @ names.push(source.span_text(s, field.name))
-
-                    return position(names, wanted)
+                    return found(named_fields.index_of(@names, s, key: n.decl, fields: rec.fields, name: wanted))
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(
                     code: "absent",
                     msg: "not a record"
@@ -97,12 +101,10 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
         .case_ty vc =>
             match decls[vc.decl].kind
                 .variant_decl v =>
-                    names: [str] @= []
-
-                    for field in v.cases[vc.at].fields
-                        names @ names.push(source.span_text(s, field.name))
-
-                    return position(names, wanted)
+                    one_case = v.cases[vc.at]
+                    return found(
+                        named_fields.index_of(@names, s, key: named_fields.case_key(one_case), fields: one_case.fields, name: wanted)
+                    )
                 .constant_decl | .function_decl | .record_decl | .test_decl => return fail(
                     code: "absent",
                     msg: "not a variant"
@@ -115,33 +117,39 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
     return fail(code: "absent", msg: "unreached")
 
 # The index of a variant's case by name: what a `.case` construction needs.
-# The variant's names are read into `cases` the first time one of its cases
+# The variant's names are read into `names` the first time one of its cases
 # is asked for, the first case of a name winning as the walk over them did,
 # and every later construction asks that table (defect 513).
-function case_index(@cases: {i64: {str: i64}}, decls: [ast.Decl], s: source.Source, decl: i64, name: token.Span) -> i64?
+function case_index(@names: {i64: {str: i64}}, decls: [ast.Decl], s: source.Source, decl: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
-    found = cases[decl]
+    held = names[decl]
 
-    if !found.is_err()
-        return found.must()[wanted]
+    if !held.is_err()
+        return held.must()[wanted]
 
     match decls[decl].kind
         .variant_decl v =>
-            names: {str: i64} @= {}
+            by_name: {str: i64} @= {}
             at: i64 @= 0
 
             for one_case in v.cases
                 text = source.span_text(s, one_case.name)
 
-                if names[text].is_err()
-                    names[text] @ at
+                if by_name[text].is_err()
+                    by_name[text] @ at
                 at @ at + 1
 
-            cases[decl] @ names
-            return names[wanted]
+            names[decl] @ by_name
+            return by_name[wanted]
         .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "absent", msg: "not a variant")
 
     return fail(code: "absent", msg: "unreached")
+
+# A table's answer as `position` gives one: the index, or absent.
+function found(at: i64) -> i64?
+    if at < 0
+        return fail(code: "absent", msg: "no such name")
+    return ok(at)
 
 function position(names: [str], wanted: str) -> i64?
     at: i64 @= 0
@@ -193,21 +201,22 @@ test "a field, a payload field and a failure field all become indices"
     # says what it thinks it says.
     y_span = token.Span(start: 28, end: 29)
     assert source.span_text(s, y_span) == "y"
-    assert field_index(p.decls, widened, s, owner: point, name: y_span).must() == 1
-    ty_of_y = field_type(p.decls, widened, s, owner: point, name: y_span).must()
+    names: {i64: {str: i64}} @= {}
+    assert field_index(@names, p.decls, widened, s, owner: point, name: y_span).must() == 1
+    ty_of_y = field_type(@names, p.decls, widened, s, owner: point, name: y_span).must()
     assert ty_of_y == table.str_ty(c.types)
 
     # The variant case: text's payload inside word.
     text_span = token.Span(start: 65, end: 69)
     assert source.span_text(s, text_span) == "text"
-    assert field_index(p.decls, widened, s, owner: word_case, name: text_span).must() == 0
+    assert field_index(@names, p.decls, widened, s, owner: word_case, name: text_span).must() == 0
 
     # The built-in failure record: msg is field 1, with no declaration
     # anywhere.
     msg_span = token.Span(start: 109, end: 112)
     assert source.span_text(s, msg_span) == "msg"
-    assert field_index(p.decls, widened, s, owner: failure, name: msg_span).must() == 1
-    assert field_index(p.decls, widened, s, owner: point, name: msg_span).is_err()
+    assert field_index(@names, p.decls, widened, s, owner: failure, name: msg_span).must() == 1
+    assert field_index(@names, p.decls, widened, s, owner: point, name: msg_span).is_err()
 
 test "a case name becomes its index, and counted is a lookup"
     text = checked_text()

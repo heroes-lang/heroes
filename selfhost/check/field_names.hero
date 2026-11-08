@@ -32,6 +32,7 @@ use resolved
 use check/table
 use check/state
 use data_errors
+use named_fields
 use resolve/near_names
 
 function names_a_record(r: resolved.Resolved, decls: [ast.Decl], base: i64) -> bool
@@ -60,14 +61,15 @@ function field_name_type(@c: state.Checker, s: source.Source, r: resolved.Resolv
 
     match decls[at].kind
         .record_decl rec =>
+            # Asked of the record's table, made at its first read
+            # (`named_fields.hero`, defect 2336); the names are listed only
+            # for the message.
+            if named_fields.index_of(@c.names, s, key: at, fields: rec.fields, name: name) >= 0
+                return table.str_ty(c.out.types)
             known: [str] @= []
 
             for candidate in rec.fields
                 known @ known.push(source.span_text(s, candidate.name))
-
-            for candidate in known
-                if candidate == name
-                    return table.str_ty(c.out.types)
 
             state.push_diagnostic(
                 @c,
