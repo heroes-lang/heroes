@@ -210,7 +210,19 @@ constant AHEAD_SYSTEM: str
 constant AHEAD_CONF: str
     "extern \"conf.h\"\n    constant CONF_LIMIT: i64\n\nfunction main()\n    print(CONF_LIMIT)\n"
 
+# The program's own `conf.h` asks for its own sibling in quotes and includes
+# it where it is found, so the file a later build finds is one the build
+# reads, the program's beside its includer, which panel 237's refusal leaves
+# alone (defect 2343's tree route); `AHEAD_ASKED` below asks by angle alone.
 constant AHEAD_PROBED: str
+    "#if __has_include(\"hero-probe-2289.h\")\n#include \"hero-probe-2289.h\"\n#endif\n#ifdef HERO_PROBE_2289\n#define CONF_LIMIT 2\n#else\n#define CONF_LIMIT 1\n#endif\n"
+
+# The shape defect 2289 was found with: a `__has_include` by angle that a file
+# the program writes beside it afterwards answers, read by no `#include`.
+# Since panel 237's R2 such a file of a folder the build names is refused
+# wherever clang lists it and enters it nowhere (its words are defect 2356's
+# question), so a later build is refused, warm as cold.
+constant AHEAD_ASKED: str
     "#if __has_include(<hero-probe-2289.h>)\n#define CONF_LIMIT 2\n#else\n#define CONF_LIMIT 1\n#endif\n"
 
 # What the decoy says, which clang's refusal of it quotes.
@@ -243,17 +255,20 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # `__has_include` that found nothing now finds. Each build after the file is
 # written must say what a cold build of the same files says, and none did
 # (measured 2026-11-07: `3` at exit 0 where a cold build refuses the decoy,
-# and `1` where it prints `2`, twice).
+# and `1` where it prints `2`, twice). **The `__has_include` is asked in
+# quotes and its file included since panel 237** (batch 25's gate B): asked
+# by angle and read by nothing, the program's file is refused
+# `shadowed_header`, warm as cold, which the last two steps hold.
 function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler: str)
     label = "cache/a header found ahead of the one a build read is seen"
     home = scratch + "/" + AHEAD_HOME
     laid: ()? @= shell.remove_tree(home)
 
-    for dir in ["/system", "/include/inc", "/probe"]
+    for dir in ["/system", "/include/inc", "/probe", "/asked"]
         if !laid.is_err()
             laid @ shell.mkdir_all(home + dir)
 
-    for pair in [["/system/prog.hero", AHEAD_SYSTEM], ["/include/prog.hero", AHEAD_CONF], ["/include/conf.h", "#define CONF_LIMIT 1\n"], ["/probe/prog.hero", AHEAD_CONF], ["/probe/conf.h", AHEAD_PROBED]]
+    for pair in [["/system/prog.hero", AHEAD_SYSTEM], ["/include/prog.hero", AHEAD_CONF], ["/include/conf.h", "#define CONF_LIMIT 1\n"], ["/probe/prog.hero", AHEAD_CONF], ["/probe/conf.h", AHEAD_PROBED], ["/asked/prog.hero", AHEAD_CONF], ["/asked/conf.h", AHEAD_ASKED]]
         if !laid.is_err()
             laid @ write_file(path: home + pair[0], text: pair[1])
 
@@ -273,9 +288,12 @@ function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler:
         ["", "", "1"]
         ["/include/inc/conf.h", "#define CONF_LIMIT 2\n", "2"]
         ["", "", "1"]
-        ["/probe/hero-probe-2289.h", "\n", "2"]
+        ["/probe/hero-probe-2289.h", "#define HERO_PROBE_2289 1\n", "2"]
+        ["", "", "1"]
+        ["/asked/hero-probe-2289.h", "\n", ""]
     ]
-    runs = [system, system, searched, searched, probe, probe]
+    asked = [compiler, "run", home + "/asked/prog.hero"]
+    runs = [system, system, searched, searched, probe, probe, asked, asked]
     at: i64 @= 0
 
     while at < steps.len()
@@ -289,11 +307,16 @@ function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler:
 
         if step[2] == ""
             refused = !said.is_err() && said.must().code == 1
-            told = refused && strings.contains(text: said.must().err, needle: "ffi_header_refused") && strings.contains(text: said.must().err, needle: AHEAD_DECOY)
+            needle: str @= "ffi_header_refused"
+
+            # The angled probe's file is the refusal's, not the decoy's.
+            if runs[at] == asked
+                needle @ "error[shadowed_header]"
+            told = refused && strings.contains(text: said.must().err, needle: needle) && (runs[at] == asked || strings.contains(text: said.must().err, needle: AHEAD_DECOY))
 
             if !told
                 wrong @ wrong.push(
-                    "    with " + step[0] + " written, `run " + named + "`: " + shell.ending(said) + ", where a cold build refuses the decoy"
+                    "    with " + step[0] + " written, `run " + named + "`: " + shell.ending(said) + ", where a cold build refuses it, `" + needle + "`"
                 )
         else if said.is_err() || said.must().code != 0 || said.must().out != step[2] + "\n"
             wrong @ wrong.push(
