@@ -2452,6 +2452,16 @@ since `heroes check` runs a stage only when the one before said nothing. Part 11
 counts the exchanges themselves once it runs; where it measures a hidden mistake of the parse
 stage costing one, telling that mistake in the same run joins the promise.
 
+**`check` judges the program's text, and the verbs that compile its C judge the C boundary**
+(panel 237's R4, ratified 2026-11-08). `check` starts no clang, so a refusal clang alone can
+give, a binding's `ffi_*` and `shadowed_header` and `shadowed_macro` among them, is told by the
+four verbs that compile the program's C, `build`, `run`, `test` and `--emit-c`, and `check`
+exits 0 on a program they refuse at exit 1. Asking those refusals inside `check` would make a
+two-line program's `check` about 4.2 times its cost (the sitting's compiler-engineer: 76.3
+million instructions for `check`, about 244 million for the refusal's listing), the trade panel
+082's R2 refused once on cost, *1.3–2.2× on every keystroke* (panel 237's R4 cites it as its
+R3); the line is the C boundary, and feature 974 keeps its own question of a bindings module.
+
 **Specific errors to include:**
 
 - Reserved-word errors that dictate the fix. The likeliest mistake from a model writing on autopilot
@@ -3010,6 +3020,52 @@ the first is the one that proves the project's premise:
    (`selfhost/cli/package_words.hero`, `is_value`), and an `@` inside a path stays a
    letter of it. So the parenthesis holds again: on this Mac each of those doors, and
    `-isystem @<file>` and `-I@<file>`, is `ffi_package` at exit 1 and leaves no file.
+
+   **A header the compiler's own C reads is the library's or the runtime's, never a file of a
+   folder the build names** (panel 237, ratified 2026-11-08; defect 2333). The folders a build
+   names, the program's own, each `--include` and each a package's `pkg-config` answers, are
+   searched before the system's, so a `stdint.h` beside `main.hero` that read the real one with
+   `#include_next` and redefined `__builtin_add_overflow` made an `i64` sum past the top print
+   `-9223372036854775808` at exit 0, where §1.12 promises an abort. Before any probe compiles,
+   one `clang -v -M` lists what the runtime's opening reads, and one file of the library's lying
+   in a named folder refuses the build, `shadowed_header`, exit 1, at the program's first byte,
+   the message naming the file and the header it stands in for, the note the folder, **who named
+   it** (the program's own folder, `--include`, the package by its name, the variable by its
+   name) and the two repairs, rename it or move it (panel 237's R3). It carries no `Fix`: the
+   repair is a file renamed or moved, which no edit of a `.hero` file writes. A file standing in
+   for C itself is undefined behaviour (ISO C, N1570 §7.1.2p3, and CERT C's PRE04-C), so the
+   refusal rests on C and not on a list of names; no reorder of the search replaces it, each
+   reorder measured refusing a correct program or reading the wrong ABI (panel 237's R1).
+
+   **Its reach is every folder a build reads a library header from** (panel 237's R2). The
+   same run lists the program's groups after the opening, with who included each file (`-H`),
+   so a library header only a group's header reaches is judged too (defect 2343): a named
+   folder's file is refused where a platform or runtime header includes it, or where a platform
+   folder holds a file of its name; the header a group names is the program's own, read from
+   where the program put it, even one named like the library's; and a header's own sibling
+   included in quotes is its own, where `#include <util.h>` meaning the program's `util.h` is
+   refused, its note naming the quoted form, the angle form asking the system's places for a
+   name the platform holds. **The environment is a named folder** (defect 2344): panel 055 made
+   `CPATH` the machine's own way to name a header folder, so the folders and words the
+   environment hands clang are read from clang's own answer, the `-cc1` job of the `-###` the
+   build already asks and of the listing's `-v`, with clang's reading of empty elements and
+   separators; a folder `CPATH`, `C_INCLUDE_PATH` or `CCC_OVERRIDE_OPTIONS` adds, `.` from an
+   empty element included, counts as named, its note naming the variable; a file it has every
+   clang read first (`-include`, `-imacros`) is refused, and a `-D` or `-U` of a name the guard
+   keeps is refused under `shadowed_macro`, both before the runtime compiles; every other edit,
+   a linker's or a warning's, goes through. Clearing `CPATH` for clang is refused (the
+   ffi-pragmatist's veto): the compiler's own `machine_locked_path` note sends a GNU readline
+   binding there, and with the variable cleared it read libedit's header at exit 0.
+
+   **A package's `-D` or `-U` of a name the guard keeps is `ffi_package`, exit 1** (the same
+   sitting's item 2). A group's header is read between `heroes_guard_open.h` and
+   `heroes_guard_close.h`, which give back at the close every name the compiler's C writes; a
+   `-D` stands before every header and every guard, so nothing undoes it, and a `.pc` answering
+   `-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)` gave the same sum at exit 0. The names
+   are `emit/guarded_names.hero`'s: the words the runtime's and the library's standard headers
+   write, and the names C reserves that the compiler's C writes; the compiler's own
+   `-D_USE_MATH_DEFINES` and `-D_CRT_SECURE_NO_WARNINGS` are none of them. Its notes say its own
+   reason and a repair that keeps the package's folders, never the allow-list's (defect 2348).
 
 
 ### 4.20 The runtime, in C
