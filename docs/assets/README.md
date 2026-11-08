@@ -40,7 +40,7 @@ themes, and the rules behind it live in `site/README.md` § Style guide and
    seed build that is faster than the figure printed. The rounding that was
    supposed to protect the third did not, either — `22 MB` is still a measured
    quantity and still grows. The boxes now say the shape, `one file of C11`,
-   `seconds`, `every module`, and the digits come from the four commands in
+   `seconds`, `every module`, and the digits come from the commands in
    `README.md` § Build and try it, run on the reader's own machine. What the
    picture claims is the loop and its last line, and neither is a number.
 

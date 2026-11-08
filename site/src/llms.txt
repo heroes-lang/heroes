@@ -51,14 +51,15 @@ output and twenty principles printed by `heroes this`.
 
 ## Source
 
-- [Repository](https://github.com/heroes-lang/heroes): the compiler, specification and design records. Clone it, build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then run `./heroes run examples/gallery/00-first.hero`. Issues and questions are welcome from anyone; code is welcome from authorized contributors, through an issue first, and `CONTRIBUTING.md` says how to ask, the three steps and what a pull request carries. A security problem, above all a program that crashes on a bad memory access or corrupts memory, goes through the private report form on the Security tab and never into a public issue (`SECURITY.md`).
+- [Repository](https://github.com/heroes-lang/heroes): the compiler, specification and design records. Clone it, build in two steps, `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed` and then `./heroes-seed build selfhost/main.hero -o heroes`, which builds today's compiler from its own source (`seed/heroes.c` is refreshed at each release and in between only when it must be, so the compiler clang makes from it can be an earlier day's), then run `./heroes run examples/gallery/00-first.hero`. Issues and questions are welcome from anyone; code is welcome from authorized contributors, through an issue first, and `CONTRIBUTING.md` says how to ask, the three steps and what a pull request carries. A security problem, above all a program that crashes on a bad memory access or corrupts memory, goes through the private report form on the Security tab and never into a public issue (`SECURITY.md`).
 - [Example programs](https://heroes-lang.org/examples/): read directly from `examples/` when the site is built.
 
 ## Notes
 
-- There is no installer yet, so the compiler is built from source with one
-  clang command. The current compiler is written in Heroes; the earlier
-  compiler is archived and no longer builds.
+- There is no installer yet, so the compiler is built from source in two
+  commands: clang on `seed/heroes.c`, then that compiler on `selfhost/`. The
+  current compiler is written in Heroes; the earlier compiler is archived and
+  no longer builds.
 - `heroes check --json` writes schema {{jsonSchema}} to stderr, with stable
   snake_case error codes, source locations, notes and suggested fixes, each
   fix with the place it applies, and every answer names the files it read and

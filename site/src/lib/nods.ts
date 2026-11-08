@@ -176,7 +176,7 @@ const THANKS = ['site/src/html/about/thanks.html', 'site/src/html/it/about/thank
 
 /**
  * The nod on the home page is deliberately inert: `Run it` is the highest-intent
- * heading on the site, and the four commands a visitor might paste sit directly
+ * heading on the site, and the commands a visitor might paste sit directly
  * under it, so that section keeps no link that leaves. The marketing and devex
  * seats reached this independently, and the home page's own footer carries the
  * way in instead.

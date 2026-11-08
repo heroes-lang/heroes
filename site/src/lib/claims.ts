@@ -40,6 +40,7 @@ import { appendFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from 
 import { dirname } from 'node:path';
 import { readText, filesIn, absolute, countLines } from './repo.ts';
 import { number } from './i18n.ts';
+import { version } from './tables.ts';
 import { checkNods, nodCount } from './nods.ts';
 
 const AGENTS_DIR = '.claude/agents';
@@ -708,6 +709,7 @@ export function checkClaims(html: string, pagePath: string): void {
   problems.push(...checkRepositoryIsOpen(html, pagePath));
   problems.push(...checkContributionsOpen(html, pagePath));
   problems.push(...checkSpecLinesThreshold(html, pagePath));
+  problems.push(...checkTwoStageBuild(html, pagePath));
   if (NAME_EVERY_VERB.includes(pagePath)) {
     markVisited(pagePath);
     for (const verb of verbs()) {
@@ -913,6 +915,58 @@ function checkSpecLinesThreshold(text: string, pagePath: string): string[] {
 }
 
 /**
+ * The two lines that build the compiler, and the release the README checks
+ * the fixpoint on (defect 2352). `seed/heroes.c` is refreshed at a release and
+ * at a red two-stage build (`seed/README.md` § When this file must be
+ * regenerated), so between two the compiler clang makes from it is an earlier
+ * day's: on 2026-11-08 it refused `use <core>/` and listed `add` and `fetch` as
+ * not built, while 18 programs of `examples/` used `core` and the site taught
+ * `heroes add core`, because the README and every page taught the clang line
+ * alone. They teach both lines since, the README in step with the site
+ * (`site/CLAUDE.md` § The README follows the site), and a page that drops the
+ * second, or spells either another way, is red here. The README's fixpoint
+ * commands check out a release by hand where `project.html` writes
+ * `v{{version}}`, so the release they name is held to the one `VERSION` says.
+ */
+const STAGE_ONE = 'clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed';
+const STAGE_TWO = './heroes-seed build selfhost/main.hero -o heroes';
+const TWO_STAGE_PAGES = [
+  README,
+  'site/src/html/start.html',
+  'site/src/html/it/start.html',
+  'site/src/html/index.html',
+  'site/src/html/it/index.html',
+];
+
+function literally(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function checkTwoStageBuild(text: string, pagePath: string): string[] {
+  if (!TWO_STAGE_PAGES.includes(pagePath)) return [];
+  markVisited(pagePath);
+  const out: string[] = [];
+  // The two lines in order, on consecutive lines, each ending where its last
+  // name ends (`heroes-seed.exe` is the Windows spelling, taught beside it),
+  // a `$ ` prompt before the second or a `#` comment after the first allowed.
+  const both = new RegExp(`${literally(STAGE_ONE)}(?![\\w.])[^\\n]*\\n(?:\\$ )?${literally(STAGE_TWO)}(?![\\w.])`);
+  if (!both.test(text)) {
+    out.push(
+      `${pagePath}: does not teach the two lines that build the compiler, one after the other:\n` +
+        `      ${STAGE_ONE}\n      ${STAGE_TWO}\n` +
+        `    Between two refreshes the seed's compiler alone is an earlier day's (defect 2352).`
+    );
+  }
+  if (pagePath === README) {
+    const release = version();
+    if (!new RegExp(`git checkout v${literally(release)}(?![\\w.])`).test(text)) {
+      out.push(`${README}: its fixpoint commands do not check out v${release}, the release VERSION says and project.html writes as v{{version}}.`);
+    }
+  }
+  return out;
+}
+
+/**
  * The README through the same checks as a page, before the audit below asks
  * whether every page the table names was seen. Called by the build-done hook.
  */
@@ -930,7 +984,7 @@ export function assertEveryClaimVisited(): number {
   const file = absolute(VISITED_FILE);
   const visited = new Set(existsSync(file) ? readFileSync(file, 'utf-8').split('\n').filter(Boolean) : []);
   if (existsSync(file)) unlinkSync(file);
-  const named = new Set([...CLAIMS.map((c) => c.page), ...NAME_EVERY_VERB]);
+  const named = new Set([...CLAIMS.map((c) => c.page), ...NAME_EVERY_VERB, ...TWO_STAGE_PAGES]);
   const missed = [...named].filter((p) => !visited.has(p)).sort();
   if (missed.length > 0) {
     throw new Error(

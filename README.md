@@ -109,21 +109,24 @@ verdicts, the vetoes, and what lifted them.
 ## Status: self-hosting is reached, and the chain continues
 
 **The compiler compiles itself**, which is what this project calls v1
-(design.md §1.0). `selfhost/` is this compiler written in Heroes, and the C it
-emits for its own source is `seed/heroes.c`, byte for byte, at each release and
-each refresh of the seed. Two commands check that, and `cmp` printing nothing is
-the whole proof:
+(design.md §1.0). `selfhost/` is this compiler written in Heroes, and
+`seed/heroes.c` is the C it emits for its own source, refreshed at each release
+and, between two, only when the compiler it makes can no longer build today's
+source. On a release four commands check it, and `cmp` printing nothing is the
+whole proof:
 
 ```sh
-./heroes build selfhost/main.hero --emit-c -o /tmp/self.c
-cmp seed/heroes.c /tmp/self.c
+git checkout v0.6.0                                    # a release, whose seed is its own C
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+./heroes build selfhost/main.hero --emit-c -o out.c
+cmp out.c seed/heroes.c
 ```
 
 Between two refreshes the seed is an earlier day's compiler: it builds today's
 from `selfhost/`, and that one reproduces itself a stage later, which the CI
-checks on every push. `heroes --version` says which on its second line,
-`sources`, the key of the modules, the library and the runtime a compiler was
-compiled from.
+checks on every push. That is why *Build and try it* below builds in two steps.
+`heroes --version` says which compiler you hold on its second line, `sources`,
+the key of the modules, the library and the runtime it was compiled from.
 
 The version number is a different thing: `heroes --version` says which release you hold on its first line, releases are tagged
 `vX.Y.Z` and listed under
@@ -136,7 +139,7 @@ versions, and a patch version changes no sentence of the spec.**
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/fixpoint-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/fixpoint-light.svg">
-    <img src="docs/assets/fixpoint-light.svg" alt="The fixpoint: clang compiles seed/heroes.c into the heroes binary in seconds; that binary compiles every module of selfhost/; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
+    <img src="docs/assets/fixpoint-light.svg" alt="The fixpoint, on a release: clang compiles seed/heroes.c into the heroes binary in seconds; that binary compiles every module of selfhost/; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
   </picture>
 </p>
 
@@ -179,23 +182,34 @@ one journal each, indexed at `docs/records/journal/README.md`.
 
 **A C compiler is the only thing you need.** `seed/heroes.c` is this compiler
 written in C, which is what it emits when it compiles itself, so there is no
-chicken and egg and no Rust:
+chicken and egg and no Rust. It is refreshed at each release and, between two,
+only when it has to be, so it is often an earlier day's compiler; the build
+takes two steps, clang making that compiler and that compiler making today's
+from `selfhost/`:
 
 ```sh
 git clone --depth 1 https://github.com/heroes-lang/heroes && cd heroes   # the tree alone; drop --depth 1 for the history
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # seconds
-./heroes doctor                                             # what this machine has
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed   # seconds: the seed's compiler
+./heroes-seed build selfhost/main.hero -o heroes                  # minutes: today's, from its own source
+./heroes doctor                                                   # what this machine has
 ./heroes run examples/gallery/00-first.hero
 ./heroes test examples/calculator/main.hero
 ```
 
-The compiler you get is the real one. It compiles `selfhost/`, its own source,
-**more than 50,000 lines of Heroes across more than 180 files**, and what it
-emits for that is `seed/heroes.c` again, byte for byte, in under a minute.
-`seed/README.md` is that ritual, including how to get a compiler back if the seed
+The compiler you get is today's. It compiled `selfhost/`, its own source,
+**more than 50,000 lines of Heroes across more than 180 files**, and the second
+line of `./heroes --version`, `sources`, names that source; it differs from
+`./heroes-seed --version`'s whenever the source has moved since the seed was
+refreshed. `seed/README.md` is the seed's ritual: when it is refreshed,
+how a release reproduces it byte for byte, and how to get a compiler back if it
 ever stops building today's source. The digits behind those thresholds are
-whatever the four commands above print on your machine, which is the only place
-a timing means anything.
+whatever the commands above print on your machine, which is the only place a
+timing means anything.
+
+On Windows the first build line takes `-Wl,/STACK:67108864` before `-o`
+(`seed/README.md` says why), and both binaries end in `.exe`, `heroes-seed.exe`
+and `heroes.exe`, because Windows runs a file only by that ending; the CI's
+Windows leg builds its two stages the same way.
 
 Every capability is a subcommand or a flag of the one binary, never a second
 binary, never a script, never a Makefile; `heroes --help` prints the current

@@ -6,23 +6,33 @@
 
   <div class="notice">
     <p>
-    <b>Heroes è in beta: il linguaggio cambia ancora.</b> I quattro comandi qui sotto funzionano già oggi, e la versione che costruiscono è <code>heroes {{version}}</code>. Fino alla 1.0.0 un cambio del numero di mezzo può cambiare il linguaggio stesso, mentre un cambio dell&rsquo;ultimo numero non lo cambia mai.
+    <b>Heroes è in beta: il linguaggio cambia ancora.</b> I cinque comandi qui sotto funzionano già oggi, e la versione che costruiscono è <code>heroes {{version}}</code>. Fino alla 1.0.0 un cambio del numero di mezzo può cambiare il linguaggio stesso, mentre un cambio dell&rsquo;ultimo numero non lo cambia mai.
   </p>
   </div>
 
-  <h2>Quattro comandi</h2>
+  <h2>Cinque comandi</h2>
   <pre><code>$ git clone https://github.com/heroes-lang/heroes
 $ cd heroes
-$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed
+$ ./heroes-seed build selfhost/main.hero -o heroes
 $ ./heroes run examples/gallery/03-fallible.hero
 read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
     La terza riga richiede <b>meno di nove secondi</b> su un MacBook Air, la
-    macchina da cui viene ogni misura di questo sito. Costruisce il compilatore
+    macchina da cui viene ogni misura di questo sito. Costruisce un compilatore
     da un solo file C generato da Heroes, ed è per questo che
     ti basta clang.
+  </p>
+  <p>
+    Quel file C si aggiorna a ogni release, la versione che il progetto
+    pubblica, e nel frattempo solo quando serve, quindi spesso è il compilatore
+    di qualche giorno prima. La quarta riga gli fa costruire il compilatore di
+    oggi a partire dai suoi sorgenti, scritti in Heroes, e sulla stessa
+    macchina ci mette qualche minuto. Da lì in poi ogni comando usa
+    <code>./heroes</code>, il compilatore di oggi, quello che questo sito
+    racconta.
   </p>
   <p>
     La riga con <code>failed</code> è un risultato previsto dell&rsquo;esempio: il programma segnala un carattere che non riesce a convertire in numero. La compilazione è riuscita.
@@ -47,10 +57,19 @@ failed: not_a_digit (expected 0-9)
   <p>
     Se ti dà un numero sotto il 18, cosa che succede su un macOS più vecchio,
     installa un clang aggiornato accanto a quello con
-    <a href="https://brew.sh">Homebrew</a> e usa quello:
+    <a href="https://brew.sh">Homebrew</a> e metti la sua cartella per prima nel
+    tuo <code>PATH</code>, l&rsquo;elenco delle cartelle in cui il terminale
+    cerca i programmi:
   </p>
   <pre><code>$ brew install llvm
-$ "$(brew --prefix llvm)/bin/clang" -I runtime seed/heroes.c runtime/runtime.c -o heroes</code></pre>
+$ export PATH="$(brew --prefix llvm)/bin:$PATH"</code></pre>
+  <p>
+    Il compilatore chiama clang per nome ogni volta che costruisce qualcosa,
+    quarta riga compresa, quindi risponde il primo clang di quell&rsquo;elenco.
+    Dopo, i cinque comandi funzionano così come sono scritti. La riga con
+    <code>export</code> vale finché resta aperta la finestra del terminale; per
+    tenerla, aggiungila al file che la tua shell legge quando parte.
+  </p>
   <p><b>Debian e Ubuntu.</b></p>
   <pre><code>$ sudo apt install clang</code></pre>
   <p>
@@ -61,16 +80,21 @@ $ "$(brew --prefix llvm)/bin/clang" -I runtime seed/heroes.c runtime/runtime.c -
   <p><b>Windows.</b></p>
   <pre><code>$ winget install LLVM.LLVM</code></pre>
   <p>
-    Su Windows la riga di compilazione vuole <b>un flag in più, e non è una
-    preferenza</b>:
+    Su Windows le due righe di compilazione cambiano in due punti: la prima
+    vuole <b>un flag in più</b>, e tutti e due i nomi finiscono in
+    <code>.exe</code>, perché Windows esegue un file solo se il suo nome finisce
+    così, e clang dà al file esattamente il nome che gli chiedi:
   </p>
-  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes</code></pre>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes-seed.exe
+$ ./heroes-seed.exe build selfhost/main.hero -o heroes.exe</code></pre>
   <p>
     Windows dà al primo thread di un programma 1 MB di spazio per le chiamate di
     funzione, dove macOS e Linux ne danno 8, e questo compilatore si richiama in
-    profondità mentre legge un programma. Senza quel flag si compila, parte e
-    compila un programma piccolo, poi muore senza dire niente la prima volta che
-    lo punti su uno dei suoi moduli.
+    profondità mentre legge un programma. Il flag dà 64 MB al compilatore che
+    nasce dal file C, lo stesso spazio che il compilatore dà a ogni programma che
+    costruisce su Windows, compreso quello che esce dalla seconda riga. I
+    controlli del progetto costruiscono il compilatore in questo modo, su
+    Windows, a ogni modifica.
   </p>
 
   <h2>Eseguilo dalla cartella del repository</h2>
@@ -128,5 +152,5 @@ we can be heroes</code></pre>
   </p>
 
   <footer>
-    <p>Heroes non ha ancora un installer. Per compilarlo servono un compilatore C e un comando. L&rsquo;installazione con un solo comando è prevista, ma non è ancora disponibile.</p>
+    <p>Heroes non ha ancora un installer. Per compilarlo servono un compilatore C e le due righe qui sopra che lo costruiscono. L&rsquo;installazione con un solo comando è prevista, ma non è ancora disponibile.</p>
   </footer>

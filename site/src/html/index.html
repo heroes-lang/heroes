@@ -124,15 +124,18 @@ function name_of(t: Token) -&gt; str
   </div>
   <pre><code>$ git clone https://github.com/heroes-lang/heroes
 $ cd heroes
-$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed
+$ ./heroes-seed build selfhost/main.hero -o heroes
 $ ./heroes run examples/gallery/03-fallible.hero
 read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    The third line builds the compiler from a single C file. It takes under
+    The third line builds a compiler from a single C file. It takes under
     nine seconds on a MacBook Air, the machine every measurement here comes
-    from. The Heroes compiler generated that C file, so clang is all you need. The line saying
+    from. The Heroes compiler generated that C file, so clang is all you need.
+    The fourth line has that compiler build today&rsquo;s from its own source,
+    written in Heroes, in a few minutes. The line saying
     <code>failed</code> is the example refusing a character it cannot read.
     <a href="/start/">The getting started guide&nbsp;&rarr;</a>&nbsp;&middot; <a href="/docs/">the language, one idea at a time&nbsp;&rarr;</a>
   </p>

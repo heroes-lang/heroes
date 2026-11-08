@@ -83,8 +83,10 @@ function compiler(): string {
   if (!existsSync(path)) {
     throw new Error(
       `the site's colouring is held to the compiler's lexer, and there is no compiler at ${path}.\n` +
-        `  Build it from the repository's root, as CLAUDE.md § Commands does:\n` +
-        `    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`
+        `  Build it from the repository's root in two stages, as deploy-site.yml does,\n` +
+        `  since the seed's compiler alone can be an earlier day's (defect 2352):\n` +
+        `    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-seed\n` +
+        `    ./heroes-seed build selfhost/main.hero -o heroes`
     );
   }
   // The binary is built from these, which no reader here opens.
