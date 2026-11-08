@@ -224,3 +224,10 @@ by R6's registered branch the removal pays: § 13's `when` paragraph loses *and 
 nothing takes no clause*, −10 vendored and 10,915 to 10,900 real, the rule kept by the checker
 (`when_on_void`) and by the `Member` production. How it was run, the table, the cost and the archive
 are `237-reports/payment.md`.
+
+## A correction, 2026-11-08
+
+R4 above names *the trade panel 082's R3 refused once on cost*. In panel 082's file the refusal on
+cost is its **R2**, *(a) is refused*, which priced the trade at 1.3 to 2.2 times on every keystroke;
+its R3 is the direction it queued, *(b)*, not a refusal. Found by lane p237-land-cli at the landing,
+reading panel 082's file; design.md §4.17 as landed cites R2 and says so. R4's ruling is unchanged.
