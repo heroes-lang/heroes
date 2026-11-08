@@ -1,0 +1,245 @@
+# The bytes of an address (RFC 3986): which a host and a path hold as
+# themselves, how a byte they do not is percent-encoded and read back, and how
+# a message quotes an address holding a byte no terminal should be handed
+# (panel 235's R9, its C4; `fetch/address.hero` is the judge that asks).
+#
+# **What is handed to a tool is encoded, never trusted to be plain.** curl
+# 8.7.1 refuses a raw space in a `file://` address (exit 3, *Malformed input to
+# a URL function*) and reads `%20`; git 2.56.0 reads both and decodes the
+# second (measured 2026-11-08 on this Mac, a repository under `sp ace/x#y`). A
+# `#` left raw ends curl's path, and a `[` or `{` is curl's glob, so every byte
+# but the unreserved ones, `/` and a drive's `:` is written `%XX`, whatever
+# else the tool is told.
+
+# What is wrong with an address's host and port, or "" where nothing is: a
+# name of letters, digits, `.` and `-`, or an IPv6 address in brackets, and a
+# port of one to five digits from 1 to 65535.
+function host_said(authority: str) -> str
+    if authority.len() == 0
+        return "names no host"
+    end: i64 @= 0
+
+    if authority[0] == '['
+        while end < authority.len() && authority[end] != ']'
+            end @ end + 1
+
+        if end == authority.len()
+            return "opens an IPv6 host with `[` and never closes it"
+
+        for at in range(from: 1, to: end)
+            if !hex_digit(authority[at]) && authority[at] != ':' && authority[at] != '.'
+                return "holds a byte no IPv6 host holds"
+
+        end @ end + 1
+    else
+        while end < authority.len() && authority[end] != ':'
+            if !host_byte(authority[end])
+                return "names a host holding a byte no host name holds"
+            end @ end + 1
+
+    if end == authority.len()
+        return ""
+
+    if authority[end] != ':'
+        return "names a host holding a byte no host name holds"
+    return port_said(authority.slice(from: end + 1, to: authority.len()))
+
+function port_said(port: str) -> str
+    if port.len() == 0 || port.len() > 5
+        return "names a port that is not a number from 1 to 65535"
+    value: i64 @= 0
+
+    for at in range(from: 0, to: port.len())
+        if port[at] < '0' || port[at] > '9'
+            return "names a port that is not a number from 1 to 65535"
+        value @ value * 10 + (port[at] - '0').to_i64().must()
+
+    if value < 1 || value > 65535
+        return "names a port that is not a number from 1 to 65535"
+    return ""
+
+function host_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '.' || b == '-'
+
+# What is wrong with an address's path, or "" where nothing is.
+function path_said(path: str) -> str
+    at: i64 @= 0
+
+    while at < path.len()
+        b = path[at]
+
+        if b == '?' || b == '#'
+            return "holds a query or a fragment, which names no source here: write the path alone"
+
+        if b == '%'
+            if at + 2 >= path.len() || !hex_digit(path[at + 1]) || !hex_digit(path[at + 2])
+                return "holds a `%` that two hex digits do not follow, which is how an address writes a byte it holds no other way"
+            at @ at + 3
+        else if path_byte(b)
+            at @ at + 1
+        else
+            return "holds " + byte_said(path, at: at) + ", which an address writes percent-encoded"
+
+    return ""
+
+# The bytes a path holds as themselves: RFC 3986's unreserved ones, its
+# sub-delimiters, `:`, `@` and the `/` between parts.
+function path_byte(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    return b == '-' || b == '.' || b == '_' || b == '~' || b == '/' || b == ':' || b == '@' || b == '!' || b == '$' || b == '&' || b == '\'' || b == '(' || b == ')' || b == '*' || b == '+' || b == ',' || b == ';' || b == '='
+
+function hex_digit(b: u8) -> bool
+    return b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return (b - '0').to_i64().must()
+
+    if b >= 'a' && b <= 'f'
+        return (b - 'a').to_i64().must() + 10
+    return (b - 'A').to_i64().must() + 10
+
+# A path's `%XX` read as the byte each writes, from a path `path_said`
+# passed; a control character written so, or bytes that are not UTF-8,
+# refused.
+function decoded(path: str) -> str?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < path.len()
+        if path[at] == '%'
+            value = (hex_value(path[at + 1]) * 16 + hex_value(path[at + 2])).to_u8().must()
+
+            if value < 32 || value == 127
+                return fail(
+                    code: "source_refused",
+                    msg: "writes a control character, `" + path.slice(from: at, to: at + 3) + "`, which no folder's name holds"
+                )
+            out @ out.push(value)
+            at @ at + 3
+        else
+            out @ out.push(path[at])
+            at @ at + 1
+
+    text = out.validated_bytes()
+
+    if text.is_err()
+        return fail(
+            code: "source_refused",
+            msg: "writes bytes that are not UTF-8, which this compiler holds no path in"
+        )
+    return ok(text.must())
+
+# `path` with every byte but RFC 3986's unreserved ones, the `/` between parts
+# and `:` written `%XX`: what curl and git are handed for a path on this
+# machine or a file's path inside an index. A run of plain bytes is copied
+# whole, and a byte that is not is written by its value. A run is cut only
+# where it holds a byte: between two bytes of one character `from` stands
+# inside it, and even an empty slice there aborts (spec § 10), which `é`
+# found the first time this ran.
+function encoded(path: str) -> str
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: path.len())
+        b = path[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-' || b == '.' || b == '_' || b == '~' || b == '/' || b == ':')
+            if at > from
+                out @ out.push(path.slice(from: from, to: at))
+            out @ out.push("%" + hex_pair(b))
+            from @ at + 1
+
+    out @ out.push(path.slice(from: from, to: path.len()))
+    return out.join("")
+
+# A byte's value as two capital hex digits.
+function hex_pair(b: u8) -> str
+    value = b.to_i64().must()
+    digits = "0123456789ABCDEF"
+    return digits.slice(from: value / 16, to: value / 16 + 1) + digits.slice(from: value % 16, to: value % 16 + 1)
+
+# The first byte of `text` that an address does not hold as itself: a space,
+# a control character or a byte above ASCII; -1 where there is none.
+function first_unplain(text: str) -> i64
+    for at in range(from: 0, to: text.len())
+        if text[at] <= 32 || text[at] >= 127
+            return at
+
+    return -1
+
+# A byte a message names: a space, a control character by its value, a
+# character above ASCII, or a printable byte quoted as itself.
+function byte_said(text: str, at: i64) -> str
+    b = text[at]
+
+    if b == 32
+        return "a space"
+
+    if b < 32 || b == 127
+        return "the control character <0x" + hex_pair(b) + ">"
+
+    if b >= 128
+        return "a character above ASCII"
+    return "`" + text.slice(from: at, to: at + 1) + "`"
+
+# `text` as a message may quote it: each control character written by its
+# value, `<0x0A>`, so a line break or an escape sequence an address holds
+# reaches no terminal as itself.
+function shown(text: str) -> str
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < 32 || text[at] == 127
+            out @ out.push(text.slice(from: from, to: at))
+            out @ out.push("<0x" + hex_pair(text[at]) + ">")
+            from @ at + 1
+
+    out @ out.push(text.slice(from: from, to: text.len()))
+    return out.join("")
+
+## Tests
+
+# Measured 2026-11-08 on this Mac: curl reads `%20`, `%23` and `%5B` and
+# refuses them raw (exit 3), so the encoded form is the one handed on.
+test "a path is handed on with every byte but the plain ones percent-encoded, and read back the same"
+    assert encoded("/a b/x#y/f[1].txt") == "/a%20b/x%23y/f%5B1%5D.txt"
+    assert encoded("C:/données/%") == "C:/donn%C3%A9es/%25"
+    assert encoded("plain/-._~") == "plain/-._~"
+    assert decoded("/a%20b/x%23y/f%5B1%5D.txt").must() == "/a b/x#y/f[1].txt"
+    assert decoded("/donn%C3%A9es").must() == "/données"
+
+    # A control character and bytes that are not UTF-8 hold no path here.
+    assert decoded("/a%0Ab").is_err()
+    assert decoded("/a%FFb").is_err()
+
+test "a host, a port and a path are told what is wrong with each, and nothing where nothing is"
+    for good in ["github.com", "index.heroes-lang.org:8443", "[::1]", "[fe80::1]:443", "localhost"]
+        assert host_said(good) == ""
+
+    assert host_said("") == "names no host"
+    assert host_said("exa mple.com") == "names a host holding a byte no host name holds"
+    assert host_said("host:0") == "names a port that is not a number from 1 to 65535"
+    assert host_said("host:65536") == "names a port that is not a number from 1 to 65535"
+    assert host_said("host:") == "names a port that is not a number from 1 to 65535"
+    assert host_said("[::1") == "opens an IPv6 host with `[` and never closes it"
+    assert path_said("/acme/json.git") == ""
+    assert path_said("/a%20b") == ""
+    assert path_said("/x?ref=v1") == "holds a query or a fragment, which names no source here: write the path alone"
+    assert path_said("/x#main") == "holds a query or a fragment, which names no source here: write the path alone"
+    assert path_said("/a%2") == "holds a `%` that two hex digits do not follow, which is how an address writes a byte it holds no other way"
+    assert path_said("/a[1]") == "holds `[`, which an address writes percent-encoded"
+    assert path_said("/a\\b") == "holds `\\`, which an address writes percent-encoded"
+
+# An address holding a line break or an escape is quoted with each control
+# character written by its value, so a message reaches the terminal as text.
+test "a control character in an address is quoted by its value"
+    assert shown("a\nb\u{1b}[31m") == "a<0x0A>b<0x1B>[31m"
+    assert first_unplain("https://x/y") == -1
+    assert first_unplain("https://x/ y") == 10
+    assert byte_said("a b", at: 1) == "a space"
+    assert byte_said("a\tb", at: 1) == "the control character <0x09>"
+    assert byte_said("aé", at: 1) == "a character above ASCII"
+    assert byte_said("a<b", at: 1) == "`<`"
