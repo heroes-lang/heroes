@@ -1,0 +1,12 @@
+# M-package-manager step 3b (lane pm-fetch's finding, 2026-11-08): the
+# program's catalogue reads the index `file://../idx`, and the catalogue of
+# its package `json` reads `file://./../idx`, the same folder written another
+# way. The build matched `json`'s entry for `text` to the program's by its
+# source written as text, two texts, and refused the program, whose
+# catalogue holds `text` (`heroes add` refused the same, `requirement_refused`).
+# Each address is compared in its one form now, `file://../idx` for both, so
+# `text` is one package and the program runs.
+use <json>/parse
+
+function main()
+    print(parse.count("one index written two ways"))

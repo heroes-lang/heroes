@@ -1,0 +1,7 @@
+# The package `json` of the case two folders up, reading the package `text`
+# through its own catalogue.
+use <text>/words
+
+# How many words `s` holds, as the package `text` counts them.
+function count(s: str) -> i64
+    return words.count(s)
