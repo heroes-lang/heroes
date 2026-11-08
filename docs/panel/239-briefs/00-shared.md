@@ -1,0 +1,257 @@
+# Panel 239, what every seat reads first
+
+The sitting hears defects 2363 and 2364 together, on the author's request relayed by the coordinator
+of batch 26 (`proposal.md` beside this file). Panel 238 (ratified 2026-11-08 by the author's reading;
+its decision issue 2362; `docs/panel/238-the-use-lines-are-one-block-in-one-order-which-the-compiler-walks-too-and-the-repositorys-static-index-stands-at-a-root-packages.md`)
+ruled in its R3 that its formatter rule (R1) and the compiler walking modules by one sorted key (R2)
+land in the round that repairs these two, and that each repair needs a sitting. **Full panel**: a new
+refusal is a diagnostic class (CLAUDE.md § 4). Seats: compiler-engineer, ffi-pragmatist,
+spec-warden, historian; a completeness critic over these briefs before any seat starts and over the
+reports after. **The llm-ergonomist's blind seat is a paid `claude -p` session, which the author has
+not allowed for this sitting**: it does not sit now; its brief is written at the synthesis and
+marked unrun.
+
+## The tree, frozen
+
+- Every seat measures the tree of lane **`p239`**: branch `p239` at **`0a62bb10c`** (*Merge branch
+  'p238' into b25-round*, `git log -1 --oneline`), plus the sitting's own commits, which touch
+  `docs/panel/239-*` alone. `git status --short` read clean when this brief was written.
+- Each seat works in **its own detached worktree**, `.claude/worktrees/239-<seat>/`, made by the
+  coordinator from `p239` after these briefs are committed, and nowhere else: never in `p239`, the
+  trunk, a lane, another seat's worktree, or `p239-scratch` (which you read and never write). A
+  `build/` you make is yours; put your work under `build/239/` in your worktree.
+- **Build your own compiler**: `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then
+  `./heroes build selfhost/main.hero -o heroes-next` in its own command; judge with `./heroes-next`.
+  Measured in `p239` while this brief was written (`p239-scratch/stage2.log`, `/usr/bin/time -l`):
+  stage 2 exit 0, **737,386,717,036 instructions retired**, `real 216.35`, `user 130.36`, `sys 28.64`
+  at a load of about 15 (`uptime`); `./heroes-next --version`'s second line **`sources
+  3d44313d62fb67a3`**. Built the same way in the `heroes-linux-arm64:latest` container from `git
+  ls-files seed runtime selfhost` (`p239-scratch/linux/build.sh`, `build.out`): the same key,
+  **GNU ld (GNU Binutils for Debian) 2.44**, **Debian clang 22.1.8**. This Mac: `ld -v`
+  **ld-27106.1**, **Apple clang 21.0.0**.
+- The machine is shared with batch 26's lanes (`b26-fmt`, `b26-index`, `b26-link`, `git worktree
+  list`). **Measure a cost in instructions retired** (`/usr/bin/time -l`), never in seconds; run at
+  most three processes at once.
+- **Linux arm64**: tar what you send from `git ls-files` with `COPYFILE_DISABLE=1 tar
+  --no-mac-metadata --no-xattrs`, never a copy that carries `.claude/worktrees`; mount your own
+  worktree's `build/239/` and set `TMPDIR` under the mount, so nothing is written to the container's
+  `/tmp` or the host's.
+
+## The two defects, reproduced while this brief was written
+
+Programs, libraries and scripts: **`.claude/worktrees/p239-scratch/repro/`** (copy what you need
+into your own `build/239/`). The link programs and `two_others` are panel 238's ffi-pragmatist's,
+from `docs/panel/238-reports/evidence.tar.xz` (`238-ffi-pragmatist/build/238/link/`, `units/two_others/`);
+the shapes under `s2363/` and `s2364/` are the coordinator's, written for this sitting. **This Mac**:
+`sh repro/mac.sh`, its output `repro/mac.out`. **Linux arm64**: `docker run --rm -v
+"$PWD":/w heroes-linux-arm64:latest sh /w/linux/repro.sh` from `p239-scratch`, its output
+`linux/repro.out`. Both with the compiler `sources 3d44313d62fb67a3`.
+
+### 2363: one C name two linked libraries define
+
+`picker.hero` binds `pick` from `a.h` with `link "a"`; `extra.hero` links `"b"` for `b_only`;
+`aux.hero` links `"w"` for `w_only`. `liba.a` and `libb.a` each define `pick` in a member of its own
+(`int pick(void)`, returning 1 and 2), and the same two as shared libraries; `libw.a`'s `pick` is
+**`int pick(int *out)`**, which writes through its argument. `_written` and `_sorted` differ only by
+the order of their two `use` lines.
+
+| program | this Mac (ld64) | Linux arm64 (GNU ld 2.44) |
+|---|---|---|
+| `sig_written` (`use picker` / `use aux`) | built exit 0, prints `1 30` | built exit 0, prints `1 30` |
+| `sig_sorted` (`use aux` / `use picker`) | **built exit 0, Bus error, 138** | **built exit 0, Segmentation fault, 139** |
+| `dup_written`, static and shared | `1 10 20` | `1 10 20` |
+| `dup_sorted`, static and shared | **`2 10 20`**, no word | **`2 10 20`**, no word |
+| `dep_sorted` (an archive needing another) | `41 2` | `internal error: linking failed`, exit 2 (defect 2365's) |
+| `only_top` (the needed archive on no line) | `internal error: linking failed`, exit 2 | the same (defect 2365) |
+
+**Which library supplied a name, asked of the link** (`repro/link/c-trace.sh`, in C, `-la -lw`
+against `-lw -la`): GNU ld's `-Wl,--trace-symbol=pick` prints `liba.a(pick_a.o): definition of pick`
+or `libw.a(pick_w.o): definition of pick`; ld64's `-Wl,-map,<file>` lists `_pick` from `liba.a(pick_a.o)`
+or `libw.a(pick_w.o)`; for the shared pair `nm -m` of the Heroes binary prints `(undefined) external
+_pick (from liba)` against `(from libb)`.
+
+**Shapes beside, depth one, written for this sitting** (`repro/s2363/`):
+
+- **A name the C library defines, which a linked library defines again** (`interpose.hero`):
+  `printer.hero` binds `puts(s: cstr lent) -> i32` from `stdio.h` with **no** `link`; `quiet.hero`
+  links `"q"` for `q_only`, and `libq.a` holds a member defining `int puts(int *out)`. **Built exit 0
+  and died on both platforms**: Bus error 138 on this Mac, SIGSEGV 139 on Linux arm64. `nm -m` of the
+  Mac binary: `external _puts` defined in the binary itself, from `libq.a`. So the class reaches a
+  group that names no library: the definition it expects is the C library's, linked implicitly.
+- **A name its group's `link` does not define where it is linked** (`remath.hero`, `extern "math.h"
+  link "m"` binding `sqrt`): prints `4.0` on both; on this Mac `nm -m` says `(undefined) external
+  _sqrt (from libSystem)`, and the SDK's `usr/lib/libm.tbd` is a symbolic link to `libSystem.tbd`
+  (`ls -la`).
+- **glibc 2.41 in the container** (`linux/repro.out`, `linux/pthread.out`): `nm -D --defined-only`
+  finds `ldexp`, `frexp`, `scalbn`, `modf`, `copysign` and `finite` defined in **both**
+  `libc.so.6` and `libm.so.6`, `sqrt` in `libm.so.6` alone; `pthread_create` in `libc.so.6` (two
+  versioned entries) and **not** in `libpthread.so.0`, and `libpthread.a` is an empty archive of 8
+  bytes (`!<arch>\n`). A C program linked `-lpthread -Wl,--trace-symbol=pthread_create` prints
+  `libc.so.6: definition of pthread_create`. `libm.so` is a linker script (`GROUP (
+  /lib/aarch64-linux-gnu/libm.so.6 AS_NEEDED ( .../libmvec.so.1 ) )`). **GNU ld's trace names one
+  definition, the one taken**: `ldexp` linked `-lm` prints `libm.so.6: definition of ldexp` and linked
+  `-lc -lm` prints `libc.so.6: definition of ldexp`, one definition line each, though both libraries
+  define it.
+- Tracked `link` names (`git grep -h -oE 'link "[^"]*"' -- '*.hero' | sort | uniq -c`): `sqlite3` 36,
+  `m` 20, `app` 7, `z` 5, `pthread` 4, the rest one or two each, most of them fixtures of refused
+  names.
+
+### 2364: two other modules' records in one module's unit
+
+`pw.h` defines `TWO_OTHERS_WIDE` and `Pw`; `rs.h` lays `Rs` out `{ long long a; int b; }` under
+that macro and `{ int a; int b; }` without it; `rs.hero` binds `Rs` with `a: i32`, as `rs.h` read
+alone says; the root (no group of its own) calls `pw.make` and `rs.make` and reads both records'
+fields.
+
+| program | both platforms, the same |
+|---|---|
+| `rs_first.hero` (`use rs` / `use pw`) | `9`, exit 0 |
+| `pw_first.hero` (`use pw` / `use rs`) | exit 1, ``error[ffi_field_type]: `Rs.a` is `long long` in `rs.h`, a signed 64-bit integer, not `i32` ``, at `rs.hero:3:9`, `fix (guess): declare `a` with `i64`` |
+| `fixguess/`, `a: i64`, both orders | exit 1, ``error[ffi_field_type]: `Rs.a` is `int` in `rs.h` ...`` |
+
+Where it comes from: `selfhost/emit/externs.hero:129-161` (`headers_for`): the unit's own groups'
+headers first, `sort(mine)`, then `sort(others)` (line 158), the headers of other modules' group
+records the unit spells, in declaration index, which is the module walk's order. The plan that asks
+it is `selfhost/emit/unit_plan.hero:62-146` (`plan`, `headers_for` at line 144). Every unit asserts
+each record field it spells against the binding (`selfhost/emit/extern_field.hero`); the layout check
+(`selfhost/cli/layout.hero`, `check_records`, line 90) asks a unit's records *"of those headers
+alone, since a record is laid out as the unit that spells it reads it"* (its comment, lines 80 to 84). **No
+check compares one record's layout in two units**: `grep -rn offsetof selfhost/emit/extern_field.hero`
+finds two assertions, both of a flexible or fixed array's room, none of an offset against another
+unit's (a question for the compiler-engineer to settle, not a premise).
+
+**Shapes beside, depth one, written for this sitting** (`repro/s2364/`), the same on both platforms:
+
+- **`pack/`: the other module's header changes the record's layout and not its field types.**
+  `pk.h` defines `RS_PACKED`; `rp.h` wraps `typedef struct Rp { char c; int b; } Rp;` in
+  `#pragma pack(push, 1)` under that macro; `rp.hero` binds `c: i8`, `b: i32`. `rp_first.hero`
+  prints `4 1 1000`. **`pk_first.hero` builds at exit 0 and prints `4 1 -402653184`**: the root's
+  unit reads `Rp` packed, `rp`'s unit reads it padded, and a value crossing between them is read at
+  the wrong offset. No message. This is the class's worst member, a wrong value at exit 0
+  (design.md §1.12), and the same cause as 2364.
+- **`own/`: a module's OWN header defines the macro that changes another module's record it spells.**
+  `m.hero`'s group `m.h` defines `TWO_OTHERS_WIDE` and `m` spells `rs.Rs`: exit 1, the same false
+  ``Rs.a` is `long long` in `rs.h``, at `rs.hero:3:9`, in every order (there is one root order).
+- **`prefix/`: the record's own module configures it with an EARLIER header of its own.** `rs3.hero`
+  binds `cfg.h` (defines `TWO_OTHERS_WIDE`) above `rs.h`, and `Rs` with `a: i64`, as `rs3`'s unit
+  reads it; the root spells `Rs`: exit 1, ``Rs.a` is `int` in `rs.h` ... not `i64` ``, at
+  `rs3.hero:6:9`. The root's unit reads `rs.h` without `cfg.h`.
+- **`both/`: two others whose headers configure each other.** `pa.h` defines `PA_WIDE` and lays `Pa`
+  out wide under `RB_WIDE`; `rb.h` the mirror. Each module's unit reads its own alone (`i32` true
+  there). `pa_first` exit 1 on ``Rb.a` is `long long` in `rb.h``; `rb_first` exit 1 on ``Pa.w` is
+  `long long` in `pa.h``: no order of the two works in one unit.
+
+## What else stands, read while writing
+
+- **Panel 238's two diffs apply to `0a62bb10c`** (`git apply --check -p1`, both printed nothing and
+  passed): R2's route, `238-compiler-engineer/build/238/prototype.diff` (803 lines, the rule and the
+  route, `selfhost/use_key.hero` read by `modules.load_edited`, `modules.cycles` and
+  `resolve/top.read_uses`), and R3's group words, `238-ffi-pragmatist/build/238/group/group.diff`
+  (114 lines). Both are files of `docs/panel/238-reports/evidence.tar.xz`, which `tar -xJf` extracts
+  into your `build/239/`. **Lane `b26-link` is implementing the group words now**, in parallel with
+  this sitting (238's landing list, `.claude/worktrees/p238-scratch/landing.md`, Commit 0); `b26-fmt`
+  and `b26-index` hold R1/R2 and R10. None has a commit past `0a62bb10c` (`git worktree list`).
+- **Defects open beside these two** (`gh issue view`): 2365, an undefined reference inside a linked
+  library told as `internal error`, exit 2 (`only_top`, `dep_sorted` on GNU ld); 2366, a `link`
+  library needing a `package`'s fails on GNU ld in every order (closed by the group words); 2367,
+  `adjacent`, two `use` lines binding one name told by their order. They are not this sitting's
+  question, but a mechanism that reads the link may meet 2365's failure path
+  (`selfhost/cli/renamed.hero`, `cli/whose.hero`).
+- **The compiler starts no symbol-table reader today**: `grep -rhoE 'program: "[^"]+"' selfhost`
+  names `clang` (59), `pkg-config` (5), `git`, `uname`, `xcode-select`, `env`, `date`, `curl`, `cc`
+  and test fixtures, and no `nm`, `otool`, `objdump`, `readelf` or `dyld_info`.
+- **The FFI codes**: 34 distinct `"ffi_..."` strings in `selfhost/`
+  (`grep -rhoE '"ffi_[a-z_]+"' selfhost | sort -u | wc -l`), among them `ffi_defined_twice` (one C
+  name two modules' units would define, `cli/defined_twice.hero`, 220 lines), `ffi_declared_two_ways`
+  (`cli/two_ways.hero`, 300), `ffi_missing_link` (a linker name a header gives that the linker
+  cannot find, `cli/renamed.hero`, 216), `ffi_one_file` (`cli/one_file.hero`, 261), `ffi_field_type`.
+  `.claude/rules/c-boundary.md` § *A clang failure that the author's own extern caused* lists twelve
+  members.
+- **The specification** (`./heroes-next measure spec/heroes-spec.md`): `claude-legacy 8178`,
+  `cl100k_base 8325`, `real 10900` (`claude-opus-5`, 2026-11-08), headroom 5484. § 13 at line 375:
+  *"A group names its header, and `link` a library when the symbols need one; C reads a module's
+  headers in the order its groups are written: one that needs another's names comes after it, and
+  one defining `_GNU_SOURCE` first. clang checks every result type, constant and record field
+  against that header"*. It says nothing of the libraries' order or of another module's record in a
+  unit (read, lines 373-388; a question, not a ruling, until the spec-warden reads it again).
+- **Panel 204** (`docs/panel/204-c-reads-a-module-s-headers-in-the-order-its-groups-are-written-and-the-spec-says-so.md`)
+  ruled a module's own headers in written order (R1), refused a macro two headers define two ways
+  (R2), and told a refused header the order that compiles (R3, `selfhost/cli/header_order.hero`, 342
+  lines, `order_trial.hero`, 179); it refused a byte-sorted order and per-group units (R4). **Panel
+  202** cut every verb's C by module (R1) and compares one external declaration two modules bind
+  (C1, `ffi_declared_two_ways`) and one definition two units would hold (C2, `ffi_defined_twice`).
+- **Where a case can live**: `git ls-files tests/golden | grep -E '\.c$'` prints nothing, so no
+  golden case builds a C library; the harness builds one in one place, `tests/harness/shell.hero:2332`
+  (a Windows DLL for a test of its own).
+
+## The questions
+
+1. **2363, the mechanism.** Which closes the class, a call reaching another definition than the one
+   the author's group names, a memory fault at exit 0 among its outcomes, on both platforms, with no
+   correct program refused, **and with its verdict free of the order** (the walk's today, R2's key
+   after; a mechanism that accepts `dup_written` and refuses `dup_sorted` lets a module's name decide
+   whether a program builds):
+   - **(A)** the definition the link took, compared with the library the binding's group names: what
+     *the group's library* is for a group with no `link` (`interpose`), a re-export (`remath` on this
+     Mac), glibc's `pthread_create` and the names libc and libm both define;
+   - **(B)** every library on the line that defines a bound name, whatever the linker took: how the
+     definitions an archive did not load and a shared library the trace does not name are read, and
+     what it refuses among glibc's and the platform's own pairs;
+   - **(C)** the compiler orders the link line so that each bound name resolves to its group's
+     library, refused where no order does;
+   - **(D)** a route this list does not name. What would have to be true for it to exist.
+   For each: the words or tools it needs (the compiler starts no symbol reader today), what it costs
+   a build in instructions, on which platform it is unrun, and what Windows' `lld-link` would need.
+2. **2363, the words.** The code (a new one, or an existing one widened), the message, the notes and
+   the fix tagged `certain` or `guess`, on which line it is told, and **what a program that needs
+   both libraries can do** (after R2 no `use` order is a lever). design.md §4.17: everything needed
+   to fix the mistake without opening another file.
+3. **2363's reach.** A name no group binds that two linked libraries define and a third needs (a
+   library's own internal reference): reached by the robust reading, or a question for later, said
+   why. A name a library defines and the program's own objects define too (the runtime, a header's
+   external definition: `ffi_defined_twice` covers two units).
+4. **2364, the mechanism.** Which closes `pw_first`, `own`, `prefix`, `both` and the silent
+   `pack/pk_first`, with no correct program refused:
+   - **(A)** the order search over the other modules' headers a unit reads (panel 238's critic,
+     second pass, finding 7), one clang probe per order tried;
+   - **(B)** a check that every group record a unit spells has, in that unit, the layout its own
+     module's unit gives it (size, alignment, each member's offset and type), told where it differs;
+   - **(C)** the owner's earlier headers read before its record's (the owner's own unit's prefix);
+   - **(D)** a unit that reads another module's record without any header beside it that the
+     owner's unit does not read;
+   - **(E)** another.
+   Their cost on a program that builds and on the failure path, in instructions; and which of them
+   `pack` needs, since a field-type assertion cannot see it.
+5. **2364, the words where no order works** (`both`): code, message, notes, fix; whether
+   `ffi_field_type`'s *"in `rb.h`"* can be made true or another code is owed.
+6. **The order of landing.** Whether each repair depends on R2's walk by key, stands alone, or must
+   land before it; how each meets R3's group words on GNU ld (inside one `--start-group` group: which
+   definition binds, whether the group loads a member the bare line did not, a `multiple definition`
+   where there was none, and whether the mechanism reads a grouped link the same way).
+7. **The cases each owes**, and in which form (`.claude/rules/verification.md` § What gates what),
+   given that no golden case builds a library: on which platform each runs.
+8. **The text**: a spec sentence or none (the spec-warden counts with `heroes measure`, the vendored
+   tables only, no `--refresh`), design.md §4.19's, and `.claude/rules/c-boundary.md`'s member list.
+
+## Rules every seat keeps
+
+- **Every number in your report comes from a command you ran while writing it**, the command beside
+  it; a negative sentence (*no program does Y*, *the compiler has no X*) is run or written as a
+  question. A figure in this brief is the coordinator's: re-run it before you rest anything on it.
+- **No paid run of any kind**: no `claude -p` session, no API call, no cloud run, no `heroes measure
+  --refresh`. One you find worth running goes in your report with its size, and the coordinator
+  decides.
+- **No credential printed**: never `gh auth token`; `gh auth status` masks it. Only `gh` reads
+  (`issue view`, `issue list`, `search`), never a write.
+- **No file outside `/Users/joseph/Temp/heroes/heroes-lang`**: no `/tmp`, no home directory, and in
+  the container nothing outside the mount.
+- **A program that may not end** is built and its binary run under `timeout`, its output to
+  `/dev/null` or through `head -c 65536` into a file; never `timeout heroes run`.
+- **No git command that writes** in your worktree or any other (no commit, no checkout, no stash);
+  `git apply` of a diff onto a **copy** of `selfhost/` under `build/239/` is how a variant is built.
+- **Write your report as you go** to `docs/panel/239-reports/<seat>.md` **in your own worktree**
+  (the coordinator copies it into the lane), so a seat stopped early leaves what it had.
+- Your report ends with: your verdict (approve, object, or veto with its condition), the design.md
+  section it rests on, the cost or delta you measured, **one falsifiable prediction** with the run or
+  milestone that scores it, and the condition that would change your verdict.
+- No em dashes.
