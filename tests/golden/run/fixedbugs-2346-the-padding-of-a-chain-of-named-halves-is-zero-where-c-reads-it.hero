@@ -1,0 +1,52 @@
+# fixedbugs, defect 2346, 2026-11-08: a group record's padding is found once,
+# before `main`, from its table of spans (panel 215's R1), and the walk that
+# found it asked every span from the table's first at each run it stepped
+# over, the spans times the runs. Panel 233's chain of group records by named
+# halves holds a span for each nested record and two for each leaf, so at
+# sixteen levels, one mebibyte, the program ran 637,908,464,903 instructions
+# before `main` at `-O0` and 241,331,015,843 at `-O2`. The spans are sorted
+# once and read once now (`runtime/parts/lend.c`'s `hero_pad_gaps`): 460 and
+# 153 million. This chain is ten levels with four bytes of padding after each
+# leaf's members, and C, lent the record, reads every byte: the padding zero
+# and every member as it was set, at each of the 1,024 leaves.
+extern "fixedbugs-2346-padded-halves.h"
+    record P0 tag fixedbugs_2346_p0
+        a: i64
+        b: i32
+    record P1 tag fixedbugs_2346_p1
+        left: P0
+        right: P0
+    record P2 tag fixedbugs_2346_p2
+        left: P1
+        right: P1
+    record P3 tag fixedbugs_2346_p3
+        left: P2
+        right: P2
+    record P4 tag fixedbugs_2346_p4
+        left: P3
+        right: P3
+    record P5 tag fixedbugs_2346_p5
+        left: P4
+        right: P4
+    record P6 tag fixedbugs_2346_p6
+        left: P5
+        right: P5
+    record P7 tag fixedbugs_2346_p7
+        left: P6
+        right: P6
+    record P8 tag fixedbugs_2346_p8
+        left: P7
+        right: P7
+    record P9 tag fixedbugs_2346_p9
+        left: P8
+        right: P8
+    record P10 tag fixedbugs_2346_p10
+        left: P9
+        right: P9
+    function fixedbugs_2346_p_make() -> P10
+    function fixedbugs_2346_p_check(@p: P10) -> i64
+
+function main()
+    chain: P10 @= fixedbugs_2346_p_make()
+    print(fixedbugs_2346_p_check(@chain))
+    print(chain.right.right.right.right.right.right.right.right.right.right.b)
