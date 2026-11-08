@@ -70,6 +70,22 @@ charged on R3 is not adopted as written: the synthesis adopts it only with a rem
 over-application that a seat names, or adopts the next arm that wins R1 and R2 and is not charged,
 and says which.
 
+## The fourth task, R4, added on the critic's second pass before its own sessions
+
+Added 2026-11-08 after the critic's second pass (`docs/panel/237-reports/critic-reports.md`, finding
+1) found that R1 and R2 name the refusal (their step 5 asks for a second close), so a reader who
+follows them cannot come out silent and the arms could not be told apart. **R4**,
+`task-reader-4.md`, asks for the same SQLite program **without naming the refusal**: no step asks
+for a second close, the task gives `sqlite3_close`'s declaration and no word of what it returns,
+and `sqlite3_close_v2` is not mentioned. Under fence A's binding the program closes once, is
+answered 5 and exits 0 with the connection open: silent, defect 2322's report. Same arms, models
+and counts as R1 to R3: 72 sessions, about 4.3 USD by the per-model costs measured so far, within
+the author's cap. Graded as R1 (the shim's count of connections open at exit). **R4's rule,
+registered here before any of its sessions runs**: the rule of R1 and R2, an arm preferred over A
+when its `silent` count is lower than A's with a one-sided Fisher p below 0.05 and its `correct`
+count not lower than A's with p below 0.05; R4 decides item 3's reader question alone, and the
+synthesis reads R1 to R3 as the critic's second pass reads them (`reader-test.md`).
+
 ## Grading, on behaviour (the critic, finding 18)
 
 Each answer's last fenced block is the program, written to a folder of its own and built with lane
