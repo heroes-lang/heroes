@@ -156,20 +156,55 @@ function blob(dir: str, text: str) -> str?
     return answered(dir, words: ["hash-object", "-w", "--", "../" + last_part(file)])
 
 # A commit of the tree `listed` names, each a mode, an object and a path in
-# turn, made in `dir`'s index alone with no file written, so a test makes a
-# tree no checkout could hold: two names one where case is ignored, a link, a
-# submodule. Tagged `tag`; its whole name.
+# turn, with no file written, so a test makes a tree no checkout could hold:
+# two names one where case is ignored, a link, a submodule, a name holding
+# `:`, `\\` or a line end. Tagged `tag`; its whole name.
+#
+# **The tree object is written byte for byte** (`raw_file`, then `hash-object
+# --literally`), its entries in git's order, never through the index: git for
+# Windows refuses `z:drive` into an index whatever `core.protectNTFS` says
+# (measured on the Windows box 2026-11-08, git 2.55.0, defect 2361), and the
+# test then died at its fixture where it means to judge that a repository
+# made elsewhere holding such a name is refused before any file is written.
 function tree_commit(dir: str, listed: [str], tag: str) -> str?
+    names: [str] @= []
     at: i64 @= 0
 
     while at + 2 < listed.len()
-        git(dir, words: ["update-index", "--add", "--cacheinfo", listed[at] + "," + listed[at + 1] + "," + listed[at + 2]])?
+        names @ names.push(listed[at + 2])
         at @ at + 3
 
-    tree = answered(dir, words: ["write-tree"])?
+    # Each entry by its name in git's order, a file's name compared as bytes:
+    # its mode, a space, its name, a zero and its object's twenty bytes.
+    hex: [str] @= []
+
+    for name in names.sort()
+        one: i64 @= 0
+
+        while one + 2 < listed.len()
+            if listed[one + 2] == name
+                hex @ hex.push(hex_of(listed[one] + " " + name) + "00" + listed[one + 1])
+            one @ one + 3
+
+    file = dir + "-tree.bin"
+    raw_file(path: file, hex: hex.join(""))?
+    tree = answered(dir, words: ["hash-object", "-t", "tree", "-w", "--literally", "--", "../" + last_part(file)])?
     commit = answered(dir, words: ["commit-tree", "-m", "made", tree])?
     git(dir, words: ["tag", "-f", "--", tag, commit])?
     return ok(commit)
+
+# Each byte of `text` as two small hexadecimal digits.
+function hex_of(text: str) -> str
+    digits = "0123456789abcdef"
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        b = to_i64(text[at]).must()
+        out @ out.push(digits.slice(from: b / 16, to: b / 16 + 1) + digits.slice(from: b % 16, to: b % 16 + 1))
+        at @ at + 1
+
+    return out.join("")
 
 # What git answers in `dir`, its line end taken off.
 function answered(dir: str, words: [str]) -> str?

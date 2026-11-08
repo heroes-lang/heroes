@@ -304,11 +304,15 @@ test "a sum that is not the tree's places nothing, and a moved tag and a missing
     assert !process.path_exists(SCRATCH + "/app/heroes.packages") || process.walk(SCRATCH + "/app/heroes.packages").must().files.len() == 0
     assert !process.remove_tree(SCRATCH).is_err()
 
-# C3: each shape a hostile tree can hold, made in the source's index alone
-# (git lets a repository hold every one of them, and its fsck at fetch passes
-# them, measured 2026-11-08 with git 2.56.0), a good file sorted before the
-# bad name so a write before the judgement would show; the staging tree holds
-# no file after any refusal.
+# C3: each shape a hostile tree can hold, its tree object written byte for
+# byte in the source (`made_repo.tree_commit`; git lets a repository hold
+# every one of them, and its fsck at fetch passes them, measured 2026-11-08
+# with git 2.56.0), beside a good file, so a write before the judgement would
+# show; the staging tree holds no file after any refusal, the bad name's
+# among them. Made through the index until defect 2361, which git for Windows
+# refuses `z:drive` into, so on Windows the test died at its fixture; and a
+# name holding `:` written there would be a file `z` with a stream `drive`,
+# which only a walk of the tree sees.
 test "a tree holding a link, a submodule, a name one where case is ignored or a name no package may hold is refused before any file is written"
     m = source_made()
     good = made_repo.blob(dir: SCRATCH + "/src", text: "ok\n").must()
@@ -334,6 +338,8 @@ test "a tree holding a link, a submodule, a name one where case is ignored or a 
             .err e => assert e.code == "name_refused"
 
         assert !process.path_exists(s.tree + "/a.txt")
+        left = process.walk(s.tree)
+        assert !process.path_exists(s.tree) || left.must().files.len() == 0 && left.must().unnamed.len() == 0
         staging.dropped(s)
         at @ at + 1
 
