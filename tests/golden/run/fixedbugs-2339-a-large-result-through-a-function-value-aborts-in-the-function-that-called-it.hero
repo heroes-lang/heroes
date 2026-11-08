@@ -1,0 +1,19 @@
+# fixedbugs, defect 2339, 2026-11-08: a group's record returned through a
+# function value keeps C's convention (panel 236), so the result's copy is on
+# the frame of the function that calls the value. At `-O2` clang inlined `go`
+# into `main`, and the abort named `main` with `before` lost, where `-O0`
+# printed it and named `go`; kept out of line, every level prints `before`
+# and names `go`. Windows' guard names no function
+# (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_make(n: i64) -> Held
+
+function go(f: (function(i64) -> Held)) -> i64
+    h = f(7)
+    return h.first
+
+function main()
+    print("before")
+    print(go(f: heroes_held_make))

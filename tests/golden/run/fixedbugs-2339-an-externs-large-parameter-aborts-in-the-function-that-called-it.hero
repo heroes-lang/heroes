@@ -1,0 +1,20 @@
+# fixedbugs, defect 2339, 2026-11-08: the parameter beside the result of
+# defect 2339's first case. A record handed to an `extern` by value is copied
+# onto the calling function's frame, so `go`'s frame passes the stack, at
+# `go`'s entry and after `main` printed `before`. Where clang inlines `go`
+# into `main`, the copy moves to `main`'s frame, which is probed before
+# `before` is printed; a function whose frame may not be had is kept out of
+# line now, so the line is printed and `go` is named at every level. Windows'
+# guard names no function (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_first(h: Held) -> i64
+
+function go()
+    h = Held(first: 7, rest: zero)
+    print(heroes_held_first(h: h))
+
+function main()
+    print("before")
+    go()

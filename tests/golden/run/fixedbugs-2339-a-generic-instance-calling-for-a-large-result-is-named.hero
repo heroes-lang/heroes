@@ -1,0 +1,19 @@
+# fixedbugs, defect 2339, 2026-11-08: an instance of a generic function
+# that calls a function value for a group's large record holds the result's
+# copy on its frame, C's convention keeping it there. At `-O2` clang inlined
+# the instance into `main`, and the abort named `main` with `before` lost,
+# where `-O0` printed it and named the instance; kept out of line, every level
+# prints `before` and names `make_one`, told with its instance's hash. Windows'
+# guard names no function (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_make(n: i64) -> Held
+
+function make_one<T>(f: (function(i64) -> T), n: i64) -> T
+    return f(n)
+
+function main()
+    print("before")
+    h = make_one(f: heroes_held_make, n: 7)
+    print(h.first)

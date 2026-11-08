@@ -1,0 +1,18 @@
+# fixedbugs, defect 2339, 2026-11-08: an `extern`'s large result dropped
+# with `_` takes no room, and C's convention still keeps its copy on the
+# calling function's frame. At `-O2` clang inlined `go` into `main`, and the
+# abort named `main` with `before` lost, where `-O0` printed it and named
+# `go`; kept out of line, every level prints `before` and names `go`.
+# Windows' guard names no function (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_make(n: i64) -> Held
+
+function go()
+    _ = heroes_held_make(n: 7)
+    print("after")
+
+function main()
+    print("before")
+    go()

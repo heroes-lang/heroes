@@ -38,6 +38,7 @@ use emit/prologue
 use emit/nodebug
 use emit/entry_stop
 use emit/large_value
+use emit/out_of_line
 use parse
 use resolve
 use checker
@@ -92,11 +93,16 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
             @w,
             text: "/* " + f.name + "<" + signature.render_instance(c, s, decls, bound: f.instance) + "> */"
         )
-    writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
     live = reachable(f)
     read = unread.emitted_reads(f, c)
     owner = source.component_at(s, decls[f.decl].span.start) + "." + f.name
     entry = prologue.written(c, names, f, live: live, read: read, owner: owner, copies_bytes: w.copies_bytes)
+
+    # A function whose frame may not be had at its entry, its room or a copy C
+    # makes on it, is kept out of line, so a bound it meets names it at every
+    # level (`emit/out_of_line.hero`, defect 2339).
+    apart = out_of_line.attribute(f, names, takes_room: entry.off_frame.len() > 0)
+    writer.line(@w, text: apart + signature.signature(f, c, names, s, decls) + " {")
 
     for one in entry.defines
         writer.line(@w, text: one)

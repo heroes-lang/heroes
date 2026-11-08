@@ -1,0 +1,19 @@
+# fixedbugs, defect 2339, 2026-11-08: the room large values take off the
+# stack is asked for in a function's prologue, and its bound names the function
+# whose prologue asked (`runtime/parts/frame.c`). At `-O2` clang inlined
+# `go` into `main`, so its take was made from `main`'s code and the stop
+# named `main`, where `-O0` named `go`; kept out of line, every level names
+# `go`. The record is one gibibyte and eight bytes, past the room, so nothing
+# is taken. Windows' guard names no function
+# (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-huge.h"
+    record Huge tag heroes_huge partial
+        first: i64
+
+function go()
+    h = Huge(first: 7, rest: zero)
+    print(h.first)
+
+function main()
+    print("before")
+    go()

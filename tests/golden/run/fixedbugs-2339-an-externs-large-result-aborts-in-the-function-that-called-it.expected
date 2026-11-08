@@ -1,0 +1,3 @@
+before
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2339-an-externs-large-result-aborts-in-the-function-that-called-it.go

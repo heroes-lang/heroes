@@ -65,6 +65,9 @@ constant LINKED_ON_WINDOWS: str
 constant CALLBACK_NAMED_ON_WINDOWS: str
     "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, so a case pinning the function a callback's frame ran out in is judged where a name is said, Darwin and Linux, and defect 2253's case on a spawned thread judges Windows (defect 2277)"
 
+constant FRAME_NAMED_ON_WINDOWS: str
+    "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, and its room's bound says it without a name too, so a case pinning which function's frame or room ran out at every level is judged where a name is said, Darwin and Linux, and defect 2253's cases judge Windows (defect 2339)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
@@ -74,6 +77,15 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2075-a-probe-that-does-not-link-is-told-as-such", why: LINKED_ON_WINDOWS)
         Skip(name: "ffi-a-header-defining-a-static-main-is-told", why: STATIC_MAIN_ON_WINDOWS)
         Skip(name: "fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written", why: CALLBACK_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-an-externs-large-result-aborts-in-the-function-that-called-it", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-an-externs-large-parameter-aborts-in-the-function-that-called-it", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-an-externs-large-parameter-and-result-abort-in-the-function-that-called-it", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-a-large-result-through-a-function-value-aborts-in-the-function-that-called-it", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-a-large-parameter-handed-on-to-an-extern-aborts-in-the-function-that-handed-it", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-an-externs-large-result-dropped-aborts-in-the-function-that-dropped-it", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-the-function-calling-the-extern-is-named-and-not-its-caller", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-a-generic-instance-calling-for-a-large-result-is-named", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level", why: FRAME_NAMED_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -154,8 +166,10 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 6
-    assert shell.exists("tests/golden/run/" + windows()[5].name + ".hero")
+    assert windows().len() == 15
+
+    for one in windows().slice(from: 5, to: 15)
+        assert shell.exists("tests/golden/run/" + one.name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
@@ -173,6 +187,7 @@ test "a name is judged where its platform's C holds its shape"
     assert reason(elsewhere()[0].name).is_err() == on_windows
     assert reason("ffi-a-header-defining-a-static-main-is-told").is_err() == !on_windows
     assert reason("fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written").is_err() == !on_windows
+    assert reason("fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level").is_err() == !on_windows
     assert reason(elsewhere()[2].name).is_err() == on_windows
     assert reason("fixedbugs-562-another-case").is_err()
 

@@ -1,0 +1,21 @@
+# fixedbugs, defect 2339, 2026-11-08: two functions deep, the frame that
+# passes the stack is `inner`'s, which holds the copy of an `extern`'s large
+# result. At `-O2` clang inlined `inner` into `outer` and the abort named
+# `outer`, where `-O0` named `inner`; kept out of line, every level names
+# `inner`, the function that holds the copy. Windows' guard names no function
+# (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-held.h"
+    record Held tag heroes_held partial
+        first: i64
+    function heroes_held_make(n: i64) -> Held
+
+function inner() -> i64
+    h = heroes_held_make(n: 7)
+    return h.first
+
+function outer() -> i64
+    return inner() + 1
+
+function main()
+    print("before")
+    print(outer())
