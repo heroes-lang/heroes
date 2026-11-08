@@ -1,0 +1,6 @@
+add -C <work>/app
+add http://git.example.org/ana/yaml --tag v1 -C <work>/app
+add Json -C <work>/app
+add yaml --index file://../../../../../tests/golden/fetch/add-refused.case/idx -C <work>/app
+add json@9.9.9 --index file://../../../../../tests/golden/fetch/add-refused.case/idx -C <work>/app
+add ssh://git@git.example.org/ana/yaml --tag v1 -C <work>/app

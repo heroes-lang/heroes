@@ -1,0 +1,18 @@
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+placed json 1.4.2 <work>/app/heroes.packages/json@1.4.2-17a3427cbb3646d2
+stderr:
+$ heroes fetch -C <work>/app
+exit 0
+stdout:
+kept json 1.4.2 <work>/app/heroes.packages/json@1.4.2-17a3427cbb3646d2
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fetch-places-and-keeps.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-c5e937500d7206bbee6d9fae216773d604f937abe1bc776b704a6fa48fceb463"
+heroes.packages:
+json@1.4.2-17a3427cbb3646d2

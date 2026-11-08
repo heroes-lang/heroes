@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/add-what-it-needs.case/idx"
+
+[dependencies.strings]
+version = "1.1.0"
+sum = "sha256-83cd13fb0064072a6a897783538e6dd988720bdf9e6bcc3ce792cccadeec85a9"

@@ -1,0 +1,5 @@
+index = "file://../../../../../tests/golden/fetch/fetch-a-sum-that-does-not-match.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-0000000000000000000000000000000000000000000000000000000000000000"

@@ -1,0 +1,11 @@
+$ heroes add --path ../local --as mine -C <work>/app
+exit 0
+stdout:
+added mine ../local
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+[dependencies.mine]
+path = "../local"
+heroes.packages:
+(none)

@@ -1,0 +1,29 @@
+$ heroes add json@1.0.0 -C <work>/app
+exit 0
+stdout:
+added json 1.0.0
+added strings 1.0.0 for json
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes add json -C <work>/app
+exit 0
+stdout:
+changed json 1.0.0 -> 2.0.0
+changed strings 1.0.0 -> 1.1.0 for json
+wrote <work>/app/heroes.toml
+stderr:
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/add-what-it-needs.case/idx"
+
+[dependencies.json]
+version = "2.0.0"
+sum = "sha256-352aa673243acb6c1ec0f4edffbc6b3c79a9aafd744cd1ebc94659e55695bbce"
+
+[dependencies.strings]
+version = "1.1.0"
+sum = "sha256-83cd13fb0064072a6a897783538e6dd988720bdf9e6bcc3ce792cccadeec85a9"
+heroes.packages:
+json@1.0.0-b2d7248ffdf3e204
+json@2.0.0-5667e195810b276a
+strings@1.0.0-a309aecfae37838e
+strings@1.1.0-0879427c11559f2c

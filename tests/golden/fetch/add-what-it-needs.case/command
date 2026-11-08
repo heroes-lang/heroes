@@ -1,0 +1,2 @@
+add json@1.0.0 -C <work>/app
+add json -C <work>/app

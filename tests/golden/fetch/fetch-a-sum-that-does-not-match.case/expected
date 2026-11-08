@@ -1,0 +1,13 @@
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+<work>/app/heroes.toml:5: error[sum_mismatch]: the listing of json 1.4.2 at the index `file://../../../../../tests/golden/fetch/fetch-a-sum-that-does-not-match.case/idx` sums to `sha256-88ed723d8c92c5d15dcbbbc763a54a2efcfcc333452c3f4e1d065235780499b8`, and the catalogue's `sum` for it is `sha256-0000000000000000000000000000000000000000000000000000000000000000`: the package is not the one its entry was written for, and nothing was fetched
+heroes.toml:
+index = "file://../../../../../tests/golden/fetch/fetch-a-sum-that-does-not-match.case/idx"
+
+[dependencies.json]
+version = "1.4.2"
+sum = "sha256-0000000000000000000000000000000000000000000000000000000000000000"
+heroes.packages:
+(none)
