@@ -1,0 +1,9 @@
+# The words of `s`, one more than its spaces.
+function count(s: str) -> i64
+    n: i64 @= 1
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == ' '
+            n @ n + 1
+
+    return n

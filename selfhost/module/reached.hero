@@ -9,13 +9,16 @@
 # A package the compilation reaches: the program's alias for it, the entry's
 # name in the program's catalogue; the folder its modules are read from, as a
 # message names it and as it is opened; why its modules were not read, ""
-# where they were; and whether it is a `path` entry, a folder of the author's
-# own, read unverified (R6).
+# where they were, and the code that is told with, "" for the graph's own
+# (`package_unread`) and the verb's where the build tells the refusal `heroes
+# fetch` would give (`module/unplaced.hero`); and whether it is a `path`
+# entry, a folder of the author's own, read unverified (R6).
 record Package
     alias: str
     root: str
     opened: str
     problem: str
+    code: str
     unverified: bool
 
 # An alias a package's own catalogue gives a package of the build (R3): in a

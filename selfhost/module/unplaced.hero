@@ -1,0 +1,112 @@
+# What a build says of a package whose placed tree is missing, where `heroes
+# fetch` would refuse the address it reads it from (M-package-manager step
+# 5b; panel 235's R8 and R9, the coordinator's ruling of 2026-11-08 under the
+# batch's recommended answer): a `file://` source outside the program's own
+# repository, a program in no repository, a source reached through a link, a
+# machine with no git. The build told *not placed: `heroes fetch` places it*,
+# naming a fix that cannot work; it tells the verb's refusal now, with the
+# verb's code and words: `fetch/address.hero`'s `judged`, over the root
+# `fetch/transport.hero`'s `root_of` asks of git, the verb's own two calls.
+#
+# **Asked on that error path alone.** A build that reads every tree it needs
+# runs no git, and neither does a package whose tree is placed, nor an
+# `https://` source, nor a `path` entry: nothing is fetched (R8), and the one
+# question, where the program stands in its repository, is asked after the
+# build has already failed. Git writes its answer into a staging folder
+# beside the placed trees, as it does for the verb (`fetch/staging.hero`),
+# removed at once, with `heroes.packages/` where nothing else stands in it.
+
+use module/catalogue
+use module/reached
+use fetch/address
+use fetch/index_source
+use fetch/staging
+use fetch/transport
+use fetch/verb_place
+use cli/process
+use cli/strings
+
+# The refusal `heroes fetch` would give the entry `e`, whose tree `package`
+# names, for the program read under `program` (the directory of the file you
+# compile as files are opened) with the catalogue's `index` line; ok where
+# the tree is placed, the source needs no repository, or the verb would
+# fetch it. Where no staging folder can be made, git cannot be asked, and the
+# graph's own words stand.
+function refusal(package: reached.Package, e: catalogue.Entry, index: str, program: str) -> ()?
+    if package.unverified || process.is_directory(path: package.opened)
+        return ok()
+    written: str @= e.git
+
+    if e.version.len() > 0
+        written @ index_source.written_index(index)
+
+    if !strings.starts_with(text: written, prefix: "file://")
+        return ok()
+    scratch = staging.opened(program)
+
+    if scratch.is_err()
+        return ok()
+    root = transport.root_of(
+        transport.path_tools(),
+        folder: verb_place.dot_if_empty(program),
+        scratch: scratch.must().folder
+    )
+    staging.dropped(scratch.must())
+    verb_place.unused_dropped(program)
+
+    match root
+        .err asked => return fail(code: asked.code, msg: asked.msg)
+        .ok at =>
+            match address.judged(written, root: at)
+                .err judged => return fail(code: judged.code, msg: judged.msg)
+                .ok _       => return ok()
+
+# A refusal's words and its code, "" where there is none.
+function said(refused: ()?) -> str
+    match refused
+        .ok    => return ""
+        .err e => return e.msg
+
+function code(refused: ()?) -> str
+    match refused
+        .ok    => return ""
+        .err e => return e.code
+
+## Tests
+
+# The questions nobody asks git for: a placed tree, a folder of the author's
+# own, an `https://` source, the Heroes index. None makes a staging folder,
+# so `build/` keeps no `heroes.packages/` after them.
+test "a tree placed, a folder, or an address on the network asks no git"
+    sum = "sha256-" + "a".repeat(64.to_u64().must())
+    git = catalogue.Entry(
+        name: "yaml",
+        version: "",
+        git: "https://git.example.org/ana/yaml",
+        tag: "v1",
+        commit: "b".repeat(40.to_u64().must()),
+        path: "",
+        sum: sum
+    )
+    index = catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: sum)
+    missing = reached.Package(
+        alias: "yaml",
+        root: "x/",
+        opened: "build/selftest-unplaced/nowhere/",
+        problem: "",
+        code: "",
+        unverified: false
+    )
+    folder = reached.Package(
+        alias: "yaml",
+        root: "x/",
+        opened: "build/selftest-unplaced/nowhere/",
+        problem: "",
+        code: "",
+        unverified: true
+    )
+    assert !refusal(missing, e: git, index: "", program: "build/selftest-unplaced/").is_err()
+    assert !refusal(missing, e: index, index: "", program: "build/selftest-unplaced/").is_err()
+    assert !refusal(missing, e: index, index: "https://index.example.org/heroes", program: "build/selftest-unplaced/").is_err()
+    assert !refusal(folder, e: git, index: "", program: "build/selftest-unplaced/").is_err()
+    assert !process.is_directory(path: "build/selftest-unplaced/heroes.packages")

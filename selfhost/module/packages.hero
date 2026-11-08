@@ -31,6 +31,7 @@ use module/reached
 use module/catalogue
 use module/placed
 use module/fingerprint
+use module/unplaced
 use cli/process
 
 constant PLACED: str
@@ -100,6 +101,14 @@ function reach(@b: Book, alias: str) -> i64
     e = found.must()
     package: reached.Package @= rooted(b, e: e)
     package.problem @ problem_of(@b, package: package, e: e)
+
+    # A tree not placed whose address the verb refuses is told as the verb
+    # tells it, never as a tree `heroes fetch` would place (step 5b).
+    refused = unplaced.refusal(package, e: e, index: b.program.index, program: b.opened)
+
+    if refused.is_err()
+        package.problem @ unplaced.said(refused)
+        package.code @ unplaced.code(refused)
     b.reached @ b.reached.push(package)
     return b.reached.len() - 1
 
@@ -111,16 +120,24 @@ function rooted(b: Book, e: catalogue.Entry) -> reached.Package
         folder = with_slash(e.path)
 
         if folder[0] == '/'
-            return reached.Package(alias: e.name, root: folder, opened: folder, problem: "", unverified: true)
+            return reached.Package(alias: e.name, root: folder, opened: folder, problem: "", code: "", unverified: true)
         return reached.Package(
             alias: e.name,
             root: b.named + folder,
             opened: b.opened + folder,
             problem: "",
+            code: "",
             unverified: true
         )
     tree = PLACED + "/" + placed.key(e, index: b.program.index) + "/"
-    return reached.Package(alias: e.name, root: b.named + tree, opened: b.opened + tree, problem: "", unverified: false)
+    return reached.Package(
+        alias: e.name,
+        root: b.named + tree,
+        opened: b.opened + tree,
+        problem: "",
+        code: "",
+        unverified: false
+    )
 
 # Why a package's modules cannot be read, "" where they can: its tree not
 # placed, not matching its fingerprint (R7), its own catalogue not reading,

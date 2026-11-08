@@ -1,0 +1,5 @@
+use <text>/words
+
+# How many words `s` holds, as the package `text` counts them.
+function count(s: str) -> i64
+    return words.count(s)

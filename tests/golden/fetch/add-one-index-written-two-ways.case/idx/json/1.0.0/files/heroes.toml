@@ -1,0 +1,6 @@
+# The program's index, written another way: `./` before the path.
+index = "file://./../../../../../tests/golden/fetch/add-one-index-written-two-ways.case/idx"
+
+[dependencies.text]
+version = "2.0.0"
+sum = "sha256-160d14da2155a01c04eeae0c40dfe3396a82c19500f3e7428f2d4e051219364a"

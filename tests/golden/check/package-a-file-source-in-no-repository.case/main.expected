@@ -1,0 +1,1 @@
+tests/golden/check/package-a-file-source-in-no-repository.case/main.hero:7:5: error[source_refused]: `<yaml>` cannot be read: `file://./packages/yaml` is read only from inside the program's own repository, and the program's folder is in none: `git rev-parse` exited 128: fatal: not a git repository (or any of the parent directories): .git

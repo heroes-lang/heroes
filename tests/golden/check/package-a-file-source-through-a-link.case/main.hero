@@ -1,0 +1,9 @@
+# M-package-manager step 5b (the coordinator's ruling of 2026-11-08): the
+# entry's `git` names `file://./linked/yaml`, and `linked` is a symbolic link
+# (made in the case's copy, `links`), which could name a place outside the
+# program's repository, so `heroes fetch` refuses the source. The build tells
+# the verb's refusal, where it said *not placed: `heroes fetch` places it*.
+use <yaml>/load  #~ source_refused
+
+function main()
+    print(load.size())

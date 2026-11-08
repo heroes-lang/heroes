@@ -55,12 +55,20 @@ function documented(inv: argv.Invocation) -> bool
 
 test "a package read from a `path` entry is told, once, and one read from its placed tree is not"
     s: source.Source @= source.new_source(name: "main.hero", text: "")
-    folder = reached.Package(alias: "json", root: "vendor/json/", opened: "vendor/json/", problem: "", unverified: true)
+    folder = reached.Package(
+        alias: "json",
+        root: "vendor/json/",
+        opened: "vendor/json/",
+        problem: "",
+        code: "",
+        unverified: true
+    )
     tree = reached.Package(
         alias: "yaml",
         root: "heroes.packages/yaml@v1-0/",
         opened: "heroes.packages/yaml@v1-0/",
         problem: "",
+        code: "",
         unverified: false
     )
     missing = reached.Package(
@@ -68,6 +76,7 @@ test "a package read from a `path` entry is told, once, and one read from its pl
         root: "gone/",
         opened: "gone/",
         problem: "the folder `gone/` its `path` names is not there",
+        code: "",
         unverified: true
     )
     aliases: [reached.Alias] = []

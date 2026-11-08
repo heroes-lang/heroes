@@ -1,0 +1,210 @@
+# What a golden case that is a folder may ask of the run beside its files
+# (M-package-manager step 5b): a shape no file of the repository can hold, a
+# machine with no git, a program git places in no repository, a link on the
+# way to a source. Two files beside `main.hero`, either or both:
+#
+#     environment    `NAME=VALUE` a line, set for the case's run alone and put
+#                    back after it, `<root>` in a value standing for the
+#                    repository's root as git answers it
+#     links          `<name> <target>` a line, a symbolic link made in the
+#                    case before its run, holding `<target>` as written
+#
+# **No link is ever made in the tree**: a case with links runs in a copy under
+# the harness's scratch folder (`build/`, inside the repository, so git
+# answers the same root there), its links made in the copy with `ln -s` as
+# `apply_tree.hero` makes its own, and the case is skipped by name where `ln`
+# is not the machine's, Windows. **What a case prints is written back as the
+# case's own**: the copy's folder as the case's, absolute and relative, and
+# the repository's root as `<root>`, so one expectation holds on every
+# machine. A case whose expectation writes `<root>` and asks nothing runs in
+# place, its root written back the same way.
+#
+# **Which variables, a fact about each**: `PATH` and `GIT_CEILING_DIRECTORIES`,
+# the two whose empty value reads as unset to what a case's compiler runs (an
+# empty ceiling list is none to git, and `PATH` is set in every run of this
+# harness), so a variable this run had unset is put back empty. Any other
+# name is refused with the case's name, never set.
+
+use apply_tree
+use shell
+use strings
+
+extern "hero_compiler.h"
+    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
+
+# The variables a case's `environment` may set.
+constant SETTABLE: [str]
+    ["PATH", "GIT_CEILING_DIRECTORIES"]
+
+# What a case asks of its run: each variable `NAME=VALUE`, each link `name
+# target`, as written.
+record Setting
+    environment: [str]
+    links: [str]
+
+# The setting of the case in the folder `dir`, none where it asks nothing, or
+# the refusal of a line it may not write.
+function read_setting(dir: str) -> Setting?
+    environment = lines_of(read_file(dir + "/environment").default(""))
+    links = lines_of(read_file(dir + "/links").default(""))
+
+    for pair in environment
+        cut = strings.index_of(text: pair, needle: "=")
+
+        if cut.is_err() || !settable(pair.slice(from: 0, to: cut.must()))
+            return fail(
+                code: "setting",
+                msg: dir + "/environment sets `" + pair + "`, and a case sets only " + SETTABLE.join(" and ") + ", the variables whose empty value reads as unset, as `NAME=VALUE`"
+            )
+
+    for link in links
+        if strings.split_on(text: link, byte: 32).len() != 2
+            return fail(code: "setting", msg: dir + "/links holds `" + link + "`, and a link is `<name> <target>`")
+
+    return ok(Setting(environment: environment, links: links))
+
+# The code a case skipped here fails with, which a form keeps as a skip.
+constant SKIP: str
+    "setting_skipped"
+
+# Why the case `s` names cannot run on this machine, "" where it can: a link
+# made with `ln`, which Windows has not.
+function skip_here(s: Setting) -> str
+    if s.links.len() > 0 && shell.exe_suffix() == ".exe"
+        return "the case makes a symbolic link with `ln -s` before its run, as `apply_tree.hero`'s link cases do, and this platform has no `ln`"
+    return ""
+
+# Whether a run failed as a case skipped here.
+function is_skip(said: shell.Run?) -> bool
+    match said
+        .ok _  => return false
+        .err e => return e.code == SKIP
+
+# Whether a case asks anything of its run.
+function asks(s: Setting) -> bool
+    return s.environment.len() > 0 || s.links.len() > 0
+
+# Whether `name` is a variable a case may set.
+function settable(name: str) -> bool
+    for one in SETTABLE
+        if one == name
+            return true
+
+    return false
+
+# The repository's root as git answers it, absolute.
+function repository_root(scratch: str) -> str?
+    asked = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--show-toplevel"])?
+
+    if asked.code != 0
+        return fail(
+            code: "no_repository",
+            msg: "the case writes `<root>` or asks its run something, and git answers no repository root here: " + asked.err
+        )
+    return ok(strings.trimmed(asked.out))
+
+# The run of `words` for the case in `dir` as `s` asks it, what it printed
+# written back as the case's own: in a copy holding its links, with its
+# variables set and put back.
+function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
+    at: str @= dir
+    line: [str] @= words
+
+    if s.links.len() > 0
+        at @ scratch + "/set/" + strings.base_name(path: dir)
+        apply_tree.copy_tree(scratch: scratch, from: dir, to: at)?
+
+        for link in s.links
+            parts = strings.split_on(text: link, byte: 32)
+            made = shell.run(scratch: scratch, program: "ln", words: ["ln", "-s", parts[1], at + "/" + parts[0]])?
+
+            if made.code != 0
+                return fail(
+                    code: "setting",
+                    msg: "`ln -s " + parts[1] + " " + at + "/" + parts[0] + "` exited " + made.code.to_str() + ": " + made.err
+                )
+
+        line @ swapped_all(words: words, old: dir, new: at)
+    before: [str] @= []
+
+    for pair in s.environment
+        cut = strings.index_of(text: pair, needle: "=").must()
+        name = pair.slice(from: 0, to: cut)
+        before @ before.push(name + "=" + shell.env(name).default(""))
+        _ = hero_env_put(
+            name: name.cstr(),
+            value: swapped(text: pair.slice(from: cut + 1, to: pair.len()), old: "<root>", new: root).cstr()
+        )
+
+    said = shell.run(scratch: scratch, program: program, words: line)
+
+    for pair in before
+        cut = strings.index_of(text: pair, needle: "=").must()
+        _ = hero_env_put(
+            name: pair.slice(from: 0, to: cut).cstr(),
+            value: pair.slice(from: cut + 1, to: pair.len()).cstr()
+        )
+
+    if at != dir
+        _ = shell.remove_tree(at).is_err()
+    back: shell.Run @= said?
+    back.out @ written_back(text: back.out, at: at, dir: dir, root: root)
+    back.err @ written_back(text: back.err, at: at, dir: dir, root: root)
+    return ok(back)
+
+# `text` with the folder the case ran in written as the case's own, and the
+# repository's root as `<root>`: the absolute form first.
+function written_back(text: str, at: str, dir: str, root: str) -> str
+    moved: str @= text
+
+    if at != dir
+        moved @ swapped(text: moved, old: root + "/" + at, new: "<root>/" + dir)
+        moved @ swapped(text: moved, old: at, new: dir)
+    return swapped(text: moved, old: root, new: "<root>")
+
+function swapped_all(words: [str], old: str, new: str) -> [str]
+    out: [str] @= []
+
+    for word in words
+        out @ out.push(swapped(text: word, old: old, new: new))
+
+    return out
+
+# `text` with every `old` written `new`.
+function swapped(text: str, old: str, new: str) -> str
+    if old.len() == 0
+        return text
+    return strings.split_text(text: text, separator: old).join(new)
+
+# The lines of a setting's file, blank ones and `#` comments left out.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+
+    for one in strings.split_on(text: text, byte: 10)
+        line = strings.trimmed(one)
+
+        if line.len() > 0 && line[0] != '#'
+            out @ out.push(line)
+
+    return out
+
+## Tests
+
+test "a case's printed folder and root are written back as its own"
+    got = written_back(
+        text: "build/h-1/set/x.case/main.hero:1:5: error[e]: through `/r/build/h-1/set/x.case/linked`, in `/r`",
+        at: "build/h-1/set/x.case",
+        dir: "tests/golden/check/x.case",
+        root: "/r"
+    )
+    assert got == "tests/golden/check/x.case/main.hero:1:5: error[e]: through `<root>/tests/golden/check/x.case/linked`, in `<root>`"
+    assert written_back(text: "outside `/r`", at: "d", dir: "d", root: "/r") == "outside `<root>`"
+
+test "a setting names only the variables whose empty value reads as unset, and links of two words"
+    assert settable("PATH")
+    assert settable("GIT_CEILING_DIRECTORIES")
+    assert !settable("GIT_DIR")
+    assert !settable("HOME")
+    assert lines_of("# why\nPATH=<root>/build/no-tools\n\n") == ["PATH=<root>/build/no-tools"]
+    none = Setting(environment: [], links: [])
+    assert !asks(none)

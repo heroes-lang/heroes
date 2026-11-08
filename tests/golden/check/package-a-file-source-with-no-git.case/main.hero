@@ -1,0 +1,9 @@
+# M-package-manager step 5b (the coordinator's ruling of 2026-11-08): the
+# entry's `git` names a folder of the program's own, on a machine whose PATH
+# holds no git (the case's `environment`), so `heroes fetch` cannot know the
+# program's repository and refuses the source, `no_git`. The build tells that,
+# where it said *not placed: `heroes fetch` places it*.
+use <yaml>/load  #~ no_git
+
+function main()
+    print(load.size())

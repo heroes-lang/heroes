@@ -1,0 +1,2 @@
+# The case runs where git may not look at the repository above it.
+GIT_CEILING_DIRECTORIES=<root>

@@ -35,6 +35,7 @@
 # cannot be broken by accident.
 
 use absence
+use case_setting
 use cases
 use platform_skips
 use report
@@ -304,6 +305,7 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
             detail: "  " + shape.dir + " has " + found.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden"
         )
     skipped: i64 @= 0
+    root: str @= ""
 
     for item in found
         expectation = read_file(item.expected)
@@ -321,12 +323,21 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
             for flag in shape.flags
                 line @ line.push(flag)
 
-            said = shell.run(scratch: scratch, program: compiler, words: line)
+            said = case_ran(
+                root: @root,
+                scratch: scratch,
+                compiler: compiler,
+                item: item,
+                words: line,
+                expected: expectation.must()
+            )
 
             # The refusal's own words, never a sentence of this suite's: until
             # defect 317 this said *cannot run the compiler on* of a compiler
             # that ran and wrote bytes that are not UTF-8.
-            if said.is_err()
+            if said.is_err() && case_setting.is_skip(said)
+                report.keep_skip(@r, label: shape.name + "/" + item.name, detail: "  " + shell.refusal(said))
+            else if said.is_err()
                 report.keep_failure(
                     @r,
                     label: shape.name + "/" + item.name,
@@ -355,6 +366,29 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
             detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not testing the refusals"
         )
     return ok(r)
+
+# The run of one case: in place, or as its folder asks of its run
+# (`case_setting.hero`, M-package-manager step 5b), the repository's root
+# asked once and written back as `<root>` where the case asks anything or
+# its expectation writes `<root>`.
+function case_ran(@root: str, scratch: str, compiler: str, item: cases.Case, words: [str], expected: str) -> shell.Run?
+    tail = "/main.hero"
+
+    if !strings.ends_with(text: item.source, suffix: ".case" + tail)
+        return shell.run(scratch: scratch, program: compiler, words: words)
+    dir = item.source.slice(from: 0, to: item.source.len() - tail.len())
+    setting = case_setting.read_setting(dir)?
+
+    if !case_setting.asks(setting) && !strings.contains(text: expected, needle: "<root>")
+        return shell.run(scratch: scratch, program: compiler, words: words)
+    skip = case_setting.skip_here(setting)
+
+    if skip.len() > 0
+        return fail(code: case_setting.SKIP, msg: skip)
+
+    if root.len() == 0
+        root @ case_setting.repository_root(scratch)?
+    return case_setting.ran(scratch: scratch, program: compiler, words: words, dir: dir, s: setting, root: root)
 
 # One case of a form that may skip for a missing library, `unsupported/`.
 #
