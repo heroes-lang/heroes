@@ -148,7 +148,7 @@ test "the applied answer holds the program, its rounds and what it did not write
     unread: [source.Source] = []
     settled = Settled(text: "abd\n", rounds: 2, elsewhere: ["geom.hero:3"], readings: unread)
     assert answer(s, settled: settled, as_json: false, holes: holes_json.unknown()) == "abd\n"
-    assert answer(s, settled: settled, as_json: true, holes: holes_json.unknown()) == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"file\": \"t.hero\",\n  \"rounds\": 2,\n  \"not_applied\": [\"geom.hero:3\"],\n  \"output\": \"abd\\n\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
+    assert answer(s, settled: settled, as_json: true, holes: holes_json.unknown()) == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"notes\": [],\n  \"file\": \"t.hero\",\n  \"rounds\": 2,\n  \"not_applied\": [\"geom.hero:3\"],\n  \"output\": \"abd\\n\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
     assert untouched(s).text == "abc"
     assert untouched(s).rounds == 0
 
@@ -161,4 +161,4 @@ test "the applied answer names the files every round read, each once"
     )
     settled = Settled(text: "abd", rounds: 1, elsewhere: ["g.hero:1"], readings: [again])
     got = answer(first, settled: settled, as_json: true, holes: holes_json.unknown())
-    assert got == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"m.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"},\n    {\"file\": \"g.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"file\": \"m.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"g.hero:1\"],\n  \"output\": \"abd\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
+    assert got == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"m.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"},\n    {\"file\": \"g.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"notes\": [],\n  \"file\": \"m.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"g.hero:1\"],\n  \"output\": \"abd\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"

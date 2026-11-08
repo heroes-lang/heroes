@@ -24,6 +24,15 @@
 # `withheld`, `twin`, `elsewhere` or `malformed`. A guess carries none; its
 # place is for showing. Each place costs two binary searches, not a walk of
 # its line (defect 372), the price panel 193's R6 measured on one long line.
+#
+# **Every answer holds the notes the compilation owes** (M-package-manager
+# step 4b; panel 235's R6, ratified 2026-11-07): `"notes"`, an array of
+# strings after `"read"`, each a sentence as stderr says it after `note: `,
+# today a package read from a `path` entry, unverified (`cli/unverified.hero`),
+# and `[]` where none is owed. A member added, so `"schema"` stays 2 (design.md
+# §4.17, *a member is added with what its absence means*): absent, the answer
+# was written before it and says nothing either way, never that no note was
+# owed.
 
 use diag
 use source
@@ -33,6 +42,8 @@ use cli/json_text
 use cli/certain
 use cli/sha256
 use cli/holes_json
+use cli/unverified
+use module/reached
 
 # The schema's number, which every document opens with. The help, the page a
 # model reads and the errors page say it, each held to this constant.
@@ -107,6 +118,8 @@ function head(kind: str, s: source.Source) -> str
 function head_of(kind: str, readings: [source.Source]) -> str
     read: [str] @= []
     named: [str] @= []
+    notes: [str] @= []
+    noted: [str] @= []
 
     for s in readings
         index: i64 @= 0
@@ -121,7 +134,12 @@ function head_of(kind: str, readings: [source.Source]) -> str
                 named @ named.push(entry.name)
             index @ index + 1
 
-    return "{\n  \"schema\": " + SCHEMA.to_str() + ",\n  \"kind\": \"" + kind + "\",\n  \"read\": [\n" + read.join(",\n") + "\n  ],\n"
+        for note in unverified.notes(s)
+            if !certain.listed(names: noted, name: note)
+                notes @ notes.push(quote(note))
+                noted @ noted.push(note)
+
+    return "{\n  \"schema\": " + SCHEMA.to_str() + ",\n  \"kind\": \"" + kind + "\",\n  \"read\": [\n" + read.join(",\n") + "\n  ],\n  \"notes\": [" + notes.join(", ") + "],\n"
 
 # Where a fix applies, as R1 gives it, or nothing for a span that is not one,
 # ends past the text, or crosses from one file into another: `--apply` writes
@@ -180,4 +198,15 @@ test "every answer says its schema and kind, names what it read, and a clean one
     s = source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
     none: [diag.Diagnostic] = []
     clean = json(none, s, holes: holes_json.unknown())
-    assert clean == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"diagnostics\": [],\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
+    assert clean == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"notes\": [],\n  \"diagnostics\": [],\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
+
+# M-package-manager step 4b: the note a `path` entry is owed is held in the
+# document, once however many readings name the package, where `--json`
+# silenced it.
+test "a document holds the notes the compilation owes, each once"
+    s: source.Source @= source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
+    folder = reached.Package(alias: "json", root: "vendor/json/", opened: "vendor/json/", problem: "", unverified: true)
+    aliases: [reached.Alias] = []
+    s.reached @ reached.Reached(packages: [folder], aliases: aliases)
+    got = head_of(kind: "diagnostics", readings: [s, s])
+    assert got == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"notes\": [\"the package `json` is read from the folder `vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it\"],\n"
