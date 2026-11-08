@@ -2,19 +2,74 @@
 # compilation reads it (spec § 1; panel 235's R6, ratified 2026-11-07): a
 # `path` entry has no fingerprint, so a mistyped one reads other code at exit
 # 0, measured by the sitting's critic, and the falsifier names it its one
-# exemption, told and never silent. Said on stderr, where a diagnostic is,
-# and never under `--json`, whose stderr is one document.
+# exemption, told and never silent.
+#
+# **Told in every answer, the JSON one included** (M-package-manager step
+# 4b, the lane's own finding of 2026-11-08): the note is said on stderr, where
+# a diagnostic is, and every JSON document holds it among its `"notes"`
+# (`cli/check_json.hero`). Until then `--json` silenced it whole, so `heroes
+# check --json` over such a program answered `"diagnostics": []` at exit 0 and
+# a tool reading the answer was told nothing of the unverified folder; and
+# `lex --json` and `check --apply --json`, whose stderr is no document, were
+# silenced with it. Stderr is left to the document only where it is one.
 
 use source
 use cli/argv
 use cli/io
+use module/reached
 
-function say(s: source.Source, inv: argv.Invocation)
-    if argv.has(inv, spelling: "--json")
-        return
+# What each package read from a `path` entry is told, once a package, in the
+# order discovery reached them.
+function notes(s: source.Source) -> [str]
+    out: [str] @= []
 
     for p in s.reached.packages
         if p.unverified && p.problem.len() == 0
-            io.eprint(
-                text: "note: the package `" + p.alias + "` is read from the folder `" + p.root + "`, a `path` entry of the catalogue: unverified, no fingerprint holds it"
+            out @ out.push(
+                "the package `" + p.alias + "` is read from the folder `" + p.root + "`, a `path` entry of the catalogue: unverified, no fingerprint holds it"
             )
+
+    return out
+
+# The notes on stderr, each a line, unless stderr is the JSON document that
+# holds them.
+function say(s: source.Source, inv: argv.Invocation)
+    if documented(inv)
+        return
+
+    for note in notes(s)
+        io.eprint(text: "note: " + note)
+
+# Whether stderr is one JSON document: `check --json`, whose diagnostics are
+# written there. With `--apply` the document is on stdout, and `lex --json`
+# prints its tokens there, so stderr is lines in both.
+function documented(inv: argv.Invocation) -> bool
+    if !argv.has(inv, spelling: "--json") || argv.has(inv, spelling: "--apply")
+        return false
+
+    return match inv.tag
+        .check_cmd => true
+        .lex_cmd | .parse_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd | .add_cmd | .fetch_cmd | .doctor_cmd | .mutate_cmd | .probe_cmd | .measure_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd => false
+
+## Tests
+
+test "a package read from a `path` entry is told, once, and one read from its placed tree is not"
+    s: source.Source @= source.new_source(name: "main.hero", text: "")
+    folder = reached.Package(alias: "json", root: "vendor/json/", opened: "vendor/json/", problem: "", unverified: true)
+    tree = reached.Package(
+        alias: "yaml",
+        root: "heroes.packages/yaml@v1-0/",
+        opened: "heroes.packages/yaml@v1-0/",
+        problem: "",
+        unverified: false
+    )
+    missing = reached.Package(
+        alias: "toml",
+        root: "gone/",
+        opened: "gone/",
+        problem: "the folder `gone/` its `path` names is not there",
+        unverified: true
+    )
+    aliases: [reached.Alias] = []
+    s.reached @ reached.Reached(packages: [folder, tree, missing], aliases: aliases)
+    assert notes(s) == ["the package `json` is read from the folder `vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it"]
