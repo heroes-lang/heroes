@@ -340,16 +340,16 @@ function label_value(issue: Listed, name: str) -> str
 function kind_of(issue: Listed) -> str
     return label_value(issue: issue, name: "kind")
 
-# The class the `class:` labels among `labels` give (`.claude/rules/
-# verification.md` § Bounded discovery), "" where none stands: the one, and
-# where two or more stand, which `file` never writes, the most severe. Until
-# 2026-11-07 the first in sorted order, so a defect labelled `adjacent` and
-# `blocking` read as `adjacent` and passed a tag its `blocking` should have
-# stopped (defect 2326). A tag that counts a defect of one class counts it of
-# every class more severe, so the most severe is the reading under which two
-# labels pass no tag either would have stopped, and stop none both would
-# have passed; a class `SEVERITY` does not name ranks above them all, since a
-# tag counts what it does not know.
+# The class the `class:` labels among `labels` give
+# (`.claude/rules/verification.md` § Bounded discovery), "" where none
+# stands: the one, and where two or more stand, which `file` never writes,
+# the most severe. Until 2026-11-07 the first in sorted order, so a defect
+# labelled `adjacent` and `blocking` read as `adjacent` and passed a tag its
+# `blocking` should have stopped (defect 2326). A tag that counts a defect of
+# one class counts it of every class more severe, so the most severe is the
+# reading under which two labels pass no tag either would have stopped, and
+# stop none both would have passed; a class `SEVERITY` does not name ranks
+# above them all, since a tag counts what it does not know.
 function class_of(labels: [str]) -> str
     best: str @= ""
     rank: i64 @= SEVERITY.len()
@@ -365,7 +365,8 @@ function class_of(labels: [str]) -> str
 
     return best
 
-# The classes of § Bounded discovery, the most severe first.
+# The classes of `.claude/rules/verification.md` § Bounded discovery, the
+# most severe first.
 constant SEVERITY: [str]
     ["systemic", "blocking", "adjacent", "improvement"]
 
