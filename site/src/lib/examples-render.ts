@@ -180,7 +180,7 @@ function walkLinks(slug: string, lang: Lang): string {
     );
   }
 
-  const away = `  <p class="next away">\n    ${t('runOneYourself', lang)}: <a href="${root(lang)}/start/">${t('theFourCommands', lang)}</a>. ` +
+  const away = `  <p class="next away">\n    ${t('runOneYourself', lang)}: <a href="${root(lang)}/start/">${t('theStartCommands', lang)}</a>. ` +
     `<a href="${root(lang)}/docs/">${t('learnTheLanguage', lang)}</a>, ` +
     `${t('orTakeItWhole', lang)} <a href="${root(lang)}/spec/">${t('inOneFile', lang)}</a>.\n  </p>`;
 

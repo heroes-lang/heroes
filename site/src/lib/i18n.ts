@@ -60,7 +60,7 @@ const PHRASES: Record<string, Phrase> = {
   // `records/english` reads this file and Italian prose belongs to the edition,
   // not to a table both editions share.
   runOneYourself: { en: 'Run one yourself', it: 'Eseguine uno' },
-  theFourCommands: { en: 'the four commands', it: 'i quattro comandi' },
+  theStartCommands: { en: 'the five commands', it: 'i cinque comandi' },
   learnTheLanguage: { en: 'Learn the language', it: 'Impara il linguaggio' },
   orTakeItWhole: { en: 'or read the full specification', it: 'oppure leggi la specifica completa' },
   inOneFile: { en: 'in one file', it: 'in un solo file' },
