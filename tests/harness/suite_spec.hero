@@ -411,6 +411,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     offered(@r, spec: text.must(), reserved: reserved)
     rejected(@r, spec: text.must(), refused: refused)
     fences(@r, scratch: scratch, compiler: compiler, spec: text.must())
+    design_copy(@r, spec: text.must())
     registered(@r, scratch: scratch, compiler: compiler)
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
@@ -1588,6 +1589,78 @@ function indented_block(text: str) -> str
 
     return out
 
+## design.md's copy of the example
+
+# **design.md §4.19 shows the specification's FFI example, and the two are
+# one text** (panel 237's R6, ratified 2026-11-08). A copy nothing holds
+# drifts: design.md's stood without `lent` since the specification's fence
+# gained it (2026-09-21, `e71d57ff9`), and the sitting's spec-warden, building
+# it, found it refused (`lend_kept`). So the first fence under the heading
+# `### 4.19 FFI` is held to spec § 13's first fence, byte for byte; `fences`
+# above judges whether that fence is a program, this one only that the two
+# documents show the same one.
+constant DESIGN: str
+    "docs/design.md"
+
+constant DESIGN_HEADING: str
+    "### 4.19 FFI"
+
+function design_copy(@r: report.Report, spec: str)
+    design = read_file(DESIGN)
+
+    if design.is_err()
+        report.keep_failure(@r, label: "spec/design-copy", detail: "  cannot read " + DESIGN)
+        return
+    said = copy_verdict(spec: spec, design: design.must())
+
+    if said.len() > 0
+        report.keep_failure(@r, label: "spec/design-copy", detail: said)
+        return
+    report.keep_pass(@r)
+
+# Empty where design.md §4.19's first fence is spec § 13's first fence byte
+# for byte; else what differs, both texts shown.
+function copy_verdict(spec: str, design: str) -> str
+    ours: str @= ""
+    held: bool @= false
+
+    for fence in spec_fences(spec)
+        if fence.section == 13 && !held
+            ours @ fence.text
+            held @ true
+
+    if !held
+        return "  spec § 13 holds no fenced block, so " + DESIGN + " §4.19 has no example to copy"
+    theirs = fence_under(text: design, heading: DESIGN_HEADING)
+
+    if theirs.is_err()
+        return "  " + DESIGN + " holds no fenced block under `" + DESIGN_HEADING + "`, where it shows spec § 13's example"
+
+    if theirs.must() != ours
+        return "  " + DESIGN + " §4.19's example is not spec § 13's first fence, byte for byte (panel 237's R6).\n  The specification's:\n" + indented_block(ours) + "  design.md's:\n" + indented_block(theirs.must()) + "  Copy the specification's fence into design.md in the commit that moves either."
+    return ""
+
+# The first fenced block under the line `heading`, its lines each ending in a
+# newline as `spec_fences` reads them; none where another heading comes first.
+function fence_under(text: str, heading: str) -> str?
+    seen: bool @= false
+    inside: bool @= false
+    body: str @= ""
+
+    for line in strings.lines(text)
+        if !seen
+            seen @ line == heading
+        else if strings.starts_with(text: line, prefix: "```")
+            if inside
+                return ok(body)
+            inside @ true
+        else if inside
+            body @ body + line + "\n"
+        else if strings.starts_with(text: line, prefix: "#")
+            return fail(code: "absent", msg: "another heading before a fence")
+
+    return fail(code: "absent", msg: "no fence under the heading")
+
 test "a fence is read with the number of its section, and a heading inside a fence is not one"
     text = "## 4. Top-level declarations\nwords\n```\nrecord P\n    x: i64\n## a heading of Heroes\n```\n## 5. Bindings\n```\nx = 5\n```\n"
     found = spec_fences(text)
@@ -1634,6 +1707,26 @@ test "a listed part is not built, and a fence that moved under its entry is buil
     elsewhere = fence_plan(found: [SpecFence(section: 8, text: tail)], listed: listed)
     assert elsewhere.programs.len() == 1
     assert elsewhere.unheld.len() == 1
+
+test "design.md's copy of the example is spec § 13's first fence, byte for byte"
+    spec = "## 12. Tests\n```\nx = 1\n```\n## 13. FFI\nwords\n```\nextern \"a.h\"\n    constant A: i64\n```\n```\ny = 2\n```\n"
+    same = "### 4.18 Other\n```\nno\n```\n### 4.19 FFI\n\nprose\n```\nextern \"a.h\"\n    constant A: i64\n```\n"
+    assert copy_verdict(spec: spec, design: same) == ""
+
+    # One word apart, the copy is told with both texts.
+    apart = copy_verdict(spec: spec, design: "### 4.19 FFI\n```\nextern \"a.h\"\n    constant A: i32\n```\n")
+    assert strings.contains(text: apart, needle: "byte for byte")
+    assert strings.contains(text: apart, needle: "constant A: i32")
+
+    # A heading before any fence, and a spec with no § 13 fence, are told.
+    assert strings.contains(
+        text: copy_verdict(spec: spec, design: "### 4.19 FFI\nprose\n### 4.20 Next\n```\nx\n```\n"),
+        needle: "holds no fenced block under"
+    )
+    assert strings.contains(
+        text: copy_verdict(spec: "## 12. Tests\n```\nx = 1\n```\n", design: same),
+        needle: "spec § 13 holds no fenced block"
+    )
 
 ## The fourth copy
 

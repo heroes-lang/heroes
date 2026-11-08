@@ -2579,9 +2579,10 @@ plus the header it comes from, no external tool, no libclang, no generated bindi
 
 ```
 extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
     record Db tag sqlite3
-    function sqlite3_open(path: cstr, @out: Db acquires sqlite3_close) -> i64
-    function sqlite3_close(db: Db consumes) -> i64
+    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64 when 0
 ```
 
 **And it gained `acquires` and `consumes` on 2026-09-15** (panel 153, defect 043), for the same
@@ -2597,6 +2598,14 @@ the two signatures above are exactly the two that defect 029 was filed against, 
 `sqlite3_step(db)` passed a database where a statement belonged and nothing refused it. The
 handle — a fieldless `record` in a group, with a `tag` and without `partial` — is now what those
 pointers are, and `examples/sqlite/main.hero` is the running witness.
+
+**And it is the specification's own fence, byte for byte, since 2026-11-08** (panel 237's R6,
+defect 2322): `constant SQLITE_OK`, `lent` on the path, and `when 0` on the close, which SQLite
+refuses while a statement is unfinalized, answering `SQLITE_BUSY` and leaving the connection open,
+so a close bound without it counts a refused close as the connection given back, in silence. This
+copy had stood without `lent` since the specification's fence gained it (2026-09-21, `e71d57ff9`),
+and the sitting's spec-warden, building it, found it refused (`lend_kept`): a copy nothing holds
+drifts. `tests/harness/suite_spec.hero`'s `design-copy` check holds the two identical since.
 
 **The header and the link flag attach to a group** (panel 036): a head line, then indented
 signatures — the shape `record` and `variant` already have, and the shape Rust's `#[link]` on an
