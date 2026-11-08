@@ -1,0 +1,2 @@
+# Silent under the `#`: clang says nothing of the edit.
+CCC_OVERRIDE_OPTIONS=#+-D__builtin_add_overflow(a,b,r)=((*(r)=(a)+(b)),0)

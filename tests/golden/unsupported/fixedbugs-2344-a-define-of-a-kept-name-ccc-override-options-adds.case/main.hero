@@ -1,0 +1,11 @@
+#~ shadowed_macro
+# fixedbugs, defect 2344 (panel 237's R2 and R3): `CCC_OVERRIDE_OPTIONS`,
+# silent under its leading `#`, hands every clang a `-D` of
+# `__builtin_add_overflow` reporting nothing, which stands before every
+# header and every guard, so an `i64` sum past the top printed
+# `-9223372036854775808` at exit 0. Refused as `shadowed_macro`, its note
+# naming the variable.
+
+function main()
+    big: i64 = 9223372036854775807
+    print(big + args().len())

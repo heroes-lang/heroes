@@ -1,0 +1,10 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's R2): `CPATH` names a folder holding a
+# `stdbool.h` that reads the library's and defines `true` as 0, and clang
+# searches it before the platform's for every compile, so `print(true)`
+# printed `false` at exit 0. Refused at the program's first byte, its note
+# naming the variable; this line is its mark.
+
+function main()
+    b = true
+    print(b)

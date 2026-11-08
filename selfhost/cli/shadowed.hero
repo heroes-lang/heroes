@@ -30,6 +30,24 @@
 # or a search it did not print, is no verdict: the build goes on and clang
 # says what it says.
 #
+# **The environment's folders and words are named too** (panel 237's R2,
+# defect 2344): a folder clang searches before the platform's that this
+# compiler did not pass, `CPATH`'s, `C_INCLUDE_PATH`'s, `.` from an empty
+# element of either, or one `CCC_OVERRIDE_OPTIONS` adds, counts among the
+# named, its note naming the variable; a file that variable has clang read
+# before every unit is refused, and so, under `shadowed_macro`, is its `-D` or
+# `-U` of a name the guard keeps (`cli/clang_added.hero` reads each from
+# clang's own answer). Every other edit goes through: a linker's, a warning's.
+# The words are read twice: from the `-###` answer every build asks, before
+# any clang compiles (`environment_stopped`), since a forced file or a `-D`
+# that breaks every compile stopped the runtime's own at exit 2, *internal
+# error*; and from the job the listing's `-v` prints, the unit's own words,
+# since an edit that fires on a word the `-###` question does not carry,
+# `s/-O2/-D.../` in a `run`, reaches the unit alone (both measured on this
+# Mac, 2026-11-08; the `-###` question carries the `-W` words the listing
+# drops). An edit firing on a word only a probe's own line carries,
+# `-fsyntax-only`, is still unseen, and stopped a group's probe at exit 2.
+#
 # **What it does not see, said**: a file of the library reached only under a
 # switch a group's header sets, which this opening, with no group, does not
 # set; of such a file the reserved pair gives back what the compiler writes of
@@ -37,7 +55,6 @@
 
 use source
 use diag
-use token
 use module/reading as file_reading
 use cli/toolchain
 use cli/compile
@@ -52,23 +69,26 @@ use cli/publish
 use cli/read_back
 use cli/response_file
 use cli/strings
-use emit/clang_place
+use cli/clang_added
+use cli/stand_in
+use cli/shadowed_words
 
-constant CODE: str
-    "shadowed_header"
+# The build stopped, its refusals told, where the environment hands every
+# clang a file or a kept name, before any clang compiles: `cli/produce.hero`
+# asks it before the runtime's object.
+function environment_stopped(t: toolchain.Toolchain, s: source.Source, permissive: bool) -> ()?
+    none = clang_added.Edits(folders: [], forced: [], macros: [], platform: [])
+    stop = compile.stage(words_told(edits: clang_added.edits(t.asked_answer), before: none), s, permissive: permissive)
 
-# One file of a named folder read in the library's place: the path clang
-# listed, the folder that held it, and the name the library's header has
-# there.
-record Shadow
-    path: str
-    folder: str
-    named: str
+    if stop.is_err()
+        return ok()
+    _ = compile.leave(stop.must(), stage_name: "the environment's words")?
+    return ok()
 
 # The words a build's units compile under, once nothing of a folder the
-# program or a package names stands in for a header of the library; the build
-# stopped, its refusals told, otherwise. `cli/produce.hero` asks it where the
-# words are settled, before any probe compiles.
+# program, a package or the environment names stands in for a header of the
+# library; the build stopped, its refusals told, otherwise. `cli/produce.hero`
+# asks it where the words are settled, before any probe compiles.
 function checked(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, permissive: bool) -> compiling.Compiling?
     stop = compile.stage(told(t, under: under), s, permissive: permissive)
 
@@ -77,20 +97,88 @@ function checked(t: toolchain.Toolchain, under: compiling.Compiling, s: source.S
     _ = compile.leave(stop.must(), stage_name: "the C library's headers")?
     return ok(under)
 
-# One diagnostic per file of a named folder the runtime's opening reads,
-# none where clang gives no listing or no directories.
+# One diagnostic per file of a named folder the runtime's opening reads, the
+# environment's folders among the named, and per word of the unit's own job
+# the `-###` answer did not hold; none where clang gives no listing or no
+# directories.
 function told(t: toolchain.Toolchain, under: compiling.Compiling) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     got = listed(build: t.build, words: compiling.probe_words(under), text: order_trial.opening([], question: ""))
 
     if got.is_err()
         return out
+    asked = clang_added.edits(t.asked_answer)
+    job = clang_added.edits(got.must().said)
+    out @ words_told(edits: job, before: asked)
     first = searched_first(under)
-    others: [str] @= [first[0]]
-    others @ strings.with_all(list: others, more: clangs_own(searched: got.must().searched, first: first))
+    named: [str] @= named_folders(under)
+    origins = environment_folders(
+        platform: strings.with_all(list: asked.platform, more: job.platform),
+        compilers: first,
+        both: [asked, job]
+    )
 
-    for one in shadows(paths: got.must().paths, named: named_folders(under), others: others)
-        out @ out.push(diagnostic(one))
+    for dir in keys(origins)
+        named @ named.push(dir)
+
+    others: [str] @= [first[0]]
+    others @ strings.with_all(
+        list: others,
+        more: clangs_own(searched: unnamed(got.must().searched, origins: origins), first: first)
+    )
+
+    for one in stand_in.shadows(paths: got.must().paths, named: named, others: others)
+        runtime = process.path_exists(t.runtime + "/" + one.named)
+        out @ out.push(shadowed_words.header(one, origin: origins[one.folder].default(""), runtime: runtime))
+
+    return out
+
+# One diagnostic per kept name and per forced file of `edits` that `before`
+# did not hold.
+function words_told(edits: clang_added.Edits, before: clang_added.Edits) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for one in edits.macros
+        if !clang_added.holds(before.macros, one)
+            out @ out.push(shadowed_words.macro(one))
+
+    for one in edits.forced
+        if !clang_added.holds(before.forced, one)
+            out @ out.push(shadowed_words.forced(one))
+
+    return out
+
+# **The folders the environment added, each with the variable that named it**:
+# every folder of `both` that is none of clang's own, where a tie goes to the
+# platform as `shadows` gives it (`CPATH` naming the SDK's own folder builds),
+# and none the compiler searches on its own words (`compilers`, the runtime's
+# and the named), whose origin is theirs.
+function environment_folders(platform: [str], compilers: [str], both: [clang_added.Edits]) -> {str: str}
+    out: {str: str} @= {}
+    taken: {str: bool} @= {}
+
+    for dir in strings.with_all(list: platform, more: compilers)
+        taken[dir] @ true
+
+    for edits in both
+        for one in edits.folders
+            dir = package_reads.lexical(one.value)
+
+            if taken[dir].is_err() && out[dir].is_err()
+                out[dir] @ one.variable
+
+    return out
+
+# `searched` without the folders the environment added, so the folders matched
+# to the compiler's own words are the compiler's: a folder prepended before
+# the runtime's (`CCC_OVERRIDE_OPTIONS='^-I<dir>'`) left every named folder
+# among clang's own, where a tie gives it away.
+function unnamed(searched: [str], origins: {str: str}) -> [str]
+    out: [str] @= []
+
+    for dir in searched
+        if origins[dir].is_err()
+            out @ out.push(dir)
 
     return out
 
@@ -100,6 +188,8 @@ function told(t: toolchain.Toolchain, under: compiling.Compiling) -> [diag.Diagn
 record Listing
     paths: [str]
     searched: [str]
+    # What clang said, its `-v` job among it.
+    said: str
 
 # **One `clang -v -M` over `text`**, which writes the listing and prints the
 # search beside it, so a build pays one process and hashes no file for this
@@ -140,7 +230,7 @@ function listed(build: str, words: [str], text: str) -> Listing?
         if !deps.under(path: path, prefix: dir + "/", either: either)
             paths @ paths.push(path)
 
-    return ok(Listing(paths: paths, searched: searched))
+    return ok(Listing(paths: paths, searched: searched, said: said.must()))
 
 # **The directories of `searched`, clang's `<...>` search as it printed it,
 # that are clang's own**: clang prints every `-I` and `-F` it kept, in the
@@ -199,69 +289,26 @@ function named_folders(under: compiling.Compiling) -> [str]
 
     return out
 
-# Each of `paths` that the longest directory holding it, among `named` and
-# `others`, places in a folder of `named`; a tie goes to `others`.
-function shadows(paths: [str], named: [str], others: [str]) -> [Shadow]
-    out: [Shadow] @= []
-
-    for written in paths
-        path = package_reads.lexical(written)
-        best: str @= ""
-        best_named: bool @= false
-
-        for dir in others
-            if package_reads.holds(dir: dir, path: path) && dir.len() > best.len()
-                best @ dir
-
-        for dir in named
-            if package_reads.holds(dir: dir, path: path) && dir.len() > best.len()
-                best @ dir
-                best_named @ true
-
-        if best_named
-            out @ out.push(Shadow(path: written, folder: best, named: relative(path: path, dir: best)))
-
-    return out
-
-# `path` without the directory `dir` that holds it and its separator.
-function relative(path: str, dir: str) -> str
-    if dir == "."
-        return path
-
-    if dir == "/"
-        return path.slice(from: 1, to: path.len())
-    return path.slice(from: dir.len() + 1, to: path.len())
-
-# The refusal, at the program's first byte, since no line of it reads the
-# file: the file named, the folder, and the library's header it stands in for.
-function diagnostic(one: Shadow) -> diag.Diagnostic
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: CODE,
-        message: "`" + clang_place.slashed(one.path) + "` stands in for the C library's `<" + one.named + ">`, which the C this compiler writes reads: a folder this build names is searched before the system's, so its file is read in the library's place",
-        span: token.Span(start: 0, end: 0)
-    )
-    d.notes @ d.notes.push(
-        "rename the file, or move it out of `" + one.folder + "`: the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers, and every `#include <" + one.named + ">` of the build reads what it holds"
-    )
-    return d
-
 ## Tests
 
-# **The directory that found a file is the longest of the search's that holds
-# it**: a named folder holding a system directory shadows nothing it did not
-# find, a tie goes to the platform's, and a file of the source's own folder,
-# relative or absolute, is told with the library's name it took.
-test "a listed file is the named folder's only where the longest directory holding it is one the program named"
-    got = shadows(
-        paths: ["./stdint.h", "/usr/include/stdint.h", "inc/sys/cdefs.h", "runtime/heroes_unit.h", "/usr/include/math.h", "/opt/pkg/include/stdbool.h"],
-        named: [".", "inc", "/", "/usr/include", "/opt/pkg/include"],
-        others: ["runtime", "/usr/include"]
-    )
-    assert got.len() == 3
-    assert got[0].path == "./stdint.h" && got[0].folder == "." && got[0].named == "stdint.h"
-    assert got[1].path == "inc/sys/cdefs.h" && got[1].named == "sys/cdefs.h"
-    assert got[2].folder == "/opt/pkg/include" && got[2].named == "stdbool.h"
-    assert relative(path: "/x/a.h", dir: "/") == "x/a.h"
+# **The environment's words are told once, and its folders are the ones that
+# are neither the platform's nor the compiler's own** (defect 2344): a kept
+# `-D` and a forced file of clang's answer are each told, and nothing of them
+# again where the listing's job holds them too; a folder clang searches on its
+# own, or one the compiler passed, takes no origin, and a folder prepended
+# before the runtime's leaves the compiler's own matched to its words.
+test "the environment's words are told once, and its folders are neither the platform's nor the compiler's (defect 2344)"
+    answer = " \"/x/clang\" \"-cc1\" \"-I/sdk\" \"-I.\" \"-I/env\" \"-c-isystem\" \"/env\" \"-I/pre\" \"-D\" \"true=0\" \"-include\" \"/f.h\" \"-internal-externc-isystem\" \"/sdk\"\n"
+    edits = clang_added.edits(answer)
+    none = clang_added.Edits(folders: [], forced: [], macros: [], platform: [])
+    first = words_told(edits: edits, before: none)
+    assert first.len() == 2 && first[0].code == shadowed_words.MACRO_CODE && first[1].code == shadowed_words.CODE
+    assert words_told(edits: edits, before: edits).len() == 0
+    origins = environment_folders(platform: edits.platform, compilers: ["runtime", "."], both: [edits, edits])
+    assert sort(keys(origins)) == ["/env", "/pre"]
+    searched = unnamed(["/pre", "runtime", ".", "/env", "/sdk"], origins: origins)
+    assert searched == ["runtime", ".", "/sdk"]
+    assert clangs_own(searched: searched, first: ["runtime", "."]) == ["/sdk"]
 
 # **Clang's own directories are the ones it printed after every `-I` it
 # kept**: a folder the words name that clang could not find is skipped, and
@@ -307,7 +354,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
     named: {str: bool} @= {}
 
     for d in told(t, under: under)
-        assert d.code == CODE
+        assert d.code == shadowed_words.CODE
 
         for name in ["stdint.h", "stdbool.h", "math.h", "stddef.h"]
             if strings.holds(text: d.message, needle: "`<" + name + ">`")

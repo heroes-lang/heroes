@@ -1,0 +1,313 @@
+# What clang adds to every compile that this compiler did not pass, read from
+# clang's own answer, for the refusal of a file or a name standing in for
+# what the compiler's C reads (design.md §4.19, §1.12; panel 237's R2,
+# defect 2344, 2026-11-08).
+#
+# **Every clang a build runs inherits the build's environment**, and clang
+# reads three variables of it into every compile: `CPATH` as `-I` folders
+# and `C_INCLUDE_PATH` as `-c-isystem` ones, both searched before the
+# platform's, an empty element of either naming `.`, the folder clang runs
+# in; and `CCC_OVERRIDE_OPTIONS`, which edits the whole command line,
+# silently under a leading `#`. Measured on this Mac with the compiler before
+# this module: a `stdbool.h` defining `true` as 0 in a folder either variable
+# names, or in `.` through an empty element, printed `false` at exit 0; an
+# `-I`, `-include` or `-imacros` added through the third did the same, and its
+# `-D__builtin_add_overflow(...)` printed an `i64` sum past the top as
+# `-9223372036854775808`.
+#
+# **Read from clang's answer, never re-derived** (the completeness critic's
+# route, built by the compiler-engineer): every build already asks `clang
+# -###` once (`clang_floor.identity`, kept whole as `Toolchain.asked_answer`),
+# and every edit of the environment is a plain word of its `-cc1` job, with
+# clang's own reading of empty elements and separators, which differ by
+# platform (an empty `CPATH` adds `.` under Apple clang 21 and nothing under
+# Debian clang 22.1.8). That question carries no `-I` and no forced file, and
+# its two `-D` are this compiler's own switches, so every folder, file and
+# kept name the job holds came from outside the compiler.
+#
+# **What it does not see, said**: an edit that fires only on a word the
+# question does not carry (`CCC_OVERRIDE_OPTIONS`'s `s/<word>/<word>/`), and a
+# sysroot the environment moves, which moves the platform's folders with it.
+
+use cli/deps
+use cli/process
+use cli/package_macros
+use cli/package_reads
+
+# One word of the job this compiler did not pass: its flag as clang wrote it,
+# its value, and the variable the environment's words name as having added
+# it.
+record Added
+    flag: str
+    value: str
+    variable: str
+
+# What the job holds that the compiler did not pass: the folders it searches
+# before the platform's, the files it reads before every unit's first line,
+# its `-D` and `-U` of a name the guard keeps; and clang's own folders, the
+# platform's, read lexically.
+record Edits
+    folders: [Added]
+    forced: [Added]
+    macros: [Added]
+    platform: [str]
+
+# **The folders a job searches before the platform's**, each flag clang reads
+# with its value as the next word: `-I` (also joined), `-isystem`,
+# `-c-isystem` (`C_INCLUDE_PATH`), `-iquote`, which the runtime's own quoted
+# headers are looked for in before `-I`, and the framework folders `-F` (also
+# joined) and `-iframework`. `-idirafter` is searched after the platform's,
+# so a file there stands in for none of its headers.
+constant FOLDER_FLAGS: [str]
+    ["-I", "-isystem", "-c-isystem", "-iquote", "-F", "-iframework"]
+
+# The files a job reads before a unit's first line.
+constant FORCED_FLAGS: [str]
+    ["-include", "-imacros", "-include-pch"]
+
+# clang's own folders: its resource directory and the platform's.
+constant PLATFORM_FLAGS: [str]
+    ["-internal-isystem", "-internal-externc-isystem", "-internal-iframework"]
+
+# What `answer`, clang's answer to `-###`, adds: nothing where it holds no
+# `-cc1` job.
+function edits(answer: str) -> Edits
+    words = cc1_words(answer)
+    out: Edits @= Edits(folders: [], forced: [], macros: [], platform: [])
+    prefix: str @= ""
+    at: i64 @= 0
+
+    while at < words.len()
+        word = words[at]
+        next: str @= ""
+
+        if at + 1 < words.len()
+            next @ words[at + 1]
+        took: i64 @= 1
+
+        if in_list(word, list: FOLDER_FLAGS) && at + 1 < words.len()
+            out.folders @ out.folders.push(
+                Added(flag: word, value: next, variable: folder_variable(flag: word, value: next))
+            )
+            took @ 2
+        else if word == "-iprefix" || word == "-iwithprefixbefore"
+            # `-iwithprefixbefore <dir>` is an `-I` of the `-iprefix` before it
+            # and `<dir>` joined, as clang reads the pair.
+            if word == "-iprefix"
+                prefix @ next
+            else
+                out.folders @ out.folders.push(Added(flag: "-I", value: prefix + next, variable: edited_or_own()))
+            took @ 2
+        else if in_list(word, list: FORCED_FLAGS) && at + 1 < words.len()
+            out.forced @ out.forced.push(Added(flag: word, value: next, variable: edited_or_own()))
+            took @ 2
+        else if in_list(word, list: PLATFORM_FLAGS) && at + 1 < words.len()
+            out.platform @ out.platform.push(package_reads.lexical(next))
+            took @ 2
+        else if (word == "-D" || word == "-U") && at + 1 < words.len()
+            out.macros @ kept(out.macros, flag: word, value: next)
+            took @ 2
+        else if word.len() > 2
+            flag = word.slice(from: 0, to: 2)
+
+            if flag == "-I" || flag == "-F"
+                value = word.slice(from: 2, to: word.len())
+                out.folders @ out.folders.push(
+                    Added(flag: flag, value: value, variable: folder_variable(flag: flag, value: value))
+                )
+            else if flag == "-D" || flag == "-U"
+                out.macros @ kept(out.macros, flag: flag, value: word.slice(from: 2, to: word.len()))
+        at @ at + took
+
+    return out
+
+# Whether `found` holds a word of `one`'s flag and value.
+function holds(found: [Added], one: Added) -> bool
+    for each in found
+        if each.flag == one.flag && each.value == one.value
+            return true
+
+    return false
+
+# `found` with a `-D` or `-U` of `value` added where it names a name the guard
+# keeps and is not this compiler's own switch (`package_macros.refused`, the
+# rule a package's answer is held to).
+function kept(found: [Added], flag: str, value: str) -> [Added]
+    if !package_macros.refused(flag: flag, value: value)
+        return found
+    return found.push(Added(flag: flag, value: value, variable: edited_or_own()))
+
+function in_list(word: str, list: [str]) -> bool
+    for one in list
+        if one == word
+            return true
+
+    return false
+
+# **The words of the first `-cc1` job clang printed**, as llvm's `printArg`
+# writes one: the program always in double quotes, every word of `-###` too,
+# a word of `-v` only where it holds a space, a `"`, a `\` or a `$`, each of
+# those three after a `\` inside the quotes. On Linux the job follows a line
+# ` (in-process)`, on this Mac it is a process of its own; either way it is the
+# one line opening with a quoted program whose next word is `-cc1`, never
+# `-v`'s `clang -cc1 version ...`.
+function cc1_words(answer: str) -> [str]
+    none: [str] = []
+
+    for line in deps.lines(answer)
+        if opens_quoted(line)
+            words = words_of(line)
+
+            if words.len() > 1 && words[1] == "-cc1"
+                return words
+
+    return none
+
+# Whether `line`'s first byte past its spaces is a `"`, asked of its bytes:
+# the job is clang's longest line, and trimming it and asking its first
+# character read every character of it as a text of its own, about seven
+# million instructions a read in the compiler as it builds (measured
+# 2026-11-08 on this Mac, three reads a build: +47 million on a two-line
+# program, +1.3 million with none).
+function opens_quoted(line: str) -> bool
+    at: i64 @= 0
+
+    while at < line.len() && line[at] == ' '
+        at @ at + 1
+
+    return at < line.len() && line[at] == '"'
+
+# The words of one printed line: separated by spaces, each in double quotes
+# or bare.
+function words_of(line: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+    n = line.len()
+
+    while at < n
+        if line[at] == ' '
+            at @ at + 1
+            continue
+        pieces: [str] @= []
+
+        if line[at] == '"'
+            at @ at + 1
+            piece: i64 @= at
+
+            while at < n && line[at] != '"'
+                if line[at] == '\\' && at + 1 < n
+                    pieces @ pieces.push(line.slice(from: piece, to: at))
+                    piece @ at + 1
+                    at @ at + 2
+                else
+                    at @ at + 1
+
+            if at > n
+                at @ n
+            pieces @ pieces.push(line.slice(from: piece, to: at))
+            at @ at + 1
+        else
+            start = at
+
+            while at < n && line[at] != ' '
+                at @ at + 1
+
+            pieces @ pieces.push(line.slice(from: start, to: at))
+        out @ out.push(pieces.join(""))
+
+    return out
+
+# **Which variable the environment's words name for a folder**, for the note
+# alone: `CPATH` for an `-I` one of its elements names and `C_INCLUDE_PATH`
+# for a `-c-isystem` one, an empty element naming `.`; else what
+# `edited_or_own` says. The verdict is the answer's, whoever added the word.
+function folder_variable(flag: str, value: str) -> str
+    if flag == "-I" && element_names(name: "CPATH", dir: value)
+        return "CPATH"
+
+    if flag == "-c-isystem" && element_names(name: "C_INCLUDE_PATH", dir: value)
+        return "C_INCLUDE_PATH"
+    return edited_or_own()
+
+# Whether an element of the variable `name`, set, names `dir`, read
+# lexically, an empty element naming `.`. Its elements are separated by `;`
+# on Windows and `:` elsewhere (clang's `llvm::sys::EnvPathSeparator`;
+# unrun on Windows).
+function element_names(name: str, dir: str) -> bool
+    if !process.is_set(name)
+        return false
+    separator: u8 @= ':'
+
+    if process.exe_suffix() == ".exe"
+        separator @ ';'
+    want = package_reads.lexical(dir)
+
+    for one in parts(text: process.env(name).default(""), separator: separator)
+        if package_reads.lexical(one) == want
+            return true
+
+    return false
+
+# `text`'s parts between `separator`, an empty one kept: `lexical` reads it
+# as `.`.
+function parts(text: str, separator: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == separator
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out.push(text.slice(from: start, to: text.len()))
+
+# `CCC_OVERRIDE_OPTIONS` where it is set, the one variable that edits any
+# word; else clang's own configuration: Apple clang's `-I/usr/local/include`
+# is in every answer on this Mac (absent here, so clang searches nothing
+# there), and a configuration file adds words of its own.
+function edited_or_own() -> str
+    if process.is_set("CCC_OVERRIDE_OPTIONS")
+        return "CCC_OVERRIDE_OPTIONS"
+    return OWN
+
+# What a note calls the words no variable added.
+constant OWN: str
+    "clang's own configuration"
+
+## Tests
+
+# **The `-cc1` job's words are read as clang quotes them**, and each kind of
+# word is found joined or apart: the folders, a prefixed pair, the forced
+# files, the kept names but this compiler's own switch, and the platform's
+# folders; the variables are named from this process's environment, which
+# sets none of the three here, so the folders' and the words' are clang's own.
+test "the -cc1 job's words are read as clang quotes them, and what it adds is found (defect 2344)"
+    answer = "clang version 21\n \"/x/clang\" \"-cc1\" \"-I/env a\" \"-D\" \"P=5\" \"-c-isystem\" \".\" \"-D\" \"_USE_MATH_DEFINES\" \"-D\" \"true=0\" \"-Umain\" \"-iprefix\" \"/p/\" \"-iwithprefixbefore\" \"inc\" \"-include\" \"/f.h\" \"-iquote\" \"q\" \"-internal-isystem\" \"/sdk\" \"-o\" \"q\\\"x\\$\"\n"
+    words = cc1_words(answer)
+    assert words[1] == "-cc1" && words[2] == "-I/env a" && words[words.len() - 1] == "q\"x$"
+    got = edits(answer)
+    assert got.folders.len() == 4
+    assert got.folders[0].flag == "-I" && got.folders[0].value == "/env a"
+    assert got.folders[1].flag == "-c-isystem" && got.folders[1].value == "."
+    assert got.folders[2].value == "/p/inc" && got.folders[3].flag == "-iquote"
+    assert got.forced.len() == 1 && got.forced[0].value == "/f.h"
+    assert got.macros.len() == 2 && got.macros[0].value == "true=0" && got.macros[1].flag == "-U"
+    assert got.platform == ["/sdk"]
+
+    if !process.is_set("CCC_OVERRIDE_OPTIONS") && !process.is_set("CPATH") && !process.is_set("C_INCLUDE_PATH")
+        assert got.folders[0].variable == OWN && got.macros[0].variable == OWN
+    assert edits("no job here").folders.len() == 0
+
+    # `-v` prints the job with its words bare, and its own version line names
+    # `-cc1` too.
+    printed = "clang -cc1 version 21.0.0\n \"/x/clang\" -cc1 -O2 -Dtrue=0 -I envdir \"-I/a b\" -v\n"
+    seen = edits(printed)
+    assert seen.macros.len() == 1 && seen.macros[0].value == "true=0"
+    assert seen.folders.len() == 2 && seen.folders[0].value == "envdir" && seen.folders[1].value == "/a b"
+
+test "a variable's elements are its parts between the separator, an empty one naming the folder clang runs in"
+    assert parts(text: "/a::b", separator: ':') == ["/a", "", "b"]
+    assert parts(text: "", separator: ':') == [""]
+    assert package_reads.lexical("") == "."

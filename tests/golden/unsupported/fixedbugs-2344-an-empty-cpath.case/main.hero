@@ -1,0 +1,11 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's R2, the compiler-engineer's shape): a
+# `CPATH` set and empty names `.` to Apple clang 21, the folder clang runs
+# in, which `directory` makes `here/`, beside a `stdbool.h` defining `true`
+# as 0; `print(true)` printed `false` at exit 0. Debian clang 22.1.8 reads
+# an empty `CPATH` as nothing, so the case is judged on Darwin alone
+# (`platform_skips.hero`).
+
+function main()
+    b = true
+    print(b)

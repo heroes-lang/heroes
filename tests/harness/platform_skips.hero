@@ -27,12 +27,16 @@ use freed_bytes
 
 # Why a case or a surface row named `name` is not judged on this machine, or
 # absent where it is: on Windows, a shape its C cannot hold; anywhere else, a
-# case whose words are the Windows target's alone.
+# case whose words are the Windows target's alone; and off Darwin, a shape only
+# Apple's clang reads (`darwin_alone`).
 function reason(name: str) -> str?
     named: [Skip] @= elsewhere()
 
     if shell.exe_suffix() == ".exe"
         named @ windows()
+
+    if !shell.exists(freed_bytes.DARWIN)
+        named @ with_skips(list: named, more: darwin_alone())
 
     for one in named
         if one.name == name
@@ -95,6 +99,25 @@ function elsewhere() -> [Skip]
         Skip(name: "fixedbugs-2053-a-header-that-defines-a-called-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
         Skip(name: "fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
         Skip(name: "fixedbugs-2280-a-header-defining-a-static-main-is-told-on-windows", why: STATIC_MAIN_ELSEWHERE)
+    ]
+
+# `list` and then `more`.
+function with_skips(list: [Skip], more: [Skip]) -> [Skip]
+    out: [Skip] @= list
+
+    for one in more
+        out @ out.push(one)
+
+    return out
+
+constant EMPTY_CPATH_IS_APPLES: str
+    "Apple clang 21 reads a `CPATH` set and empty as `.`, the folder clang runs in, and searches it before the platform's, where upstream clang adds nothing for an empty value (Debian clang 22.1.8's `clang -###`, panel 237's compiler-engineer, 2026-11-08): the shape is Darwin's, and its empty elements, `:` and a trailing separator, are judged everywhere (defect 2344)"
+
+# The cases whose shape only Apple's clang holds, skipped on every other
+# machine by name.
+function darwin_alone() -> [Skip]
+    return [
+        Skip(name: "fixedbugs-2344-an-empty-cpath", why: EMPTY_CPATH_IS_APPLES)
     ]
 
 # **And an emission that names the platform's own C is compared where it was
@@ -178,6 +201,12 @@ test "every name skipped on Windows is a case or a surface row that exists"
 
     assert elsewhere().len() == 3
 
+    # And each case judged on Darwin alone is a folder case that exists.
+    for one in darwin_alone()
+        assert shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
+
+    assert darwin_alone().len() == 1
+
 # On a machine that is not Windows nothing is skipped by name but the cases
 # whose words are Windows' alone, and on Windows those are judged.
 test "a name is judged where its platform's C holds its shape"
@@ -189,6 +218,7 @@ test "a name is judged where its platform's C holds its shape"
     assert reason("fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written").is_err() == !on_windows
     assert reason("fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level").is_err() == !on_windows
     assert reason(elsewhere()[2].name).is_err() == on_windows
+    assert reason(darwin_alone()[0].name).is_err() == shell.exists(freed_bytes.DARWIN)
     assert reason("fixedbugs-562-another-case").is_err()
 
 # Each emission compared on Darwin alone is a blessed file and a case that

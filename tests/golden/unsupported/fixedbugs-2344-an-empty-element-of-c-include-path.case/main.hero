@@ -1,0 +1,10 @@
+#~ shadowed_header
+# fixedbugs, defect 2344 (panel 237's completeness critic, finding 4):
+# `C_INCLUDE_PATH=:` is two empty elements, each `.`, the folder clang runs
+# in, which `directory` makes `here/`, beside a `stdbool.h` defining `true`
+# as 0; `print(true)` printed `false` at exit 0, and a rule that counted
+# only `CPATH`'s empty elements let it through.
+
+function main()
+    b = true
+    print(b)

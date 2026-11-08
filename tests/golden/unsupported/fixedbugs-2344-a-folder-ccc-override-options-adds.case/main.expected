@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2344-a-folder-ccc-override-options-adds.case/envdir/stdbool.h` stands in for the C library's `<stdbool.h>`, which the C this compiler writes reads: a folder this build names is searched before the system's, so its file is read in the library's place
+  at tests/golden/unsupported/fixedbugs-2344-a-folder-ccc-override-options-adds.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2344-a-folder-ccc-override-options-adds.case/envdir`: `CCC_OVERRIDE_OPTIONS` names that folder for every clang this build runs, and every `#include <stdbool.h>` of the build reads what it holds

@@ -1,0 +1,101 @@
+# What the refusals of a file or a word standing in for what the C this
+# compiler writes reads say (design.md §4.19, §4.17: everything needed to fix
+# the mistake without opening another file; defect 2333, panel 237's R2 and
+# R3). No `Fix`: the repair is a file renamed or moved or a variable edited,
+# which no edit of the program's text writes. Each is told at the program's
+# first byte, since no line of it reads the file or the word. Moved out of
+# `cli/shadowed.hero` when panel 237's R2 widened that refusal past §11's 300
+# lines.
+
+use diag
+use token
+use cli/stand_in
+use cli/clang_added
+use cli/package_macros
+use emit/clang_place
+
+constant CODE: str
+    "shadowed_header"
+
+# A `-D` or `-U` of a name the guard keeps that the environment hands every
+# clang: neither a package's answer nor a file, a word the build did not write
+# (panel 237's R3).
+constant MACRO_CODE: str
+    "shadowed_macro"
+
+# The refusal, at the program's first byte, since no line of it reads the
+# file: the file named, the folder, and the library's header it stands in for;
+# `origin` the variable that named the folder, "" for one the build names.
+# **A runtime's header is told as the runtime's** (`runtime`): only a folder
+# the environment searches before the runtime's, an `-iquote` or a prepended
+# `-I` of `CCC_OVERRIDE_OPTIONS`, can hold one read in its place, the unit
+# naming it in quotes (measured on this Mac, 2026-11-08: a
+# `heroes_standard.h` there was refused as the C library's `<heroes_standard.h>`).
+function header(one: stand_in.Shadow, origin: str, runtime: bool) -> diag.Diagnostic
+    whose_header: str @= "the C library's `<" + one.named + ">`"
+    place: str @= "the system's"
+    whose_place: str @= "the library's"
+    spelled: str @= "<" + one.named + ">"
+
+    if runtime
+        whose_header @ "the runtime's `" + one.named + "`"
+        place @ "the runtime's"
+        whose_place @ "the runtime's"
+        spelled @ "\"" + one.named + "\""
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: "`" + clang_place.slashed(one.path) + "` stands in for " + whose_header + ", which the C this compiler writes reads: a folder this build names is searched before " + place + ", so its file is read in " + whose_place + " place",
+        span: token.Span(start: 0, end: 0)
+    )
+    whose: str @= "the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers"
+
+    if origin.len() > 0
+        whose @ named_by(origin: origin, folder: one.folder)
+    d.notes @ d.notes.push(
+        "rename the file, or move it out of `" + one.folder + "`: " + whose + ", and every `#include " + spelled + "` of the build reads what it holds"
+    )
+    return d
+
+# Who named a folder the environment added: the variable, the empty element
+# that names `.`, or clang's own configuration.
+function named_by(origin: str, folder: str) -> str
+    if origin == clang_added.OWN
+        return "clang's own configuration searches that folder in every compile"
+    told: str @= "`" + origin + "` names that folder for every clang this build runs"
+
+    if folder == "."
+        told @ told + ", an empty element of it naming `.`, the folder clang runs in"
+    return told
+
+# A file the environment has every clang read before a unit's first line.
+function forced(one: clang_added.Added) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: "`" + clang_place.slashed(one.value) + "` is read before the first line of every unit this build compiles, through " + source_of(one) + "'s `" + one.flag + "`: what it defines stands before the C library's headers and every guard, so nothing undoes it",
+        span: token.Span(start: 0, end: 0)
+    )
+    d.notes @ d.notes.push(remedy(one, word: one.flag + " " + one.value))
+    return d
+
+# A `-D` or `-U` of a name the guard keeps that the environment hands every
+# clang.
+function macro(one: clang_added.Added) -> diag.Diagnostic
+    name = package_macros.macro_of(one.value)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: MACRO_CODE,
+        message: "`" + one.flag + one.value + "` reaches every clang this build runs through " + source_of(one) + ", and `" + name + "` is a name the C this compiler writes: a `" + one.flag + "` stands before every header and every guard, so nothing undoes it",
+        span: token.Span(start: 0, end: 0)
+    )
+    d.notes @ d.notes.push(remedy(one, word: one.flag + one.value))
+    return d
+
+function source_of(one: clang_added.Added) -> str
+    if one.variable == clang_added.OWN
+        return one.variable
+    return "`" + one.variable + "`"
+
+# What takes the word out: the variable without it, or the variable unset.
+function remedy(one: clang_added.Added, word: str) -> str
+    if one.variable == clang_added.OWN
+        return "take `" + word + "` out of clang's configuration file, which adds it to every compile"
+    return "take `" + word + "` out of `" + one.variable + "`, or build with `" + one.variable + "` unset"
