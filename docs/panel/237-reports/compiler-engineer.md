@@ -473,3 +473,275 @@ the variant compiler `heroes-p237` and its sources `build/ce/variant/selfhost/` 
 harness judged by `heroes-p237`, a compiler built from other sources than the tree's
 (`.claude/hooks/provenance.py`), so 2333's seven cases under the routes were run by hand
 (`build/ce/cases2333.sh`), each compared byte for byte with its `.expected`.
+
+## Routes built for 2343 and 2344
+
+Asked by the coordinator after the critic's second pass (`237-reports/critic-reports.md`,
+findings 3 to 6, and its *must not adopt* items 2 to 4), on defects 2343 and 2344 (`gh issue view`).
+Written 2026-11-08 in the same worktree, nothing committed. The critic's `viaown` and `cipempty` and
+the ffi-pragmatist's readline program (`237-ffi-pragmatist/build/ffi/rlh/rel/main.hero`) were read
+there and their sources copied into `build/ce/m2/`; nothing was built or written in another seat's
+worktree.
+
+### The second variant compiler, `heroes-p237b`
+
+A copy of the first variant (`build/ce/variant/selfhost/`, so `P237_SHADOW`, `P237_ORDER` and the
+count rule `P237_ENV=count` stay for comparison) at `build/ce/variant2/selfhost/`, with two routes
+behind two switches. `heroes-next check` of it exits 0.
+
+**Defect 2344, `P237_ENV=asked`: read the `-###` answer the build already has** (the critic's
+route, finding 3).
+
+- `cli/toolchain.hero`: the `Toolchain` record keeps the answer's text, `asked_answer`, which
+  `toolchain_at` already reads once a build from `clang_floor.identity` (`clang -### <the
+  compiler's own words> -c runtime/runtime.c`) and until now kept only as a digest (+4 / -1 by
+  `diff`).
+- `cli/clang_added.hero`, new (164 lines, 100 of code without comments and its test): the words of
+  the answer's `"-cc1"` job, unquoted as clang writes them; the folders it searches for `<...>`
+  ahead of the platform's (`-I`, joined or apart, `-isystem`, `-c-isystem`), every one of which the
+  compiler did not pass, since the `-###` question carries no `-I`; clang's own folders (every
+  `-internal-isystem` and `-internal-externc-isystem`); and every `-D` or `-U` of a name the guard
+  keeps that is not the compiler's own switch (`package_macros.refused`, item 2's rule). Measured
+  first: a plain answer holds exactly `-D _USE_MATH_DEFINES` and `-D _CRT_SECURE_NO_WARNINGS` on
+  this Mac and in the Linux container (Debian clang 22.1.8), so any other `-D` or `-U` came from
+  outside the compiler.
+- `cli/shadowed.hero`'s `told`: each such folder is counted among the named folders, unless it is
+  also one of clang's own (a tie goes to the platform, the landed rule: `CPATH` naming the SDK's
+  own folder must build); each kept `-D` or `-U` is refused, code `shadowed_macro` (the prototype's
+  name; question 3 is the sitting's), its note naming the variable. The variable is named by
+  matching the folder against the variables' values (`.` against an empty element), for the words
+  only: the verdict is clang's answer, whoever added the word. About 28 code lines.
+- Every other word of the answer goes through untouched: nothing reads it.
+
+**Defect 2343, `P237_GROUPS=on`: who included each file, and whether the platform has one of that
+name.**
+
+- The refusal's one `clang -v -M` run gains `-H` (clang prints each file it enters with its depth
+  in dots, the same paths as `-M`; measured in one run with `-v -M`) and `-MG` (a group's missing
+  header does not cost the listing), and it lists the runtime's opening **followed by** the
+  program's groups inside the guard (`order_trial.opening([])`, then
+  `macro_guard.around(c_text.includes(order_trial.theirs(headers)))`), so a library header the
+  runtime reads is entered first beneath the runtime, and one only a group reaches is entered
+  beneath that group. `cli/produce.hero` hands it the program's group headers
+  (`emit_externs.headers`, +1 / -1).
+- The rule, for each file of a named folder in that tree: **the unit's own include** (depth 1, the
+  header a group names) **is the program's**, never refused; a nested file is refused where **the
+  header that included it is not a named folder's** (the platform's or the runtime's: `_stdio.h`
+  beneath the SDK's `stdio.h`, the landed 36 beneath the runtime), or where **a platform folder
+  holds a file of the same name** (`process.path_exists`: `stdio.h` beneath the program's own
+  `lib.h`). A file `-M` lists and `-H` does not (found only by `__has_include`) keeps the landed
+  rule. About 89 code lines (`grouped_text`, `Entry`, `entries_of`, `tree_shadows`, `includer`,
+  `twin`, `finder`, the reader in the message).
+- The message names the header that included the file where it is not the runtime's: *which
+  `lib.h` includes*, not *which the C this compiler writes reads*.
+
+Built three times, each `heroes-next check` exit 0 and `heroes-next build ... -o heroes-p237b`
+exit 0: the routes as described; then `-include` and `-imacros` added to the `-###` route, after
+the first matrix found that door open in every arm (below); then the quoted-sibling exemption added
+to the tree route, after a case of my own found it refusing a correct program (below). **Every
+figure below is the third build's**, `heroes-p237b --version`: `sources 222d4bf371b8e243`.
+
+Two more facts measured on the way:
+
+- `-MG` keeps the one run going where a group's header is missing: `clang -v -H -M -MG` over a file
+  including `<p237_missing.h>` exits 0 and lists the name bare (the route skips a path where no file
+  stands, `process.path_exists`); without `-MG`, exit 1.
+- **The Linux container reads the environment differently from this Mac, which is the case for
+  reading clang rather than re-deriving it.** Debian clang 22.1.8's `-###` (`docker run
+  heroes-linux-arm64:latest`, the runtime mounted read-only): `CPATH=/e` is `-I/e` and
+  `C_INCLUDE_PATH=:` is two `-c-isystem .`, as on this Mac, and `CCC_OVERRIDE_OPTIONS` reaches it as
+  `-D P=5` and `-include /f.h`; but **an empty `CPATH` adds nothing there**, where Apple clang
+  21.0.0 adds `-I.`. Its plain answer holds no `-I/usr/local/include` (that folder is an
+  `-internal-isystem` there). The route reads each clang's own answer; the count rule would have had
+  to be right about both.
+
+### Defect 2344: the environment matrix
+
+`build/ce/envmatrix.sh`, each case built and run under three arms: **landed** (`heroes-next`),
+**count** (`heroes-p237b`, `P237_ENV=count`, my first variant's rule) and **asked**
+(`P237_ENV=asked`, the `-###` route). Programs in `build/ce/m2/`; `bool` prints `true`, `ccc` is
+the overflow program run as `./p one`. A folder holds `stdbool.h` defining `true` as 0;
+`force.h` defines `__STDBOOL_H`, `bool`, `true` and `false` (as 0).
+
+| case | landed | count | asked |
+|---|---|---|---|
+| `CPATH=<folder>` | 0, **`false`** | exit 1 `shadowed_header` | exit 1 `shadowed_header` |
+| `C_INCLUDE_PATH=<folder>` | 0, **`false`** | exit 1 | exit 1 |
+| `CPATH=''`, the critic's `cipempty` | 0, **`false`** | exit 1 | exit 1 |
+| `C_INCLUDE_PATH=':'`, `cipempty` | 0, **`false`** | 0, **`false`** | exit 1 `shadowed_header` |
+| `C_INCLUDE_PATH='/x:'`, `cipempty` | 0, **`false`** | 0, **`false`** | exit 1 `shadowed_header` |
+| `CCC_OVERRIDE_OPTIONS='#+-D__builtin_add_overflow(...)'` | 0, **`-9223372036854775808`** | 0, **wrong sum** | exit 1 `shadowed_macro` |
+| the same without the `#` | 0, **wrong sum** | 0, **wrong sum** | exit 1 `shadowed_macro` |
+| `'#+-Dtrue=0'` | 0, `true` | 0, `true` | exit 1 `shadowed_macro` |
+| `'#+-I<folder>'` | 0, **`false`** | 0, **`false`** | exit 1 `shadowed_header` |
+| `'#+-include<force.h>'` | 0, **`false`** | 0, **`false`** | exit 1 `shadowed_header` |
+| `'#+-imacros<force.h>'` | 0, **`false`** | 0, **`false`** | exit 1 `shadowed_header` |
+| `'#+-fuse-ld=lld'`, `lld@22`'s `bin` first on `PATH` (measurement 055's use) | exit 2, *linking failed* | exit 2, the same | exit 2, the same |
+| `'#+-fuse-ld=ld'` | 0, `true` | 0, `true` | 0, `true` |
+| `'#+-Wl,-dead_strip'` | 0, `true` | 0, `true` | 0, `true` |
+| `envown`: `CPATH=hdr`, the program's own `mine2333.h` | 0, 2333 | 0, 2333 | 0, 2333 |
+| the ffi-pragmatist's readline binding, `CPATH=/opt/homebrew/opt/readline/include` | 0, **2051** | 0, 2051 | 0, 2051 |
+| `CPATH=<the SDK's usr/include>` (a platform folder named) | 0, `true` | 0, `true` | 0, `true` |
+| nothing set | 0, `true` | 0, `true` | 0, `true` |
+
+- **The `-###` route closes every case of the critic's list** (its *must not adopt* item 2) and
+  three it does not list (`-I`, `-include`, `-imacros` through `CCC_OVERRIDE_OPTIONS`), refuses
+  none of the four correct programs, and passes every other edit untouched.
+- **Measurement 055's `-fuse-ld=lld` cannot link on this Mac whatever the compiler does**: the
+  keg-only `lld@22` (22.1.8) says *could not load TAPI file ... libSystem.tbd: malformed file*, and
+  plain `clang t.o -o t` under the same override fails the same way. So the row says what can be
+  said: every arm gives the same exit 2 with lld's own words, the route adds no refusal, and the
+  two linker edits this Mac can link (`-fuse-ld=ld`, `-Wl,-dead_strip`) build and run in every arm.
+- **`'#+-Dtrue=0'` is refused although harmless today** (the guard gives `true` back, so the landed
+  compiler prints `true`): the route refuses a `-D` of a kept name whatever it does, as item 2's
+  rule refuses a package's. Strict, and the same line as item 2.
+- **The count rule leaves seven cases at a wrong value at exit 0**: the critic's two
+  `C_INCLUDE_PATH` empty elements (finding 4, reproduced) and the five `CCC_OVERRIDE_OPTIONS` cases
+  that change a value (the `-D` with and without `#`, `-I`, `-include`, `-imacros`), since it reads
+  only two variables; three of the seven are on the critic's list.
+- The words, as the route prints them (`cipempty`, `C_INCLUDE_PATH=':'`): *`stdbool.h` stands in
+  for the C library's `<stdbool.h>` ...* and the note *rename the file, or move it out of `.`:
+  `C_INCLUDE_PATH` names that folder for every clang this build runs, an empty element of it naming
+  `.`, the folder clang runs in*; for the `-D`, *`-D__builtin_add_overflow(a,b,r)=...` reaches every
+  clang this build runs through `CCC_OVERRIDE_OPTIONS`, and `__builtin_add_overflow` is a name the
+  C this compiler writes*, note *take `-D__builtin_add_overflow` out of `CCC_OVERRIDE_OPTIONS`, or
+  build with `CCC_OVERRIDE_OPTIONS` unset*. The variable is named by matching the folder against the
+  variables' values; a folder no variable holds is named *clang's own default search* (Apple
+  clang's `-I/usr/local/include`, absent here, so how a file found there is told is **unrun**, as
+  the critic said).
+
+**Correction to my condition (b) above, 2026-11-08**: *sets `CCC_OVERRIDE_OPTIONS` to `#` for every
+clang* is withdrawn. The critic's finding 5 is right that it silently drops an edit this repository
+has used, and the `-###` route measured here tells instead, passes measurement 055's edit, and
+closes the `-I`, `-include` and `-imacros` doors the `#` would also have closed only by discarding
+every edit.
+
+### Defect 2343: the group matrix
+
+`build/ce/groupmatrix.sh`, three arms: **landed**, **groups** (`P237_GROUPS=on`), **both**
+(`P237_GROUPS=on P237_ENV=asked`).
+
+| case | landed | groups | both |
+|---|---|---|---|
+| `viagroup` (`_stdio.h` beside a group binding `stdio.h`'s `BUFSIZ`) | 0, **7** | exit 1 `shadowed_header` | exit 1 |
+| the critic's `viaown`, evil (`lib.h` includes `<stdio.h>`, the program's `stdio.h` says 7) | 0, **7 14** | exit 1 `shadowed_header` | exit 1 |
+| `viaown`, clean | 0, 1024 2048 | 0, 1024 2048 | 0, 1024 2048 |
+| `utilown` (the program's own `util.h`, an SDK name, named by its group) | 0, 7 | 0, 7 | 0, 7 |
+| `stdiogroup` (a group naming `stdio.h`, the program's `stdio.h` says 99) | 0, 99 | 0, 99 | 0, 99 |
+| `sibling` (`money.h` includes its own `<money_types.h>`) | 0, 125000 | 0, 125000 | 0, 125000 |
+| `sibutil-quoted` (`money.h` includes its own `"util.h"`) | 0, 125000 | 0, 125000 | 0, 125000 |
+| `sibutil-angled` (`money.h` includes its own `<util.h>`) | 0, 125000 | **exit 1 `shadowed_header`** | exit 1 |
+| `boolgroup` (a group naming `stdbool.h`, the program's `stdbool.h` says `true` is 0) | exit 1 | exit 1 | exit 1 |
+| `beside`, `included`, `boolbeside`, `sub/sys/cdefs.h`, a symlink, a folder named twice | exit 1 each | exit 1 each | exit 1 each |
+| `own` (`--include` folder, `mine2333.h`) | 0, 2333 | 0, 2333 | 0, 2333 |
+| readline through `CPATH` | 0, 2051 | 0, 2051 | 0, 2051 |
+| `group` (`math.h`, `sqrt`) | 0, 1.4142135623730951 | the same | the same |
+
+- **The tree route closes both wrong values** (`viagroup` beneath the SDK's `stdio.h`, `viaown`
+  beneath the program's own `lib.h` by the platform's twin) **and builds every correct program of
+  the four** (`viaown` clean, `utilown`, `stdiogroup`, and `sibling`), with every landed refusal
+  kept. The messages: *`./_stdio.h` stands in for the C library's `<_stdio.h>`, which
+  `.../MacOSX.sdk/usr/include/stdio.h` includes*; *`./stdio.h` stands in for the C library's
+  `<stdio.h>`, which `./lib.h` includes*.
+- **`stdiogroup` prints 99 under this route, a ruling and not a measurement**: the file the group
+  names, read for the group's own include, is the program's header, as `utilown`'s is; a rule that
+  refused `stdiogroup` and built `utilown` would need a list of which names are the C library's, a
+  premise about the world. And a group naming a header the runtime itself reads (`boolgroup`) is
+  refused, because the runtime enters that name first.
+- **What the route refuses that may be correct: `sibutil-angled`.** A program's own `money.h`
+  writing `#include <util.h>` and meaning its own `util.h` is the same shape as the critic's
+  `viaown` (`#include <stdio.h>`, answered from the program's folder), and no rule here tells them
+  apart without that list of names. The quoted form, `#include "util.h"`, was refused by the first
+  build of the route; C's rule (a quoted include asks the includer's folder first) makes it the
+  header's own sibling, so the third build exempts a file found beside a named folder's includer
+  that names it in quotes (`quoted_sibling`, read from the includer's text), and it builds.
+- **The words differ in one case**: where the includer is the runtime's own header, the route says
+  *which `runtime/heroes_standard.h` includes* (my folder case's `.expected`, its one differing
+  line) where the landed sentence says *which the C this compiler writes reads*. A landing keeps the
+  landed sentence for the runtime's includer.
+
+### No correct program refused, with both routes on
+
+`build/ce/sweep2.sh`, `P237_ENV=asked P237_GROUPS=on`: every `examples/*/main.hero` (55) and the 12
+`run` goldens of item 3's subset (the 9 naming a package among them): **67 of 67 exit 0**,
+`shadowed_header` or `shadowed_macro` in 0 outputs. 2333's seven cases (`build/ce/cases2333b.sh`):
+the four `run` cases the same as their `.expected`, the three `unsupported` cases exit 1 and the
+same; my folder case exit 1, differing in the includer's words alone (above).
+
+### The cost, children counted
+
+`build/ce/cost2.sh`, and for the count rule an inline loop of the same shape writing
+`build/ce/cost3.tsv`: the four arms of one binary, warm; the
+compiler's own instructions over 8 alternated rounds, the first discarded (7 kept), and the clangs
+it starts through the counting `clang`, 3 builds per arm; medians, range in brackets for the own
+process.
+
+| program | arm | clang runs | own process | clangs | total | vs base |
+|---|---|---|---|---|---|---|
+| two-line | base | 5 | 723,754,558 | 898,117,678 | 1,621,872,236 | |
+| | asked (2344) | 5 | +19,557,246 | +10,219,696 | 1,651,649,178 | **+1.84 %** |
+| | groups (2343) | 5 | +144,240,822 | +6,667,219 | 1,772,780,277 | **+9.30 %** |
+| | both | 5 | +174,039,626 | +6,211,830 | 1,802,123,692 | +11.11 % |
+| one group, `math.h` | base | 7 | 871,460,584 | 1,174,565,676 | 2,046,026,260 | |
+| | asked | 7 | +20,891,365 | +768,771 | 2,067,686,396 | +1.06 % |
+| | groups | 7 | +158,577,794 | +9,315,721 | 2,213,919,775 | +8.21 % |
+| | both | 7 | +189,626,526 | +5,364,293 | 2,241,017,079 | +9.53 % |
+| one group, `stdio.h` | base | 7 | 870,231,365 | 1,190,479,054 | 2,060,710,419 | |
+| | asked | 7 | +20,537,421 | +3,351,700 | 2,084,599,540 | +1.16 % |
+| | groups | 7 | +259,218,865 | +9,716,148 | 2,329,645,432 | +13.05 % |
+| | both | 7 | +297,889,935 | +22,501,449 | 2,381,101,803 | +15.55 % |
+
+And the count rule against the same base, two-line and one group: own process -892,734 and
+-200,485, clangs +5,465,970 and +119,137, 5 and 7 runs: nothing measurable.
+
+- **Neither route adds a process**: 5 and 7 clang runs in every arm.
+- **The `-###` route costs about +20 M in the compiler's own process** (reading the answer it
+  already holds); its clang-side differences, +0.8 M to +10.2 M, lie inside the spread of identical
+  builds (the base arm's own clang range on the two-line program is 895,084,124 to 907,355,335).
+- **The tree route costs +144 M to +259 M in the compiler's own process**, growing with the headers
+  a group reads, and about +7 M to +10 M in clang for `-H`. That is my prototype's walk of the tree
+  (each entry's folder found against every searched directory, twice for a nested one, and the
+  `-v`/`-H` text read byte by byte), **unprofiled and unoptimised**: an inference, not measured,
+  is that a landing that finds each directory once per path, or asks `compiling.unit_reach`'s run
+  instead (my report's item 1), costs far less. As built, it is the route's measured price.
+
+### Size, and where it lands
+
+| route | code lines (comments and tests out) | where |
+|---|---|---|
+| 2344, `-###` | about **147**: `cli/clang_added.hero` 108 (new; 177 lines with its comments and test, 133 by the layout rule), `shadowed.hero` about 38 (the block in `told`, `forced_diagnostic`, `macro_diagnostic`, the origin in the note), `toolchain.hero` 1 field | `selfhost/cli/` |
+| 2343, tree | about **110** in `shadowed.hero` (`grouped_text`, `Entry`, `entries_of`, `tree_shadows`, `quoted_sibling`, `folder_of`, `includer`, `twin`, `finder`, the `-H -MG` words, the reader in the message) and 1 argument in `produce.hero` | `selfhost/cli/` |
+| count rule, for comparison | 19 (25 with comments) | `shadowed.hero` |
+
+Neither touches the lexer, the checker, the descriptors, ownership or the emitter: both are driver
+code, no construct, no veto. But the variant's `shadowed.hero` stands at **409 lines by the layout
+suite's rule against its ceiling of 300**, `toolchain.hero` at 301 (298 landed) and `produce.hero` at
+304 (300 landed; the ceiling is `suite_layout.hero:45`), so a landing puts the tree route in a module of its own
+beside `clang_added.hero` and moves a line out of each of the other two first.
+
+### Summary
+
+- **Defect 2344**: the **`-###` route** (`P237_ENV=asked`) closes every case: the critic's six
+  wrong values (`CPATH=dir`, `C_INCLUDE_PATH=dir`, `CPATH=''`, `C_INCLUDE_PATH=':'` and `'/x:'`, a
+  kept `-D` through `CCC_OVERRIDE_OPTIONS` under `#`), the same `-D` without `#`, and `-I`,
+  `-include`, `-imacros` through the same variable, refusing none of `envown` (2333), the readline binding (2051), `CPATH` naming the
+  SDK's folder, or the linker edits (`-fuse-ld=lld` gives the same lld failure in every arm, as
+  plain clang does on this SDK; `-fuse-ld=ld` and `-Wl,-dead_strip` link). About **147 code
+  lines** in `selfhost/cli/`, **no added process, about +20 M instructions, +1.1 % to +1.8 %** of a
+  warm build. It fails no case run; it refuses `-Dtrue=0`, harmless today, by item 2's own line.
+  The count rule (19 lines, no measurable cost) leaves seven of them at a wrong value, three of the
+  critic's list among them.
+- **Defect 2343**: the **tree route** (`P237_GROUPS=on`) closes `_stdio.h` and `viaown`, builds
+  `utilown` (7), `viaown` clean (1024 2048) and `stdiogroup` (99, by the ruling that a group's named
+  header is the program's), and keeps every landed refusal; 67 of 67 correct programs build with
+  both routes on. About **110 code lines**, **no added process, +144 M to +259 M instructions, +8.2 %
+  to +13.0 %** of a warm build as built (unoptimised). **The case it fails, if it is correct:
+  `sibutil-angled`**, a program's header including its own `<util.h>` by angle brackets, refused
+  because the SDK has a `util.h`; it is `viaown`'s shape, and telling them apart needs a list of the
+  C library's header names, which no route here keeps. `stdiogroup`'s 99 is the sitting's ruling to
+  confirm.
+
+Built in `build/ce/variant2/selfhost/` (binary `heroes-p237b`; the first two builds kept as
+`heroes-p237b-first` and `heroes-p237b-second`), cases in `build/ce/m2/`, scripts
+`build/ce/envmatrix.sh`, `groupmatrix.sh`, `sweep2.sh`, `cases2333b.sh`, `cost2.sh`; nothing
+committed, nothing written outside this worktree, no paid run.

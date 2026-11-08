@@ -44,3 +44,16 @@ says a group's record declared `lent` without `@` is a pointer to const, and a h
 record with a `tag` and no fields; the compiler refuses `lent` on a handle on panel 171's ruling,
 which the specification never took in. Sonnet 5.5 built 0 of its 72 first tries, so each arm's
 `correct` count rests on Opus's and Haiku's twelve sessions per task.
+
+## R4, the task that names the refusal nowhere, 2026-11-08
+
+Registered at `62a95b20a` before any of its sessions; run from 13:10 to 13:39:59; graded by the same runner. The rule's lines:
+
+```
+R4 A correct 5 silent 1 loud 0 refused 12 failed 0 unknown 0 | when 14 v2 0 bare 4 none 0
+R4 B correct 7 silent 0 loud 0 refused 11 failed 0 unknown 0 | when 18 v2 0 bare 0 none 0 | p(silent lower) 0.5000 p(correct lower) 0.8555 not preferred
+R4 C correct 8 silent 0 loud 0 refused 10 failed 0 unknown 0 | when 15 v2 0 bare 3 none 0 | p(silent lower) 0.5000 p(correct lower) 0.9179 not preferred
+R4 D correct 8 silent 0 loud 0 refused 10 failed 0 unknown 0 | when 18 v2 0 bare 0 none 0 | p(silent lower) 0.5000 p(correct lower) 0.9179 not preferred
+```
+
+**No arm is preferred over A.** Silent 1 of 18 under A (`R4-A-h4`, Haiku 5.5: it printed `5` and `0`, exited 0, one connection open, defect 2322's report) and 0 under B, C and D. Read descriptively and not as a finding: the close was bound bare 4 times under A and 3 under C, never under B or D; 14 of 18 under A and 15 of 18 under C bound it `when 0` from what the models know of SQLite, with the task naming nothing (a one-sided Fisher p for A's 14 against B's 18 is 0.0519). Of the 43 refused first tries, 38 were `lent_shape` first. **The whole sitting's paid runs: 17.7277 USD** for the blind seat and 288 reader sessions (`blind237.py sum`), within the author's cap of 25 USD.
