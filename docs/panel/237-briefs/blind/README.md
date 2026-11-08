@@ -51,6 +51,25 @@ there, and `ANTHROPIC_API_KEY`, which `--bare` needs (the critic, finding 17), r
 `/panel`'s: `--bare --restricted --safe-mode --strict-mcp-config`, `--tools Read,Write` and the same
 in `--allowedTools`, the rest disallowed, `--output-format json`.
 
+## The third task, R3, added before its own sessions on the seats' reports
+
+Added 2026-11-08 at about 12:35, after the historian's report (its § on `when 0` being a fact of each
+function: C11's `fclose` ends the stream whether or not the call succeeds) and the ffi-pragmatist's
+(`when 0` on `fclose` measured a double free under glibc's ASan and a false leak panic here), and
+**before any R3 session ran**; R1's and R2's sessions were running, and their results were not read
+before this section was committed. **R3**, `task-reader-3.md`, binds a journal library of one header
+(`journal.h` here) whose close **always** ends the journal and returns 5 when its final flush fails:
+the right binding is `consumes` with no `when`, and a `when 0` there is the lesson of B and D
+applied where it does not hold. Same arms, models and counts as R1 and R2: 72 sessions. Its
+`journal.h` writes the journals still open and the closes of an ended journal into `journals.txt`;
+`correct` is exit 0 with both 0, `silent` exit 0 with either above 0.
+
+**R3's rule, registered here**: an arm is **charged with over-application** when its `correct` count
+is lower than A's with a one-sided Fisher exact p below 0.05. An arm that wins R1 and R2 and is
+charged on R3 is not adopted as written: the synthesis adopts it only with a remedy for the
+over-application that a seat names, or adopts the next arm that wins R1 and R2 and is not charged,
+and says which.
+
 ## Grading, on behaviour (the critic, finding 18)
 
 Each answer's last fenced block is the program, written to a folder of its own and built with lane
