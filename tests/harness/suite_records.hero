@@ -1855,13 +1855,13 @@ function project_walk(listed: [str]) -> [str]
 
 test "the walk leaves a placed tree out by its folder's name, and keeps the package's source and every file beside it"
     listed = [
-        "examples/index/core/0.1.0/files/strings.md"
+        "packages/core/0.1.0/files/strings.md"
         "examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.md"
         "examples/ini/heroes.packagesx/notes.md"
         "examples/ini/main.hero"
         "heroes.packages/k/x.md"
     ]
-    assert project_walk(listed) == ["examples/index/core/0.1.0/files/strings.md", "examples/ini/heroes.packagesx/notes.md", "examples/ini/main.hero"]
+    assert project_walk(listed) == ["packages/core/0.1.0/files/strings.md", "examples/ini/heroes.packagesx/notes.md", "examples/ini/main.hero"]
 
 # Whether this path is one of the dated records — the pruning `find` used to do
 # with `-not -path`, done here now that the listing comes from git. Same rule as

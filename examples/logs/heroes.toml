@@ -1,4 +1,4 @@
-index = "file://../index"
+index = "file://../../packages"
 
 [dependencies.core]
 version = "0.1.0"

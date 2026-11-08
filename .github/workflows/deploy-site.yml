@@ -61,6 +61,7 @@ on:
     paths:
       - 'site/**'
       - 'examples/**'
+      - 'packages/**'
       - 'selfhost/**'
       - 'spec/heroes-spec.md'
       - 'tests/harness/suite_spec.hero'

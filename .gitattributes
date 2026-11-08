@@ -43,5 +43,5 @@ tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/expected -text
 # CRLF file when it is added, so the committed bytes would no longer be the
 # ones the version's `list` and the catalogue's `sum` name; git keeps them as
 # they are, on every leg.
-examples/index/** -text
+packages/** -text
 **/heroes.packages/** -text

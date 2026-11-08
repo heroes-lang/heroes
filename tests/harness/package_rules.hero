@@ -18,10 +18,11 @@ use module_text
 use shell
 use strings
 
-# The local static index every program's catalogue under `examples/` reads, over
-# `file://../index` (panel 235's R15 and R9's C4).
+# The local static index every program's catalogue under `examples/` reads, at
+# the repository's root, over `file://../../packages` (panel 235's R15 and R9's
+# C4; panel 238's R10 moved it there from inside `examples/`).
 constant INDEX: str
-    "examples/index"
+    "packages"
 
 # The one package the conventions hold, the catalogue entry every program names
 # the core packages by: `use <core>/strings`.
@@ -597,9 +598,9 @@ test "a listing is sorted by the paths' bytes, and what moved is named once each
 test "a catalogue of the examples is the verb's: an index line, then each entry's version and sum"
     sum = "sha256-" + "0123456789abcdef".repeat(4.to_u64().must())
     c = catalogue_read(
-        "index = \"file://../index\"\n\n[dependencies.core]\nversion = \"0.1.0\"\nsum = \"" + sum + "\"\n"
+        "index = \"file://../../packages\"\n\n[dependencies.core]\nversion = \"0.1.0\"\nsum = \"" + sum + "\"\n"
     ).must()
-    assert c.index == "file://../index"
+    assert c.index == "file://../../packages"
     assert c.entries.len() == 1 && c.entries[0].name == "core" && c.entries[0].version == "0.1.0" && c.entries[0].sum == sum
     assert catalogue_read("[dependencies.core]\npath = \"../packages\"\n").is_err()
     assert catalogue_read("index = \"file://../index\"\n# a comment\n").is_err()
@@ -625,7 +626,7 @@ test "every part of a path under a package's root is lower case"
     assert crooked_parts("a.b.hero") == ["a.b.hero"]
     assert crooked_parts("x/1st.hero") == ["1st.hero"]
     assert crooked_parts("x/a.Hero") == ["a.Hero"]
-    assert module_path(root: "examples/index/core/0.1.0/files", path: "examples/index/core/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
+    assert module_path(root: "packages/core/0.1.0/files", path: "packages/core/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
 
 test "two paths that differ only in case are named together"
     assert case_twins(["a/Strings.hero", "a/strings.hero", "b/x.hero"]) == ["`a/Strings.hero` and `a/strings.hero`"]

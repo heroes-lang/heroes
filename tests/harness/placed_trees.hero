@@ -59,7 +59,7 @@ test "a path stands in a placed tree when one of its folders is named heroes.pac
     assert !within("examples/ini/heroes.packagesx/strings.hero")
     assert !within("examples/ini/my.heroes.packages/strings.hero")
     assert !within("examples/ini/heroes.packages")
-    assert !within("examples/index/core/0.1.0/files/strings.hero")
+    assert !within("packages/core/0.1.0/files/strings.hero")
     assert !within("examples/ini/main.hero")
     assert !within("")
 

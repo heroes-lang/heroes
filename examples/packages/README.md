@@ -10,8 +10,9 @@ are source, verified the way any program is: by the checker, by their own
 `test` blocks and, where they bind C, by clang against the header they name.
 
 **Their source is one tree**, the newest version of `core` in the local static
-index beside this folder, `examples/index/core/<version>/files/` (panel 235's
-R15, ratified 2026-11-07). A program that uses a package, `main.hero` here among
+index at the repository's root, `packages/core/<version>/files/` (panel 235's
+R15, ratified 2026-11-07; panel 238's R10 moved the index there from inside
+`examples/`). A program that uses a package, `main.hero` here among
 them, names it `use <core>/strings` and holds one entry, `core`, in its
 catalogue `heroes.toml`, which `heroes add core` writes; the verb places the
 version's files under the program's own `heroes.packages/`, the index's files
@@ -40,7 +41,7 @@ it: the compiler, the net's `packages` suite, or a reader's review.
    strings/internal/scan`.
 4. **A program fetches the packages it uses**: `heroes add core` in its folder
    writes the entry `core` into its catalogue, with the version and the sum
-   the index publishes (`index = "file://../index"` for a program here), and
+   the index publishes (`index = "file://../../packages"` for a program here), and
    places the version's files under `heroes.packages/`, which the program
    commits, so `build`, `check` and `run` never fetch (panel 235's R8). The
    compiler holds the placed tree to the entry's `sum` at every build, and the

@@ -397,7 +397,7 @@ test "a case's tree is exempt and a document is not"
 test "a placed tree is exempt by its folder's name, and the package's source beside it is not"
     assert exempt("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.md")
     assert exempt("heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
-    assert !exempt("examples/index/core/0.1.0/files/strings.md")
+    assert !exempt("packages/core/0.1.0/files/strings.md")
     assert !exempt("examples/ini/heroes.packagesx/strings.md")
     assert !exempt("examples/ini/my.heroes.packages/strings.md")
     assert !exempt("examples/ini/main.hero")

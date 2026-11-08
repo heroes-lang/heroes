@@ -399,7 +399,10 @@ shelf*, and its English and Italian pages missing), and its copies under
 **Where they moved, 2026-11-08** (M-package-manager step 14, lane pm-core;
 panel 235's R15): the thirteen copies left the programs and the canonical
 tree left `examples/packages/`, and the source is `core` 0.1.0 in a local static index,
-`examples/index/`, read over `file://../index`. Each of the fourteen programs
+then inside `examples/` and read over `file://../index`, at the repository's root
+since panel 238's R10 the same day, `packages/`, read over `file://../../packages`
+(every placed folder renamed with it, the key holding the `index` line as written).
+Each of the fourteen programs
 that uses it holds a catalogue `heroes add core` wrote and the tree it placed
 under `heroes.packages/`. Of the 43 `use core/` lines (41 when the sitting
 counted, `spreadsheet` having gained one with defect 2307's repair), the 23 in

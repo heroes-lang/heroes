@@ -6,11 +6,12 @@
  * and everything a page states about one is derived here and nowhere else.
  * `examples/README.md` states the rule the discovery follows in its own words:
  * a directory holding a `main.hero` IS a program, so a program joins by
- * existing and cannot be forgotten. Two directories are not program
- * directories: `gallery/`, because each of its files is its own program, and
- * `index/`, the local static index the programs' catalogues read the core
- * packages from (panel 235's R15), which is checked for its shape and shown on
- * no page of its own.
+ * existing and cannot be forgotten. One directory is not a program
+ * directory: `gallery/`, because each of its files is its own program. The
+ * local static index the programs' catalogues read the core packages from
+ * (panel 235's R15) stands beside `examples/` at the repository's root,
+ * `packages/` (panel 238's R10); it is checked for its shape on every build and
+ * shown on no page of its own.
  *
  * A program that uses a package carries two more kinds of file, and each is
  * read as what it is: `heroes.toml`, its catalogue, a document shown beside the
@@ -44,8 +45,8 @@ import { splitExpectation, outputLines, type Expectation } from './expectation.t
 const EXAMPLES = 'examples';
 const GALLERY = 'examples/gallery';
 
-/** The local static index of the core packages (panel 235's R15). */
-const INDEX = 'examples/index';
+/** The local static index of the core packages (panel 235's R15), at the root (panel 238's R10). */
+const INDEX = 'packages';
 
 /** A program's catalogue, beside its `main.hero` (spec § 1). */
 const CATALOGUE = 'heroes.toml';
@@ -273,7 +274,7 @@ function checkIndex(): void {
     throw new Error(
       `${path} is in ${INDEX}, the local static index, and is none of its files.\n` +
         `  an index holds <name>/versions, <name>/<version>/list and\n` +
-        `  <name>/<version>/files/<path> (examples/README.md § index/).`
+        `  <name>/<version>/files/<path> (examples/README.md § The index).`
     );
   }
 }
@@ -401,13 +402,13 @@ function buildExample(
 export function examples(): Example[] {
   if (cached !== null) return cached;
 
+  // The index stands outside `examples/`, so no turn of the loop below reaches
+  // it: it is checked here, on every build, or a file of another kind in it
+  // would pass with the build green and blind (panel 238's R10).
+  checkIndex();
   const programs: Example[] = [];
   for (const dir of directoriesIn(EXAMPLES)) {
     if (dir === GALLERY) continue;
-    if (dir === INDEX) {
-      checkIndex();
-      continue;
-    }
     if (!isFile(`${dir}/main.hero`)) {
       throw new Error(
         `${dir} is under examples/ and holds no main.hero.\n` +

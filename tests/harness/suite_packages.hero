@@ -5,7 +5,8 @@
 # 2026-11-07).
 #
 # WHY THIS EXISTS. The core packages are one catalogue entry, `core`, published
-# in a local static index inside the repository, `examples/index/`, and every
+# in a local static index at the repository's root, `packages/` (panel 238's
+# R10; inside `examples/` until then), and every
 # program that uses them fetches its version with `heroes add core`, placed
 # under its own `heroes.packages/` (R15, M-package-manager step 14). The
 # compiler holds each placed tree to the catalogue's `sum` at every build (R7);
@@ -19,41 +20,43 @@
 # program's catalogue and placed trees under `examples/`. A placed tree is held
 # to its fingerprint and to the index here and to nothing else: it is the
 # package author's, and R7 has the walks of the tree leave it out by its
-# folder's name (`placed_trees.hero`). Each question is a label of its own, and
-# a failure names every file it found and how to repair it:
+# folder's name (`placed_trees.hero`). Each question is a check of its own, and
+# a failure names every file it found and how to repair it. A report labels a
+# check by this suite's name, a slash and the check's name below; no living
+# text here writes a label in that shape, since the index's folder at the
+# repository's root bears the suite's name and `records/citations` reads such a
+# label as a path under it, which no file is (panel 238's R11). So the checks:
 #
-#   packages/index    every version `versions` lists is its folder's files
-#                     byte for byte: its `list` is their listing and its sum
-#                     the SHA-256 of that `list`; no folder or file beside them
-#   packages/placed   every catalogue under `examples/` reads the local index
-#                     and names versions it publishes, with their sums, and
-#                     every tree under a `heroes.packages/` is one an entry
-#                     names, placed once, the index's files byte for byte
-#   packages/reach    every module of the package's source is one the driver,
-#                     `examples/packages/main.hero`, reaches, asked of the
-#                     compiler: a reached module is named by a `#line` of the
-#                     driver's `--emit-c`, in its placed tree; and the driver
-#                     holds the newest version
-#   packages/ran      every `test` block of the package's source passes in the
-#                     driver's `heroes test`, so the package's tests run in the
-#                     net (M-package-manager step 14's item 4)
-#   packages/case     no two `.hero` paths of the project differ only in case,
-#                     and every part of a path under the source is lower case
-#   packages/names    records and variants in PascalCase, constants in
-#                     SCREAMING_CASE
-#   packages/codes    every literal code a `fail` writes is snake_case
-#   packages/quiet    no `print(`, `exit(`, `args(` or `args_checked(` but in
-#                     `log` and `os`
-#   packages/docs     every top-level function has a doc comment
-#   packages/tests    every top-level function is called by a `test` block of
-#                     its own module
-#   packages/cards    each face's card is what `package_cards.hero -- write`
-#                     writes, within its budget, every call it writes
-#                     compiling as written (task 2294, `package_judge.hero`)
+#   index     every version `versions` lists is its folder's files byte for
+#             byte: its `list` is their listing and its sum the SHA-256 of
+#             that `list`; no folder or file beside them
+#   placed    every catalogue under `examples/` reads the local index and names
+#             versions it publishes, with their sums, and every tree under a
+#             `heroes.packages/` is one an entry names, placed once, the
+#             index's files byte for byte
+#   reach     every module of the package's source is one the driver,
+#             `examples/packages/main.hero`, reaches, asked of the compiler: a
+#             reached module is named by a `#line` of the driver's `--emit-c`,
+#             in its placed tree; and the driver holds the newest version
+#   ran       every `test` block of the package's source passes in the
+#             driver's `heroes test`, so the package's tests run in the net
+#             (M-package-manager step 14's item 4)
+#   case      no two `.hero` paths of the project differ only in case, and
+#             every part of a path under the source is lower case
+#   names     records and variants in PascalCase, constants in SCREAMING_CASE
+#   codes     every literal code a `fail` writes is snake_case
+#   quiet     no `print(`, `exit(`, `args(` or `args_checked(` but in `log`
+#             and `os`
+#   docs      every top-level function has a doc comment
+#   tests     every top-level function is called by a `test` block of its own
+#             module
+#   cards     each face's card is what `package_cards.hero -- write` writes,
+#             within its budget, every call it writes compiling as written
+#             (task 2294, `package_judge.hero`)
 #
-# **Retired with R15**: `packages/copies`, which held each program's copy under
+# **Retired with R15**: the `copies` check, which held each program's copy under
 # `core/` to the canonical tree byte for byte, has nothing left to hold, the
-# copies having become placed trees `placed` holds; and `packages/internal`,
+# copies having become placed trees `placed` holds; and the `internal` check,
 # which held a private module to its own package, is the compiler's since R16,
 # `error[private_module]` at the `use` line (measured on a program writing
 # `use <core>/strings/internal/scan`, M-package-manager step 14).
@@ -84,11 +87,11 @@ constant EXAMPLES: str
 constant DRIVER: str
     "examples/packages/main.hero"
 
-# The index line every catalogue under `examples/` writes: the index beside
-# the program's folder, read over `file://` from inside the repository (R9's
-# C4), for a program one folder below `examples/`.
+# The index line every catalogue under `examples/` writes: the index at the
+# repository's root, two folders above a program one folder below `examples/`,
+# read over `file://` from inside the repository (R9's C4; panel 238's R10).
 constant INDEX_LINE: str
-    "file://../index"
+    "file://../../packages"
 
 # The floor of the source: the `.hero` files of the newest version's `files/`.
 # **4 on 2026-11-08**, M-package-manager step 14, the day the source became
@@ -620,10 +623,10 @@ test "a label passes on nothing found, and fails once naming everything found"
 # folder's name, and keeps the package's source and the programs' own.
 test "the case rule asks every module of the project but those in a placed tree"
     listed = [
-        "examples/index/core/0.1.0/files/strings.hero"
+        "packages/core/0.1.0/files/strings.hero"
         "examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero"
         "examples/ini/heroes.packagesx/strings.hero"
         "examples/ini/main.hero"
         "examples/ini/notes.md"
     ]
-    assert hero_paths(listed) == ["examples/index/core/0.1.0/files/strings.hero", "examples/ini/heroes.packagesx/strings.hero", "examples/ini/main.hero"]
+    assert hero_paths(listed) == ["packages/core/0.1.0/files/strings.hero", "examples/ini/heroes.packagesx/strings.hero", "examples/ini/main.hero"]

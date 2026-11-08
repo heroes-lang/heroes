@@ -184,11 +184,16 @@ function trees() -> [Tree]
     # more than a quarter, the 39 `.hero` files that batch added under
     # `examples/`: the core packages' canonical tree and its driver, five, and
     # the 34 copies of its files that fourteen programs carry.
+    # The packages row joined 2026-11-08 (panel 238's R10), when the index left
+    # `examples/` for the repository's root, its four `.hero` files with it:
+    # 4 seeds and 36 variants, measured by `heroes probe packages --family
+    # multi` that day, the four the examples row stopped reading.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 599, floor: Floor(family: "multi", generated: 5391, parsing: 5391), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 1798, floor: Floor(family: "multi", generated: 16182, parsing: 16182), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 159, floor: Floor(family: "multi", generated: 1431, parsing: 1431), known: none)
+        Tree(name: "packages, multi", root: "packages", seeds: 4, floor: Floor(family: "multi", generated: 36, parsing: 36), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?

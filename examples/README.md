@@ -10,10 +10,10 @@ cannot be forgotten. Beside the source, a program directory may carry
 - `main.args` — one argument per line, handed to `args()`;
 - data the program reads, named in `main.args` (`sample.json`, `sample.maze`, …).
 - `heroes.toml` and `heroes.packages/`: the program's catalogue, naming the
-  core packages it uses as one entry, `core`, from the index beside it
-  (`index/`, below), and the tree `heroes add core` placed of that version, the
-  index's files byte for byte, committed so the program builds as it stands and
-  never fetches (`packages/README.md`).
+  core packages it uses as one entry, `core`, from the index at the
+  repository's root (§ The index, below), and the tree `heroes add core`
+  placed of that version, the index's files byte for byte, committed so the
+  program builds as it stands and never fetches (`packages/README.md`).
 
 Every program is checked in **three configurations** — `-O0`, `-O2`,
 `--sanitize` — its `test` blocks green in all three and its output identical in
@@ -80,7 +80,7 @@ close a measured gap, its own header comment carries the measurement.
 | `montecarlo/` | pi by counting darts, one thread per SEED rather than per stream, because two threads sharing a generator is the classic race and here it cannot be written |
 | `nbody/` | five bodies under gravity for a thousand steps, and the two energies the benchmarks game publishes — `-0.169075164` before, `-0.169087605` after. The initial conditions are copied digit for digit from the reference C program, written without exponents because this language has none. The first program here where the FFI is **inside** a real program: it cannot take a step without `sqrt` |
 | `nqueens/` | how many ways eight queens fit, one thread per opening move: the member whose work is a search TREE rather than a range, so the threads finish at wildly different times |
-| `packages/` | the conventions every core package follows (`packages/README.md`), and `main.hero`, the packages' own program, a consumer of `<core>` like every other here, whose `heroes test` runs every package's tests: `strings` and `strconv` so far, each function admitted because the programs here wrote it by hand, their source the index's (`index/`) |
+| `packages/` | the conventions every core package follows (`packages/README.md`), and `main.hero`, the packages' own program, a consumer of `<core>` like every other here, whose `heroes test` runs every package's tests: `strings` and `strconv` so far, each function admitted because the programs here wrote it by hand, their source the index's (§ The index) |
 | `palette/` | colours packed into one integer: the corpus's hex, octal and binary literals, `~` and `^`. The lines stand as `heroes fmt` produced them — it deleted the C parentheses around `mode & MASK == 0`, because here `&` binds tighter than a comparison, the other way round from C |
 | `pipeline/` | lines in, report out: the program that **cannot be written without `use … as`**, because two modules in two directories are both named `source` |
 | `query/` | a relational engine over a table it writes itself: a deterministic generator makes **5,000 rows**, the program writes them to a file, reads them back through a strict reader and asserts the round trip, then filters, joins, merge-sorts and groups them whole. The corpus's first program to hand the language data at volume — every other one reads an input of at most 28 lines — so it is where copy-on-write costs something, under `--sanitize` like everything else. Also the first `sort` on a `bool` and the first **map keyed by a record**. A query here is a **value** and not a string: the corpus already had three parsers, and a `variant` used as an instruction set was a shape it did not have. Every number it prints is computed twice by routes that share no line, because there is no published answer for a table a program invented |
@@ -114,18 +114,23 @@ if a program has no description written for it. So adding a directory here is
 also adding a page, and `site/README.md` § the examples browser is where the
 mechanism is written down.
 
-## `index/`
+## The index
 
-Not a program directory either: the local static index of the core packages,
-the one every catalogue here reads, `index = "file://../index"` (panel 235's
-R15). `core/versions` lists each version with the SHA-256 of its listing;
-`core/<version>/list` is that listing, `<sha256>  <path>` a file, sorted by the
-paths' bytes; and `core/<version>/files/` holds the package's source, the newest
-version being the one tree a change is written in. A published version is never
-edited: a change is a new version, its listing and its line written from
-`shasum -a 256`, and the `packages` suite recomputes every listing and sum and
-names the file that moved. No `use` reaches it: a program names the package
+Not a directory of this folder: the local static index of the core packages
+stands at the repository's root, `packages/`, and every catalogue here reads it,
+`index = "file://../../packages"` (panel 235's R15; panel 238's R10 moved it
+there from this folder, where it stood as `index/`). `core/versions` lists each
+version with the SHA-256 of its listing; `core/<version>/list` is that listing,
+`<sha256>  <path>` a file, sorted by the paths' bytes; and
+`core/<version>/files/` holds the package's source, the newest version being
+the one tree a change is written in. A published version is never edited: a
+change is a new version, its listing and its line written from `shasum -a 256`,
+and the `packages` suite recomputes every listing and sum and names the file
+that moved. No `use` reaches it: a program names the package
 `use <core>/strings` and reads the tree `heroes add` placed in its own folder.
+That tree's folder is named by the `index` line as written, so a move of the
+index renames every placed folder: `heroes fetch` in each program places the
+new one and leaves the old, which is removed by hand.
 
 ## `gallery/`
 
