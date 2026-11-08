@@ -404,6 +404,12 @@ cost (R1.3), so the historian's candidate line is not used (the critic, second p
 
 Pending.
 
+**Ratified, 2026-11-08, about 22:39**, by the author's reading of the sitting's results as the coordinator set
+them out in the conversation (the premise measured false, R1 to R13, the four defects older than the
+proposal, the batch that lands R1 and R2 with the repairs of 2363 and 2364), given in Italian and meant
+as: *OK, I ratify*. R1 to R12 stand as adopted. R13's question is, by its own text, panel 235's R7
+to restate, so a later sitting's: until one rules, the next move of the index renames as R10 does.
+
 ## Process notes
 
 1. **The critic's first pass changed the seating before any seat started.** The briefs said *the
