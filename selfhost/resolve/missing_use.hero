@@ -11,10 +11,13 @@
 #
 # Asked only where nothing else answers the qualifier: no local, no
 # declaration of the file and no built-in by that name, and no module the file
-# names. The module is looked for where a bare `use` reads it, the directory
-# of the file you compile, `<name>.hero` (the compiler-engineer's pricing: the
-# error path, one look), or among the modules of the compilation whose path
-# ends in it, which another file names.
+# names. The module is looked for among the modules of the compilation whose
+# path ends in it, which another file names, and else in the tree a bare `use`
+# of the file reads, at any depth (`module/answering.hero`): until the lane's
+# own finding of 2026-11-08 only `<name>.hero` beside the file you compile
+# was looked at, so `lib/strs.hero`, which no `use` names, left `strs.holds`
+# told as before the repair. Every module that answers is named, each with
+# its own `guess`, in the walk's order.
 
 use token
 use ast
@@ -24,9 +27,7 @@ use resolve/state
 use resolved
 use inventory
 use module/names as module_names
-use module/placed
-use module/paths
-use cli/files
+use module/answering
 
 # The diagnostic owed where the receiver `id` is a module named by no `use`
 # of this file, or a failure where it is not one.
@@ -46,31 +47,52 @@ function told(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64, bare: bo
 function named(r: state.Resolver, s: source.Source, name: str, span: token.Span) -> diag.Diagnostic?
     if name == module_names.binding_of(r.module) || !resolved.used_module_named(r.out, from: r.module, binding: name).is_err()
         return fail(code: "absent", msg: "a `use` of this file names it, or the file is that module")
-    module = module_answering(s, name: name)
+    found = answering.modules(s, from: r.module, name: name)
 
-    if module.len() == 0
+    if found.len() == 0
         return fail(code: "absent", msg: "no module answers the name")
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_name",
-        message: "nothing named `" + name + "` is in scope, and the module `" + module + "` answers it, which this file names in no `use` line: every module a file names needs its own `use` — `use " + module + "`",
+        message: "nothing named `" + name + "` is in scope, and " + answered(found) + ", which this file names in no `use` line: every module a file names needs its own `use` — " + use_lines(found),
         span: span
     )
 
-    # A GUESS: the line is written at the top of the file, and whether the
-    # module is the one meant, its declarations say once the line is there.
+    # A GUESS each: the line is written at the top of the file, and whether
+    # the module is the one meant, its declarations say once the line is there.
     first = s.files[source.file_of(s, span.start)].start
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "add `use " + module + "` at the top of the file", replacement: "use " + module + "\n", span: token.Span(start: first, end: first), certainty: .guess)
-    )
+
+    for module in found
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "add `use " + module + "` at the top of the file", replacement: "use " + module + "\n", span: token.Span(start: first, end: first), certainty: .guess)
+        )
+
     return ok(d)
 
-# The module a `use` would name for `name`: one of the compilation whose path
-# ends in it, else `<name>.hero` beside the file you compile; "" for none.
-function module_answering(s: source.Source, name: str) -> str
-    for f in s.files
-        if !f.is_library && !placed.is_package(f.module) && module_names.binding_of(f.module) == name
-            return f.module
+# `the module `strs` answers it`, or every module that does.
+function answered(found: [str]) -> str
+    if found.len() == 1
+        return "the module `" + found[0] + "` answers it"
+    return "the modules " + listed(found, mark: "`", last: " and ") + " answer it"
 
-    match files.entry(paths.directory_text(s.name) + name + ".hero")
-        .file | .link                            => return name
-        .absent | .directory | .other | .unknown => return ""
+# `use strs`, or each line that would answer.
+function use_lines(found: [str]) -> str
+    said: [str] @= []
+
+    for module in found
+        said @ said.push("use " + module)
+
+    return listed(said, mark: "`", last: " or ")
+
+# The words quoted with `mark`, a comma between them and `last` before the
+# last one.
+function listed(words: [str], mark: str, last: str) -> str
+    out: [str] @= []
+
+    for at in range(from: 0, to: words.len())
+        if at > 0 && at == words.len() - 1
+            out @ out.push(last)
+        else if at > 0
+            out @ out.push(", ")
+        out @ out.push(mark + words[at] + mark)
+
+    return out.join("")

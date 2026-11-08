@@ -1,0 +1,6 @@
+# The package's module of the case beside it, its `use` of `text/strs`
+# missing.
+
+# Whether s holds a `b`.
+function found(s: str) -> bool
+    return strs.holds(s: s, part: "b")  #~ unknown_name

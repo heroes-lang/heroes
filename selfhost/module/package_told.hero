@@ -175,14 +175,22 @@ function private_reaches(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
     for used in uses
         from = source.module_at(s, used.span.start)
         name = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
-        owner = owner_of(name)
 
-        if owner.len() > 0 && from != owner && !(from.len() > owner.len() && from.slice(from: 0, to: owner.len() + 1) == owner + "/")
+        if !reaches(from: from, name: name)
+            owner = owner_of(name)
             out @ out.push(
                 diag.new_diagnostic(code: "private_module", message: "`" + name + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it; name what `" + owner + "` offers instead", span: used.name)
             )
 
     return out
+
+# Whether the module `from` may name `name` (R16): `name` stands under no
+# `internal` folder, or `from` is the module that folder belongs to or a
+# module under it. Asked by the `use` lines above and by what a missing
+# `use` is offered (`module/answering.hero`), one rule in one place.
+function reaches(from: str, name: str) -> bool
+    owner = owner_of(name)
+    return owner.len() == 0 || from == owner || from.len() > owner.len() && from.slice(from: 0, to: owner.len() + 1) == owner + "/"
 
 # The module a private module belongs to, "" for one under no `internal`.
 function owner_of(name: str) -> str
@@ -202,3 +210,8 @@ test "a private module is its owner's and its owner's modules' alone"
     assert owner_of("a/internal/b/internal/c") == "a/internal/b"
     assert owner_of("internalx/y") == ""
     assert owner_of("a/internals/b") == ""
+    assert reaches(from: "<core>/strings", name: "<core>/strings/internal/scan")
+    assert reaches(from: "<core>/strings/split", name: "<core>/strings/internal/scan")
+    assert !reaches(from: "<core>/stringsx", name: "<core>/strings/internal/scan")
+    assert !reaches(from: "main", name: "lib/internal/strs")
+    assert reaches(from: "main", name: "lib/strs")
