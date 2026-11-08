@@ -306,6 +306,110 @@ an objection by its own condition** (critic-reports item 2 and *must not adopt* 
 | historian | (Two) under MVS, the first two packages of M-core-packages' resumed batch that pin different versions of one dependency meet at the higher pin, where a solver with exact pins would fail to resolve them | M-core-packages' resumption |
 | blind seat | first turns of 30: U-pkg 25, U-angle 23, U-bare 15. **Measured 29, 30 and 30**: every prediction low, and the order wrong, U-bare tying the author's form and above U-pkg | scored here |
 
+## Scored at M-package-manager's close, measured 2026-11-08
+
+Each row of the table above whose checkpoint is this milestone, its first version or its goldens,
+scored by the command beside it, run on 2026-11-08 by lane pm-close on this Mac (Apple clang
+21.0.0) against `a789691f1`, `main` as pushed after batch 24, which carried the first version, with
+the stage 2 compiler built from that tree (`heroes 0.6.0`, `sources 669ffd2449ebed18`). **The first
+version's commits** are read two ways from `git log --no-merges 5bd4cf3e4..a789691f1`: the 26 whose
+subject opens `M-package-manager` (set A), and with them the 8 repairs of lanes pm-use and pm-cbound,
+defects 2290, 2292, 2308 and 2325 (the `use` cluster) and 2324 and 2333 (the header search), which
+the milestone's page counts as the first lane's (set B, 34). Step 1 (`8f0e33203`), R12's wording,
+lies before the range and touches no `selfhost/`. The programs built for P1, P2 and (One) stand in
+the lane's scratch folder, `.claude/worktrees/pm-close-scratch/`, outside the tracked tree.
+
+- **The compiler-engineer's line counts: falsified, both halves, each in the cheap direction.**
+  - *0 lines under `selfhost/check/` and `selfhost/ir/`*: `git show --numstat` of every commit of set
+    B, restricted to the two folders, reads `selfhost/ir/` 0 and `selfhost/check/` **5** (3 added, 2
+    removed), all of them step 3's (`301ce606c`): `check/callee_text.hero` calls
+    `text_lines.newlines_in` where it called `source.newlines_in`, the helper having moved from
+    `source.hero` to `text_lines.hero` to pay `source.hero`'s ceiling. No rule of the checker moved,
+    so the prediction holds in substance and is falsified as registered, by its own command. The
+    whole range's `git diff --stat 5bd4cf3e4 a789691f1 -- selfhost/check/ selfhost/ir/` reads 278
+    and 197 changed lines, every other one batch 24's repairs and panel 236's landing.
+  - *95 to 165 lines added to `selfhost/parse/` in `code_lines`' unit*: **+42**. A mirror of
+    `tests/harness/suite_layout.hero`'s `code_lines` (blank lines and `test` blocks left out) over
+    each commit's `git ls-tree` of `selfhost/parse/` reads 8,736 at `5bd4cf3e4`, 8,782 after step 2
+    (`574e579c7`, +46, `parse/use_mark.hero` and `parse/use_line.hero`'s two calls, the figures
+    `suite_layout`'s `BUDGETS` comment records for that step), 8,778 after defect 2325 (`f24f97e9a`,
+    -4), 8,778 after defect 2308 (`655479dd3`) and 8,778 at `a789691f1`; no other commit of the range
+    touches the folder. The prediction priced the prototype's reader, written inside `parse/` (103
+    lines); the landing read what the mark holds and the habits beside it from the line's tokens,
+    along a seam, in `selfhost/package_mark.hero` (235 code lines today), and kept inside `parse/`
+    only what moves the cursor.
+- **The ffi-pragmatist's P1: falsified on this Mac, in its second clause.** A static index read over
+  `file://` held `ledgerdb` 1.0.0, a copy of `examples/ledger/db/sqlite.hero`, and `vec` 1.0.0, a
+  module binding its own `vecmath.h` beside it, with a `heroes_standard.h` holding an `#error`
+  planted at the package's root; `heroes add` placed both. (a) A program using `<ledgerdb>/sqlite`
+  alone built with no `--include` and ran, `0` at exit 0, its units reading the SDK's `sqlite3.h`:
+  holds. (b) A program using `<vec>/vec` with no `--include` was refused, `error[ffi_missing_header]:
+  vecmath.h is not on this machine's include path`, at
+  `heroes.packages/vec@1.0.0-c82a81482eba06e6/vec.hero:2:5`: **falsified**. C1's unit
+  (`compiling.of_package`) and C2's listing (`compiling.within_root`), written at step 7
+  (`6358dddfd`, whose body says *lane pm-use plugs the root in*), are called by no build:
+  `grep -rn 'of_package\|within_root' selfhost` finds them in `cli/compiling.hero`'s own tests
+  alone. (c) With `--include` naming the package's folder the program built and ran, `11` and `0`,
+  and every unit's `deps.txt` named the runtime's `heroes_standard.h` and none the planted one:
+  holds, on the program-wide line defect 2324 made runtime-first. The four CI legs are unrun for
+  this shape, no golden carrying it.
+- **The ffi-pragmatist's P2: falsified on this Mac.** A fetched package `pk` whose `pk.h` defines
+  `PK_LIMIT` as `((1LL << 40) + 3)`, bound as `constant PK_LIMIT: i64`, and carries a constructor
+  that appends `ran` to a file: a cold `heroes build` with no `--include` was refused
+  `ffi_missing_header` and wrote nothing; a cold build with `--include` naming the package's folder,
+  the route the refusal's own note names, exited 0, and **the header's constructor ran twice during
+  the build**, the file holding two lines before the binary was ever run. C5's reader
+  (`cli/constant_dump.hero`, step 8, `4457ddbb3`) is *not yet taken by the build*, as that commit
+  says, and R9's *until then a fetched header that needs the probe is refused, never run* has no
+  executor in the tree.
+- **The spec-warden's W1: held.** `heroes measure spec/heroes-spec.md` reads `real 10904
+  claude-opus-5, 2026-11-08`, the count `--refresh` pinned at `ca83d921d`, against 10,514 at the
+  ledger's row 8019: **+390 real**, inside the +800 R13 binds. `git diff --stat ca83d921d a789691f1
+  -- spec/heroes-spec.md` prints nothing, so the pin is the landed text's; no paid refresh was run.
+- **The spec-warden's W3, as R18 restates it: held, row by row.** `check` narrowed to `use-` reads
+  14 passed and 0 failed, and `heroes check tests/golden/check/use-a-package-mark-told.hero` gives a
+  `certain` fix for the whole path inside the brackets, the dot, the quoted name and the mark's
+  parts apart, and a `guess` for an address, bracketed or not, the address's last part
+  (`write <yaml>/dump`); `use <roman>.numeral` and `use <"roman">/numeral`, owed at the sitting,
+  are its second and third lines. Run by hand: the brackets forgotten where the entry exists and its
+  placed tree holds the module, `use ledgerdb/sqlite`, is `error[package_unmarked]` with `fix
+  (certain): write use <ledgerdb>/sqlite`, which `check --apply` writes; a bracket added to the
+  program's own module, `use <own>/thing` beside `own/thing.hero`, is `unknown_entry` with `fix
+  (guess): write use own/thing`; a catalogue's mistake (`package-a-source-of-no-shape.case`) is told
+  with its line, `heroes.toml:3`, and carries no fix. **First measured here**, R18 having left it
+  unmeasured: `import json` is `reserved_word` with `fix (certain): replace import with use`, which
+  writes a bare `use json`, the program's own module. **No golden case holds `package_unmarked`**:
+  `grep -rn package_unmarked tests selfhost` finds only the line that writes it.
+- **The spec-warden's W4, as restated: held**, so R7 counts question 17 met. `check` narrowed to
+  `package` reads 17 passed and 0 failed, and each of the seven restated cases built with `heroes
+  build` exits 1 with no binary written: the catalogue deleted and the entry deleted (`unknown_entry`),
+  `sum`, `version`, `tag` and `commit` mistyped and the placed tree edited (`package_unread`). The
+  exemption, `tests/golden/surface-fixtures/path235/`, builds at exit 0 with `note: the package json
+  is read from the folder .../decoy/, a path entry of the catalogue: unverified, no fingerprint holds
+  it` on stderr, and runs, `13`. W4 as registered stays falsified by design for `path`, as the table
+  says.
+- **The historian's (One): held, on a `path` entry, and vacuous for a placed tree.** A `path` entry
+  naming a folder of the program's own tree, `lib/`, reached as `use <lib>/counter` and as `use
+  lib/counter as own`, was built as two units (`1libcounter.c` and `libcounter.c` under `build/`)
+  and printed `2` and `3`; with `b: counter.Box = own.boxed(3)` added, the build refused
+  `type_mismatch: expected counter.Box, found own.Box`: one file compiled as two modules, Dart's
+  recorded failure. A placed tree cannot be reached without brackets: `use
+  heroes.packages/ledgerdb@1.0.0-bf5e130ed4f8081c/sqlite` is refused, `use_holds_an_address`. No
+  golden names one file both ways, read over the 39 files of `tests/golden/` and `examples/` holding
+  a bracketed `use`.
+- **The historian's (Two): not this close's.** Its checkpoint is M-core-packages' resumption, which
+  has not come, and it stays for that row. A reading of the mechanism today, which scores nothing:
+  two packages of a local index, `a` needing `strings` 1.0.0 and `b` needing 1.1.0, added in turn
+  printed `changed strings 1.0.0 -> 1.1.0 for b`, and the program using both built and read `110`
+  through each.
+- **The reader test's cells and the blind seat's** were scored at the sitting and are not read again.
+
+**Found while scoring, reported to the coordinator and filed by nobody here**: C1, C2 and C5 written
+and tested and taken by no build, so a fetched package's own header is found only through
+`--include`, and through it a fetched header's code runs at a cold build (P1's (b) and P2 above);
+`use_holds_an_address` calls a placed tree's folder *an address* and guesses `<sqlite>/parse` for
+`use heroes.packages/ledgerdb@.../sqlite`; and no case holds `package_unmarked`.
+
 ## Disagreements, stated plainly
 
 **U-bare, kept out.** The blind seat vetoed it on locality and its own condition lowered the
