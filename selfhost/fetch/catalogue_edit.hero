@@ -16,6 +16,12 @@
 # one and the author wrote it (one of R5's reasons for TOML, the historian's
 # § 3); Go's `go get` keeps a `go.mod`'s comments the same way.
 #
+# **A line keeps its own end**: a catalogue written on Windows ends its lines
+# `\r\n`, and a line read here keeps its `\r`, so a line left alone is written
+# back byte for byte and a value changed keeps it; a line added takes the end
+# of the file's first line. Until 2026-11-08, the day it was written, every
+# `\r` was dropped, measured on a catalogue `index = "file://../idx"\r\n`.
+#
 # The text is read here only for the places of its tables and keys: whether
 # it reads at all is the reader's, which `add` asked first.
 
@@ -25,19 +31,27 @@ use module/catalogue
 # written into it and `index`, where not "", as its `index` line.
 function edited(text: str, entries: [catalogue.Entry], index: str) -> str
     lines: [str] @= lines_of(text)
+    eol = end_of(lines)
 
     for e in sorted(entries)
         head = table_at(lines, name: e.name)
 
         if head < 0
-            lines @ appended(lines, e: e)
+            lines @ appended(lines, e: e, eol: eol)
         else
             for key in keys_of(e)
-                lines @ set_field(lines, head: head, key: key, value: value_of(e, key: key))
+                lines @ set_field(lines, head: head, key: key, value: value_of(e, key: key), eol: eol)
 
     if index.len() > 0 && key_line(lines, from: 0, to: first_table(lines), key: "index") < 0
-        lines @ with_index(lines, index: index)
+        lines @ with_index(lines, index: index, eol: eol)
     return lines.join("\n") + "\n"
+
+# What a line the editor adds ends with before its `\n`: the `\r` of a file
+# whose first line ends `\r\n`, else nothing.
+function end_of(lines: [str]) -> str
+    if lines.len() > 0 && lines[0].len() > 0 && lines[0][lines[0].len() - 1] == '\r'
+        return "\r"
+    return ""
 
 # The fields an entry of `e`'s source holds, in the order they are written.
 function keys_of(e: catalogue.Entry) -> [str]
@@ -58,22 +72,22 @@ function value_of(e: catalogue.Entry, key: str) -> str
         _         => e.path
 
 # `lines` with the table of `e` added at the end, one blank line before it.
-function appended(lines: [str], e: catalogue.Entry) -> [str]
+function appended(lines: [str], e: catalogue.Entry, eol: str) -> [str]
     out: [str] @= without_trailing_blanks(lines)
 
     if out.len() > 0
-        out @ out.push("")
-    out @ out.push("[dependencies." + e.name + "]")
+        out @ out.push(eol)
+    out @ out.push("[dependencies." + e.name + "]" + eol)
 
     for key in keys_of(e)
-        out @ out.push(key + " = \"" + value_of(e, key: key) + "\"")
+        out @ out.push(key + " = \"" + value_of(e, key: key) + "\"" + eol)
 
     return out
 
 # `lines` with the table opening at `head` holding `key` as `value`: its line
 # changed between its quotes where it is there, added after the table's last
 # field where it is not.
-function set_field(lines: [str], head: i64, key: str, value: str) -> [str]
+function set_field(lines: [str], head: i64, key: str, value: str, eol: str) -> [str]
     end = table_end(lines, head: head)
     at = key_line(lines, from: head + 1, to: end, key: key)
     out: [str] @= lines
@@ -84,11 +98,11 @@ function set_field(lines: [str], head: i64, key: str, value: str) -> [str]
     last: i64 @= head
 
     for probe in range(from: head + 1, to: end)
-        if lines[probe].len() > 0 && lines[probe][0] != '#'
+        if !blank(lines[probe]) && trimmed_start(lines[probe])[0] != '#'
             last @ probe
 
     pieces: [str] @= lines.slice(from: 0, to: last + 1)
-    pieces @ pieces.push(key + " = \"" + value + "\"")
+    pieces @ pieces.push(key + " = \"" + value + "\"" + eol)
 
     for rest in lines.slice(from: last + 1, to: lines.len())
         pieces @ pieces.push(rest)
@@ -112,13 +126,13 @@ function with_value(line: str, value: str) -> str
     return line.slice(from: 0, to: open + 1) + value + line.slice(from: close, to: line.len())
 
 # `lines` with an `index` line above its first table.
-function with_index(lines: [str], index: str) -> [str]
+function with_index(lines: [str], index: str, eol: str) -> [str]
     first = first_table(lines)
     out: [str] @= lines.slice(from: 0, to: first)
-    out @ out.push("index = \"" + index + "\"")
+    out @ out.push("index = \"" + index + "\"" + eol)
 
     if first < lines.len()
-        out @ out.push("")
+        out @ out.push(eol)
 
     for rest in lines.slice(from: first, to: lines.len())
         out @ out.push(rest)
@@ -147,24 +161,27 @@ function place_of(text: str, name: str, key: str) -> i64
             return at + 1
     return head + 1
 
-# The text's lines without their line ends; "" holds none.
+# The text's lines without their `\n`, a `\r` before one kept; "" holds none.
 function lines_of(text: str) -> [str]
     out: [str] @= []
     from: i64 @= 0
 
     for at in range(from: 0, to: text.len())
         if text[at] == '\n'
-            out @ out.push(without_return(text.slice(from: from, to: at)))
+            out @ out.push(text.slice(from: from, to: at))
             from @ at + 1
 
     if from < text.len()
-        out @ out.push(without_return(text.slice(from: from, to: text.len())))
+        out @ out.push(text.slice(from: from, to: text.len()))
     return out
 
-function without_return(line: str) -> str
-    if line.len() > 0 && line[line.len() - 1] == '\r'
-        return line.slice(from: 0, to: line.len() - 1)
-    return line
+# Whether a line holds nothing but spaces, tabs and its `\r`.
+function blank(line: str) -> bool
+    for at in range(from: 0, to: line.len())
+        if line[at] != ' ' && line[at] != '\t' && line[at] != '\r'
+            return false
+
+    return true
 
 # Where `[dependencies.<name>]` opens, or -1.
 function table_at(lines: [str], name: str) -> i64
@@ -177,7 +194,7 @@ function table_at(lines: [str], name: str) -> i64
 function starts_table(line: str, name: str) -> bool
     head = "[dependencies." + name + "]"
     rest = trimmed_start(line)
-    return rest.len() > head.len() && rest.slice(from: 0, to: head.len()) == head && (rest[head.len()] == ' ' || rest[head.len()] == '#')
+    return rest.len() > head.len() && rest.slice(from: 0, to: head.len()) == head && (rest[head.len()] == ' ' || rest[head.len()] == '#' || rest[head.len()] == '\r')
 
 # Where the table opening at `head` ends: the next table, or the text's end.
 function table_end(lines: [str], head: i64) -> i64
@@ -215,7 +232,7 @@ function trimmed_start(line: str) -> str
 function without_trailing_blanks(lines: [str]) -> [str]
     end: i64 @= lines.len()
 
-    while end > 0 && trimmed_start(lines[end - 1]).len() == 0
+    while end > 0 && blank(lines[end - 1])
         end @ end - 1
 
     return lines.slice(from: 0, to: end)
@@ -277,3 +294,16 @@ test "an entry that moved changes in its own lines, its comment kept, and every 
     assert place_of(text: after, name: "mine", key: "") == 7
     assert place_of(text: after, name: "absent", key: "sum") == 0
     assert place_of(text: after, name: "", key: "index") == 0
+
+# A catalogue written with `\r\n` keeps every line's end, a value changed and
+# a table added included, and reads back.
+test "a catalogue whose lines end with a return keeps them, every line it adds ending so too"
+    before = "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.4.2\"  # pinned\r\nsum = \"sha256-" + "a".repeat(64.to_u64().must()) + "\"\r\n"
+    after = edited(
+        text: before,
+        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), entry(name: "core", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
+        index: ""
+    )
+    assert after == "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.5.0\"  # pinned\r\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\r\n\r\n[dependencies.core]\r\nversion = \"0.1.0\"\r\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\r\n"
+    assert catalogue.parsed(file: "h", text: after).problem == ""
+    assert place_of(text: after, name: "json", key: "sum") == 5
