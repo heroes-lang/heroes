@@ -58,8 +58,10 @@ output and twenty principles printed by `heroes this`.
 
 - There is no installer yet, so the compiler is built from source in two
   commands: clang on `seed/heroes.c`, then that compiler on `selfhost/`. The
-  current compiler is written in Heroes; the earlier compiler is archived and
-  no longer builds.
+  current compiler is written in Heroes. The earlier one, in Rust, is kept at
+  the tag `m-bootstrap-archive` and not maintained; rebuilt there with its
+  pinned Rust it still builds, and emits the same C as that tag's seed on 142
+  of 142 programs (measurement 047 in `docs/measurements/`).
 - `heroes check --json` writes schema {{jsonSchema}} to stderr, with stable
   snake_case error codes, source locations, notes and suggested fixes, each
   fix with the place it applies, and every answer names the files it read and
