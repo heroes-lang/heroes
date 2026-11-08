@@ -27,6 +27,7 @@
 # twice exit 0, `=0` after it exit 1).
 
 use cli/flags
+use cli/strings
 use emit/guarded_names
 
 # Whether a `-D` or `-U` word, its value `value`, names a name the guard keeps,
@@ -39,6 +40,31 @@ function refused(flag: str, value: str) -> bool
     if flag == "-D" && own_switch(value)
         return false
     return kept_name(macro_of(value))
+
+# Whether the words a package's refusal names, `-D <value>` apart or
+# `-D<value>` joined (`libraries.refused`'s `said`), are a `-D` or `-U` that
+# `refused` refuses.
+function refused_said(said: str) -> bool
+    for flag in ["-D", "-U"]
+        if said.len() > 2 && strings.starts_with(text: said, prefix: flag)
+            value: str @= said.slice(from: 2, to: said.len())
+
+            if strings.starts_with(text: value, prefix: " ")
+                value @ value.slice(from: 1, to: value.len())
+
+            if refused(flag: flag, value: value)
+                return true
+
+    return false
+
+# **The notes of a package's `-D` or `-U` of a kept name** (panel 237's R3,
+# defect 2348): its own reason, and a repair that keeps every other word of
+# the answer, the folders its group's header is found in among them. It was
+# told with the allow-list's notes until then, which said `-D` is accepted,
+# gave Go's CVE-2018-6574 as the reason and advised `link`, which hands clang
+# none of the package's `-I`, so the header was no longer found.
+function notes(package: str) -> str
+    return "\n  a `-D` or `-U` stands before every header this compiler's C reads and before every guard it writes around a group's header, so nothing undoes it: the guard gives back a header's own `#define` of such a name after the header, and has nothing to give back for a word that stood before it\n  the word is the package's: take it out of the `Cflags` of the `" + package + "` `.pc` file, which `pkg-config --variable=pcfiledir " + package + "` names the folder of, and every other word of its answer, its header folders among them, still reaches the build"
 
 # What a refusal owes its reader after the word it names, or "" where `refused`
 # says no.
@@ -98,4 +124,7 @@ test "a -D or -U of a name the C this compiler writes is refused, and a switch i
         assert told(flag: "-D", value: value) == ""
 
     assert !refused(flag: "-I", value: "main")
+    assert refused_said("-Dmain=SDL_main") && refused_said("-D main=SDL_main") && refused_said("-U __has_feature")
+    assert !refused_said("-D _REENTRANT") && !refused_said("-D") && !refused_said("-Imain") && !refused_said("-Wl,-rpath -Wl,@x")
+    assert !strings.holds(text: notes("p"), needle: "link") && !strings.holds(text: notes("p"), needle: "CVE")
     assert macro_of("F(x)=x") == "F" && macro_of("A=1") == "A" && macro_of("B") == "B"

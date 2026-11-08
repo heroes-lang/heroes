@@ -23,6 +23,29 @@ constant CODE: str
 constant MACRO_CODE: str
     "shadowed_macro"
 
+# **Who named a folder** (panel 237's R3): the program, its own folder;
+# `--include`; a package, by its name; a variable of the environment, by its
+# name; clang's own configuration, Apple clang's `-I/usr/local/include` or a
+# configuration file; "" where none is known, which no build reaches.
+record Origin
+    kind: str
+    name: str
+
+constant PROGRAM: str
+    "program"
+
+constant INCLUDE: str
+    "include"
+
+constant PACKAGE: str
+    "package"
+
+constant VARIABLE: str
+    "variable"
+
+constant CLANG: str
+    "clang"
+
 # The refusal, at the program's first byte, since no line of it reads the
 # file: the file named, the folder, and the library's header it stands in for;
 # `origin` the variable that named the folder, "" for one the build names.
@@ -31,7 +54,7 @@ constant MACRO_CODE: str
 # `-I` of `CCC_OVERRIDE_OPTIONS`, can hold one read in its place, the unit
 # naming it in quotes (measured on this Mac, 2026-11-08: a
 # `heroes_standard.h` there was refused as the C library's `<heroes_standard.h>`).
-function header(one: stand_in.Shadow, origin: str, runtime: bool) -> diag.Diagnostic
+function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Diagnostic
     whose_header: str @= "the C library's `<" + one.named + ">`"
     place: str @= "the system's"
     whose_place: str @= "the library's"
@@ -51,12 +74,8 @@ function header(one: stand_in.Shadow, origin: str, runtime: bool) -> diag.Diagno
         message: "`" + clang_place.slashed(one.path) + "` stands in for " + whose_header + ", " + reads + ": a folder this build names is searched before " + place + ", so its file is read in " + whose_place + " place",
         span: token.Span(start: 0, end: 0)
     )
-    whose: str @= "the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers"
-
-    if origin.len() > 0
-        whose @ named_by(origin: origin, folder: one.folder)
     d.notes @ d.notes.push(
-        "rename the file, or move it out of `" + one.folder + "`: " + whose + ", and every `#include " + spelled + "` of the build reads what it holds"
+        "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder) + ", and every `#include " + spelled + "` of the build reads what it holds"
     )
 
     # The angle form found a name the platform holds beside the header that
@@ -67,16 +86,28 @@ function header(one: stand_in.Shadow, origin: str, runtime: bool) -> diag.Diagno
         )
     return d
 
-# Who named a folder the environment added: the variable, the empty element
-# that names `.`, or clang's own configuration.
-function named_by(origin: str, folder: str) -> str
-    if origin == clang_added.OWN
-        return "clang's own configuration searches that folder in every compile"
-    told: str @= "`" + origin + "` names that folder for every clang this build runs"
+# **Who named the folder, in words** (panel 237's R3): the one origin the
+# reader changes, never the three it might be, which the note said until then.
+function named_by(origin: Origin, folder: str) -> str
+    if origin.kind == PROGRAM
+        return "the folder is this program's own, which every unit searches before the system's"
 
-    if folder == "."
-        told @ told + ", an empty element of it naming `.`, the folder clang runs in"
-    return told
+    if origin.kind == INCLUDE
+        return "`--include` names that folder"
+
+    if origin.kind == PACKAGE
+        return "the package `" + origin.name + "` names that folder in its `pkg-config` answer"
+
+    if origin.kind == CLANG
+        return "clang's own configuration searches that folder in every compile"
+
+    if origin.kind == VARIABLE
+        told: str @= "`" + origin.name + "` names that folder for every clang this build runs"
+
+        if folder == "."
+            told @ told + ", an empty element of it naming `.`, the folder clang runs in"
+        return told
+    return "the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers"
 
 # A file the environment has every clang read before a unit's first line.
 function forced(one: clang_added.Added) -> diag.Diagnostic

@@ -107,7 +107,10 @@ function edits(answer: str) -> Edits
         else if (word == "-D" || word == "-U") && at + 1 < words.len()
             out.macros @ kept(out.macros, flag: word, value: next)
             took @ 2
-        else if word.len() > 2
+        else if word.len() > 2 && word[0] == '-' && word[1] < 128
+            # Its first two bytes are one character each, so the cut after
+            # them splits none: a word opening with a character of three
+            # bytes, a path's, is no flag.
             flag = word.slice(from: 0, to: 2)
 
             if flag == "-I" || flag == "-F"
@@ -299,6 +302,7 @@ test "the -cc1 job's words are read as clang quotes them, and what it adds is fo
     if !process.is_set("CCC_OVERRIDE_OPTIONS") && !process.is_set("CPATH") && !process.is_set("C_INCLUDE_PATH")
         assert got.folders[0].variable == OWN && got.macros[0].variable == OWN
     assert edits("no job here").folders.len() == 0
+    assert edits(" \"/x/clang\" \"-cc1\" \"€x\" \"-é\" \"-Iü\"\n").folders[0].value == "ü"
 
     # `-v` prints the job with its words bare, and its own version line names
     # `-cc1` too.
