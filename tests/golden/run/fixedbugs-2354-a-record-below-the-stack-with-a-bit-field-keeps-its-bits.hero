@@ -1,0 +1,15 @@
+# fixedbugs, defect 2354, 2026-11-08: the case of one bit-field with the
+# record below every stack, 64 KiB, which its constructor's frame held
+# without dying. The record is the runtime's now at every size, and C reads
+# the bits beside the bit-field and the padding zero as before.
+extern "fixedbugs-2354-small.h"
+    record Small tag fixedbugs_2354_small partial
+        a: i64
+    function fixedbugs_2354_small_dirty(@p: Small)
+    function fixedbugs_2354_small_check(@p: Small) -> i64
+
+function main()
+    print("before")
+    held: Small @= Small(a: 7, rest: zero)
+    fixedbugs_2354_small_dirty(@held)
+    print(fixedbugs_2354_small_check(@held))

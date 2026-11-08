@@ -483,6 +483,17 @@ static void hero_free_raw(void *p) {
     free(p);
 }
 
+/* The same block zeroed, by `calloc`, given back through `hero_free_raw`
+ * (defect 2354): the object a constructor finds a group record's bit-field
+ * masks in, before `main` (`parts/lend.c`'s `hero_pad_object`). `calloc` and
+ * not `malloc` and a `memset`, so a block of the record's size asks the system
+ * for pages already zero, which it hands without writing them. */
+static void *hero_calloc_raw(size_t size) {
+    void *p = calloc(1, size);
+    if (p == NULL) hero_panic("out of memory");
+    return p;
+}
+
 /* Scratch memory, borrowed by one runtime call and given back before it returns.
  * Counted since 2026-08-30 — the header says why. */
 static void *hero_alloc(size_t size) {

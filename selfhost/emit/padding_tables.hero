@@ -114,6 +114,13 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
 # object sets exactly its bits, all of them, whatever its type, and
 # `hero_pad_masks` reads the object's bytes. Each name the block spells is
 # guarded from the header's macros, as a member's is in the table.
+#
+# **THE OBJECT IS THE RUNTIME'S, NEVER THE CONSTRUCTOR'S FRAME** (defect 2354):
+# the block declared it as a local, and a constructor runs before `main`, so
+# before the stack guard exists; a record of 128 MiB with one named bit-field,
+# stored whole, died at 139 with nothing said, at both levels. It is taken
+# zeroed from `hero_pad_object` and given back by `hero_pad_object_give` once
+# the masks are read (`runtime/parts/lend.c`), so no frame holds it at any size.
 function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) -> [str]
     room: i64 @= 0
     k: i64 @= 1
@@ -129,20 +136,25 @@ function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) ->
     steps: [str] @= []
 
     for path in held.bits
-        steps @ steps.push("hero_pad_o." + path + "--;")
+        steps @ steps.push(OBJECT + "->" + path + "--;")
 
         for name in membership.names_in(path)
             spelled[name] @ true
 
-    out: [str] @= ["{", "    " + t + " hero_pad_o;", "    __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);"]
+    out: [str] @= ["{", "    " + t + " *const " + OBJECT + " = (" + t + " *)hero_pad_object(sizeof(" + t + "));"]
 
     for line in membership.guarded(names: spelled, line: "    " + steps.join(" "))
         out @ out.push(line)
 
     out @ out.push(
-        "    " + padding.bit_table("mn", decl: decl) + " = hero_pad_masks(" + padding.table_of(decl) + ", " + (held.spans.len() / 2).to_str() + ", &hero_pad_o, sizeof hero_pad_o, " + m + ", " + room.to_str() + ");"
+        "    " + padding.bit_table("mn", decl: decl) + " = hero_pad_masks(" + padding.table_of(decl) + ", " + (held.spans.len() / 2).to_str() + ", " + OBJECT + ", sizeof(" + t + "), " + m + ", " + room.to_str() + ");"
     )
+    out @ out.push("    hero_pad_object_give(" + OBJECT + ");")
     return out.push("}")
+
+# The name of the zeroed record a bit-field block runs `--` on.
+constant OBJECT: str
+    "hero_pad_o"
 
 # The group records one extern call lends: the record, or fixed array of
 # records, each `@` argument is, and the element of each array whose buffer

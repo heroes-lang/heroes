@@ -880,6 +880,9 @@ void hero_pad_fill(void *, size_t, size_t, const size_t *, size_t);
 /* The bits beside a named bit-field: masks found once from C's own bits, cleared atomically at each lend (panel 223). */
 size_t hero_pad_masks(const size_t *, size_t, const void *, size_t, size_t *, size_t);
 void hero_pad_clear(void *, size_t, size_t, const size_t *, size_t);
+/* The zeroed record those masks are found in, off every stack, and its giving back (defect 2354). */
+void *hero_pad_object(size_t);
+void hero_pad_object_give(void *);
 
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *
