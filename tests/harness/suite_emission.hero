@@ -36,6 +36,10 @@
 #
 #     UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission
 #
+# or for the programs whose label holds a third word alone, `emission
+# run/loop`, which is how a program with nothing blessed is told to be
+# blessed (defect 2341): what is not named is neither compared nor written.
+#
 # CLAUDE.md §9 follows the bytes: a regeneration that turns red green has
 # its diff read and quoted in the commit body. This is the one suite in the
 # harness that writes into the repository, which is why the guards below
@@ -53,6 +57,7 @@
 #     reporting green, as every other suite here does.
 
 use absence
+use cases
 use report
 use floors
 use shell
@@ -71,8 +76,10 @@ constant STORE: str
 # `fixedbugs/` IS here, and the reason is worth knowing: those cases are
 # wrong FFI bindings, and their C is exactly where the two compilers once
 # disagreed on a fixed array. They carry no `.expected`, which is why this
-# suite reads the directory itself instead of `cases.collect`: the pairing
-# invariant belongs to the suites whose artifact is a snapshot.
+# suite asks `cases.programs`, the walk `cases.collect` lays the pair rule on,
+# and not `cases.collect`: the pairing invariant belongs to the suites whose
+# artifact is a snapshot. Until defect 2341 it read each directory itself and
+# took its `.hero` files, so a case that is a folder had no blessed emission.
 #
 # **`--emit-c` asks clang before it writes a byte, so most of them have no C**
 # (defect 298). Its artifact is that of a build that passed: the pointee check
@@ -188,7 +195,11 @@ record Program
     stored: str
     label: str
 
-function run_all(scratch: str, compiler: str) -> report.Report?
+# `only` narrows the suite to the programs whose label holds it, `run/loop` or a
+# part of one (defect 2341): the gate of one repair, and the blessing of one new
+# program. A narrowed run is not the whole suite, so it asks none of the whole
+# suite's questions, its floors and its orphans, and `main` says so on its line.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     programs = collect(scratch)?
     r: report.Report @= report.empty()
 
@@ -197,16 +208,17 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # cases below hand it 1 or 2 over a two-file tree, so a decay check in there
     # would call every test's stub tree outgrown. This is where the REAL floor
     # meets the REAL count, and the refusals meet theirs.
-    blessed = blessed_among(programs)
-    floors.check(@r, label: "emission", found: blessed, floor: LEAST, what: "programs whose emission is blessed")
-    floors.check(
-        @r,
-        label: "emission",
-        found: programs.len() - blessed,
-        floor: LEAST_REFUSED,
-        what: "programs with nothing blessed, each one `--emit-c` must refuse"
-    )
-    swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: blessing(), least: LEAST)?
+    if only == ""
+        blessed = blessed_among(programs)
+        floors.check(@r, label: "emission", found: blessed, floor: LEAST, what: "programs whose emission is blessed")
+        floors.check(
+            @r,
+            label: "emission",
+            found: programs.len() - blessed,
+            floor: LEAST_REFUSED,
+            what: "programs with nothing blessed, each one `--emit-c` must refuse"
+        )
+    swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: blessing(), least: LEAST, only: only)?
 
     # Every blessed emission compiled, after the sweep and apart from it, so
     # the sweep's own tests, which run it over stub trees, judge bytes alone.
@@ -216,7 +228,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # (`pthread_mutex_t`'s `__sig`, `re_pattern_buffer`'s `re_magic`,
     # `passwd`'s `pw_change`, `SDL_MouseWheelEvent`'s `integer_x`) and one on
     # Windows (`tm`'s `tm_gmtoff`), every one a name of `darwin_emissions`.
-    for one in programs
+    for one in narrowed(programs: programs, only: only)
         if shell.exists(one.stored) && !blessing()
             elsewhere = platform_skips.emission_reason(one.label)
 
@@ -251,23 +263,36 @@ function blessing() -> bool
 
 # Every program in the repository that reaches the emitter, with the path
 # its blessed emission lives at.
-#
-# The stored name is the program's own path flattened — `run/loop.hero`
-# becomes `run-loop.c` — rather than a mirrored tree, because one flat
-# directory is one `find` and one listing to check for orphans. Flattening
-# can in principle collide, so the sweep asks; it does not assume.
 function collect(scratch: str) -> [Program]?
+    return collected(scratch: scratch, root: "")
+
+# The programs of the tree at `root`, "" for the repository or a folder of
+# the tests' own ending in `/`.
+#
+# A group's programs are `cases.programs`', the one walk of a golden
+# directory: each `.hero` file, and each folder `<name>.case/` as ONE program,
+# its `main.hero` (defect 2341). Its source is that file's path from the
+# repository's root, which `sweep` builds as the `run` form builds every case
+# (`suite_run.one_case`), so the compiler reads the catalogue and the placed
+# trees beside it, as it does for every build. A folder not named `.case` is
+# a case's modules, no program of its own.
+#
+# The stored name is the program's own path flattened, `run/loop.hero`
+# becoming `run-loop.c` and `run/pkg.case/main.hero`, a case's name being its
+# folder's less `.case`, `run-pkg.c`: one flat directory rather than a
+# mirrored tree, because it is one `find` and one listing to check for
+# orphans. Flattening can collide, `run/pkg.hero` beside `run/pkg.case/`, so
+# the sweep asks; it does not assume.
+function collected(scratch: str, root: str) -> [Program]?
     found: [Program] @= []
 
     for group in GROUPS
-        for entry in shell.list_entries(scratch: scratch, dir: "tests/golden/" + group)?
-            if strings.ends_with(text: entry, suffix: ".hero")
-                stem = strings.base_name(path: strings.without_suffix(text: entry, suffix: ".hero"))
-                found @ found.push(
-                    Program(source: entry, stored: STORE + "/" + group + "-" + stem + ".c", label: group + "/" + stem)
-                )
+        for item in cases.programs(scratch: scratch, dir: root + "tests/golden/" + group)?
+            found @ found.push(
+                Program(source: item.source, stored: root + STORE + "/" + group + "-" + item.name + ".c", label: group + "/" + item.name)
+            )
 
-    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+    for dir in shell.list_directories(scratch: scratch, dir: root + EXAMPLES)?
         base = strings.base_name(path: dir)
 
         for entry in ENTRIES
@@ -275,19 +300,36 @@ function collect(scratch: str) -> [Program]?
 
             if !read_file(source).is_err()
                 found @ found.push(
-                    Program(source: source, stored: STORE + "/examples-" + base + "-" + entry + ".c", label: "examples/" + base + "/" + entry)
+                    Program(source: source, stored: root + STORE + "/examples-" + base + "-" + entry + ".c", label: "examples/" + base + "/" + entry)
                 )
 
     return ok(found)
 
-# The sweep itself, with the store, the program list and the floor as
-# parameters — so the tests at the bottom can run it over a tree of their
-# own instead of over the repository.
-function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64) -> report.Report?
+# The programs whose label holds `only`, every one where it is empty: the
+# third word, as `cases.matching` reads it of a case's name.
+function narrowed(programs: [Program], only: str) -> [Program]
+    if only == ""
+        return programs
+    kept: [Program] @= []
+
+    for one in programs
+        if strings.contains(text: one.label, needle: only)
+            kept @ kept.push(one)
+
+    return kept
+
+# The sweep itself, with the store, the program list, the floor and the third
+# word as parameters, so the tests at the bottom can run it over a tree of
+# their own instead of over the repository.
+#
+# A narrowed sweep walks the programs `only` names and asks no floor and no
+# orphan, the whole suite's questions (defect 2341): every blessed file of a
+# program it does not walk would read as an orphan, and its count as short.
+function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64, only: str) -> report.Report?
     r: report.Report @= report.empty()
     blessed = blessed_among(programs)
 
-    if blessed < least
+    if only == "" && blessed < least
         report.keep_failure(
             @r,
             label: "emission",
@@ -295,8 +337,9 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         )
     seen: {str: str} @= {}
     skipped: i64 @= 0
+    walked = narrowed(programs: programs, only: only)
 
-    for one in programs
+    for one in walked
         earlier = seen[one.stored]
 
         if !earlier.is_err()
@@ -396,13 +439,16 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         # copy of the scanner.
         suite_descriptors.judge(@r, label: "emission/" + one.label + " descriptors", c: said.must().out)
 
-    orphans(@r, scratch: scratch, store: store, seen: seen)
+    if only == ""
+        orphans(@r, scratch: scratch, store: store, seen: seen)
 
-    if skipped > 0 && skipped * 3 >= programs.len()
+    # A skip is not a pass, asked of the programs walked, as `run` asks it of
+    # a filter's cases.
+    if skipped > 0 && skipped * 3 >= walked.len()
         report.keep_failure(
             @r,
             label: "emission",
-            detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions"
+            detail: "  " + skipped.to_str() + " of " + walked.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions"
         )
     return ok(r)
 
@@ -430,7 +476,7 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
         report.keep_failure(
             @r,
             label: "emission/" + one.label,
-            detail: "  nothing blessed at " + one.stored + " — a new program's emission is blessed on purpose:\n    UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission"
+            detail: "  nothing blessed at " + one.stored + " — a new program's emission is blessed on purpose:\n    UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission " + one.label
         )
         return
 
@@ -642,6 +688,33 @@ function one_program_tree(scratch: str, name: str) -> Program?
     write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n")?
     return ok(Program(source: tree + "/x.hero", stored: tree + "/x.c", label: "one/x"))
 
+# A tree of the repository's shape under `root`, which ends in `/`, for
+# `collected`: the four groups, `examples/` and the store, made empty, then
+# each of `files`, a path under `root`, written empty, its folders made.
+function planted(root: str, files: [str]) -> ()?
+    shell.remove_tree(root)?
+
+    for group in GROUPS
+        shell.mkdir_all(root + "tests/golden/" + group)?
+
+    shell.mkdir_all(root + EXAMPLES)?
+    shell.mkdir_all(root + STORE)?
+
+    for path in files
+        shell.mkdir_all(directory_of(root + path))?
+        write_file(path: root + path, text: "")?
+
+    return ok()
+
+# The labels of `programs`, in their order.
+function labels_of(programs: [Program]) -> [str]
+    out: [str] @= []
+
+    for one in programs
+        out @ out.push(one.label)
+
+    return out
+
 # The version the STUB writes into its header, and it is not the compiler's
 # on purpose: these cases drive a shell script that prints fixed text
 # (`emitter`, above) and never `./heroes`, and `is_a_capture` reads the
@@ -679,7 +752,8 @@ test "an emission that matches its blessed bytes passes, and a changed one fails
         store: scratch + "/emission-match",
         programs: programs,
         update: false,
-        least: 1
+        least: 1,
+        only: ""
     )
     assert !green.is_err()
 
@@ -710,7 +784,8 @@ test "an emission that matches its blessed bytes passes, and a changed one fails
         store: scratch + "/emission-match",
         programs: programs,
         update: false,
-        least: 1
+        least: 1,
+        only: ""
     )
     assert !red.is_err()
     assert red.must().failed == 1
@@ -742,11 +817,16 @@ test "a program with nothing blessed says how to bless it, and blessing writes t
         store: scratch + "/emission-new",
         programs: programs,
         update: false,
-        least: 0
+        least: 0,
+        only: ""
     )
     assert !red.is_err()
     assert red.must().failed == 1
     assert strings.contains(text: red.must().failures[0], needle: "UPDATE_EMISSION=1")
+
+    # Narrowed to the program by its label, so the blessing it asks for writes
+    # that program's bytes and no other's (defect 2341).
+    assert strings.contains(text: red.must().failures[0], needle: "-- <compiler> emission one/x")
 
     blessed = sweep(
         scratch: scratch,
@@ -754,7 +834,8 @@ test "a program with nothing blessed says how to bless it, and blessing writes t
         store: scratch + "/emission-new",
         programs: programs,
         update: true,
-        least: 0
+        least: 0,
+        only: ""
     )
     assert !blessed.is_err()
     assert blessed.must().failed == 0
@@ -776,7 +857,15 @@ test "a blessed file no program claims is reported, and so is a collision and a 
     assert !stub.is_err()
     programs: [Program] = [one.must()]
 
-    got = sweep(scratch: scratch, compiler: stub.must(), store: store, programs: programs, update: false, least: 1)
+    got = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: programs,
+        update: false,
+        least: 1,
+        only: ""
+    )
     assert !got.is_err()
     assert got.must().failed == 1
     assert strings.contains(text: got.must().failures[0], needle: "gone.c")
@@ -787,7 +876,15 @@ test "a blessed file no program claims is reported, and so is a collision and a 
         one.must()
         Program(source: one.must().source, stored: one.must().stored, label: "one/twin")
     ]
-    clash = sweep(scratch: scratch, compiler: stub.must(), store: store, programs: twice, update: false, least: 3)
+    clash = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: twice,
+        update: false,
+        least: 3,
+        only: ""
+    )
     assert !clash.is_err()
     assert strings.contains(
         text: clash.must().failures[0],
@@ -817,14 +914,14 @@ test "fixedbugs: the floor counts the emissions blessed, and a refusal is read a
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path]).is_err()
     programs: [Program] = [one.must(), refused]
     assert blessed_among(programs) == 1
-    met = sweep(scratch: scratch, compiler: path, store: tree, programs: programs, update: false, least: 1)
+    met = sweep(scratch: scratch, compiler: path, store: tree, programs: programs, update: false, least: 1, only: "")
     assert !met.is_err()
 
     # The blessed one twice (its bytes, its descriptors), the refusal once, and
     # the store: four, and nothing failed.
     assert met.must().passed == 4
     assert met.must().failed == 0
-    short = sweep(scratch: scratch, compiler: path, store: tree, programs: programs, update: false, least: 2)
+    short = sweep(scratch: scratch, compiler: path, store: tree, programs: programs, update: false, least: 2, only: "")
     assert !short.is_err()
     assert short.must().failed == 1
     assert strings.contains(
@@ -879,7 +976,8 @@ test "a blessing refuses a capture that does not open with the emitter's header,
         store: scratch + "/emission-doctored",
         programs: programs,
         update: true,
-        least: 0
+        least: 0,
+        only: ""
     )
     assert !refused.is_err()
     assert refused.must().failed == 1
@@ -895,7 +993,8 @@ test "a blessing refuses a capture that does not open with the emitter's header,
         store: scratch + "/emission-doctored",
         programs: programs,
         update: true,
-        least: 0
+        least: 0,
+        only: ""
     )
     assert !blessed.is_err()
     assert blessed.must().failed == 0
@@ -935,7 +1034,8 @@ test "fixedbugs: a program that cannot emit is skipped only where the machine la
         store: tree + "/store-has",
         programs: [Program(source: has.must(), stored: blessed, label: "has")],
         update: false,
-        least: 1
+        least: 1,
+        only: ""
     )
     assert !refuted.is_err()
     assert refuted.must().failed == 1
@@ -953,11 +1053,212 @@ test "fixedbugs: a program that cannot emit is skipped only where the machine la
         store: tree + "/store-lacks",
         programs: [Program(source: lacks.must(), stored: tree + "/store-lacks/lacks.c", label: "lacks")],
         update: false,
-        least: 1
+        least: 1,
+        only: ""
     )
     assert !excused.is_err()
     assert excused.must().skips.len() == 1
     assert strings.starts_with(text: excused.must().skips[0], prefix: "SKIP emission/lacks\n")
     assert excused.must().failed == 1
     assert strings.contains(text: excused.must().failures[0], needle: "1 of 1 programs were skipped")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2341, held as a test (2026-11-08): `collect` took each group's `.hero`
+# files and never a case that is a folder, so the two of `run/` had no blessed
+# emission. Every group holds one here, a catalogue and a placed tree inside
+# it and a folder of modules beside it, which is no program; and `examples/`
+# holds a folder named `.case`, an example like any other, named by its
+# folder, since `.case` names a golden case and not an example.
+test "fixedbugs: a .case folder of every group is one program, its main.hero, and a folder of modules is none (defect 2341)"
+    scratch = shell.own_scratch()
+    root = scratch + "/emission-folders/"
+    files: [str] @= [
+        "tests/golden/run/pkg.case/main.expected"
+        "examples/tool/main.hero"
+        "examples/odd.case/main.hero"
+    ]
+
+    for group in GROUPS
+        for path in ["/flat.hero", "/pkg.case/main.hero", "/pkg.case/heroes.toml", "/pkg.case/heroes.packages/text@1.0.0-k/words.hero", "/modules/helper.hero"]
+            files @ files.push("tests/golden/" + group + path)
+
+    assert !planted(root: root, files: files).is_err()
+    got = collected(scratch: scratch, root: root)
+    assert !got.is_err()
+    want: [str] = [
+        "emit/flat"
+        "emit/pkg"
+        "fixedbugs/flat"
+        "fixedbugs/pkg"
+        "ir/flat"
+        "ir/pkg"
+        "run/flat"
+        "run/pkg"
+        "examples/odd.case/main"
+        "examples/tool/main"
+    ]
+    assert labels_of(got.must()) == want
+
+    # Its source the file it compiles, its blessed file named by the folder.
+    assert got.must()[7].source == root + "tests/golden/run/pkg.case/main.hero"
+    assert got.must()[7].stored == root + STORE + "/run-pkg.c"
+    assert got.must()[3].source == root + "tests/golden/fixedbugs/pkg.case/main.hero"
+    assert got.must()[8].stored == root + STORE + "/examples-odd.case-main.c"
+    assert !shell.remove_tree(scratch).is_err()
+
+# A folder named `.case` with no `main.hero` directly inside is a case that
+# stopped running: the walk stops on it by name, whichever group holds it, and
+# never passes it over (defect 2341).
+test "fixedbugs: a .case folder holding no main.hero stops the walk by name, never skipped in silence (defect 2341)"
+    scratch = shell.own_scratch()
+    root = scratch + "/emission-hollow/"
+    files: [str] = [
+        "tests/golden/run/flat.hero"
+        "tests/golden/fixedbugs/hollow.case/heroes.toml"
+        "tests/golden/fixedbugs/hollow.case/inner/main.hero"
+    ]
+    assert !planted(root: root, files: files).is_err()
+
+    said = match collected(scratch: scratch, root: root)
+        .ok _  => "collected"
+        .err e => e.msg
+
+    assert said == "golden case " + root + "tests/golden/fixedbugs/hollow.case holds no main.hero, the file it compiles"
+    assert !shell.remove_tree(scratch).is_err()
+
+# The guards hold for a folder program as for a flat one (defect 2341): its
+# emission is compared and its file claimed, it counts toward the floor, its
+# file is an orphan once the folder goes, and a flat case of its name beside
+# it is a collision, two programs and one blessed file.
+test "fixedbugs: a folder program is compared, counted, claimed and collides as a flat one does (defect 2341)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    root = scratch + "/emission-guards/"
+    assert !planted(root: root, files: ["tests/golden/run/flat.hero", "tests/golden/run/pkg.case/main.hero"]).is_err()
+    store = root + STORE
+
+    for name in ["/run-flat.c", "/run-pkg.c"]
+        assert !write_file(path: store + name, text: emitted_fixture()).is_err()
+
+    stub = emitter(scratch: scratch, name: "stub-emit-guards.sh", says: emitted_fixture())
+    assert !stub.is_err()
+    two = collected(scratch: scratch, root: root)
+    assert !two.is_err()
+    assert blessed_among(two.must()) == 2
+    green = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: two.must(),
+        update: false,
+        least: 2,
+        only: ""
+    )
+    assert !green.is_err()
+
+    # Each program's bytes and descriptors, and the store: five.
+    assert green.must().passed == 5
+    assert green.must().failed == 0
+    assert !shell.remove_tree(root + "tests/golden/run/pkg.case").is_err()
+    one = collected(scratch: scratch, root: root)
+    assert !one.is_err()
+    gone = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: one.must(),
+        update: false,
+        least: 1,
+        only: ""
+    )
+    assert !gone.is_err()
+    assert gone.must().failed == 1
+    assert strings.contains(text: gone.must().failures[0], needle: store + "/run-pkg.c")
+    assert !shell.mkdir_all(root + "tests/golden/run/pkg.case").is_err()
+
+    for path in ["tests/golden/run/pkg.case/main.hero", "tests/golden/run/pkg.hero"]
+        assert !write_file(path: root + path, text: "").is_err()
+
+    three = collected(scratch: scratch, root: root)
+    assert !three.is_err()
+    assert labels_of(three.must()) == ["run/flat", "run/pkg", "run/pkg"]
+    clash = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: three.must(),
+        update: false,
+        least: 2,
+        only: ""
+    )
+    assert !clash.is_err()
+    assert clash.must().failed == 1
+    assert strings.contains(text: clash.must().failures[0], needle: "is claimed by run/pkg as well")
+    assert !shell.remove_tree(scratch).is_err()
+
+# The third word narrows the sweep to the programs whose label holds it, and a
+# blessing under it writes theirs alone, which is how this repair's own two
+# emissions were blessed (defect 2341). A narrowed run asks no floor and no
+# orphan, so a floor past the tree and a file no program claims leave it
+# green; and a word no label holds walks nothing, which `main` refuses as a
+# run that tested nothing.
+test "a narrowed sweep compares and blesses only the programs whose label holds the word (defect 2341)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    root = scratch + "/emission-narrowed/"
+    assert !planted(root: root, files: ["tests/golden/run/flat.hero", "tests/golden/run/pkg.case/main.hero"]).is_err()
+    store = root + STORE
+    two = collected(scratch: scratch, root: root)
+    assert !two.is_err()
+    pkg = two.must()[1]
+    assert pkg.label == "run/pkg"
+
+    # The stub's header names the folder program, so a blessing of the flat one
+    # would be refused as another program's capture, and fail.
+    proper = stub_header(of: pkg.source) + "int main(void) { return 0; }\n"
+    stub = emitter(scratch: scratch, name: "stub-emit-narrowed.sh", says: proper)
+    assert !stub.is_err()
+    assert !write_file(path: store + "/run-gone.c", text: proper).is_err()
+    blessed = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: two.must(),
+        update: true,
+        least: 9,
+        only: "run/pkg"
+    )
+    assert !blessed.is_err()
+    assert blessed.must().failed == 0
+    assert read_file(pkg.stored).default("") == proper
+    assert read_file(two.must()[0].stored).is_err()
+    compared = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: two.must(),
+        update: false,
+        least: 9,
+        only: "pkg"
+    )
+    assert !compared.is_err()
+
+    # Its bytes and its descriptors, and nothing else asked.
+    assert compared.must().passed == 2
+    assert compared.must().failed == 0
+    nothing = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: two.must(),
+        update: false,
+        least: 9,
+        only: "zzz"
+    )
+    assert !nothing.is_err()
+    assert nothing.must().passed + nothing.must().failed + nothing.must().skips.len() == 0
+    assert narrowed(programs: two.must(), only: "").len() == 2
+    assert narrowed(programs: two.must(), only: "run/").len() == 2
     assert !shell.remove_tree(scratch).is_err()
