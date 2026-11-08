@@ -1,0 +1,2 @@
+note: the package `json` is read from the folder `tests/golden/check/fixedbugs-2292-a-package-is-offered-its-own-module.case/vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/fixedbugs-2292-a-package-is-offered-its-own-module.case/vendor/json/parse.hero:6:12: error[unknown_name]: nothing named `strs` is in scope, and the module `text/strs` answers it, which this file names in no `use` line: every module a file names needs its own `use` — `use text/strs`

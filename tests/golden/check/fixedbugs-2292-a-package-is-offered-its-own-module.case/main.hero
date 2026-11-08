@@ -1,0 +1,11 @@
+# Fixed defect 2292, its shape of a package's module, 2026-11-08, lane
+# pm-use: a module of the package `json` writes `strs.holds` and no `use` of
+# its file names `strs`. A bare `use` in a package's file starts at the
+# package's own root (panel 235's R4), so the module it is offered is the
+# package's own, `text/strs`, and never the program's `strs.hero` beside this
+# file, which the repair at abedd4d0c offered as `use strs`, a line that
+# inside the package names no module at all.
+use <json>/parse
+
+function main()
+    print(parse.found(s: "abc"))

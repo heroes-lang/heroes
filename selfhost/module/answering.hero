@@ -1,0 +1,153 @@
+# The modules a `use` could name for a qualifier that no `use` of its file
+# names (spec § 1, *every module you name needs its own `use`*; defect 2292,
+# its shape of a module in a folder, the lane's own finding of 2026-11-08):
+# `strs.holds(s: "abc", part: "b")` where `lib/strs.hero` stands under the
+# directory of the file you compile, no `use` names it, and so no module of
+# the compilation is `strs`. Asked on the error path alone, for a qualifier
+# nothing else answers (`resolve/missing_use.hero`).
+#
+# The tree walked is the one a bare `use` of the module that wrote the
+# qualifier starts at: the directory of the file you compile for a module of
+# the program's own, the package's own root for a package's (panel 235's R4),
+# and each answer is spelt as that `use` would be written there. The walk
+# asks only what each listing holds, never the world around it:
+#   - a folder is entered only where its name can be a part of a `use` path,
+#     an identifier and no keyword, so `.git/`, `heroes.packages/` and a
+#     case's `x.case/` are never entered, nothing under them being nameable;
+#   - a link is never entered: the tree is the program's own, and a link to
+#     `/` or to a folder above it would walk the disk or never end;
+#   - a module under an `internal` folder is offered only to the module that
+#     folder belongs to and to the modules under it (R16);
+#   - a file is the name its directory lists, byte for byte (defect 2290),
+#     and the folders are read in their names' byte order, shallowest first,
+#     so the answer is one answer on every machine.
+
+use source
+use bytes
+use keywords
+use module/names as module_names
+use module/placed
+use module/paths
+use module/package_told
+use module/spelling
+use cli/files
+use cli/process
+
+# The modules a bare `use` in the module `from` could name for `name`, as
+# that `use` would spell them: one of the compilation whose last part is
+# `name` (another file names it), else every `<name>.hero` of `from`'s tree;
+# none where nothing answers, or where the tree cannot be told.
+function modules(s: source.Source, from: str, name: str) -> [str]
+    package = placed.package_of(from)
+    found: [str] @= []
+
+    for f in s.files
+        if !f.is_library && placed.package_of(f.module) == package && module_names.binding_of(f.module) == name && package_told.reaches(from: from, name: f.module)
+            found @ found.push(placed.inside_of(f.module))
+            return found
+
+    root = root_of(s, package: package)
+
+    if root.is_err()
+        return found
+
+    for inside in under(root: root.must(), file: name + ".hero")
+        if package_told.reaches(from: from, name: package + inside)
+            found @ found.push(inside)
+
+    return found
+
+# Where a bare `use` of the package `package` starts, as files are opened:
+# the directory of the file you compile for the program's own (`package` is
+# ""), the package's own root for one of the build, a failure for one the
+# build holds no root of.
+function root_of(s: source.Source, package: str) -> str?
+    if package.len() == 0
+        return ok(paths.open_directory(s.name))
+
+    for p in s.reached.packages
+        if "<" + p.alias + ">/" == package && p.problem.len() == 0
+            return ok(p.opened)
+
+    return fail(code: "absent", msg: "no root of " + package + " in this build")
+
+# Every path under `root` whose folder lists `file`, as a `use` names it
+# (`lib/strs` for `lib/strs.hero`): the folders entered breadth first, each a
+# name a `use` can write and none a link, in their names' byte order.
+function under(root: str, file: str) -> [str]
+    stem = file.slice(from: 0, to: file.len() - 5)
+    found: [str] @= []
+    level: [str] @= [""]
+
+    while level.len() > 0
+        deeper: [str] @= []
+
+        for folder in level
+            if spelling.holds(spelling.scan(folder: root + folder, kind: 0), name: file)
+                found @ found.push(folder + stem)
+
+            for sub in sort(spelling.scan(folder: root + folder, kind: 1))
+                if nameable(sub) && entered(root + folder + sub)
+                    deeper @ deeper.push(folder + sub + "/")
+
+        level @ deeper
+
+    return found
+
+# Whether a folder's name can be a part of a `use` path: one identifier as
+# the lexer reads it, ASCII letters, digits and `_`, a letter or `_` first,
+# and no keyword.
+function nameable(part: str) -> bool
+    if part.len() == 0 || !bytes.is_alpha(part[0]) && part[0] != '_'
+        return false
+
+    for at in range(from: 1, to: part.len())
+        if !bytes.is_alnum(part[at]) && part[at] != '_'
+            return false
+
+    return keywords.keyword(part).is_err()
+
+# Whether the walk goes into `path`: a directory, the link itself never.
+function entered(path: str) -> bool
+    match files.entry(path)
+        .directory                                  => return true
+        .absent | .file | .link | .other | .unknown => return false
+
+## Tests
+
+test "a folder is entered only under a name a `use` can write"
+    assert nameable("lib")
+    assert nameable("_tools")
+    assert nameable("v2")
+    assert !nameable("2d")
+    assert !nameable("my-lib")
+    assert !nameable(".git")
+    assert !nameable("heroes.packages")
+    assert !nameable("x.case")
+    assert !nameable("function")
+    assert !nameable("")
+
+# A tree of every shape the walk meets, made where the tests make theirs:
+# a module two folders down, one beside it under a name no `use` writes, one
+# in a folder named by a keyword, and a link back to the tree's own root,
+# which a walk following links would enter for ever. A platform that makes
+# no link for this account (Windows without the privilege, 1314) still
+# walks the rest.
+test "the walk finds a module in a folder, shallowest first, and enters no link"
+    dir = "build/selftest-answering"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(path: dir)
+    assert !process.mkdir_all(path: dir + "/lib/deep").is_err()
+    assert !process.mkdir_all(path: dir + "/my-lib").is_err()
+    assert !process.mkdir_all(path: dir + "/match").is_err()
+    assert !write_file(path: dir + "/lib/strs.hero", text: "function f() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: dir + "/lib/deep/strs.hero", text: "function f() -> i64\n    return 2\n").is_err()
+    assert !write_file(path: dir + "/my-lib/strs.hero", text: "function f() -> i64\n    return 3\n").is_err()
+    assert !write_file(path: dir + "/match/strs.hero", text: "function f() -> i64\n    return 4\n").is_err()
+    linked = files.symbolic_link(target: "..", name: dir + "/lib/up")
+    assert under(root: dir + "/", file: "strs.hero") == ["lib/strs", "lib/deep/strs"]
+    assert under(root: dir + "/", file: "other.hero").len() == 0
+    assert entered(dir + "/lib")
+
+    if !linked.is_err()
+        assert !entered(dir + "/lib/up")
+    assert !process.remove_tree(dir).is_err()

@@ -1,0 +1,8 @@
+# Fixed defect 2292, its shape of a module in a folder, 2026-11-08, lane
+# pm-use: where several folders hold a `strs.hero`, every module a `use`
+# could name is told, shallowest first and in their names' byte order, each
+# with its own `guess`: `lib/strs`, `other/strs` and `other/deep/strs`. Not
+# `my-lib/strs.hero`, whose folder no `use` can write, nor
+# `lib/internal/strs.hero`, which is `lib`'s alone (panel 235's R16).
+function main()
+    print(strs.holds(s: "abc", part: "b"))  #~ unknown_name

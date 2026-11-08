@@ -1,0 +1,5 @@
+# The package's own module of the case beside it.
+
+# Whether s holds part.
+function holds(s: str, part: str) -> bool
+    return s.len() >= part.len()

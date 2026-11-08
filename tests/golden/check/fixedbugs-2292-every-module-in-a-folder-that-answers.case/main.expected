@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2292-every-module-in-a-folder-that-answers.case/main.hero:8:11: error[unknown_name]: nothing named `strs` is in scope, and the modules `lib/strs`, `other/strs` and `other/deep/strs` answer it, which this file names in no `use` line: every module a file names needs its own `use` — `use lib/strs`, `use other/strs` or `use other/deep/strs`

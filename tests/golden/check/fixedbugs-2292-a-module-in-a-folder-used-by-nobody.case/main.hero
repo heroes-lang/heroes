@@ -1,0 +1,10 @@
+# Fixed defect 2292, its shape of a module in a folder, 2026-11-08, lane
+# pm-use (the lane's own finding, after the repair at abedd4d0c): the module
+# `lib/strs.hero` stands under the directory of the file you compile and no
+# `use` names it, so no module of the compilation is `strs`, and the
+# qualifier was told `unknown_name` with the closest names in scope, then
+# `unknown_function` for `holds` with a `guess` renaming it `fold`, as before
+# the repair. The tree a bare `use` reads is walked now, at any depth, and
+# the one message names `use lib/strs`, with a `guess` writing it at the top.
+function main()
+    print(strs.holds(s: "abc", part: "b"))  #~ unknown_name

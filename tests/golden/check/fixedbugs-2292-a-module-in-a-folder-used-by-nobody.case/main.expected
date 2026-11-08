@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2292-a-module-in-a-folder-used-by-nobody.case/main.hero:10:11: error[unknown_name]: nothing named `strs` is in scope, and the module `lib/strs` answers it, which this file names in no `use` line: every module a file names needs its own `use` — `use lib/strs`
