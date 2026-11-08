@@ -372,7 +372,7 @@ extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
     record Db tag sqlite3
     function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
-    function sqlite3_close(db: Db consumes) -> i64 when 0
+    function sqlite3_close(db: Db consumes) -> i64
 ```
 Where C writes several, `@md: [u8] counted_by N lent` hands C `N` elements, the
 array's own then zeros, and leaves the array exactly those `N`: numbers, the
