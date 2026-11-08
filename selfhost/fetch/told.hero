@@ -13,7 +13,8 @@
 
 # The codes that blame the input, exit 1: a source refused by its shape, a
 # word a catalogue wrote, a source that answers that what was asked for is not
-# there, a file past its bound.
+# there, a file past its bound, a tree holding a name no package may, a tag
+# that moved, a sum that does not match.
 constant INPUT_CODES: [str]
     [
         "source_refused"
@@ -21,17 +22,23 @@ constant INPUT_CODES: [str]
         "commit_refused"
         "absent"
         "too_large"
+        "name_refused"
+        "tag_moved"
+        "sum_mismatch"
     ]
 
 # The codes that blame the tool or the machine, exit 2: a program this command
 # runs is not here, a source on the network did not answer, git asked inside
-# another git command's environment.
+# another git command's environment, git failing on the staging folder's own
+# repository, a tree that could not be written or moved into place.
 constant TOOL_CODES: [str]
     [
         "no_git"
         "no_curl"
         "unreachable"
         "git_environment"
+        "git_failed"
+        "cannot_place"
     ]
 
 # The exit `code` earns.
