@@ -224,6 +224,8 @@ function by_name(a: agreed_layout.Asking, components: [str]) -> [str]
 
     out: [str] @= []
 
+    # ORDER: by the module's name, then its component, as `sort` orders a
+    # `str`: the order the reader writes the blocks in.
     for key in sort(keys(keyed))
         out @ out.push(keyed[key].must())
 

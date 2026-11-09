@@ -185,7 +185,10 @@ function opened(said: str, listing: str, named: [str]) -> [str]
 
     files = map_files(listing, needles: wanted)
 
-    for index in keys(files)
+    # ORDER: by the index the map gives each file, as `sort` orders an `i64`,
+    # so the files come in the map's own order; the archives returned keep
+    # the order they are first met in.
+    for index in sort(keys(files))
         listed @ listed.push(files[index].must())
 
     for file in listed

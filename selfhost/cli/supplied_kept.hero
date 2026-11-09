@@ -122,10 +122,13 @@ function keep(path: str, p: supplied_probe.Probes, opened: [str])
     lines @ lines.push("reversed\t" + flag(p.reversed) + "\t" + flag(p.reversed_linked))
     lines @ lines.push("whole\t" + flag(p.whole) + "\t" + flag(p.whole_linked))
 
-    for name in keys(p.taken)
+    # ORDER: by name, as `sort` orders a `str`, so one verdict is kept as one
+    # file, byte for byte; the reader takes the lines into maps.
+    for name in sort(keys(p.taken))
         lines @ lines.push("taken\t" + name + "\t" + p.taken[name].must())
 
-    for name in keys(p.platform)
+    # ORDER: by name, as above.
+    for name in sort(keys(p.platform))
         lines @ lines.push("platform\t" + name + "\t" + p.platform[name].must())
 
     for d in p.refused

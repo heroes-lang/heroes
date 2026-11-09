@@ -121,6 +121,8 @@ function laid_out(decls: [ast.Decl], decl: i64) -> bool
 function foreign_of(s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan) -> [i64]
     out: [i64] @= []
 
+    # ORDER: by declaration index, as `sort` orders an `i64`: the list
+    # returned is the order the records are judged and told in.
     for decl in sort(keys(plan.records))
         if laid_out(decls, decl: decl) && source.component_at(s, decls[decl].name.start) != plan.module
             out @ out.push(decl)
@@ -184,6 +186,8 @@ function owner_block(a: Asking, decl: i64, @memo: {str: str}, @dumps: {str: str}
     owner = plan_of(a, module: owner_of(a, decl: decl))?
     wanted: [i64] @= []
 
+    # ORDER: by declaration index, as `sort` orders an `i64`: the order the
+    # records are asked of clang in the one dump.
     for one in sort(keys(owner.records))
         if !a.typed[one].is_err()
             wanted @ wanted.push(one)

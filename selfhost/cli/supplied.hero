@@ -205,6 +205,8 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
         answered = supplied_probe.platform(t, line: j.line, names: unasked)
 
         if !answered.is_err()
+            # ORDER: none, each answer is written into a map, whose order
+            # nothing reads.
             for name in keys(answered.must())
                 probes.platform[name] @ answered.must()[name].must()
 
