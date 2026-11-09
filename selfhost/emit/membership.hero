@@ -9,15 +9,20 @@
 # `DECLARED` for a record the screen vouches for, whose declared fields are
 # exactly the struct's members; for any other record the leaves of the
 # header's layout dump, one entry each, joined by `;`: `p <path>` a member,
-# `n <byte> <bytes> <path>` a named bit-field, the bytes its bits reach (the
-# one span C cannot be asked for, read from the dump's offset column) and its
-# C name, through which its bits are found (panel 223); `c <byte> <bytes>` a
-# `const` one, whose bytes are held whole, since no line may write it; `f
-# <path>` a flexible array member, holding every byte from its offset to the
-# end.
+# `n <width> <path>` a named bit-field, its declared width and its C name,
+# through which C finds its bits before `main` (panel 223); `c <width>
+# <path>` a `const` one, which no line may write; `f <path>` a flexible array
+# member, holding every byte from its offset to the end.
+#
+# **No entry carries a byte** (defect 2383): where a bit-field lies is the
+# target's layout, `1:0-2` under the Itanium one and `4:0-2` under the MSVC
+# one for `struct { int8_t a; unsigned b : 3; }`, and a byte read from this
+# machine's dump and written into the C made one program two texts, and C
+# compiled for another target zero a byte its bit-field holds. Its width is
+# the declaration's, the same on every target.
 
-use emit/layout_text
 use emit/layout_rows
+use emit/layout_text
 
 # The key a record's membership rides under in `ctype.Names.lend_units`,
 # which no C name a counted parameter is keyed by can begin with.
@@ -43,15 +48,15 @@ function encoded(tree: [layout_text.Member]) -> str?
             if m.name.len() == 0
                 continue
 
-            if m.byte < 0 || m.last < m.byte
-                return fail(code: "none", msg: "a bit-field whose bytes the dump does not give")
-            span = m.byte.to_str() + " " + (m.last - m.byte + 1).to_str()
+            if m.width < 1
+                return fail(code: "none", msg: "a bit-field whose width the dump does not give")
+            told = m.width.to_str() + " " + m.path
 
             # The dump prints a `const` bit-field's qualifier first.
             if layout_rows.starts(text: m.type_text, prefix: "const ")
-                out @ out.push("c " + span)
+                out @ out.push("c " + told)
             else
-                out @ out.push("n " + span + " " + m.path)
+                out @ out.push("n " + told)
         else if m.flexible
             out @ out.push("f " + m.path)
         else if m.path.len() > 0
@@ -74,7 +79,7 @@ function entries(text: str) -> [str]
 
     return out
 
-# The two numbers of a bit-field's span, split at their one space.
+# Where a bit-field's width ends, at its entry's first space.
 function space_in(text: str) -> i64
     at: i64 @= 0
 
@@ -85,31 +90,35 @@ function space_in(text: str) -> i64
 
     return 0 - 1
 
-# What a bit-field's entry gives, its record at `at` in the outer type (panel
-# 223, defect 2099): `span`, the bytes its bits reach, which no gap holds; and
-# `path`, its C name, empty for a `c` entry. `emit/padding_tables.hero` finds
-# its bits before `main` by `--` on a zeroed object, through that name, and
-# `hero_pad_clear` writes zero the bits beside them at each lend.
+# What a bit-field's entry gives (panel 223, defect 2099): its declared
+# `width`, which bounds the bytes its bits can reach, and `path`, its C name.
+# `emit/padding_tables.hero` has C find its bits before `main` by `--` on a
+# zeroed object, through that name, and `hero_pad_clear` writes zero the bits
+# beside them at each lend.
 record Bits
-    span: [str]
+    width: i64
     path: str
 
-# A bit-field's entry, `<byte> <bytes>` and for an `n` entry ` <path>`;
-# absent where it has no space.
-function bit_entry(rest: str, at: str) -> Bits?
+# A bit-field's entry, `<width> <path>`; absent where it has no space, no
+# name or no width.
+function bit_entry(rest: str) -> Bits?
     first = space_in(rest)
 
-    if first < 0
-        return fail(code: "none", msg: "a bit-field's entry is not two numbers")
-    tail = rest.slice(from: first + 1, to: rest.len())
-    second = space_in(tail)
-    bytes: str @= tail
-    path: str @= ""
+    if first < 1 || first + 1 >= rest.len()
+        return fail(code: "none", msg: "a bit-field's entry is not a width and a name")
+    width = layout_rows.leading_number(rest.slice(from: 0, to: first))
 
-    if second >= 0
-        bytes @ tail.slice(from: 0, to: second)
-        path @ tail.slice(from: second + 1, to: tail.len())
-    return ok(Bits(span: ["(" + at + ") + " + rest.slice(from: 0, to: first), bytes], path: path))
+    if width < 1
+        return fail(code: "none", msg: "a bit-field's entry has no width")
+    return ok(Bits(width: width, path: rest.slice(from: first + 1, to: rest.len())))
+
+# **The most bytes a bit-field `width` bits wide can reach**: its bits are
+# one run in its storage unit, laid out in consecutive bytes, so from bit 7
+# of a byte they reach `(width + 6) / 8 + 1`, on every target and in either
+# byte order. The bound sizes the masks a record's named bit-fields can give
+# and the runs of bytes they set, never a byte's place.
+function bytes_reached(width: i64) -> i64
+    return (width + 6) / 8 + 1
 
 # **A member's own name is spelled where no header macro reaches it.** The
 # dump names the members as C declares them, and a header may define a macro
@@ -157,69 +166,48 @@ function names_in(path: str) -> [str]
 ## Tests
 
 test "a membership is read entry by entry, and a dump's leaves are its entries"
-    assert entries("p a;p inner.d;n 1 2 c") == ["p a", "p inner.d", "n 1 2 c"]
-    assert bit_entry(rest: "1 2 c", at: "0").must().span == ["(0) + 1", "2"]
-    assert bit_entry(rest: "1 2 o.c", at: "x").must().path == "o.c"
-    assert bit_entry(rest: "0 1", at: "0").must().path == "" && bit_entry(rest: "1", at: "0").is_err()
+    assert entries("p a;p inner.d;n 3 c") == ["p a", "p inner.d", "n 3 c"]
+    assert bit_entry(rest: "3 c").must().width == 3 && bit_entry(rest: "3 c").must().path == "c"
+    assert bit_entry(rest: "10 o.c").must().path == "o.c" && bit_entry(rest: "10 o.c").must().width == 10
+    assert bit_entry(rest: "1").is_err() && bit_entry(rest: "0 c").is_err() && bit_entry(rest: "3 ").is_err()
     assert entries("") == []
     assert space_in("1 2") == 1
     assert names_in("via.fd") == ["via", "fd"]
     assert names_in("kind") == ["kind"]
 
-test "a named bit-field gives its bytes and its C name, a const one its bytes alone"
-    b = layout_text.Member(
+test "a named bit-field gives its width and its C name, a const one the same, never a byte (defect 2383)"
+    b = member(name: "b", byte: 1, width: 3, type_text: "unsigned int")
+    c = member(name: "c", byte: 1, width: 10, type_text: "unsigned int")
+    k = member(name: "k", byte: 0, width: 2, type_text: "const unsigned int")
+    pad = member(name: "", byte: 1, width: 2, type_text: "unsigned int")
+    assert encoded([k, b, pad, c]).must() == "c 2 k;n 3 b;n 10 c"
+
+    # The same declaration under the MSVC layout, its bit-fields at byte 4:
+    # one text, since no entry carries a byte.
+    moved = member(name: "b", byte: 4, width: 3, type_text: "unsigned int")
+    assert encoded([moved]).must() == encoded([b]).must()
+    assert encoded([member(name: "b", byte: 1, width: -1, type_text: "unsigned int")]).is_err()
+
+test "a bit-field reaches at most the bytes its width can straddle"
+    assert bytes_reached(1) == 1
+    assert bytes_reached(2) == 2 && bytes_reached(8) == 2 && bytes_reached(9) == 2
+    assert bytes_reached(10) == 3 && bytes_reached(64) == 9
+
+# A bit-field leaf of a dump, for the tests.
+function member(name: str, byte: i64, width: i64, type_text: str) -> layout_text.Member
+    return layout_text.Member(
         depth: 1,
-        name: "b",
+        name: name,
         nested: false,
         bitfield: true,
         flexible: false,
-        byte: 1,
-        last: 1,
+        byte: byte,
+        width: width,
         union_kw: false,
         place: "",
-        path: "b",
-        type_text: "unsigned int"
+        path: name,
+        type_text: type_text
     )
-    c = layout_text.Member(
-        depth: 1,
-        name: "c",
-        nested: false,
-        bitfield: true,
-        flexible: false,
-        byte: 1,
-        last: 2,
-        union_kw: false,
-        place: "",
-        path: "c",
-        type_text: "unsigned int"
-    )
-    k = layout_text.Member(
-        depth: 1,
-        name: "k",
-        nested: false,
-        bitfield: true,
-        flexible: false,
-        byte: 0,
-        last: 0,
-        union_kw: false,
-        place: "",
-        path: "k",
-        type_text: "const unsigned int"
-    )
-    pad = layout_text.Member(
-        depth: 1,
-        name: "",
-        nested: false,
-        bitfield: true,
-        flexible: false,
-        byte: 1,
-        last: 1,
-        union_kw: false,
-        place: "",
-        path: "",
-        type_text: "unsigned int"
-    )
-    assert encoded([k, b, pad, c]).must() == "c 0 1;n 1 1 b;n 1 2 c"
 
 test "a name the dump spelled is undefined for the one line that spells it, and restored"
     named: {str: bool} @= {}

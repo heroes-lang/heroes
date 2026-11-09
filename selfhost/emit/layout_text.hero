@@ -64,15 +64,15 @@ record Member
     nested: bool
     bitfield: bool
     flexible: bool
-    # The byte the member starts at, as the dump prints it: the one number
-    # read from the text, and only where C cannot be asked (a bit-field has
-    # no `__builtin_offsetof`).
+    # The byte the member starts at, as the dump prints it, and only where C
+    # cannot be asked (a bit-field has no `__builtin_offsetof`): this target's
+    # layout, so never a number the emitted C carries (defect 2383).
     byte: i64
-    # The last byte a bit-field's bits reach, else `byte`; -1 where the
-    # offset column is not the shape `layout_rows.last_byte` knows. The bytes
-    # a bit-field holds are the one span C cannot be asked for (panel 215's
-    # R1, `emit/padding.hero`).
-    last: i64
+    # The bits a bit-field holds, its declared width, the same on every
+    # target; 0 for any other member, -1 where the offset column is not the
+    # shape `layout_rows.bit_width` knows. It bounds the bytes a bit-field can
+    # reach, which C finds itself before `main` (`emit/padding_tables.hero`).
+    width: i64
     # An anonymous member whose type opens with `union `: the one word of a
     # type's text that is read, because an anonymous member has no name C
     # can classify (a NAMED member is classified by C through `path`).
@@ -207,7 +207,7 @@ function members(rows: [str], from: i64) -> [Member]?
     named: [str] @= []
     bits: [bool] @= []
     starts_at: [i64] @= []
-    lasts: [i64] @= []
+    widths: [i64] @= []
     flex: [bool] @= []
     typed: [str] @= []
     closed: bool @= false
@@ -237,7 +237,7 @@ function members(rows: [str], from: i64) -> [Member]?
         depths @ depths.push(spaces / 2 - 1)
         bits @ bits.push(layout_rows.byte_index(text: row.slice(from: 0, to: bar), needle: ":") >= 0)
         starts_at @ starts_at.push(layout_rows.leading_number(row.slice(from: 0, to: bar)))
-        lasts @ lasts.push(layout_rows.last_byte(row.slice(from: 0, to: bar)))
+        widths @ widths.push(layout_rows.bit_width(row.slice(from: 0, to: bar)))
 
         if space < 0
             named @ named.push(text)
@@ -268,7 +268,7 @@ function members(rows: [str], from: i64) -> [Member]?
         if anonymous
             place @ place_of(typed[k])
         out @ out.push(
-            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], last: lasts[k], union_kw: anonymous && deeper && layout_rows.starts(text: typed[k], prefix: "union "), place: place, path: paths[k], type_text: typed[k])
+            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], width: widths[k], union_kw: anonymous && deeper && layout_rows.starts(text: typed[k], prefix: "union "), place: place, path: paths[k], type_text: typed[k])
         )
         k @ k + 1
 
@@ -353,7 +353,7 @@ test "a block is read by its shape: depth, the empty name of an anonymous member
     assert got[2].depth == 2 && got[2].name == "" && got[2].nested
     assert got[3].depth == 3 && got[3].name == "i"
     assert got[6].bitfield && got[6].name == "flag" && got[6].byte == 12
-    assert got[6].last == 12 && got[3].last == 4
+    assert got[6].width == 1 && got[3].width == 0
     assert got[3].byte == 4
     assert got[7].flexible && !got[0].flexible
     assert got[2].union_kw && !got[1].union_kw && !got[3].union_kw

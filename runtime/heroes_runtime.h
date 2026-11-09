@@ -883,6 +883,8 @@ void hero_pad_clear(void *, size_t, size_t, const size_t *, size_t);
 /* The zeroed record those masks are found in, off every stack, and its giving back (defect 2354). */
 void *hero_pad_object(size_t);
 void hero_pad_object_give(void *);
+/* A record's gaps and masks where it holds named bit-fields, the bytes they reach found by C, never written as numbers (defect 2383). */
+size_t hero_pad_bits(size_t, const size_t *, size_t, const void *, size_t *, size_t *, size_t, size_t *);
 
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *

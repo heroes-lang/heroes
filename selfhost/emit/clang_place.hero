@@ -173,7 +173,8 @@ function found_in(path: str, spelled: str) -> str
 
 # A file of the stack as an `#include` would name it: a framework's header by
 # its framework, one under the directory the group's header was found in from
-# there, and anything else, a system header among them, as clang printed it.
+# there, and anything else, a system header among them, as clang printed it
+# with `/` between its parts (`slashed`, defect 2382).
 function shown(path: str, directory: str) -> str
     p = slashed(path)
     cut: i64 @= 0
@@ -188,7 +189,7 @@ function shown(path: str, directory: str) -> str
 
     if directory.len() > 0 && p.len() > directory.len() && same_bytes(text: p, from: 0, part: directory)
         return p.slice(from: directory.len(), to: p.len())
-    return path
+    return p
 
 # clang opens `#include <Fake/fake.h>` in a framework directory as
 # `Fake.framework/Headers/fake.h` (measured 2026-10-02 with `-F` on this
@@ -212,6 +213,14 @@ function framed(p: str, cut: i64) -> str?
 
     return fail(code: "none", msg: "not a framework's headers")
 
+# **A path read from clang's words, with `/` between its parts**: clang writes
+# the machine's separator, `\` on the Windows box, between the folder it
+# searched and the name it found there, and in a listing between every part.
+# It is how a path is compared, and **how every message tells a path clang
+# printed** (defect 2382): a message naming one file with `\` beside the
+# program's own paths with `/` named one tree two ways, so `shown`,
+# `ffi_value.shown`, `package_reads.outside`, `group_file.plain` and the
+# refusals of a file standing in for a header all tell what this gives.
 function slashed(path: str) -> str
     out: [str] @= []
 
@@ -386,3 +395,9 @@ test "a file of the stack is shown as an include would name it"
     assert shown(path: "/usr/include/sys/x.h", directory: "tests/") == "/usr/include/sys/x.h"
     assert shown(path: "fw/Fake.framework/Headers/inner.h", directory: "") == "Fake/inner.h"
     assert shown(path: "mid.h", directory: "") == "mid.h"
+
+    # A file under no directory of the group's, a system header on the
+    # Windows box, is told with `/` as every path a message tells is (defect
+    # 2382).
+    assert shown(path: "C:\\SDK\\ucrt\\stdio.h", directory: "tests/golden/unsupported/") == "C:/SDK/ucrt/stdio.h"
+    assert shown(path: "build\\tu-1\\x.h", directory: "") == "build/tu-1/x.h"

@@ -10,6 +10,7 @@
 use cli/clang_added
 use cli/package_macros
 use cli/stand_in
+use cli/strings
 use diag
 use emit/clang_place
 use token
@@ -154,13 +155,15 @@ function package_header(path: str, folder: str, wanted: str, package: str, origi
     return d
 
 # A file the environment has every clang read before a unit's first line.
+# Its path is told with `/` in the message and in the note alike, as every
+# path a message tells from clang's words is (defect 2382).
 function forced(one: clang_added.Added) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: CODE,
         message: "`" + clang_place.slashed(one.value) + "` is read before the first line of the C the clang jobs it reaches compile, through " + source_of(one) + "'s `" + one.flag + "`: what it defines stands before the C library's headers and every guard, so nothing undoes it",
         span: token.Span(start: 0, end: 0)
     )
-    d.notes @ d.notes.push(remedy(one, word: one.flag + " " + one.value))
+    d.notes @ d.notes.push(remedy(one, word: one.flag + " " + clang_place.slashed(one.value)))
     return d
 
 # A folder an edit of the environment adds to some of the clang jobs this
@@ -171,7 +174,7 @@ function unlisted(one: clang_added.Added) -> diag.Diagnostic
         message: "`" + clang_place.slashed(one.value) + "` is searched before the system's by some of the clang jobs this compiler starts and not by the others, through " + source_of(one) + "'s `" + one.flag + "`: a header of one name would be read from it by some jobs and from the system by the rest, and no listing of what a unit reads can say which",
         span: token.Span(start: 0, end: 0)
     )
-    d.notes @ d.notes.push(remedy(one, word: one.flag + " " + one.value))
+    d.notes @ d.notes.push(remedy(one, word: one.flag + " " + clang_place.slashed(one.value)))
     return d
 
 # A `-D` or `-U` of a name the guard keeps that the environment hands every
@@ -218,3 +221,14 @@ test "a file a header only asks after is told as answering the question, and a f
     )
     assert read.message == "`inc/stdio.h` stands in for the C library's `<stdio.h>`, which the C this compiler writes reads: a folder this build names is searched before the system's, so its file is read in the library's place"
     assert read.notes == ["rename the file, or move it out of `inc`: `--include` names that folder, and every `#include <stdio.h>` of the build reads what it holds"]
+
+# **A file or a folder clang's job names is told one way in the message and
+# its note** (defect 2382): the message told it with `/` and the note as
+# clang wrote it, `\` on the Windows box, one file in two spellings.
+test "a forced file and a folder some jobs search are told with `/` in the message and the note alike (defect 2382)"
+    file = forced(clang_added.Added(flag: "-include", value: "C:\\inc\\evil.h", variable: "CCC_OVERRIDE_OPTIONS"))
+    assert strings.holds(text: file.message, needle: "`C:/inc/evil.h` is read before")
+    assert file.notes == ["take the edit that writes `-include C:/inc/evil.h` out of `CCC_OVERRIDE_OPTIONS`, or build with `CCC_OVERRIDE_OPTIONS` unset"]
+    folder = unlisted(clang_added.Added(flag: "-I", value: "build\\evil", variable: clang_added.OWN))
+    assert strings.holds(text: folder.message, needle: "`build/evil` is searched before")
+    assert folder.notes == ["take `-I build/evil` out of clang's configuration file, which adds it to every compile"]

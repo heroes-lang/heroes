@@ -29,8 +29,20 @@
 # byte one shares, the bits no named bit-field holds are written zero by an
 # atomic `and`, each byte's mask found once before `main` by C itself, `--` on
 # each named bit-field of a zeroed object (`emit/padding_tables.hero`), so no
-# bit a named bit-field holds is written, even while C's own thread writes it;
-# a byte a `const` bit-field holds is held whole and never written.
+# bit a named bit-field holds is written, even while C's own thread writes it.
+#
+# **AND WHICH BYTES A BIT-FIELD HOLDS IS C'S ANSWER TOO, never a number of
+# this machine's** (defect 2383): the same `--` sets every byte a named
+# bit-field reaches, so those bytes leave the gaps where C sees them set; the
+# table holds members alone, `offsetof` and `sizeof`, and the emitted C is one
+# text on every target. Until then each bit-field's byte was read from the
+# layout dump and written as a number, `(0) + 1` under the Itanium layout and
+# `(0) + 4` under the MSVC one, and C compiled for a target the C was not
+# written on would zero the byte its bit-field holds. **A record holding a
+# `const` bit-field gets no table**: C can be asked no byte of it and no line
+# may write it, so the safe direction is to write nothing, and no program
+# holds such a record, since C assigns no struct with a `const` member
+# (`ffi_const_field` at the top, clang beneath it).
 #
 # **WHAT IT LEAVES, each filed as an issue at the landing**: a C array of structs the binding does not declare as a fixed array of a group
 # record, covered whole (the dump prints it as one line); the bytes past a
@@ -46,27 +58,28 @@
 # unusual layouts went unread.
 
 use ast
-use source
-use handles
 use check/state
 use check/table
+use emit/aggregate
+use emit/ctype
+use emit/large_value
+use emit/lend_count
+use emit/mangle
+use emit/membership
+use emit/writer
+use handles
 use ir
 use ir/containers
-use emit/writer
-use emit/ctype
-use emit/mangle
-use emit/aggregate
-use emit/lend_count
-use emit/membership
-use emit/large_value
+use source
 
 # What the members of one record hold, as spans of the outer type, and the
 # arrays of records among them, whose elements are zeroed one by one.
 record Held
     spans: [str]
-    # Each named bit-field's bytes, after `spans` in the table, and its C name.
-    bitspans: [str]
+    # Each named bit-field's C name, and the most bytes they can reach between
+    # them (`membership.bytes_reached`), which sizes their masks.
     bits: [str]
+    room: i64
     arrays: [Nested]
     # The C names a layout dump spelled in `spans`, each a member's own name,
     # which no header macro may rewrite (`guarded`).
@@ -139,9 +152,9 @@ function bit_table(kind: str, decl: i64) -> str
 # holds, element by element. None where the record has no table.
 function passes(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, base: str, count: str, depth: i64) -> [str]
     t = ctype.of(names, decl: decl)
-    held = members(c, names, s, decls, decl: decl, t: t, prefix: "", at: "0")
+    held = members(c, names, s, decls, decl: decl, t: t, prefix: "")
 
-    if held.is_err() || held.must().spans.len() + held.must().bitspans.len() == 0
+    if held.is_err() || held.must().spans.len() == 0
         return []
     out: [str] @= [
         "hero_pad_fill(" + base + ", sizeof(" + t + "), " + count + ", " + gaps_of(decl) + ", " + count_of(decl) + ");"
@@ -166,15 +179,15 @@ function passes(c: state.Checked, names: ctype.Names, s: source.Source, decls: [
     return out
 
 # What the members of record `decl` hold, as spans of the outer type `t`, the
-# record standing at `prefix` in it (`inner.`), its offset there `at`.
-function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, t: str, prefix: str, at: str) -> Held?
+# record standing at `prefix` in it (`inner.`).
+function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, t: str, prefix: str) -> Held?
     said = names.lend_units[membership.KEY + decl.to_str()]
 
     if said.is_err()
         return fail(code: "none", msg: "the layout round said nothing of this record")
     spans: [str] @= []
-    bitspans: [str] @= []
     bits: [str] @= []
+    room: i64 @= 0
     arrays: [Nested] @= []
     bare: {str: bool} @= {}
 
@@ -193,21 +206,12 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
         # A declared field that is another record of the group: its members,
         # under its path, where the screen vouched for this record.
         if said.must() == membership.DECLARED && inner >= 0 && element == written.must()
-            sub = members(
-                c,
-                names,
-                s,
-                decls,
-                decl: inner,
-                t: t,
-                prefix: path + ".",
-                at: "__builtin_offsetof(" + t + ", " + path + ")"
-            )
+            sub = members(c, names, s, decls, decl: inner, t: t, prefix: path + ".")
 
             if !sub.is_err()
                 added(list: @spans, more: sub.must().spans)
-                added(list: @bitspans, more: sub.must().bitspans)
                 added(list: @bits, more: sub.must().bits)
+                room @ room + sub.must().room
 
                 # ORDER: none — each name is set in another map, whose one
                 # reader sorts it (`guarded`).
@@ -227,7 +231,7 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
             arrays @ arrays.push(Nested(path: path, element: inner))
 
     if said.must() == membership.DECLARED
-        return ok(Held(spans: spans, bitspans: bitspans, bits: bits, arrays: arrays, bare: bare))
+        return ok(Held(spans: spans, bits: bits, room: room, arrays: arrays, bare: bare))
     d = ctype.of(names, decl: decl)
 
     for entry in membership.entries(said.must())
@@ -244,21 +248,19 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
                 list: @spans,
                 more: ["__builtin_offsetof(" + t + ", " + prefix + rest + ")", "sizeof(" + d + ") - __builtin_offsetof(" + d + ", " + rest + ")"]
             )
-        else if entry[0] == 'n' || entry[0] == 'c'
-            found = membership.bit_entry(rest: rest, at: at)
+        else if entry[0] == 'c'
+            return fail(code: "none", msg: "a const bit-field, whose bytes C names no way to ask")
+        else if entry[0] == 'n'
+            found = membership.bit_entry(rest)
 
             if found.is_err()
                 return fail(code: "none", msg: "a bit-field's entry this reader cannot read")
-
-            if entry[0] == 'c'
-                added(list: @spans, more: found.must().span)
-            else
-                added(list: @bitspans, more: found.must().span)
-                bits @ bits.push(prefix + found.must().path)
+            bits @ bits.push(prefix + found.must().path)
+            room @ room + membership.bytes_reached(found.must().width)
         else
             return fail(code: "none", msg: "an entry of a kind this reader does not know")
 
-    return ok(Held(spans: spans, bitspans: bitspans, bits: bits, arrays: arrays, bare: bare))
+    return ok(Held(spans: spans, bits: bits, room: room, arrays: arrays, bare: bare))
 
 # **A union the screen vouches for is covered whole.** A record bound to a
 # union by one arm (`record UN` over `typedef union { char c; double d; } UN;`
@@ -291,17 +293,11 @@ constant NOWHERE: str
 function span(t: str, path: str) -> [str]
     return ["__builtin_offsetof(" + t + ", " + path + ")", "sizeof(((" + t + " *)0)->" + path + ")"]
 
-# `list` and `more` after it, one list.
-function joined(list: [str], more: [str]) -> [str]
-    out: [str] @= list
-    added(list: @out, more: more)
-    return out
-
 # `more` pushed onto `list`, which is lent, so each push grows it in place
 # (defect 409's spelling, `emit/writer.hero`'s `add_line`). Until defect
-# 2284's repair `members` wrote `spans @ joined(list: spans, more: …)` once a
-# member, and `joined`'s copy of the list it was handed made every member cost
-# all the spans before it: 131,072 leaves of a header's struct, a mebibyte of
+# 2284's repair `members` wrote `spans @ joined(list: spans, more: ...)` once
+# a member, and the copy of the list `joined` was handed made every member
+# cost all the spans before it: 131,072 leaves of a header's struct, a mebibyte of
 # `int64_t` pairs, kept `heroes build` past ten minutes.
 function added(@list: [str], more: [str])
     for one in more

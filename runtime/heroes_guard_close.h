@@ -346,6 +346,7 @@
 #pragma pop_macro("hero_map_set")
 #pragma pop_macro("hero_map_set_at")
 #pragma pop_macro("hero_os_pid")
+#pragma pop_macro("hero_pad_bits")
 #pragma pop_macro("hero_pad_clear")
 #pragma pop_macro("hero_pad_fill")
 #pragma pop_macro("hero_pad_gaps")
