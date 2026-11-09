@@ -36,6 +36,7 @@ use diag
 use cli/deep_types
 use cli/link
 use cli/package_missing
+use cli/library_needs
 
 # What one refusal is read as, printing nothing (defect 2143, so a round's
 # every refused unit can be read before any is told): what tells it where it
@@ -162,6 +163,20 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
 
         if lacked.len() > 0
             return authors(lacked, msg: "a package names a library this machine does not have")
+
+        # A name a library the program links needs and nothing on the line
+        # defines, every undefined name referenced from the program's own
+        # libraries (`cli/library_needs.hero`, defect 2365).
+        needs = library_needs.told(
+            message: message,
+            s: s,
+            decls: art.decls,
+            build: t.build,
+            linked: under.package_flags
+        )
+
+        if needs.len() > 0
+            return authors(needs, msg: "a library this program links needs one it does not link")
 
     # What no reader of clang's words named is the headers' where the unit's
     # opening is refused with them and compiles without them, told on the

@@ -1,0 +1,244 @@
+# Who a refused link says refers to each name it found no definition of
+# (design.md §4.19; defect 2365, 2026-11-08): every undefined name a linker
+# reports, each with the file whose code refers to it, read from the
+# linker's own words. `cli/library_needs.hero` asks it whether every such
+# file is a library the program links, and tells the author where it is.
+#
+# **Where each linker says who refers to the name**, measured 2026-11-08 by
+# lane b26-link, GNU ld 2.44 and `ld.lld` 22 in the `heroes-linux-arm64`
+# container and ld64-27106.1 on this Mac:
+#
+#     GNU ld  /usr/bin/ld: a/libtop.a(top.o): in function `top_value':
+#             top.c:(.text+0x8): undefined reference to `base_helper'
+#             /usr/bin/ld: a/libtop.a(top.o):(.data+0x0): undefined reference to `base_var'
+#             /usr/bin/ld: s/libtop.so: undefined reference to `base_helper'
+#     ld64      "_base_helper", referenced from:
+#                   _top_value in libtop.a[2](top.o)
+#     ld.lld  ld.lld: error: undefined symbol: base_helper
+#             >>> referenced by top.c
+#             >>>               top.o:(top_value) in archive a/libtop.a
+#             ld.lld: error: undefined reference: base_helper
+#             >>> referenced by s/libtop.so (disallowed by --no-allow-shlib-undefined)
+#
+# and `lld-link` writes `>>> referenced by top.lib(top.obj):(top_value)`
+# under its `undefined symbol` line (the same container, clang's
+# `--target=aarch64-pc-windows-msvc`). GNU ld names the file once per
+# function, on its `in function` line, so a source location under it is that
+# file's; it names the file on the line itself for a shared library and for a
+# reference outside any function, the program's own object's included
+# (`/tmp/m.o:(.data+0x0)`). MSVC's `link.exe` is unrun with a library that
+# needs another, so its report is placed nowhere. ld64 links a dylib that
+# leaves a name undefined (measured), so on macOS only an archive's
+# reference is reported.
+
+use emit/ffi_build
+use emit/ffi_lookup
+use cli/strings
+
+# One reference a refused link reports: the undefined name, and who refers
+# to it as the linker named it with its decorations taken off (`placed`), ""
+# where the report names nobody this reader can place.
+record Reference
+    symbol: str
+    file: str
+
+# Every reference `message` reports, each undefined name with who refers to
+# it, in the linker's order; a name an ld64 or lld report opens and lists no
+# placed reference under is a reference to nobody (`file: ""`), so that a
+# reader asking who refers to every name finds one it cannot place.
+function references(message: str) -> [Reference]
+    out: [Reference] @= []
+
+    # GNU ld's file of the function it last named; the name an ld64 or lld
+    # report is listing the references of, and whether one was placed.
+    context: str @= ""
+    open: str @= ""
+    placed_one: bool @= true
+
+    for line in ffi_lookup.lines(text: message)
+        within = before(text: line, marker: ": in function `")
+
+        if !within.is_err()
+            context @ placed(unprefixed(within.must()))
+            continue
+        gnu = before(text: line, marker: ": undefined reference to `")
+
+        if !gnu.is_err()
+            here = placed(unprefixed(gnu.must()))
+            file: str @= context
+
+            if is_file(here)
+                file @ here
+            out @ out.push(Reference(symbol: ffi_build.undefined_symbol(line).default(""), file: file))
+            continue
+        listing = listed_symbol(line)
+
+        if !listing.is_err()
+            if !placed_one
+                out @ out.push(Reference(symbol: open, file: ""))
+            open @ listing.must()
+            placed_one @ false
+            continue
+
+        if open != ""
+            by = referrer(line)
+
+            if !by.is_err()
+                out @ out.push(Reference(symbol: open, file: by.must()))
+                placed_one @ true
+
+    if !placed_one
+        out @ out.push(Reference(symbol: open, file: ""))
+    return out
+
+# The name an ld64, `ld.lld` or `lld-link` report opens with, whose references
+# the lines under it list: ld64's quoted `referenced from:` line, the lld
+# family's `undefined symbol:`, and `ld.lld`'s `undefined reference:` for a
+# shared library's.
+function listed_symbol(line: str) -> str?
+    if ffi_lookup.has(text: line, needle: "referenced from:") || ffi_lookup.has(text: line, needle: "error: undefined symbol: ")
+        return ffi_build.undefined_symbol(line)
+    shared = ffi_lookup.after(text: line, marker: "error: undefined reference: ")
+
+    if shared.is_err()
+        return fail(code: "none", msg: "no report opens here")
+    return ok(strings.trimmed(shared.must()))
+
+# Who a line under an ld64 or lld report says refers to its name, placed; an
+# error where the line is no reference, or names a source file alone, as
+# lld's `>>> referenced by top.c` does above the line naming the object.
+function referrer(line: str) -> str?
+    archive = ffi_lookup.after(text: line, marker: " in archive ")
+
+    if !archive.is_err()
+        return ok(placed(archive.must()))
+    text: str @= ""
+    lld = ffi_lookup.after(text: line, marker: ">>> ")
+
+    if !lld.is_err()
+        text @ strings.trimmed(lld.must())
+        by = ffi_lookup.after(text: text, marker: "referenced by ")
+
+        if !by.is_err()
+            text @ by.must()
+    else
+        in_file = last_after(text: line, marker: " in ")
+
+        if !strings.starts_with(text: line, prefix: "    ") || in_file.is_err()
+            return fail(code: "none", msg: "not a line of a report")
+        text @ in_file.must()
+    file = placed(text)
+
+    if !is_file(file)
+        return fail(code: "none", msg: "a source file, not the file referring")
+    return ok(file)
+
+# The file `text` names with what a linker writes after it taken off: an
+# archive member's `(top.o)`, ld64's `[2]`, a section's or a function's
+# `:(.text+0x8)` or `:(top_value)`, and `ld.lld`'s ` (disallowed by ...)`.
+function placed(text: str) -> str
+    t: str @= strings.trimmed(text)
+
+    while true
+        cs = t.chars()
+
+        if cs.len() == 0 || cs[cs.len() - 1] != ")" && cs[cs.len() - 1] != "]"
+            return t
+        opening: str @= "("
+
+        if cs[cs.len() - 1] == "]"
+            opening @ "["
+        at = last_index(letters: cs, ch: opening)
+
+        if at <= 0
+            return t
+        cut: i64 @= at
+
+        if cs[at - 1] == ":"
+            cut @ at - 1
+        t @ strings.trimmed(cs.slice(from: 0, to: cut).join(""))
+
+# Whether `file`, placed, is a file a linker read, an object or a library,
+# rather than a source file and its line.
+function is_file(file: str) -> bool
+    for suffix in [".o", ".obj", ".a", ".so", ".lib", ".dylib", ".tbd"]
+        if strings.ends_with(text: file, suffix: suffix)
+            return true
+
+    return strings.holds(text: file, needle: ".so.")
+
+# What GNU ld wrote after its own name, `/usr/bin/ld: ` and its kin: the
+# text after the last `: `, or the text whole where it holds none. A path
+# holds `:` and never `: ` in the reports measured, `/w/m/top.c:4:(...)`.
+function unprefixed(text: str) -> str
+    return last_after(text: text, marker: ": ").default(text)
+
+# The text before the first `marker`, an error where it stands nowhere.
+function before(text: str, marker: str) -> str?
+    at = ffi_lookup.char_index_of(text: text, needle: marker)
+
+    if at.is_err()
+        return fail(code: "none", msg: "marker not present")
+    return ok(text.chars().slice(from: 0, to: at.must()).join(""))
+
+# The text after the last `marker`, an error where it stands nowhere.
+function last_after(text: str, marker: str) -> str?
+    rest: str @= text
+    found: bool @= false
+
+    while true
+        next = ffi_lookup.after(text: rest, marker: marker)
+
+        if next.is_err()
+            if !found
+                return fail(code: "none", msg: "marker not present")
+            return ok(rest)
+        rest @ next.must()
+        found @ true
+
+# The index of the last `ch` among `letters`, -1 where there is none.
+function last_index(letters: [str], ch: str) -> i64
+    at: i64 @= -1
+
+    for i in range(from: 0, to: letters.len())
+        if letters[i] == ch
+            at @ i
+
+    return at
+
+## Tests
+
+test "every linker's report of a library's undefined name is read with who refers to it (defect 2365)"
+    gnu = "internal error: linking failed:\n/usr/bin/ld: a/libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n/usr/bin/ld: a/libtop.a(top.o): in function `top_more':\ntop.c:(.text+0x24): undefined reference to `base_two'\n/usr/bin/ld: top.c:(.text+0x2c): undefined reference to `base_helper'\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    assert references(gnu) == [Reference(symbol: "base_helper", file: "a/libtop.a"), Reference(symbol: "base_two", file: "a/libtop.a"), Reference(symbol: "base_helper", file: "a/libtop.a")]
+    ld64 = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_value in libtop.a[2](top.o)\n      _main in m3-f5a527.o\n  \"_base_two\", referenced from:\n      _top_more in libtop.a[2](top.o)\nld: symbol(s) not found for architecture arm64\n"
+    assert references(ld64) == [Reference(symbol: "base_helper", file: "libtop.a"), Reference(symbol: "base_helper", file: "m3-f5a527.o"), Reference(symbol: "base_two", file: "libtop.a")]
+    lld = "ld.lld: error: undefined symbol: base_helper\n>>> referenced by top.c\n>>>               top.o:(top_value) in archive a/libtop.a\n>>> referenced by m3.c\n>>>               /tmp/m3-55a8f7.o:(main)\n\nld.lld: error: undefined reference: base_two\n>>> referenced by s/libtop.so (disallowed by --no-allow-shlib-undefined)\n"
+    assert references(lld) == [Reference(symbol: "base_helper", file: "a/libtop.a"), Reference(symbol: "base_helper", file: "/tmp/m3-55a8f7.o"), Reference(symbol: "base_two", file: "s/libtop.so")]
+
+    # `lld-link`'s archive member; GNU ld's shared library, a reference outside
+    # any function, a `-g` build's source line under an unprefixed context.
+    assert references("lld-link: error: undefined symbol: base_helper\n>>> referenced by top.lib(top.obj):(top_value)\n") == [Reference(symbol: "base_helper", file: "top.lib")]
+    assert references("/usr/bin/ld: s/libtop.so: undefined reference to `base_helper'\n") == [Reference(symbol: "base_helper", file: "s/libtop.so")]
+    assert references("/usr/bin/ld: ./libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n/usr/bin/ld: /tmp/m-83ddc3.o:(.data+0x0): undefined reference to `main_var'\n") == [Reference(symbol: "base_helper", file: "./libtop.a"), Reference(symbol: "main_var", file: "/tmp/m-83ddc3.o")]
+    assert references("g/libtop.a(topg.o): in function `top_value':\n/w/m/top.c:4:(.text+0x8): undefined reference to `base_helper'\n") == [Reference(symbol: "base_helper", file: "g/libtop.a")]
+
+    # A name whose report lists nobody this reader can place is a reference to
+    # nobody, and words that are no report are none.
+    assert references("lld-link: error: undefined symbol: base_helper\n") == [Reference(symbol: "base_helper", file: "")]
+    assert references("ld: library 'top' not found\n").len() == 0
+
+test "a file is read whole from what a linker writes after it (defect 2365)"
+    assert placed("a/libtop.a(top.o)") == "a/libtop.a"
+    assert placed("libtop.a[2](top.o)") == "libtop.a"
+    assert placed("top.lib(top.obj):(top_value)") == "top.lib"
+    assert placed("./libtop.a(top.o):(.data+0x0)") == "./libtop.a"
+    assert placed("s/libtop.so (disallowed by --no-allow-shlib-undefined)") == "s/libtop.so"
+    assert placed("top.c:(.text+0x8)") == "top.c"
+    assert placed("") == ""
+    assert unprefixed("/usr/bin/ld: top.c:(.text+0x2c)") == "top.c:(.text+0x2c)"
+    assert unprefixed("/w/m/top.c:4:(.text+0x8)") == "/w/m/top.c:4:(.text+0x8)"
+    assert is_file("a/libtop.a") && is_file("/tmp/m.o") && is_file("libtop.so.1")
+    assert !is_file("top.c") && !is_file("/w/m/top.c:4")
+    assert last_after(text: "_f in x in libtop.a", marker: " in ").must() == "libtop.a"
+    assert last_after(text: "none", marker: " in ").is_err()
