@@ -2376,8 +2376,8 @@ struct's member and a group's; it names every record or library it is about in a
 name, never the order the compiler walked; and a note cites the specification by its own section,
 *spec § 13*, never this document's, which a reader holding the specification alone takes for its
 own section 4. (On 2026-11-09, 49 message lines in 25 files of `selfhost/` still cited this
-document's sections, counted by `git grep -n -E '"[^"]*\(§[0-9]+\.[0-9]+\)[^"]*"' -- selfhost`; a
-defect drafted at panel 239 and not yet filed owes their repair, and this clause leaves with it.)
+document's sections, counted by `git grep -n -E '"[^"]*\(§[0-9]+\.[0-9]+\)[^"]*"' -- selfhost`;
+defect 2377 owes their repair, and this clause leaves with it.)
 
 **Fixes are tagged `certain | guess`, and only `certain` fixes are machine-applicable.** The
 example above shows why: "convert: `to_i64(user.id)`" may be right, but "change save's signature to
