@@ -1,0 +1,144 @@
+# Whether the two files that define a name a group naming no library binds,
+# the one the link took and the one the platform alone answers it from, are
+# one C library's, asked of the version each defines the name under
+# (design.md §4.19, §1.12; defect 2395; panel 239's R1, whose words are that
+# `link "m"` and glibc's pairs pass). `cli/supplied_judged.hero`'s
+# `platform_kept` compares the files the links name; this reads the files.
+#
+# **The premise, a falsifiable claim**: a C library shipped as several
+# shared files defines a name two of them hold under one symbol version of
+# its own, and a library a program builds does not. Measured in the
+# `heroes-linux-arm64` image with GNU nm 2.44, 2026-11-09: glibc 2.41's
+# `libc.so.6` and `libm.so.6` both define `ldexp@@GLIBC_2.17` (and `frexp`
+# and `scalbn` alike), and a `libq.so` clang built defines `puts` with no
+# version. So a binding the link took from a library the program names is
+# the C library's where the file the platform alone answers it from defines
+# it under the same default version, `name@@version`; with no version on
+# either side, or two different ones, it stays refused, as `interpose`'s
+# `puts` of `libq` does. **Where the premise dies** one way, glibc giving a
+# name of `libm.so.6` another version than `libc.so.6`'s, the case
+# `run/fixedbugs-2395-ldexp-...` is refused again on Linux: that is the
+# test that fires. The other way, a library no part of the C library that
+# defines a name under the C library's own version, says by its version
+# script that it is one, on purpose.
+#
+# The versions are read by `nm -D --with-symbol-versions`, binutils', which
+# ships beside the GNU ld the platform links with, asked only of ELF shared
+# files and only on a refusal's path; an `nm` that cannot run or cannot read
+# the file answers no version, so the binding stays refused, the loud way.
+
+use cli/link_flags
+use cli/process
+use cli/publish
+use cli/strings
+use cli/supplied_judged
+use cli/supplied_names
+use cli/toolchain
+
+# `found` without the refusal of each lone binding that both orders took
+# from one shared file, which the platform alone answers from another shared
+# file defining the name under the same version.
+function one_library(t: toolchain.Toolchain, found: [str], alone: [supplied_judged.Bound], first: {str: str}, turned: {str: str}, platform: {str: str}) -> [str]
+    if link_flags.apple(t.target) || link_flags.msvc(t.target)
+        return found
+    kept: [str] @= found
+    listings: {str: str} @= {}
+
+    for b in alone
+        here = first[b.name].default("")
+        there = turned[b.name].default(here)
+        theirs = platform[b.name].default("")
+
+        if !supplied_judged.flagged(kept, decl: b.decl) || here != there || here == theirs || !shared(here) || !shared(theirs)
+            continue
+
+        for file in [here, theirs]
+            if listings[file].is_err()
+                listings[file] @ symbols(t, file: file)
+
+        mine = version_of(listing: listings[here].default(""), name: b.name)
+
+        if mine != "" && mine == version_of(listing: listings[theirs].default(""), name: b.name)
+            kept @ supplied_judged.without_decl(kept, decl: b.decl)
+
+    return kept
+
+# Whether `file` is an ELF shared library, `lib<name>.so` or `.so.<version>`,
+# as GNU ld's trace names it; a member of an archive is `lib.a(x.o)`.
+function shared(file: str) -> bool
+    if file == "" || supplied_names.is_regular(file)
+        return false
+    return strings.ends_with(text: file, suffix: ".so") || strings.holds(text: file, needle: ".so.")
+
+# The default version `listing`, `nm -D`'s words, defines `name` under, ""
+# where it defines it under none or does not define it: a line of three
+# words, the address, a type that is not `U`, and `name@@version`.
+function version_of(listing: str, name: str) -> str
+    want = name + "@@"
+
+    for line in supplied_names.split_on(field: listing, separator: "\n")
+        words: [str] @= []
+
+        for word in supplied_names.split_on(field: line, separator: " ")
+            if word.len() > 0
+                words @ words.push(word)
+
+        if words.len() != 3 || words[1] == "U" || !strings.starts_with(text: words[2], prefix: want)
+            continue
+        return words[2].slice(from: want.len(), to: words[2].len())
+
+    return ""
+
+# What `nm -D --with-symbol-versions` says of `file`, "" where it could not
+# run or refused the file; its words are written under `build/` and removed.
+function symbols(t: toolchain.Toolchain, file: str) -> str
+    base = publish.private_name(t.build + "/supplied-versions")
+    out = base + ".out.txt"
+    err = base + ".err.txt"
+    ran = process.run(program: "nm", words: ["nm", "-D", "--with-symbol-versions", file], out: out, err: err)
+    listing = read_file(out).default("")
+    publish.discard(out)
+    publish.discard(err)
+
+    if !ran.started || ran.code != 0
+        return ""
+    return listing
+
+## Tests
+
+test "a name is read under its default version, never a reference's or another name's (defect 2395)"
+    listing = "0000000000031d20 W ldexp@@GLIBC_2.17\n0000000000041c00 W ldexpf@@GLIBC_2.17\n                 U __assert_fail@GLIBC_2.17\n00000000000005d0 T puts\n0000000000012000 T frexp@GLIBC_2.2\n"
+    assert version_of(listing: listing, name: "ldexp") == "GLIBC_2.17"
+    assert version_of(listing: listing, name: "puts") == ""
+    assert version_of(listing: listing, name: "__assert_fail") == ""
+    assert version_of(listing: listing, name: "frexp") == ""
+    assert version_of(listing: "", name: "ldexp") == ""
+
+test "only an ELF shared file is asked its versions (defect 2395)"
+    assert shared("/lib/aarch64-linux-gnu/libm.so.6")
+    assert shared("/w/libq.so")
+    assert !shared("/w/libq.a(puts_q.o)")
+    assert !shared("/usr/lib/system/libsystem_m.tbd")
+    assert !shared("")
+
+test "a lone binding whose files answer no version, or are not read on this linker, stays refused (defect 2395)"
+    none: [str] = []
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    found = [
+        supplied_judged.marker(kind: "bound", decl: 3, name: "ldexp", file: "/w/libm.so.6", library: "m", order: "written")
+    ]
+    first: {str: str} @= {}
+    first["ldexp"] @ "/w/libm.so.6"
+    platform: {str: str} @= {}
+    platform["ldexp"] @ "/w/libc.so.6"
+    turned: {str: str} = {}
+    got = one_library(
+        t,
+        found: found,
+        alone: [supplied_judged.Bound(name: "ldexp", decl: 3, own: none)],
+        first: first,
+        turned: turned,
+        platform: platform
+    )
+
+    assert got == found

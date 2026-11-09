@@ -7,9 +7,12 @@
 # names supplies, in any order asked, or that two libraries the program
 # names define in the probe that loads every library file whole; a name of
 # a group naming no library that a library of the program answers where the
-# platform alone answers it too; and a name the runtime calls that a library
-# of the program supplies, unless a group of that library binds it, the
-# author's own word that an allocator replaces `malloc` on purpose. **What is
+# platform alone answers it too, from another file and not under the same
+# version (`cli/supplied_versions.hero`: glibc's `ldexp` in `libm.so.6` and
+# `libc.so.6` is one C library's; defect 2395); and a name the runtime
+# calls that a library of the program supplies, unless a group of that
+# library binds it, the author's own word that an allocator replaces
+# `malloc` on purpose. **What is
 # never judged**: a library the program does not name, so `link "m"` taken
 # from Apple's `libsystem_m.tbd` and `link "pthread"` from glibc's
 # `libc.so.6` pass with no list of the platform's libraries.

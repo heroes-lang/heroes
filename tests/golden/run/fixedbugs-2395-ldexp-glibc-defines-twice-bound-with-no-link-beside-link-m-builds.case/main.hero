@@ -1,0 +1,20 @@
+# fixedbugs, defect 2395, lane b27-libm, 2026-11-09: a name glibc defines in
+# two of its own files, bound with no `link` beside a module that links `m`,
+# builds at every level.
+#
+# glibc defines `ldexp` in `libc.so.6` and in `libm.so.6`, both under
+# `GLIBC_2.17` on Linux arm64. `pair` binds it naming no library, and
+# `mathy` links `m`, so the link takes it from `libm.so.6`, which comes
+# before the C library on the line, and the platform alone from
+# `libc.so.6`: two files, one C library. Panel 239's R1 says glibc's pairs
+# pass; until the repair this program was refused `ffi_defined_elsewhere`
+# on Linux at `-O0` and `-O2`, as `libm.so.6` were another library
+# interposing the C library's `ldexp`. The two files are asked the version
+# each defines the name under (`cli/supplied_versions.hero`), and one
+# version is one C library's.
+use mathy
+use pair
+
+function main()
+    print(pair.scaled())
+    print(mathy.root())

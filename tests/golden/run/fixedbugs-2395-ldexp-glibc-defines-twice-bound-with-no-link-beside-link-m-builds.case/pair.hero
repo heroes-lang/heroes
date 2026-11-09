@@ -1,0 +1,6 @@
+# A module binding `ldexp` from the C library, naming no library.
+extern "math.h"
+    function ldexp(x: f64, e: i32) -> f64
+
+function scaled() -> f64
+    return ldexp(x: 1.5, e: 2)
