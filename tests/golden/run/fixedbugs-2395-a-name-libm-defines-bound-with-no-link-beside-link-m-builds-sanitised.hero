@@ -1,0 +1,22 @@
+# fixedbugs, defect 2395, lane b27-libm, 2026-11-09: a name only `libm`
+# defines, bound with no `link` beside a group that links `m`, builds at
+# every level, the sanitised ones included.
+#
+# On glibc `fma` is `libm.so.6`'s alone. Panel 239's R1 asks a binding of a
+# group naming no library whether a library the program names supplies it
+# where the platform alone does too, two definitions; and under `--sanitize`
+# clang's driver links `libm.so.6` for its runtime, so the platform alone
+# answered `fma` from the very file the program's `link "m"` reached, and a
+# correct program was refused `ffi_defined_elsewhere` on Linux at both
+# sanitised levels. One file answering both is one definition. `fma` is
+# rounded once by its definition, so `7.0` is exact on every C library.
+
+extern "math.h" link "m"
+    function sqrt(x: f64) -> f64
+
+extern "math.h"
+    function fma(x: f64, y: f64, z: f64) -> f64
+
+function main()
+    print(fma(x: 2.0, y: 3.0, z: 1.0))
+    print(sqrt(x: 16.0))
