@@ -256,3 +256,20 @@ Milestone close — the checklist (this is its only copy):
   still judged the tag before it, and `m-thesis-harness` stood over two
   defects its own placing aged;
 - site build log: only when the author asks (`site/README.md`).
+- **the worktrees the milestone left, removed once the push and the tag stand**
+  (author instruction 2026-11-09, meant as: *plan a way to clean the worktrees
+  no longer used and already merged*). `.claude/rules/records.md` § Working in
+  lanes already asked a lane removed *in the same session*, and on the evening
+  this bullet was written 18 worktrees stood under `.claude/worktrees/` that
+  every one of them had left behind, two of rounds at 5 GB each. Each worktree
+  is measured, never recalled, by three tests run just before it goes: its
+  HEAD is an ancestor of `origin/main` (`git merge-base --is-ancestor`); it
+  holds no modified tracked file (`git status --porcelain
+  --untracked-files=no` empty); and every untracked file is either already
+  committed byte for byte (`diff -r` against the tree that holds it) or a
+  binary the seed rebuilds. One that passes all three goes by `git worktree
+  remove` (`--force` only past those untracked files) and its branch by `git
+  branch -d`, which refuses a branch that is not merged; one that fails any
+  test is listed with what failed and its removal is asked. A worktree a
+  session still uses, a lane open or a sitting's seat before its synthesis,
+  stays; the scratch folders follow the work that reads them, asked.
