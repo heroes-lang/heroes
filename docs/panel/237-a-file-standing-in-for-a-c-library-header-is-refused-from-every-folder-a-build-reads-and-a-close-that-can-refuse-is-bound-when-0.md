@@ -231,3 +231,19 @@ R4 above names *the trade panel 082's R3 refused once on cost*. In panel 082's f
 cost is its **R2**, *(a) is refused*, which priced the trade at 1.3 to 2.2 times on every keystroke;
 its R3 is the direction it queued, *(b)*, not a refusal. Found by lane p237-land-cli at the landing,
 reading panel 082's file; design.md §4.17 as landed cites R2 and says so. R4's ruling is unchanged.
+
+## Scored at M-package-manager's close, measured 2026-11-09
+
+The compiler-engineer's prediction, the row of the seats' table and the first line of § Predictions
+to score, scored on this Mac (Apple clang 21.0.0) against `1517fae51`, `main` as pushed after batch
+26, with the stage 2 compiler built from that tree (`heroes 0.6.0`, `sources 7dacd1dc37e5b9ed`).
+
+- **Held, both halves.**
+  - *`shadowed.hero` at most 260 lines by `layout`'s count*: `selfhost/cli/shadowed.hero` reads
+    **181** code lines by the seat's own filter, `code_of` of `.claude/rules/verification.md` with
+    `NF > 0`, against 214 at `163912031`.
+  - *A warm build of the two-line program starting exactly 5 clangs*: the seat's
+    `build/ce/two/main.hero` and its counting `build/ce/bin/clang`, both taken from
+    `237-reports/evidence.tar.xz`, first on `PATH`; one cold build, then five warm builds, **5 clang
+    runs in each of the five**, by their words one `-###`, three `-M` and one `-c`; the program
+    prints `1`.
