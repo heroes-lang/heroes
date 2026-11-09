@@ -24,26 +24,35 @@
 #   declaration (`cli/header_meaning.hero`), so a typedef moving between
 #   headers with their order moves no name's reading.
 #
+# **A file that does not compile is still asked the second question** where
+# clang names no two headers (defect 2369, 2026-11-09): the preprocessor
+# reads it all the same, and a macro of a module walked first, which
+# rewrites the binding's own declaration into C clang refuses, is the
+# mistake a module walked after it makes by rewriting only the binding's
+# calls. Both are told at the binding, so the order the modules' names give
+# them (panel 238's R4) never chooses the message; clang's own words are
+# told only where neither question finds a cause.
+#
 # A refusal is `ffi_one_file`, at exit 1, and no file is written.
 
-use source
 use ast
-use diag
-use token
-use ir/containers
-use emit/externs as emit_externs
-use emit/unit_plan
-use cli/toolchain
-use cli/compiling
-use cli/order_trial
-use cli/header_meaning
-use cli/dump_meaning
-use cli/two_ways_ask
-use cli/clang_first
 use cli/caret_bytes
+use cli/clang_first
+use cli/compiling
+use cli/dump_meaning
+use cli/header_meaning
 use cli/header_refused
 use cli/headers_together
+use cli/order_trial
 use cli/package_units
+use cli/toolchain
+use cli/two_ways_ask
+use diag
+use emit/externs as emit_externs
+use emit/unit_plan
+use ir/containers
+use source
+use token
 
 # The refusal of `text`, the one file, or none where it means what the units
 # do.
@@ -76,8 +85,25 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
     if !ran.asked
         return none
 
+    # Two groups' headers clang refuses together, where its note points into
+    # the other's, are told as the two.
     if !ran.compiles
-        return [uncompiled(s, decls, t, said: ran.said, message: ran.refusal)]
+        two = sides_told(s, decls, t, said: ran.said, message: ran.refusal)
+
+        if !two.is_err()
+            return [two.must()]
+
+    # Otherwise a binding that means something else in the one file is told
+    # at the binding, whether the file compiles or not (defect 2369): a
+    # macro of a module walked first rewrites the binding's own declaration
+    # into C clang refuses, a module walked after it rewrites only its
+    # calls, and both are the one mistake. The preprocessor reads a file
+    # that does not compile, so its question is asked either way; the type
+    # and the dump only of one that does.
+    left: [diag.Diagnostic] @= none
+
+    if !ran.compiles
+        left @ [uncompiled(decls, message: ran.refusal)]
     by_module = bound(s, decls)
     asked: [str] @= []
 
@@ -86,12 +112,16 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
             asked @ asked.push(name)
 
     if asked.len() == 0
-        return none
+        return left
     memo: {str: str} @= {}
-    one = compiling.probe_with(t.build, under: whole_under, headers: whole, memo: @memo)
-    theirs = two_ways_ask.answers(t, one, names: asked)
+    theirs: {str: two_ways_ask.Answer} @= {}
+    fused_dump: {str: str}? @= fail(code: "none", msg: "the one file does not compile")
+
+    if ran.compiles
+        one = compiling.probe_with(t.build, under: whole_under, headers: whole, memo: @memo)
+        theirs @ two_ways_ask.answers(t, one, names: asked)
+        fused_dump @ dump_meaning.read_of(t, under: whole_under, headers: fused, names: asked)
     fused_read = header_meaning.read_of(t, under: whole_under, headers: fused, names: asked)
-    fused_dump = dump_meaning.read_of(t, under: whole_under, headers: fused, names: asked)
 
     for plan in differing
         names = by_module[plan.module].default([])
@@ -110,16 +140,18 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 
             if !own_read.is_err() && !fused_read.is_err()
                 read @ header_meaning.differing(one: own_read.must(), two: fused_read.must(), names: names)
-            own_dump = dump_meaning.read_of(
-                t,
-                under: own_under,
-                headers: order_trial.theirs(plan.headers),
-                names: names
-            )
 
-            if !own_dump.is_err() && !fused_dump.is_err()
-                for name in header_meaning.differing(one: own_dump.must(), two: fused_dump.must(), names: names)
-                    read @ read.push(name)
+            if !fused_dump.is_err()
+                own_dump = dump_meaning.read_of(
+                    t,
+                    under: own_under,
+                    headers: order_trial.theirs(plan.headers),
+                    names: names
+                )
+
+                if !own_dump.is_err()
+                    for name in header_meaning.differing(one: own_dump.must(), two: fused_dump.must(), names: names)
+                        read @ read.push(name)
 
             for name in names
                 typed = !mine[name].is_err() && !theirs[name].is_err() && mine[name].must().type != theirs[name].must().type
@@ -129,7 +161,7 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
                         meant_otherwise(s, decls, plan: plan, name: name, fused: fused, typed: typed, mine: type_of(mine, name: name), theirs: type_of(theirs, name: name))
                     ]
 
-    return none
+    return left
 
 # Every function and constant each module's groups bind from a header that is
 # not the compiler's own, by its C name, in written order: one walk of the
@@ -151,40 +183,39 @@ function bound(s: source.Source, decls: [ast.Decl]) -> {str: [str]}
 
     return out
 
-# The one file clang refuses: the two groups' headers it refuses together
-# where its note points into another's (`header_refused.sides`), else its
-# first error on the first group of the program. Its unit is thrown away
-# once compiled (`order_trial.compiled_once`), so it is never compiled again
-# for a caret's name (`cli/caret_bytes.hero`): a name clang's excerpt does
-# not give leaves the reading to its first error, which is the same telling.
-function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, said: str, message: str) -> diag.Diagnostic
+# The one file clang refuses, as the two groups' headers it refuses together
+# where its note points into another's (`header_refused.sides`), or absent.
+# Its unit is thrown away once compiled (`order_trial.compiled_once`), so it
+# is never compiled again for a caret's name (`cli/caret_bytes.hero`): a
+# name clang's excerpt does not give leaves the reading to its first error.
+function sides_told(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, said: str, message: str) -> diag.Diagnostic?
     again: caret_bytes.Again @= caret_bytes.none()
-    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime, @again)
+    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime, @again)?
+    two = header_refused.sides(read)?
+    first: headers_together.Side @= two.one
+    second: headers_together.Side @= two.other
 
-    if !read.is_err()
-        two = header_refused.sides(read.must())
+    if sort([first.header, second.header])[0] != first.header
+        first @ two.other
+        second @ two.one
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_one_file",
+        message: "`--emit-c` writes this program as one file, and in it `" + first.header + "`, the header this group names, and `" + second.header + "`, which another module's group names at " + source.elsewhere(s, here: first.span.start, there: second.span.start) + ", cannot be compiled together: clang refuses them, at " + headers_together.at_line(first) + headers_together.between(first) + " and " + headers_together.at_line(second) + ": " + message,
+        span: first.span
+    )
 
-        if !two.is_err()
-            first: headers_together.Side @= two.must().one
-            second: headers_together.Side @= two.must().other
-
-            if sort([first.header, second.header])[0] != first.header
-                first @ two.must().other
-                second @ two.must().one
-            d: diag.Diagnostic @= diag.new_diagnostic(
-                code: "ffi_one_file",
-                message: "`--emit-c` writes this program as one file, and in it `" + first.header + "`, the header this group names, and `" + second.header + "`, which another module's group names at " + source.elsewhere(s, here: first.span.start, there: second.span.start) + ", cannot be compiled together: clang refuses them, at " + headers_together.at_line(first) + headers_together.between(first) + " and " + headers_together.at_line(second) + ": " + message,
-                span: first.span
+    for side in [first, second]
+        if !side.quoted.is_err()
+            d.notes @ d.notes.push(
+                "`" + side.file + "` line " + side.row.to_str() + " reads `" + side.quoted.must() + "`"
             )
 
-            for side in [first, second]
-                if !side.quoted.is_err()
-                    d.notes @ d.notes.push(
-                        "`" + side.file + "` line " + side.row.to_str() + " reads `" + side.quoted.must() + "`"
-                    )
+    d.notes @ d.notes.push(UNITS)
+    return ok(d)
 
-            d.notes @ d.notes.push(UNITS)
-            return d
+# The one file clang refuses where neither two headers nor a binding's
+# meaning say why: its first error, on the first group of the program.
+function uncompiled(decls: [ast.Decl], message: str) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_one_file",
         message: "`--emit-c` writes this program as one file, which reads every module's headers together, and clang refuses it where each module's unit compiles: " + message,

@@ -20,22 +20,22 @@
 # line `emit/ffi_reach.hero` reads; a build that compiles never asks.
 
 use ast
-use source
 use bytes
+use cli/bound_ask
+use cli/bound_macro
+use cli/bound_names
+use cli/bound_said
+use cli/probing
+use cli/strings
+use cli/toolchain
 use emit/c_text
 use emit/externs as emit_externs
-use emit/macro_guard
 use emit/ffi_asked
 use emit/ffi_lookup
 use emit/ffi_reach
-use cli/toolchain
-use cli/probing
-use cli/bound_said
-use cli/bound_ask
-use cli/bound_names
-use cli/bound_macro
-use cli/strings
+use emit/macro_guard
 use parse
+use source
 
 # What every bound function and constant of each list's groups reaches, the
 # first list's answer kept where two lists bind one name; nothing where
@@ -47,33 +47,44 @@ function reached(t: toolchain.Toolchain, asking: [probing.Probing], s: source.So
         return out
 
     for one in asking
-        headers = bound_names.groups_of(one.headers)
-        names = names_of(s, decls, headers: headers)
+        asked = table_of(t, one: one, s: s, decls: decls)
 
-        if names.len() == 0
+        if asked.is_err()
             continue
-        probe = bound_macro.probe_of(t, one: one)
 
-        if probe.read.is_err()
-            continue
-        lines: [str] @= [macro_guard.FIRST_LINE]
-        lines @ strings.with_all(list: lines, more: c_text.includes(emit_externs.SEEDS))
-        lines @ lines.push(macro_guard.OPEN_LINE)
-        lines @ strings.with_all(list: lines, more: c_text.includes(headers))
-        said = bound_ask.preprocessed(t, probe: probe, text: lines.join("\n") + "\n", mode: ["-E", "-dM"])
-
-        if said.is_err()
-            continue
-        table = bound_said.defines(said.must())
-
-        for name in names
+        for name in asked.must().names
             if out[name].is_err()
-                walked = walk(table, from: name)
+                walked = walk(asked.must().defines, from: name)
 
                 if !walked.is_err()
                     out[name] @ walked.must()
 
     return out
+
+# The functions and constants one header list's groups bind, and clang's
+# macro table where the unit reads them.
+record Table
+    names: [str]
+    defines: {str: bound_said.Define}
+
+# `one`'s table, absent where its groups bind nothing or clang did not
+# answer; `cli/header_needs.hero` asks it of a refused link (defect 2372).
+function table_of(t: toolchain.Toolchain, one: probing.Probing, s: source.Source, decls: [ast.Decl]) -> Table?
+    headers = bound_names.groups_of(one.headers)
+    names = names_of(s, decls, headers: headers)
+
+    if names.len() == 0
+        return fail(code: "none", msg: "these groups bind nothing")
+    probe = bound_macro.probe_of(t, one: one)
+
+    if probe.read.is_err()
+        return fail(code: "none", msg: "the headers were not read")
+    lines: [str] @= [macro_guard.FIRST_LINE]
+    lines @ strings.with_all(list: lines, more: c_text.includes(emit_externs.SEEDS))
+    lines @ lines.push(macro_guard.OPEN_LINE)
+    lines @ strings.with_all(list: lines, more: c_text.includes(headers))
+    said = bound_ask.preprocessed(t, probe: probe, text: lines.join("\n") + "\n", mode: ["-E", "-dM"])?
+    return ok(Table(names: names, defines: bound_said.defines(said)))
 
 # Whether any line of clang's words finds a name undeclared.
 function undeclared_in(message: str) -> bool

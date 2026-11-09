@@ -1,0 +1,13 @@
+# fixedbugs, defect 2372, lane b26-cli, 2026-11-09.
+#
+# The header makes the bound `top2372_alias` a macro for `base2372_alias`,
+# so the call this program's C writes is one to `base2372_alias`, which
+# nothing on the link line defines; the linker names the compiler's own
+# functions as referring to it. Until 2026-11-09 it was *internal error:
+# linking failed* at exit 2; the macro is now read, and told.
+
+extern "fixedbugs-2372-alias.h"
+    function top2372_alias() -> i32  #~ ffi_missing_link
+
+function main()
+    print(top2372_alias())

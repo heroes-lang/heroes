@@ -7,36 +7,37 @@
 # compiler blames itself at exit 2. `build` and `--emit-c` ask it the same
 # question in the same order, which stood written twice there.
 
-use source
-use token
-use emit/ffi
-use emit/ffi_asked
-use cli/io
-use cli/compile
-use cli/toolchain
-use cli/compiling
-use cli/pointee_ask
-use cli/header_ask
-use cli/reach_ask
-use cli/member_ask
-use cli/system_paths
-use cli/probing
-use cli/header_refused
-use cli/header_alone
-use cli/macro_twice
-use cli/header_order
-use cli/name_order
-use cli/inline_only
-use cli/renamed
-use cli/group_file
-use cli/opening_told
 use cli/caret_bytes
+use cli/compile
+use cli/compiling
+use cli/deep_types
+use cli/group_file
+use cli/header_alone
+use cli/header_ask
+use cli/header_needs
+use cli/header_order
+use cli/header_refused
+use cli/inline_only
+use cli/io
+use cli/library_needs
+use cli/link
+use cli/macro_twice
+use cli/member_ask
+use cli/name_order
+use cli/opening_told
+use cli/package_missing
+use cli/pointee_ask
+use cli/probing
+use cli/reach_ask
+use cli/renamed
+use cli/system_paths
+use cli/toolchain
 use cli/units
 use diag
-use cli/deep_types
-use cli/link
-use cli/package_missing
-use cli/library_needs
+use emit/ffi
+use emit/ffi_asked
+use source
+use token
 
 # What one refusal is read as, printing nothing (defect 2143, so a round's
 # every refused unit can be read before any is told): what tells it where it
@@ -177,6 +178,14 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
 
         if needs.len() > 0
             return authors(needs, msg: "a library this program links needs one it does not link")
+
+        # A name a group's header's own text puts in the program's object
+        # and nothing on the line defines (`cli/header_needs.hero`, defect
+        # 2372).
+        texts = header_needs.told(message, s, art.decls, t, asking: asking, linked: under.package_flags)
+
+        if texts.len() > 0
+            return authors(texts, msg: "a header this program binds needs a library it does not link")
 
     # What no reader of clang's words named is the headers' where the unit's
     # opening is refused with them and compiles without them, told on the

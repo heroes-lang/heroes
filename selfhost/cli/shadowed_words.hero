@@ -7,12 +7,12 @@
 # `cli/shadowed.hero` when panel 237's R2 widened that refusal past §11's 300
 # lines.
 
-use diag
-use token
-use cli/stand_in
 use cli/clang_added
 use cli/package_macros
+use cli/stand_in
+use diag
 use emit/clang_place
+use token
 
 constant CODE: str
     "shadowed_header"
@@ -75,17 +75,29 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
         whose_place @ "the runtime's"
         spelled @ "\"" + one.named + "\""
     reads: str @= "which the C this compiler writes reads"
+    read_in: str @= "its file is read"
 
     if one.reader.len() > 0
         reads @ "which " + one.reader + " includes"
+
+    # A file a header only asks after (defect 2356): nothing reads it, and the
+    # question is what it answers.
+    if one.asked
+        reads @ "which a header of this build asks after and never includes"
+        read_in @ "the question finds its file"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: CODE,
-        message: "`" + clang_place.slashed(one.path) + "` stands in for " + whose_header + ", " + reads + ": a folder this build names is searched before " + place + ", so its file is read in " + whose_place + " place",
+        message: "`" + clang_place.slashed(one.path) + "` stands in for " + whose_header + ", " + reads + ": a folder this build names is searched before " + place + ", so " + read_in + " in " + whose_place + " place",
         span: token.Span(start: 0, end: 0)
     )
-    d.notes @ d.notes.push(
-        "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder) + ", and every `#include " + spelled + "` of the build reads what it holds"
-    )
+    moved = "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder)
+
+    if one.asked
+        d.notes @ d.notes.push(
+            "a header asks only whether `" + one.named + "` exists, with `__has_include`, and the file standing in `" + one.folder + "` answers yes in " + whose_place + " place: " + moved + ", and every `__has_include(" + spelled + ")` and `#include " + spelled + "` of the build finds it there"
+        )
+    else
+        d.notes @ d.notes.push(moved + ", and every `#include " + spelled + "` of the build reads what it holds")
 
     # The angle form found a name the platform holds beside the header that
     # asked for it (panel 237's ruling on `sibutil-angled`).
@@ -184,3 +196,25 @@ function remedy(one: clang_added.Added, word: str) -> str
     if one.variable == clang_added.OWN
         return "take `" + word + "` out of clang's configuration file, which adds it to every compile"
     return "take the edit that writes `" + word + "` out of `" + one.variable + "`, or build with `" + one.variable + "` unset"
+
+## Tests
+
+# **A file a header only asks after is told as asked, never as read**
+# (defect 2356): the header's question, the file's answer and who named its
+# folder; a file the unit reads keeps the sentence of what reads it.
+test "a file a header only asks after is told as answering the question, and a file read as read (defect 2356)"
+    asked = header(
+        stand_in.Shadow(path: "./stdio.h", folder: ".", named: "stdio.h", reader: "", beside: false, asked: true),
+        origin: Origin(kind: PROGRAM, name: ""),
+        runtime: false
+    )
+    assert asked.code == CODE
+    assert asked.message == "`./stdio.h` stands in for the C library's `<stdio.h>`, which a header of this build asks after and never includes: a folder this build names is searched before the system's, so the question finds its file in the library's place"
+    assert asked.notes == ["a header asks only whether `stdio.h` exists, with `__has_include`, and the file standing in `.` answers yes in the library's place: rename the file, or move it out of `.`: the folder is this program's own, which every unit searches before the system's, and every `__has_include(<stdio.h>)` and `#include <stdio.h>` of the build finds it there"]
+    read = header(
+        stand_in.Shadow(path: "inc/stdio.h", folder: "inc", named: "stdio.h", reader: "", beside: false, asked: false),
+        origin: Origin(kind: INCLUDE, name: ""),
+        runtime: false
+    )
+    assert read.message == "`inc/stdio.h` stands in for the C library's `<stdio.h>`, which the C this compiler writes reads: a folder this build names is searched before the system's, so its file is read in the library's place"
+    assert read.notes == ["rename the file, or move it out of `inc`: `--include` names that folder, and every `#include <stdio.h>` of the build reads what it holds"]
