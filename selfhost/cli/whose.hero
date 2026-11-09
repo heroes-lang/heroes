@@ -7,36 +7,37 @@
 # compiler blames itself at exit 2. `build` and `--emit-c` ask it the same
 # question in the same order, which stood written twice there.
 
-use source
-use token
-use emit/ffi
-use emit/ffi_asked
-use cli/io
-use cli/compile
-use cli/toolchain
-use cli/compiling
-use cli/pointee_ask
-use cli/header_ask
-use cli/reach_ask
-use cli/member_ask
-use cli/system_paths
-use cli/probing
-use cli/header_refused
-use cli/header_alone
-use cli/macro_twice
-use cli/header_order
-use cli/name_order
-use cli/inline_only
-use cli/renamed
-use cli/group_file
-use cli/opening_told
 use cli/caret_bytes
+use cli/compile
+use cli/compiling
+use cli/deep_types
+use cli/group_file
+use cli/header_alone
+use cli/header_ask
+use cli/header_order
+use cli/header_refused
+use cli/inline_only
+use cli/io
+use cli/library_needs
+use cli/link
+use cli/macro_twice
+use cli/member_ask
+use cli/name_order
+use cli/opening_told
+use cli/package_missing
+use cli/pointee_ask
+use cli/probing
+use cli/reach_ask
+use cli/renamed
+use cli/supplied_words
+use cli/system_paths
+use cli/toolchain
 use cli/units
 use diag
-use cli/deep_types
-use cli/link
-use cli/package_missing
-use cli/library_needs
+use emit/ffi
+use emit/ffi_asked
+use source
+use token
 
 # What one refusal is read as, printing nothing (defect 2143, so a round's
 # every refused unit can be read before any is told): what tells it where it
@@ -105,10 +106,15 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
     if header.len() > 0
         return authors(header, msg: "a header this program binds does not compile")
 
-    # A function the linker found no definition of whose header defines it
-    # only `inline` (defect 562, `cli/inline_only.hero`), told before the
-    # reading of a missing `link` would tell it as one.
+    # A C name another library than its group's supplies (`cli/supplied.hero`,
+    # defect 2363), then a function the linker found no definition of whose
+    # header defines it only `inline` (defect 562, `cli/inline_only.hero`),
+    # told before the reading of a missing `link` would tell it as one.
     if code == link.REFUSED
+        elsewhere = supplied_words.told(message, s, art.decls)
+
+        if elsewhere.len() > 0
+            return authors(elsewhere, msg: "a C name is defined by another library than its group's")
         inline = inline_only.told(message, s, art.decls, t, asking: asking)
 
         if inline.len() > 0

@@ -1730,6 +1730,331 @@ test "a package whose -l this machine has no library for is told at its string (
 
     assert !shell.remove_tree(scratch).is_err()
 
+# PANEL 239's R1, asked of the compiler itself (defects 2363 and 2378): a C
+# name a group binds that a library the program names for another group
+# defines too, or a C library's name such a library defines again, is
+# refused `ffi_defined_elsewhere` at exit 1 on the binding in every order of
+# the libraries, where the program was built at exit 0 bound by the order: a
+# wrong value, or a memory fault where the other definition takes another
+# signature (Bus error on this Mac, SIGSEGV on Linux arm64, 2026-11-09).
+# Since panel 238's walk (its R2) the libraries stand in the order of their
+# modules' names, so a program is asked as written, with its `use` lines the
+# other way round (one text, byte for byte), and with its group's module
+# renamed to sort first, which turns the libraries round (one text but that
+# name). A library is built with clang alone where it is shared and with the
+# machine's `ar` where it is a file of objects; a machine that runs no script,
+# Windows, is not asked here (defect 2376).
+
+# A file a case writes: its name in the case's folder and its text.
+record Written
+    name: str
+    text: str
+
+constant PICKER: str
+    "extern \"a.h\" link \"a\"\n    function pick() -> i32\n    function a_only() -> i32\n\nfunction chosen() -> i32\n    return pick()\n\nfunction only() -> i32\n    return a_only()\n"
+
+# Every file of `files` written into `dir`.
+function wrote(dir: str, files: [Written]) -> ()?
+    for one in files
+        write_file(path: dir + "/" + one.name, text: one.text)?
+
+    return ok()
+
+# A module binding `bound` from `header` in `library`'s group, and answering
+# it from `only`.
+function other_module(header: str, library: str, bound: str) -> str
+    return "extern \"" + header + "\" link \"" + library + "\"\n    function " + bound + "() -> i32\n\nfunction only() -> i32\n    return " + bound + "()\n"
+
+# A program using `first` and `second`, printing `group`'s pick and `other`'s
+# own answer.
+function both_used(first: str, second: str, group: str, other: str) -> str
+    return "use " + first + "\nuse " + second + "\n\nfunction main()\n    print(" + group + ".chosen())\n    print(" + other + ".only())\n"
+
+# Whether this machine is Darwin, whose shared library is a `.dylib`.
+function darwin(scratch: str) -> bool
+    said = shell.run(scratch: scratch, program: "uname", words: ["uname", "-s"])
+    return !said.is_err() && said.must().out == "Darwin\n"
+
+# `lib<library>` in `dir` of `sources`, each a `.c` compiled: a file of
+# objects by `ar`, or shared by clang alone where `shared`.
+function c_library(scratch: str, dir: str, library: str, sources: [Written], shared: bool) -> ()?
+    wrote(dir: dir, files: sources)?
+    words: [str] @= ["ar", "rcs", dir + "/lib" + library + ".a"]
+
+    if shared && darwin(scratch)
+        words @ [
+            "clang"
+            "-dynamiclib"
+            "-install_name"
+            "@rpath/lib" + library + ".dylib"
+            "-o"
+            dir + "/lib" + library + ".dylib"
+        ]
+    else if shared
+        words @ ["clang", "-shared", "-o", dir + "/lib" + library + ".so"]
+
+    for one in sources
+        object = dir + "/" + one.name + ".o"
+        made = shell.run(scratch: scratch, program: "clang", words: ["clang", "-c", "-fPIC", "-O0", dir + "/" + one.name, "-o", object])?
+
+        if made.code != 0
+            return fail(code: "not_built", msg: one.name + ": " + made.err)
+        words @ words.push(object)
+
+    made = shell.run(scratch: scratch, program: words[0], words: words)?
+
+    if made.code != 0
+        return fail(code: "not_built", msg: "lib" + library + ": " + made.err)
+    return ok()
+
+# What the compiler says building `<dir>/<program>.hero` against the
+# libraries in `dir`.
+function built_against(scratch: str, compiler: str, dir: str, program: str) -> shell.Run
+    return shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", dir + "/" + program + ".hero", "--library", dir, "-o", dir + "/" + program + ".out"]
+    ).must()
+
+# A refusal `ffi_defined_elsewhere` saying `headline` on `module`'s first
+# binding, nothing written.
+function refused_at(got: shell.Run, dir: str, module: str, headline: str, program: str) -> bool
+    at = "error[ffi_defined_elsewhere]: " + headline
+    return got.code == 1 && strings.contains(text: got.err, needle: at) && strings.contains(text: got.err, needle: "\n  at " + dir + "/" + module + ".hero:2:5\n") && !strings.contains(text: got.err, needle: "internal error") && !shell.exists(dir + "/" + program + ".out")
+
+# `said` with every `from` written `to`.
+function renamed(said: str, from: str, to: str) -> str
+    return strings.split_text(text: said, separator: from).join(to)
+
+test "a C name two shared libraries define, or one the C library defines, is refused in every order (defect 2363)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/shared2363"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "a", sources: [Written(name: "pick_a.c", text: "int pick(void) { return 1; }\n"), Written(name: "a_only.c", text: "int a_only(void) { return 10; }\n")], shared: true).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "b", sources: [Written(name: "pick_b.c", text: "int pick(void) { return 2; }\n"), Written(name: "b_only.c", text: "int b_only(void) { return 20; }\n")], shared: true).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "q", sources: [Written(name: "q_only.c", text: "int q_only(void) { return 30; }\n"), Written(name: "puts_q.c", text: "int puts(int *out) { *out = 5; return 1; }\n")], shared: true).is_err()
+    assert !wrote(dir: dir, files: [Written(name: "a.h", text: "int pick(void);\nint a_only(void);\n"), Written(name: "b.h", text: "int b_only(void);\n"), Written(name: "q.h", text: "int q_only(void);\n"), Written(name: "picker.hero", text: PICKER), Written(name: "apick.hero", text: PICKER), Written(name: "extra.hero", text: other_module(header: "b.h", library: "b", bound: "b_only")), Written(name: "quiet.hero", text: other_module(header: "q.h", library: "q", bound: "q_only")), Written(name: "printer.hero", text: "extern \"stdio.h\"\n    function puts(s: cstr lent) -> i32\n\nfunction chosen() -> i32\n    return puts(s: \"hello\".cstr())\n"), Written(name: "written.hero", text: both_used(first: "picker", second: "extra", group: "picker", other: "extra")), Written(name: "sorted.hero", text: both_used(first: "extra", second: "picker", group: "picker", other: "extra")), Written(name: "flip.hero", text: both_used(first: "apick", second: "extra", group: "apick", other: "extra")), Written(name: "interpose.hero", text: both_used(first: "printer", second: "quiet", group: "printer", other: "quiet"))]).is_err()
+    headline = "`pick`, bound here from library `a`, is also defined by library `b`, which module `extra` links, and a program holds one `pick`: which of the two its calls reach would rest on the order of the libraries, which no line of the program writes"
+    written = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "written")
+    assert refused_at(written, dir: dir, module: "picker", headline: headline, program: "written")
+    assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/liba.")
+    assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/libb.")
+    sorted = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sorted")
+    assert sorted.err == written.err
+    flip = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "flip")
+    assert refused_at(flip, dir: dir, module: "apick", headline: headline, program: "flip")
+    assert renamed(said: flip.err, from: "apick", to: "picker") == written.err
+    interposed = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "interpose")
+    assert refused_at(
+        interposed,
+        dir: dir,
+        module: "printer",
+        headline: "`puts`, bound here from the C library, would be called from library `q`, which module `quiet` links, not from the C library",
+        program: "interpose"
+    )
+    assert !shell.remove_tree(scratch).is_err()
+
+test "a C name two libraries of objects define is refused in every order, a definition no order loads among them (defect 2363)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/archives2363"
+    assert !shell.mkdir_all(dir).is_err()
+    pick_a = Written(name: "pick_a.c", text: "int pick(void) { return 1; }\n")
+    a_only = Written(name: "a_only.c", text: "int a_only(void) { return 10; }\n")
+    assert !c_library(scratch: scratch, dir: dir, library: "a", sources: [pick_a, a_only], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "w", sources: [Written(name: "pick_w.c", text: "int pick(int *out) { *out = 99; return 2; }\n"), Written(name: "w_only.c", text: "int w_only(void) { return 30; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "b2", sources: [Written(name: "b2.c", text: "int pick(void) { return 2; }\nint b_only(void) { return 20; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "bw", sources: [Written(name: "weak_b.c", text: "__attribute__((weak)) int pick(void) { return 3; }\nint b_only(void) { return 20; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "ab", sources: [Written(name: "ab.c", text: "int pick(void) { return 1; }\nint a_only(void) { return 10; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "bs", sources: [Written(name: "pick_b.c", text: "int pick(void) { return 2; }\n"), Written(name: "b_self.c", text: "int pick(void);\nint b_only(void) { return 10 * pick(); }\n")], shared: false).is_err()
+    picker2 = "extern \"a.h\" link \"ab\"\n    function pick() -> i32\n    function a_only() -> i32\n\nfunction chosen() -> i32\n    return pick()\n"
+    assert !wrote(dir: dir, files: [Written(name: "a.h", text: "int pick(void);\nint a_only(void);\n"), Written(name: "w.h", text: "int w_only(void);\n"), Written(name: "b.h", text: "int b_only(void);\n"), Written(name: "picker.hero", text: PICKER), Written(name: "apick.hero", text: PICKER), Written(name: "picker2.hero", text: picker2), Written(name: "apick2.hero", text: picker2), Written(name: "aux.hero", text: other_module(header: "w.h", library: "w", bound: "w_only")), Written(name: "extra2.hero", text: other_module(header: "b.h", library: "b2", bound: "b_only")), Written(name: "extraw.hero", text: other_module(header: "b.h", library: "bw", bound: "b_only")), Written(name: "extra_s.hero", text: other_module(header: "b.h", library: "bs", bound: "b_only")), Written(name: "sig_written.hero", text: both_used(first: "picker", second: "aux", group: "picker", other: "aux")), Written(name: "sig_sorted.hero", text: both_used(first: "aux", second: "picker", group: "picker", other: "aux")), Written(name: "sig_flip.hero", text: both_used(first: "apick", second: "aux", group: "apick", other: "aux")), Written(name: "one_written.hero", text: both_used(first: "picker", second: "extra2", group: "picker", other: "extra2")), Written(name: "one_flip.hero", text: both_used(first: "apick", second: "extra2", group: "apick", other: "extra2")), Written(name: "weak_written.hero", text: both_used(first: "picker", second: "extraw", group: "picker", other: "extraw")), Written(name: "weak_flip.hero", text: both_used(first: "apick", second: "extraw", group: "apick", other: "extraw")), Written(name: "ab_written.hero", text: both_used(first: "picker2", second: "extra_s", group: "picker2", other: "extra_s")), Written(name: "ab_flip.hero", text: both_used(first: "apick2", second: "extra_s", group: "apick2", other: "extra_s")), Written(name: "self_written.hero", text: both_used(first: "picker", second: "extra_s", group: "picker", other: "extra_s")), Written(name: "self_flip.hero", text: both_used(first: "apick", second: "extra_s", group: "apick", other: "extra_s"))]).is_err()
+    whole = ", and a program holds one `pick`: this call, or that library's own calls to it, would reach the other library's"
+
+    # `sig`, the defect's own: `libw`'s `pick` takes a pointer, and the order
+    # that reached it died by a memory fault.
+    sig = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_written")
+    assert refused_at(
+        sig,
+        dir: dir,
+        module: "picker",
+        headline: "`pick`, bound here from library `a`, is also defined by library `w`, which module `aux` links" + whole,
+        program: "sig_written"
+    )
+    assert built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_sorted").err == sig.err
+    assert renamed(said: built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_flip").err, from: "apick", to: "picker") == sig.err
+
+    # `one`: the other library's file loaded for its own name holds the
+    # duplicate, which Apple's linker takes in both orders and GNU ld refuses
+    # in one; `weak`: a weak definition there, which Apple's linker takes in
+    # both orders and GNU ld in one, so the headline says which.
+    shapes = [
+        ["one", "picker", "a", "b2", "extra2"]
+        ["weak", "picker", "a", "bw", "extraw"]
+        ["self", "picker", "a", "bs", "extra_s"]
+        ["ab", "picker2", "ab", "bs", "extra_s"]
+    ]
+
+    for shape in shapes
+        one = built_against(scratch: scratch, compiler: compiler, dir: dir, program: shape[0] + "_written")
+        opening = "`pick`, bound here from library `" + shape[2] + "`, "
+        assert refused_at(one, dir: dir, module: shape[1], headline: opening, program: shape[0] + "_written")
+        assert strings.contains(
+            text: one.err,
+            needle: "library `" + shape[3] + "`, which module `" + shape[4] + "` links"
+        )
+        flipped = built_against(scratch: scratch, compiler: compiler, dir: dir, program: shape[0] + "_flip")
+        assert renamed(said: flipped.err, from: "apick", to: "picker") == one.err
+
+        # `ab`: Apple's linker loads `libab`'s one file for `a_only` and takes
+        # its `pick` in both orders, while `libbs`'s own call reaches it; the
+        # probe that loads every file whole names both.
+        if shape[0] != "weak"
+            assert strings.contains(
+                text: one.err,
+                needle: opening + "is also defined by library `" + shape[3] + "`, which module `" + shape[4] + "` links" + whole
+            )
+
+    assert !shell.remove_tree(scratch).is_err()
+
+test "a library defining a name the runtime calls or defines is refused, unless a group of it binds that name (defects 2363 and 2378)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/runtime2363"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "r", sources: [Written(name: "r_only.c", text: "int r_only(void) { return 30; }\n"), Written(name: "printf_r.c", text: "int printf(const char *f, ...) { (void)f; return 0; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "hh", sources: [Written(name: "hh.c", text: "int h_only(void) { return 5; }\nvoid hero_print_end(void) { }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "myalloc", sources: [Written(name: "myalloc.c", text: ALLOCATOR)], shared: false).is_err()
+    served = "    function myalloc_served() -> i64\n\nfunction served() -> i64\n    return myalloc_served()\n"
+    assert !wrote(dir: dir, files: [Written(name: "r.h", text: "int r_only(void);\n"), Written(name: "hh.h", text: "int h_only(void);\n"), Written(name: "myalloc.h", text: "#include <stddef.h>\nvoid *malloc(size_t n);\nvoid *calloc(size_t c, size_t n);\nvoid *realloc(void *p, size_t n);\nvoid free(void *p);\nlong myalloc_served(void);\n"), Written(name: "loud.hero", text: other_module(header: "r.h", library: "r", bound: "r_only")), Written(name: "hh_lib.hero", text: other_module(header: "hh.h", library: "hh", bound: "h_only")), Written(name: "runtime_name.hero", text: "use loud\n\nfunction main()\n    print(loud.only())\n    print(7)\n"), Written(name: "hero_name.hero", text: "use hh_lib\n\nfunction main()\n    print(hh_lib.only())\n"), Written(name: "counting.hero", text: "extern \"myalloc.h\" link \"myalloc\"\n" + served), Written(name: "counting2.hero", text: "extern \"myalloc.h\" link \"myalloc\"\n    function malloc(n: u64) -> ptr\n" + served), Written(name: "counting4.hero", text: "extern \"myalloc.h\" link \"myalloc\"\n    function malloc(n: u64) -> ptr\n    function calloc(c: u64, n: u64) -> ptr\n    function realloc(p: ptr, n: u64) -> ptr\n    function free(p: ptr)\n" + served), Written(name: "alloc_main.hero", text: counted(module: "counting")), Written(name: "alloc_bound.hero", text: counted(module: "counting2")), Written(name: "alloc_all.hero", text: counted(module: "counting4"))]).is_err()
+    told = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "runtime_name")
+    assert refused_at(
+        told,
+        dir: dir,
+        module: "loud",
+        headline: "library `r`, which module `loud` links, defines `printf`, of the C library, which the program's own runtime calls: the runtime's calls would reach library `r`'s",
+        program: "runtime_name"
+    )
+
+    # Defect 2378: the runtime's own name, which the link refused as a
+    # duplicate and the compiler told as its own `internal error` at exit 2.
+    named = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "hero_name")
+    assert refused_at(
+        named,
+        dir: dir,
+        module: "hh_lib",
+        headline: "library `hh`, which module `hh_lib` links, defines `hero_print_end`, a name of the program's own runtime, and a program holds one `hero_print_end`",
+        program: "hero_name"
+    )
+    assert strings.contains(
+        text: named.err,
+        needle: "  note: `hero_print_end` is the runtime's own: rename it where library `hh` is built, or link a library that does not define it\n"
+    )
+
+    # An allocator replaces `malloc` on purpose only where its group binds
+    # every name of the C library it defines that the runtime calls.
+    for shape in [["alloc_main", "counting", "`calloc`, `free`, `malloc`"], ["alloc_bound", "counting2", "`calloc`, `free`"]]
+        alloc = built_against(scratch: scratch, compiler: compiler, dir: dir, program: shape[0])
+        assert refused_at(
+            alloc,
+            dir: dir,
+            module: shape[1],
+            headline: "library `myalloc`, which module `" + shape[1] + "` links, defines " + shape[2] + ", of the C library, which the program's own runtime calls",
+            program: shape[0]
+        )
+
+    every_bound = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "alloc_all")
+    assert every_bound.err == "wrote " + dir + "/alloc_all.out\n"
+    assert every_bound.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/alloc_all.out") == "100\ntrue\n"
+    assert !shell.remove_tree(scratch).is_err()
+
+# A program printing a hundred strings' count and whether `module`'s
+# allocator served any of them.
+function counted(module: str) -> str
+    return "use " + module + "\n\nfunction main()\n    items: [str] @= []\n\n    for i in range(from: 0, to: 100)\n        items @ items.push(i.to_str() + \"x\")\n\n    print(items.len())\n    print(" + module + ".served() > 0)\n"
+
+# What `binary` printed on stdout, run with no word.
+function ran_out(scratch: str, binary: str) -> str
+    return shell.run(scratch: scratch, program: binary, words: [binary]).must().out
+
+# A counting allocator replacing the C library's four on purpose, each block
+# served by the system's own (the sitting's `myalloc.c`).
+constant ALLOCATOR: str
+    "#include <stddef.h>\n#ifdef __APPLE__\n#include <malloc/malloc.h>\nstatic void *sys_malloc(size_t n) { return malloc_zone_malloc(malloc_default_zone(), n); }\nstatic void *sys_calloc(size_t c, size_t n) { return malloc_zone_calloc(malloc_default_zone(), c, n); }\nstatic void *sys_realloc(void *p, size_t n) {\n  if (!p) return sys_malloc(n);\n  malloc_zone_t *z = malloc_zone_from_ptr(p);\n  return malloc_zone_realloc(z ? z : malloc_default_zone(), p, n);\n}\nstatic void sys_free(void *p) { if (p) { malloc_zone_t *z = malloc_zone_from_ptr(p); if (z) malloc_zone_free(z, p); } }\n#else\nextern void *__libc_malloc(size_t); extern void *__libc_calloc(size_t, size_t);\nextern void *__libc_realloc(void *, size_t); extern void __libc_free(void *);\nstatic void *sys_malloc(size_t n) { return __libc_malloc(n); }\nstatic void *sys_calloc(size_t c, size_t n) { return __libc_calloc(c, n); }\nstatic void *sys_realloc(void *p, size_t n) { return __libc_realloc(p, n); }\nstatic void sys_free(void *p) { __libc_free(p); }\n#endif\nstatic long served;\nvoid *malloc(size_t n) { served++; return sys_malloc(n); }\nvoid *calloc(size_t c, size_t n) { served++; return sys_calloc(c, n); }\nvoid *realloc(void *p, size_t n) { served++; return sys_realloc(p, n); }\nvoid free(void *p) { sys_free(p); }\nlong myalloc_served(void) { return served; }\n"
+
+test "the probes' answer kept for a warm build is asked again once a library the link read is rebuilt (defect 2363)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/kept2363"
+    assert !shell.mkdir_all(dir).is_err()
+    pick_a = Written(name: "pick_a.c", text: "int pick(void) { return 1; }\n")
+    a_only = Written(name: "a_only.c", text: "int a_only(void) { return 10; }\n")
+    b_only = Written(name: "b_only.c", text: "int b_only(void) { return 20; }\n")
+    assert !c_library(scratch: scratch, dir: dir, library: "a", sources: [pick_a, a_only], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "b", sources: [b_only], shared: false).is_err()
+    assert !wrote(dir: dir, files: [Written(name: "a.h", text: "int pick(void);\nint a_only(void);\n"), Written(name: "b.h", text: "int b_only(void);\n"), Written(name: "apick.hero", text: PICKER), Written(name: "extra.hero", text: other_module(header: "b.h", library: "b", bound: "b_only")), Written(name: "main.hero", text: both_used(first: "apick", second: "extra", group: "apick", other: "extra"))]).is_err()
+
+    # Built twice, the second warm: the libraries stand `a` first, so the
+    # program's own link takes `liba`'s `pick`, and `libb` defines no other.
+    first = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "main")
+    assert first.err == "wrote " + dir + "/main.out\n" && first.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/main.out") == "1\n20\n"
+    warm = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "main")
+    assert warm.err == "wrote " + dir + "/main.out\n" && warm.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/main.out") == "1\n20\n"
+
+    # `libb` rebuilt with a `pick` of its own: the program's link still takes
+    # `liba`'s, and only the probe in the other order reaches `libb`'s, so an
+    # answer kept by the link's words alone would build it.
+    assert !shell.remove_tree(dir + "/libb.a").is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "b", sources: [Written(name: "pick_b.c", text: "int pick(void) { return 2; }\n"), b_only], shared: false).is_err()
+    assert !shell.remove_tree(dir + "/main.out").is_err()
+    rebuilt = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "main")
+    assert refused_at(
+        rebuilt,
+        dir: dir,
+        module: "apick",
+        headline: "`pick`, bound here from library `a`, is also defined by library `b`, which module `extra` links",
+        program: "main"
+    )
+    assert !shell.remove_tree(scratch).is_err()
+
+test "two libraries of the platform a program names, each its group's, build as they did (panel 239)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/platform2363"
+    assert !shell.mkdir_all(dir).is_err()
+
+    # glibc defines `ldexp` in `libc.so.6` and `libm.so.6` both, and
+    # `pthread_self` in `libc.so.6` behind `libpthread.a`; Apple's in
+    # `libsystem_m` and `libsystem_pthread`: libraries the program does not
+    # name, never judged. `pthread_t` is a number on glibc and a pointer on
+    # Darwin, so each asks its own pair.
+    threads: str @= "extern \"pthread.h\" link \"pthread\"\n    function pthread_self() -> u64\n    function pthread_equal(a: u64, b: u64) -> i32\n\nfunction level() -> i32\n    me = pthread_self()\n    return pthread_equal(a: me, b: me)\n"
+    wanted: str @= "1\n16.0\n"
+
+    if darwin(scratch)
+        threads @ "extern \"pthread.h\" link \"pthread\"\n    function pthread_getconcurrency() -> i32\n    function pthread_setconcurrency(level: i32) -> i32\n\nfunction level() -> i32\n    _ = pthread_setconcurrency(level: 0)\n    return pthread_getconcurrency()\n"
+        wanted @ "0\n16.0\n"
+    assert !wrote(dir: dir, files: [Written(name: "threads.hero", text: threads), Written(name: "mathy.hero", text: "extern \"math.h\" link \"m\"\n    function sqrt(x: f64) -> f64\n    function ldexp(x: f64, e: i32) -> f64\n\nfunction scaled() -> f64\n    return ldexp(x: sqrt(x: 4.0), e: 3)\n"), Written(name: "pair.hero", text: "use mathy\nuse threads\n\nfunction main()\n    print(threads.level())\n    print(mathy.scaled())\n")]).is_err()
+    pair = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "pair")
+    assert pair.err == "wrote " + dir + "/pair.out\n"
+    assert pair.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/pair.out") == wanted
+    assert !shell.remove_tree(scratch).is_err()
+
 # DEFECT 2365, asked of the compiler itself: a `link` group's library that
 # needs a name nothing on the link line defines, a `libtop2365.a` whose
 # `top_value` calls a `base_helper` no library of the program has, is told

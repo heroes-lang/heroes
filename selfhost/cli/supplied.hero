@@ -1,0 +1,274 @@
+# Which library supplies each C name a group binds and each name the runtime
+# calls, asked of the link itself, and a second definition among the
+# libraries a program names refused (design.md §4.19, §1.12; defect 2363;
+# panel 239's R1, the ffi-pragmatist's v6, provisional, author ratification
+# pending).
+#
+# **A linked program holds one definition of a C name**, and which of two a
+# call reaches is the libraries' order, or on Apple's linker the names'
+# order too. clang holds a bound function to its header and to nothing else,
+# so `pick` bound from `a.h` with `link "a"` reached `libw`'s `pick` at exit
+# 0, and where `libw`'s takes a pointer the program died by a memory fault
+# (Bus error on this Mac, SIGSEGV on Linux arm64; defect 2363).
+#
+# **Three readings, each the linker's own answer**: the real link, asked who
+# supplied each traced name (`--trace-symbol` on GNU ld and lld, the map on
+# Apple's linker, kept off the author's screen and written under `build/`,
+# never published); and where the program names two or more libraries, the
+# probes `cli/supplied_probe.hero` runs, the libraries in the other order and
+# every library file loaded whole. **The real link reads first**, so the
+# probes' answers are kept by the bytes of every library file it read
+# (`cli/supplied_kept.hero`) and a warm build asks its own link alone; on a
+# refused link the probes are asked all the same, their findings carried in
+# its words. `cli/supplied_judged.hero` decides, `cli/supplied_words.hero`
+# tells.
+#
+# **Unrun on Windows**, whose linker is asked nothing here: the class stays
+# open on that platform (defect 2376).
+
+use ast
+use cli/link_flags
+use cli/link_warning
+use cli/process
+use cli/publish
+use cli/strings
+use cli/supplied_judged
+use cli/supplied_kept
+use cli/supplied_probe
+use cli/supplied_read
+use cli/toolchain
+use emit/externs as emit_externs
+use source
+
+# What the real link is asked and of what: whether it is asked at all, every
+# bound function, every name the runtime needs, the library names the line
+# carries, the line's own words, and where Apple's linker writes its map.
+record Judging
+    asked: bool
+    bound: [supplied_judged.Bound]
+    needs: [str]
+    named: [str]
+    line: [str]
+    map_path: str
+
+function nothing() -> Judging
+    none: [str] = []
+    no_bound: [supplied_judged.Bound] = []
+    return Judging(asked: false, bound: no_bound, needs: none, named: none, line: none, map_path: "")
+
+# Every function a group binds, each with its group's libraries.
+function bindings(s: source.Source, decls: [ast.Decl], package_words: {str: [str]}) -> [supplied_judged.Bound]
+    out: [supplied_judged.Bound] @= []
+    none: [str] = []
+
+    for index in range(from: 0, to: decls.len())
+        match decls[index].kind
+            .function_decl fd =>
+                if !fd.value.is_extern || fd.value.header.is_err()
+                    continue
+                own: [str] @= []
+
+                if !fd.value.library.is_err()
+                    match fd.value.library.must()
+                        .link l     => own @ [emit_externs.unquoted(s, span: l.name)]
+                        .package pk => own @ library_names(
+                            package_words[emit_externs.unquoted(s, span: pk.name)].default(none)
+                        )
+                out @ out.push(
+                    supplied_judged.Bound(name: source.span_text(s, decls[index].name), decl: index, own: own)
+                )
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+# The library names of a list of link words: each `-l` word's name.
+function library_names(words: [str]) -> [str]
+    out: [str] @= []
+
+    for word in words
+        if strings.starts_with(text: word, prefix: "-l") && word.len() > 2
+            out @ out.push(word.slice(from: 2, to: word.len()))
+
+    return out
+
+# The names the real link and the probes trace: every bound name and every
+# name the runtime calls, once each.
+function traced(j: Judging) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for b in j.bound
+        if seen[b.name].is_err()
+            seen[b.name] @ true
+            out @ out.push(b.name)
+
+    for name in j.needs
+        if seen[name].is_err()
+            seen[name] @ true
+            out @ out.push(name)
+
+    return out
+
+# What the link of `line` over `objects` is asked: nothing where the program
+# names no library, or the target's linker is not one this reads.
+function asked(t: toolchain.Toolchain, line: [str], bound: [supplied_judged.Bound], objects: [str]) -> Judging
+    named = library_names(line)
+
+    if named.len() == 0 || link_flags.msvc(t.target) || process.exe_suffix() == ".exe"
+        return nothing()
+    return Judging(
+        asked: true,
+        bound: bound,
+        needs: supplied_probe.runtime_needs(t, objects),
+        named: named,
+        line: line,
+        map_path: publish.private_name(t.build + "/supplied-real") + ".map"
+    )
+
+# The real link's own words that ask who supplied each traced name.
+function real_words(t: toolchain.Toolchain, j: Judging) -> [str]
+    none: [str] = []
+
+    if !j.asked
+        return none
+    return supplied_probe.asking_words(
+        target: t.target,
+        names: traced(j),
+        map_path: j.map_path,
+        listed: j.named.len() > 1
+    )
+
+# The real link of `line`, run and judged before anything it wrote is
+# published: its own refusal, its words carrying what the probes find, or the
+# verdict on who supplied each name, a refusal of the link's (`clang_link`).
+function linked(t: toolchain.Toolchain, j: Judging, line: [str], err_path: str) -> ()?
+    heard: str @= ""
+    ran = link_warning.run_link_heard(line: line, what: "linking", err_path: err_path, traced: traced(j), heard: @heard)
+
+    match ran
+        .ok    => return after_link(t, j: j, said: heard)
+        .err e => return fail(code: e.code, msg: carried(t, j: j, message: e.msg))
+
+# The verdict once the real link linked, read from what it said (both its
+# streams) and its map, with the probes' answers, kept or asked.
+function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
+    if !j.asked
+        return ok()
+    listing = read_file(j.map_path).default("")
+    publish.discard(j.map_path)
+    apple = link_flags.apple(t.target)
+    names = traced(j)
+    first = supplied_read.taken(said: said, listing: listing, apple: apple, names: names)
+    opened: [str] @= []
+
+    if j.named.len() > 1
+        opened @ supplied_read.opened(said: said, listing: listing, named: j.named)
+    at = supplied_kept.path_of(t, line: j.line, names: names)
+    probes: supplied_probe.Probes @= supplied_probe.none()
+    fresh: bool @= false
+
+    # The probes, where there are two libraries to ask them of, kept by the
+    # files the link opened; with one, an answer is kept only of the platform.
+    if j.named.len() > 1
+        match supplied_kept.kept(path: at, opened: opened)
+            .ok k =>
+                probes @ k
+            .err =>
+                probes @ supplied_probe.probed(t, line: j.line, names: names, named: j.named)
+                fresh @ true
+
+    found: [str] @= strings.with_all(
+        list: probes_found(j, p: probes),
+        more: supplied_judged.judged(j.bound, supplied: first, named: j.named, order: "written")
+    )
+    found @ strings.with_all(
+        list: found,
+        more: supplied_judged.needs_judged(j.bound, needs: j.needs, named: j.named, supplied: first, order: "written")
+    )
+    lone = supplied_judged.lone(j.bound, found: found)
+
+    if lone.len() > 0 && j.named.len() < 2
+        probes @ supplied_kept.kept(path: at, opened: opened).default(probes)
+    unasked: [str] @= []
+
+    for b in lone
+        if probes.platform[b.name].is_err()
+            unasked @ unasked.push(b.name)
+
+    if unasked.len() > 0
+        answered = supplied_probe.platform(t, line: j.line, names: unasked)
+
+        if !answered.is_err()
+            for name in keys(answered.must())
+                probes.platform[name] @ answered.must()[name].must()
+
+            fresh @ true
+
+    found @ supplied_judged.platform_kept(
+        found,
+        alone: lone,
+        first: first,
+        turned: probes.taken,
+        platform: probes.platform
+    )
+
+    if fresh
+        supplied_kept.keep(path: at, p: probes, opened: opened)
+
+    if found.len() == 0
+        return ok()
+    found @ strings.with_all(
+        list: found,
+        more: supplied_judged.own_lines(j.bound, found: found, supplied: first, order: "written")
+    )
+    found @ strings.with_all(
+        list: found,
+        more: supplied_judged.own_lines(j.bound, found: found, supplied: probes.taken, order: "reversed")
+    )
+    return fail(code: "clang_link", msg: found.join("\n"))
+
+# What the probes found, the libraries in the other order first, then every
+# library file loaded whole.
+function probes_found(j: Judging, p: supplied_probe.Probes) -> [str]
+    found: [str] @= []
+
+    if p.reversed && p.reversed_linked
+        found @ supplied_judged.judged(j.bound, supplied: p.taken, named: j.named, order: "reversed")
+        found @ strings.with_all(
+            list: found,
+            more: supplied_judged.needs_judged(j.bound, needs: j.needs, named: j.named, supplied: p.taken, order: "reversed")
+        )
+    else if p.reversed
+        found @ supplied_judged.refused_lines(j.bound, dups: p.refused, order: "reversed-refused")
+
+    if p.whole && !p.whole_linked
+        found @ strings.with_all(
+            list: found,
+            more: supplied_judged.whole_found(j.bound, needs: j.needs, named: j.named, dups: p.dups)
+        )
+    return found
+
+# A refused real link's words, with what the probes find before them, so the
+# reading of a refusal (`cli/supplied_words.hero`) reads both.
+function carried(t: toolchain.Toolchain, j: Judging, message: str) -> str
+    if !j.asked
+        return message
+    publish.discard(j.map_path)
+    found = probes_found(j, p: supplied_probe.probed(t, line: j.line, names: traced(j), named: j.named))
+
+    if found.len() == 0
+        return message
+    return found.join("\n") + "\n" + message
+
+## Tests
+
+test "a program naming no library asks its link nothing (panel 239)"
+    none: [str] = []
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    no_bound: [supplied_judged.Bound] = []
+    j = asked(t, line: ["clang", "x.o"], bound: no_bound, objects: ["x.o"])
+    assert !j.asked
+    assert real_words(t, j: j) == none
+    assert !after_link(t, j: j, said: "").is_err()
+    assert carried(t, j: j, message: "linking failed") == "linking failed"
+    assert library_names(["clang", "-L", "d", "-la", "-l", "-lm"]) == ["a", "m"]

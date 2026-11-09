@@ -1,0 +1,321 @@
+# What a program is told where a name reaches another library's definition
+# than its group's (design.md §4.17, §4.19; defects 2363 and 2378; panel
+# 239's R2, the ffi-pragmatist's v6; `cli/supplied.hero` the reading).
+#
+# **In the specification's words** (panel 239's R2 and R6, the spec-warden's
+# § 9 and § 12c): a library is named by its `link` name and the module that
+# links it, the C library by that name, a file in a library by its path,
+# the one exact name of where the definition is; never the link's own
+# vocabulary, which the specification does not hold, and never the order of
+# `use` lines or a module's name as a lever. **Told on the binding's line**,
+# the one the author wrote and the one whose meaning changed, and the same
+# words in every order of the modules, its files sorted. **No `Fix`**: the
+# repair is a library rebuilt or a `link` removed, which no edit of the
+# binding writes (panel 237's `shadowed_header` precedent).
+#
+# **And a duplicate the link itself refused** (route F, GNU ld's `one_*` in
+# one order): of a bound name, on its binding; of a name the program's own
+# runtime defines, on the group whose library defines it again (defect
+# 2378, `internal error` at exit 2 until then); of a name no group binds, on
+# the first group whose library defines it. A duplicate one of whose files
+# is no library the program names and not the runtime's object is not read
+# here, and stays what it was.
+
+use ast
+use cli/strings
+use cli/supplied_judged
+use cli/supplied_names
+use cli/supplied_read
+use diag
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use source
+
+# The diagnostics of a refused link's words: the probes' and the link's own
+# markers first, else a duplicate the link itself refused.
+function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    files: {i64: [str]} @= {}
+    orders: {i64: [str]} @= {}
+    other: {i64: str} @= {}
+    whole: {i64: bool} @= {}
+    order: [i64] @= []
+    runtime: {str: [str]} @= {}
+    runtime_files: {str: [str]} @= {}
+    libraries: [str] @= []
+    none: [str] = []
+
+    for line in ffi_lookup.lines(text: message)
+        f = supplied_judged.fields(line)
+
+        if f.len() != 7
+            continue
+
+        if f[1] == "runtime"
+            if runtime[f[5]].is_err()
+                libraries @ libraries.push(f[5])
+            held = runtime[f[5]].default(none)
+
+            if !supplied_names.named_in(held, name: f[3])
+                runtime[f[5]] @ held.push(f[3])
+                runtime_files[f[5]] @ runtime_files[f[5]].default(none).push(f[4])
+            continue
+        decl = ffi_lookup.number(f[2])
+
+        if decl.is_err() || decl.must() < 0 || decl.must() >= decls.len()
+            continue
+        at = decl.must()
+
+        if files[at].is_err()
+            order @ order.push(at)
+        held = files[at].default(none)
+
+        for file in each_file(f[4])
+            if !supplied_names.named_in(files[at].default(none), name: file)
+                files[at] @ files[at].default(none).push(file)
+
+        if files[at].is_err()
+            files[at] @ held
+        orders[at] @ orders[at].default(none).push(f[6])
+
+        if f[1] == "whole"
+            whole[at] @ true
+
+        if f[5].len() > 0
+            other[at] @ f[5]
+
+    for at in order
+        out @ out.push(
+            bound_told(s, decls, at: at, files: files[at].default(none), orders: orders[at].default(none), other: other[at].default(""), whole: !whole[at].is_err())
+        )
+
+    for library in libraries
+        out @ out.push(
+            runtime_told(s, decls, library: library, names: runtime[library].default(none), files: runtime_files[library].default(none))
+        )
+
+    if out.len() > 0
+        return out
+    return duplicates_told(message, s, decls)
+
+# A duplicate the link itself refused, read where every file it names is a
+# library the program names or the runtime's own object.
+function duplicates_told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    named = linked_names(s, decls)
+
+    for d in supplied_read.duplicates(message)
+        theirs: [str] @= []
+        runtime: i64 @= 0
+        unplaced: i64 @= 0
+
+        for file in d.files
+            found = supplied_names.naming(file: file, named: named)
+
+            if found.len() > 0 && !supplied_names.named_in(theirs, name: found[0])
+                theirs @ theirs.push(found[0])
+            else if found.len() == 0 && runtime_object(file)
+                runtime @ runtime + 1
+            else if found.len() == 0
+                unplaced @ unplaced + 1
+
+        if unplaced > 0 || theirs.len() == 0
+            continue
+        bound = ffi_lookup.declaration(s, decls, name: d.name)
+
+        if !bound.is_err() && !bound.must().is_constant && runtime == 0
+            d1: diag.Diagnostic @= diag.new_diagnostic(
+                code: "ffi_defined_elsewhere",
+                message: "`" + d.name + "`, bound here, is defined twice among the libraries this program links, and the program cannot be built with both",
+                span: bound.must().span
+            )
+            d1.notes @ with_files(notes: d1.notes, files: d.files)
+            d1.notes @ d1.notes.push(the_rule(d.name))
+            out @ ffi_lookup.add_once(found: out, d: d1)
+            continue
+        at = group_of(s, decls, library: theirs[0])
+
+        if at < 0
+            continue
+
+        if runtime > 0
+            d2: diag.Diagnostic @= diag.new_diagnostic(
+                code: "ffi_defined_elsewhere",
+                message: "library `" + theirs[0] + "`, which " + module_of(s, decls, at: at) + " links, defines `" + d.name + "`, a name of the program's own runtime, and a program holds one `" + d.name + "`",
+                span: decls[at].span
+            )
+            d2.notes @ with_files(notes: d2.notes, files: d.files)
+            d2.notes @ d2.notes.push(
+                "`" + d.name + "` is the runtime's own: rename it where library `" + theirs[0] + "` is built, or link a library that does not define it"
+            )
+            out @ ffi_lookup.add_once(found: out, d: d2)
+            continue
+
+        if theirs.len() >= 2
+            d3: diag.Diagnostic @= diag.new_diagnostic(
+                code: "ffi_defined_elsewhere",
+                message: "`" + d.name + "` is defined by library `" + theirs[0] + "`, which " + module_of(s, decls, at: at) + " links, and by library `" + theirs[1] + "`, which " + module_of(s, decls, at: group_of(s, decls, library: theirs[1])) + " links, and the program cannot be built with both",
+                span: decls[at].span
+            )
+            d3.notes @ with_files(notes: d3.notes, files: d.files)
+            d3.notes @ d3.notes.push(the_rule(d.name))
+            out @ ffi_lookup.add_once(found: out, d: d3)
+
+    return out
+
+# Whether `file` is the runtime's object the compiler links into every
+# program, `runtime-<key>-<key>.o` under `build/` (`toolchain.runtime_object`).
+function runtime_object(file: str) -> bool
+    base = supplied_names.base_of(file)
+    return strings.starts_with(text: base, prefix: "runtime-") && (strings.ends_with(text: base, suffix: ".o") || strings.ends_with(text: base, suffix: ".obj"))
+
+# One binding's diagnostic: the files its name was found in, sorted, and in
+# which orders of the libraries, so the words are the same whatever order the
+# program's modules stand in.
+function bound_told(s: source.Source, decls: [ast.Decl], at: i64, files: [str], orders: [str], other: str, whole: bool) -> diag.Diagnostic
+    name = source.span_text(s, decls[at].name)
+    own = own_library(s, decls, at: at)
+    whose: str @= "another library this program links"
+
+    if other.len() > 0
+        whose @ "library `" + other + "`, which " + module_of(s, decls, at: group_of(s, decls, library: other)) + " links"
+
+    refused: bool @= false
+
+    for one in orders
+        if strings.ends_with(text: one, suffix: "-refused")
+            refused @ true
+
+    turned = supplied_names.named_in(orders, name: "reversed")
+    said: str @= "is defined twice among the libraries this program links, and the program cannot be built with both"
+
+    if whole
+        said @ "is also defined by " + whose + ", and a program holds one `" + name + "`: this call, or that library's own calls to it, would reach the other library's"
+    else if files.len() >= 2
+        said @ "is also defined by " + whose + ", and a program holds one `" + name + "`: which of the two its calls reach would rest on the order of the libraries, which no line of the program writes"
+    else if files.len() == 1 && refused
+        said @ "is also defined by " + whose + ": its calls would reach that one, or the program could not be built, as the order of the libraries falls"
+    else if files.len() == 1 && turned
+        said @ "would be called from " + whose + ", not from " + own + ", whatever the order of the libraries"
+    else if files.len() == 1
+        said @ "would be called from " + whose + ", not from " + own
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_defined_elsewhere",
+        message: "`" + name + "`, bound here from " + own + ", " + said,
+        span: decls[at].span
+    )
+    d.notes @ with_files(notes: d.notes, files: sort(files))
+    d.notes @ d.notes.push(the_rule(name))
+    return d
+
+# A library that defines names the runtime calls, told on its group.
+function runtime_told(s: source.Source, decls: [ast.Decl], library: str, names: [str], files: [str]) -> diag.Diagnostic
+    at = group_of(s, decls, library: library)
+    shown: [str] @= []
+
+    for name in sort(names)
+        shown @ shown.push("`" + name + "`")
+
+    listed = shown.join(", ")
+    span: ast.Decl @= decls[0]
+
+    if at >= 0
+        span @ decls[at]
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_defined_elsewhere",
+        message: "library `" + library + "`, which " + module_of(s, decls, at: at) + " links, defines " + listed + ", of the C library, which the program's own runtime calls: the runtime's calls would reach library `" + library + "`'s",
+        span: span.span
+    )
+    d.notes @ with_files(notes: d.notes, files: sort(files))
+    d.notes @ d.notes.push(
+        "where that is meant, as an allocator replaces `malloc` on purpose, bind each of them in a group of library `" + library + "`, which says so; else link a library that does not define them"
+    )
+    return d
+
+function with_files(notes: [str], files: [str]) -> [str]
+    out: [str] @= notes
+    seen: [str] @= []
+
+    for file in files
+        for one in each_file(file)
+            plain = supplied_names.without_index(one)
+
+            if !supplied_names.named_in(seen, name: plain)
+                seen @ seen.push(plain)
+                out @ out.push("a definition is in `" + plain + "`")
+
+    return out
+
+function each_file(field: str) -> [str]
+    out: [str] @= []
+
+    for one in supplied_names.split_on(field: field, separator: "|")
+        if one.len() > 0
+            out @ out.push(one)
+
+    return out
+
+function the_rule(name: str) -> str
+    return "a program holds one definition of `" + name + "`: link one library that defines it, or build the other library with its `" + name + "` kept to itself (`objcopy --localize-symbol=" + name + "` on Linux, `nmedit -R` on macOS, `-fvisibility=hidden` for a shared library)"
+
+# How a binding's group names its library: `library `a``, the package's, or
+# the C library.
+function own_library(s: source.Source, decls: [ast.Decl], at: i64) -> str
+    match decls[at].kind
+        .function_decl fd =>
+            if fd.value.library.is_err()
+                return "the C library"
+
+            match fd.value.library.must()
+                .link l     => return "library `" + emit_externs.unquoted(s, span: l.name) + "`"
+                .package pk => return "package `" + emit_externs.unquoted(s, span: pk.name) + "`"
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return "its group's library"
+
+    return "its group's library"
+
+# The first declaration of a group that links `library`, -1 where none does.
+function group_of(s: source.Source, decls: [ast.Decl], library: str) -> i64
+    for index in range(from: 0, to: decls.len())
+        match decls[index].kind
+            .function_decl fd =>
+                if !fd.value.library.is_err()
+                    match fd.value.library.must()
+                        .link l =>
+                            if emit_externs.unquoted(s, span: l.name) == library
+                                return index
+                        .package => continue
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return -1
+
+function module_of(s: source.Source, decls: [ast.Decl], at: i64) -> str
+    if at < 0
+        return "a package of this program"
+    return "module `" + source.module_at(s, decls[at].span.start) + "`"
+
+# Every library name a group's `link` gives.
+function linked_names(s: source.Source, decls: [ast.Decl]) -> [str]
+    out: [str] @= []
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.library.is_err()
+                    match fd.value.library.must()
+                        .link l =>
+                            name = emit_externs.unquoted(s, span: l.name)
+
+                            if !supplied_names.named_in(out, name: name)
+                                out @ out.push(name)
+                        .package => continue
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+## Tests
+
+test "the runtime's own object is told from a library's file and from a unit's (defect 2378)"
+    assert runtime_object("build/runtime-0538e9d90444c6be-578c67547cb30f76.o")
+    assert runtime_object("/w/build/runtime-1-2.obj")
+    assert !runtime_object("build/tu-0007986b2ac09bfc/main.o")
+    assert !runtime_object("/w/lib/libhh.a(hh.o)")

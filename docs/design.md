@@ -2364,6 +2364,21 @@ error: incompatible types
 The signature, the record definition, where it lives, and two concrete routes. The model fixes it
 **in one turn**, without opening anything.
 
+**At the C boundary, in the specification's words** (panel 239's R6, provisional, author
+ratification pending; decision 2374). A refusal that a group's library or another module's header
+caused names what the specification names: a group, its header, its `link` library, a module, a
+function, a record and its field, a size in bytes, and what a header defines, and it says a module
+*reads* a header, as spec § 13 does. The header's own C words are allowed (`long long`, `#pragma
+pack`, a macro's name), since spec § 13 sends the reader to the header; the machinery's are not
+(*unit*, *archive*, *member* in the linker's sense, *link line*, *linker*, *object*, each `grep
+-ciw` 0 over the specification on 2026-11-09, *member* being a struct's and a group's there). It
+names every record or library in a fixed order, by name, never the walk's, and a file in a library
+by its path, the one exact name of where a definition is. Its note cites the specification by its
+own section, *spec § 13*, as `cli/argv.hero`'s notes cite *spec § 3 Types*: a model that holds the
+specification alone reads *§4.19* as its section 4. (On 2026-11-09, 49 message lines in 25 files of
+`selfhost/` still cited this document's sections, defect 2377, until whose repair this clause
+counts them.)
+
 **Fixes are tagged `certain | guess`, and only `certain` fixes are machine-applicable.** The
 example above shows why: "convert: `to_i64(user.id)`" may be right, but "change save's signature to
 accept a str id" is usually the *wrong* repair — and a model will apply whatever the compiler
@@ -2731,6 +2746,42 @@ group names* (`cli/switch_ask.hero`). And a `package`'s words, its `-D` among th
 units that read a header a group naming that package names (defect 572, `emit/header_packages.hero`),
 never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
 where `main` named `ncursesw`, and was told *declares no* otherwise.
+
+**A function a group binds is called from its own library, in every module and every order of the
+modules, or the program is refused** (panel 239's R1 to R3, provisional, author ratification
+pending; decision 2374; defects 2363 and 2378). A linked program holds one definition of a C name,
+and which of two a call reaches is the libraries' order, or on Apple's linker the names' order
+too; clang holds a bound function to its header and to nothing else, so `pick` bound from `a.h`
+with `link "a"` reached another library's `int pick(int *)` at exit 0 and died by a memory fault.
+So the link itself is asked who supplied each name a group binds and each name the runtime calls
+(GNU ld's and lld's `--trace-symbol`, Apple's linker's map, kept off the author's screen and never
+published), and where the program names two or more libraries, two links beside it: the libraries
+in the other order, every other word where it stood, and every library file of objects loaded
+whole, which names a definition no order loads (`ab`: Apple's linker takes the group's own `pick`
+in both orders while another library's own call reaches it). Refused `ffi_defined_elsewhere`, on
+the binding or on the group whose library is at fault, both files named, in every order of the
+modules and under every name: a name a group binds that a library the program names for another
+group supplies; a name of a group naming no library, the C library's, that a library of the
+program defines over the platform's (`puts`); and a name the runtime calls or defines that a
+library of the program supplies (`printf`, `hero_print_end`, which the link refused as a duplicate
+and the compiler told as its own `internal error` until then), **unless a group of that library
+binds the name**: an allocator that replaces `malloc` on purpose says so by binding every name it
+replaces, with no new form. **What is never judged** is a library the program does not name, so
+`link "m"` taken from Apple's `libsystem_m.tbd` and `link "pthread"` from glibc's `libc.so.6` pass
+with no list of the platform's libraries. **What is not refused**, said: a name no group binds and
+the runtime does not call, defined by two libraries the program names and needed by a third, since
+static FFmpeg and static X11 carry identical copies on purpose and no symbol tells one from two
+different definitions (defect 2375, the author's to rule); a shared library's second definition of
+such a name; and Windows, whose link is asked nothing yet (defect 2376). **What it costs**: the
+probes' answers are kept by the link's words, the compiler that links them and the key of every
+library file the links read (`cli/supplied_kept.hero`), so a warm build runs its own link alone,
+and a library rebuilt, removed or shadowed is asked again; measured on this Mac on 2026-11-09,
+every link counted, a warm build naming one library +5.4%, two files of objects +6.7%, two shared
+libraries +6.5%, none +0%, where the sitting's route without the kept answers cost +6.3%, +51% and
++30% (`cli/supplied.hero`). **The specification gains no sentence** (the sitting's spec-warden):
+spec § 13's *`link` a library when the symbols need one* already gives the meaning, and what is
+refused is what no order and no name can make mean it, as with the other refusals this section
+names.
 
 **A `constant` is the group's second kind of member, and its value is the header's**
 (panel 038). It carries no body — inside a group a declaration is a *signature, not a

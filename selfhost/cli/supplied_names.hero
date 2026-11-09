@@ -1,0 +1,163 @@
+# Which library the program names a file a link opened is, and the small
+# readings of a linker's words the readers share (design.md §4.19; defect
+# 2363; panel 239), out of `cli/supplied_read.hero` at the landing past §11's
+# 300 lines. Each name the program wrote is asked of a file, the file never
+# parsed for one (panel 188's rule for a library's name), as
+# `cli/library_needs.hero` asks it.
+
+use cli/strings
+use emit/ffi_lookup
+
+# The library names among `named` that name `file`, as the link found it;
+# asked of the file's bytes first, so the platform's files a link names for
+# every name the runtime calls cost no character list each.
+function naming(file: str, named: [str]) -> [str]
+    out: [str] @= []
+
+    for n in named
+        if strings.holds(text: file, needle: "lib" + n + ".") && names_file(base: base_of(file), name: n)
+            out @ out.push(n)
+
+    return out
+
+# Whether `base`, a file's last component, is the library `-l<name>` reads:
+# `lib<name>.a`, `.so`, `.so.<version>`, `.dylib`, `.<version>.dylib`, `.tbd`.
+function names_file(base: str, name: str) -> bool
+    stem = "lib" + name + "."
+
+    if !strings.starts_with(text: base, prefix: stem)
+        return false
+    rest = base.slice(from: stem.len(), to: base.len())
+    return rest == "a" || rest == "so" || rest == "dylib" || rest == "tbd" || strings.starts_with(text: rest, prefix: "so.") || strings.ends_with(text: rest, suffix: ".dylib") || strings.ends_with(text: rest, suffix: ".tbd")
+
+# A file's last component, its object `(x.o)` and Apple's index `[2]` taken off.
+function base_of(file: str) -> str
+    cs = archive_of(file).chars()
+    start: i64 @= 0
+
+    for i in range(from: 0, to: cs.len())
+        if cs[i] == "/" || cs[i] == "\\"
+            start @ i + 1
+
+    return cs.slice(from: start, to: cs.len()).join("")
+
+# A file as the link names it with its object `(x.o)` and Apple's index
+# `[2]` taken off: the archive an object was loaded from, or the file itself.
+function archive_of(file: str) -> str
+    cs = file.chars()
+    end: i64 @= cs.len()
+
+    if end > 0 && cs[end - 1] == ")"
+        open = ffi_lookup.char_index_of(text: file, needle: "(")
+
+        if !open.is_err()
+            end @ open.must()
+
+    if end > 0 && cs[end - 1] == "]"
+        k: i64 @= end - 1
+
+        while k > 0 && cs[k] != "["
+            k @ k - 1
+
+        if cs[k] == "["
+            end @ k
+    return cs.slice(from: 0, to: end).join("")
+
+# An object of a library file, or an object, as against a shared library.
+function is_regular(file: str) -> bool
+    return strings.ends_with(text: file, suffix: ")") || strings.ends_with(text: file, suffix: ".o") || strings.ends_with(text: file, suffix: ".obj")
+
+# A file as Apple's linker names a duplicate's, `libab.a[2](ab.o)`, as its map
+# names it, `libab.a(ab.o)`: the index taken off.
+function without_index(file: str) -> str
+    open = ffi_lookup.char_index_of(text: file, needle: ".a[")
+
+    if open.is_err()
+        return file
+    cs = file.chars()
+    k: i64 @= open.must() + 2
+
+    while k < cs.len() && cs[k] != "]"
+        k @ k + 1
+
+    if k >= cs.len()
+        return file
+    return cs.slice(from: 0, to: open.must() + 2).join("") + cs.slice(from: k + 1, to: cs.len()).join("")
+
+# The text after the last `: `, the whole where there is none: GNU ld puts its
+# own path before the file it names, lld does not.
+function last_field(text: str) -> str
+    cs = text.chars()
+    start: i64 @= 0
+
+    for i in range(from: 0, to: cs.len() - 1)
+        if cs[i] == ":" && cs[i + 1] == " "
+            start @ i + 2
+
+    return cs.slice(from: start, to: cs.len()).join("")
+
+function until(text: str, stop: str) -> str
+    kept: [str] @= []
+
+    for ch in text.chars()
+        if ch == stop
+            break
+        kept @ kept.push(ch)
+
+    return kept.join("")
+
+# The text before the first `stop`, the whole where there is none.
+function until_text(text: str, stop: str) -> str
+    at = ffi_lookup.char_index_of(text: text, needle: stop)
+
+    if at.is_err()
+        return text
+    return text.chars().slice(from: 0, to: at.must()).join("")
+
+# `field`'s parts between each `separator`, a byte such as a tab or `|`,
+# cut a byte at a time.
+function split_on(field: str, separator: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < field.len()
+        if field[at] == separator[0]
+            out @ out.push(field.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out.push(field.slice(from: start, to: field.len()))
+
+function named_in(list: [str], name: str) -> bool
+    for one in list
+        if one == name
+            return true
+
+    return false
+
+function shares(a: [str], b: [str]) -> bool
+    for one in a
+        if named_in(b, name: one)
+            return true
+
+    return false
+
+## Tests
+
+test "a field is cut at each of its separator's bytes, an empty part kept (panel 239)"
+    assert split_on(field: "a\tb\t\tc", separator: "\t") == ["a", "b", "", "c"]
+    assert split_on(field: "", separator: "|") == [""]
+    assert split_on(field: "/w/é.a|/w/b.a", separator: "|") == ["/w/é.a", "/w/b.a"]
+
+test "a library file is the one its -l name reads, and no other (panel 239)"
+    assert names_file(base: "liba.a", name: "a")
+    assert names_file(base: "libm.so.6", name: "m")
+    assert names_file(base: "libb.dylib", name: "b")
+    assert !names_file(base: "libsystem_m.tbd", name: "m")
+    assert !names_file(base: "libab.a", name: "a")
+    assert base_of("/w/out/lib/liba.a(pick_a.o)") == "liba.a"
+    assert base_of("/w/out/libab.a[2](ab.o)") == "libab.a"
+    assert base_of("/lib/aarch64-linux-gnu/libc.so.6") == "libc.so.6"
+    assert without_index("/w/libab.a[2](ab.o)") == "/w/libab.a(ab.o)"
+    assert without_index("/w/libab.a(ab.o)") == "/w/libab.a(ab.o)"
