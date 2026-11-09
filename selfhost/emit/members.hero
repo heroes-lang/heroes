@@ -17,6 +17,7 @@ use ast
 use check/state
 use check/table
 use emit
+use emit/bound_type
 use emit/callback_guard
 use emit/ctype
 use emit/large_size
@@ -70,6 +71,7 @@ record Whole
 # parameter (`emit.emit_told`'s, panel 194's R7).
 function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}, lend_units: {str: str}) -> Whole
     names: ctype.Names @= ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+    names @ bound_type.with_names(names, s: s, decls: decls)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_units
@@ -101,6 +103,7 @@ function retold(built: Whole, p: containers.Program, c: state.Checked, s: source
 
     if struct_tags.len() > 0
         names: ctype.Names @= ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+        names @ bound_type.with_names(names, s: s, decls: decls)
         names @ ctype.with_options(names, c: c, s: s, decls: decls)
         out.names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     out.names.lend_units @ lend_units

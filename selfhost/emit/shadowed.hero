@@ -27,6 +27,9 @@
 # name of no such form is written as before, and a program that binds none
 # writes the same C.
 #
+# A group's RECORD of those names is a type a body may spell after hiding it,
+# renamed by an alias instead (`emit/bound_type.hero`).
+#
 # A header MACRO of those forms is another matter: it rewrites the body's
 # own declarations before clang reads them, and it is the header's to repair
 # (`cli/own_names.hero`, panel 214's R3).
@@ -119,7 +122,11 @@ function written(name: str, s: source.Source, decls: [ast.Decl]) -> str
 # widened by `hero_` for as long as a group binds it too, so the unit
 # never declares one name twice.
 function accessor(name: str, s: source.Source, decls: [ast.Decl]) -> str
-    out: str @= HEAD + name
+    return unbound(head: HEAD, name: name, s: s, decls: decls)
+
+# `head` and `name`, widened by `hero_` for as long as a group binds it.
+function unbound(head: str, name: str, s: source.Source, decls: [ast.Decl]) -> str
+    out: str @= head + name
 
     while binds(s, decls, name: out)
         out @ "hero_" + out

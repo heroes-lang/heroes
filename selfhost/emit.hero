@@ -16,6 +16,7 @@ use check/state
 use checker
 use diag
 use emit/body
+use emit/bound_type
 use emit/builtins
 use emit/c_main
 use emit/callback_guard
@@ -205,6 +206,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     reached: {i64: bool} = walked.reached
     constructed: {i64: bool} = walked.constructed
     names: ctype.Names @= ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+    names @ bound_type.with_names(names, s: s, decls: decls)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_local.with_flows(lend_units, p, c)

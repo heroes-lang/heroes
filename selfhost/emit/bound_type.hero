@@ -1,0 +1,93 @@
+# A group's record whose C typedef is named as a function's body names
+# something of its own, spelled by an alias the unit declares after the
+# group's include (design.md §4.19, §3.1; CLAUDE.md §7; defect 2389).
+#
+# **What a body hides**: `emit/shadowed.hero` lists the names a body
+# declares, `t1` among them. A group's untagged record is spelled by the name
+# its header gives it, so `record t1` met the body's temporary `int64_t t1`
+# and then `t2 = (t1){.a = t1};`, clang's *expected identifier or '('* at
+# exit 2, a correct program refused; `record h0_p` beside a local `p` the same.
+# A type cannot be reached through a function as a bound function is, so the
+# record is renamed: right after the group's include the unit writes
+# `typedef t1 hero_bound_type_t1;` (`aliases`, `emit/decls.hero`'s prelude),
+# and the unit's names spell the record by that alias (`with_names`,
+# `emit.hero` and `emit/members.hero`).
+#
+# **For the unit alone.** A probe compiled apart from the unit (the layout
+# screen, the locks, the pointee check) builds names of its own and spells the
+# header's name, which no body of its own hides; given the alias it never
+# declared, the layout screen read *use of undeclared identifier* on every row
+# (measured on 2026-11-09 before this line was so). A record the header tags,
+# `struct t1`, lives in C's tag namespace, which no body declares into, and a
+# name of no body's form keeps its spelling, so no other program's C moves.
+
+use ast
+use emit/ctype
+use emit/externs as emit_externs
+use emit/shadowed
+use parse
+use source
+
+constant HEAD: str
+    "hero_bound_type_"
+
+# The C name a unit spells an untagged group record `name` by: its own, or
+# its alias where a body could hide it.
+function written(name: str, s: source.Source, decls: [ast.Decl]) -> str
+    if shadowed.form(name) == ""
+        return name
+    return shadowed.unbound(head: HEAD, name: name, s: s, decls: decls)
+
+# The aliases a unit writes right after the groups' includes, one per
+# untagged group record of a body's form whose header is among `headers`,
+# so the alias stands wherever the header does. ORDER: the declarations'.
+function aliases(s: source.Source, decls: [ast.Decl], headers: [str]) -> [str]
+    out: [str] @= []
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                name = source.span_text(s, decl.name)
+
+                if !rec.header.is_err() && rec.tag.is_err() && shadowed.form(name) != "" && holds(headers, one: emit_externs.unquoted(s, span: rec.header.must()))
+                    out @ out.push("typedef " + name + " " + written(name, s: s, decls: decls) + ";")
+            .function_decl | .constant_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+# The unit's names with every such record spelled by its alias.
+function with_names(names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> ctype.Names
+    out: ctype.Names @= names
+
+    for index in range(from: 0, to: decls.len())
+        match decls[index].kind
+            .record_decl rec =>
+                if !rec.header.is_err() && rec.tag.is_err()
+                    out.aggregates[index] @ written(source.span_text(s, decls[index].name), s: s, decls: decls)
+            .function_decl | .constant_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+## Tests
+
+# A group's untagged record of a body's form is spelled by its alias, which
+# the unit declares after the header that holds it; a tagged one, another
+# header's, and a name of no such form are left as they are.
+test "a group record a body could hide is spelled by an alias its header's unit declares (defect 2389)"
+    text = "extern \"r.h\"\n    record t1\n        a: i64\n    record h0_p tag h0_p\n        a: i64\n    record Pair\n        a: i64\n\nfunction main()\n    print(1)\n"
+    s = source.new_source(name: "r.hero", text: text)
+    decls = parse.parse_source(s).decls
+    assert written("t1", s: s, decls: decls) == "hero_bound_type_t1"
+    assert written("Pair", s: s, decls: decls) == "Pair"
+    assert aliases(s, decls, headers: ["r.h"]) == ["typedef t1 hero_bound_type_t1;"]
+    assert aliases(s, decls, headers: ["other.h"]).len() == 0
+    names = with_names(ctype.new_names(s, decls), s: s, decls: decls)
+    assert ctype.of(names, decl: 0) == "hero_bound_type_t1"
+    assert ctype.of(names, decl: 2) == "Pair"

@@ -1,0 +1,17 @@
+# fixedbugs, defect 2389, 2026-11-09, the type beside the local.
+#
+# SYMPTOM: a group's record whose typedef is named `h0_p`, built where the
+# function's first local is `p`, was *internal error* at exit 2: the local
+# `h0_p h0_p;` hid the type for the rest of the body.
+#
+# FIX: spelled by its alias, `hero_bound_type_h0_p` (`emit/bound_type.hero`),
+# so it prints 42.
+
+extern "fixedbugs-2389-a-bound-record-named-as-a-local-builds.h"
+    record h0_p
+        a: i64
+    function geth(v: h0_p) -> i64
+
+function main()
+    p = h0_p(a: 42)
+    print(geth(v: p))
