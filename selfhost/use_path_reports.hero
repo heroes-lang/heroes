@@ -1,0 +1,37 @@
+# The lexer's reports a `use` line's path takes back (defect 2391). The lexer
+# runs before the parser and knows no `use` line, so a key or a version inside
+# a path, `2e3` in a placed tree's key `2e3e1bba9c8acea1`, is told as a number
+# before the parser tells the whole path as one mistake, an address or a placed
+# tree's folder (`package_mark.told_whole`, the codes `use_holds_an_address`
+# and `package_unmarked`). Where it does, a report the lexer made inside that
+# path is a second message for the one mistake and is taken back; a report
+# reaching past the path is kept. The parser applies it where it applies
+# `unclosed.withdrawn` (`parse.hero`), for the strict and the control arm alike.
+#
+# Split from `package_mark.hero` at its line ceiling
+# (`tests/harness/suite_layout.hero`), along the seam of whose report a path
+# keeps, apart from how a mark is read.
+
+use diag
+use token
+
+# The lexer's reports `lexed` keeps where `said` holds the parser's: every one
+# but those inside a path the parser told whole.
+function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for d in lexed
+        if !inside_a_path(said, span: d.span)
+            out @ out.push(d)
+
+    return out
+
+# Whether `span` lies inside a path the parser told whole.
+function inside_a_path(said: [diag.Diagnostic], span: token.Span) -> bool
+    for d in said
+        whole = d.code == "use_holds_an_address" || d.code == "package_unmarked"
+
+        if whole && d.span.start <= span.start && span.end <= d.span.end
+            return true
+
+    return false

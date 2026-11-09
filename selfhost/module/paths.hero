@@ -282,6 +282,22 @@ test "a refused use line does not eat the next one, and this is a fixed defect"
     assert dotted.diagnostics[0].code == "module_path_has_no_parts"
     assert dotted.diagnostics[1].code == "module_path_wants_a_part"
 
+# Defect 2391: a key or a version the lexer would read as a number is part of
+# the path the parser tells whole, one message for the one mistake.
+test "a number the lexer reads inside a path told whole is no second message"
+    for key in ["2e3e1bba9c8acea1", "12e4a0b1c2d3e4f5", "0123456789abcdef", "0b1fa2b3c4d5e6f7", "1_e3"]
+        p = parse.parse("use heroes.packages/core@0.1.0-" + key + "/strconv\n\nfunction main()\n    print(0)\n")
+        assert p.diagnostics.len() == 1
+        assert p.diagnostics[0].code == "package_unmarked"
+
+    for line in ["use <heroes.packages/core@1e5-k>/strconv", "use \"heroes.packages/core@0.1.0-2e3e/strconv\"", "use github.com/2e3/json/parse"]
+        p = parse.parse(line + "\n\nfunction main()\n    print(0)\n")
+        assert p.diagnostics.len() == 1
+
+    # A number outside the path is still told.
+    after = parse.parse("use github.com/acme/json/parse\n\nfunction main()\n    print(2e3)\n")
+    assert after.diagnostics.len() == 2
+
 # The parser's half of the mark (`parse/use_mark.hero`), asked here because
 # that module cannot reach the parser. Each habit is told by its own code, and
 # a repair is `certain` only where the line it writes is the one meant

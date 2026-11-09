@@ -19,6 +19,7 @@ use source
 use source_extent
 use token
 use unclosed_runs
+use use_path_reports
 use wrap_break
 
 record ParseOutput
@@ -120,14 +121,16 @@ function parse_source(s: source.Source) -> ParseOutput
         index @ index + 1
 
     # A brace habit's `{` that never closed is told once, by the parser; and
-    # the openers of a line the lexer named open at one place, once.
+    # the openers of a line the lexer named open at one place, once; and a
+    # number lexed inside a `use` path told whole is no second message
+    # (`use_path_reports.withdrawn`, defect 2391).
     diagnostics: [diag.Diagnostic] @= told_once(
-        unclosed.withdrawn(lexed: lexer_said, said: normal, text: s.text),
+        unclosed.withdrawn(lexed: use_path_reports.withdrawn(lexed: lexer_said, said: normal), said: normal, text: s.text),
         lexed: lexed,
         text: s.text
     )
     control: [diag.Diagnostic] @= told_once(
-        unclosed.withdrawn(lexed: lexer_said, said: controlled, text: s.text),
+        unclosed.withdrawn(lexed: use_path_reports.withdrawn(lexed: lexer_said, said: controlled), said: controlled, text: s.text),
         lexed: lexed,
         text: s.text
     )
@@ -177,12 +180,12 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         apart.weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
     said = quote_held.held(which_arm.placed(c, lexed: lexed.diagnostics), lexed: lexed.diagnostics, text: text)
     diagnostics: [diag.Diagnostic] @= told_once(
-        unclosed.withdrawn(lexed: lexed.diagnostics, said: said.normal, text: text),
+        unclosed.withdrawn(lexed: use_path_reports.withdrawn(lexed: lexed.diagnostics, said: said.normal), said: said.normal, text: text),
         lexed: lexed,
         text: text
     )
     control: [diag.Diagnostic] @= told_once(
-        unclosed.withdrawn(lexed: lexed.diagnostics, said: said.control, text: text),
+        unclosed.withdrawn(lexed: use_path_reports.withdrawn(lexed: lexed.diagnostics, said: said.control), said: said.control, text: text),
         lexed: lexed,
         text: text
     )
