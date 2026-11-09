@@ -1,0 +1,20 @@
+# Fixed defect 2368, 2026-11-09, lane b26-misc, a shape beside it: two
+# packages' modules of one last part, `<core>/strings` and `<json>/strings`,
+# each binding `strings`.
+#
+# SYMPTOM: the line read second was told with `fix (guess): write
+# `use <json>/strings as <json>_strings``, whose alias keeps the package's
+# mark and is no name: applied, the line does not parse.
+#
+# CAUSE: the alias was the module's name with its `/` closed up, and a
+# package's module is named with its mark.
+#
+# FIX: a package's module is offered its entry's name before its path, the
+# mark left out, `json_strings`, and a fix is offered only where its alias is
+# a name; applied, with `json_strings.hello()` written for the second module,
+# the program builds.
+use <core>/strings
+use <json>/strings  #~ module_binding_taken
+
+function main()
+    print(strings.hello())

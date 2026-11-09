@@ -1,0 +1,8 @@
+# The package's module of defect 2368's case beside it, naming two of its own
+# modules of one last part: a bare `use` in a package's file names the
+# package's module, `<core>/text/zeta` and `<core>/zeta` in the compilation.
+use text/zeta  #~ module_binding_taken
+use zeta
+
+function hello() -> str
+    return zeta.z()

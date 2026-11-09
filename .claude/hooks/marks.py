@@ -99,21 +99,71 @@ def constant(tree, name):
     return None
 
 
+CASE = ".case"
+
+
+class Case:
+    """A case of the annotations suite, as `tests/harness/cases.hero` reads
+    one: the name a narrowed run selects it by and its failure line says, and
+    the case's source and expectation, paths relative to the tree."""
+
+    def __init__(self, name, source, expected):
+        self.name = name
+        self.source = source
+        self.expected = expected
+
+
+def case_of(directories, rel):
+    """The case of one of `directories` that the file `rel` belongs to, or
+    None. Two shapes, `cases.hero`'s (defect 2370, 2026-11-09): a `.hero`
+    standing in the directory is a case of its own; and a file anywhere inside
+    a folder `<name>.case/` standing in the directory is a file of that case
+    (panel 235's R19), its `main.hero` the file compiled, beside its
+    `main.expected`, and every other file its modules, in folders of their own
+    or not. Until that day the hooks asked `os.path.dirname(rel)`, the case's
+    own folder, which no row of the suite names, so a folder case marked and
+    not canonical on purpose was refused *not canonical*. A folder of a flat
+    case's modules, and a `.case` folder deeper than the directory's own
+    entries, which `cases.hero` never reads as a case, are no case here."""
+    for directory in directories:
+        if not rel.startswith(directory + "/"):
+            continue
+        parts = rel[len(directory) + 1:].split("/")
+        if len(parts) == 1 and parts[0].endswith(".hero"):
+            stem = rel[: -len(".hero")]
+            return Case(parts[0][: -len(".hero")], rel, stem + ".expected")
+        if len(parts) > 1 and parts[0].endswith(CASE) and len(parts[0]) > len(CASE):
+            folder = directory + "/" + parts[0]
+            return Case(parts[0][: -len(CASE)], folder + "/main.hero", folder + "/main.expected")
+    return None
+
+
+def case_named(tree, rel):
+    """The case of the suite's `DIRECTORIES` the file `rel` belongs to, or
+    None (`case_of`)."""
+    return case_of(constant(tree, "DIRECTORIES") or [], rel)
+
+
 def judged_narrowed(tree, rel):
-    """Whether a narrowed `annotations` run judges the case `rel`: a `.hero`
-    in one of the suite's `DIRECTORIES`, with its `.expected` beside it."""
-    directories = constant(tree, "DIRECTORIES")
-    if not directories or not rel.endswith(".hero"):
+    """Whether a narrowed `annotations` run judges the case `rel` belongs to:
+    a `.hero` of a case of the suite's `DIRECTORIES` (`case_of`), the case's
+    source and its expectation both standing, which the harness refuses to
+    run without."""
+    if not rel.endswith(".hero"):
         return False
-    if os.path.dirname(rel) not in directories:
+    case = case_named(tree, rel)
+    if case is None:
         return False
-    return os.path.isfile(os.path.join(tree, rel[: -len(".hero")] + ".expected"))
+    if case.source != rel and not os.path.isfile(os.path.join(tree, case.source)):
+        return False
+    return os.path.isfile(os.path.join(tree, case.expected))
 
 
 def held_to_marks(tree, rel, text):
     """Whether the golden case `rel`, holding `text`, is judged by its marks
-    and not by `fmt`, whatever `fmt` answers (defect 581, 2026-10-10): a case
-    of the suite's `DIRECTORIES` whose `#~` marks claim diagnostics. Those
+    and not by `fmt`, whatever `fmt` answers (defect 581, 2026-10-10): a file
+    of a case of the suite's `DIRECTORIES` (`case_of`, a folder case's files
+    since defect 2370) whose `#~` marks claim diagnostics. Those
     directories are the four the `canonical` suite leaves out of its walk
     (`suite_canonical.hero`'s test *the exempt directories*), because there a
     case's text is its subject: one does not parse on purpose (defect 334), and
@@ -123,10 +173,11 @@ def held_to_marks(tree, rel, text):
     marks, and the guard refused a merge carrying 576's as *not canonical*.
     A case with no mark keeps `fmt`'s verdict, and so does one under the run
     roots or another golden directory, whose programs the `canonical` suite
-    holds to `fmt` (`run/`, `emit/`, `ir/`, `fixedbugs/`)."""
+    holds to `fmt` (`run/`, `emit/`, `ir/`, `fixedbugs/`), a folder case's
+    files there too."""
     if not rel.startswith("tests/golden/") or MARK.search(text) is None:
         return False
-    return os.path.dirname(rel) in (constant(tree, "DIRECTORIES") or [])
+    return case_named(tree, rel) is not None
 
 
 def in_run_roots(tree, rel):

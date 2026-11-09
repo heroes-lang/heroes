@@ -1,0 +1,7 @@
+# The catalogue of defect 2368's case beside it: two packages of the author's
+# own, read from folders, the mark `<core>` and `<json>` any entry's.
+[dependencies.core]
+path = "vendor/core"
+
+[dependencies.json]
+path = "vendor/json"

@@ -1,0 +1,5 @@
+# A module of defect 2368's cases, the package `json`'s nested `text/strs`,
+# of `core`'s `strs`'s last part.
+
+function deep() -> str
+    return "json"

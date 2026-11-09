@@ -188,7 +188,10 @@ def offences(where, paths=()):
         if over is not None:
             found.append(over.split("\n")[0])
     if marked:
-        names = {os.path.basename(rel)[: -len(".hero")]: rel for rel in marked}
+        # Each by the name its case runs under, the folder's less `.case` for
+        # a file of a folder case (defect 2370), and told by its source.
+        cases = [marks.case_named(top, rel) for rel in marked]
+        names = {case.name: case.source for case in cases}
         told = marks.disagreements(compiler, top, sorted(names))
         for name, rows in sorted((told or {}).items()):
             found.append(

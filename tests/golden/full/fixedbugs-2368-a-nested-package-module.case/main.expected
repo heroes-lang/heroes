@@ -1,0 +1,9 @@
+note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2368-a-nested-package-module.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `json` is read from the folder `tests/golden/full/fixedbugs-2368-a-nested-package-module.case/vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[module_binding_taken]: this file already calls `<core>/strs` by the name `strs`, so `<json>/text/strs` cannot have it too — a file may not bind one name twice
+  at tests/golden/full/fixedbugs-2368-a-nested-package-module.case/main.hero:11:17
+     |
+  11 | use <json>/text/strs  #~ module_binding_taken
+     |                 ^^^^
+  note: the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently
+  fix (guess): write `use <json>/text/strs as json_text_strs`

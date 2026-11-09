@@ -1,0 +1,14 @@
+# Fixed defect 2368, 2026-11-09, lane b26-misc, a shape beside it: a
+# package's nested module, `<json>/text/strs`, beside another package's
+# `<core>/strs`, both binding `strs`.
+#
+# SYMPTOM: told with `fix (guess): write `use <json>/text/strs as
+# <json>_text_strs``, no name.
+#
+# FIX: the alias is the package's entry and every part of its path,
+# `json_text_strs`.
+use <core>/strs
+use <json>/text/strs  #~ module_binding_taken
+
+function main()
+    print(strs.x())

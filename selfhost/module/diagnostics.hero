@@ -16,10 +16,14 @@
 # `rename_fit.hero` where it repairs the line and the program it writes
 # says nothing new; `f` from a module with no `use` is a GUESS because
 # applying it leaves a file that still needs the `use`.
+#
+# Two `use` lines binding one name, `module_binding_taken`, and the alias its
+# fix writes are `module/binding_taken.hero`'s since defect 2368, when that
+# alias grew a package's rule past this file's ceiling.
 
-use token
 use diag
 use module/names as module_names
+use token
 
 # One module named twice in one file. Not a shadowing error and not a
 # duplicate declaration — it is a line that does nothing, and saying which
@@ -157,79 +161,6 @@ function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnosti
     )
     return d
 
-# `use check/state` beside `use ir/state`: one file, one name, two modules.
-#
-# **Panel 100 R3's diagnostic, and it replaced a program-wide one.** The
-# deleted `module_last_parts_collide` refused the two modules ANYWHERE in a
-# program and put its caret on a module's own first line — a file the author
-# may never have opened, with no repair they could apply there. This one
-# fires on the `use` line that made the name ambiguous, in the file being
-# edited, and its repair is one clause: `as`.
-function module_binding_taken(binding: str, first: str, second: str, has_alias: bool, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "module_binding_taken",
-        message: "this file already calls `" + first + "` by the name `" + binding + "`, so `" + second + "` cannot have it too — a file may not bind one name twice",
-        span: span
-    )
-
-    # **A fix is offered only where it would CHANGE something.** The suggestion
-    # closes up a path's separators, so for a path with none — a root module
-    # colliding with a nested one's last part — it is the taken name again and
-    # `use scale as scale` repairs nothing. Found by the corpus:
-    # `examples/shapes/` provoked exactly that while it was being written. The
-    # rule is `use_wants_a_name`'s, one department over — a fix that leaves the
-    # program where it was is worse than a message with no fix, because the
-    # author reads it as the answer.
-    suggested = suggestion(second)
-
-    # **The replacement depends on whether the line ALREADY says `as`, and
-    # getting that wrong shipped a fix that does not parse.** The span is the
-    # binding, so on `use ir/state` it must become `state as ir_state`, and on
-    # `use ir/state as state` it must become just `ir_state` — the first form
-    # applied to the second line gives `as state as ir_state`. Measured by
-    # panel 101's compiler-engineer on the build that had shipped hours
-    # earlier; it was invisible because §8 makes CI apply only `certain` fixes,
-    # and this one is a guess.
-    replacement: str @= binding + " as " + suggested
-
-    if has_alias
-        replacement @ suggested
-
-    if suggested != binding
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "write `use " + second + " as " + suggested + "`", replacement: replacement, span: span, certainty: .guess)
-        )
-    d.notes @ d.notes.push(
-        "the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently"
-    )
-    return d
-
-# A name for the second module that is unlikely to be taken: its whole path
-# with the separators closed up, which is the same shape its C component
-# already has. A GUESS rather than a certain fix — the author knows a better
-# word than the compiler does, and §4.17 says a certain fix must be the one
-# repair, not the first one that parses.
-#
-# The path is cut only beside its `/`, one byte that is never inside another
-# character, and never a byte at a time: a module path is identifier text
-# and ASCII today, and the byte-at-a-time spelling is the one that aborted
-# `build` on `f"é {x}"` (defect 110), so it is not kept where nothing but
-# today's lexer stands between it and a character above ASCII.
-function suggestion(module: str) -> str
-    parts: [str] @= []
-    start: i64 @= 0
-    i: i64 @= 0
-
-    while i < module.len()
-        if module[i] == '/'
-            parts @ parts.push(module.slice(from: start, to: i))
-            parts @ parts.push("_")
-            start @ i + 1
-        i @ i + 1
-
-    parts @ parts.push(module.slice(from: start, to: module.len()))
-    return parts.join("")
-
 # An `extern` reached from another module (panel 033 R5, carried by
 # M-separate-compilation acceptance row 1). clang verifies an extern
 # against its header only in the translation unit that declares it, so a
@@ -332,14 +263,6 @@ test "the list reads as prose, whatever its length"
     assert listed(two) == "`x` and `y`"
     three: [str] = ["x", "y", "z"]
     assert listed(three) == "`x`, `y` and `z`"
-
-test "a suggested name closes up the path's separators, and keeps every character whole"
-    assert suggestion("ir/state") == "ir_state"
-    assert suggestion("a/b/c") == "a_b_c"
-    assert suggestion("state") == "state"
-    assert suggestion("") == ""
-    assert suggestion("/x/") == "_x_"
-    assert suggestion("café/é€😀") == "café_é€😀"
 
 test "an unused use carries its note, not a fix"
     d = unused_use(name: "geom", span: token.Span(start: 0, end: 8))
