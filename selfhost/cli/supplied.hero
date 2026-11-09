@@ -35,6 +35,7 @@ use cli/publish
 use cli/strings
 use cli/supplied_judged
 use cli/supplied_kept
+use cli/supplied_names
 use cli/supplied_probe
 use cli/supplied_read
 use cli/supplied_windows
@@ -230,7 +231,7 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
         list: found,
         more: supplied_judged.own_lines(j.bound, found: found, supplied: probes.taken, order: "reversed")
     )
-    return fail(code: "clang_link", msg: found.join("\n"))
+    return fail(code: "clang_link", msg: found.push(folders(j)).join("\n"))
 
 # What the probes found, the libraries in the other order first, then every
 # library file loaded whole.
@@ -261,9 +262,20 @@ function carried(t: toolchain.Toolchain, j: Judging, message: str) -> str
     publish.discard(j.map_path)
     found = probes_found(j, p: supplied_probe.probed(t, line: j.line, names: traced(j), named: j.named))
 
-    if found.len() == 0
+    if found.len() == 0 && supplied_read.duplicates(message).len() == 0
         return message
-    return found.join("\n") + "\n" + message
+    return found.push(folders(j)).join("\n") + "\n" + message
+
+# The marker that hands the words the link line's `-L` folders, so a file is
+# named by the folder the program's words gave (`supplied_names.shown`).
+function folders(j: Judging) -> str
+    dirs: [str] @= []
+
+    for dir in supplied_names.dirs_of(j.line)
+        if !strings.holds(text: dir, needle: "|") && !strings.holds(text: dir, needle: "\t")
+            dirs @ dirs.push(dir)
+
+    return supplied_judged.marker(kind: "dirs", decl: -1, name: "", file: dirs.join("|"), library: "", order: "")
 
 ## Tests
 

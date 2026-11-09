@@ -1841,6 +1841,10 @@ function refused_at(got: shell.Run, dir: str, module: str, headline: str, progra
 function exported(text: str) -> str
     return "#ifdef _WIN32\n#define X __declspec(dllexport)\n#else\n#define X\n#endif\n" + text
 
+# How many definitions a refusal names, a note each (defect 2384).
+function definitions_named(said: str) -> i64
+    return strings.split_text(text: said, separator: "  note: a definition is in `").len() - 1
+
 # `said` with every `from` written `to`.
 function renamed(said: str, from: str, to: str) -> str
     return strings.split_text(text: said, separator: from).join(to)
@@ -1860,10 +1864,14 @@ test "a C name two shared libraries define, or one the C library defines, is ref
     written = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "written")
     assert refused_at(written, dir: dir, module: "picker", headline: headline, program: "written")
 
-    # A Windows map names a library by its name and the DLL it stands for.
+    # One note for each definition, named by the folder the program's words
+    # gave (defect 2384); a Windows map names a library by its name and the
+    # DLL it stands for, which is named in that folder.
+    assert definitions_named(written.err) == 2
+
     if shell.exe_suffix() == ".exe"
-        assert strings.contains(text: written.err, needle: "  note: a definition is in `a.lib(a.dll)`\n")
-        assert strings.contains(text: written.err, needle: "  note: a definition is in `b.lib(b.dll)`\n")
+        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/a.lib(a.dll)`\n")
+        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/b.lib(b.dll)`\n")
     else
         assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/liba.")
         assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/libb.")
@@ -1882,7 +1890,7 @@ test "a C name two shared libraries define, or one the C library defines, is ref
     )
     assert !shell.remove_tree(scratch).is_err()
 
-test "a C name two libraries of objects define is refused in every order, a definition no order loads among them (defect 2363)"
+test "a C name two libraries of objects define is refused in every order, a definition no order loads among them, each named once (defects 2363 and 2384)"
     if !shell.can_run_scripts()
         return
     scratch = shell.own_scratch()
@@ -1910,6 +1918,16 @@ test "a C name two libraries of objects define is refused in every order, a defi
         module: "picker",
         headline: "`pick`, bound here from library `a`, is also defined by library `w`, which module `aux` links" + whole,
         program: "sig_written"
+    )
+
+    # Apple's linker names a duplicate's file by its absolute path and its
+    # map by the folder the line gave, and each definition was told twice,
+    # four notes for two (defect 2384, panel 239's blind seat): one note for
+    # each, by the folder as the program's words wrote it, relative here.
+    assert definitions_named(sig.err) == 2
+    assert strings.contains(
+        text: sig.err,
+        needle: "  note: a definition is in `" + dir + "/liba.a(pick_a.c.o)`\n  note: a definition is in `" + dir + "/libw.a(pick_w.c.o)`\n"
     )
     assert built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_sorted").err == sig.err
     assert renamed(said: built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sig_flip").err, from: "apick", to: "picker") == sig.err
@@ -1944,6 +1962,7 @@ test "a C name two libraries of objects define is refused in every order, a defi
                 text: one.err,
                 needle: opening + "is also defined by library `" + shape[3] + "`, which module `" + shape[4] + "` links" + whole
             )
+            assert definitions_named(one.err) == 2
 
     assert !shell.remove_tree(scratch).is_err()
 
