@@ -153,4 +153,79 @@ tasks 2312 and 2313, and of the third tempo, 2314 and 2315; the historian's (Two
 M-core-packages' resumption; and the latency ceiling's `record` and `compare` against
 `m-latency-ceiling`'s compiler, the close's own measurement.
 
-@@CLOSE@@
+## The close, 2026-11-09
+
+**Batch 26 went out first**, `1517fae51` pushed in the afternoon with 22 issues closed, and its CI
+run, 42639480634, read Darwin arm64 green and the seed's refresh rebuilt by the seed before it;
+Linux x86-64 and arm64 red on the case of defect 2056, which was defect 2395 seen on glibc; and
+Windows **cancelled at the job's 240 minutes**, its net past 21 suites and still passing them, with
+`unsupported: 379 passed, 4 failed` and the four never named, since the net prints its `FAIL` lines
+at its end. The Windows box, started by the author that evening, did not reproduce them: at
+`1517fae51` and at the round's head, built in two stages from each seed with `pkgconf` installed
+from vcpkg as the CI's step installs it, `unsupported` read 383 and 0 and 393 and 0. So the four
+are a fact of the runner the box does not share, filed `blocking` as defect 2398 with
+everything measured; and the job's ceiling went to 360 minutes, GitHub's own for a hosted runner,
+the author's answer the same evening, with splitting Windows' net into jobs a task
+(task 2400).
+
+**Batch 27 repaired five defects**: 2388, a `const` member inside an array's element, which C11
+refuses to assign, told `ffi_const_field` at exit 1 (decision 2387, the author's *repair it
+tonight*); 2389, a header macro that renames one of the compiler's own C names, three shapes;
+2390, a placed tree's folder no longer called an address; 2391, a number inside a `use` path told
+once; and 2395, `fabs` and `ldexp` that glibc defines in libc and libm. Gate A, the fixpoint
+`7273148d6736fed6`, the compiler's own 1,989 tests and the net's own 584; gate B, every suite and
+form, 11,858 passed and 13 failed, each told before it was answered: two `keys()` walks the lanes
+left without an `ORDER` mark, a comment of the coordinator's that wrapped *M-package-manager* at a
+line's end, and the eleven new cases with nothing blessed (`0561a89e5`, the emissions blessed with
+the round's last compiler).
+
+**The latency ceiling was the close's own measurement**, on the still machine after the gate: the
+row of 2026-11-09 read `check` 8.10 s, the seed 9.32 s and the warm build 44.68 s, past decision
+2282's level of 7.50, 9.00 and 41.00 s, and the compare against `m-latency-ceiling`'s compiler read
+`check` 1.4 % slower on the same tree, the build without a verdict. Two causes, both measured: the
+tree grew 12.3 % (182,687 lines in 701 modules to 205,235 in 786), the previous tag's compiler
+taking 8.00 s of `check` on it; and a bisect of eleven steps named the merge of step 4
+(`b17a032da`) the first commit to read slower, 0.8 %, the rest not located. Decision
+2396 raised the level by 2282's own rule to 8.9, 10.3 and 49.1 s and the start page to
+*under ten seconds* (`429464c94`); the 0.8 % and the build's verdict are a task (task 2399). The
+level's own test had pinned the old ceilings in its text and read red in the net's own tests from
+that commit, which only gate B, the net, had been run over; panel 240's compiler-engineer found it,
+and `b7aaa1db1` writes the text from the constants it judges.
+
+**And the words.** Asked that evening whether the root folder `packages/` was misnamed, *since in
+Heroes it is called a module*, the author was shown that a module is a file and a package what the
+catalogue fetches, so the folder was right, and that the word meant something else in one place,
+§ 13's `package "raylib"`, a C library `pkg-config` is asked about, the clause panel 050 wrote and
+panel 235 left unruled. The author's answer, *one name for one thing, before the tag, with a
+reduced sitting*, convened panel 240: three seats and the critic, no blind seat, no paid run by a
+seat. Its compiler-engineer built the rename and found the precedent, `@` to `@=` at panel 209; its
+spec-warden priced 23 drafts and gave the wording, T1, six tokens below today; its historian found
+no system of fourteen that writes the bare word for a `pkg-config` lookup and five that name the
+second route after the tool. The critic repaired seven facts of the briefs before any seat started,
+corrected the synthesis in thirteen places and found the five user-facing messages the prototype had
+left saying *package* in the C sense, one pinned by four expected files the net would have kept
+green. The landing (`fd15c2280`) spells the mark `pkgconfig`, refuses `package` with
+`old_package_word` and the tool's own spelling with `pkgconfig_spelled`, each with a `certain` fix,
+moves the tree by that fix, holds § 13's marks to the compiler's words with a check that fires,
+and refreshes the seed in the same commit. Its count is the night's other measurement: T1 read 10,904
+real on the first `--refresh`, above 10,900, which falsified the spec-warden's registered W1, and the
+removal W1 named paid in the same commit, the sentence losing *and what else it needs*, 10,898 real on
+the second; the vendored scale had said −6 where the reader's own said +4. The compiler's internal
+names are a task (task 2401), § 13's sentence that JSON comes from C libraries another (task 2402),
+and the author ratified the sitting at 23:50, by reading, decision 2397.
+
+**And two habits.** The plan's graph, drawn by hand all evening and published again each time the
+author asked, became the skill `/graph` on the author's word (`d723e92d6`, its template made English at
+`20b500353` when `records` read it). And asked for a way to clean the worktrees, the coordinator
+measured the 29 standing: 18 merged into `main` with nothing uncommitted, the only untracked files a
+rebuildable seed binary and sitting 239's reports identical to the committed ones, removed on the
+author's yes with their merged branches (36 GB); and `/step` § 5 carries the removal at every close,
+by the same three tests (`683fc2289`).
+
+**The author left the session at about 00:20 on 2026-11-10**, giving it, for itself alone, the box,
+the commits, the pushes, the site's publication and the tag (CLAUDE.md § Hard stops, a session left
+unattended).
+
+So the row says *done*. The tag is placed over this commit once the round's push reads its Windows
+leg: `unsupported` with no failure closes defect 2398 by that run and the tag follows; a
+failure names its cases at the net's end, and the tag waits on their repair.
