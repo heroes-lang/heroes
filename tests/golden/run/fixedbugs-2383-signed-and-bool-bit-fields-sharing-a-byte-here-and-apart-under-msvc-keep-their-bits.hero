@@ -1,0 +1,21 @@
+# fixedbugs, defect 2383, 2026-11-09: a signed bit-field and a `_Bool`
+# one share byte 1 under the Itanium layout, and the MSVC one gives each a
+# unit of its own type, at bytes 4 and 8 (clang's record layout dump for both
+# targets, read on this Mac). The padding table wrote each named bit-field's
+# bytes as numbers from the layout of the machine that wrote the C; C now
+# finds them itself before `main`, and the C is one text. C reads every bit
+# no named bit-field holds zero and every member as it set it.
+extern "fixedbugs-2383-layouts.h"
+    record Apart tag fixedbugs_2383_apart partial
+        lo: i8
+        h: i16
+    function fixedbugs_2383_mk_apart() -> Apart
+    function fixedbugs_2383_check_apart(@p: Apart) -> i64
+
+record Held
+    one: Apart
+    k: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2383_mk_apart(), k: 1)
+    print(fixedbugs_2383_check_apart(@h.one))

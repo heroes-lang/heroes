@@ -529,6 +529,9 @@ static void hero_pad_sift(size_t *pairs, size_t root, size_t end) {
     }
 }
 
+static size_t hero_pad_walk(size_t size, size_t *gaps, size_t n);
+static size_t hero_pad_kept(const size_t *spans, size_t nfull, size_t *masks, size_t count);
+
 static void hero_pad_sort(size_t *pairs, size_t n) {
     for (size_t i = n / 2; i > 0; i--) hero_pad_sift(pairs, i - 1, n);
     for (size_t end = n; end > 1; end--) {
@@ -567,6 +570,13 @@ static void hero_pad_sort(size_t *pairs, size_t n) {
  * is overwritten, and there are at most `n + 1`. */
 size_t hero_pad_gaps(size_t size, const size_t *spans, size_t n, size_t *gaps) {
     memcpy(gaps, spans, 2 * n * sizeof(size_t));
+    return hero_pad_walk(size, gaps, n);
+}
+
+/* The walk `hero_pad_gaps` describes, over the `n` spans already in `gaps`,
+ * the gaps written over them; `hero_pad_bits` hands it the spans of a
+ * table and of the bytes its named bit-fields set. */
+static size_t hero_pad_walk(size_t size, size_t *gaps, size_t n) {
     hero_pad_sort(gaps, n);
     size_t at = 0, count = 0;
     for (size_t i = 0; i < n; i++) {
@@ -616,7 +626,9 @@ void hero_pad_object_give(void *object) {
 
 /* The bytes named bit-fields share with bits no named bit-field holds (panel
  * 223, defect 2099), as offset and bits-to-keep pairs into `masks`, and how
- * many. `object` is the `size` bytes of a zeroed record on which the unit's
+ * many. The C this compiler writes asks `hero_pad_bits` for them since defect
+ * 2383; this entry point stays for the C a compiler before it wrote, which
+ * `HERO_RUNTIME_ABI` still promises to link. `object` is the `size` bytes of a zeroed record on which the unit's
  * constructor ran `--` on each named bit-field, so C itself set exactly their
  * bits, on any ABI and either byte order. A byte one of the first `nfull`
  * spans covers is a whole member's (another arm of a union, or a `const`
@@ -644,6 +656,13 @@ size_t hero_pad_masks(const size_t *spans, size_t nfull, const void *object, siz
         masks[2 * count + 1] = image[at];
         count++;
     }
+    return hero_pad_kept(spans, nfull, masks, count);
+}
+
+/* The `count` masks in offset order `hero_pad_masks` describes, less those of
+ * a byte one of the first `nfull` spans covers, moved down in their order;
+ * how many are kept. */
+static size_t hero_pad_kept(const size_t *spans, size_t nfull, size_t *masks, size_t count) {
     for (size_t s = 0; s < nfull; s++) {
         size_t off = spans[2 * s], end = off + spans[2 * s + 1], lo = 0, hi = count;
         while (lo < hi) {
@@ -661,6 +680,58 @@ size_t hero_pad_masks(const size_t *spans, size_t nfull, const void *object, siz
         kept++;
     }
     return kept;
+}
+
+/* A RECORD'S GAPS AND MASKS WHERE IT HOLDS NAMED BIT-FIELDS, BOTH C'S OWN
+ * ANSWER (defect 2383). `object` is the `size` bytes of a zeroed record on
+ * which the unit's constructor ran `--` on each named bit-field, so C set
+ * exactly their bits and every byte each reaches, on any ABI and in either
+ * byte order. Each run of set bytes is one more span beside the table's `n`
+ * members, so a gap is a run of bytes no member and no named bit-field holds
+ * (`hero_pad_walk`); and each set byte some bit of which no named bit-field
+ * holds gives a mask, as `hero_pad_masks` says, written into `masks`, their
+ * count into `*nmasks`. `room` bounds both, the most bytes the record's named
+ * bit-fields can reach, which the emitter sums from their declared widths;
+ * `gaps` has room for the table's spans, `room` runs and one gap past them.
+ *
+ * Until then the table carried each bit-field's bytes as numbers, read from
+ * the layout dump of the machine that wrote the C: `(0) + 1` under the
+ * Itanium layout where the MSVC one puts the bit-field at byte 4, so one
+ * program was two texts, and C compiled for the other target would zero the
+ * byte its bit-field holds. One pass over the bytes, a word of zeros skipped
+ * at a time, where `hero_pad_masks` read each. */
+size_t hero_pad_bits(size_t size, const size_t *spans, size_t n, const void *object, size_t *gaps, size_t *masks, size_t room, size_t *nmasks) {
+    const unsigned char *image = object;
+    size_t runs = 0, count = 0, at = 0;
+    memcpy(gaps, spans, 2 * n * sizeof(size_t));
+    while (at < size) {
+        if (size - at >= sizeof(uint64_t)) {
+            uint64_t word;
+            memcpy(&word, image + at, sizeof word);
+            if (word == 0) {
+                at += sizeof word;
+                continue;
+            }
+        }
+        if (image[at] == 0) {
+            at++;
+            continue;
+        }
+        size_t from = at;
+        for (; at < size && image[at] != 0; at++) {
+            if (image[at] == 0xFF) continue;
+            if (count == room) hero_panic("a bit-field table gave more bytes than it has room for — this is a compiler bug, please report it");
+            masks[2 * count] = at;
+            masks[2 * count + 1] = image[at];
+            count++;
+        }
+        if (runs == room) hero_panic("a bit-field table gave more runs of bytes than it has room for — this is a compiler bug, please report it");
+        gaps[2 * (n + runs)] = from;
+        gaps[2 * (n + runs) + 1] = at - from;
+        runs++;
+    }
+    *nmasks = hero_pad_kept(spans, n, masks, count);
+    return hero_pad_walk(size, gaps, n + runs);
 }
 
 /* The bits no named bit-field holds, in each byte one shares, written zero in

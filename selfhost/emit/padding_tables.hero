@@ -8,16 +8,15 @@
 # `emit/padding.hero` on 2026-10-16, at panel 215's landing.
 
 use ast
-use source
 use check/state
-use ir
-use ir/containers
-use emit/writer
 use emit/ctype
 use emit/lend_count
-use emit/padding
 use emit/membership
-use emit/layout_rows
+use emit/padding
+use emit/writer
+use ir
+use ir/containers
+use source
 
 # The tables of every group record the functions `at` lend, written once at
 # file scope before their bodies (`table_of`): each record's spans, its own
@@ -61,39 +60,46 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
     writer.at_generated(@w)
     writer.line(@w, text: "void *" + padding.NOWHERE + "(void);")
 
-    found: [i64] @= []
+    gapped: [i64] @= []
     masked: [str] @= []
 
     # ORDER: by declaration, so the unit's text is a function of the program.
     for decl in sort(keys(lent))
-        held = padding.members(c, names, s, decls, decl: decl, t: ctype.of(names, decl: decl), prefix: "", at: "0")
+        held = padding.members(c, names, s, decls, decl: decl, t: ctype.of(names, decl: decl), prefix: "")
 
         if !held.is_err()
             spans_at = padding.table_of(decl)
-            line = "__attribute__((unused)) static const size_t " + spans_at + "[] = {" + padding.joined(list: held.must().spans, more: held.must().bitspans).join(", ") + "};"
+            line = "__attribute__((unused)) static const size_t " + spans_at + "[] = {" + held.must().spans.join(", ") + "};"
 
             for text in membership.guarded(names: held.must().bare, line: line)
                 writer.line(@w, text: text)
 
             # Room for one more gap than the table has spans, the most
-            # `hero_pad_gaps` can find (`runtime/parts/lend.c` says why).
+            # `hero_pad_gaps` can find (`runtime/parts/lend.c` says why), and
+            # where named bit-fields set bytes, a span more for each run of
+            # them, `room` at most (`hero_pad_bits`).
+            more: str @= "2"
+
+            if held.must().bits.len() > 0
+                more @ (2 + 2 * held.must().room).to_str()
             writer.line(
                 @w,
-                text: "__attribute__((unused)) static size_t " + padding.gaps_of(decl) + "[sizeof " + spans_at + " / sizeof(size_t) + 2];"
+                text: "__attribute__((unused)) static size_t " + padding.gaps_of(decl) + "[sizeof " + spans_at + " / sizeof(size_t) + " + more + "];"
             )
             writer.line(@w, text: "__attribute__((unused)) static size_t " + padding.count_of(decl) + ";")
-            found @ found.push(decl)
 
             if held.must().bits.len() > 0
                 for step in bit_tables(@w, decl: decl, held: held.must(), t: ctype.of(names, decl: decl))
                     masked @ masked.push(step)
+            else
+                gapped @ gapped.push(decl)
 
     # A type's gaps never change, so they are found once, before `main` and
     # before any thread, and a lend only writes.
-    if found.len() > 0
+    if gapped.len() + masked.len() > 0
         writer.line(@w, text: "__attribute__((constructor)) static void hero_pad_init(void) {")
 
-        for decl in found
+        for decl in gapped
             spans_at = padding.table_of(decl)
             writer.line(
                 @w,
@@ -108,12 +114,20 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
     writer.blank(@w)
 
 # A record's bit-field tables (panel 223, defect 2099): room for a mask per
-# byte its named bit-fields reach and how many masks there are, at file scope;
-# and the constructor's block that finds them, the answer. C finds the bits
-# itself, endianness and ABI alike: `--` on each named bit-field of a zeroed
-# object sets exactly its bits, all of them, whatever its type, and
-# `hero_pad_masks` reads the object's bytes. Each name the block spells is
-# guarded from the header's macros, as a member's is in the table.
+# byte its named bit-fields can reach and how many masks there are, at file
+# scope; and the constructor's block that finds them and the record's gaps,
+# the answer. C finds the bits itself, endianness and ABI alike: `--` on each
+# named bit-field of a zeroed object sets exactly its bits, all of them,
+# whatever its type, so every byte it reaches, and `hero_pad_bits` reads the
+# object's bytes. Each name the block spells is guarded from the header's
+# macros, as a member's is in the table.
+#
+# **NO BYTE OF A BIT-FIELD IS WRITTEN AS A NUMBER** (defect 2383): the table
+# holds members alone, and the bytes each named bit-field reaches are the
+# ones C set, so the text is the same on every target. `room` is the most
+# bytes the named bit-fields can reach, from their declared widths
+# (`membership.bytes_reached`), never from where this machine's layout put
+# them.
 #
 # **THE OBJECT IS THE RUNTIME'S, NEVER THE CONSTRUCTOR'S FRAME** (defect 2354):
 # the block declared it as a local, and a constructor runs before `main`, so
@@ -122,16 +136,10 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
 # zeroed from `hero_pad_object` and given back by `hero_pad_object_give` once
 # the masks are read (`runtime/parts/lend.c`), so no frame holds it at any size.
 function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) -> [str]
-    room: i64 @= 0
-    k: i64 @= 1
-
-    while k < held.bitspans.len()
-        room @ room + layout_rows.leading_number(held.bitspans[k])
-        k @ k + 2
-
     m = padding.bit_table("m", decl: decl)
-    writer.line(@w, text: "__attribute__((unused)) static size_t " + m + "[" + (2 * room).to_str() + "];")
-    writer.line(@w, text: "__attribute__((unused)) static size_t " + padding.bit_table("mn", decl: decl) + ";")
+    mn = padding.bit_table("mn", decl: decl)
+    writer.line(@w, text: "__attribute__((unused)) static size_t " + m + "[" + (2 * held.room).to_str() + "];")
+    writer.line(@w, text: "__attribute__((unused)) static size_t " + mn + ";")
     spelled: {str: bool} @= {}
     steps: [str] @= []
 
@@ -146,8 +154,9 @@ function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) ->
     for line in membership.guarded(names: spelled, line: "    " + steps.join(" "))
         out @ out.push(line)
 
+    spans_at = padding.table_of(decl)
     out @ out.push(
-        "    " + padding.bit_table("mn", decl: decl) + " = hero_pad_masks(" + padding.table_of(decl) + ", " + (held.spans.len() / 2).to_str() + ", " + OBJECT + ", sizeof(" + t + "), " + m + ", " + room.to_str() + ");"
+        "    " + padding.count_of(decl) + " = hero_pad_bits(sizeof(" + t + "), " + spans_at + ", sizeof " + spans_at + " / (2 * sizeof(size_t)), " + OBJECT + ", " + padding.gaps_of(decl) + ", " + m + ", " + held.room.to_str() + ", &" + mn + ");"
     )
     out @ out.push("    hero_pad_object_give(" + OBJECT + ");")
     return out.push("}")
@@ -190,7 +199,7 @@ function lent_by(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
 function reached(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, @lent: {i64: bool})
     if !lent[decl].is_err()
         return
-    held = padding.members(c, names, s, decls, decl: decl, t: ctype.of(names, decl: decl), prefix: "", at: "0")
+    held = padding.members(c, names, s, decls, decl: decl, t: ctype.of(names, decl: decl), prefix: "")
 
     if held.is_err() || held.must().spans.len() == 0
         return

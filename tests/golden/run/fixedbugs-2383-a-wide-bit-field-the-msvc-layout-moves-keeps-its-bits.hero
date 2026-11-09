@@ -1,0 +1,21 @@
+# fixedbugs, defect 2383, 2026-11-09: forty bits after a byte, from bit 72
+# of a 16-byte record under the Itanium layout and from byte 16 of a 24-byte
+# one under the MSVC layout, its unit eight bytes wide (clang's record layout
+# dump for both targets, read on this Mac). The padding table wrote the
+# bit-field's bytes as numbers from the layout of the machine that wrote the
+# C; C now finds them itself before `main`, and the C is one text. C reads
+# every byte no member holds zero and every member as it set it.
+extern "fixedbugs-2383-layouts.h"
+    record Wide tag fixedbugs_2383_wide partial
+        x: i64
+        a: u8
+    function fixedbugs_2383_mk_wide() -> Wide
+    function fixedbugs_2383_check_wide(@p: Wide) -> i64
+
+record Held
+    one: Wide
+    k: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2383_mk_wide(), k: 1)
+    print(fixedbugs_2383_check_wide(@h.one))

@@ -85,7 +85,7 @@ constant NAMES: [str]
         "hero_lend_count_u64 hero_lend_count_u64_at hero_lend_give hero_lend_give_at hero_lend_local hero_lend_local_give"
         "hero_lend_local_name hero_lend_take hero_lend_take_at hero_map_decref hero_map_eq"
         "hero_map_find hero_map_find_at hero_map_incref hero_map_keys hero_map_len hero_map_new"
-        "hero_map_put hero_map_put_at hero_map_release_at hero_map_set hero_map_set_at hero_os_pid hero_pad_clear hero_pad_fill hero_pad_gaps hero_pad_masks hero_pad_object hero_pad_object_give hero_panic"
+        "hero_map_put hero_map_put_at hero_map_release_at hero_map_set hero_map_set_at hero_os_pid hero_pad_bits hero_pad_clear hero_pad_fill hero_pad_gaps hero_pad_masks hero_pad_object hero_pad_object_give hero_panic"
         "hero_panic_assert_at hero_panic_assert_shown_at hero_panic_assert_sides_at"
         "hero_panic_assert_str_sides_at hero_panic_at hero_panic_byte_at"
         "hero_panic_index_at hero_panic_library_at hero_panic_must_at"

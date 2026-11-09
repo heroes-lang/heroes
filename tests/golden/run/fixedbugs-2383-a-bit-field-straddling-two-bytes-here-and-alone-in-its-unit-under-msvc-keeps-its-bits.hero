@@ -1,0 +1,21 @@
+# fixedbugs, defect 2383, 2026-11-09: `b` straddles bytes 0 and 1 after
+# `a`'s seven bits under the Itanium layout and stands alone in a unit of
+# its own type at byte 4 under the MSVC one (clang's record layout dump for
+# both targets, read on this Mac). The padding table wrote each named
+# bit-field's bytes as numbers from the layout of the machine that wrote the
+# C, so one program was two texts; C now finds the bytes itself before
+# `main`, and the C is one text. C reads every bit no named bit-field holds
+# zero and every member as it set it, under either layout.
+extern "fixedbugs-2383-layouts.h"
+    record Across tag fixedbugs_2383_across partial
+        c: i8
+    function fixedbugs_2383_mk_across() -> Across
+    function fixedbugs_2383_check_across(@p: Across) -> i64
+
+record Held
+    one: Across
+    k: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2383_mk_across(), k: 1)
+    print(fixedbugs_2383_check_across(@h.one))
