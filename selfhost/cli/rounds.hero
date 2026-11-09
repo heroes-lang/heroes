@@ -16,31 +16,30 @@
 # bounded by the program's tagged handles; a round costs one failing compile
 # (2026-09-15), the probes asked once per build.
 
-use source
-use emit/ffi_asked
-use cli/compile
-use cli/toolchain
-use cli/compiling
-use cli/assemble
-use cli/settled
-use cli/probing
-use cli/pointee_ask
-use cli/tag_spelling
-use cli/whose
-use cli/refused_units
-use cli/two_ways
-use cli/defined_twice
-use cli/pragma_ask
-use cli/bound_macro
-use diag
-use emit/lock_screen
 use check/lock_copies
+use cli/assemble
+use cli/bound_macro
+use cli/compile
+use cli/compiling
+use cli/defined_twice
 use cli/locks
-use emit/lend_type
-use cli/value_run
+use cli/pointee_ask
+use cli/pragma_ask
+use cli/probing
+use cli/refused_units
+use cli/settled
+use cli/tag_spelling
+use cli/toolchain
+use cli/two_ways
 use cli/value_beside
 use cli/value_early
-use cli/package_stand_in
+use cli/value_run
+use cli/whose
+use diag
+use emit/ffi_asked
+use emit/lend_type
+use emit/lock_screen
+use source
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`cli/refused_units.hero`); where the binary landed; the
@@ -68,15 +67,9 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
     # `cli/value_early.hero`).
     beside: [value_run.Unit] @= []
 
-    # A fetched package's header reading a file outside the package's root,
-    # the runtime and the machine's own (panel 235's R9, its C2; defect 2351),
-    # and a file of a folder a package's search names standing in for a
-    # header (panel 237's R2; defect 2357), told before any probe or unit of
-    # the build compiles.
-    held = package_stand_in.stopped(t, planned.probings, s: s, decls: art.decls, site: site)
-
-    if held.is_err()
-        return Rounds(verdict: held, binary: "", struct_tags: struct_tags, asked: asked, kept: {})
+    # What a package's search may read, C2 and a file standing in for a
+    # header (defects 2351 and 2357), is judged before the rounds, first and
+    # alone, where the build is planned (`cli/agreed.planned`).
 
     # A name a group binds whose meaning another group's header gives it, a
     # macro read before or after the group's own (`cli/bound_macro.hero`,

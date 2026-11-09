@@ -23,11 +23,13 @@
 # `cli/agreed_told.hero` says, in the specification's words, what no list
 # made alike.
 
+use check/table
 use cli/agreed_layout
 use cli/agreed_order
 use cli/agreed_told
 use cli/compile
 use cli/compiling
+use cli/package_stand_in
 use cli/package_units
 use cli/probing
 use cli/settled
@@ -38,6 +40,7 @@ use emit/decls as emit_decls
 use emit/externs as emit_externs
 use emit/unit_plan
 use source
+use token
 
 # The build's plans and their probes, each unit's list the one under which
 # every record it spells of another module reads as that module reads it;
@@ -57,6 +60,17 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
         package_words: site.package_words,
         by_header: site.by_header
     )
+
+    # **What a package's search may read is judged first, and alone**
+    # (`cli/package_stand_in.hero`): a fetched package's header reading
+    # outside its places (panel 235's R9, its C2; defect 2351), then a file of
+    # a folder a search names standing in for a header (panel 237's R2; defect
+    # 2357), before any unit compiles. A record a stand-in lays out otherwise
+    # is that stand-in's refusal, never also two layouts: until 2026-11-09 the
+    # route asked first, and the program's own `pt.h` standing in for the
+    # package `pt`'s was told `ffi_record_two_layouts` in its place (the
+    # round's gate, `unsupported/fixedbugs-2357-...-a-fetched-packages-header`).
+    package_stand_in.stopped(t, probed.probings, s: s, decls: art.decls, site: site)?
     foreign: [[i64]] @= []
     crossing: bool @= false
 
@@ -67,10 +81,7 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
         if mine.len() > 0
             crossing @ true
 
-    # A fetched package's headers reading outside its places are told before
-    # any clang run reads them (panel 235's R9, its C2;
-    # `cli/package_stand_in.hero`), so no list is asked while one is.
-    if !crossing || probing.outside(probed.probings, s: s, decls: art.decls).len() > 0
+    if !crossing
         return ok(probed)
     a = agreed_layout.asking(
         t,
@@ -110,8 +121,10 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
                 made = agreed_order.composed(a, plan: plan, wanted: mine, wrong: wrong, memo: @memo, dumps: @dumps)
 
                 if made.found.is_err()
+                    records = agreed_told.by_record_name(a, tried: made.tried)
+                    place = spelled_at(a, module: plan.module, records: records, spelled: mine)
                     refusals @ refusals.push(
-                        agreed_told.in_module(a, tried: made.tried, module: plan.module, spelled: mine)
+                        agreed_told.in_module(a, tried: made.tried, module: plan.module, at: place)
                     )
                 else
                     chosen.headers @ made.found.must()
@@ -136,6 +149,60 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compil
         by_header: site.by_header
     )
     return ok(probing.Planned(whole: probed.whole, plans: plans, probings: probings))
+
+# **Told where the reading module spells the record** (panel 239's R5, the
+# spec-warden's § 12c), the place its author can change: until the sitting a
+# refusal pointed at the binding, a correct field, and its `guess` walked in
+# a circle (`fixguess`).
+# Where module `module` first spells one of `records`, a value of one or its
+# type written, else one of `spelled`; the first record's binding where it
+# spells neither, which no unit planned from the module's code can reach.
+function spelled_at(a: agreed_layout.Asking, module: str, records: [i64], spelled: [i64]) -> token.Span
+    for wanted in [records, spelled]
+        found = first_spelling(a, module: module, wanted: wanted)
+
+        if !found.is_err()
+            return found.must()
+
+    return a.decls[records[0]].name
+
+function first_spelling(a: agreed_layout.Asking, module: str, wanted: [i64]) -> token.Span?
+    best: token.Span? @= fail(code: "none", msg: "the module spells none of them")
+    at: i64 @= 0
+
+    # The checker types every expression of the arena, one entry each; the
+    # bounds are asked all the same, so a shorter table reads as no spelling.
+    for e in a.tree.exprs
+        if at < a.checked.expr_types.len() && earlier(best, span: e.span) && is_one_of(a, ty: a.checked.expr_types[at], wanted: wanted) && source.component_at(a.s, e.span.start) == module
+            best @ ok(e.span)
+        at @ at + 1
+
+    # ORDER: none, the earliest place is kept.
+    for node in keys(a.checked.written_types)
+        if node >= 0 && node < a.tree.types.len()
+            span = a.tree.types[node].span
+
+            if earlier(best, span: span) && is_one_of(a, ty: a.checked.written_types[node].must(), wanted: wanted) && source.component_at(a.s, span.start) == module
+                best @ ok(span)
+
+    return best
+
+function earlier(best: token.Span?, span: token.Span) -> bool
+    match best
+        .ok held => return span.start < held.start
+        .err     => return true
+
+function is_one_of(a: agreed_layout.Asking, ty: i64, wanted: [i64]) -> bool
+    match table.get(a.checked.types, ty)
+        .named n =>
+            for decl in wanted
+                if decl == n.decl
+                    return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => return false
+        .array | .fixed | .map | .fallible | .function_ty | .case_ty => return false
+        .failure | .generic | .error                                 => return false
+
+    return false
 
 # The headers of the one file `--emit-c` writes, which reads every module's:
 # their written order where every group record reads in it as its own module

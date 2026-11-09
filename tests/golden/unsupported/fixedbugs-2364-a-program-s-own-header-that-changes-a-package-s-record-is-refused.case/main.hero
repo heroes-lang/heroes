@@ -1,0 +1,18 @@
+# fixedbugs, defect 2364, lane p239-land-a, 2026-11-09, the shape beside
+# defect 2357's stand-in case.
+#
+# This program's own group names `packs-four.h`, which leaves `#pragma
+# pack(4)` set, and it holds the fetched package `pt`'s record, so its unit
+# reads the package's `pt.h` after it and lays `pt_point` out at a multiple of
+# 4, where the package's own unit lays it out at a multiple of 8. No file
+# stands in for `pt.h`: the package's header is read, and the program's own
+# header changes it. A unit's own headers come first, so no order makes the
+# two alike, and the program is refused, told where it spells the record.
+use <pt>/pt
+
+extern "packs-four.h"
+    function four() -> i32
+
+function main()
+    p: pt.Point = pt.make(x: 3, y: 4)  #~ ffi_record_two_layouts
+    print(p.x + p.y + to_i64(four()).must())

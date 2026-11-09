@@ -14,7 +14,8 @@
 #
 # **Told where the reading module spells the record** (R5, the spec-warden's
 # § 12c): the first value of it, or the first place its type is written, in
-# that module's files, since that is where the author can change something;
+# that module's files (`cli/agreed.spelled_at` finds it), since that is where
+# the author can change something;
 # a note says the binding is not what to change, since a binding is judged as
 # its own module reads its header. Told at the binding until panel 239,
 # today's `ffi_field_type` pointed at a correct field and its `guess` walked
@@ -24,9 +25,9 @@
 # repair is a module moved or a header named elsewhere, never an edit of one
 # line.
 
-use check/table
 use cli/agreed_layout
 use cli/clang_told
+use cli/package_units
 use cli/strings
 use diag
 use emit/externs as emit_externs
@@ -35,9 +36,8 @@ use source
 use token
 
 # The refusal of module `module`'s unit, every record of `tried` named, told
-# where the module first spells one of them, or one of `spelled`, the records
-# of other modules its unit spells, where it spells none of these by name.
-function in_module(a: agreed_layout.Asking, tried: agreed_layout.Tried, module: str, spelled: [i64]) -> diag.Diagnostic
+# `at` the place the module spells one of them (`cli/agreed.spelled_at`).
+function in_module(a: agreed_layout.Asking, tried: agreed_layout.Tried, module: str, at: token.Span) -> diag.Diagnostic
     records = by_record_name(a, tried: tried)
     reader = "module `" + agreed_layout.module_name(a, component: module) + "`"
     d: diag.Diagnostic @= told(
@@ -46,7 +46,7 @@ function in_module(a: agreed_layout.Asking, tried: agreed_layout.Tried, module: 
         records: records,
         reader: reader,
         code: "ffi_record_two_layouts",
-        at: spelled_at(a, module: module, records: records, spelled: spelled)
+        at: at
     )
 
     for decl in records
@@ -68,20 +68,32 @@ function in_module(a: agreed_layout.Asking, tried: agreed_layout.Tried, module: 
             if agreed_layout.holds(own, one: one)
                 owns @ owns.push(one)
 
-        called = record_name(a, decl: decl)
-        theirs = owner_name(a, decl: decl)
-
         if owns.len() > 0
-            d.notes @ d.notes.push(
-                reader + "'s own " + listed(owns) + " changes `" + called + "`: spell `" + called + "` only in modules that read it as module `" + theirs + "` does, or have module `" + theirs + "` read first the header that changes it, so both read it alike"
-            )
+            d.notes @ d.notes.push(own_note(a, reader: reader, owns: owns, decl: decl))
         else if causes.len() > 0
-            apart @ apart.push("`" + called + "` only in modules that do not also read " + listed(causes))
+            apart @ apart.push(
+                "`" + record_name(a, decl: decl) + "` only in modules that do not also read " + listed(causes)
+            )
 
     if apart.len() > 0
         d.notes @ d.notes.push("spell " + apart.join(", and "))
 
     return d
+
+# What a reader's own header changing a record leaves the author: the record
+# spelled only where its own module's reading holds, or that module made to
+# read the header first; a fetched package's module is code others publish
+# (spec § 1), whose groups the program does not write, so it is offered the
+# first alone (the shape beside defect 2357's stand-in).
+function own_note(a: agreed_layout.Asking, reader: str, owns: [str], decl: i64) -> str
+    called = record_name(a, decl: decl)
+    theirs = owner_name(a, decl: decl)
+    first = reader + "'s own " + listed(owns) + " changes `" + called + "`: spell `" + called + "` only in modules that read it as module `" + theirs + "` does"
+    place = package_units.place_of(a.s, component: agreed_layout.owner_of(a, decl: decl))
+
+    if place.fetched
+        return first + ", the package `" + place.alias + "`'s, code others publish, whose groups this program does not write"
+    return first + ", or have module `" + theirs + "` read first the header that changes it, so both read it alike"
 
 # The refusal of the one file `--emit-c` writes, which reads every module's
 # headers: told at the first record's binding, since no module of the program
@@ -140,56 +152,6 @@ function by_record_name(a: agreed_layout.Asking, tried: agreed_layout.Tried) -> 
         out @ out.push(keyed[key].must())
 
     return out
-
-# Where module `module` first spells one of `records`, a value of one or its
-# type written, else one of `spelled`; the first record's binding where it
-# spells neither, which no unit planned from the module's code can reach.
-function spelled_at(a: agreed_layout.Asking, module: str, records: [i64], spelled: [i64]) -> token.Span
-    for wanted in [records, spelled]
-        found = first_spelling(a, module: module, wanted: wanted)
-
-        if !found.is_err()
-            return found.must()
-
-    return a.decls[records[0]].name
-
-function first_spelling(a: agreed_layout.Asking, module: str, wanted: [i64]) -> token.Span?
-    best: token.Span? @= fail(code: "none", msg: "the module spells none of them")
-    at: i64 @= 0
-
-    # The checker types every expression of the arena, one entry each; the
-    # bounds are asked all the same, so a shorter table reads as no spelling.
-    for e in a.tree.exprs
-        if at < a.checked.expr_types.len() && earlier(best, span: e.span) && is_one_of(a, ty: a.checked.expr_types[at], wanted: wanted) && source.component_at(a.s, e.span.start) == module
-            best @ ok(e.span)
-        at @ at + 1
-
-    # ORDER: none, the earliest place is kept.
-    for node in keys(a.checked.written_types)
-        if node >= 0 && node < a.tree.types.len()
-            span = a.tree.types[node].span
-
-            if earlier(best, span: span) && is_one_of(a, ty: a.checked.written_types[node].must(), wanted: wanted) && source.component_at(a.s, span.start) == module
-                best @ ok(span)
-
-    return best
-
-function earlier(best: token.Span?, span: token.Span) -> bool
-    match best
-        .ok held => return span.start < held.start
-        .err     => return true
-
-function is_one_of(a: agreed_layout.Asking, ty: i64, wanted: [i64]) -> bool
-    match table.get(a.checked.types, ty)
-        .named n =>
-            for decl in wanted
-                if decl == n.decl
-                    return true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => return false
-        .array | .fixed | .map | .fallible | .function_ty | .case_ty => return false
-        .failure | .generic | .error                                 => return false
-
-    return false
 
 # That the binding is judged as its own module reads its header, so no edit
 # of it makes the two readings alike.
