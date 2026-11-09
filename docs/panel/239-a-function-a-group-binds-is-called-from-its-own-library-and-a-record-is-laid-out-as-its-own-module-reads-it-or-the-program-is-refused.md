@@ -450,6 +450,11 @@ that reason and this ruling; and the blind seat is allowed, at most 10 USD in al
 words: *yes 10 dollars*), its twelve sessions run against the landing's compiler with their grading
 registered before any session starts.
 
+**The blind seat, run 2026-11-09 after the ratification** (`239-reports/llm-ergonomist-blind.md`):
+twelve sessions, 1.5671 USD by the CLI's report; right of four, today 3, the seat's words 4, the
+synthesis's 4, so the seat's arm does not beat the synthesis's and R6's words stand; the experiment
+meets its ceiling between those two arms. Its grading found defect 2384.
+
 ## Process notes
 
 1. **The critic's first pass changed the briefs before any seat started**: eleven findings (two new
