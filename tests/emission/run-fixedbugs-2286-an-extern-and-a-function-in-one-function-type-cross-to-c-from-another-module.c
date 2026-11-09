@@ -78,8 +78,8 @@ _Static_assert(__builtin_classify_type(((struct fixedbugs_2286_held *)0)->first)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_RECORD(fixedbugs_2286_held_make((int64_t)0), struct fixedbugs_2286_held), "heroes-ffi-return fixedbugs_2286_held_make Held");
 _Static_assert(HERO_RET_INT(fixedbugs_2286_call_ret((void *)0, (int64_t)0)), "heroes-ffi-return fixedbugs_2286_call_ret i64");
+_Static_assert(HERO_RET_RECORD(fixedbugs_2286_held_make((int64_t)0), struct fixedbugs_2286_held), "heroes-ffi-return fixedbugs_2286_held_make Held");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -139,10 +139,10 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 6 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_holder_fixedbugs_2286_held_make(int64_t a0) { (void)(fixedbugs_2286_held_make)(a0); }
 #line 6 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/caller.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_caller_fixedbugs_2286_call_ret(h_0fn_1d97ba71 a0, int64_t a1) { (void)(fixedbugs_2286_call_ret)(a0, a1); }
+#line 6 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_holder_fixedbugs_2286_held_make(int64_t a0) { (void)(fixedbugs_2286_held_make)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
@@ -171,8 +171,8 @@ HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e2013
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_main_main(void);
-h_0fn_1d97ba71 h_holder_maker(void);
 int64_t h_caller_hand(h_0fn_1d97ba71 h0_cb, int64_t h1_n);
+h_0fn_1d97ba71 h_holder_maker(void);
 __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
@@ -191,15 +191,15 @@ __attribute__((__noinline__)) void h_main_main(void) {
 }
 #undef t7
 
-#line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
-h_0fn_1d97ba71 h_holder_maker(void) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = fixedbugs_2286_held_make; return t1;
-#line 198 "main.c"
-}
-
 #line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/caller.hero"
 int64_t h_caller_hand(h_0fn_1d97ba71 h0_cb, int64_t h1_n) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_cb; t2 = h1_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"caller.hero", "caller.hand", 9, 12}; t3 = fixedbugs_2286_call_ret((h_0fn_1d97ba71)hero_callback_of((void (*)(void))t1), t2); } return t3;
+#line 198 "main.c"
+}
+
+#line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
+h_0fn_1d97ba71 h_holder_maker(void) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = fixedbugs_2286_held_make; return t1;
 #line 204 "main.c"
 }
 HERO_TU_LOCAL bool h_holder_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b) {

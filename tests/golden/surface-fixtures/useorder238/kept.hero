@@ -1,0 +1,15 @@
+# Panel 238's R1: a block already in its one order, the bracketed group first,
+# a blank line between the groups, is printed back byte for byte.
+
+use <core>/strings
+use <core2>/x  # the second package
+
+use Alpha
+
+# about alpha
+use alpha
+use lib/beta as near_beta
+use zeta
+
+function shown() -> i64
+    return strings.four() + x.one() + Alpha.five() + alpha.six() + near_beta.three() + zeta.two()

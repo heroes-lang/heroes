@@ -2,7 +2,11 @@
 # from, never two that touch the same bytes (design.md §4.17; CLAUDE.md §8;
 # defect 137). `check --apply` is the one command that writes the compiler's
 # fixes into the author's file with no reader in between, so what it writes
-# must be the fixes and nothing else.
+# must be the fixes and nothing else. Nor does it put a `use` block in its
+# order (panel 238's R5): `--apply` repairs meaning and `heroes fmt` repairs
+# form, and a block a fix leaves out of order is `fmt`'s to write, which the
+# `.applied` of `check/fixedbugs-2308-...` pins, its bracketed line repaired
+# where it stands, below the program's own.
 #
 # **Every fix's span and replacement are the ORIGINAL text's.** A fix whose
 # span encloses another's was made from the text before the inner one ran:
@@ -22,11 +26,11 @@
 # again of the text this left, which is the one place an enclosing fix can
 # be made from the text it will change.
 
+use diag
 use source
 use source_extent
-use diag
-use token
 use stable
+use token
 
 # What one pass wrote, and what it did not.
 record Applied

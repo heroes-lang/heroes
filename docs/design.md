@@ -2253,7 +2253,19 @@ invents:**
   program.** Two purposes: it removes all style decisions from the model (pure spend, no meaning),
   and it makes any textual difference between two versions *semantic*. Implementation: this is the
   pretty printer, which is needed anyway for error messages and `???` output. Write it once, use it
-  for both.
+  for both. **The `use` lines are one block in one order** (panel 238, the author's instruction of
+  2026-11-08, ratified that day): the bracketed group first, then the program's own, a blank line
+  between the two, each group by its path part by part, each part by its bytes, the alias breaking
+  a tie, then the order written. A `use` written after a declaration joins the block, since a `use`
+  binds its name for the whole file. A comment glued above a `use` moves with it (§4.1's reading of
+  a doc), the file's header stays on top, and any other comment in the block rises above it. **The
+  compiler follows the same order** (`selfhost/use_key.hero`): it walks the modules, binds the names
+  and reads the cycles by that key and never by the order written, so a formatted file and its
+  source are one program by construction, and the reorder reaches no output but that file's own
+  line numbers. Until that sitting the formatter kept source order (*"reordering is where a
+  formatter starts deleting the author's remarks"*); the reorder is a pass over the text
+  (`selfhost/print/use_order.hero`), judged by its own guard before the printer, which still prints
+  in source order.
 
 ### 4.16 Typed holes: `???`
 

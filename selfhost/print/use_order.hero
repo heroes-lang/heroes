@@ -1,0 +1,389 @@
+# The `use` block in its one order (panel 238, ratified 2026-11-08; design.md
+# §4.15, §4.1). Before `heroes fmt` prints a file, its `use` lines are
+# gathered into one block above the declarations: the bracketed ones
+# (`use <core>/x`) first, then the program's own, a blank line between the two
+# groups and none inside one, each group in `use_key.hero`'s order, the order
+# the compiler walks, binds and reads cycles in, so the two cannot disagree.
+#
+# WHY A PASS OVER THE TEXT AND NOT THE PRINTER'S WALK. `print/fmt.hero` prints
+# its items and the comment stream in source order, the stream moving one way
+# only (`page.comments_before`), so a walk that took the items out of order
+# would print each comment where the next item asked for it, not where it was
+# written: `fmt.hero`'s own warning above `format_file`. So the block is
+# reordered here, line by line and comments with it, and the printer then
+# reads a file already in its one order, in source order as ever.
+# `print/guard.hero`'s `checked` calls this first and judges it on its own
+# (`reorder_refused`) before the printer reads a byte.
+#
+# WHICH COMMENT MOVES, design.md §4.1's rule as the parser reads a doc
+# (`doc_comments.take_docs`): a run of comments at column 0 directly above a
+# `use` line, no blank line between, stopped by a `##` heading, is that line's
+# and moves with it, and so does a comment on the line itself. Two readings
+# of a comment that is not a line's:
+# - a run that opens the file and touches its first `use` is the FILE's
+#   header and stays above the block, glued to it as it was;
+# - any other comment between the block's first line and its last, a run
+#   with a blank line under it, a heading, an indented one, is a remark about
+#   the file and rises above the block in its order, a blank line under each
+#   run.
+# A run that moves gets a blank line above it unless it opens its group, and
+# never lands glued under the header: the next reading would take it for the
+# header (found by the compiler-engineer's own test at the sitting, where no
+# judge could see it, since nothing moves on the second pass).
+#
+# THE KNOWN COST (panel 238's R1.3). A comment glued above the first of two
+# or more `use` lines travels with that one line, so a heading meant for a
+# run is written above the run's first line by the key; §4.1's spelling of a
+# heading, a blank line under it, makes it a remark that rises above the block.
+# And where the file's header is glued to a first line that has a run of its
+# own, the two are one run and read as the header, which the text cannot
+# settle otherwise; nothing is lost either way.
+#
+# WHERE A LATE `use` GOES. The grammar puts no `use` first (`File` in spec
+# section 2), and a `use` binds its name for the whole file (spec line 164),
+# so a `use` after a declaration joins the block, its run with it, and leaves
+# a blank line where it stood: a comment above it never becomes the
+# documentation of the declaration below. With no `use` before the first
+# declaration, the block stands above that declaration's documentation, a
+# blank line on either side.
+
+use ast
+use cursor
+use parse
+use print/fmt
+use source
+use source_extent
+use text_lines
+use token
+use use_key
+
+# What a line of the root file is, as this pass reads it, from the parser's
+# own spans, so a `#` inside a string is never taken for a comment.
+variant Line
+    blank
+    code
+    # A comment that opens its line at column 0 and is no `##` heading: the
+    # kind a run above a `use` is made of.
+    comment
+    # Any other comment line: a heading, or one written further in.
+    remark
+    use_line
+
+# One `use` line and the comments that move with it, lines `from` to `line`
+# of the file counted from 0; `leading` where it stands above the first
+# declaration.
+record Entry
+    line: i64
+    from: i64
+    leading: bool
+    written: str
+    alias: str
+
+# The root file's text with its `use` block in the one order: the text itself
+# where there is no `use`.
+function reordered(s: source.Source, uses: [ast.Use], comments: [token.Span], decls: [ast.Decl]) -> str
+    text = source_extent.user_text(s)
+    starts = text_lines.starts_of(text)
+    lines = split_lines(text, starts: starts)
+    kinds = kinds_of(s, text: text, starts: starts, uses: uses, comments: comments)
+    first_decl = first_declaration(s, decls: decls, count: lines.len())
+    entries = entries_of(s, uses: uses, kinds: kinds, first_decl: first_decl)
+
+    if entries.len() == 0
+        return text
+    owned = owned_lines(entries, count: lines.len())
+    ordered = in_order(entries)
+    block = block_lines(lines, entries: ordered)
+    lead = leading_count(entries)
+    out: [str] @= []
+
+    if lead > 0
+        first = entries[0]
+        last = entries[lead - 1]
+        out @ append(out: out, lines: lines, from: 0, to: first.from)
+        out @ remarks(out: out, lines: lines, kinds: kinds, owned: owned, from: first.from, to: last.line + 1)
+
+        # A run that opens the block never lands glued under the header: the
+        # next reading would take the two for one header, and nothing would
+        # move on that second pass to say so.
+        if ordered[0].from < ordered[0].line
+            out @ apart(out)
+        out @ append(out: out, lines: block, from: 0, to: block.len())
+        out @ rest(out: out, lines: lines, owned: owned, from: last.line + 1)
+    else
+        # Above the first declaration's documentation, which stays its own.
+        place: i64 @= first_decl
+
+        while place > 0 && kinds[place - 1] == .comment
+            place @ place - 1
+
+        out @ append(out: out, lines: lines, from: 0, to: place)
+
+        if place > 0 && kinds[place - 1] != .blank
+            out @ out.push("")
+        out @ append(out: out, lines: block, from: 0, to: block.len())
+        out @ out.push("")
+        out @ rest(out: out, lines: lines, owned: owned, from: place)
+    return out.join("\n")
+
+## Reading the file
+
+# The text's lines, `\n` taken off and anything before it kept, so joining
+# them with `\n` gives the text back.
+function split_lines(text: str, starts: [i64]) -> [str]
+    out: [str] @= []
+
+    for at in range(from: 0, to: starts.len())
+        end: i64 @= text.len()
+
+        if at + 1 < starts.len()
+            end @ starts[at + 1] - 1
+        out @ out.push(text.slice(from: starts[at], to: end))
+
+    return out
+
+# Each line's kind: blank or code by its bytes, then a comment line where one
+# of the root file's comments opens it, then a `use` line where one of its
+# `use`s starts. A comment after code on its line leaves the line code.
+function kinds_of(s: source.Source, text: str, starts: [i64], uses: [ast.Use], comments: [token.Span]) -> [Line]
+    kinds: [Line] @= []
+
+    for line in split_lines(text, starts: starts)
+        kind: Line @= .blank
+
+        if !is_blank(line)
+            kind @ .code
+        kinds @ kinds.push(kind)
+
+    for c in comments
+        if !source.is_root(s, c.start) || text_lines.margin_width(text, at: c.start) < 0
+            continue
+        line = source.line_of(s, c.start) - 1
+
+        if c.start == starts[line] && !cursor.starts_a_section(text.slice(from: c.start, to: c.end))
+            kinds[line] @ .comment
+        else
+            kinds[line] @ .remark
+
+    for used in uses
+        if source.is_root(s, used.span.start)
+            kinds[source.line_of(s, used.span.start) - 1] @ .use_line
+
+    return kinds
+
+# The line, from 0, of the root file's first declaration, an extern group's
+# member read at its group's head; `count` where there is none.
+function first_declaration(s: source.Source, decls: [ast.Decl], count: i64) -> i64
+    first: i64 @= count
+
+    for decl in decls
+        start = fmt.decl_start(decl)
+
+        if !source.is_root(s, start)
+            continue
+        line: i64 @= source.line_of(s, start) - 1
+        head = fmt.head_line(s, decl: decl)
+
+        if head > 0
+            line @ head - 1
+
+        if line < first
+            first @ line
+
+    return first
+
+# The root file's `use` lines in source order, each with its run.
+function entries_of(s: source.Source, uses: [ast.Use], kinds: [Line], first_decl: i64) -> [Entry]
+    out: [Entry] @= []
+
+    for used in uses
+        if !source.is_root(s, used.span.start)
+            continue
+        line = source.line_of(s, used.span.start) - 1
+        from: i64 @= line
+
+        while from > 0 && kinds[from - 1] == .comment
+            from @ from - 1
+
+        out @ out.push(
+            Entry(line: line, from: from, leading: line < first_decl, written: source.span_text(s, used.name), alias: use_key.alias_of(s, used: used))
+        )
+
+    # The file's header: a run that opens the file and touches its first
+    # `use`, which stays where it is.
+    if out.len() > 0 && out[0].leading && out[0].from < out[0].line && only_blank(kinds, to: out[0].from)
+        head = out[0]
+        out[0] @ Entry(line: head.line, from: head.line, leading: true, written: head.written, alias: head.alias)
+    return out
+
+function only_blank(kinds: [Line], to: i64) -> bool
+    for at in range(from: 0, to: to)
+        if kinds[at] != .blank
+            return false
+
+    return true
+
+# Whether each line of the file is a `use` line or in the run of one.
+function owned_lines(entries: [Entry], count: i64) -> [bool]
+    owned: [bool] @= []
+
+    for _ in range(from: 0, to: count)
+        owned @ owned.push(false)
+
+    for e in entries
+        for at in range(from: e.from, to: e.line + 1)
+            owned[at] @ true
+
+    return owned
+
+## The block
+
+# The entries in `use_key`'s order, the group first, then the path, then the
+# alias, a tie in source order.
+function in_order(entries: [Entry]) -> [Entry]
+    written: [str] @= []
+    aliases: [str] @= []
+
+    for e in entries
+        written @ written.push(e.written)
+        aliases @ aliases.push(e.alias)
+
+    out: [Entry] @= []
+
+    for at in use_key.order_of(written: written, aliases: aliases)
+        out @ out.push(entries[at])
+
+    return out
+
+# The block's lines: a blank line between the two groups, and above a run of
+# comments that moves with its line, but at the top of its group.
+function block_lines(lines: [str], entries: [Entry]) -> [str]
+    out: [str] @= []
+    group: i64 @= -1
+
+    for e in entries
+        now = use_key.group_of(e.written)
+
+        if now != group
+            if out.len() > 0
+                out @ out.push("")
+        else if e.from < e.line
+            out @ out.push("")
+        group @ now
+        out @ append(out: out, lines: lines, from: e.from, to: e.line + 1)
+
+    return out
+
+## Writing the file
+
+function leading_count(entries: [Entry]) -> i64
+    count: i64 @= 0
+
+    for e in entries
+        if e.leading
+            count @ count + 1
+
+    return count
+
+# The lines of `from` to `to` no `use` line owns, the remarks of the block's
+# region, in their order, a blank line under each run and above it where the
+# header stands glued there, so a remark that rises never joins the header.
+function remarks(out: [str], lines: [str], kinds: [Line], owned: [bool], from: i64, to: i64) -> [str]
+    lines_out: [str] @= out
+    in_run: bool @= false
+
+    for at in range(from: from, to: to)
+        if kinds[at] != .blank && !owned[at]
+            if !in_run
+                lines_out @ apart(lines_out)
+            lines_out @ lines_out.push(lines[at])
+            in_run @ true
+        else if in_run
+            lines_out @ lines_out.push("")
+            in_run @ false
+
+    if in_run
+        lines_out @ lines_out.push("")
+    return lines_out
+
+# The lines from `from` on, a late `use` and its run left out and a blank
+# line left where they stood.
+function rest(out: [str], lines: [str], owned: [bool], from: i64) -> [str]
+    lines_out: [str] @= out
+    at: i64 @= from
+
+    while at < lines.len()
+        if owned[at]
+            lines_out @ lines_out.push("")
+
+            while at < lines.len() && owned[at]
+                at @ at + 1
+
+            continue
+        lines_out @ lines_out.push(lines[at])
+        at @ at + 1
+
+    return lines_out
+
+# `out` with a blank line at its end, where its last line is not one.
+function apart(out: [str]) -> [str]
+    if out.len() == 0 || is_blank(out[out.len() - 1])
+        return out
+    lines_out: [str] @= out
+    lines_out @ lines_out.push("")
+    return lines_out
+
+function append(out: [str], lines: [str], from: i64, to: i64) -> [str]
+    lines_out: [str] @= out
+
+    for at in range(from: from, to: to)
+        lines_out @ lines_out.push(lines[at])
+
+    return lines_out
+
+function is_blank(line: str) -> bool
+    for at in range(from: 0, to: line.len())
+        if line[at] != ' ' && line[at] != '\t' && line[at] != '\r'
+            return false
+
+    return true
+
+## Tests
+
+function sorted_text(text: str) -> str
+    parsed = parse.parse(text)
+    return reordered(source.new_source(name: "t.hero", text: text), parsed.uses, parsed.comments, parsed.decls)
+
+test "the bracketed group first, each group by its path part by part, a blank line between"
+    text = "use zeta\nuse <core2>/x\nuse lib/beta\nuse <core>/y\nuse alpha\n\nfunction main()\n    print(1)\n"
+    assert sorted_text(text) == "use <core>/y\nuse <core2>/x\n\nuse alpha\nuse lib/beta\nuse zeta\n\nfunction main()\n    print(1)\n"
+
+test "a file already in its order comes back byte for byte, and one with no use line"
+    for text in ["# header\n\nuse <core>/y\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n", "function main()\n    print(1)\n", "", "use a"]
+        assert sorted_text(text) == text
+
+test "the header stays above, and neither a run nor a remark that rises is ever glued under it"
+    text = "# header\nuse zeta\n# about alpha\nuse alpha\n\nfunction main()\n    print(1)\n"
+    assert sorted_text(text) == "# header\n\n# about alpha\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n"
+
+    # The header's own line sorting first keeps the two glued, as written.
+    kept = "# header\nuse alpha\n# about zeta\nuse zeta\n\nfunction main()\n    print(1)\n"
+    assert sorted_text(kept) == "# header\nuse alpha\n\n# about zeta\nuse zeta\n\nfunction main()\n    print(1)\n"
+    remark = "# header\nuse zeta\n\n# a remark\n\nuse alpha\n\nfunction main()\n    print(1)\n"
+    assert sorted_text(remark) == "# header\n\n# a remark\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n"
+
+test "a remark, a heading and an indented comment in the block rise above it, a blank under each run"
+    text = "use zeta\n\n# a remark\n\n## A heading\nuse beta\n    # indented\nuse alpha\n\nfunction main()\n    print(1)\n"
+    assert sorted_text(text) == "# a remark\n\n## A heading\n\n    # indented\n\nuse alpha\nuse beta\nuse zeta\n\nfunction main()\n    print(1)\n"
+
+test "a late use joins the block and its run with it, a blank line left behind"
+    text = "use zeta\n\n# remark\nuse alpha\nfunction main()\n    print(1)\n\n## Tests\n\nuse beta\n\ntest \"t\"\n    assert true\n"
+    assert sorted_text(text) == "# remark\nuse alpha\nuse beta\nuse zeta\nfunction main()\n    print(1)\n\n## Tests\n\n\n\ntest \"t\"\n    assert true\n"
+
+    # Every line late: the block stands above the first declaration's doc.
+    late = "# what main does\nfunction main()\n    print(1)\n\nuse zeta\n# about alpha\nuse alpha\n"
+    assert sorted_text(late) == "# about alpha\nuse alpha\nuse zeta\n\n# what main does\nfunction main()\n    print(1)\n\n\n"
+
+test "a trailing comment and an alias travel with their line, and a string's hash is no comment"
+    text = "use zeta as a_first  # the last letter\nuse alpha as z_last\n\nconstant HASH: str\n    \"# not a comment\"\n"
+    assert sorted_text(text) == "use alpha as z_last\nuse zeta as a_first  # the last letter\n\nconstant HASH: str\n    \"# not a comment\"\n"

@@ -6,8 +6,11 @@
 # SYMPTOM: `twice` was told alone at exit 1, and `K_DIV` on the next build.
 #
 # FIX: as its neighbour's, the probe asked beside the two ways' refusal.
+#
+# Its modules are named for the key the compiler walks `use` lines by (panel
+# 238's R4, `selfhost/use_key.hero`): `long_twice` before `then_defines`.
 use fixedbugs555/long_twice
-use fixedbugs555/defines
+use fixedbugs555/then_defines
 
 extern "fixedbugs-555-double.h"
     function twice(x: f64) -> f64  #~ ffi_declared_two_ways
@@ -18,5 +21,5 @@ extern "fixedbugs-2128-values.h"
 function main()
     print(long_twice.doubled(x: 3))
     print(twice(x: 4.0))
-    print(defines.unit())
+    print(then_defines.unit())
     print(K_DIV)

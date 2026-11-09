@@ -1,0 +1,18 @@
+# Fixed defect 2367, 2026-11-09, lane b26-fmt (panel 238's R6), the issue's
+# own reproducer: two `use` lines bind `zeta`, the root module by its own
+# name and `lib/beta` by an `as`, the renamed one first, the order the
+# compiler reads them in since panel 238 whichever way they are written.
+#
+# SYMPTOM: this order told `use zeta`, with no fix, since `use zeta as zeta`
+# repairs nothing, and then `unknown_in_module` on `zeta.two()`; the other
+# order told the renamed line with a `guess` renaming it. (That other order
+# is not canonical, and a folder case's text is held to `fmt` by the commit
+# guard, so it stands as the compiler's own test in `resolve/top.hero`.)
+#
+# FIX: the line told is the one its author can repair, the renamed one,
+# wherever it stands: one error, on the alias, and its fix.
+use lib/beta as zeta  #~ module_binding_taken
+use zeta
+
+function main()
+    print(zeta.two())

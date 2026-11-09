@@ -13,12 +13,12 @@
 # in five of one fixture, and a spec sentence the parser disagreed with
 # among them, defect 104).
 
-use source
 use print/guard
-use probe/seed
 use probe/lines
-use probe/tokens
 use probe/reader
+use probe/seed
+use probe/tokens
+use source
 
 # The seven families, in the order the report prints them.
 constant FAMILIES: [str]
@@ -80,7 +80,17 @@ function judged(path: str, text: str) -> Outcome
     # The output is the variant byte for byte: every comment is where it was.
     if done.formatted == text
         return .held
-    why = reader.compare(was: text, before: done.input.tokens, now: done.formatted, after: done.output.tokens)
+
+    # The reader pairs the text the printer read with what it printed: the
+    # variant with its `use` block in the one order (panel 238), a reorder
+    # `guard.checked` has judged on its own already. Paired with the variant
+    # as written, every comment after a moved line would read as moved.
+    why = reader.compare(
+        was: done.ordered,
+        before: done.ordered_input.tokens,
+        now: done.formatted,
+        after: done.output.tokens
+    )
 
     if why != ""
         return .moved(why: why)
@@ -317,6 +327,27 @@ test "every family holds over a comment after the parenthesis around a map's key
     assert r.failures.len() == 0
     assert parsing(r, family: "bracket") >= 42
     assert parsing(r, family: "paren") >= 9
+
+# Panel 238: `fmt` writes a file's `use` lines as one block in one order
+# before its printer reads the file, and the reader pairs the text the
+# printer read with what it printed. Seeds whose blocks are out of order,
+# split by a remark, glued to the file's header and written after a
+# declaration: every variant the parser takes holds under both judges, each
+# family making at least as many as measured the day it landed (2026-11-09).
+# Paired with the seed as written, the reader reads the block's moves as moved
+# comments, which the last two assertions show.
+test "every family holds over a use block out of order"
+    seeds = [
+        "# header\nuse zeta  # the last\n# about the package\nuse <core>/strings\n\n# a remark\n\nuse alpha as near_alpha\n\nfunction main()\n    print(zeta.two() + strings.four() + near_alpha.one())\n"
+        "use zeta\n\nfunction main()\n    print(zeta.two() + alpha.one())\n\n# the late one\nuse alpha\n# the doc of helper\nfunction helper() -> i64\n    return 1\n"
+    ]
+    r = every_family(seeds)
+    assert r.failures.len() == 0
+    assert parsing(r, family: "single") >= 61
+    assert parsing(r, family: "bracket") >= 60
+    done = guard.checked(path: "t.hero", s: source.new_source(name: "t.hero", text: seeds[0]))
+    assert reader.compare(was: seeds[0], before: done.input.tokens, now: done.formatted, after: done.output.tokens) != ""
+    assert reader.compare(was: done.ordered, before: done.ordered_input.tokens, now: done.formatted, after: done.output.tokens) == ""
 
 test "a stride that is a multiple of 3 is refused, and an offset below the stride divides a run"
     families = ["bracket"]

@@ -1,0 +1,17 @@
+# Fixed defect 2367, 2026-11-09, lane b26-fmt (panel 238's R6): two `use`
+# lines bind `zeta`, `fixedbugs2367/zeta` by its last part and
+# `fixedbugs2367/lib/beta` by an `as`, the renamed one written first, which
+# is also the order the compiler reads them in since panel 238.
+#
+# SYMPTOM: this order told `use fixedbugs2367/zeta`, with a `guess` renaming
+# a line the author had not renamed, and then `unknown_in_module` on
+# `zeta.two()`, `zeta` having gone to `lib/beta`; the other order told the
+# renamed line alone.
+#
+# FIX: the line told is the one its author can repair, the renamed one,
+# wherever it stands: one error, on the alias, and its fix.
+use fixedbugs2367/lib/beta as zeta  #~ module_binding_taken
+use fixedbugs2367/zeta
+
+function main()
+    print(zeta.two())

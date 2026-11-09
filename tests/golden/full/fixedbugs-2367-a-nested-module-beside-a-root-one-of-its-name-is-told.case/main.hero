@@ -1,0 +1,16 @@
+# Fixed defect 2367, 2026-11-09, lane b26-fmt, the shape beside it: two `use`
+# lines with no `as` bind `zeta`, the root module and a nested one whose last
+# part is that name, the nested one written first, which is also the order
+# the compiler reads them in since panel 238.
+#
+# SYMPTOM: this order blamed `use zeta`, whose fix would write `use zeta as
+# zeta`, so none was offered, and then told `zeta.two()` that `other/zeta`
+# declares no `two`; the other order blamed `use other/zeta` with a `guess`.
+#
+# FIX: the line told is the one a fix can repair, the nested one, wherever
+# it stands: one error, and the `guess` writing its `as`.
+use other/zeta  #~ module_binding_taken
+use zeta
+
+function main()
+    print(zeta.two())

@@ -1,0 +1,4 @@
+# A module of defect 2367's cases: the name the clash is about.
+
+function two() -> i64
+    return 2

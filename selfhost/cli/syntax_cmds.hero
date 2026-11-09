@@ -8,18 +8,18 @@
 # a formatter that proceeds rewrites the author's program into the
 # parser's guess about it — the one thing a formatter must never do.
 
-use source
-use source_extent
+use cli/argv
+use cli/io
+use cli/publish
+use cli/strings
+use cli/table as cli_table
 use diag
 use parse
 use print/dump
 use print/fmt
 use print/guard
-use cli/table as cli_table
-use cli/argv
-use cli/io
-use cli/publish
-use cli/strings
+use source
+use source_extent
 
 # heroes parse <file.hero> [--dump-ast]: without the flag a syntax
 # check, silent on success; with it the tree — but only when the file
@@ -326,3 +326,204 @@ test "a comment moved off the code it was written beside is refused, whichever p
     assert run_fmt(path: "build/selftest_fmt_moved.hero", s: ls, inv: linv) == .ok_exit
     kept = "function f(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n"
     assert read_file("build/selftest_fmt_moved.hero").must() == kept
+
+# Panel 238: `fmt` writes a file's `use` lines as one block in one order, the
+# reorder a pass over the text before the printer, and the guard judges the
+# two steps apart. PREDICATE TESTS, as the tree check's is, one per step. The
+# printer's side is the pair: a block out of order, or the two groups with no
+# blank line between them (what a stage 2 from before the sitting writes), is
+# not a fixpoint of `fmt`, since the second pass would order it, and the same
+# block in order passes. The reorder's side is its own judge, which fires on a
+# pass that lost a line, on one that made a remark a declaration's doc and on
+# one whose text does not parse, and passes the pass `fmt` makes.
+test "a block out of order is refused, the same block in order passes, and the reorder has its own judge"
+    in_order = "use <core>/strings\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
+    printed_wrong = [
+        "use zeta\nuse alpha\nuse <core>/strings\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
+        "use <core>/strings\nuse alpha\nuse zeta\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
+    ]
+
+    for out_of_order in printed_wrong
+        caught = guard.refuse_output_the_formatter_broke(path: "t.hero", original: in_order, formatted: out_of_order)
+        assert !caught.is_err()
+        assert strings.holds(text: caught.must(), needle: "not a fixpoint")
+
+    assert guard.refuse_output_the_formatter_broke(path: "t.hero", original: in_order, formatted: in_order).is_err()
+
+    text = "use zeta\n# a remark\n\nuse alpha\n\nfunction main()\n    print(1)\n"
+    lost = "use alpha\nuse zeta\n\nfunction main()\n    print(1)\n"
+    lost_said = guard.reorder_refused(path: "t.hero", text: text, order: lost, order_parse: parse.parse(lost))
+    assert strings.holds(text: lost_said.must(), needle: "lost or added a line")
+    made_doc = "use alpha\nuse zeta\n\n# a remark\nfunction main()\n    print(1)\n"
+    doc_said = guard.reorder_refused(path: "t.hero", text: text, order: made_doc, order_parse: parse.parse(made_doc))
+    assert strings.holds(text: doc_said.must(), needle: "changed the TREE")
+    torn = "use alpha\nuse zeta\n# a remark\n\nfunction main(\n    print(1)\n"
+    torn_said = guard.reorder_refused(path: "t.hero", text: text, order: torn, order_parse: parse.parse(torn))
+    assert strings.holds(text: torn_said.must(), needle: "does not parse")
+    done = guard.checked(path: "t.hero", s: source.new_source(name: "t.hero", text: text))
+    assert done.ordered == "# a remark\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n"
+    assert guard.reorder_refused(
+        path: "t.hero",
+        text: text,
+        order: done.ordered,
+        order_parse: done.ordered_input
+    ).is_err()
+    assert done.refusal.is_err()
+
+    # And the real command writes the block in its order once, then leaves
+    # the file alone.
+    assert !write_file(path: "build/selftest_fmt_uses.hero", text: text).is_err()
+    us = source.new_source(name: "build/selftest_fmt_uses.hero", text: text)
+    hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
+    uinv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_uses.hero"), program_args: [], flags: hits)
+    assert run_fmt(path: "build/selftest_fmt_uses.hero", s: us, inv: uinv) == .ok_exit
+    assert read_file("build/selftest_fmt_uses.hero").must() == done.ordered
+    again = source.new_source(name: "build/selftest_fmt_uses.hero", text: done.ordered)
+    assert run_fmt(path: "build/selftest_fmt_uses.hero", s: again, inv: uinv) == .ok_exit
+    assert read_file("build/selftest_fmt_uses.hero").must() == done.ordered
+
+## The `use` block in its one order (panel 238)
+
+# What `fmt` writes of `text`, every check of the guard holding.
+function written_by_fmt(text: str) -> str
+    done = guard.checked(path: "t.hero", s: source.new_source(name: "t.hero", text: text))
+    assert done.input.diagnostics.len() == 0
+    assert done.refusal.is_err()
+    return done.formatted
+
+# The shapes beside the rule, depth one, measured at the sitting (the
+# compiler-engineer's item 7 and its glued header, the spec-warden's eight
+# comment shapes): each written as `fmt` writes it, and that text a fixpoint.
+# Every expectation is the rule read off its text: a glued run travels with
+# its line, a remark rises above the block, the file's header stays on top, a
+# late line joins the block and leaves a blank behind, and no doc moves.
+test "the shapes beside the rule are written by it, and each is a fixpoint"
+    main = "\nfunction main()\n    print(zeta.two() + alpha.one())\n"
+    holed = "\nfunction main()\n    x: i64 = ???\n    print(x + zeta.two() + alpha.one())\n"
+    helper = "function helper() -> i64\n    return 0\n"
+    given = [
+        "use zeta\nuse alpha\n"
+        "use zeta  # the last letter\nuse alpha  # the first\n" + main
+        "use zeta as a_first\nuse alpha as z_last\n\nfunction main()\n    print(a_first.two() + z_last.one())\n"
+        "use zeta\n\n# the package group, written second\nuse <core>/strings\n\nfunction main()\n    print(zeta.two())\n"
+        "use zeta\n" + main + "\n# a remark above the late line\nuse alpha\nfunction helper() -> i64\n    return 1\n"
+        "use zeta\n" + main + "\n# a remark, then a blank\n\nuse alpha\n# the doc of helper\nfunction helper() -> i64\n    return 1\n"
+        "# header\nuse zeta\n# about alpha\nuse alpha\n\nfunction main()\n    print(1)\n"
+        "use zeta\n" + holed + "\n# what helper does\nuse alpha\n" + helper
+        "use zeta\n" + holed + "\nuse alpha\n# what helper does\n" + helper
+        "use zeta\n" + holed + "\n## Tests\n\nuse alpha\n\n# what helper does\n" + helper
+        "use zeta\n## The rest\nuse alpha\n\n# what main does" + holed + "\n# what helper does\n" + helper
+        "# header\n# why beta\nuse lib/beta\nuse alpha\n\n# what helper does\nfunction helper() -> i64\n    return beta.three()\n\nfunction main()\n    x: i64 = ???\n    print(x + alpha.one())\n"
+        "use zeta\nuse alpha\n# what helper does\n" + helper + holed
+        "# what helper does\nfunction helper() -> i64\n    return alpha.one()\n\nfunction main()\n    x: i64 = ???\n    print(x)\n\nuse alpha\n"
+        "use zeta\n# why alpha\nuse alpha\n\n# what helper does\n" + helper + holed
+    ]
+    wanted = [
+        "use alpha\nuse zeta\n"
+        "use alpha  # the first\nuse zeta  # the last letter\n" + main
+        "use alpha as z_last\nuse zeta as a_first\n\nfunction main()\n    print(a_first.two() + z_last.one())\n"
+        "# the package group, written second\nuse <core>/strings\n\nuse zeta\n\nfunction main()\n    print(zeta.two())\n"
+        "# a remark above the late line\nuse alpha\nuse zeta\n" + main + "\nfunction helper() -> i64\n    return 1\n"
+        "use alpha\nuse zeta\n" + main + "\n# a remark, then a blank\n\n# the doc of helper\nfunction helper() -> i64\n    return 1\n"
+        "# header\n\n# about alpha\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n"
+        "# what helper does\nuse alpha\nuse zeta\n" + holed + "\n" + helper
+        "use alpha\nuse zeta\n" + holed + "\n# what helper does\n" + helper
+        "use alpha\nuse zeta\n" + holed + "\n## Tests\n\n# what helper does\n" + helper
+        "## The rest\n\nuse alpha\nuse zeta\n\n# what main does" + holed + "\n# what helper does\n" + helper
+        "# header\n# why beta\nuse alpha\nuse lib/beta\n\n# what helper does\nfunction helper() -> i64\n    return beta.three()\n\nfunction main()\n    x: i64 = ???\n    print(x + alpha.one())\n"
+        "use alpha\nuse zeta\n\n# what helper does\n" + helper + holed
+        "use alpha\n\n# what helper does\nfunction helper() -> i64\n    return alpha.one()\n\nfunction main()\n    x: i64 = ???\n    print(x)\n"
+        "# why alpha\nuse alpha\nuse zeta\n\n# what helper does\n" + helper + holed
+    ]
+    assert given.len() == wanted.len()
+
+    for at in range(from: 0, to: given.len())
+        assert written_by_fmt(given[at]) == wanted[at]
+        assert written_by_fmt(wanted[at]) == wanted[at]
+
+        # And no declaration's documentation moved: the docs `fmt` read are
+        # the docs its output holds, in the same order.
+        assert docs_of(given[at]) == docs_of(wanted[at])
+
+# Every declaration's doc in `text`, in its order, as the parser reads it.
+function docs_of(text: str) -> [str]
+    parsed = parse.parse(text)
+    out: [str] @= []
+
+    for decl in parsed.decls
+        for one in decl.doc
+            out @ out.push(text.slice(from: one.start, to: one.end))
+
+    return out
+
+# The orders of `count` things, each a list of the indices 0 to `count - 1`.
+function orders(count: i64) -> [[i64]]
+    total: i64 @= 1
+
+    for _ in range(from: 0, to: count)
+        total @ total * count
+
+    out: [[i64]] @= []
+
+    for code in range(from: 0, to: total)
+        picked: [i64] @= []
+        seen: [bool] @= []
+
+        for _ in range(from: 0, to: count)
+            seen @ seen.push(false)
+
+        left: i64 @= code
+        distinct: bool @= true
+
+        for _ in range(from: 0, to: count)
+            digit = left % count
+            left @ left / count
+
+            if seen[digit]
+                distinct @ false
+            seen[digit] @ true
+            picked @ picked.push(digit)
+
+        if distinct
+            out @ out.push(picked)
+
+    return out
+
+# One text per layout, measured at the sitting over 361 files: five lines,
+# one with a comment glued above it, in all 120 orders and three layouts (a
+# blank line under the header and none between the lines; a blank between
+# every two; the header glued to the first line), and one with a line written
+# after `main`. The first two layouts and the late one give one text; the
+# glued layout two, by whether the commented line is written first, where the
+# header and that line's comment are one run, read as the header, the one
+# reading the text cannot settle otherwise. Each text is a fixpoint.
+test "every order of one set of lines gives one text per layout"
+    lines = ["use <core>/strings", "use <core2>/x", "# why beta\nuse lib/beta as b2", "use alpha", "use Zeta"]
+    tail = "\n\nfunction main()\n    print(1)\n"
+    block = "use <core>/strings\nuse <core2>/x\n\nuse Zeta\nuse alpha\n\n# why beta\nuse lib/beta as b2" + tail
+    apart = "# header\n\n" + block
+    glued = "# header\n" + block
+    read_as_header = "# header\n# why beta\nuse <core>/strings\nuse <core2>/x\n\nuse Zeta\nuse alpha\nuse lib/beta as b2" + tail
+    seen: i64 @= 0
+
+    for order in orders(count: 5)
+        picked: [str] @= []
+
+        for at in order
+            picked @ picked.push(lines[at])
+
+        assert written_by_fmt("# header\n\n" + picked.join("\n") + tail) == apart
+        assert written_by_fmt("# header\n\n" + picked.join("\n\n") + tail) == apart
+
+        if order[0] == 2
+            assert written_by_fmt("# header\n" + picked.join("\n") + tail) == read_as_header
+        else
+            assert written_by_fmt("# header\n" + picked.join("\n") + tail) == glued
+        seen @ seen + 1
+
+    assert seen == 120
+    late = "# header\n\nuse <core>/strings\nuse <core2>/x\n# why beta\nuse lib/beta as b2\nuse Zeta" + tail + "\nuse alpha\n"
+    assert written_by_fmt(late) == apart
+
+    for text in [apart, glued, read_as_header]
+        assert written_by_fmt(text) == text

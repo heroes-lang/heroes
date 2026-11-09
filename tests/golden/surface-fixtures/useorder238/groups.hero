@@ -1,0 +1,18 @@
+# Panel 238's R1, the `use` block in its one order: both groups written out
+# of order, a comment glued above a line, one on a line, an alias, and a
+# remark between the lines. The probe's variants put a comment and a broken
+# bracket at every place on these lines; `fmt` writes them in the order the
+# compiler walks, and the surface suite pins what it writes.
+use zeta  # the last letter
+use <core2>/x
+
+# a remark about the file, which rises above the block
+
+use lib/beta as near_beta
+# about the package
+use <core>/strings
+use Alpha
+use alpha
+
+function shown() -> i64
+    return zeta.two() + x.one() + near_beta.three() + strings.four() + Alpha.five() + alpha.six()

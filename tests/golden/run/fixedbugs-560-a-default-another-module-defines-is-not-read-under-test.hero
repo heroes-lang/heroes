@@ -6,12 +6,20 @@
 # its own module's unit, so `cap` caps at 10, and prints 3 and 10. Until
 # 2026-10-10 `heroes test` read both in one unit, the first module's first,
 # and failed the correct test below, *left: 50 right: 10*.
+#
+# The modules' names are chosen for the key the compiler walks `use` lines
+# by (panel 238's R4, `selfhost/use_key.hero`, whose test names them):
+# `limit_half` before `then_cap_ten`, the order in which the defect shows.
+# Under the key the order written reaches no walk, so a module named to sort
+# first would make this a case that passes on the compiler it was written
+# against (the sitting's compiler-engineer ran this text on the compiler of
+# `55d20a362`, from before the repair, and it failed, as it should).
 use fixedbugs560/limit_half
-use fixedbugs560/cap_ten
+use fixedbugs560/then_cap_ten
 
 function main()
     print(limit_half.halved(x: 6))
-    print(cap_ten.capped(v: 50))
+    print(then_cap_ten.capped(v: 50))
 
 test "cap is ten"
-    assert cap_ten.capped(v: 50) == 10
+    assert then_cap_ten.capped(v: 50) == 10
