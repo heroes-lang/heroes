@@ -94,7 +94,13 @@ precedent):
   name bound by no group and of none of the compiler's forms, declared by
   none of the unit's opening read alone, and named by a body or a macro of
   the module's header list (`cli/header_bodies.hero`); a reference no
-  header's text explains stays exit 2;
+  header's text explains stays exit 2. **Each name is judged by the reader
+  whose question it answers** (defect 2381, lane b26-cli, 2026-11-09, the
+  same precedent): a link missing a name a linked library needs beside a
+  name a header's inline body needs was told by neither while each reader
+  judged the whole link; it is told where every name is one reader's, each
+  told as that reader tells it, in the program's order, and stays exit 2
+  where any name is neither's (`cli/link_needs.hero`);
 - **a `ptr` lend C would write through, rooted at a name the program may not
   write** — added 2026-09-19 (panel 166, defect 065). The lend crosses as
   `const void *` from a `=` binding or a by-value parameter, and clang's own

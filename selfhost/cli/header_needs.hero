@@ -13,8 +13,10 @@
 # they name as referring is the header's `top_fast` at `-O0`, the compiler's
 # own `h_<module>_main` beside it once `-O2` inlines it, and the compiler's
 # `hero_extern_refs` for a macro (measured 2026-11-09, ld64-27106.1 and GNU
-# ld 2.44). So clang is asked, as panel 214's R3 asks it, and a link is told
-# here only where, for every undefined name it reports:
+# ld 2.44). So clang is asked, as panel 214's R3 asks it, and a name the link
+# reports is this reader's only where (`cli/link_needs.hero` tells the link
+# where every name is this reader's or `cli/library_needs.hero`'s, defect
+# 2381):
 #
 # - every reference is placed in the object of one of the program's modules,
 #   `<module>-<digest>.o` (`cli/units.hero`), or in a library the program
@@ -74,25 +76,17 @@ record Asked
     defines: {str: bound_said.Define}
     answered: bool
 
-# The diagnostics for a refused link's `message`, one per binding or group
-# whose header's text names undefined names; none unless every undefined
-# name the link reports is one of them. `linked` are the packages' flags the
-# link carried.
-function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, asking: [probing.Probing], linked: [str]) -> [diag.Diagnostic]
-    none: [diag.Diagnostic] = []
-    refs = link_report.references(message)
-    missing: [str] @= []
+# The diagnostics for `names`, undefined names `refs` reports (the link's
+# references, `link_report.references`), one per binding or group whose
+# header's text names them; absent unless every one of `names` is such a
+# name, so `cli/link_needs.hero` leaves the link the compiler's (defect
+# 2381). `libraries` are the libraries the program's words link
+# (`library_needs.names_of`), which may refer to a name beside its object.
+function told_of(refs: [link_report.Reference], names: [str], s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, asking: [probing.Probing], libraries: [str]) -> [diag.Diagnostic]?
+    for name in names
+        if name == "" || !ffi_lookup.declaration(s, decls, name: name).is_err() || own_names.reserved(name)
+            return fail(code: "none", msg: "a name the compiler's own C may name")
 
-    for one in refs
-        if one.symbol == "" || one.file == ""
-            return none
-        missing @ once(missing, name: one.symbol)
-
-    for name in missing
-        if !ffi_lookup.declaration(s, decls, name: name).is_err() || own_names.reserved(name)
-            return none
-
-    libraries = library_needs.names_of(s, decls: decls, linked: linked)
     asked: [Asked] @= []
 
     for one in asking
@@ -103,7 +97,7 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
 
     findings: [needs_told.Finding] @= []
 
-    for name in missing
+    for name in names
         found: needs_told.Finding? @= fail(code: "none", msg: "no header explains it")
 
         for i in range(from: 0, to: asking.len())
@@ -117,7 +111,7 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
                 )
 
         if found.is_err()
-            return none
+            return fail(code: "none", msg: "no header explains `" + name + "`")
         findings @ merged(findings, one: found.must())
 
     out: [diag.Diagnostic] @= []
@@ -125,7 +119,7 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
     for one in findings
         out @ out.push(needs_told.diagnostic(one, linking: needs_told.group_links(s, decls: decls, at: one)))
 
-    return out
+    return ok(out)
 
 # What `one`'s header list answers: clang's dump of the list and of the
 # unit's opening alone (`defined_twice.dump_of`), and its macro table.
@@ -319,13 +313,6 @@ function hexadecimal(text: str) -> bool
             return false
 
     return true
-
-function once(names: [str], name: str) -> [str]
-    for one in names
-        if one == name
-            return names
-
-    return names.push(name)
 
 ## Tests
 
