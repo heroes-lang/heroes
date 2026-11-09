@@ -113,56 +113,98 @@ function enter(@r: state.Resolver, s: source.Source, decls: [ast.Decl], index: i
 # spec already has, and never reading it is the unused error it already
 # has. Neither needed a word of specification; both need a table.
 #
-# **In the one order of `use_key.hero`, never as written** (panel 238): of
-# two lines that clash, the one read second is the one told, and a
-# formatter that reorders the block must not move which.
+# **In the one order of `use_key.hero`, never as written** (panel 238): a
+# formatter that reorders the block must not move which of two lines is told.
+#
+# **And of two lines that bind one name, the one told is the one its author
+# can repair** (defect 2367). The lines are read in three passes, each in the
+# key's order: first a line naming a module by its own name alone, on which
+# no `as` could differ from the name it takes, so a clash told there offers
+# no fix; then a line whose path has a part to close up, which the fix's `as`
+# names; and a line with an `as` last, its alias being the author's own word
+# and the one the fix renames. A line read later finds the name taken, so it
+# is the one told, and the key decides only between two alike. Until then the
+# second line read was told: `use zeta` beside `use lib/beta as zeta` blamed
+# `use zeta` in one order, with no fix and a second error after it, and the
+# key would have read every such file that way.
 function read_uses(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
-    for used in use_key.ordered_uses(s, uses)
-        from = source.module_at(s, used.span.start)
-        named = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
+    ordered = use_key.ordered_uses(s, uses)
+    passes: [i64] @= []
 
-        if from == named
-            # A module using itself. The module graph calls it a cycle,
-            # which it is; a second message would be a second diagnostic
-            # for one mistake.
-            continue
+    for used in ordered
+        passes @ passes.push(repair_pass(s, used: used))
 
-        if resolved.is_used_module(r.out, from: from, module: named)
-            state.push_diagnostic(@r, diagnostics.used_twice(named, span: used.name))
-            continue
+    for pass in range(from: 0, to: 3)
+        for at in range(from: 0, to: ordered.len())
+            if passes[at] == pass
+                read_use(@r, s, decls, used: ordered[at])
 
-        # What a `use` introduces into this file is its BINDING — the name
-        # after `as`, or the path's last part where there is no `as`. The
-        # PARSER decides it and puts it in the node (`ast.Use.binding`), so
-        # nothing here derives a name or has to know the rule (panel 100 R8).
-        binding = source.span_text(s, used.binding)
+# Which pass reads a `use` line: 0 where a clash told on it could offer no
+# repair, a path of one part and no `as` (`module_binding_taken`'s own rule:
+# a fix only where it changes something); 1 where the fix would write an
+# `as`; 2 where the line has one.
+function repair_pass(s: source.Source, used: ast.Use) -> i64
+    if used.binding.end != used.name.end
+        return 2
+    named = placed.identity(
+        s.reached.aliases,
+        from: source.module_at(s, used.span.start),
+        named: source.span_text(s, used.name)
+    )
 
-        # **THE PER-FILE UNIQUENESS RULE, and it lives here because this is
-        # where the `use` lines are** (panel 100 R3, replacing the program-wide
-        # `paths.last_parts_collide`). `use check/state` beside
-        # `use ir/state` binds `state` twice in one file and neither is more
-        # right than the other, so the second is refused — with the caret on
-        # the name the author can fix, which the deleted check could not do:
-        # it pointed at a module's own first line, in a file the author may
-        # never have opened.
-        taken = resolved.used_module_named(r.out, from: from, binding: binding)
+    if diagnostics.suggestion(named) != source.span_text(s, used.binding)
+        return 1
+    return 0
 
-        if !taken.is_err()
-            state.push_diagnostic(
-                @r,
-                diagnostics.module_binding_taken(binding: binding, first: taken.must(), second: named, has_alias: used.binding.end != used.name.end, span: used.binding)
-            )
-            continue
-        already = resolved.top_in(r.out, module: from, name: binding)
+# One `use` line read: refused where it uses its own module, uses a module a
+# second time, takes a name a line read before it took, or shadows a
+# declaration of its file; else bound.
+function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used: ast.Use)
+    from = source.module_at(s, used.span.start)
+    named = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
 
-        if !already.is_err()
-            at = source.elsewhere(s, here: used.binding.start, there: decls[already.must()].name.start)
-            state.push_diagnostic(
-                @r,
-                diagnostics.use_shadows_a_declaration(name: binding, declared_at: at, span: used.binding)
-            )
-            continue
-        resolved.declare_use(@r.out, from: from, binding: binding, module: named)
+    if from == named
+        # A module using itself. The module graph calls it a cycle,
+        # which it is; a second message would be a second diagnostic
+        # for one mistake.
+        return
+
+    if resolved.is_used_module(r.out, from: from, module: named)
+        state.push_diagnostic(@r, diagnostics.used_twice(named, span: used.name))
+        return
+
+    # What a `use` introduces into this file is its BINDING — the name
+    # after `as`, or the path's last part where there is no `as`. The
+    # PARSER decides it and puts it in the node (`ast.Use.binding`), so
+    # nothing here derives a name or has to know the rule (panel 100 R8).
+    binding = source.span_text(s, used.binding)
+
+    # **THE PER-FILE UNIQUENESS RULE, and it lives here because this is
+    # where the `use` lines are** (panel 100 R3, replacing the program-wide
+    # `paths.last_parts_collide`). `use check/state` beside
+    # `use ir/state` binds `state` twice in one file, so the line read
+    # later is refused (`read_uses` says which) — with the caret on
+    # the name the author can fix, which the deleted check could not do:
+    # it pointed at a module's own first line, in a file the author may
+    # never have opened.
+    taken = resolved.used_module_named(r.out, from: from, binding: binding)
+
+    if !taken.is_err()
+        state.push_diagnostic(
+            @r,
+            diagnostics.module_binding_taken(binding: binding, first: taken.must(), second: named, has_alias: used.binding.end != used.name.end, span: used.binding)
+        )
+        return
+    already = resolved.top_in(r.out, module: from, name: binding)
+
+    if !already.is_err()
+        at = source.elsewhere(s, here: used.binding.start, there: decls[already.must()].name.start)
+        state.push_diagnostic(
+            @r,
+            diagnostics.use_shadows_a_declaration(name: binding, declared_at: at, span: used.binding)
+        )
+        return
+    resolved.declare_use(@r.out, from: from, binding: binding, module: named)
 
 # What no expression and no written type ever named. Runs after every
 # body, because a `use` may be read anywhere in its file.
@@ -400,6 +442,55 @@ test "a file may not bind one name twice, and `as` is the repair"
 
     for d in r2.out.diagnostics
         assert d.code != "module_binding_taken"
+
+# Defect 2367, 2026-11-09: of two `use` lines that bind one name, the one told
+# is the one its author can repair, whichever order they are written in: the
+# renamed line, with the `guess` renaming it again; beside a root module of the
+# name, the nested one, with the `guess` writing its `as`; of two renamed
+# lines, the second by the key. Until then the line read second was told, and
+# in one order of each pair it offered no fix.
+test "of two lines binding one name, the one a fix can repair is told, in either order"
+    pairs = [
+        ["use zeta\nuse lib/beta as zeta\n", "use lib/beta as zeta\nuse zeta\n", "lib/beta: lib_beta"]
+        ["use zeta\nuse other/zeta\n", "use other/zeta\nuse zeta\n", "other/zeta: zeta as other_zeta"]
+        ["use lib/beta as zeta\nuse other/zeta as zeta\n", "use other/zeta as zeta\nuse lib/beta as zeta\n", "other/zeta: other_zeta"]
+    ]
+
+    for pair in pairs
+        assert told_of(pair[0]) == [pair[2]]
+        assert told_of(pair[1]) == [pair[2]]
+
+# Each line `module_binding_taken` tells of the root `head`, as its path and the
+# replacement its fix writes, `no fix` where it offers none.
+function told_of(head: str) -> [str]
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: head + "\nfunction main()\n    print(zeta.two())\n", is_library: false)
+        source.InputFile(name: "zeta.hero", module: "zeta", text: "function two() -> i64\n    return 2\n", is_library: false)
+        source.InputFile(name: "lib/beta.hero", module: "lib/beta", text: "function three() -> i64\n    return 3\n", is_library: false)
+        source.InputFile(name: "other/zeta.hero", module: "other/zeta", text: "function three() -> i64\n    return 3\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    r: state.Resolver @= state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    collect(@r, s, p.decls, p.uses)
+    out: [str] @= []
+
+    for d in r.out.diagnostics
+        if d.code != "module_binding_taken"
+            continue
+        fix: str @= "no fix"
+
+        if d.fixes.len() > 0
+            fix @ d.fixes[0].replacement
+
+        for used in p.uses
+            if used.binding.start == d.span.start
+                out @ out.push(source.span_text(s, used.name) + ": " + fix)
+
+    return out
 
 test "an unread use is reported, and a hole in the file suspends it"
     unread = resolved_file("use geom\nconstant M: i64\n    1\n")

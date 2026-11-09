@@ -1,0 +1,19 @@
+# Fixed defect 2367, 2026-11-09, lane b26-fmt (panel 238's R6): two `use`
+# lines bind `zeta`, `fixedbugs2367/zeta` by its last part and
+# `fixedbugs2367/lib/beta` by an `as`, the renamed one written second.
+#
+# SYMPTOM: of two lines binding one name the one read second was told, so
+# the order written chose: this order told the renamed line, with a `guess`
+# renaming it again; the other told the plain line, with a `guess` renaming a
+# line the author had not renamed, and then `unknown_in_module` on
+# `zeta.two()`. Under panel 238's key, which reads `lib/beta` first, every
+# file would have taken the second outcome.
+#
+# FIX: the line told is the one its author can repair, the renamed one,
+# wherever it stands; this order and the other
+# (`...-told-written-first.hero`) say the same.
+use fixedbugs2367/zeta
+use fixedbugs2367/lib/beta as zeta  #~ module_binding_taken
+
+function main()
+    print(zeta.two())

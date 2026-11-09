@@ -1,0 +1,5 @@
+# A module of defect 2367's shape beside it: a nested module whose last part
+# is the root module's name.
+
+function three() -> i64
+    return 3
