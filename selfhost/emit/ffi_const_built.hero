@@ -22,11 +22,12 @@
 # *internal error*. It is told the same way, worded for where the member
 # lies, on the record whose assignment clang refuses: the LAST record built or
 # received at the line, since a record built for a field of another is built
-# before it and is told in clang's own line about it. What it does not reach,
-# said: a `const` member inside an ELEMENT of an array member, which clang
-# 21 and 22 assign without a word, so the program builds and C reads the
-# member as it set it; refusing it moves the line between accepted and
-# refused, a question for a sitting.
+# before it and is told in clang's own line about it. What it does not reach:
+# a `const` member inside an ELEMENT of an array member, which clang 21 and
+# 22 assign without a word, so no line of clang's names it; the layout round
+# asks clang to assign the element itself and tells the record from its own
+# marker (defect 2388, decision 2387; `cli/const_elements.hero`,
+# `emit/ffi_const_element.hero`).
 
 use ast
 use diag

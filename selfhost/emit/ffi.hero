@@ -193,7 +193,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         # A group record's field, the readers of `emit/ffi_fields_told.hero`, in
         # their order.
-        for one in ffi_fields_told.told(s, tree, decls, p, line: line, asked: asked, word_bits: word_bits)
+        for one in ffi_fields_told.told(s, tree, decls, c, p, line: line, asked: asked, word_bits: word_bits)
             found @ ffi_lookup.add_once(found, d: one)
 
         union_r = ffi_record.union_record(s, tree, decls, line: line)

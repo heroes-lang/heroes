@@ -1,0 +1,174 @@
+# A group record whose `const` member lies inside an ELEMENT of an array
+# member (defect 2388, 2026-11-09), told `ffi_const_field` at exit 1 on
+# every line that builds one or receives one by value, as defects 2131 and
+# 2386 tell the same member at the top of the record and nested in a member.
+#
+# **Why clang's words cannot be read here.** C11 counts a structure as no
+# modifiable lvalue where it holds a member of const-qualified type,
+# *"including, recursively, any member or element of all contained
+# aggregates or unions"* (§6.3.2.1p1), and an assignment needs one on its
+# left (§6.5.16p2); every Heroes value is built by assignment. clang 21 and
+# 22 refuse the member at the top and in a nested member, and assign
+# `struct outer { struct inner items[2]; int n; }` without a word where
+# `struct inner` holds `const int k`: their walk stops at an array. So the
+# program built at exit 0 and C wrote a member the header declares `const`.
+#
+# **Who finds the member.** The layout round asks C itself, element by
+# element (`cli/const_elements.hero`), and says what it found as one marker
+# line per record, `MARKER <decl> <member>`, in the layout check's answer:
+# so this reader reads no clang wording, only the line the round wrote. The
+# record is named by its declaration index, which is the round's and this
+# reader's alike, and a site is the instruction `built_record` names, one
+# predicate both ends call: the round writes a marker only for a record some
+# site builds or receives, so the marker is never one this reader cannot tell.
+
+use ast
+use check/state
+use check/table
+use diag
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use emit/layout_rows
+use handles
+use ir
+use ir/containers
+use source
+
+# The marker the layout round writes for each record it refuses.
+constant MARKER: str
+    "heroes-ffi-const-element "
+
+# The group record an instruction builds or receives by value: a
+# construction of one, or a call of an extern whose result is one, as
+# `ffi_const_built.record_of` reads the line clang names; the result's type
+# is read from the checker, so the layout round, which holds no syntax tree,
+# asks the same question.
+function built_record(c: state.Checked, decls: [ast.Decl], inst: ir.Inst) -> i64?
+    match inst.op
+        .construct cn =>
+            match cn.shape
+                .record_shape r => return group_record(decls, decl: r.decl)
+                .case_shape | .array_shape | .map_shape | .ok_shape | .fail_shape | .err_shape => return fail(
+                    code: "none",
+                    msg: "not a record"
+                )
+        .call cl =>
+            match cl.callee
+                .extern_fn e =>
+                    match decls[e.decl].kind
+                        .function_decl fd =>
+                            written = state.written_type(c, fd.value.result)
+
+                            if written.is_err()
+                                return fail(code: "none", msg: "no result type")
+
+                            match table.get(c.types, written.must())
+                                .named n => return group_record(decls, decl: n.decl)
+                                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+                                    code: "none",
+                                    msg: "not a record"
+                                )
+                                .array | .map | .fallible | .function_ty | .fixed => return fail(
+                                    code: "none",
+                                    msg: "not a record"
+                                )
+                                .case_ty | .failure | .generic | .error => return fail(
+                                    code: "none",
+                                    msg: "not a record"
+                                )
+                        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(
+                            code: "none",
+                            msg: "not a function"
+                        )
+                .heroes_fn | .builtin_fn | .indirect => return fail(code: "none", msg: "not an extern")
+        .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast => return fail(
+            code: "none",
+            msg: "not a build"
+        )
+        .index | .map_get | .len_of | .tag_of | .payload | .func_ref => return fail(code: "none", msg: "not a build")
+        .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+            code: "none",
+            msg: "not a build"
+        )
+
+# `decl` where it is a group's record with fields, a handle being a pointer.
+function group_record(decls: [ast.Decl], decl: i64) -> i64?
+    match decls[decl].kind
+        .record_decl rec =>
+            if rec.header.is_err() || handles.is_handle(decls[decl])
+                return fail(code: "none", msg: "not a group record")
+            return ok(decl)
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
+
+# Every group record some instruction of the program builds or receives.
+function sites(c: state.Checked, decls: [ast.Decl], p: containers.Program) -> {i64: bool}
+    out: {i64: bool} @= {}
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                built = built_record(c, decls, inst: inst)
+
+                if !built.is_err()
+                    out[built.must()] @ true
+
+    return out
+
+# The marker line for the record at `decl`, whose `const` member is `member`.
+function marker(decl: i64, member: str) -> str
+    return MARKER + decl.to_str() + " " + member
+
+# The refusal at every line that builds or receives the record a marker
+# names; nothing for any other line.
+function told(s: source.Source, c: state.Checked, decls: [ast.Decl], p: containers.Program, line: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    rest = ffi_lookup.after(text: line, marker: MARKER)
+
+    if rest.is_err()
+        return out
+    space = layout_rows.byte_index(text: rest.must(), needle: " ")
+
+    if space < 1 || space + 1 >= rest.must().len()
+        return out
+    decl = layout_rows.leading_number(rest.must().slice(from: 0, to: space))
+
+    if decl < 0 || decl >= decls.len() || group_record(decls, decl: decl).is_err()
+        return out
+    member = rest.must().slice(from: space + 1, to: rest.must().len())
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                built = built_record(c, decls, inst: inst)
+
+                if !built.is_err() && built.must() == decl
+                    out @ out.push(refusal(s, decls, at: decl, member: member, inst: inst))
+
+    return out
+
+# The refusal itself, worded for where the member lies; the note is the
+# top-level case's, since the cure is the same.
+function refusal(s: source.Source, decls: [ast.Decl], at: i64, member: str, inst: ir.Inst) -> diag.Diagnostic
+    header: str @= ""
+
+    match decls[at].kind
+        .record_decl rec =>
+            if !rec.header.is_err()
+                header @ emit_externs.unquoted(s, span: rec.header.must())
+        .constant_decl | .function_decl | .variant_decl | .test_decl => header @ header
+
+    owner = source.span_text(s, decls[at].name)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_const_field",
+        message: "`" + header + "` declares `" + owner + "`'s member `" + member + "` as `const`, inside an element of one of `" + owner + "`'s array members, so C still refuses to assign any `" + owner + "` — and this line is that assignment",
+        span: inst.span
+    )
+    d.notes @ d.notes.push(
+        "C11 counts a `const` member inside an array's element as it counts one at the top (§6.3.2.1p1), though clang assigns it without a word: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here"
+    )
+    return d
+
+## Tests
+
+test "a marker names the record and its member, and any other line names nothing"
+    assert marker(decl: 3, member: "k") == "heroes-ffi-const-element 3 k"

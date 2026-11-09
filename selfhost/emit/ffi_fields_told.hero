@@ -1,22 +1,25 @@
 # The readers of a group record's FIELD in one line of clang's refusal, in the
 # order `emit/ffi.hero` asks them, each diagnostic once: a field the header has
 # inside another member, a field it lacks, a flexible array member, a `const`
-# member named or left out (defects 060 and 2131), an unnamed member's type,
+# member named or left out (defects 060 and 2131) or inside an array's
+# element (defect 2388, the layout round's marker), an unnamed member's type,
 # and a field at another type. Split out of `emit/ffi.hero` along that seam
 # when defect 2131's reader took it past its ceiling (2026-10-17); the
 # readers are the same, and so is their order.
 
 use ast
+use check/state
 use diag
 use emit/ffi_asked
 use emit/ffi_const_built
+use emit/ffi_const_element
 use emit/ffi_field
 use emit/ffi_lookup
 use emit/ffi_nested
 use ir/containers
 use source
 
-function told(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str, asked: ffi_asked.Asked, word_bits: i64) -> [diag.Diagnostic]
+function told(s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, line: str, asked: ffi_asked.Asked, word_bits: i64) -> [diag.Diagnostic]
     found: [diag.Diagnostic] @= []
 
     # A field the header has inside another member, and one whose type
@@ -52,6 +55,13 @@ function told(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.
 
         if !left.is_err()
             found @ ffi_lookup.add_once(found, d: left.must())
+
+    # A `const` member inside an array's element (defect 2388), which clang
+    # assigns without a word: the layout round's own marker, told at every
+    # line that builds or receives the record.
+    for one in ffi_const_element.told(s, c, decls, p, line: line)
+        found @ ffi_lookup.add_once(found, d: one)
+
     unnamed = ffi_nested.unnamed_member(s, tree, decls, line: line, fields: asked.fields)
 
     if !unnamed.is_err()
