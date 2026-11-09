@@ -1,6 +1,6 @@
 # Defect 453, the macro fixture read the other way: a module whose header
 # defines a macro `twice`, named to be walked first (panel 238's R4).
-extern "onefile-macro.h"  #~ ffi_one_file
+extern "onefile-macro.h"
     function dbl(x: i64) -> i64
 
 function hundredfold(x: i64) -> i64

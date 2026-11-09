@@ -1,0 +1,12 @@
+# Defect 2369, lane b26-cli, 2026-11-09: the module whose header defines
+# `LIMIT` as a macro is walked first, so in the one file `--emit-c` writes the
+# macro rewrites the other module's `enum` into C clang refuses. `build`
+# prints 7 and 5. Until 2026-11-09 the one file was told in clang's words at
+# the first module's group, and in the other order at the binding; both
+# orders now name the binding the macro rewrites.
+use aseven
+use mlimit
+
+function main()
+    print(aseven.sevenfold())
+    print(mlimit.limit())

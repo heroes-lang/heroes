@@ -1,0 +1,7 @@
+# Defect 2369: a module whose header defines `LIMIT` as a macro, named to be
+# walked first (panel 238's R4).
+extern "onefile-seven.h"
+    function seven() -> i64
+
+function sevenfold() -> i64
+    return seven()

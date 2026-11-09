@@ -1,12 +1,11 @@
 # Defect 453's macro fixture read the other way (panel 238's R4): the module
 # whose header defines the macro `twice`, `hundred`, is named to be walked
 # first, so the one file `--emit-c` writes reads its header before the
-# binding's. `build` prints 300 and 8; the one file is still refused, since
-# the macro rewrites the binding's declaration into another program, but in
-# clang's own words at `hundred`'s group, where the other order names the
-# binding the macro rewrites (`onefile453macro/`). Since panel 238 the order
-# the modules are walked in is their names', so this order is reachable by
-# name alone, and the case keeps it refused.
+# binding's. `build` prints 300 and 8; the one file is refused, since the
+# macro rewrites the binding's own declaration into C clang refuses. Until
+# defect 2369 it was told in clang's words at `hundred`'s group, where the
+# other order (`onefile453macro/`) names the binding the macro rewrites;
+# both orders now name it, so the modules' names never choose the message.
 use hundred
 use narrow
 

@@ -590,7 +590,8 @@ function ffi_probes() -> [probe.Probe]
         row(name: "a binding another module's macro rewrites in the one file is refused by --emit-c (defect 453)", argv: "build tests/golden/surface-fixtures/onefile453macro/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`twice`, which this group binds, is not what this module's own unit makes of it").err_has("`onefile-macro.h`").out_empty()
         row(name: "a binding whose types another module's header changes in the one file is refused by --emit-c, read from clang's dumps (defect 453)", argv: "build tests/golden/surface-fixtures/onefile453type/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`onefile_size`, which this group binds").err_has("`onefile-wide.h`").out_empty()
         row(name: "the macro fixture read the other way, the module whose macro rewrites the binding walked first, builds and runs as its units mean it (panel 238's R4)", argv: "run tests/golden/surface-fixtures/onefile453macrofirst/main.hero", code: 0).out_is("300\n8\n")
-        row(name: "and is still refused by --emit-c, in clang's words at that module's group (panel 238's R4; the plainer message drafted adjacent)", argv: "build tests/golden/surface-fixtures/onefile453macrofirst/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("onefile453macrofirst/hundred.hero:3:8").out_empty()
+        row(name: "and is still refused by --emit-c, at the binding the macro rewrites as in the other order, where clang's words at that module's group told it until defect 2369", argv: "build tests/golden/surface-fixtures/onefile453macrofirst/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`twice`, which this group binds, is not what this module's own unit makes of it").err_has("`onefile-macro.h`").err_has("onefile453macrofirst/narrow.hero:5:14").out_empty()
+        row(name: "a constant a module walked first rewrites with its macro is refused by --emit-c at the binding, as in the other order (defect 2369)", argv: "build tests/golden/surface-fixtures/onefile2369const/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`LIMIT`, which this group binds, is not what this module's own unit makes of it").err_has("`onefile-seven.h`").err_has("onefile2369const/mlimit.hero:4:14").out_empty()
         row(name: "a missing link is the author's error", argv: "build tests/golden/fixedbugs/ffi-missing-link.hero", code: 1).may_skip().err_has("error[ffi_missing_link]").err_has("ffi-missing-link.hero:").err_has("link \"<library>\"").err_lacks("internal error").err_lacks("build/")
         row(name: "a const pointer reads", argv: "run tests/golden/fixedbugs/ffi-const-pointer.hero", code: 0).out_has("false 3").out_has("ziggy").out_has("stardust")
         row(name: "a cstr is not any pointer", argv: "build tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero", code: 1).err_has("ffi_return_type")
@@ -1068,8 +1069,11 @@ test "the tables are what this module is, so they are counted"
     # a macro rewriting a binding, and a type a binding's body reads.
     # 28 -> 30 on 2026-11-09, lane b26-fmt (panel 238's R4): the macro case
     # read the other way, `onefile453macrofirst/`, built by `run` and refused
-    # by `--emit-c`, the order the modules' names now choose.
-    assert ffi_probes().len() == 30
+    # by `--emit-c`, the order the modules' names now choose; told at the
+    # binding the macro rewrites since defect 2369, the same day.
+    # 30 -> 31 the same day, lane b26-cli (defect 2369): a constant a module
+    # walked first rewrites with its macro, told at the binding.
+    assert ffi_probes().len() == 31
 
     # 33 -> 35 on 2026-09-03, M-robustness-guards step 2: `qualifyptr`'s two
     # rows — the program whose `certain` fix reproduced itself, now a guess,
