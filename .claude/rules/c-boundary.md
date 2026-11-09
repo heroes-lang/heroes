@@ -216,7 +216,13 @@ its R4, the same day, both ratified 2026-11-09):
   hidden field or a union, built at exit 0 and printed a wrong value
   (`pack`, `pragma`, `partial`, `union2`, each measured by the sitting on
   this Mac and Linux arm64). The member never sees a record whose reading
-  unit's own list does not compile; that unit's compile tells it.
+  unit's own list does not compile; that unit's compile tells it. Nor one
+  that a file standing in for a header lays out otherwise: what a package's
+  search may read is judged first and alone (`cli/package_stand_in.hero`,
+  defects 2351 and 2357), since the round's gate of 2026-11-09 found the
+  program's own `pt.h` standing in for the package `pt`'s told as two
+  layouts in its place, and a program's own header that changes a package's
+  record is still this member (both in `unsupported/`).
 
 **Since panel 214 (2026-10-14, provisional, author ratification pending) whose
 a refused header is, where no reader names it, is decided by a clang run and

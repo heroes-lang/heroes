@@ -1,0 +1,8 @@
+error[ffi_record_two_layouts]: `Point` is 16 bytes, at a multiple of 4, where module `main` reads `pt.h` after `packs-four.h`, and 16 bytes, at a multiple of 8, where module `<pt>/pt` reads it
+  at tests/golden/unsupported/fixedbugs-2364-a-program-s-own-header-that-changes-a-package-s-record-is-refused.case/main.hero:17:8
+     |
+  17 |     p: pt.Point = pt.make(x: 3, y: 4)  #~ ffi_record_two_layouts
+     |        ^^^^^^^^
+  note: `Point` is bound at `tests/golden/unsupported/fixedbugs-2364-a-program-s-own-header-that-changes-a-package-s-record-is-refused.case/heroes.packages/pt@1.0.0-a3ae65015eed2dcb/pt.hero:5:12` and read as module `<pt>/pt` reads `pt.h`: a change to its fields changes neither reading, so the binding is not what to change
+  note: a group's `record` is its header's struct as its own module reads it (spec § 13), and a value of `Point` passes between module `main` and module `<pt>/pt`, so both must read it alike; no order of the headers module `main` reads, nor module `<pt>/pt`'s earlier headers before `pt.h`, makes them alike
+  note: module `main`'s own `packs-four.h` changes `Point`: spell `Point` only in modules that read it as module `<pt>/pt` does, the package `pt`'s, code others publish, whose groups this program does not write
