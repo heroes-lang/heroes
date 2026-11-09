@@ -1,0 +1,7 @@
+# The catalogue of defect 2373's case beside it: one package fetched from an
+# index, its tree placed under `heroes.packages/`.
+index = "file://../idx"
+
+[dependencies.core]
+version = "0.1.0"
+sum = "sha256-f45a062f0669d29c00b77eb917fc80d107f12d20879cc69ca57095b3519ee051"

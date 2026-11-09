@@ -1,0 +1,13 @@
+# fixedbugs, defect 2364: a record reached through another record's field,
+# laid out wide where a macro another header defines is read before it.
+extern "fixedbugs-2364-outer.h"
+    record In
+        a: i32
+        b: i32
+    record Outer
+        c: i32
+        r: In
+    function outer_make(v: i32) -> Outer
+
+function make(v: i32) -> Outer
+    return outer_make(v: v)

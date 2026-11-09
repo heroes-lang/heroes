@@ -60,9 +60,10 @@ static _Atomic size_t hero_frame_held = 0;
 /* THE MESSAGE OPENS AS THE STACK GUARD'S DOES AND SAYS WHICH ROOM RAN OUT:
  * `panic: stack exhausted in <module.function>`, the function whose prologue
  * asked, named as the guard names one where the platform's guard names any
- * (`parts/stack.c`, POSIX by `dladdr` on the return address, Windows the first
- * sentence alone), then that the room large values take off the stack is full,
- * since the stack itself may be nearly empty. One thread tells it, through
+ * (`parts/stack.c`, POSIX by `hero_stack_symbol` on the return address, a
+ * generic instance's `static` copy included since defect 2371, Windows the
+ * first sentence alone), then that the room large values take off the stack
+ * is full, since the stack itself may be nearly empty. One thread tells it, through
  * the guard's own flag (`hero_stack_tell_first`, defect 2287): a second that
  * runs out while the first is telling, of its room or of its stack, waits for
  * the process to end, so two messages never interleave. */
@@ -70,11 +71,11 @@ static _Noreturn void hero_frame_exhausted(void *caller) {
     fflush(stdout);
 #if !defined(_WIN32)
     hero_stack_tell_first();
-    Dl_info info;
+    const char *who = caller != NULL ? hero_stack_symbol((uintptr_t)caller) : NULL;
     hero_stack_say("panic: stack exhausted");
-    if (caller != NULL && dladdr(caller, &info) != 0 && info.dli_sname != NULL && hero_stack_is_heroes(info.dli_sname)) {
+    if (hero_stack_is_heroes(who)) {
         hero_stack_say(" in ");
-        hero_stack_say_heroes_name(info.dli_sname);
+        hero_stack_say_heroes_name(who);
     }
     hero_stack_say(": the room large values take off the stack is full, 1 GiB for the whole program\n");
     hero_abort();

@@ -1,0 +1,13 @@
+# fixedbugs, defect 2364: a module whose own header defines the macro under
+# which another module's header lays `Rs` out wide, and which spells `Rs`;
+# named so that panel 238's walk reaches it before `rs` or after it (`then_`).
+use fixedbugs2364/rs
+
+extern "fixedbugs-2364-m.h"
+    record Mm
+        w: i32
+    function mm_make(v: i32) -> Mm
+
+function total(x: rs.Rs) -> i64  #~ ffi_record_two_layouts
+    m = mm_make(v: 4)
+    return to_i64(x.a + x.b + m.w).must()

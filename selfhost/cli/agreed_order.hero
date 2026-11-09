@@ -1,0 +1,289 @@
+# What is tried before a group record read two ways is refused: other orders
+# of the headers a unit reads, under which every record it spells of another
+# module reads as its own module reads it (design.md §4.19, §1.12; panel
+# 239's R4, routes A and C, provisional; defect 2364). `cli/agreed.hero` asks
+# it where `cli/agreed_layout.disagreeing` found a record read otherwise, and
+# takes the first list it returns as the unit's.
+#
+# **What a unit's list may become.** The unit's own headers stay first, as it
+# reads them (panel 204's R1, `emit/externs.hero`): no other module's header
+# is put before them, so none changes what one of the module's own means, and
+# a record they change is refused, never moved under them. After them, one
+# block per module that owns a record the unit spells: that record's headers,
+# in written order. The blocks are tried **in every order of up to
+# `WHOLE_ORDERS`**, then **each block preceded by its owner's own earlier
+# headers**, the ones its own unit reads before the record's (route C, the
+# compiler-engineer's `prefix`: `cfg.h` read before `rs.h` in the owner's
+# unit, and so in the reader's). Past `WHOLE_ORDERS` blocks, the sorted order
+# and its reverse. Every header of the list that is in neither the unit's own
+# part nor a block, a handle's of another module, follows the blocks as it
+# stood, so the list read is never thinner than the plan's.
+#
+# **The blocks are sorted by their modules' names**, so what is tried, and
+# the first list under which every record agrees, owe nothing to the order
+# the modules are walked in. `--emit-c`'s one file is one more list, its
+# blocks every module's own headers (`composed_fused`).
+
+use cli/agreed_layout
+use emit/externs as emit_externs
+use emit/unit_plan
+use source
+
+# What a composer came back with: the list every record agrees under, or none,
+# and what the lists tried found, the list the unit read first among them.
+record Composed
+    found: [str]?
+    tried: agreed_layout.Tried
+
+# Every block order tried at most for each shape of the blocks: four blocks'
+# every order, 24 lists; past four, the sorted order and its reverse.
+constant WHOLE_ORDERS: i64
+    4
+
+# The first list under which every record of `wanted` agrees, for a unit
+# whose own list read them otherwise (`wrong`).
+function composed(a: agreed_layout.Asking, plan: unit_plan.Plan, wanted: [i64], wrong: [agreed_layout.Differ], @memo: {str: str}, @dumps: {str: str}) -> Composed
+    tried: agreed_layout.Tried @= agreed_layout.Tried(lists: {}, here: {}, theirs: {})
+    agreed_layout.note_tried(@tried, list: plan.headers, wrong: wrong)
+    seen: {str: bool} @= {}
+    seen[plan.headers.join("\n")] @ true
+    own = own_part(a, plan: plan)
+    blocks = blocks_of(a, foreign: wanted)
+
+    for prefixed in [false, true]
+        shaped = shaped_blocks(a, blocks: blocks, prefixed: prefixed)
+
+        for order in orders(shaped.len())
+            list = with_rest(list: listed(base: own, blocks: shaped, order: order), rest: plan.headers)
+
+            if seen[list.join("\n")].is_err()
+                seen[list.join("\n")] @ true
+                candidate: unit_plan.Plan @= plan
+                candidate.headers @ list
+                words = agreed_layout.plan_words(a, plan: candidate)
+                found = agreed_layout.disagreeing(
+                    a,
+                    headers: list,
+                    words: words,
+                    wanted: wanted,
+                    memo: @memo,
+                    dumps: @dumps
+                )
+
+                if found.len() == 0 && !agreed_layout.listed_reading(a, headers: list, words: words, wanted: wanted, memo: @memo, dumps: @dumps).is_err()
+                    return Composed(found: ok(list), tried: tried)
+                agreed_layout.note_tried(@tried, list: list, wrong: found)
+
+    none: [str]? = fail(code: "none", msg: "no order agrees")
+    return Composed(found: none, tried: tried)
+
+# The same over the one file's blocks, each a module's own headers, for a
+# file whose written list read `wanted` otherwise (`wrong`).
+function composed_fused(a: agreed_layout.Asking, whole: [str], words: [str], wanted: [i64], wrong: [agreed_layout.Differ], @memo: {str: str}, @dumps: {str: str}) -> Composed
+    tried: agreed_layout.Tried @= agreed_layout.Tried(lists: {}, here: {}, theirs: {})
+    agreed_layout.note_tried(@tried, list: whole, wrong: wrong)
+    seen: {str: bool} @= {}
+    seen[whole.join("\n")] @ true
+    owners: [str] @= []
+
+    for one in a.s.files
+        if !one.is_library && agreed_layout.own_headers(a, component: one.component).len() > 0
+            owners @ agreed_layout.once_text(owners, one: one.component)
+
+    blocks: [[str]] @= []
+
+    for owner in by_name(a, components: owners)
+        blocks @ blocks.push(agreed_layout.own_headers(a, component: owner))
+
+    for order in orders(blocks.len())
+        list = with_rest(list: listed(base: emit_externs.SEEDS, blocks: blocks, order: order), rest: whole)
+
+        if seen[list.join("\n")].is_err()
+            seen[list.join("\n")] @ true
+            found = agreed_layout.disagreeing(
+                a,
+                headers: list,
+                words: words,
+                wanted: wanted,
+                memo: @memo,
+                dumps: @dumps
+            )
+
+            if found.len() == 0 && !agreed_layout.listed_reading(a, headers: list, words: words, wanted: wanted, memo: @memo, dumps: @dumps).is_err()
+                return Composed(found: ok(list), tried: tried)
+            agreed_layout.note_tried(@tried, list: list, wrong: found)
+
+    none: [str]? = fail(code: "none", msg: "no order agrees")
+    return Composed(found: none, tried: tried)
+
+# `base`, then the blocks in `order`, each header once.
+function listed(base: [str], blocks: [[str]], order: [i64]) -> [str]
+    out: [str] @= base
+
+    for at in order
+        for header in blocks[at]
+            out @ emit_externs.once(out, header: header)
+
+    return out
+
+# `list`, then every header of `rest` it does not hold, in `rest`'s order.
+function with_rest(list: [str], rest: [str]) -> [str]
+    out: [str] @= list
+
+    for header in rest
+        out @ emit_externs.once(out, header: header)
+
+    return out
+
+# The headers of the plan's list that are the unit's own: the compiler's and
+# those its own module's groups name, as the unit reads them.
+function own_part(a: agreed_layout.Asking, plan: unit_plan.Plan) -> [str]
+    own = agreed_layout.own_headers(a, component: plan.module)
+    out: [str] @= []
+
+    for header in plan.headers
+        if emit_externs.is_own(header) || agreed_layout.holds(own, one: header)
+            out @ out.push(header)
+
+    return out
+
+# One block per module owning a record of `foreign`, the modules sorted by
+# name: the headers of its records `foreign` holds, in written order.
+function blocks_of(a: agreed_layout.Asking, foreign: [i64]) -> [[str]]
+    owners: [str] @= []
+
+    for decl in foreign
+        owners @ agreed_layout.once_text(owners, one: agreed_layout.owner_of(a, decl: decl))
+
+    out: [[str]] @= []
+
+    for owner in by_name(a, components: owners)
+        needed: [str] @= []
+
+        for decl in foreign
+            if agreed_layout.owner_of(a, decl: decl) == owner
+                needed @ agreed_layout.once_text(needed, one: agreed_layout.header_of(a, decl: decl))
+
+        out @ out.push(needed)
+
+    return out
+
+# The blocks as they are, or each preceded by its owner's own headers up to
+# the last one the block holds, as its owner's unit reads them.
+function shaped_blocks(a: agreed_layout.Asking, blocks: [[str]], prefixed: bool) -> [[str]]
+    if !prefixed
+        return blocks
+    out: [[str]] @= []
+
+    for block in blocks
+        out @ out.push(
+            prefix_of(list: agreed_layout.own_headers(a, component: owner_of_header(a, header: block[0])), needed: block)
+        )
+
+    return out
+
+# The module whose group names `header`, the first in declaration order.
+function owner_of_header(a: agreed_layout.Asking, header: str) -> str
+    index: i64 @= 0
+
+    for decl in a.decls
+        named = emit_externs.header_at(a.decls, at: index)
+
+        if !named.is_err() && emit_externs.unquoted(a.s, span: named.must()) == header
+            return source.component_at(a.s, decl.name.start)
+        index @ index + 1
+
+    return ""
+
+# `list` up to its last header that `needed` holds.
+function prefix_of(list: [str], needed: [str]) -> [str]
+    last: i64 @= 0 - 1
+    at: i64 @= 0
+
+    for header in list
+        if agreed_layout.holds(needed, one: header)
+            last @ at
+        at @ at + 1
+
+    out: [str] @= []
+    at @ 0
+
+    for header in list
+        if at <= last
+            out @ out.push(header)
+        at @ at + 1
+
+    return out
+
+# Components sorted by their modules' names, as the reader writes them.
+function by_name(a: agreed_layout.Asking, components: [str]) -> [str]
+    keyed: {str: str} @= {}
+
+    for one in components
+        keyed[agreed_layout.module_name(a, component: one) + "\n" + one] @ one
+
+    out: [str] @= []
+
+    for key in sort(keys(keyed))
+        out @ out.push(keyed[key].must())
+
+    return out
+
+# Every order of `n` blocks, the sorted one first; past `WHOLE_ORDERS`, the
+# sorted order and its reverse.
+function orders(n: i64) -> [[i64]]
+    if n > WHOLE_ORDERS
+        forward: [i64] @= []
+        back: [i64] @= []
+
+        for i in range(from: 0, to: n)
+            forward @ forward.push(i)
+            back @ back.push(n - 1 - i)
+
+        return [forward, back]
+    empty: [i64] = []
+    out: [[i64]] @= [empty]
+
+    for k in range(from: 0, to: n)
+        next: [[i64]] @= []
+
+        for one in out
+            for back in range(from: 0, to: one.len() + 1)
+                at = one.len() - back
+                made: [i64] @= []
+
+                for i in range(from: 0, to: at)
+                    made @ made.push(one[i])
+
+                made @ made.push(k)
+
+                for i in range(from: at, to: one.len())
+                    made @ made.push(one[i])
+
+                next @ next.push(made)
+
+        out @ next
+
+    return out
+
+## Tests
+
+test "every order of up to four blocks is tried, the sorted one first, and past four two"
+    assert orders(0) == [[]]
+    assert orders(1) == [[0]]
+    assert orders(2) == [[0, 1], [1, 0]]
+    assert orders(3).len() == 6
+    assert orders(3)[0] == [0, 1, 2]
+    assert orders(4).len() == 24
+    assert orders(4)[0] == [0, 1, 2, 3]
+    assert orders(5) == [[0, 1, 2, 3, 4], [4, 3, 2, 1, 0]]
+
+test "a block's owner's earlier headers come before it, up to the last it holds"
+    assert prefix_of(list: ["cfg.h", "rs.h", "late.h"], needed: ["rs.h"]) == ["cfg.h", "rs.h"]
+    assert prefix_of(list: ["rs.h"], needed: ["rs.h"]) == ["rs.h"]
+    assert prefix_of(list: ["a.h"], needed: ["b.h"]) == []
+
+test "a list keeps the plan's every header, the ones no block holds after the blocks"
+    made = listed(base: ["heroes_unit.h", "m.h"], blocks: [["pw.h"], ["rs.h"]], order: [1, 0])
+    assert made == ["heroes_unit.h", "m.h", "rs.h", "pw.h"]
+    assert with_rest(list: made, rest: ["heroes_unit.h", "m.h", "h.h", "pw.h", "rs.h"]) == ["heroes_unit.h", "m.h", "rs.h", "pw.h", "h.h"]

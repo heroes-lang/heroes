@@ -18,8 +18,8 @@ use cli/header_order
 use cli/header_refused
 use cli/inline_only
 use cli/io
-use cli/library_needs
 use cli/link
+use cli/link_needs
 use cli/macro_twice
 use cli/member_ask
 use cli/name_order
@@ -170,19 +170,16 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
         if lacked.len() > 0
             return authors(lacked, msg: "a package names a library this machine does not have")
 
-        # A name a library the program links needs and nothing on the line
-        # defines, every undefined name referenced from the program's own
-        # libraries (`cli/library_needs.hero`, defect 2365).
-        needs = library_needs.told(
-            message: message,
-            s: s,
-            decls: art.decls,
-            build: t.build,
-            linked: under.package_flags
-        )
+        # Every name nothing on the line defines, each told by the reader
+        # whose question it answers, a library the program links needing it
+        # (`cli/library_needs.hero`, defect 2365) or a group's header's own
+        # text putting it in the program's object (`cli/header_needs.hero`,
+        # defect 2372), and only where every name is one of them
+        # (`cli/link_needs.hero`, defect 2381).
+        needs = link_needs.told(message, s, art.decls, t, asking: asking, linked: under.package_flags)
 
         if needs.len() > 0
-            return authors(needs, msg: "a library this program links needs one it does not link")
+            return authors(needs, msg: "a name this program's link needs is defined by no library it links")
 
     # What no reader of clang's words named is the headers' where the unit's
     # opening is refused with them and compiles without them, told on the

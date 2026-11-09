@@ -1,0 +1,8 @@
+# The catalogue of defect 2373's case beside it: two packages read from
+# folders, the second named `words` here and `text` by the first's own
+# catalogue.
+[dependencies.core]
+path = "vendor/core"
+
+[dependencies.words]
+path = "vendor/text"

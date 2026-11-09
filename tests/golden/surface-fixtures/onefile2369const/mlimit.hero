@@ -1,0 +1,7 @@
+# Defect 2369: a module binding the `enum` constant `LIMIT`, which the other
+# module's macro rewrites in one file.
+extern "onefile-limit.h"
+    constant LIMIT: i32  #~ ffi_one_file
+
+function limit() -> i32
+    return LIMIT

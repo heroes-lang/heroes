@@ -1,0 +1,18 @@
+# fixedbugs, defect 2364, lane p239-land-a, 2026-11-09 (panel 239's R4; the
+# critic's `partial`).
+#
+# `fixedbugs-2364-rx.h` adds a hidden field between `Rx.a` and `Rx.b` where
+# the macro of `fixedbugs-2364-wide.h` is read before it, which a `partial`
+# record may leave out. Before the repair this unit read `wide.h` first, so
+# `Rx` was 12 bytes here and 8 in `rx`'s unit, and the program built at exit
+# 0 printing `0` for `b` and `300` for 302, bytes nobody wrote.
+use fixedbugs2364/defines_wide
+use fixedbugs2364/rx
+
+function main()
+    p = defines_wide.make(v: 4)
+    r = rx.make(v: 3)
+    print(p.w)
+    print(r.a)
+    print(r.b)
+    print(rx.sum(r: r))

@@ -1,0 +1,8 @@
+# The package's module of defect 2373's case beside it: it names its own
+# `text/strs`, then takes that module's name for a local.
+use text/strs  #~ unused_binding
+
+# A greeting.
+function hello() -> str
+    strs = "x"  #~ shadowed_binding
+    return strs

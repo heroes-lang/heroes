@@ -25,25 +25,25 @@
 # compiler's own source has a handful of header lists among its modules.
 
 use ast
-use source
-use diag
 use check/state
-use ir/containers
-use emit/members
-use emit/unit_plan
-use emit/decls as emit_decls
-use emit/externs as emit_externs
-use emit/header_packages
-use cli/toolchain
 use cli/compiling
+use cli/layout
+use cli/libraries
+use cli/package_units
 use cli/pointee
 use cli/pointee_ask
 use cli/pointee_wants
-use cli/layout
 use cli/strings
-use cli/libraries
-use cli/package_units
+use cli/toolchain
+use diag
+use emit/decls as emit_decls
+use emit/externs as emit_externs
+use emit/header_packages
+use emit/members
 use emit/membership
+use emit/unit_plan
+use ir/containers
+use source
 
 # The modules whose units read one header list: the list, the modules, the
 # program cut to their members (the externs the pointee check asks about),
@@ -104,15 +104,7 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
     # a unit reaching another package's record, search their own folders, so
     # one list under two searches is two.
     for plan in plans
-        base = compiling.Compiling(
-            level: under.level,
-            sanitize: under.sanitize,
-            search_include: under.search_include,
-            package_flags: libraries.words_of(package_words, packages: header_packages.of(by_header, listed: plan.headers)),
-            runtime: under.runtime,
-            source_dir: under.source_dir
-        )
-        words = package_units.unit_under(base, s, decls, plan: plan)
+        words = plan_under(under, s, decls, plan: plan, package_words: package_words, by_header: by_header)
         key = libraries.key_text(compiling.search_words(words)) + "\n\n" + plan.headers.join("\n")
 
         if keys_seen[key].is_err()
@@ -174,6 +166,22 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
         group @ group + 1
 
     return out
+
+# What one module's unit compiles under, as its probe reads its headers: the
+# build's words with the packages of the groups naming those headers, and the
+# search its package and the packages whose records it reaches give it. The
+# probes above and the record layouts' agreement ask this one function
+# (`cli/agreed_layout.plan_words`, panel 239), so the two cannot drift.
+function plan_under(under: compiling.Compiling, s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan, package_words: {str: [str]}, by_header: {str: [str]}) -> compiling.Compiling
+    base = compiling.Compiling(
+        level: under.level,
+        sanitize: under.sanitize,
+        search_include: under.search_include,
+        package_flags: libraries.words_of(package_words, packages: header_packages.of(by_header, listed: plan.headers)),
+        runtime: under.runtime,
+        source_dir: under.source_dir
+    )
+    return package_units.unit_under(base, s, decls, plan: plan)
 
 # Whether a group's units have a question for a probe: an extern the pointee
 # check asks about, or a group record with fields the layout check lays out.

@@ -1,0 +1,347 @@
+# Whether a group record one module spells of another reads there as its own
+# module reads it: the record asked of clang under both header lists and
+# compared (design.md §4.19, §1.12; panel 239's R4, provisional, author
+# ratification pending; defect 2364). The judge of `cli/agreed.hero`, which
+# asks it of every unit and of `--emit-c`'s one file; `cli/agreed_order.hero`
+# tries other lists with it, and `cli/agreed_told.hero` says what it found.
+#
+# A unit reads its own groups' headers first and the header of another
+# module's group record after them (`emit/externs.headers_for`), so a header
+# read before the record's, one of the unit's own or another module's, can
+# change the record: a macro the record's header reads, a `#pragma pack` left
+# set, a member a macro adds. A value of the record passes between the two
+# units as each reads it, and no part of C sees one `struct` read two ways in
+# two units (C11 6.2.7; the sitting's ffi-pragmatist, its § 9). So the record
+# is asked of clang under both lists, the record-layout dump of
+# `emit/layout_text.dump_unit`, and compared: every member's byte and type,
+# the size, the alignment. A field's type assertion cannot see a packed record
+# or a hidden member, and a comparison of macros cannot see a pragma left set;
+# the layout sees all three (the compiler-engineer's § 3).
+#
+# **Asked only where the readings can differ**: a record whose header a list
+# reads after exactly the headers its own module's list reads before it,
+# under the same words, reads the same by construction and costs no clang.
+# Where it is asked, the list's preprocessing is a probe's own answer where a
+# probe already read that list (`compiling.Probe.read`), and each dump is kept
+# under `build/agreed-<key>/`, the key naming the compiler, the words, the
+# dump's text and what the headers resolve to and hold.
+
+use ast
+use check/state
+use cli/clang_told
+use cli/compiling
+use cli/digest
+use cli/kept
+use cli/libraries
+use cli/pointee
+use cli/probing
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use emit/externs as emit_externs
+use emit/layout_rows
+use emit/layout_text
+use emit/unit_plan
+use source
+
+# What every question here is asked with: the build, the declarations and
+# what the checker made of them (`cli/agreed_told.hero` finds where a module
+# spells a record by them), the C type of each group record with fields by
+# declaration (`layout_text.asked`), the plans and the words their packages
+# give, and what each probe read of its list, by `list_key`.
+record Asking
+    t: toolchain.Toolchain
+    under: compiling.Compiling
+    s: source.Source
+    decls: [ast.Decl]
+    tree: ast.Ast
+    checked: state.Checked
+    typed: {i64: str}
+    package_words: {str: [str]}
+    by_header: {str: [str]}
+    plans: [unit_plan.Plan]
+    read: {str: str}
+
+# One record read otherwise than its own module reads it, and its two blocks.
+record Differ
+    decl: i64
+    here: str
+    theirs: str
+
+# What the lists tried found: each record that disagreed in one, the first
+# list where it did, in the order they were tried, and its two blocks there.
+record Tried
+    lists: {i64: [str]}
+    here: {i64: str}
+    theirs: {i64: str}
+
+function asking(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], tree: ast.Ast, checked: state.Checked, planned: probing.Planned, package_words: {str: [str]}, by_header: {str: [str]}) -> Asking
+    typed: {i64: str} @= {}
+
+    for one in layout_text.asked(s, decls)
+        typed[one.decl] @ one.c_type
+
+    read: {str: str} @= {}
+
+    for one in planned.probings
+        if !one.probe.is_err() && !one.probe.must().read.is_err()
+            read[list_key(headers: one.probe.must().headers, words: one.probe.must().words)] @ one.probe.must().read.must()
+
+    return Asking(
+        t: t,
+        under: under,
+        s: s,
+        decls: decls,
+        tree: tree,
+        checked: checked,
+        typed: typed,
+        package_words: package_words,
+        by_header: by_header,
+        plans: planned.plans,
+        read: read
+    )
+
+function list_key(headers: [str], words: [str]) -> str
+    return libraries.key_text(words) + "\n\n" + headers.join("\n")
+
+# Whether a declaration is a group record with fields, the records whose
+# layout a dump holds; asked of the declaration itself, so a build with none
+# names no C type at all.
+function laid_out(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec => return !rec.header.is_err() && rec.fields.len() > 0
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# The group records with fields a unit spells and another module declares, by
+# declaration index.
+function foreign_of(s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan) -> [i64]
+    out: [i64] @= []
+
+    for decl in sort(keys(plan.records))
+        if laid_out(decls, decl: decl) && source.component_at(s, decls[decl].name.start) != plan.module
+            out @ out.push(decl)
+
+    return out
+
+function owner_of(a: Asking, decl: i64) -> str
+    return source.component_at(a.s, a.decls[decl].name.start)
+
+# The plan of `module`, absent where the build plans no unit for it.
+function plan_of(a: Asking, module: str) -> unit_plan.Plan?
+    for plan in a.plans
+        if plan.module == module
+            return ok(plan)
+
+    return fail(code: "none", msg: "no unit for that module")
+
+# The words a plan's unit is probed under, its probe's own
+# (`probing.plan_under`).
+function plan_words(a: Asking, plan: unit_plan.Plan) -> [str]
+    return compiling.probe_words(
+        probing.plan_under(a.under, a.s, a.decls, plan: plan, package_words: a.package_words, by_header: a.by_header)
+    )
+
+# The records of `wanted` read under `headers` and `words` otherwise than
+# their own module reads them, each with its two blocks. Empty where a dump
+# does not compile: the unit's own compile says why, on the author's line.
+function disagreeing(a: Asking, headers: [str], words: [str], wanted: [i64], @memo: {str: str}, @dumps: {str: str}) -> [Differ]
+    out: [Differ] @= []
+    asked: [i64] @= []
+
+    for decl in wanted
+        owner = plan_of(a, module: owner_of(a, decl: decl))
+
+        if owner.is_err()
+            continue
+        header = header_of(a, decl: decl)
+
+        if before_all(headers, header: header) != before_all(owner.must().headers, header: header) || words != plan_words(a, plan: owner.must())
+            asked @ asked.push(decl)
+
+    if asked.len() == 0
+        return out
+    mine = listed_reading(a, headers: headers, words: words, wanted: wanted, memo: @memo, dumps: @dumps)
+
+    if mine.is_err()
+        return out
+
+    for decl in asked
+        theirs = owner_block(a, decl: decl, memo: @memo, dumps: @dumps)
+        here = block_of(mine.must(), decl: decl)
+
+        if !theirs.is_err() && !here.is_err() && here.must() != theirs.must()
+            out @ out.push(Differ(decl: decl, here: here.must(), theirs: theirs.must()))
+
+    return out
+
+# The record's block as its own module's unit lays it out, read with every
+# record of that unit, so one dump serves each of them.
+function owner_block(a: Asking, decl: i64, @memo: {str: str}, @dumps: {str: str}) -> str?
+    owner = plan_of(a, module: owner_of(a, decl: decl))?
+    wanted: [i64] @= []
+
+    for one in sort(keys(owner.records))
+        if !a.typed[one].is_err()
+            wanted @ wanted.push(one)
+
+    dump = listed_reading(a, headers: owner.headers, words: plan_words(a, plan: owner), wanted: wanted, memo: @memo, dumps: @dumps)?
+    return block_of(dump, decl: decl)
+
+# Each record of `wrong` not yet found disagreeing, with the list it was read
+# under.
+function note_tried(@tried: Tried, list: [str], wrong: [Differ])
+    for one in wrong
+        if tried.lists[one.decl].is_err()
+            tried.lists[one.decl] @ list
+            tried.here[one.decl] @ one.here
+            tried.theirs[one.decl] @ one.theirs
+
+# clang's record-layout dump of `wanted` under `headers` and `words`: asked
+# once per build for each list (`dumps`, an empty text where it failed) and
+# kept under `build/agreed-<key>/`.
+function listed_reading(a: Asking, headers: [str], words: [str], wanted: [i64], @memo: {str: str}, @dumps: {str: str}) -> str?
+    asked: [layout_text.Asked] @= []
+
+    for decl in wanted
+        asked @ asked.push(layout_text.Asked(decl: decl, c_type: a.typed[decl].must()))
+
+    text = layout_text.dump_unit(headers, wanted: asked)
+    name = libraries.key_text(words) + "\n" + text
+    known = dumps[name]
+
+    if !known.is_err() && known.must().len() == 0
+        return fail(code: "unread", msg: "the dump did not compile")
+
+    if !known.is_err()
+        return known
+    dumps[name] @ ""
+    read = reads_of(a, headers: headers, words: words, memo: @memo)?
+    dir = a.t.build + "/agreed-" + digest.digest(a.t.fingerprint + "|agreed|" + a.t.compiler_key + "|" + name + "|reads:" + read + "|" + a.t.runtime_key)
+    was = kept.read(dir + "/dump.txt")
+
+    if !was.is_err()
+        dumps[name] @ was.must()
+        return was
+    process.mkdir_all(dir)?
+    unit = pointee.unit_path(dir: dir, stem: "dump", text: text)
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    out_path = publish.private_name(dir + "/dump-out.txt")
+    line: [str] @= response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"], more: words),
+        dir: dir
+    )
+    line @ line.push(unit)
+    ran = process.run(program: "clang", words: line, out: out_path, err: process.discard())
+    said = read_back.words(out_path)
+    publish.discard(out_path)
+
+    if !ran.started || ran.code != 0 || said.is_err()
+        return fail(code: "unread", msg: "the dump did not compile")
+    kept.write(path: dir + "/dump.txt", text: said.must())?
+    dumps[name] @ said.must()
+    return said
+
+# What `headers` resolve to under `words`, `compiling.reads`'s rows: the
+# probe's own answer where one read this list under these words, else one
+# `clang -M` asked here.
+function reads_of(a: Asking, headers: [str], words: [str], @memo: {str: str}) -> str?
+    probed = a.read[list_key(headers: headers, words: words)]
+
+    if !probed.is_err()
+        return probed
+    return compiling.reads(a.t.build, words: words, headers: headers, @memo)
+
+# The rows of the record's wrapper block in a dump, from its first member to
+# its size, each anonymous member's place left out, since two units may name
+# one header's path two ways.
+function block_of(dump: str, decl: i64) -> str?
+    head = "| struct " + layout_rows.PREFIX + decl.to_str()
+    rows: [str] @= []
+    inside: bool @= false
+
+    for line in clang_told.lines_of(dump)
+        if !inside
+            inside @ strings.ends_with(text: line, suffix: head)
+            continue
+        rows @ rows.push(placeless(line))
+
+        if layout_rows.byte_index(text: line, needle: "[sizeof=") >= 0
+            return ok(rows.join("\n"))
+
+    return fail(code: "none", msg: "the dump holds no block for the record")
+
+function placeless(line: str) -> str
+    for needle in ["(anonymous at ", "(unnamed at "]
+        at = layout_rows.byte_index(text: line, needle: needle)
+
+        if at >= 0
+            close: i64 @= at
+
+            while close < line.len() && line[close] != ')'
+                close @ close + 1
+
+            if close < line.len()
+                return line.slice(from: 0, to: at) + "(anonymous)" + placeless(line.slice(from: close + 1, to: line.len()))
+
+    return line
+
+# The header of the group a record belongs to.
+function header_of(a: Asking, decl: i64) -> str
+    return emit_externs.unquoted(a.s, span: emit_externs.header_at(a.decls, at: decl).must())
+
+# The headers before `header` in `list`, the compiler's own included, or the
+# whole list where it does not hold it.
+function before_all(list: [str], header: str) -> [str]
+    out: [str] @= []
+
+    for one in list
+        if one == header
+            return out
+        out @ out.push(one)
+
+    return out
+
+# The name a module is written with in a `use` line.
+function module_name(a: Asking, component: str) -> str
+    for file in a.s.files
+        if file.component == component
+            return file.module
+
+    return component
+
+# Every header a module's own groups name, in written order, the compiler's
+# own left out.
+function own_headers(a: Asking, component: str) -> [str]
+    out: [str] @= []
+    index: i64 @= 0
+
+    for decl in a.decls
+        if source.component_at(a.s, decl.name.start) == component
+            named = emit_externs.header_at(a.decls, at: index)
+
+            if !named.is_err()
+                header = emit_externs.unquoted(a.s, span: named.must())
+
+                if !emit_externs.is_own(header)
+                    out @ once_text(out, one: header)
+        index @ index + 1
+
+    return out
+
+# `list` with `one` after it, where it does not hold it already.
+function once_text(list: [str], one: str) -> [str]
+    if holds(list, one: one)
+        return list
+    return list.push(one)
+
+function holds(list: [str], one: str) -> bool
+    for held in list
+        if held == one
+            return true
+
+    return false

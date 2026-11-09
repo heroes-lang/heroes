@@ -1,0 +1,17 @@
+# Defect 2371's shape beside defect 521's `mutual`: `ask` and `zag` call each
+# other, and `zag` is a generic function's instance, which the compiler writes
+# `static` in every unit that uses it. glibc's `dladdr` reads only the
+# exported symbols, so on Linux the walk could not see `zag` and the line
+# named `ask` alone, its recursion lost. The runtime reads the executable's
+# own symbol table on Linux (`runtime/parts/symbols.c`), and the guard names
+# both, from the first by name, `zag` with its instance's hash.
+function ask(n: i64) -> i64
+    return 1 + zag(xs: [1], n: n + 1)
+
+function zag<T>(xs: [T], n: i64) -> i64
+    if n < 0
+        return 0
+    return 1 + ask(n + xs.len())
+
+function main()
+    print(ask(0))

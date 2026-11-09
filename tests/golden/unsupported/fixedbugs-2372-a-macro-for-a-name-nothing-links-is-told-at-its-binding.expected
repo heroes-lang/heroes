@@ -1,0 +1,6 @@
+error[ffi_missing_link]: `top2372_alias` is a macro for `base2372_alias` where this group reads it from `fixedbugs-2372-alias.h`, and nothing on the link line defines `base2372_alias`
+  at tests/golden/unsupported/fixedbugs-2372-a-macro-for-a-name-nothing-links-is-told-at-its-binding.hero:10:5
+     |
+  10 |     function top2372_alias() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs a `link` naming the library that defines `base2372_alias`: where this program's C writes `top2372_alias` it writes `base2372_alias`, which its own object then refers to, at `-O0` and `-O2` alike, and a library is linked only where a group names it; name it in this group's own `link`, `extern "fixedbugs-2372-alias.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares

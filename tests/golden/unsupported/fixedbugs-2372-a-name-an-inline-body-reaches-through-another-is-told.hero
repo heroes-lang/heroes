@@ -1,0 +1,11 @@
+# fixedbugs, defect 2372, lane b26-cli, 2026-11-09.
+#
+# The bound `top2372_mid` calls `mid2372`, another `static inline` function
+# of the header, whose body calls `base2372_deep`, which nothing on the link
+# line defines: the binding is told, naming the body that calls it.
+
+extern "fixedbugs-2372-mid.h"
+    function top2372_mid() -> i32  #~ ffi_missing_link
+
+function main()
+    print(top2372_mid())

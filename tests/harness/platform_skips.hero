@@ -21,9 +21,9 @@
 # header's `static` one follows it, and the Windows target tells it in the
 # same extension's words, which the CI's Windows leg read first.
 
+use freed_bytes
 use shell
 use strings
-use freed_bytes
 
 # Why a case or a surface row named `name` is not judged on this machine, or
 # absent where it is: on Windows, a shape its C cannot hold; anywhere else, a
@@ -72,6 +72,9 @@ constant CALLBACK_NAMED_ON_WINDOWS: str
 constant FRAME_NAMED_ON_WINDOWS: str
     "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, and its room's bound says it without a name too, so a case pinning which function's frame or room ran out at every level is judged where a name is said, Darwin and Linux, and defect 2253's cases judge Windows (defect 2339)"
 
+constant INSTANCE_NAMED_ON_WINDOWS: str
+    "Windows' stack guard says `stack exhausted` and names no function, the first sentence alone, and its room's bound says it without a name too, so a case pinning a generic function's instance by name, the frame or the room it ran out of, is judged where a name is said, Darwin and Linux, and defect 2253's cases judge Windows (defect 2371)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
@@ -90,6 +93,8 @@ function windows() -> [Skip]
         Skip(name: "fixedbugs-2339-the-function-calling-the-extern-is-named-and-not-its-caller", why: FRAME_NAMED_ON_WINDOWS)
         Skip(name: "fixedbugs-2339-a-generic-instance-calling-for-a-large-result-is-named", why: FRAME_NAMED_ON_WINDOWS)
         Skip(name: "fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level", why: FRAME_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2371-a-generic-instance-that-recurses-for-ever-is-named", why: INSTANCE_NAMED_ON_WINDOWS)
+        Skip(name: "fixedbugs-2371-a-generic-instance-whose-room-is-full-is-named", why: INSTANCE_NAMED_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -193,9 +198,9 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 15
+    assert windows().len() == 17
 
-    for one in windows().slice(from: 5, to: 15)
+    for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
 
     # Each case named for one platform's words is a case that exists, so a
@@ -221,6 +226,7 @@ test "a name is judged where its platform's C holds its shape"
     assert reason("ffi-a-header-defining-a-static-main-is-told").is_err() == !on_windows
     assert reason("fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written").is_err() == !on_windows
     assert reason("fixedbugs-2339-a-function-whose-room-is-full-is-named-at-every-level").is_err() == !on_windows
+    assert reason("fixedbugs-2371-a-generic-instance-whose-room-is-full-is-named").is_err() == !on_windows
     assert reason(elsewhere()[2].name).is_err() == on_windows
     assert reason(darwin_alone()[0].name).is_err() == shell.exists(freed_bytes.DARWIN)
     assert reason("fixedbugs-562-another-case").is_err()

@@ -56,17 +56,20 @@
 # Heroes refuses module cycles, so the arrow pointing one way is the condition
 # under which this seam exists at all.
 
-use source
-use emit
-use cli/io
+use cli/agreed
 use cli/compile
-use cli/toolchain
-use cli/probing
 use cli/compiling
+use cli/io
 use cli/one_file
 use cli/pointee_ask
+use cli/probing
 use cli/publish
+use cli/settled
+use cli/toolchain
+use emit
+use emit/externs as emit_externs
 use emit/lend_type
+use source
 
 # The artifact, written or printed, AFTER the build's own rounds have passed. A
 # failure here is the pointee check's and carries its message up so the caller
@@ -78,10 +81,16 @@ use emit/lend_type
 # the rounds; this file only applies their answer.
 #
 # `probings` are the build's, each module's headers asked its own questions
-# (panel 202's C0, `cli/probing.hero`), their answers kept from the rounds.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], planned: probing.Planned, under: compiling.Compiling, struct_tags: {str: bool}, kept: {str: bool}, version: str, sources: str) -> ()?
+# (panel 202's C0, `cli/probing.hero`), their answers kept from the rounds;
+# `site` is what the build settled, its version and sources' key among it.
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], planned: probing.Planned, under: compiling.Compiling, struct_tags: {str: bool}, kept: {str: bool}, site: settled.Site) -> ()?
     checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
     checked.verdict?
+
+    # **The one file reads every module's headers, each group record in it as
+    # its own module reads it** (panel 239's R4, `cli/agreed.fused`): in an
+    # order of the modules' headers that makes it so, or refused, told there.
+    headers = agreed.fused(t, under: under, art, s, site, probed: planned)?
 
     # **THE ARTIFACT IS THE C THAT COMPILED, NOT THE FIRST DRAFT** (defect 049,
     # closing panel 157 R1 the way it was written). Until 2026-09-17 this ran
@@ -121,8 +130,8 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     text: str @= art.c
     units = lend_type.lend_units(answered)
 
-    if struct_tags.len() > 0 || units.len() > 0 || kept.len() > 0
-        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, sources: sources, text: true, struct_tags: struct_tags, lend_units: units, kept: kept).c
+    if struct_tags.len() > 0 || units.len() > 0 || kept.len() > 0 || headers != emit_externs.headers(art.program, s, art.decls)
+        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, sources: site.sources, text: true, struct_tags: struct_tags, lend_units: units, kept: kept, headers: headers).c
 
     # **The one file is written only where it means the program the units
     # build** (defect 453, panel 202's R3; `cli/one_file.hero`): where a
@@ -130,7 +139,7 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     # whether the file compiles and whether each binding means in it what it
     # means in its module's unit, and a refusal is told at exit 1 with nothing
     # written.
-    refusal = one_file.refused(t, under, art.program, s, art.decls, text: text, plans: planned.plans)
+    refusal = one_file.refused(t, under, s, art.decls, text: text, plans: planned.plans, whole: headers)
 
     if refusal.len() > 0
         _ = compile.stage(refusal, s, permissive: false).is_err()

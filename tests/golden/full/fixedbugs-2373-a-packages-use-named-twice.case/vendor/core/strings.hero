@@ -1,0 +1,8 @@
+# The package's module of defect 2373's case beside it: it names its own
+# `text/strs` twice.
+use text/strs
+use text/strs  #~ used_twice
+
+# A greeting.
+function hello() -> str
+    return strs.deep()

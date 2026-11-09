@@ -2126,6 +2126,161 @@ test "a name a linked library needs and nothing defines is told at its group or 
     assert !shell.exists(path + ".out")
     assert !shell.remove_tree(scratch).is_err()
 
+# DEFECT 2372, asked of the compiler itself: a group binding `top_value`
+# from a header whose `static inline` body calls `base_helper`, the group
+# linking a `libtop2372.a` that defines nothing the program calls, is told at
+# the binding, `ffi_missing_link` at exit 1, the header, the function and the
+# name named, at `-O0` and at `-O2`, where the linker names the header's
+# function as referring at the first and the compiler's own caller beside it
+# at the second (measured on this Mac, ld64-27106.1, and in the
+# `heroes-linux-arm64` container, GNU ld 2.44, 2026-11-09); every platform
+# ended the build at exit 2 as *internal error: linking failed*. And the name
+# defined by a library the program does link builds and runs. The archives
+# are made by the machine's own `ar`; a machine that runs no script, Windows,
+# is not asked.
+test "a header's inline body calling a name nothing on the link line defines is told at its binding at both levels (defect 2372)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/needs2372"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/top.c", text: "int top_other(void) { return 1; }\n").is_err()
+    assert !write_file(path: dir + "/base.c", text: "int base_helper(void) { return 40; }\nint base_other(void) { return 2; }\n").is_err()
+    assert !write_file(path: dir + "/fast2372.h", text: "int base_helper(void);\nstatic inline int top_value(void) { return base_helper() + 1; }\n").is_err()
+    assert !write_file(path: dir + "/base2372.h", text: "int base_other(void);\n").is_err()
+
+    for name in ["top", "base"]
+        made = shell.run(
+            scratch: scratch,
+            program: "clang",
+            words: ["clang", "-c", "-fPIC", dir + "/" + name + ".c", "-o", dir + "/" + name + ".o"]
+        ).must()
+        assert made.err == "" && made.code == 0
+        archived = shell.run(
+            scratch: scratch,
+            program: "ar",
+            words: ["ar", "rcs", dir + "/lib" + name + "2372.a", dir + "/" + name + ".o"]
+        ).must()
+        assert archived.code == 0
+
+    path = dir + "/inline.hero"
+    assert !write_file(path: path, text: "extern \"fast2372.h\" link \"top2372\"\n    function top_value() -> i32\n\nfunction main()\n    print(top_value())\n").is_err()
+
+    for level in ["-O0", "-O2"]
+        said = shell.run(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "build", level, path, "--library", dir, "-o", path + ".out"]
+        ).must()
+        assert strings.contains(
+            text: said.err,
+            needle: "error[ffi_missing_link]: `top_value` is defined inline in `fast2372.h` line 2, and its body calls `base_helper`, which nothing on the link line defines\n  at " + path + ":2:5\n"
+        )
+        assert strings.contains(
+            text: said.err,
+            needle: "  note: this program needs a `link` naming the library that defines `base_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
+        )
+        assert !strings.contains(text: said.err, needle: "internal error")
+        assert said.code == 1
+        assert !shell.exists(path + ".out")
+
+    # The name defined by a library the program links: it builds and runs.
+    linked = dir + "/linked.hero"
+    assert !write_file(path: linked, text: "extern \"fast2372.h\" link \"top2372\"\n    function top_value() -> i32\n\nextern \"base2372.h\" link \"base2372\"\n    function base_other() -> i32\n\nfunction main()\n    print(top_value() + base_other())\n").is_err()
+    built = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", "-O2", linked, "--library", dir, "-o", linked + ".out"]
+    ).must()
+    assert built.code == 0
+    ran = shell.run(scratch: scratch, program: linked + ".out", words: [linked + ".out"]).must()
+    assert ran.out == "43\n"
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2381, asked of the compiler itself: one link missing a name a
+# linked library needs, `libtop2381.a`'s `top_value` calling `base_helper`,
+# and a name a header's inline body needs, `top_fast` calling `base_two`, was
+# told by neither defect 2365's reader nor 2372's, each judging the whole
+# link, *internal error: linking failed* at exit 2 (measured on this Mac,
+# ld64-27106.1, and in the `heroes-linux-arm64` container, GNU ld 2.44,
+# 2026-11-09). Each name is now told by its reader, at `-O0` and `-O2`, in
+# the program's order; three names over the two readers likewise; and a name
+# neither answers, one of the compiler's own forms a header's body calls,
+# leaves the link the compiler's, exit 2. The archives are made by the
+# machine's own `ar`; a machine that runs no script, Windows, is not asked.
+test "each name a refused link reports is told by the reader whose question it answers, or the link is the compiler's (defect 2381)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/needs2381"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/top.c", text: "int base_helper(void);\nint top_value(void) { return base_helper() + 1; }\n").is_err()
+    assert !write_file(path: dir + "/other.c", text: "int base_three(void);\nint other_value(void) { return base_three() + 3; }\n").is_err()
+    assert !write_file(path: dir + "/mixed2381.h", text: "int top_value(void);\nint base_two(void);\nint hero_gone2381(void);\nstatic inline int top_fast(void) { return base_two() + 1; }\nstatic inline int top_gone(void) { return hero_gone2381() + 1; }\n").is_err()
+    assert !write_file(path: dir + "/other2381.h", text: "int other_value(void);\n").is_err()
+
+    for name in ["top", "other"]
+        made = shell.run(
+            scratch: scratch,
+            program: "clang",
+            words: ["clang", "-c", "-fPIC", dir + "/" + name + ".c", "-o", dir + "/" + name + ".o"]
+        ).must()
+        assert made.err == "" && made.code == 0
+        archived = shell.run(
+            scratch: scratch,
+            program: "ar",
+            words: ["ar", "rcs", dir + "/lib" + name + "2381.a", dir + "/" + name + ".o"]
+        ).must()
+        assert archived.code == 0
+
+    library = "error[ffi_missing_link]: the library `top2381` needs `base_helper`, and nothing on the link line defines it\n  at "
+    header = "error[ffi_missing_link]: `top_fast` is defined inline in `mixed2381.h` line 4, and its body calls `base_two`, which nothing on the link line defines\n  at "
+    path = dir + "/mixed.hero"
+    assert !write_file(path: path, text: "extern \"mixed2381.h\" link \"top2381\"\n    function top_value() -> i32\n    function top_fast() -> i32\n\nfunction main()\n    print(top_value() + top_fast())\n").is_err()
+
+    for level in ["-O0", "-O2"]
+        said = shell.run(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "build", level, path, "--library", dir, "-o", path + ".out"]
+        ).must()
+        assert strings.contains(text: said.err, needle: library + path + ":1:27\n")
+        assert strings.contains(text: said.err, needle: header + path + ":3:5\n")
+        assert !strings.contains(text: said.err, needle: "internal error")
+        assert said.code == 1
+        assert !shell.exists(path + ".out")
+
+    # Three names over the two readers, each told, in the program's order.
+    three = dir + "/three.hero"
+    assert !write_file(path: three, text: "extern \"mixed2381.h\" link \"top2381\"\n    function top_value() -> i32\n    function top_fast() -> i32\n\nextern \"other2381.h\" link \"other2381\"\n    function other_value() -> i32\n\nfunction main()\n    print(top_value() + top_fast() + other_value())\n").is_err()
+    told = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", three, "--library", dir, "-o", three + ".out"]
+    ).must()
+    first = strings.index_of(text: told.err, needle: library + three + ":1:27\n").default(-1)
+    second = strings.index_of(text: told.err, needle: header + three + ":3:5\n").default(-1)
+    third = strings.index_of(text: told.err, needle: "error[ffi_missing_link]: the library `other2381` needs `base_three`, and nothing on the link line defines it\n  at " + three + ":5:27\n").default(
+        -1
+    )
+    assert first >= 0 && second > first && third > second
+    assert told.code == 1
+
+    # A name neither reader answers beside two each answers: the compiler's.
+    neither = dir + "/neither.hero"
+    assert !write_file(path: neither, text: "extern \"mixed2381.h\" link \"top2381\"\n    function top_value() -> i32\n    function top_fast() -> i32\n    function top_gone() -> i32\n\nfunction main()\n    print(top_value() + top_fast() + top_gone())\n").is_err()
+    left = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", neither, "--library", dir, "-o", neither + ".out"]
+    ).must()
+    assert strings.contains(text: left.err, needle: "internal error: linking failed")
+    assert !strings.contains(text: left.err, needle: "error[ffi_missing_link]")
+    assert left.code == 2
+    assert !shell.remove_tree(scratch).is_err()
+
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
 # named `zz9`.

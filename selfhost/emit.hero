@@ -1,4 +1,3 @@
-use emit/large_size
 # The backend's front door: the IR becomes one C11 translation unit
 # (design.md §3.1; panels 020, 023). Port of the driver half of
 # heroes/src/emit/mod.rs in the Rust bootstrap at `m-bootstrap-archive` — the file that says the ORDER the
@@ -13,41 +12,42 @@ use emit/large_size
 # the output path — which is what makes the double-emit determinism
 # diff a property of the emitter rather than of the invocation.
 use ast
-use source
-use module/names as module_names
-use diag
 use check/state
-use ir/containers
-use ir/instances
-use ir/phases
-use emit/ctype
-use emit/synth
-use emit/writer
-use emit/decls as emit_decls
-use emit/c_main
-use emit/gate
-use emit/typeorder
-use emit/extern_probe
-use emit/perfn
-use emit/sides
-use emit/side_bodies
-use emit/descriptors
-use emit/signature
+use checker
+use diag
 use emit/body
+use emit/builtins
+use emit/c_main
 use emit/callback_guard
 use emit/callback_thunk
-use emit/builtins
-use emit/reach
+use emit/ctype
+use emit/decls as emit_decls
+use emit/descriptors
+use emit/extern_probe
 use emit/externs as emit_externs
-use parse
-use resolve
-use checker
+use emit/gate
+use emit/large_size
+use emit/lend_local
+use emit/padding_tables
+use emit/perfn
+use emit/reach
+use emit/side_bodies
+use emit/sides
+use emit/signature
+use emit/synth
+use emit/typeorder
+use emit/writer
+use ir/containers
+use ir/instances
 use ir/lower
 use ir/mono
 use ir/own
+use ir/phases
 use ir/place_store
-use emit/lend_local
-use emit/padding_tables
+use module/names as module_names
+use parse
+use resolve
+use source
 
 # What came out. Exactly one of the two is interesting: with any
 # diagnostic the C is empty, because a translation unit missing the
@@ -163,13 +163,16 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
         text: text,
         struct_tags: struct_tags,
         lend_units: none,
-        kept: no_kept
+        kept: no_kept,
+        headers: emit_externs.headers(p, s, decls)
     )
 
 # The same with what a round's pointee check read of each counted parameter
-# (panel 194's R7), and the names a bound macro reaches the guard keeps
-# (defect 2059).
-function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, sources: str, text: bool, struct_tags: {str: bool}, lend_units: {str: str}, kept: {str: bool}) -> Emitted
+# (panel 194's R7), the names a bound macro reaches the guard keeps (defect
+# 2059), and the one file's headers in `headers`' order: `emit_externs.headers`,
+# or the order under which every group record reads as its own module reads it
+# (panel 239, `cli/agreed.fused`).
+function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, sources: str, text: bool, struct_tags: {str: bool}, lend_units: {str: str}, kept: {str: bool}, headers: [str]) -> Emitted
     refused = gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
 
     if refused.len() > 0
@@ -231,7 +234,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         version: version,
         tu_local: "",
         records: every,
-        headers: emit_externs.headers(p, s, decls),
+        headers: headers,
         kept: kept
     )
 

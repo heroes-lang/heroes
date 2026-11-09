@@ -52,7 +52,10 @@
  *   (`h_<module>_<name>`, which the mangler makes deterministic, CLAUDE.md §7).
  *   On Linux `dladdr` reads only `.dynsym`, so the link line carries
  *   `-rdynamic` (`selfhost/cli/flags.hero`); without it the message loses the
- *   name and nothing else.
+ *   name and nothing else. And `-rdynamic` exports no `static` function, which
+ *   a generic function's instance is, so since defect 2371 Linux reads the
+ *   executable's own symbol table first (`parts/symbols.c`,
+ *   `hero_stack_symbol` below).
  * - THREADS ARE A RECORDED HOLE, not a fix. The alternate stack is per thread;
  *   a C library's own thread that overflows dies as it did before this file
  *   (138 today, 132 with the handler installed on the main thread only —
@@ -501,31 +504,48 @@ static void hero_stack_regs(void *ctx, uintptr_t *pc, uintptr_t *fp, uintptr_t *
 #endif
 }
 
+/* THE NAME OF THE FUNCTION WHOSE BYTES HOLD `addr`, or NULL: every name this
+ * file and its neighbours tell is asked here (defect 2371, 2026-11-09). On
+ * Linux the executable's own symbol table first (`parts/symbols.c`), because
+ * glibc's `dladdr` reads only the exported symbols and the compiler writes a
+ * generic function's instance and the per-type functions `static`, so a frame
+ * of `make_one<Held>` was told as `main`, the exported function under it, and
+ * a generic recursion with no name at all; `dladdr` after it, for what lies
+ * outside the executable. Darwin's `dladdr` reads the whole symbol table, the
+ * local symbols too, and is asked alone. */
+static const char *hero_stack_symbol(uintptr_t addr) {
+#if defined(__linux__)
+    const char *own = hero_own_symbol(addr);
+    if (own != NULL) return own;
+#endif
+    Dl_info info;
+    if (dladdr((void *)addr, &info) == 0) return NULL;
+    return info.dli_sname;
+}
+
 /* The Heroes function on the interrupted stack nearest the fault: the pc's own
  * symbol if it is one, else the first frame up the chain that is. Every fp is
  * checked against the stack range before it is read, and the walk must go up. */
 static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
-    Dl_info info;
-    const char *first = NULL;
-    if (dladdr((void *)pc, &info) != 0) {
-        if (hero_stack_is_heroes(info.dli_sname)) return info.dli_sname;
-        first = info.dli_sname;
-    }
+    const char *first = hero_stack_symbol(pc);
+    if (hero_stack_is_heroes(first)) return first;
     /* The link register, once, BEFORE the chain: on AArch64 it holds the return
      * address of a leaf callee that saved no frame record, which is the one
      * frame the chain below structurally cannot see. `lr - 1` for the same
      * reason the loop uses `ret - 1` — the return address is the instruction
      * AFTER the call, and at the end of a function that can belong to the next
      * symbol. Zero everywhere the chain suffices, so this costs one compare. */
-    if (lr != 0 && dladdr((void *)(lr - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) {
-        return info.dli_sname;
+    if (lr != 0) {
+        const char *caller = hero_stack_symbol(lr - 1);
+        if (hero_stack_is_heroes(caller)) return caller;
     }
     for (int i = 0; i < 64; i++) {
         if (fp < hero_stack_lo - HERO_STACK_WINDOW || fp + 16 > hero_stack_hi || (fp & 7) != 0) break;
         uintptr_t next_fp = *(uintptr_t *)fp;
         uintptr_t ret = *(uintptr_t *)(fp + 8);
         if (ret == 0) break;
-        if (dladdr((void *)(ret - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) return info.dli_sname;
+        const char *caller = hero_stack_symbol(ret - 1);
+        if (hero_stack_is_heroes(caller)) return caller;
         if (next_fp <= fp) break;
         fp = next_fp;
     }
@@ -686,18 +706,22 @@ static void hero_stack_pass_on(int signum, siginfo_t *si, void *ctx) {
 #define HERO_STACK_SEEN 64
 
 static int hero_stack_names(uintptr_t pc, uintptr_t fp, uintptr_t lr, const char **out) {
-    Dl_info info;
     int n = 0;
     uintptr_t first_ret = 0;
-    if (dladdr((void *)pc, &info) != 0 && hero_stack_is_heroes(info.dli_sname)) out[n++] = info.dli_sname;
+    const char *own = hero_stack_symbol(pc);
+    if (hero_stack_is_heroes(own)) out[n++] = own;
     if (fp >= hero_stack_lo - HERO_STACK_WINDOW && fp + 16 <= hero_stack_hi && (fp & 7) == 0) first_ret = *(uintptr_t *)(fp + 8);
-    if (lr != 0 && lr != first_ret && dladdr((void *)(lr - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) out[n++] = info.dli_sname;
+    if (lr != 0 && lr != first_ret) {
+        const char *caller = hero_stack_symbol(lr - 1);
+        if (hero_stack_is_heroes(caller)) out[n++] = caller;
+    }
     for (int i = 0; i < 64 && n < HERO_STACK_SEEN; i++) {
         if (fp < hero_stack_lo - HERO_STACK_WINDOW || fp + 16 > hero_stack_hi || (fp & 7) != 0) break;
         uintptr_t next_fp = *(uintptr_t *)fp;
         uintptr_t ret = *(uintptr_t *)(fp + 8);
         if (ret == 0) break;
-        if (dladdr((void *)(ret - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) out[n++] = info.dli_sname;
+        const char *caller = hero_stack_symbol(ret - 1);
+        if (hero_stack_is_heroes(caller)) out[n++] = caller;
         if (next_fp <= fp) break;
         fp = next_fp;
     }
@@ -750,7 +774,7 @@ static void hero_stack_say_recursion(uintptr_t pc, uintptr_t fp, uintptr_t lr, c
  * running out however far above `sp` stands, and the wild store panel 104
  * rejected, a store of the program's own, never has its `pc` there.
  *
- * The routine is known by the name `dladdr` gives its `pc`, as
+ * The routine is known by the name `hero_stack_symbol` gives its `pc`, as
  * `hero_stack_blame` knows a Heroes function by its symbol: a premise about
  * the platform, written to fail loudly. Its falsifiers are
  * `tests/golden/run/fixedbugs-2253-*`, which die at 139 again on Darwin the
@@ -760,9 +784,8 @@ static void hero_stack_say_recursion(uintptr_t pc, uintptr_t fp, uintptr_t lr, c
  * AArch64's; on x86-64 Darwin the walk would name its caller instead, unrun,
  * no leg and no machine of this project being one. */
 static int hero_stack_pc_is_probe(uintptr_t pc) {
-    Dl_info info;
-    if (dladdr((void *)pc, &info) == 0 || info.dli_sname == NULL) return 0;
-    const char *name = info.dli_sname;
+    const char *name = hero_stack_symbol(pc);
+    if (name == NULL) return 0;
     while (*name == '_') name++;
     return strcmp(name, "chkstk_darwin") == 0;
 }

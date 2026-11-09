@@ -1,0 +1,5 @@
+# A module of the package `text` of defect 2373's case.
+
+# A word.
+function cut() -> str
+    return "c"

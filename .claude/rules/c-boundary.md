@@ -48,7 +48,7 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has thirteen members
+is exit 1 with a diagnostic on the `.hero` line, and it has fourteen members
 (panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
 defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
 blamed moves, the line between accepted and refused does not; the seventh,
@@ -56,7 +56,8 @@ eighth and ninth by panel 202, ratified 2026-10-10, its R2; the tenth by its
 R3, the same day; the eleventh by panel 208, ratified 2026-10-10, its R2,
 which counted it the seventh on the trunk's list of that hour; the twelfth
 by defects 591 and 592, 2026-10-11, with no sitting, on defect 360's
-precedent; the thirteenth by panel 239, 2026-11-09, provisional, its R1):
+precedent; the thirteenth by panel 239's R1, 2026-11-09, and the fourteenth by
+its R4, the same day, both provisional, author ratification pending):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -83,7 +84,25 @@ precedent; the thirteenth by panel 239, 2026-11-09, provisional, its R1):
   undefined name the linker reports must be referenced from a library a
   `link` or a package's `-l` names (`cli/link_report.hero` reads who refers
   to each, in GNU ld's, ld64's and the lld family's words), so a reference
-  from the program's own object stays exit 2;
+  from the program's own object stays exit 2; and, widened 2026-11-09 by
+  defect 2372 (lane b26-cli, on the same precedent), a name **the text of a
+  group's header puts in the program's own object**, a `static inline`
+  body that calls it or a bound name the header makes a macro for it, told
+  `ffi_missing_link` at the binding whose header's text reaches it, the
+  header, the function and the name named (`cli/header_needs.hero`). The
+  narrowing is clang's answer, never the linker's words, which name the
+  header's function at `-O0` and the compiler's own caller at `-O2`: every
+  reference in a module's own object or a library the program names, the
+  name bound by no group and of none of the compiler's forms, declared by
+  none of the unit's opening read alone, and named by a body or a macro of
+  the module's header list (`cli/header_bodies.hero`); a reference no
+  header's text explains stays exit 2. **Each name is judged by the reader
+  whose question it answers** (defect 2381, lane b26-cli, 2026-11-09, the
+  same precedent): a link missing a name a linked library needs beside a
+  name a header's inline body needs was told by neither while each reader
+  judged the whole link; it is told where every name is one reader's, each
+  told as that reader tells it, in the program's order, and stays exit 2
+  where any name is neither's (`cli/link_needs.hero`);
 - **a `ptr` lend C would write through, rooted at a name the program may not
   write** — added 2026-09-19 (panel 166, defect 065). The lend crosses as
   `const void *` from a `=` binding or a by-value parameter, and clang's own
@@ -173,6 +192,28 @@ precedent; the thirteenth by panel 239, 2026-11-09, provisional, its R1):
   group binds and the runtime does not call, defined twice among the
   program's libraries (defect 2375, the author's to rule), and Windows, asked
   nothing yet (defect 2376).
+- **a group record another module's unit reads otherwise than its own
+  module's unit does, where no order of the headers makes the two alike**:
+  added 2026-11-09 (panel 239's R4 and R5, provisional, author ratification
+  pending; defect 2364). Each unit's header list is read by clang's
+  record-layout dump and every record a unit spells of another module is
+  compared with its owner's reading, the size, the alignment and each
+  field's byte and type (`cli/agreed_layout.hero`); where an order of the
+  other modules' headers in that unit, or their owners' earlier headers
+  before them, makes every record agree, that order is the unit's and
+  nothing is told (`cli/agreed_order.hero`); where none does, told
+  `ffi_record_two_layouts` before any unit compiles, at the line where the
+  reading module first spells the record, the two sizes and the first two
+  fields that differ named (`cli/agreed_told.hero`). `--emit-c`'s one file
+  is one more list, `ffi_one_file` where no order of the modules' own
+  headers agrees. It moved both lines: until then two other modules' records
+  in one unit followed the module walk, so a correct program was refused
+  with a false `ffi_field_type` (`two_others`), and a record packed by
+  another module's macro or by a pragma its header left set, or widened by a
+  hidden field or a union, built at exit 0 and printed a wrong value
+  (`pack`, `pragma`, `partial`, `union2`, each measured by the sitting on
+  this Mac and Linux arm64). The member never sees a record whose reading
+  unit's own list does not compile; that unit's compile tells it.
 
 **Since panel 214 (2026-10-14, provisional, author ratification pending) whose
 a refused header is, where no reader names it, is decided by a clang run and
@@ -197,10 +238,10 @@ library that defines it, so a symbol nobody declared and no library of the
 program defines stays exit 2 and the compiler's fault. The second half is the
 thirteenth member's (panel 239, 2026-11-09): a name the runtime calls or defines
 is the author's where a library a `link` or a package of the program names
-supplies it, recovered through that library, never through the name. The fifth member recovers the
-lend from the IR at the line clang names, which is the same question asked of
-the call: a qualifier error at a line where no immutable lend is passed to C
-stays exit 2.
+supplies it, recovered through that library, never through the name. The fifth
+member recovers the lend from the IR at the line clang names, which is the same
+question asked of the call: a qualifier error at a line where no immutable lend
+is passed to C stays exit 2.
 
 ## The instruments
 

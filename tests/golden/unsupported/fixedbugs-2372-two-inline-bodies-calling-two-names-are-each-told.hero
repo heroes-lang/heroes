@@ -1,0 +1,11 @@
+# fixedbugs, defect 2372, lane b26-cli, 2026-11-09.
+#
+# Two `static inline` bodies of one header, each calling a name nothing on
+# the link line defines: each binding is told its own name, once.
+
+extern "fixedbugs-2372-two.h"
+    function top2372_one() -> i32  #~ ffi_missing_link
+    function top2372_two() -> i32  #~ ffi_missing_link
+
+function main()
+    print(top2372_one() + top2372_two())

@@ -33,18 +33,20 @@
 #   its own `util.h` is refused, its note naming the quoted form (panel 237's
 #   ruling; CERT C's PRE04-C);
 # - and a file `-M` lists and `-H` does not, found by `__has_include` alone, is
-#   refused wherever a named folder found it, the landed rule.
+#   refused wherever a named folder found it, the landed rule, and told as a
+#   file a header only asks after (`asked`, defect 2356): its words said the
+#   C this compiler writes reads it, where nothing does.
 
-use module/reading as file_reading
+use cli/deps
 use cli/order_trial
 use cli/package_reads
 use cli/process
-use cli/deps
-use cli/strings
 use cli/stand_in
+use cli/strings
 use emit/c_text
 use emit/clang_place
 use emit/macro_guard
+use module/reading as file_reading
 
 # The words the refusal's run adds where it lists a group's headers.
 constant WORDS: [str]
@@ -131,7 +133,7 @@ function shadows(said: str, paths: [str], groups: [str], named: [str], others: [
 
             if !told.is_err()
                 out @ out.push(
-                    stand_in.Shadow(path: one.path, folder: folder, named: name, reader: told.must().reader, beside: told.must().beside)
+                    stand_in.Shadow(path: one.path, folder: folder, named: name, reader: told.must().reader, beside: told.must().beside, asked: false)
                 )
 
     for written in paths
@@ -141,7 +143,7 @@ function shadows(said: str, paths: [str], groups: [str], named: [str], others: [
         if folder.len() > 0 && seen[path].is_err() && process.path_exists(written)
             seen[path] @ true
             out @ out.push(
-                stand_in.Shadow(path: written, folder: folder, named: stand_in.relative(path: path, dir: folder), reader: "", beside: false)
+                stand_in.Shadow(path: written, folder: folder, named: stand_in.relative(path: path, dir: folder), reader: "", beside: false, asked: true)
             )
 
     return out
@@ -260,21 +262,25 @@ test "a file of a named folder is told by who included it, and a group's own hea
     for dir in ["/rt", "/sdk", "/src"]
         assert !process.mkdir_all(root + dir).is_err()
 
-    for pair in [["/sdk/stdio.h", ""], ["/sdk/time.h", ""], ["/sdk/string.h", ""], ["/src/_stdio.h", ""], ["/src/time.h", ""], ["/src/string.h", ""], ["/src/heroes_unit.h", ""], ["/src/money.h", "#include <time.h>\n"], ["/src/quoted.h", "#  include \"string.h\"\n"]]
+    for pair in [["/sdk/stdio.h", ""], ["/sdk/time.h", ""], ["/sdk/string.h", ""], ["/src/_stdio.h", ""], ["/src/time.h", ""], ["/src/string.h", ""], ["/src/heroes_unit.h", ""], ["/src/money.h", "#include <time.h>\n"], ["/src/quoted.h", "#  include \"string.h\"\n"], ["/src/locale.h", ""]]
         assert !write_file(path: root + pair[0], text: pair[1]).is_err()
 
     said = [". " + root + "/src/heroes_unit.h", ". " + root + "/src/money.h", ".. " + root + "/src/time.h", ". " + root + "/sdk/stdio.h", ".. " + root + "/src/_stdio.h", ". " + root + "/src/quoted.h", ".. " + root + "/src/string.h"].join("\n") + "\n"
     got = shadows(
         said: said,
-        paths: [],
+        paths: [root + "/src/time.h", root + "/src/locale.h", root + "/src/absent.h"],
         groups: ["money.h", "stdio.h", "quoted.h"],
         named: [root + "/src"],
         others: [root + "/rt", root + "/sdk"]
     )
-    assert got.len() == 3
-    assert got[0].named == "heroes_unit.h" && got[0].reader == ""
-    assert got[1].named == "time.h" && got[1].reader == "`" + root + "/src/money.h`" && got[1].beside
+    assert got.len() == 4
+    assert got[0].named == "heroes_unit.h" && got[0].reader == "" && !got[0].asked
+    assert got[1].named == "time.h" && got[1].reader == "`" + root + "/src/money.h`" && got[1].beside && !got[1].asked
     assert got[2].named == "_stdio.h" && got[2].reader == "the C library's `<stdio.h>`" && !got[2].beside
+
+    # A file `-M` lists and `-H` shows entered nowhere is one a header only
+    # asks after (defect 2356); one `-MG` lists and no folder holds is none.
+    assert got[3].named == "locale.h" && got[3].asked && got[3].reader == ""
     assert entries("x\n.. a/b.h\n.\n...c\n")[0].depth == 2 && entries("x\n.. a/b.h\n").len() == 1
 
     # Windows' paths come back as clang wrote them, each `\` once (defect 2359).

@@ -1,0 +1,150 @@
+# The names a refused link reports that nothing on its line defines, each
+# judged by the reader whose question it answers, and the link told as the
+# author's where every one of them is (design.md §4.19, §4.17; CLAUDE.md
+# §7's named exception; defect 2381, 2026-11-09).
+#
+# **Two readers, one question each.** A name every reference to which is
+# placed in a library the program names is `cli/library_needs.hero`'s
+# (defect 2365), told at the group or the package that links that library;
+# a name the text of a group's header puts in the program's own object is
+# `cli/header_needs.hero`'s (defect 2372), told at the binding that brings
+# that text in. Until this file each reader judged the whole link, and told
+# it only where every name was its own, so a link missing one name of each,
+# a `libtop.a` needing `base_helper` beside an inline body calling
+# `base_two`, was told by neither: *internal error: linking failed*, exit 2,
+# measured on this Mac and in the `heroes-linux-arm64` container.
+#
+# **The link is told only where every name is answered**, each by its
+# reader and every diagnostic either gives; a name neither answers, one the
+# compiler's own C or the runtime refers to, one of the compiler's own
+# forms, or a reference no reader can place, leaves the whole link the
+# compiler's, exit 2, as panel 048 ruled for a name nobody declared.
+
+use ast
+use cli/header_needs
+use cli/library_needs
+use cli/link_report
+use cli/probing
+use cli/toolchain
+use diag
+use parse
+use source
+use token
+
+# The diagnostics for a refused link's `message`, in the program's order;
+# none unless every undefined name it reports is answered.
+# `linked` are the packages' flags the link carried.
+function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, asking: [probing.Probing], linked: [str]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    refs = link_report.references(message)
+    libraries = library_needs.names_of(s, decls: decls, linked: linked)
+    out: [diag.Diagnostic] @= []
+    taken: {str: bool} @= {}
+
+    for need in library_needs.owned(refs, names: libraries)
+        at = library_needs.told_at(s, decls: decls, need: need, build: t.build)
+
+        if at.is_err()
+            return none
+        out @ out.push(at.must())
+
+        for symbol in need.symbols
+            taken[symbol] @ true
+
+    # What is left is the headers' to answer, every name or none.
+    left: [str] @= []
+
+    for one in refs
+        if one.symbol == "" || one.file == ""
+            return none
+
+        if taken[one.symbol].is_err() && !holds(left, name: one.symbol)
+            left @ left.push(one.symbol)
+
+    if left.len() == 0
+        return in_order(out)
+    texts = header_needs.told_of(refs, names: left, s: s, decls: decls, t: t, asking: asking, libraries: libraries)
+
+    if texts.is_err()
+        return none
+
+    for d in texts.must()
+        out @ out.push(d)
+
+    return in_order(out)
+
+# `found` in the program's order, by where each is told, two at one place in
+# the order given: ld64 lists the undefined names by name and GNU ld by
+# reference, so the linker's order is no one order on every platform.
+function in_order(found: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for d in found
+        at: i64 @= out.len()
+
+        while at > 0 && out[at - 1].span.start > d.span.start
+            at @ at - 1
+
+        moved: [diag.Diagnostic] @= out.slice(from: 0, to: at).push(d)
+
+        for i in range(from: at, to: out.len())
+            moved @ moved.push(out[i])
+
+        out @ moved
+
+    return out
+
+function holds(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+constant TEXT: str
+    "extern \"top.h\" link \"top\"\n    function top_value() -> i32\n\nfunction main()\n    print(top_value())\n"
+
+# **Every name answered, or the link is the compiler's**: a name a named
+# library alone needs is told at its group; one the program's object refers
+# to and no header list answers, here none being asked, leaves the whole
+# link the compiler's, the library's name with it; a reference no reader can
+# place, and words that are no report, are nobody's.
+test "a link is told where every name it reports is answered by one reader, and is the compiler's where one is not (defect 2381)"
+    s = source.new_source(name: "m.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+    t = toolchain.Toolchain(
+        runtime: "runtime",
+        build: "build",
+        fingerprint: "",
+        runtime_key: "",
+        compiler_key: "",
+        compiler_banner: "",
+        target: "",
+        asked_answer: ""
+    )
+    library = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_value in libtop.a[2](top.o)\n"
+    alone = told(library, s, decls, t, asking: [], linked: [])
+    assert alone.len() == 1 && alone[0].code == "ffi_missing_link"
+    assert alone[0].message == "the library `top` needs `base_helper`, and nothing on the link line defines it"
+    mixed = library + "  \"_base_two\", referenced from:\n      _top_fast in m-740b7fff2887daca.o\n"
+    assert told(mixed, s, decls, t, asking: [], linked: []).len() == 0
+    runtime = library + "  \"_base_two\", referenced from:\n      _hero_x in runtime-0128005f5ecb3c36-578c67547cb30f76.o\n"
+    assert told(runtime, s, decls, t, asking: [], linked: []).len() == 0
+    assert told(library + "lld-link: error: undefined symbol: base_two\n", s, decls, t, asking: [], linked: []).len() == 0
+    assert told("", s, decls, t, asking: [], linked: []).len() == 0
+    assert told("ld: library 'top' not found\n", s, decls, t, asking: [], linked: []).len() == 0
+
+    # Told in the program's order, two at one place as given.
+    at = token.Span(start: 9, end: 9)
+    one = diag.new_diagnostic(code: "a", message: "", span: token.Span(start: 30, end: 31))
+    two = diag.new_diagnostic(code: "b", message: "", span: at)
+    three = diag.new_diagnostic(code: "c", message: "", span: at)
+    four = diag.new_diagnostic(code: "d", message: "", span: token.Span(start: 2, end: 3))
+    codes: [str] @= []
+
+    for d in in_order([one, two, three, four])
+        codes @ codes.push(d.code)
+
+    assert codes == ["d", "b", "c", "a"]
