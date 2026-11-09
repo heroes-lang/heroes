@@ -40,17 +40,17 @@
 # wrong value, measured the same day with `--include`. `reads` asks what a
 # record cannot, which files these words make of these includes now.
 
+use cli/deps
+use cli/digest
 use cli/flags
 use cli/libraries
-use cli/strings
-use cli/process
-use cli/publish
-use cli/digest
 use cli/opening
-use cli/response_file
-use cli/deps
 use cli/order_trial
 use cli/package_reads
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/strings
 use emit/c_text
 use emit/clang_place
 
@@ -531,11 +531,13 @@ test "a fetched package's header that reads a file outside its root is refused w
             .ok _  => ""
             .err e => e.code
 
+        # The message tells the file with `/`, as it tells the root, on every
+        # platform: the Windows box's listing writes `\` (defect 2382).
         msg = match said
             .ok _  => ""
-            .err e => clang_place.slashed(e.msg)
+            .err e => e.msg
 
-        assert code == "package_reads_outside" && strings.holds(text: msg, needle: pair[1]) || code == "unread" && read.is_err()
+        assert code == "package_reads_outside" && strings.holds(text: msg, needle: pair[1]) && !strings.holds(text: msg, needle: "\\") || code == "unread" && read.is_err()
 
     clean = reads_text(
         build: root + "/build",

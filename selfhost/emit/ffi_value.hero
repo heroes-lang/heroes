@@ -27,26 +27,26 @@
 # is the author's to answer.
 
 use ast
-use source
-use diag
-use check/state
 use check/render
-use ir/containers
-use emit/ctype
-use emit/ffi_lookup
-use emit/ffi_site
-use emit/ffi_asked
-use emit/ffi_result
-use emit/clang_place
+use check/state
+use checker
+use cli/clang_excerpt
+use cli/clang_first
+use diag
 use emit/clang_name
+use emit/clang_place
+use emit/ctype
+use emit/ffi_asked
+use emit/ffi_lookup
+use emit/ffi_result
+use emit/ffi_site
 use emit/record_constant
 use emit/undefined_words
-use cli/clang_first
-use cli/clang_excerpt
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 constant ERROR: str
     "error: "
@@ -247,9 +247,11 @@ function spelled_at(rows: [str], line: str, name: str) -> Spelled?
 # The file a note names: as the group names it where it is the group's header;
 # from the program's own directory where it stands under it, which is where a
 # header beside the program is found and how its `#include` names it; and as
-# clang printed it otherwise. clang prints the directory the build searched,
-# `./` or the program's own, with this machine's separator, so a name read
-# from the program's directory is the same on every platform.
+# clang printed it otherwise, with `/` between its parts as every path a
+# message tells (`clang_place.slashed`, defect 2382). clang prints the
+# directory the build searched, `./` or the program's own, with this
+# machine's separator, so a name read from the program's directory is the
+# same on every platform.
 function shown(path: str, header: str, program: str) -> str
     for spelled in clang_place.spellings(path)
         if clang_name.printed_as(printed: spelled, value: header)
@@ -266,7 +268,7 @@ function shown(path: str, header: str, program: str) -> str
         if directory.len() > 0 && p.len() > directory.len() && clang_place.same_bytes(text: p, from: 0, part: directory)
             return p.slice(from: directory.len(), to: p.len())
 
-    return path
+    return p
 
 ## Tests
 
@@ -334,6 +336,7 @@ test "a header's file is named as the group names it, else from the program's di
     assert shown(path: "tests/golden/unsupported/inner.h", header: "outer.h", program: "tests/golden/unsupported/x.hero") == "inner.h"
     assert shown(path: "tests/golden/unsupported\\inner.h", header: "outer.h", program: "tests/golden/unsupported/x.hero") == "inner.h"
     assert shown(path: "/usr/include/pthread.h", header: "outer.h", program: "x.hero") == "/usr/include/pthread.h"
+    assert shown(path: "C:\\SDK\\ucrt\\stdio.h", header: "outer.h", program: "x.hero") == "C:/SDK/ucrt/stdio.h"
 
 # clang 22 names the enumeration's warning `-Wimplicit-enum-enum-cast`, and
 # clang 18, the floor, `-Wenum-conversion`: the words before them are the same.

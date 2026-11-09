@@ -42,9 +42,12 @@
 # `compiling.within_root`): two listings of each fetched package's header
 # list, the lines its probes open with and its unit's opening, judged before
 # any probe or unit of the build compiles and told on the package's first
-# binding (`cli/rounds.hero`). Until then no build called it. Measured on this
-# Mac alone; the Linux and Windows legs are unrun, a Windows listing's `\`
-# read as `/` (`lexical`) among what they owe.
+# binding (`cli/rounds.hero`). Until then no build called it.
+#
+# **A path is told as written, `/` between its parts** (defect 2382): the
+# Windows box's listing writes `\`, and the refusal named the file so beside
+# the root written with `/`. Its `..` kept, its separators are made `/` by
+# `clang_place.slashed`, the rule every message telling clang's paths follows.
 
 use cli/deps
 use cli/process
@@ -270,7 +273,7 @@ function holds(dir: str, path: str) -> bool
 
 # The paths of a listing's rows (`<digest> <path>`, after the digest of them
 # all) that no directory of `dirs` holds and that are none of `files`, as the
-# listing wrote them.
+# listing wrote them, every separator `/` (defect 2382).
 function outside(listing: str, dirs: [str], files: [str]) -> [str]
     out: [str] @= []
     first: bool @= true
@@ -299,7 +302,7 @@ function outside(listing: str, dirs: [str], files: [str]) -> [str]
                 allowed @ true
 
         if !allowed
-            out @ out.push(written)
+            out @ out.push(clang_place.slashed(written))
 
     return out
 
@@ -424,3 +427,26 @@ test "a listing is judged row by row: the root, the runtime, the toolchain's own
         package_flags: [],
         listing: fail(code: "unread", msg: "x")
     ).is_err()
+
+# The Windows box's listing writes `\` between a path's parts (defect 2382):
+# the file outside the root is told as written, its climb kept, `/` between
+# its parts as the root's are, and a path the root holds passes either way.
+test "a path a Windows listing names outside the root is told with `/`, its climb kept (defect 2382)"
+    own = Own(dirs: ["C:/LLVM/lib/clang/23/include"], files: [])
+    listing = "0123456789abcdef\naaaa heroes.packages\\vec\\vecmath.h\nbbbb runtime\\heroes_unit.h\ncccc C:\\LLVM\\lib\\clang\\23\\include\\stdint.h\ndddd heroes.packages\\vec\\..\\..\\outside.h"
+    said = judged(
+        own: own,
+        root: "heroes.packages/vec",
+        runtime: "runtime",
+        package_flags: [],
+        listing: ok(listing)
+    )
+
+    msg = match said
+        .ok _  => ""
+        .err e => e.msg
+
+    assert strings.holds(text: msg, needle: "reads `heroes.packages/vec/../../outside.h`, outside its root")
+    assert !strings.holds(text: msg, needle: "\\")
+    assert !strings.holds(text: msg, needle: "stdint.h") && !strings.holds(text: msg, needle: "vecmath.h")
+    assert outside("0\nx C:\\pkg\\..\\x.h", dirs: ["C:/pkg"], files: []) == ["C:/pkg/../x.h"]
