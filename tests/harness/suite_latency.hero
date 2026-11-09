@@ -51,12 +51,12 @@ constant BUILD_MS: i64
 # **8.9, 10.3 and 49.1 s since 2026-11-09**, raised at M-package-manager's
 # close by the same rule over that close's row, 8.10, 9.32 and 44.68 s, with
 # its cause named in the decision issue that took it: the compiler's own
-# source grew 11.5 % with the package manager (182,687 to 203,681 lines,
-# the seed 29.0 to 33.0 MB), so the clocks that read it grew with it, the
-# previous tag's compiler taking 8.00 s of `check` on that tree; and 1.4 %
-# of `check` is the compiler's own, 0.8 % of it entering at M-package-
-# manager step 4 (b17a032da, bisected over the close's tree), the rest under
-# the floor at every step after.
+# source grew 12.3 % with the package manager (182,687 lines in 701 modules
+# to 205,235 in 786, the seed 28,876,131 to 32,967,237 bytes), so the clocks
+# that read it grew with it, the previous tag's compiler taking 8.00 s of
+# `check` on that tree; and 1.4 % of `check` is the compiler's own, the
+# first commit to read slower being the merge of M-package-manager step 4
+# (b17a032da), by 0.8 %, the rest not located by the bisect.
 constant CHECK_CEILING_MS: i64
     8900
 

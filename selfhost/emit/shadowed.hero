@@ -186,6 +186,8 @@ function accessors(@w: writer.Writer, p: containers.Program, s: source.Source, d
         return
     writer.at_generated(@w)
 
+    # ORDER: by name, as `sort` orders a `str`: the accessors are written in
+    # that order, and one input's emitted C is one text (`determinism`).
     for name in sort(keys(named))
         writer.line(
             @w,

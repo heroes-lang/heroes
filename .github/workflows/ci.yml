@@ -190,7 +190,13 @@ jobs:
     # A leg that has not ended after four hours is hung, not slow: the slowest,
     # Windows, read under two hours on 2026-10-25, and GitHub's default lets a
     # hung one run six before it is killed.
-    timeout-minutes: 240
+    # **Falsified 2026-11-09**: Windows read 3 h 51 min on 69fbc7924 and was
+    # cancelled at four hours on 1517fae51 with its net past 21 suites and still
+    # passing them, slow and not hung. So the ceiling is GitHub's own for a
+    # hosted runner, six hours (docs.github.com, Actions limits, read that day),
+    # and splitting Windows' net into jobs of its own is a task, since the net
+    # keeps growing (the author's answer of 2026-11-09).
+    timeout-minutes: 360
     # No platform's failure hides another's. That is the point of having three,
     # and `fail-fast` would undo it on the first divergence.
     strategy:

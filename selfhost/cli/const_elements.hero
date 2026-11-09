@@ -344,6 +344,8 @@ function refused(said: str) -> {i64: str}
         if tail.is_err()
             continue
 
+        # ORDER: none, as a fact about the value: the check above leaves
+        # `placed` one key, and each key's answer is set on its own.
         for decl in keys(placed)
             if out[decl].is_err()
                 out[decl] @ ffi_lookup.up_to_quote(tail.must())
