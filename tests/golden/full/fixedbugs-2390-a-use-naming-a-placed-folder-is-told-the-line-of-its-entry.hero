@@ -17,11 +17,11 @@
 # entry `core` placed this folder. A module under the package's `internal`
 # folder is told no `use` of the program reaches it, and offered nothing.
 #
-# The key opens with `2e3`: the lexer's `exponent_literal` on each line is
-# defect 2391's, told apart.
-use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv  #~ exponent_literal package_unmarked
-use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ exponent_literal package_unmarked
-use <heroes.packages/core@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ exponent_literal package_unmarked
+# The key opens with `2e3`, which the lexer told `exponent_literal` before each
+# line until defect 2391: the path is read as a path, never as a number.
+use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv  #~ package_unmarked
+use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ package_unmarked
+use <heroes.packages/core@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ package_unmarked
 
 function main()
     print(strconv.atoi("12").must())

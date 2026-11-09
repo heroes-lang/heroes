@@ -1,0 +1,23 @@
+# Fixed defect 2391, 2026-11-09, lane b27-place: a `use` line whose path the
+# parser tells whole, a placed tree's folder or an address, holding what the
+# lexer reads as a number, the shapes beside the issue's `2e3` key.
+#
+# SYMPTOM: each line was told twice, first by the lexer at the number's
+# column, `exponent_literal` (`12e4`, `1e5`, `2e3`), `leading_zero`,
+# `digit_not_in_base`, `misplaced_separator`, then by the parser on the path.
+#
+# CAUSE: the lexer reads a line before the parser and knows no `use`, and the
+# parser's message on the whole path never took the lexer's back.
+#
+# FIX: a report the lexer made inside a path the parser told whole is
+# withdrawn, so each line is told once; a number outside the path, in `main`,
+# is still told.
+use heroes.packages/json@1.0.0-12e4a0b1c2d3e4f5/parse  #~ package_unmarked
+use heroes.packages/json@1.0.0-0123456789abcdef/parse  #~ package_unmarked
+use heroes.packages/json@1.0.0-0b1fa2b3c4d5e6f7/parse  #~ package_unmarked
+use heroes.packages/json@1.0.0-1_e3/parse  #~ package_unmarked
+use <heroes.packages/json@1e5.0.0-abc>/parse  #~ package_unmarked
+use github.com/2e3/json/parse  #~ use_holds_an_address
+
+function main()
+    print(2e3)  #~ exponent_literal
