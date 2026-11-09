@@ -1,7 +1,6 @@
 # Whether a group record one module spells of another reads there as its own
 # module reads it: the record asked of clang under both header lists and
-# compared (design.md §4.19, §1.12; panel 239's R4, provisional, author
-# ratification pending; defect 2364). The judge of `cli/agreed.hero`, which
+# compared (design.md §4.19, §1.12; panel 239's R4, ratified 2026-11-09; defect 2364). The judge of `cli/agreed.hero`, which
 # asks it of every unit and of `--emit-c`'s one file; `cli/agreed_order.hero`
 # tries other lists with it, and `cli/agreed_told.hero` says what it found.
 #

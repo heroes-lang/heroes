@@ -57,7 +57,7 @@ R3, the same day; the eleventh by panel 208, ratified 2026-10-10, its R2,
 which counted it the seventh on the trunk's list of that hour; the twelfth
 by defects 591 and 592, 2026-10-11, with no sitting, on defect 360's
 precedent; the thirteenth by panel 239's R1, 2026-11-09, and the fourteenth by
-its R4, the same day, both provisional, author ratification pending):
+its R4, the same day, both ratified 2026-11-09):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -170,7 +170,7 @@ its R4, the same day, both provisional, author ratification pending):
   image, where `llabs` is the symbol's own spelling.
 - **a C name a group binds, or the runtime calls or defines, that a library
   the program names other than the one meant would supply**: added 2026-11-09
-  (panel 239's R1 and R2, provisional, author ratification pending, decision
+  (panel 239's R1 and R2, ratified 2026-11-09, decision
   2374; defects 2363 and 2378). Told `ffi_defined_elsewhere` on the binding,
   or on the group whose library defines a name of the runtime's, both files
   named, the same words in every order of the modules and under every name
@@ -198,8 +198,7 @@ its R4, the same day, both provisional, author ratification pending):
   Windows box, 2026-11-09).
 - **a group record another module's unit reads otherwise than its own
   module's unit does, where no order of the headers makes the two alike**:
-  added 2026-11-09 (panel 239's R4 and R5, provisional, author ratification
-  pending; defect 2364). Each unit's header list is read by clang's
+  added 2026-11-09 (panel 239's R4 and R5, ratified 2026-11-09; defect 2364). Each unit's header list is read by clang's
   record-layout dump and every record a unit spells of another module is
   compared with its owner's reading, the size, the alignment and each
   field's byte and type (`cli/agreed_layout.hero`); where an order of the

@@ -1,7 +1,7 @@
 # Every group record a unit spells of another module is read there as its own
 # module reads it: made so by the compiler where an order of the headers can,
 # and refused where none can, before any unit compiles (design.md §4.19,
-# §1.12; panel 239's R4 and R5, provisional, author ratification pending;
+# §1.12; panel 239's R4 and R5, ratified 2026-11-09;
 # defect 2364).
 #
 # **What it closed.** Two other modules' records read in one unit followed the

@@ -935,7 +935,7 @@ A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
 unit cached, and each unit reads the headers of its own module's groups and of
 the group records it spells, never another module's, which every probe of the
 headers asks alike, each such record laid out as its own module's unit lays it out
-(§4.19; panel 239's R4, provisional, author ratification pending). `heroes test` compiles a unit per module too, the root's
+(§4.19; panel 239's R4, ratified 2026-11-09). `heroes test` compiles a unit per module too, the root's
 `main` running every module's tests (panel 202 R3, defect 560), and `--emit-c`
 writes the whole program as one `.c`, which is the seed's bootstrap, refused at
 exit 1 where that file cannot mean the program the units build: where it does
@@ -2365,8 +2365,7 @@ error: incompatible types
 The signature, the record definition, where it lives, and two concrete routes. The model fixes it
 **in one turn**, without opening anything.
 
-**At the C boundary, in the specification's words** (panel 239's R6, provisional, author
-ratification pending). A refusal names what the specification names: a group, its header, its
+**At the C boundary, in the specification's words** (panel 239's R6, ratified 2026-11-09). A refusal names what the specification names: a group, its header, its
 `link` library, a module, a function, a record and its field, a size in bytes, and what a header
 defines, and it says a module *reads* a header, as spec § 13 does; a file in a library is named by
 its path, the one exact name of where a definition is; the header's own C words stand as the header
@@ -2750,8 +2749,7 @@ never every unit of the program: until then a module binding `wcwidth` from `wch
 where `main` named `ncursesw`, and was told *declares no* otherwise.
 
 **A function a group binds is called from its own library, in every module and every order of the
-modules, or the program is refused** (panel 239's R1 to R3, provisional, author ratification
-pending; decision 2374; defects 2363 and 2378). A linked program holds one definition of a C name,
+modules, or the program is refused** (panel 239's R1 to R3, ratified 2026-11-09; decision 2374; defects 2363 and 2378). A linked program holds one definition of a C name,
 and which of two a call reaches is the libraries' order, or on Apple's linker the names' order
 too; clang holds a bound function to its header and to nothing else, so `pick` bound from `a.h`
 with `link "a"` reached another library's `int pick(int *)` at exit 0 and died by a memory fault.
@@ -2794,7 +2792,7 @@ refused is what no order and no name can make mean it, as with the other refusal
 names.
 
 **A record a group binds is laid out, in every unit that spells it, as its own module's unit lays it
-out** (panel 239's R4 and R5, provisional, author ratification pending; defect 2364). Where another
+out** (panel 239's R4 and R5, ratified 2026-11-09; defect 2364). Where another
 module's unit reads the record's header after headers its own module's unit does not read before
 it, clang's record-layout dump of each unit's header list is compared, the size, the alignment and
 each field's byte and type (`cli/agreed_layout.hero`): a macro another header defines, a `#pragma

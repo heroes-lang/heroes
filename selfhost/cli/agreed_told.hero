@@ -1,6 +1,5 @@
 # The words of a group record read two ways that no order of the headers
-# makes alike (design.md §4.17, §4.19; panel 239's R5 and R6, provisional,
-# author ratification pending; defect 2364): `ffi_record_two_layouts` for a
+# makes alike (design.md §4.17, §4.19; panel 239's R5 and R6, ratified 2026-11-09; defect 2364): `ffi_record_two_layouts` for a
 # module's unit, `ffi_one_file` for the one file `--emit-c` writes.
 #
 # **In the specification's words** (spec § 13; R6): a module reads a header,

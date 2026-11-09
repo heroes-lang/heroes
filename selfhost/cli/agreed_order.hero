@@ -1,7 +1,7 @@
 # What is tried before a group record read two ways is refused: other orders
 # of the headers a unit reads, under which every record it spells of another
 # module reads as its own module reads it (design.md §4.19, §1.12; panel
-# 239's R4, routes A and C, provisional; defect 2364). `cli/agreed.hero` asks
+# 239's R4, routes A and C, ratified 2026-11-09; defect 2364). `cli/agreed.hero` asks
 # it where `cli/agreed_layout.disagreeing` found a record read otherwise, and
 # takes the first list it returns as the unit's.
 #

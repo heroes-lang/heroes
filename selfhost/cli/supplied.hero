@@ -1,8 +1,7 @@
 # Which library supplies each C name a group binds and each name the runtime
 # calls, asked of the link itself, and a second definition among the
 # libraries a program names refused (design.md §4.19, §1.12; defect 2363;
-# panel 239's R1, the ffi-pragmatist's v6, provisional, author ratification
-# pending).
+# panel 239's R1, the ffi-pragmatist's v6, ratified 2026-11-09).
 #
 # **A linked program holds one definition of a C name**, and which of two a
 # call reaches is the libraries' order, or on Apple's linker the names'
