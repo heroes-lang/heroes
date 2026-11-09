@@ -1,0 +1,23 @@
+# fixedbugs, defect 2371, 2026-11-09: the room large values take off the stack
+# is asked for in a function's prologue, and its bound names the function
+# whose prologue asked by the return address (`runtime/parts/frame.c`). An
+# instance of a generic function is written `static` in every unit that uses
+# it, and glibc's `dladdr` reads only the exported symbols, so on Linux the
+# bound said `stack exhausted` and no name, at `-O0` and `-O2`, where Darwin
+# named `go` (told with its instance's hash). The runtime reads the
+# executable's own symbol table on Linux (`runtime/parts/symbols.c`), and
+# every level names `go` on both. The record is defect 2339's, one gibibyte
+# and eight bytes, past the room, so nothing is taken. Windows' bound names no
+# function (`tests/harness/platform_skips.hero`).
+extern "fixedbugs-2339-huge.h"
+    record Huge tag heroes_huge partial
+        first: i64
+
+function go<T>(x: T) -> T
+    h = Huge(first: 7, rest: zero)
+    print(h.first)
+    return x
+
+function main()
+    print("before")
+    print(go(x: 1))

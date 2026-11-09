@@ -1,0 +1,17 @@
+# fixedbugs, defect 2371, 2026-11-09: an instance of a generic function is
+# written `static` in every unit that uses it, and glibc's `dladdr` reads only
+# the exported symbols, so on Linux the stack guard could not see the frame
+# that ran out: a recursion of `down` said `stack exhausted` and no name, at
+# `-O0` and `-O2`, where Darwin named `down` (told with its instance's hash).
+# The runtime reads the executable's own symbol table on Linux
+# (`runtime/parts/symbols.c`), and every level names `down` on both. Under the
+# sanitiser the runtime's guard yields to ASan, which says `stack-overflow`.
+# Windows' guard names no function (`tests/harness/platform_skips.hero`).
+function down<T>(x: T, n: i64) -> i64
+    if n < 0
+        return 0
+    return down(x: x, n: n + 1) + 1
+
+function main()
+    print("before")
+    print(down(x: 1, n: 0))

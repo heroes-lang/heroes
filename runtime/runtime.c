@@ -143,6 +143,11 @@
 /* Aborting and printing: no dependencies, and everything below may abort. */
 #include "parts/panic.c"
 
+/* The executable's own functions by name on Linux, the `static` ones that
+ * glibc's `dladdr` cannot see among them (defect 2371). Needs nothing; asked by
+ * stack.c below, for every name a fault's report gives. */
+#include "parts/symbols.c"
+
 /* The guard-page handler that turns a stack overflow into a panic with the
  * function's name (panel 104). Needs only panic.c above it; installed once
  * from hero_args_set, in os.c below. */
