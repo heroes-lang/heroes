@@ -27,20 +27,22 @@
 # request for `struct` is obeyed. A program whose tags need no qualifier never
 # reaches the second round and pays nothing.
 
-use source
-use module/names as module_names
 use cli/compile
-use cli/toolchain
-use cli/units
 use cli/link
 use cli/probing
-use emit/unit
-use emit/members
-use emit/lend_local
-use cli/value_ask
-use cli/value_run
-use cli/value_beside
 use cli/settled
+use cli/supplied
+use cli/supplied_judged
+use cli/toolchain
+use cli/units
+use cli/value_ask
+use cli/value_beside
+use cli/value_run
+use emit/lend_local
+use emit/members
+use emit/unit
+use module/names as module_names
+use source
 
 # What a round came back with: the verdict, and EVERY clang refusal it met and
 # not only the first. A program of several modules may need `struct` on a tag in
@@ -247,13 +249,25 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         site,
         objects: objects,
         module: module_names.binary_of(s.name),
-        modules: probing.every_module(planned.probings)
+        modules: probing.every_module(planned.probings),
+        bound: supplied.bindings(s, art.decls, package_words: site.package_words)
     )
 
 # The link over a round's objects, and the round it makes: its verdict, the
 # refusal that verdict is, and where the binary landed. A link's refusal is
 # no one unit's, so `modules` are every one.
-function linked_round(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, objects: [str], module: str, modules: [str]) -> Round
+function linked_round(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, objects: [str], module: str, modules: [str], bound: [supplied_judged.Bound]) -> Round
+    # Which library supplies each bound name and each name the runtime calls,
+    # asked of the link (`cli/supplied.hero`, panel 239; defect 2363).
+    line = link.link_line(
+        objects: objects,
+        level: options.level,
+        sanitize: options.sanitize,
+        target: t.target,
+        search_library: options.library,
+        package_flags: site.package_flags,
+        link_names: site.link_names
+    )
     linked = link.link_objects(
         t,
         objects: objects,
@@ -263,7 +277,8 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
         sanitize: options.sanitize,
         search_library: options.library,
         package_flags: site.package_flags,
-        link_names: site.link_names
+        link_names: site.link_names,
+        judging: supplied.asked(t, line: line, bound: bound, objects: objects)
     )
     return Round(
         verdict: carry_failure(linked),

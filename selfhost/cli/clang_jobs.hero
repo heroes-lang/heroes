@@ -30,12 +30,12 @@
 # that only takes words away, `x-fsigned-char`, which adds nothing the class
 # reads.
 
-use cli/process
+use cli/clang_added
+use cli/clang_floor
 use cli/deps
+use cli/process
 use cli/strings
 use cli/toolchain
-use cli/clang_floor
-use cli/clang_added
 use emit/value_probe
 
 # Every word a clang job of the compiler carries but its level's words
@@ -91,6 +91,20 @@ constant WORDS: [str]
         "-Wl,/FORCE:UNRESOLVED"
         "-Wl,--start-group"
         "-Wl,--end-group"
+        "-Wl,--trace-symbol=main"
+        "-Wl,-map,"
+        "-Wl,/MAP:"
+        "-Wl,/WHOLEARCHIVE:"
+        "-Wl,/SUBSYSTEM:CONSOLE"
+        "-Wl,/ENTRY:main"
+        "-Wl,/errorlimit:0"
+        "-Wl,-t"
+        "-Wl,--whole-archive"
+        "-Wl,--no-whole-archive"
+        "-Wl,-all_load"
+        "-Wl,-undefined,dynamic_lookup"
+        "-Wl,--unresolved-symbols=ignore-all"
+        "-nostdlib"
         "-lm"
         "--rsp-quoting=posix"
         "-x"
@@ -165,7 +179,9 @@ test "every word a module hands clang is on the line the edits are asked of (def
 # `xcode-select`), a file's suffix, a word clang prints on its own line
 # rather than reads (`-fdepfile-entry=`, and `-fsanitize-system-ignorelist=`,
 # which `cli/package_reads.hero` reads since defect 2351 and this test met at
-# batch 25's merge), and a prefix a module tests a word against.
+# batch 25's merge), a prefix a module tests a word against, and a word one
+# takes off a line with the word after it (`-framework`, which
+# `cli/supplied_probe.hero` leaves off the platform's probe, panel 239).
 constant NOT_WORDS: [str]
     [
         "-object-file-name="
@@ -202,6 +218,7 @@ constant NOT_WORDS: [str]
         "-git-said.txt"
         "-fdepfile-entry="
         "-fsanitize-system-ignorelist="
+        "-framework"
     ]
 
 function listed(word: str) -> bool

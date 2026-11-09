@@ -2368,15 +2368,16 @@ The signature, the record definition, where it lives, and two concrete routes. T
 **At the C boundary, in the specification's words** (panel 239's R6, provisional, author
 ratification pending). A refusal names what the specification names: a group, its header, its
 `link` library, a module, a function, a record and its field, a size in bytes, and what a header
-defines; the header's own C words stand as the header writes them (`long long`, `#pragma pack`, a
-macro's name), since spec § 13 sends the reader to the header. It leans on no word of the machinery
-the specification does not use (*unit*, *archive*, *link line*, *linker*, *object*, each `grep -ciw`
-0 over it on 2026-11-09), nor on *member* in a linker's sense, which the specification spends on a
-struct's member and a group's; it names every record or library it is about in a fixed order, by
-name, never the order the compiler walked; and a note cites the specification by its own section,
-*spec § 13*, never this document's, which a reader holding the specification alone takes for its
-own section 4. (On 2026-11-09, 49 message lines in 25 files of `selfhost/` still cited this
-document's sections, counted by `git grep -n -E '"[^"]*\(§[0-9]+\.[0-9]+\)[^"]*"' -- selfhost`;
+defines, and it says a module *reads* a header, as spec § 13 does; a file in a library is named by
+its path, the one exact name of where a definition is; the header's own C words stand as the header
+writes them (`long long`, `#pragma pack`, a macro's name), since spec § 13 sends the reader to the
+header. It leans on no word of the machinery the specification does not use (*unit*, *archive*,
+*link line*, *linker*, *object*, each `grep -ciw` 0 over it on 2026-11-09), nor on *member* in a
+linker's sense, which the specification spends on a struct's member and a group's; it names every
+record or library it is about in a fixed order, by name, never the order the compiler walked; and a
+note cites the specification by its own section, *spec § 13*, never this document's, which a reader
+holding the specification alone takes for its own section 4. (On 2026-11-09, 49 message lines in
+25 files of `selfhost/` still cited this document's sections, counted by `git grep -n -E '"[^"]*\(§[0-9]+\.[0-9]+\)[^"]*"' -- selfhost`;
 defect 2377 owes their repair, and this clause leaves with it.)
 
 **Fixes are tagged `certain | guess`, and only `certain` fixes are machine-applicable.** The
@@ -2747,6 +2748,50 @@ group names* (`cli/switch_ask.hero`). And a `package`'s words, its `-D` among th
 units that read a header a group naming that package names (defect 572, `emit/header_packages.hero`),
 never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
 where `main` named `ncursesw`, and was told *declares no* otherwise.
+
+**A function a group binds is called from its own library, in every module and every order of the
+modules, or the program is refused** (panel 239's R1 to R3, provisional, author ratification
+pending; decision 2374; defects 2363 and 2378). A linked program holds one definition of a C name,
+and which of two a call reaches is the libraries' order, or on Apple's linker the names' order
+too; clang holds a bound function to its header and to nothing else, so `pick` bound from `a.h`
+with `link "a"` reached another library's `int pick(int *)` at exit 0 and died by a memory fault.
+So the link itself is asked who supplied each name a group binds and each name the runtime calls
+(GNU ld's and lld's `--trace-symbol`, Apple's linker's map, kept off the author's screen and never
+published), and where the program names two or more libraries, two links beside it: the libraries
+in the other order, every other word where it stood, and every library file of objects loaded
+whole, which names a definition no order loads (`ab`: Apple's linker takes the group's own `pick`
+in both orders while another library's own call reaches it). Refused `ffi_defined_elsewhere`, on
+the binding or on the group whose library is at fault, both files named, in every order of the
+modules and under every name: a name a group binds that a library the program names for another
+group supplies; a name of a group naming no library, the C library's, that a library of the
+program defines over the platform's (`puts`); and a name the runtime calls or defines that a
+library of the program supplies (`printf`, `hero_print_end`, which the link refused as a duplicate
+and the compiler told as its own `internal error` until then), **unless a group of that library
+binds the name**: an allocator that replaces `malloc` on purpose says so by binding every name it
+replaces, with no new form. **What is never judged** is a library the program does not name, so
+`link "m"` taken from Apple's `libsystem_m.tbd` and `link "pthread"` from glibc's `libc.so.6` pass
+with no list of the platform's libraries. **What is not refused**, said: a name no group binds and
+the runtime does not call, defined by two libraries the program names and needed by a third, since
+static FFmpeg and static X11 carry identical copies on purpose and no symbol tells one from two
+different definitions, a known cost kept by the author's ruling of 2026-11-09 on decision 2374's
+second question (defect 2375) and pinned by the net's own case that builds it (`intern`, `100 2 7`);
+and a shared library's second definition of such a name. **On Windows** (defect 2376, measured on
+the Windows box with clang 23.1.1 driving lld-link and MSVC's link.exe, 2026-11-09, where both took
+the first library's definition in either order and a DLL's `puts` died by a memory fault) the link
+is asked by its map, `/MAP`, which names the library and the object or DLL of each name, the probes
+load every library file of objects whole with `/WHOLEARCHIVE:`, and their answers are kept by the
+files the link line's own `-L` folders hold, the map naming a library by its name alone
+(`cli/supplied_windows.hero`); a library's duplicate of a name a library the program does not name
+defines, as `fflush` against Windows' `libucrt.lib`, is told on its group. **What it costs**: the
+probes' answers are kept by the link's words, the compiler that links them and the key of every
+library file the links read (`cli/supplied_kept.hero`), so a warm build runs its own link alone,
+and a library rebuilt, removed or shadowed is asked again; measured on this Mac on 2026-11-09,
+every link counted, a warm build naming one library +5.4%, two files of objects +6.7%, two shared
+libraries +6.5%, none +0%, where the sitting's route without the kept answers cost +6.3%, +51% and
++30% (`cli/supplied.hero`). **The specification gains no sentence** (the sitting's spec-warden):
+spec § 13's *`link` a library when the symbols need one* already gives the meaning, and what is
+refused is what no order and no name can make mean it, as with the other refusals this section
+names.
 
 **A record a group binds is laid out, in every unit that spells it, as its own module's unit lays it
 out** (panel 239's R4 and R5, provisional, author ratification pending; defect 2364). Where another

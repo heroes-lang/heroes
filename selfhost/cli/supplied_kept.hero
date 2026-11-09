@@ -1,0 +1,263 @@
+# The probes' answers kept, so a warm build of a program naming two or more
+# libraries asks its own link alone (design.md §4.19, §1.12; defect 2363;
+# panel 239's R1, the cost its landing owed: the probes cost a two-library
+# build of the sitting's +30% to +51% on every build, every link counted).
+#
+# **Kept by the link's words and the bytes of every library file it read,
+# never by the words alone**: a library rebuilt under the same words changes
+# the answer, which is why the real link runs on every build
+# (`cli/link.hero`). So the answer is found by the link's words, the
+# compiler that links them (its key) and the names traced, and it holds every
+# library file of the program's that the real link and the probes opened,
+# each with its key (`module/reading`'s, made in C); it is taken only where
+# every one of them still has that key and the real link of this build opened
+# no library file of the program's that it does not name, so a library
+# rebuilt, removed, or found first on the search path by a new file is asked
+# again. Each object of the program is named by its own text in the words
+# (`cli/units.hero`), so a changed program is another answer.
+#
+# **What it keeps is what the linker said, never a verdict**: each supplier,
+# each duplicate, each file, judged again against the program as it stands,
+# so a binding added or moved is never judged by an earlier program's
+# declarations. The platform's own files (`libc.so.6`, `libSystem.tbd`) are
+# not keyed: the platform probe asks only which of them answers a name of a
+# group naming no library, and they change with the toolchain, whose key
+# names the answer.
+
+use cli/clang_asked
+use cli/digest
+use cli/link_flags
+use cli/process
+use cli/publish
+use cli/strings
+use cli/supplied_names
+use cli/supplied_probe
+use cli/supplied_read
+use cli/toolchain
+use emit/ffi_build
+use module/reading as file_reading
+
+# The first line of a kept answer, its number moved whenever what a probe
+# asks moves (its line's words, what it traces), so an answer to another
+# question is never read as this one's.
+constant HEAD: str
+    "heroes-supplied-kept 1"
+
+# Where the answer of the probes of `line` tracing `names` is kept.
+function path_of(t: toolchain.Toolchain, line: [str], names: [str]) -> str
+    said = t.compiler_key + "\n" + line.join("\n") + "\n\n" + names.join("\n")
+    return t.build + "/supplied-" + digest.digest(said) + ".txt"
+
+# The answer kept at `path`, where every file it names still has its key and
+# `opened`, the files of the program's this build's link read, are all among
+# them; an error where there is none or it no longer holds.
+function kept(path: str, opened: [str]) -> supplied_probe.Probes?
+    text = read_file(path)?
+    lines = supplied_names.byte_lines(text: text, needles: [], stops: [])
+
+    if lines.len() == 0 || lines[0] != HEAD
+        return fail(code: "stale", msg: "another shape of answer")
+    out: supplied_probe.Probes @= supplied_probe.none()
+
+    for line in lines.slice(from: 1, to: lines.len())
+        f = supplied_names.split_on(field: line, separator: "\t")
+
+        if f.len() != 3
+            return fail(code: "stale", msg: "a line that is not an answer's")
+
+        if f[0] == "file"
+            if file_reading.key_of(f[1]).default("") != f[2]
+                return fail(code: "stale", msg: f[1] + " changed")
+            out.files @ out.files.push(f[1])
+        else if f[0] == "reversed"
+            out.reversed @ f[1] == "1"
+            out.reversed_linked @ f[2] == "1"
+        else if f[0] == "whole"
+            out.whole @ f[1] == "1"
+            out.whole_linked @ f[2] == "1"
+        else if f[0] == "taken"
+            out.taken[f[1]] @ f[2]
+        else if f[0] == "platform"
+            out.platform[f[1]] @ f[2]
+        else if f[0] == "refused"
+            out.refused @ out.refused.push(supplied_read.Duplicate(name: f[1], files: files_of(f[2])))
+        else if f[0] == "dup"
+            out.dups @ out.dups.push(supplied_read.Duplicate(name: f[1], files: files_of(f[2])))
+        else
+            return fail(code: "stale", msg: "a line that is not an answer's")
+
+    for file in opened
+        if !supplied_names.named_in(out.files, name: file)
+            return fail(code: "stale", msg: file + " was not read when the answer was kept")
+
+    return ok(out)
+
+function files_of(field: str) -> [str]
+    out: [str] @= []
+
+    for one in supplied_names.split_on(field: field, separator: "|")
+        if one.len() > 0
+            out @ out.push(one)
+
+    return out
+
+# `p` kept at `path`, with `opened`'s files beside its own, each with its key;
+# nothing kept where a file cannot be keyed or a path holds a tab, a line end
+# or a `|`, which would split its field, so the next build asks again.
+function keep(path: str, p: supplied_probe.Probes, opened: [str])
+    lines: [str] @= [HEAD]
+    files: [str] @= p.files
+
+    for file in opened
+        if !supplied_names.named_in(files, name: file)
+            files @ files.push(file)
+
+    for file in files
+        key = file_reading.key_of(file)
+
+        if key.is_err() || !plain(file)
+            return
+        lines @ lines.push("file\t" + file + "\t" + key.must())
+
+    lines @ lines.push("reversed\t" + flag(p.reversed) + "\t" + flag(p.reversed_linked))
+    lines @ lines.push("whole\t" + flag(p.whole) + "\t" + flag(p.whole_linked))
+
+    for name in keys(p.taken)
+        lines @ lines.push("taken\t" + name + "\t" + p.taken[name].must())
+
+    for name in keys(p.platform)
+        lines @ lines.push("platform\t" + name + "\t" + p.platform[name].must())
+
+    for d in p.refused
+        lines @ lines.push("refused\t" + d.name + "\t" + d.files.join("|"))
+
+    for d in p.dups
+        lines @ lines.push("dup\t" + d.name + "\t" + d.files.join("|"))
+
+    for line in lines.slice(from: 1, to: lines.len())
+        if !plain_line(line)
+            return
+
+    _ = publish.rewrite(path: path, text: lines.join("\n") + "\n").is_err()
+
+# Whether `line` is three fields with no line end in any, a duplicate's files
+# split only by the `|` between them.
+function plain_line(line: str) -> bool
+    f = supplied_names.split_on(field: line, separator: "\t")
+
+    if f.len() != 3 || !plain(f[1])
+        return false
+
+    for one in supplied_names.split_on(field: f[2], separator: "|")
+        if !plain(one)
+            return false
+
+    return true
+
+function plain(word: str) -> bool
+    for ch in word.chars()
+        if ch == "\t" || ch == "\n" || ch == "|"
+            return false
+
+    return true
+
+function flag(b: bool) -> str
+    if b
+        return "1"
+    return "0"
+
+# The names the runtime's object needs from outside it, asked once per object:
+# the object linked alone with no library, every name the link calls
+# undefined read back (`ffi_build.undefined_symbol`), kept beside it under
+# `build/`. Measured by the sitting on this Mac: 142 names, `nm -u`'s, and
+# `main`, which is the program's.
+function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
+    nothing: [str] = []
+    runtime: str @= ""
+
+    for object in objects
+        if strings.starts_with(text: supplied_names.base_of(object), prefix: "runtime-")
+            runtime @ object
+
+    if runtime == ""
+        return nothing
+    needs_at = t.build + "/supplied-needs-" + supplied_names.base_of(runtime) + ".txt"
+    cached = read_file(needs_at)
+
+    if !cached.is_err()
+        return supplied_names.byte_lines(text: cached.must(), needles: [], stops: [])
+    base = publish.private_name(t.build + "/supplied-needs")
+    err_path = base + ".err.txt"
+    run = supplied_probe.run_words(
+        strings.with_all(list: ["clang", "-nostdlib", runtime, "-o", base + process.exe_suffix()], more: alone_words(t))
+    )
+    asked = clang_asked.asked(
+        program: run[0],
+        words: run,
+        what: "asking which names the runtime needs",
+        err_path: err_path,
+        out_path: ""
+    )
+    publish.discard(base + process.exe_suffix())
+    publish.discard(err_path)
+    said: str @= ""
+
+    match asked
+        .ok    => return nothing
+        .err e => said @ e.msg
+
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for line in supplied_names.byte_lines(text: said, needles: [], stops: [])
+        name = ffi_build.undefined_symbol(line)
+
+        if name.is_err() || name.must() == "main" || !seen[name.must()].is_err()
+            continue
+        seen[name.must()] @ true
+        out @ out.push(name.must())
+
+    if out.len() > 0
+        _ = publish.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
+    return out
+
+# What a Windows link of the runtime's object alone needs to name every name
+# it lacks: lld-link and link.exe stop at *subsystem must be defined* before
+# any, and lld-link at twenty errors (measured on the Windows box, 2026-11-09:
+# 104 names by both once these are given; link.exe ignores the error limit
+# with a warning, LNK4044).
+function alone_words(t: toolchain.Toolchain) -> [str]
+    none: [str] = []
+
+    if !link_flags.msvc(t.target)
+        return none
+    return ["-Wl,/SUBSYSTEM:CONSOLE", "-Wl,/ENTRY:main", "-Wl,/errorlimit:0"]
+
+## Tests
+
+test "a kept answer is taken while its files keep their keys, and asked again once one moves (panel 239)"
+    dir = "build/selftest-supplied-kept"
+    assert !process.mkdir_all(dir).is_err()
+    _ = publish.rewrite(path: dir + "/liba.a", text: "one\n").is_err()
+    _ = publish.rewrite(path: dir + "/libb.a", text: "two\n").is_err()
+    p: supplied_probe.Probes @= supplied_probe.none()
+    p.reversed @ true
+    p.reversed_linked @ true
+    p.taken["pick"] @ dir + "/libb.a(pick_b.o)"
+    p.files @ [dir + "/libb.a"]
+    p.dups @ [supplied_read.Duplicate(name: "pick", files: [dir + "/liba.a(pick_a.o)", dir + "/libb.a(pick_b.o)"])]
+    at = dir + "/kept.txt"
+    keep(path: at, p: p, opened: [dir + "/liba.a"])
+    again = kept(path: at, opened: [dir + "/liba.a"]).must()
+    assert again.taken["pick"].must() == dir + "/libb.a(pick_b.o)"
+    assert again.dups == p.dups
+    assert again.files == [dir + "/libb.a", dir + "/liba.a"]
+
+    # A library file the link reads that the answer never saw, and one
+    # rebuilt, are each asked again.
+    assert kept(path: at, opened: [dir + "/libc.a"]).is_err()
+    _ = publish.rewrite(path: dir + "/libb.a", text: "two, rebuilt\n").is_err()
+    assert kept(path: at, opened: [dir + "/liba.a"]).is_err()
+    publish.discard(dir + "/liba.a")
+    publish.discard(dir + "/libb.a")
+    publish.discard(at)

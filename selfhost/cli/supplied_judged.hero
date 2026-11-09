@@ -1,0 +1,238 @@
+# Which names a program's libraries would answer against its own groups'
+# words, judged from what each link said (design.md §4.19, §1.12; defect 2363;
+# panel 239's R1.3, the ffi-pragmatist's v6), out of `cli/supplied.hero` at
+# the landing along its seam: this decides, `cli/supplied_read.hero` reads.
+#
+# **What is refused**: a name a group binds that a library another group
+# names supplies, in any order asked, or that two libraries the program
+# names define in the probe that loads every library file whole; a name of
+# a group naming no library that a library of the program answers where the
+# platform alone answers it too; and a name the runtime calls that a library
+# of the program supplies, unless a group of that library binds it, the
+# author's own word that an allocator replaces `malloc` on purpose. **What is
+# never judged**: a library the program does not name, so `link "m"` taken
+# from Apple's `libsystem_m.tbd` and `link "pthread"` from glibc's
+# `libc.so.6` pass with no list of the platform's libraries.
+#
+# Each finding is one line, a MARKER, so a refused link's words carry them to
+# `cli/supplied_words.hero` as any reader of a refusal is carried its words:
+# `heroes-supplied`, the kind (`bound`, `runtime`, `whole`, `own`), the
+# binding's declaration (-1 for none), the name, the file or files (`|`
+# between), the library the program names it for, and the order asked.
+
+use cli/supplied_names
+use cli/supplied_read
+
+constant MARK: str
+    "heroes-supplied"
+
+# A C function a group binds: its name, its declaration, and the library names
+# its group's `link` or package hands the link.
+record Bound
+    name: str
+    decl: i64
+    own: [str]
+
+function marker(kind: str, decl: i64, name: str, file: str, library: str, order: str) -> str
+    return MARK + "\t" + kind + "\t" + decl.to_str() + "\t" + name + "\t" + file + "\t" + library + "\t" + order
+
+# A marker's seven fields, or fewer where the line is no marker.
+function fields(line: str) -> [str]
+    out = supplied_names.split_on(field: line, separator: "\t")
+
+    if out.len() != 7 || out[0] != MARK
+        return []
+    return out
+
+# Every bound name whose supplier is a library the program names for another
+# group and not for the name's own.
+function judged(bound: [Bound], supplied: {str: str}, named: [str], order: str) -> [str]
+    out: [str] @= []
+
+    for b in bound
+        from = supplied[b.name]
+
+        if from.is_err()
+            continue
+        theirs = supplied_names.naming(file: from.must(), named: named)
+
+        if theirs.len() == 0 || supplied_names.shares(a: theirs, b: b.own)
+            continue
+        out @ out.push(
+            marker(kind: "bound", decl: b.decl, name: b.name, file: from.must(), library: theirs[0], order: order)
+        )
+
+    return out
+
+# Every name the runtime calls that a library the program names supplies,
+# where no group of that library binds it.
+function needs_judged(bound: [Bound], needs: [str], named: [str], supplied: {str: str}, order: str) -> [str]
+    out: [str] @= []
+
+    for name in needs
+        from = supplied[name]
+
+        if from.is_err()
+            continue
+        theirs = supplied_names.naming(file: from.must(), named: named)
+
+        if theirs.len() == 0 || bound_there(bound, name: name, libraries: theirs)
+            continue
+        out @ out.push(
+            marker(kind: "runtime", decl: -1, name: name, file: from.must(), library: theirs[0], order: order)
+        )
+
+    return out
+
+function bound_there(bound: [Bound], name: str, libraries: [str]) -> bool
+    for b in bound
+        if b.name == name && supplied_names.shares(a: libraries, b: b.own)
+            return true
+
+    return false
+
+# The whole probe's duplicates between two libraries the program names, of a
+# name a group binds or the runtime calls.
+function whole_found(bound: [Bound], needs: [str], named: [str], dups: [supplied_read.Duplicate]) -> [str]
+    out: [str] @= []
+
+    for d in dups
+        libraries: [str] @= []
+
+        for file in d.files
+            for n in supplied_names.naming(file: file, named: named)
+                if !supplied_names.named_in(libraries, name: n)
+                    libraries @ libraries.push(n)
+
+        if libraries.len() < 2
+            continue
+        joined = d.files.join("|")
+
+        for b in bound
+            if b.name == d.name
+                other: str @= libraries[0]
+
+                if supplied_names.shares(a: [other], b: b.own)
+                    other @ libraries[1]
+                out @ out.push(
+                    marker(kind: "whole", decl: b.decl, name: d.name, file: joined, library: other, order: "whole")
+                )
+
+        if supplied_names.named_in(needs, name: d.name) && !bound_there(bound, name: d.name, libraries: libraries)
+            out @ out.push(
+                marker(kind: "runtime", decl: -1, name: d.name, file: joined, library: libraries[0], order: "whole")
+            )
+
+    return out
+
+# A marker for each bound name a refused probe found two definitions of.
+function refused_lines(bound: [Bound], dups: [supplied_read.Duplicate], order: str) -> [str]
+    out: [str] @= []
+
+    for d in dups
+        for b in bound
+            if b.name == d.name
+                out @ out.push(marker(kind: "bound", decl: b.decl, name: d.name, file: "", library: "", order: order))
+
+    return out
+
+# The supplier of every binding `found` already refuses, in one order.
+function own_lines(bound: [Bound], found: [str], supplied: {str: str}, order: str) -> [str]
+    out: [str] @= []
+
+    for b in bound
+        from = supplied[b.name]
+
+        if from.is_err() || !flagged(found, decl: b.decl)
+            continue
+        out @ out.push(marker(kind: "own", decl: b.decl, name: b.name, file: from.must(), library: "", order: order))
+
+    return out
+
+function flagged(found: [str], decl: i64) -> bool
+    for line in found
+        f = fields(line)
+
+        if f.len() == 7 && f[2] == decl.to_str()
+            return true
+
+    return false
+
+# The bindings of a group naming no library that `found` refuses: each is
+# asked of the platform alone (`supplied_probe.platform`).
+function lone(bound: [Bound], found: [str]) -> [Bound]
+    out: [Bound] @= []
+
+    for b in bound
+        if b.own.len() == 0 && flagged(found, decl: b.decl)
+            out @ out.push(b)
+
+    return out
+
+# `found` without the refusal of each lone binding the platform alone does
+# not answer where both orders took one file: on glibc `fabs` is
+# `libm.so.6`'s alone, so a group with no `link` binding it, in a program
+# another of whose groups links `m`, reaches one definition. `platform` is
+# the platform's answer for each it was asked, "" where it gave none; a
+# binding it was not asked of, its probe refused, stays refused.
+function platform_kept(found: [str], alone: [Bound], first: {str: str}, turned: {str: str}, platform: {str: str}) -> [str]
+    kept: [str] @= found
+
+    for b in alone
+        here = first[b.name].default("")
+        there = turned[b.name].default(here)
+        theirs = platform[b.name]
+
+        if theirs.is_err()
+            continue
+
+        if here == there && (theirs.must() == "" || theirs.must() == "linker synthesized")
+            kept @ without_decl(kept, decl: b.decl)
+
+    return kept
+
+function without_decl(found: [str], decl: i64) -> [str]
+    out: [str] @= []
+
+    for line in found
+        f = fields(line)
+
+        if f.len() == 7 && f[2] == decl.to_str()
+            continue
+        out @ out.push(line)
+
+    return out
+
+## Tests
+
+test "a name another group's library supplies is judged, the platform's and its own are not (panel 239)"
+    none: [str] = []
+    bound = [
+        Bound(name: "pick", decl: 3, own: ["a"])
+        Bound(name: "puts", decl: 4, own: none)
+        Bound(name: "sqrt", decl: 5, own: ["m"])
+    ]
+    supplied: {str: str} @= {}
+    supplied["pick"] @ "/w/lib/libb.a(pick_b.o)"
+    supplied["puts"] @ "/w/lib/libq.a(puts_q.o)"
+    supplied["sqrt"] @ "/usr/lib/system/libsystem_m.tbd"
+    got = judged(bound, supplied: supplied, named: ["a", "b", "q", "m"], order: "written")
+    assert got.len() == 2
+    assert got[0] == "heroes-supplied\tbound\t3\tpick\t/w/lib/libb.a(pick_b.o)\tb\twritten"
+    assert fields(got[1])[3] == "puts"
+    assert lone(bound, found: got).len() == 1
+
+test "a runtime name a library supplies is judged unless a group of that library binds it (panel 239)"
+    bound = [Bound(name: "malloc", decl: 2, own: ["myalloc"])]
+    supplied: {str: str} @= {}
+    supplied["malloc"] @ "/w/libmyalloc.a(myalloc.o)"
+    supplied["free"] @ "/w/libmyalloc.a(myalloc.o)"
+    supplied["printf"] @ "/usr/lib/libSystem.B.tbd"
+    got = needs_judged(
+        bound,
+        needs: ["malloc", "free", "printf"],
+        named: ["myalloc"],
+        supplied: supplied,
+        order: "written"
+    )
+    assert got == ["heroes-supplied\truntime\t-1\tfree\t/w/libmyalloc.a(myalloc.o)\tmyalloc\twritten"]

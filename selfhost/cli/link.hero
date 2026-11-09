@@ -7,14 +7,15 @@
 
 use cli/files
 use cli/flags
+use cli/libraries
 use cli/link_flags
 use cli/link_output
-use cli/libraries
 use cli/link_warning
 use cli/process
 use cli/publish
 use cli/response_file
 use cli/strings
+use cli/supplied
 use cli/toolchain
 use cli/units
 use module/reading as file_reading
@@ -45,7 +46,7 @@ use module/reading as file_reading
 # **Its words reach clang in a file in the binary's home** (defect 583,
 # `response_file.for_link`): they name every object, and Windows refuses a
 # line past 32,767 characters, which the compiler's own build passed.
-function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> str?
+function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str], judging: supplied.Judging) -> str?
     line: [str] @= link_line(
         objects: objects,
         level: level,
@@ -85,6 +86,10 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # it could not be made and the build was refused.
         if files.is_special(at)
             return linked_into(line: response_file.for_link(line: line, home: home)?, t: t, at: at, binary: binary)
+
+    # Who supplies each bound name and each name the runtime calls, asked of
+    # this link itself, judged before anything is published (panel 239).
+    line @ strings.with_all(list: line, more: supplied.real_words(t, j: judging))
     line @ response_file.for_link(line: line, home: home)?
     stage = publish.private_name(at)
     stage_made = process.mkdir_all(stage)
@@ -105,7 +110,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         more: link_output.pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: module)
     )
     line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
-    linked = link_warning.run_link(line: line, what: "linking", err_path: err_path)
+    linked = supplied.linked(t, j: judging, line: line, err_path: err_path)
     publish.discard(err_path)
 
     if linked.is_err()
@@ -305,7 +310,8 @@ function build_beside(index: i64) -> i64
         sanitize: false,
         search_library: none,
         package_flags: none,
-        link_names: none
+        link_names: none,
+        judging: supplied.nothing()
     )
 
     if binary.is_err()
@@ -457,7 +463,8 @@ test "a binary's home is named by every word of its link line, and an author's -
         sanitize: false,
         search_library: none,
         package_flags: none,
-        link_names: none
+        link_names: none,
+        judging: supplied.nothing()
     ).must()
     assert binary == wanted
     assert process.path_exists(wanted)
@@ -466,7 +473,7 @@ test "a binary's home is named by every word of its link line, and an author's -
     # elsewhere a byte of a name, and neither is split to name the output.
     assert !process.mkdir_all(t.build + "/sub").is_err()
     slashed = t.build + "/sub\\app" + process.exe_suffix()
-    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must() == slashed
+    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none, judging: supplied.nothing()).must() == slashed
     assert process.path_exists(slashed)
     missing = link_objects(
         t,
@@ -477,7 +484,8 @@ test "a binary's home is named by every word of its link line, and an author's -
         sanitize: false,
         search_library: none,
         package_flags: none,
-        link_names: none
+        link_names: none,
+        judging: supplied.nothing()
     )
 
     # The name the binary would have had, the platform's suffix with it
@@ -496,7 +504,8 @@ test "a binary's home is named by every word of its link line, and an author's -
         sanitize: false,
         search_library: none,
         package_flags: none,
-        link_names: none
+        link_names: none,
+        judging: supplied.nothing()
     ).must()
     assert bare == t.build + "/bare" + process.exe_suffix()
     assert process.path_exists(bare)
@@ -611,7 +620,8 @@ test "a link whose objects pass what one Windows command line holds reads every 
         sanitize: false,
         search_library: none,
         package_flags: none,
-        link_names: none
+        link_names: none,
+        judging: supplied.nothing()
     ).must()
     ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
     assert ran.started && ran.code == 0
@@ -682,7 +692,8 @@ test "two links of the same objects into one path are one binary (defect 593)"
             sanitize: false,
             search_library: none,
             package_flags: none,
-            link_names: none
+            link_names: none,
+            judging: supplied.nothing()
         ).must()
         bytes_of @ bytes_of.push(file_reading.key_of(linked).must())
 
@@ -823,7 +834,8 @@ test "a library that needs another links in every order its words are written in
             sanitize: false,
             search_library: [dir],
             package_flags: packages[at],
-            link_names: names[at]
+            link_names: names[at],
+            judging: supplied.nothing()
         )
 
         # The linker's words where a shape does not link, read in the failure.

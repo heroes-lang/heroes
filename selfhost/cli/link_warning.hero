@@ -14,13 +14,12 @@
 # of this shape are dropped, each with the `in function` line above it that
 # belongs to it; every other line the linker says passes as it did.
 
+use cli/clang_asked
+use cli/clang_told
 use cli/io
 use cli/process
-use cli/strings
-use cli/clang_told
-use cli/toolchain
 use cli/publish
-use cli/clang_asked
+use cli/strings
 
 constant SAID_IN: str
     ": in function `"
@@ -35,26 +34,87 @@ constant WARNING: str
 # On Windows the linker's stdout is read too where the link fails, since
 # MSVC's link.exe writes its refusals there (defect 644).
 function run_link(line: [str], what: str, err_path: str) -> ()?
+    none: [str] = []
+    heard: str @= ""
+    return run_link_heard(line: line, what: what, err_path: err_path, traced: none, heard: @heard)
+
+# `run_link`, what the link wrote on both its streams handed back in `heard`
+# where it linked, and none of the lines its trace of `traced` wrote printed
+# (`cli/supplied.hero`, panel 239): GNU ld writes them on stderr, lld on
+# stdout, and every linker its `-t` on stdout, which is never printed. A
+# refusal says what the link said on stderr, as it did before.
+function run_link_heard(line: [str], what: str, err_path: str, traced: [str], @heard: str) -> ()?
     said: str @= ""
 
     if process.exe_suffix() == ".exe"
+        # What it printed is read where it linked (defect 2376), and is in
+        # its refusal's words where it did not, link.exe's being there.
         out_path = publish.private_name(err_path + ".stdout.txt")
-        asked = clang_asked.asked(
+        printed: str @= ""
+        asked = clang_asked.answered(
             program: "clang",
             words: line,
             what: what,
             err_path: err_path,
-            out_path: out_path
+            out_path: out_path,
+            apart: false,
+            printed: @printed
         )
         publish.discard(out_path)
         said @ asked?
+        heard @ printed + said
     else
-        said @ toolchain.asked_through(program: "env", words: strings.with_all(list: ["env", "LC_ALL=C"], more: line), what: what, err_path: err_path)?
-    kept = without_section_warnings(said)
+        out_path = publish.private_name(err_path + ".stdout.txt")
+        printed: str @= ""
+        asked = clang_asked.asked_apart(
+            program: "env",
+            words: strings.with_all(list: ["env", "LC_ALL=C"], more: line),
+            what: what,
+            err_path: err_path,
+            out_path: out_path,
+            printed: @printed
+        )
+        publish.discard(out_path)
+
+        match asked
+            .ok words =>
+                said @ words
+                heard @ printed + words
+            .err e => return fail(code: e.code, msg: without_traces(e.msg, traced: traced))
+    kept = without_section_warnings(without_traces(said, traced: traced))
 
     if strings.trimmed(kept).len() > 0
         io.eprint_raw(text: kept)
     return ok()
+
+# `said` without the lines a trace of `traced` wrote: `<file>: definition of
+# <name>`, `shared definition of`, `reference to`.
+function without_traces(said: str, traced: [str]) -> str
+    if traced.len() == 0
+        return said
+    wanted: {str: bool} @= {}
+
+    for name in traced
+        wanted[name] @ true
+
+    kept: [str] @= []
+
+    for line in clang_told.lines_of(said)
+        if !trace_of(line, wanted: wanted)
+            kept @ kept.push(line + "\n")
+
+    return kept.join("")
+
+function trace_of(line: str, wanted: {str: bool}) -> bool
+    for marker in [": definition of ", ": reference to ", ": shared definition of "]
+        if strings.holds(text: line, needle: marker)
+            cs = line.chars()
+            at = index_of(cs, needle: marker, from: 0)
+
+            if at >= 0 && !wanted[cs.slice(from: at + marker.chars().len(), to: cs.len()).join("")].is_err()
+                return true
+
+    return false
 
 # `said` without the section warnings and the context line each stands under,
 # each line kept ended by its line end.
