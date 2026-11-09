@@ -1,0 +1,14 @@
+# fixedbugs, defect 2389, 2026-11-09.
+#
+# SYMPTOM: a group binding a C function named `h0_p`, called where the
+# function's first local is `p`, was *internal error* at exit 2: the body
+# declared that local `int64_t h0_p;` and the call `t3 = h0_p(t2);` read it.
+#
+# FIX: reached through its accessor (`emit/shadowed.hero`), so it prints 42.
+
+extern "fixedbugs-2389-a-bound-c-function-named-as-a-local-builds.h"
+    function h0_p(v: i64) -> i64
+
+function main()
+    p = 40
+    print(h0_p(v: p))

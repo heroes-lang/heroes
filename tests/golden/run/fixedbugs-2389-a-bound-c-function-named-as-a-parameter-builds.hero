@@ -1,0 +1,25 @@
+# fixedbugs, defect 2389, 2026-11-09, the shapes beside the local.
+#
+# SYMPTOM: a bound C function named `h0_x`, called in a function whose
+# parameter is `x`, and one named `ph0_n`, called in a function whose `@`
+# parameter is `n`, were *internal error* at exit 2: each call read the
+# parameter, *called object type 'int64_t' is not a function* and
+# *'int64_t *'* the same.
+#
+# FIX: reached through their accessors (`emit/shadowed.hero`).
+
+extern "fixedbugs-2389-a-bound-c-function-named-as-a-parameter-builds.h"
+    function h0_x(v: i64) -> i64
+    function ph0_n(v: i64) -> i64
+
+function twice(x: i64) -> i64
+    return h0_x(v: x)
+
+function bump(@n: i64)
+    n @ ph0_n(v: n)
+
+function main()
+    print(twice(x: 21))
+    n: i64 @= 40
+    bump(@n)
+    print(n)

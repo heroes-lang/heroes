@@ -33,6 +33,7 @@ use emit/mangle
 use emit/nodebug
 use emit/padding
 use emit/printing
+use emit/shadowed
 use emit/stop_place
 use emit/writer
 use inventory
@@ -254,7 +255,10 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, site
             # its operand — so the call is emitted exactly once either way.
             when = handle_result.success_c(c, s, decls, decl: e.decl)
             keeps = !when.is_err() || handle_result.reads_result(decls, decl: e.decl)
-            invocation = extern_name + "(" + crossed.join(", ") + ")"
+
+            # A name a body also declares, `t1` or `h0_p`, is reached through its
+            # accessor (defect 2389, `emit/shadowed.hero`); any other as written.
+            invocation = shadowed.written(extern_name, s: s, decls: decls) + "(" + crossed.join(", ") + ")"
             result_name: str? @= target
 
             if keeps && assign.len() == 0

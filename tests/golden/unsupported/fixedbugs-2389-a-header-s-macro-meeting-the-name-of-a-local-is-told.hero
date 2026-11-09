@@ -1,0 +1,17 @@
+# fixedbugs, defect 2389, 2026-11-09.
+#
+# SYMPTOM: a header defining `#define h0_p 0`, the name the C this compiler
+# writes gives a function's first local when it is `p`, was *internal error*
+# at exit 2: the reader knew the emitter's `f_<field>` and `t<N>` and not
+# its locals' `h<N>_<name>`.
+#
+# FIX: panel 214's R3 reads the first note under the error that expands a
+# macro, wherever it stands (`cli/own_names.hero`, `met`), and the emitter's
+# names of a body are among its forms, so the header is told at exit 1.
+
+extern "fixedbugs-2389-a-header-s-macro-meeting-the-name-of-a-local-is-told.h"  #~ ffi_header_refused
+    function plus(x: i64, y: i64) -> i64
+
+function main()
+    p = 40
+    print(plus(x: p, y: 2))

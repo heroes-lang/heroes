@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2389-a-header-s-macro-meeting-the-name-of-a-local-is-told.h`, the header this group names, does not compile in this program's unit: its line 3 defines `h0_p` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected identifier or '('
+  at tests/golden/unsupported/fixedbugs-2389-a-header-s-macro-meeting-the-name-of-a-local-is-told.hero:12:8
+     |
+  12 | extern "fixedbugs-2389-a-header-s-macro-meeting-the-name-of-a-local-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2389-a-header-s-macro-meeting-the-name-of-a-local-is-told.h` line 3 reads `#define h0_p 0`
+  note: this compiler's `h0_p` is the name the C it writes gives the parameter or local `p` of a function of the program's own, which that function declares
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `h0_p` in `fixedbugs-2389-a-header-s-macro-meeting-the-name-of-a-local-is-told.h`, a name this compiler keeps to itself

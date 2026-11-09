@@ -1,0 +1,24 @@
+# fixedbugs, defect 2389, 2026-11-09.
+#
+# SYMPTOM: a group binding a C function named `t1`, the name the C this
+# compiler writes gives its first temporary, was *internal error* at exit 2:
+# the body declared `int64_t t1, t2;` and its call `t2 = t1(t1);` read the
+# temporary, *called object type 'int64_t' is not a function*. A correct
+# program refused, the specification reserving no prefix (panel 214). `t12`
+# in a body of more temporaries than twelve is the same.
+#
+# FIX: a bound function of a body's own form is reached through an accessor
+# taken before any body (`emit/shadowed.hero`), so both calls print.
+
+extern "fixedbugs-2389-a-bound-c-function-named-as-a-temporary-builds.h"
+    function t1(x: i64) -> i64
+    function t12(x: i64) -> i64
+
+function main()
+    print(t1(x: 41))
+    a = 1
+    b = a + 2
+    c = b + 3
+    d = c + 4
+    e = d + 5
+    print(t12(x: e + 15))

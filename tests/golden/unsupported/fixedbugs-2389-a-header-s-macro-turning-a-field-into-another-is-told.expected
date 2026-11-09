@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2389-a-header-s-macro-turning-a-field-into-another-is-told.h`, the header this group names, does not compile in this program's unit: its line 3 defines `f_left` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: duplicate member 'f_right'
+  at tests/golden/unsupported/fixedbugs-2389-a-header-s-macro-turning-a-field-into-another-is-told.hero:11:8
+     |
+  11 | extern "fixedbugs-2389-a-header-s-macro-turning-a-field-into-another-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2389-a-header-s-macro-turning-a-field-into-another-is-told.h` line 3 reads `#define f_left f_right`
+  note: this compiler's `f_left` is the name the C it writes gives the field `left` of a record of the program's own, where it reads or builds one
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `f_left` in `fixedbugs-2389-a-header-s-macro-turning-a-field-into-another-is-told.h`, a name this compiler keeps to itself
