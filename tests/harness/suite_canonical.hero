@@ -66,11 +66,15 @@ use strings
 # `tests/golden/lldb` joined them on 2026-10-12 (issue 944), written in form:
 # its programs are run, as `run/`'s are, and the lines its sessions claim are
 # the lines of the canonical text, so a case out of form would move them.
+# `packages` joined them on 2026-11-08 (panel 238's R10): the core packages'
+# index left `examples/` for the repository's root, and its newest version's
+# `files/` is the package's source, read by every program that places it.
 constant SOURCE_DIRS: [str]
     [
         "selfhost"
         "tests/harness"
         "examples"
+        "packages"
         "tests/golden/run"
         "tests/golden/ir"
         "tests/golden/emit"
@@ -169,8 +173,9 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 test "the walk names the directories that were swept, and the floor is under the count"
     # The list is the check: a directory dropped from it is a directory
     # that silently stops being source, and no other instrument would
-    # notice. Seven, measured 2026-08-28; eight since 2026-10-12, `lldb/`.
-    assert SOURCE_DIRS.len() == 8
+    # notice. Seven, measured 2026-08-28; eight since 2026-10-12, `lldb/`;
+    # nine since 2026-11-08, the index at the root, `packages/`.
+    assert SOURCE_DIRS.len() == 9
 
     # 371 files were swept that day. The floor sits below it with room for
     # ordinary growth and shrinkage, and above any plausible partial walk.

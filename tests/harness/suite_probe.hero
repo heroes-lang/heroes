@@ -188,11 +188,16 @@ function trees() -> [Tree]
     # asked: 758 seeds and 6822 variants, past 599 and 5391 by more than a
     # quarter, the 159 files added under `selfhost/` since batch 18 raised it,
     # the floor having passed every one of them in silence until then.
+    # The packages row joined 2026-11-08 (panel 238's R10), when the index left
+    # `examples/` for the repository's root, its four `.hero` files with it:
+    # 4 seeds and 36 variants, measured by `heroes probe packages --family
+    # multi` that day, the four the examples row stopped reading.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 1798, floor: Floor(family: "multi", generated: 16182, parsing: 16182), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 159, floor: Floor(family: "multi", generated: 1431, parsing: 1431), known: none)
+        Tree(name: "packages, multi", root: "packages", seeds: 4, floor: Floor(family: "multi", generated: 36, parsing: 36), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
