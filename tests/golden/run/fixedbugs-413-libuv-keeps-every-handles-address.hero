@@ -16,7 +16,7 @@
 # ends. The Windows box has no libuv, and the case is judged where the header
 # is (`.claude/rules/platforms.md`): its twin on a header of its own,
 # `fixedbugs-413-a-record-c-knows-by-its-address`, runs everywhere.
-extern "uv.h" package "libuv"
+extern "uv.h" pkgconfig "libuv"
     record UvTimer tag uv_timer_s partial
         data: ptr
     record UvHandle tag uv_handle_s

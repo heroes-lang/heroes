@@ -29,7 +29,7 @@ extern "stdio.h" link ""    #~ unwritable_name
 extern "stdio.h" link "m\nx"    #~ unwritable_name
     function f7() -> i32
 
-extern "stdio.h" package "a\rb"    #~ unwritable_name
+extern "stdio.h" pkgconfig "a\rb"    #~ unwritable_name
     function f8() -> i32
 
 function main()

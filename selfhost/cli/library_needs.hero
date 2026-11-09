@@ -60,7 +60,7 @@ function names_of(s: source.Source, decls: [ast.Decl], linked: [str]) -> [str]
 
     return names
 
-# The string of `decl`'s group's `link`, or of its `package` where
+# The string of `decl`'s group's `link`, or of its `pkgconfig` where
 # `want_package`; an error where it has no group or its group names the other.
 function group_span(decl: ast.Decl, want_package: bool) -> token.Span?
     group: ast.Library? @= fail(code: "none", msg: "no group")
@@ -79,7 +79,7 @@ function group_span(decl: ast.Decl, want_package: bool) -> token.Span?
             if want_package
                 return fail(code: "none", msg: "a `link` group")
             return ok(l.name)
-        .package pk =>
+        .pkgconfig pk =>
             if !want_package
                 return fail(code: "none", msg: "a package's group")
             return ok(pk.name)
@@ -202,11 +202,11 @@ function linked_told(need: Needing, span: token.Span) -> diag.Diagnostic
 function answered_told(need: Needing, package: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_link",
-        message: "the library `" + shown(need.name) + "`, which the package `" + shown(package) + "` answered with, needs " + listed(need.symbols) + ", and nothing on the link line defines " + pronoun(need.symbols),
+        message: "the library `" + shown(need.name) + "`, which `pkg-config` answered for `" + shown(package) + "`, needs " + listed(need.symbols) + ", and nothing on the link line defines " + pronoun(need.symbols),
         span: span
     )
     d.notes @ d.notes.push(
-        "`" + shown(need.file) + "` refers to " + listed(need.symbols) + " without defining " + pronoun(need.symbols) + ", and the package's answer names no library that does: its `.pc` names that library in `Libs`, or a package that has it in `Requires`; or give this program a group of its own for it, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+        "`" + shown(need.file) + "` refers to " + listed(need.symbols) + " without defining " + pronoun(need.symbols) + ", and `pkg-config`'s answer names no library that does: its `.pc` names that library in `Libs`, or in `Requires` another `.pc` that names it; or give this program a group of its own for it, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
     )
     return d
 
@@ -286,7 +286,7 @@ test "a name a library needs is told with the library, on every linker's report 
         span: token.Span(start: 0, end: 0)
     )
     assert p.code == "ffi_missing_link"
-    assert p.message == "the library `top`, which the package `ptop` answered with, needs `base_helper` and `base_two`, and nothing on the link line defines them"
+    assert p.message == "the library `top`, which `pkg-config` answered for `ptop`, needs `base_helper` and `base_two`, and nothing on the link line defines them"
     assert listed(["a", "b", "c"]) == "`a`, `b` and `c`"
 
 test "a name the program's own object or an unnamed library refers to is not a library's (defects 2365 and 2381)"

@@ -176,7 +176,7 @@ function externGroups(text: string): { header: string; link: string | null; pkg:
     groups.push({
       header: header[1],
       link: /\blink "([^"]+)"/.exec(line)?.[1] ?? null,
-      pkg: /\bpackage "([^"]+)"/.exec(line)?.[1] ?? null,
+      pkg: /\bpkgconfig "([^"]+)"/.exec(line)?.[1] ?? null,
     });
   }
   return groups;

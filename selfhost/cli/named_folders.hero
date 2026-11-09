@@ -62,7 +62,7 @@ function of_compiler(under: compiling.Compiling, packages: {str: [str]}) -> {str
     # names, so the note observes this order.
     for name in sort(keys(packages))
         for dir in package_reads.answered(libraries.compile_flags(packages[name].default([])))
-            out @ taken(out, dir: dir, origin: shadowed_words.Origin(kind: shadowed_words.PACKAGE, name: name))
+            out @ taken(out, dir: dir, origin: shadowed_words.Origin(kind: shadowed_words.PKGCONFIG, name: name))
 
     if under.source_dir.len() > 0
         out @ taken(
@@ -135,7 +135,7 @@ test "a folder is told by the first word that names it, the compiler's before th
     )
     origins = of_compiler(under, packages: {"zlib": ["-Ipkg", "-Iboth", "-DZ=1"]})
     assert origins["inc"].must().kind == shadowed_words.INCLUDE && origins["both"].must().kind == shadowed_words.INCLUDE
-    assert origins["pkg"].must().kind == shadowed_words.PACKAGE && origins["pkg"].must().name == "zlib"
+    assert origins["pkg"].must().kind == shadowed_words.PKGCONFIG && origins["pkg"].must().name == "zlib"
     assert origins["src"].must().kind == shadowed_words.PROGRAM && origins["runtime"].is_err()
     assert searched_first(under) == ["runtime", "inc", "both", "pkg", "both", "src"]
     added = clang_added.Edits(

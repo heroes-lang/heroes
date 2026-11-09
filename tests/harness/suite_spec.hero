@@ -96,7 +96,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    125
+    126
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -110,7 +110,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    8325
+    8314
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -160,7 +160,7 @@ constant CEILING: i64
     16384
 
 # THE RECORD: the reader's own count, and the same four constants
-# `selfhost/cli/measure.hero` holds — for the reason `CEILING` is in two
+# `selfhost/measure/pinned.hero` holds — for the reason `CEILING` is in two
 # places, one printed and one checked, with `recorded` below as what stops
 # them drifting (defect 017's class). **This is the number the ceiling is
 # judged against**, and `SPEC_TOKENS` above is not: that one is vendored and
@@ -171,13 +171,13 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    10900
+    10898
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-11-08"
+    "2026-11-09"
 
 # The contract's own record, pinned here the way the spec's is, and cross-checked
 # against `selfhost/measure/pinned.hero` by `recorded` below. **It carries a
@@ -222,7 +222,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "43a8cf64676f5a99"
+    "18bc6ed030668b91"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live
@@ -1273,7 +1273,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
         report.keep_failure(
             @r,
             label: "spec/real",
-            detail: "  `measure " + SPEC + "` does not print \"" + row + "\".\n  The record is in two places, this file and `selfhost/cli/measure.hero`, for\n  the reason CEILING is: one printed and one checked. Whichever moved, the\n  other moves with it (defect 017's class), and the model id and the date\n  travel WITH the number because a count without them is not a measurement."
+            detail: "  `measure " + SPEC + "` does not print \"" + row + "\".\n  The record is in two places, this file and `selfhost/measure/pinned.hero`, for\n  the reason CEILING is: one printed and one checked. Whichever moved, the\n  other moves with it (defect 017's class), and the model id and the date\n  travel WITH the number because a count without them is not a measurement."
         )
         return
 

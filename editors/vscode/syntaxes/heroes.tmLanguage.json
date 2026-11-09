@@ -73,8 +73,8 @@
       }
     },
     "extern": {
-      "comment": "An `extern` group (spec § 13, `Extern`): a column-0 `extern` line and the lines below it, up to the first line whose first character is neither a space nor `#`, so a blank line or a column-0 comment does not end it, the same rule `site/src/lib/highlight.ts` follows. `link` and `package` are painted only right after the header's string on the `extern` line; the group's other contextual words only on its indented lines (#extern-member).",
-      "begin": "^(extern)\\b(?:\\s+(\"(?:[^\"\\\\]|\\\\.)*\")\\s+(link|package)\\b)?",
+      "comment": "An `extern` group (spec § 13, `Extern`): a column-0 `extern` line and the lines below it, up to the first line whose first character is neither a space nor `#`, so a blank line or a column-0 comment does not end it, the same rule `site/src/lib/highlight.ts` follows. `link` and `pkgconfig` are painted only right after the header's string on the `extern` line; the group's other contextual words only on its indented lines (#extern-member).",
+      "begin": "^(extern)\\b(?:\\s+(\"(?:[^\"\\\\]|\\\\.)*\")\\s+(link|pkgconfig)\\b)?",
       "beginCaptures": {
         "1": { "name": "keyword.control.extern.hero" },
         "2": { "name": "string.quoted.double.hero" },
@@ -87,7 +87,7 @@
       ]
     },
     "extern-member": {
-      "comment": "One indented line of an `extern` group, where the parser reads the marks of `Member` and `CParam` (spec § 13): each painted unless the next character that is not a space is `:`, so a parameter or a field named `owned` stays a name. These are the eleven contextual words besides `as`, `link` and `package`.",
+      "comment": "One indented line of an `extern` group, where the parser reads the marks of `Member` and `CParam` (spec § 13): each painted unless the next character that is not a space is `:`, so a parameter or a field named `owned` stays a name. These are the eleven contextual words besides `as`, `link` and `pkgconfig`.",
       "begin": "^(?=[ ]+\\S)",
       "end": "$",
       "patterns": [

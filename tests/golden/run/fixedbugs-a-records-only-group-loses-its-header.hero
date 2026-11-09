@@ -18,7 +18,7 @@
 # The case is deliberately a group with NO function in it. A group with one would
 # have hidden both halves.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Color
         r: u8
         g: u8

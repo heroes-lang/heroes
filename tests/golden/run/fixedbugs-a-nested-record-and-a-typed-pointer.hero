@@ -31,7 +31,7 @@
 # `Font` is the witness for both at once: four scalars, one nested `Texture`, and
 # two typed pointers. It bound under neither rule before today.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Texture
         id: u32
         width: i32

@@ -1,17 +1,128 @@
-# What a `package` string may hold past what every group head's string
+# What a `pkgconfig` string may hold past what every group head's string
 # shares (design.md §4.19; spec § 13; panel 188's R6 and R7). `head_names`
-# judges every string and asks this leaf the package's own questions: where
+# judges every string and asks this leaf the mark's own questions: where
 # `pkg-config` splits its argument, a name read as an option, a version's
-# comparison, and a `.pc` file named instead of a package. Moved out of
+# comparison, and a `.pc` file named instead of a library. And the mark's
+# old word, `package`, told where it is still written (panel 240). Moved out of
 # `head_names.hero` on 2026-10-03 when that file stood at its 300 lines and
 # defect 234's rules needed room there (panel 188's R12), word for word but a
 # guard against an empty value, which `head_names` never hands it.
 
+use bytes
+use cursor
 use diag
 use shown_char
 use token
 
-# What `pkg-config` cannot be handed as one package's name: `unwritable_name`
+# The word the mark was spelled with until panel 240 (2026-11-09), when
+# *package* became only the code others publish (spec § 1) and the mark took
+# the name of the tool it asks. Read in the mark's one position and nowhere
+# else, never a word of `keywords.contextual()`, and told there once.
+constant RETIRED: str
+    "package"
+
+# The old word told once, at the word, with the certain fix that writes
+# `pkgconfig`, the head then read as the `pkgconfig` group it is, so the rest
+# of the file is judged (`parse/group_head.one_library`). Said by the parser,
+# so `fmt` refuses the line and never rewrites the word; `check --apply`
+# writes the fix.
+function retired(at: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "old_package_word",
+        message: "`package` named what `pkg-config` is asked about until panel 240; a package is now only code others publish, reached by `use <name>/module`, and a group names its library for `pkg-config` with `pkgconfig`, as `pkgconfig \"raylib\"` — write `pkgconfig`",
+        span: at
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `pkgconfig`", replacement: "pkgconfig", span: at, certainty: .certain)
+    )
+    return d
+
+# The tool's own name and the spellings beside it, written where the mark
+# stands (panel 240): `pkg-config`, which the lexer reads as three tokens
+# touching, and `pkg_config`, `pkgConfig` and `PkgConfig`, one name each, in
+# any case (`PKGCONFIG`, `Pkgconfig`, `PKG-CONFIG`: the critic's C1, the
+# shapes beside the four). Told once with the certain fix that writes
+# `pkgconfig`, the head then read as the mark, as the retired word is.
+function near(written: str, at: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "pkgconfig_spelled",
+        message: "`" + written + "` is not the mark: a group names its library for `pkg-config` with the one word `pkgconfig`, in lower case and no `-` or `_` inside it, as `pkgconfig \"raylib\"` — write `pkgconfig`",
+        span: at
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `pkgconfig`", replacement: "pkgconfig", span: at, certainty: .certain)
+    )
+    return d
+
+# Where the mark stands, the old word or a near spelling told
+# (`parse/group_head.one_library`): how many tokens it takes, the cursor left
+# on its last, 0 where neither stands. Here, outside `parse/`'s budget, as
+# `cell_errors.old_symbol` is.
+function read_word(@c: cursor.Cursor, text: str, word: str) -> i64
+    if word == RETIRED
+        cursor.say(@c, retired(cursor.current_span(c)))
+        return 1
+    width = near_width(c.tokens, at: c.pos, text: text)
+
+    if width == 0
+        return 0
+    first = cursor.current_span(c)
+    whole = token.Span(start: first.start, end: c.tokens[c.pos + width - 1].span.end)
+    cursor.say(@c, near(written: text.slice(from: whole.start, to: whole.end), at: whole))
+    skipped: i64 @= 1
+
+    while skipped < width
+        _ = cursor.bump(@c)
+        skipped @ skipped + 1
+
+    return width
+
+# How many tokens a near spelling of the mark takes from `tokens[at]`, 0
+# where none stands there.
+function near_width(tokens: [token.Token], at: i64, text: str) -> i64
+    t = tokens[at]
+    word = text.slice(from: t.span.start, to: t.span.end)
+
+    if word != "pkgconfig" && (lower_is(word: word, want: "pkgconfig") || lower_is(word: word, want: "pkg_config"))
+        return 1
+
+    if !lower_is(word: word, want: "pkg") || at + 2 >= tokens.len()
+        return 0
+    dash = tokens[at + 1]
+    tail = tokens[at + 2]
+
+    if dash.kind == .minus && tail.kind == .ident && dash.span.start == t.span.end && tail.span.start == dash.span.end && lower_is(word: text.slice(from: tail.span.start, to: tail.span.end), want: "config")
+        return 3
+    return 0
+
+# Whether `word` is `want`, a lower-case ASCII word, in any case.
+function lower_is(word: str, want: str) -> bool
+    if word.len() != want.len()
+        return false
+    i: i64 @= 0
+
+    while i < word.len()
+        if bytes.lower(word[i]) != want[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# What a head's junk is told where the mark stands, right after an `extern`
+# line's header: a name there that is no mark, or a string with no mark
+# before it, is where `link` or `pkgconfig` goes, so the message names both
+# (panel 240, the spec-warden's condition 3; design.md §4.17), and the head
+# junk's report says it (`parse/members_below.junk_after_head`). Anywhere
+# else, nothing.
+function unmarked(c: cursor.Cursor) -> str
+    if c.pos < 2 || c.tokens[c.pos - 1].kind != .str_lit || c.tokens[c.pos - 2].kind != .kw_extern
+        return ""
+
+    if !cursor.at(c, .ident) && !cursor.at(c, .str_lit)
+        return ""
+    return "after the header's name a group writes `link` or `pkgconfig` and its library's name in quotes, as `link \"sqlite3\"` or `pkgconfig \"raylib\"`, or ends the line there; "
+
+# What `pkg-config` cannot be handed as one library's name: `unwritable_name`
 # where it splits its argument, `option_like_name` where it would read an
 # option; none otherwise.
 function cannot_carry(value: str, span: token.Span) -> diag.Diagnostic?
@@ -19,7 +130,7 @@ function cannot_carry(value: str, span: token.Span) -> diag.Diagnostic?
 
     if split.len() > 0
         return ok(
-            diag.new_diagnostic(code: "unwritable_name", message: "this package's name holds " + split + ", where `pkg-config` splits its argument into packages and versions: a group names one package, as `package \"raylib\"`", span: span)
+            diag.new_diagnostic(code: "unwritable_name", message: "this library's name holds " + split + ", where `pkg-config` splits its argument into names and versions: a group names one library, as `pkgconfig \"raylib\"`", span: span)
         )
 
     # Go's `SafeArg` refuses the same (panel 188's historian): the `--`
@@ -28,7 +139,7 @@ function cannot_carry(value: str, span: token.Span) -> diag.Diagnostic?
     # rests on no tool, and is no thesis rule.
     if value.len() > 0 && value[0] == '-'
         return ok(
-            diag.new_diagnostic(code: "option_like_name", message: "this package's name begins with `-`, which is how an option to `pkg-config` begins, and this compiler does not rest on every `pkg-config` reading the `--` it writes before the name: name the package, as `package \"raylib\"`", span: span)
+            diag.new_diagnostic(code: "option_like_name", message: "this library's name begins with `-`, which is how an option to `pkg-config` begins, and this compiler does not rest on every `pkg-config` reading the `--` it writes before the name: name the library, as `pkgconfig \"raylib\"`", span: span)
         )
     return fail(code: "none", msg: "one name to `pkg-config`")
 
@@ -64,7 +175,7 @@ function thesis(written: str, value: str, span: token.Span) -> diag.Diagnostic?
     # `seven.PC`, `seven.pC` and `.pc` as files too (the critic's third pass).
     if last >= 2 && value[last - 2] == '.' && (value[last - 1] == 'p' || value[last - 1] == 'P') && (value[last] == 'c' || value[last] == 'C')
         return ok(
-            diag.new_diagnostic(code: "machine_locked_path", message: "`" + written + "` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's\n  name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`", span: span)
+            diag.new_diagnostic(code: "machine_locked_path", message: "`" + written + "` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's\n  name the library, as `pkgconfig \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`", span: span)
         )
     i: i64 @= 0
 
@@ -73,7 +184,7 @@ function thesis(written: str, value: str, span: token.Span) -> diag.Diagnostic?
 
         if b == '<' || b == '>' || b == '=' || b == '!'
             return ok(
-                diag.new_diagnostic(code: "package_comparison", message: "this package's name holds `" + value.slice(from: i, to: i + 1) + "`, which is how `pkg-config` writes a version's comparison, and a group names a package and no version: write the package's name alone, as `package \"raylib\"`", span: span)
+                diag.new_diagnostic(code: "pkgconfig_comparison", message: "this library's name holds `" + value.slice(from: i, to: i + 1) + "`, which is how `pkg-config` writes a version's comparison, and a group names a library and no version: write the library's name alone, as `pkgconfig \"raylib\"`", span: span)
             )
         i @ i + 1
 

@@ -912,7 +912,7 @@ holds only where a `use` without brackets never reaches fetched code and every s
 against its fingerprint, a `path` entry being the one exemption and told at every build. Every
 other per-project file stays examined and unplaced, its three conditions kept on
 M-package-manager's page (panel 056's: one key, not two, a `prefix <dir>` from which `-I` and `-L`
-are both derived; no string in the file also in a `.hero` file; one named binding that `package
+are both derived; no string in the file also in a `.hero` file; one named binding that `pkgconfig
 "<name>"` and one command line cannot build).
 
 One declared exception with an expiry date: `cargo build`/`cargo test` build *the compiler* until
@@ -2743,9 +2743,9 @@ left a program no place for one. A name a header declares only under such a swit
 rather than *declares no*: a refused round asks the header again under `_XOPEN_SOURCE 700` and
 under `_GNU_SOURCE 1`, and a name found there is *`sched.h` declares
 `sched_getcpu` only under `_GNU_SOURCE`: define it in a header of your own that this module's first
-group names* (`cli/switch_ask.hero`). And a `package`'s words, its `-D` among them, reach only the
-units that read a header a group naming that package names (defect 572, `emit/header_packages.hero`),
-never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
+group names* (`cli/switch_ask.hero`). And a `pkgconfig` answer's words, its `-D` among them,
+reach only the units that read a header a group naming that library names (defect 572,
+`emit/header_packages.hero`), never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
 where `main` named `ncursesw`, and was told *declares no* otherwise.
 
 **A function a group binds is called from its own library, in every module and every order of the
@@ -3090,13 +3090,13 @@ the first is the one that proves the project's premise:
 
    **Both halves of that last sentence are now false, and panel 055 measured each.** The
    premise — *what the group head lacks is search paths* — expired when panel 050 landed
-   `package` and rung 5 was climbed with it, measured, with no path in any program; the
-   sentence went on reading as correct because the argument around it stayed valid, which is
-   CLAUDE.md §11's class exactly. And the **validation rule is incomplete**: a `-` check
+   `package` (spelled `pkgconfig` since panel 240) and rung 5 was climbed with it, measured,
+   with no path in any program; the sentence went on reading as correct because the argument
+   around it stayed valid, which is CLAUDE.md §11's class exactly. And the **validation rule is incomplete**: a `-` check
    cannot see a response file, because clang expands `@file` *before* it parses a single
    option. `clang -I "@two.rsp"` with `/tmp -DSMUGGLED=1` inside splices `-D SMUGGLED=1` onto
    the cc1 line and compiles — CVE-2018-6574's class through the one door the check does not
-   cover. Panel 050's **allow-list** holds against it (a `.pc` answering `@…` is `ffi_package`
+   cover. Panel 050's **allow-list** holds against it (a `.pc` answering `@…` is `ffi_pkgconfig`
    at exit 1) because it names what is permitted rather than what is forbidden; a rule phrased
    as *"not beginning with `-`"* does not. What panel 055 landed instead is the opposite of a
    path clause: an absolute path in a group head is **refused**, `machine_locked_path`, and the
@@ -3113,7 +3113,7 @@ the first is the one that proves the project's premise:
    batch 8 (`113471ca`), the one `ffi_missing_library`'s note already gave. The rule, an
    absolute path refused, is unchanged; `PKG_CONFIG_PATH` on Windows is unrun.
 
-   **The parenthesis above, *a `.pc` answering `@…` is `ffi_package` at exit 1*, was false
+   **The parenthesis above, *a `.pc` answering `@…` is `ffi_pkgconfig` at exit 1*, was false
    from panel 055 to defect 527's repair; corrected here 2026-10-09** (panel 198's R2,
    ratified that day; its completeness critic found it, its compiler-engineer re-measured
    it). The allow-list named its words and never judged what an admitted word's VALUE
@@ -3126,18 +3126,18 @@ the first is the one that proves the project's premise:
    beginning with `-` or `@`, and for `-l` not beginning with `:`
    (`selfhost/cli/package_words.hero`, `is_value`), and an `@` inside a path stays a
    letter of it. So the parenthesis holds again: on this Mac each of those doors, and
-   `-isystem @<file>` and `-I@<file>`, is `ffi_package` at exit 1 and leaves no file.
+   `-isystem @<file>` and `-I@<file>`, is `ffi_pkgconfig` at exit 1 and leaves no file.
 
    **A header the compiler's own C reads is the library's or the runtime's, never a file of a
    folder the build names** (panel 237, ratified 2026-11-08; defect 2333). The folders a build
-   names, the program's own, each `--include` and each a package's `pkg-config` answers, are
+   names, the program's own, each `--include` and each `pkg-config` answers for a library, are
    searched before the system's, so a `stdint.h` beside `main.hero` that read the real one with
    `#include_next` and redefined `__builtin_add_overflow` made an `i64` sum past the top print
    `-9223372036854775808` at exit 0, where §1.12 promises an abort. Before any probe compiles,
    one `clang -v -M` lists what the runtime's opening reads, and one file of the library's lying
    in a named folder refuses the build, `shadowed_header`, exit 1, at the program's first byte,
    the message naming the file and the header it stands in for, the note the folder, **who named
-   it** (the program's own folder, `--include`, the package by its name, the variable by its
+   it** (the program's own folder, `--include`, `pkg-config`'s answer by its library, the variable by its
    name) and the two repairs, rename it or move it (panel 237's R3). It carries no `Fix`: the
    repair is a file renamed or moved, which no edit of a `.hero` file writes. A file standing in
    for C itself is undefined behaviour (ISO C, N1570 §7.1.2p3, and CERT C's PRE04-C), so the
@@ -3164,7 +3164,7 @@ the first is the one that proves the project's premise:
    ffi-pragmatist's veto): the compiler's own `machine_locked_path` note sends a GNU readline
    binding there, and with the variable cleared it read libedit's header at exit 0.
 
-   **A package's `-D` or `-U` of a name the guard keeps is `ffi_package`, exit 1** (the same
+   **A `pkgconfig` answer's `-D` or `-U` of a name the guard keeps is `ffi_pkgconfig`, exit 1** (the same
    sitting's item 2). A group's header is read between `heroes_guard_open.h` and
    `heroes_guard_close.h`, which give back at the close every name the compiler's C writes; a
    `-D` stands before every header and every guard, so nothing undoes it, and a `.pc` answering
@@ -3172,7 +3172,7 @@ the first is the one that proves the project's premise:
    are `emit/guarded_names.hero`'s: the words the runtime's and the library's standard headers
    write, and the names C reserves that the compiler's C writes; the compiler's own
    `-D_USE_MATH_DEFINES` and `-D_CRT_SECURE_NO_WARNINGS` are none of them. Its notes say its own
-   reason and a repair that keeps the package's folders, never the allow-list's (defect 2348).
+   reason and a repair that keeps the library's folders, never the allow-list's (defect 2348).
 
 
 ### 4.20 The runtime, in C

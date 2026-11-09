@@ -51,7 +51,7 @@
 # members, so an anonymous union defeated it (defect 151). The verdict here is
 # the same, asked of the header's layout before the unit compiles.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Color            #~ ffi_incomplete_record
         r: u8
         g: u8

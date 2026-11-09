@@ -17,7 +17,7 @@ extern "a\u{1}b.h"  #~ unwritable_name
 extern "stdio.h" link "m\u{1f}x"  #~ unwritable_name
     function c3() -> i32
 
-extern "stdio.h" package "z\u{1b}z"  #~ unwritable_name
+extern "stdio.h" pkgconfig "z\u{1b}z"  #~ unwritable_name
     function c4() -> i32
 
 extern "a\u{7f}b.h"

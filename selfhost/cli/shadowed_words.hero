@@ -41,8 +41,8 @@ constant PROGRAM: str
 constant INCLUDE: str
     "include"
 
-constant PACKAGE: str
-    "package"
+constant PKGCONFIG: str
+    "pkgconfig"
 
 constant VARIABLE: str
     "variable"
@@ -117,8 +117,8 @@ function named_by(origin: Origin, folder: str) -> str
     if origin.kind == INCLUDE
         return "`--include` names that folder"
 
-    if origin.kind == PACKAGE
-        return "the package `" + origin.name + "` names that folder in its `pkg-config` answer"
+    if origin.kind == PKGCONFIG
+        return "`pkg-config`'s answer for the library `" + origin.name + "` names that folder"
 
     if origin.kind == CLANG
         return "clang's own configuration searches that folder in every compile"
@@ -135,7 +135,7 @@ function named_by(origin: Origin, folder: str) -> str
         if folder == "."
             told @ told + ", an empty element of it naming `.`, the folder clang runs in"
         return told
-    return "the folder is this program's own, one `--include` names, or one a package's `pkg-config` answers"
+    return "the folder is this program's own, one `--include` names, or one `pkg-config` answers for a library"
 
 # **A file read for a header a package's group names, from a folder searched
 # before that package's own** (defect 2357): a unit reading another

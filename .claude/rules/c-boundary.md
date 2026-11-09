@@ -78,11 +78,11 @@ its R4, the same day, both ratified 2026-11-09):
   defect 360's precedent: who is blamed moves, the line between accepted and
   refused does not), a name **a library the program links needs** and
   nothing on the link line defines, told `ffi_missing_link` at the string of
-  the group whose `link` names that library, or of the package whose answer
-  carried it, the library and every such name named
+  the group whose `link` names that library, or of the `pkgconfig` group
+  whose answer carried it, the library and every such name named
   (`cli/library_needs.hero`). The narrowing is the program's own words: every
   undefined name the linker reports must be referenced from a library a
-  `link` or a package's `-l` names (`cli/link_report.hero` reads who refers
+  `link` or a `pkgconfig` answer's `-l` names (`cli/link_report.hero` reads who refers
   to each, in GNU ld's, ld64's and the lld family's words), so a reference
   from the program's own object stays exit 2; and, widened 2026-11-09 by
   defect 2372 (lane b26-cli, on the same precedent), a name **the text of a
@@ -282,8 +282,8 @@ a name and asks whether *this program* declared it `extern`, or linked the
 library that defines it, so a symbol nobody declared and no library of the
 program defines stays exit 2 and the compiler's fault. The second half is the
 thirteenth member's (panel 239, 2026-11-09): a name the runtime calls or defines
-is the author's where a library a `link` or a package of the program names
-supplies it, recovered through that library, never through the name. The fifth
+is the author's where a library a `link` or a `pkgconfig` answer of the program
+names supplies it, recovered through that library, never through the name. The fifth
 member recovers the lend from the IR at the line clang names, which is the same
 question asked of the call: a qualifier error at a line where no immutable lend
 is passed to C stays exit 2.

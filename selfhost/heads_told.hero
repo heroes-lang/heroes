@@ -8,7 +8,7 @@
 #   `parse/group_head` asks it. The value keeps an escape's `\`, and a
 #   header's `\` is `escape_in_header_name`'s, so the lexer's `unknown_escape`
 #   there was a second message for one mistake, and its certain fix, `\\d`,
-#   wrote a name the head refuses next. A `link` or `package` name keeps the
+#   wrote a name the head refuses next. A `link` or `pkgconfig` name keeps the
 #   lexer's message, whose fix the head accepts.
 # - A character a line cannot show, written as itself in any of the three
 #   strings (`raw_refusal`): the head refuses it from the name whole, and the
@@ -18,6 +18,7 @@
 
 use diag
 use head_names
+use head_package
 use keywords
 use token
 
@@ -56,7 +57,7 @@ function told_by_heads(diagnostics: [diag.Diagnostic], tokens: [token.Token], te
     return out
 
 # The word naming the head string after the token at `at`: `header` after
-# `extern`, `link` or `package` after the header's own string, or "".
+# `extern`, `link` or `pkgconfig` after the header's own string, or "".
 function head_word(tokens: [token.Token], at: i64, text: str) -> str
     if tokens[at].kind == .kw_extern
         return "header"
@@ -65,8 +66,13 @@ function head_word(tokens: [token.Token], at: i64, text: str) -> str
         return ""
     word = text.slice(from: tokens[at].span.start, to: tokens[at].span.end)
 
-    if word == keywords.WORD_LINK || word == keywords.WORD_PACKAGE
+    if word == keywords.WORD_LINK || word == keywords.WORD_PKGCONFIG
         return word
+
+    # The old word reads as the mark it was (`head_package.retired`), so its
+    # string is judged once, as a `pkgconfig` string.
+    if word == head_package.RETIRED || head_package.near_width(tokens, at: at, text: text) == 1
+        return keywords.WORD_PKGCONFIG
     return ""
 
 # The lexer's refusals of a character written as itself (`raw_refusal`).

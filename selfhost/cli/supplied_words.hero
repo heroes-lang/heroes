@@ -297,8 +297,8 @@ function own_library(s: source.Source, decls: [ast.Decl], at: i64) -> str
                 return "the C library"
 
             match fd.value.library.must()
-                .link l     => return "library `" + emit_externs.unquoted(s, span: l.name) + "`"
-                .package pk => return "package `" + emit_externs.unquoted(s, span: pk.name) + "`"
+                .link l       => return "library `" + emit_externs.unquoted(s, span: l.name) + "`"
+                .pkgconfig pk => return "library `" + emit_externs.unquoted(s, span: pk.name) + "`"
         .constant_decl | .record_decl | .variant_decl | .test_decl => return "its group's library"
 
     return "its group's library"
@@ -313,14 +313,14 @@ function group_of(s: source.Source, decls: [ast.Decl], library: str) -> i64
                         .link l =>
                             if emit_externs.unquoted(s, span: l.name) == library
                                 return index
-                        .package => continue
+                        .pkgconfig => continue
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
     return -1
 
 function module_of(s: source.Source, decls: [ast.Decl], at: i64) -> str
     if at < 0
-        return "a package of this program"
+        return "a library `pkg-config` answered for"
     return "module `" + source.module_at(s, decls[at].span.start) + "`"
 
 # Every library name a group's `link` gives.
@@ -337,7 +337,7 @@ function linked_names(s: source.Source, decls: [ast.Decl]) -> [str]
 
                             if !supplied_names.named_in(out, name: name)
                                 out @ out.push(name)
-                        .package => continue
+                        .pkgconfig => continue
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
     return out

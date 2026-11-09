@@ -59,7 +59,8 @@ the control arm nothing, so they cannot end silent.
 
 ## Not in a held-out task, or not pinned
 
-- `machine_locked_path`, `undefined_header_name`, `unshowable_name`, `package_comparison`: rules
-  of the C boundary and of packages, and a held-out task has no `extern` and no `use`.
+- `machine_locked_path`, `undefined_header_name`, `unshowable_name`, `pkgconfig_comparison`
+  (`package_comparison` until panel 240): rules of the C boundary and of its `pkgconfig` names, and
+  a held-out task has no `extern` and no `use`.
 - `continuation_outside_brackets`: no witness in `tests/golden/control/`, so its control meaning
   is not pinned there; `dry` alone says what a mutant of it does.

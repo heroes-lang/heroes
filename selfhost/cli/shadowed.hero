@@ -395,7 +395,7 @@ test "each file of a named folder the runtime's opening reads in the library's p
         "stdint.h": "this program's own"
         "stdbool.h": "this program's own"
         "math.h": "`--include` names"
-        "stddef.h": "the package `p2333` names"
+        "stddef.h": "the library `p2333` names"
     }
 
     for d in told(t, under: under, groups: [], packages: {"p2333": ["-I" + root + "/pkg"]}, places: {})

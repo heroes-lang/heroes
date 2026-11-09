@@ -84,6 +84,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     contextual(@r, out: out, scratch: scratch)
     powers(@r, out: out)
     productions(@r, out: out)
+    extern_marks(@r, out: out)
     return ok(r)
 
 ## The keywords
@@ -454,6 +455,8 @@ function lexical() -> [str]
 record Production
     name: str
     uses: [str]
+    # The right side as written, its quoted terminals with it.
+    body: str
 
 function productions(@r: report.Report, out: str)
     found = productions_of(out)
@@ -511,6 +514,138 @@ function mark(found: [Production], at: str, @seen: {str: bool})
         if one.name == at
             for used in one.uses
                 mark(found: found, at: used, @seen)
+
+## The group head's marks, against the parser
+
+# **The one production held to the parser** (panel 240, the spec-warden's
+# condition 1). The words `Extern` quotes after the header's string are
+# contextual words the parser reads by their constants, and a mark respelled
+# on one side only left this suite green: the productions are held to
+# themselves above and the constants to `grammar`'s list, neither to the
+# other, so the spec saying `pkgconfig` over a parser reading `package`
+# passed every check here (the spec-warden's run, 2026-11-09). Both directions
+# are held: every word `Extern` quotes that the lexer does not reserve is one
+# `MARK_SOURCE` reads through its `keywords.WORD_*` constant, and every such
+# constant `MARK_SOURCE` reads is a word `Extern` quotes. A set and not a
+# sequence: the production alternates and the parser tries each, and neither
+# order means anything.
+constant MARK_SOURCE: str
+    "selfhost/parse/group_head.hero"
+
+constant LEAST_MARKS: i64
+    2
+
+function extern_marks(@r: report.Report, out: str)
+    reserved = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")
+    quoted = marks_quoted(found: productions_of(out), name: "Extern", reserved: reserved)
+
+    if !floors.sound(@r, label: "grammar/extern-marks", found: quoted.len(), floor: LEAST_MARKS, what: "marks the spec's `Extern` quotes, as `grammar` prints it")
+        return
+    text = read_file(MARK_SOURCE)
+
+    if text.is_err()
+        report.keep_failure(
+            @r,
+            label: "grammar/extern-marks",
+            detail: "  cannot read " + MARK_SOURCE + ", and a file this check cannot read is a file it cannot hold to the production"
+        )
+        return
+    read = marks_read(text: text.must(), declared: quoted_on_next_line(path: KEYWORD_SOURCE, marker: "constant WORD_"))
+
+    if !floors.sound(@r, label: "grammar/extern-marks", found: read.len(), floor: LEAST_MARKS, what: "contextual words " + MARK_SOURCE + " reads by their constants")
+        return
+    apart = marks_apart(quoted: quoted, read: read)
+
+    if apart.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/extern-marks",
+            detail: "  the spec's `Extern` and the parser's group head disagree on the marks after the header's string:\n    " + apart.join("\n    ") + "\n  A mark respelled on one side only is a program the spec teaches and the\n  parser refuses, or one the parser reads and no reader of the spec can write:\n  the repair is the side left behind."
+        )
+        return
+    report.keep_pass(@r)
+
+# The words the production `name` quotes that the lexer does not reserve, each
+# once, in the order written.
+function marks_quoted(found: [Production], name: str, reserved: [str]) -> [str]
+    out: [str] @= []
+
+    for one in found
+        if one.name != name
+            continue
+
+        for word in quoted_words(one.body)
+            if !holds(list: reserved, word: word) && !holds(list: out, word: word)
+                out @ out.push(word)
+
+    return out
+
+# Every word between a pair of quotes, in order.
+function quoted_words(body: str) -> [str]
+    out: [str] @= []
+    pieces = strings.split_text(text: body, separator: "\"")
+    i: i64 @= 1
+
+    while i < pieces.len()
+        out @ out.push(pieces[i])
+        i @ i + 2
+
+    return out
+
+# The declared contextual words whose constant `text` reads on a line that is
+# not a comment, the constant's name ending there (`WORD_AS` is not read by
+# `WORD_ASK`).
+function marks_read(text: str, declared: [str]) -> [str]
+    out: [str] @= []
+
+    for word in declared
+        name = constant_of(word)
+
+        for line in strings.lines(text)
+            if !strings.starts_with(text: strings.trimmed(line), prefix: "#") && names_whole(line: line, name: name) && !holds(list: out, word: word)
+                out @ out.push(word)
+
+    return out
+
+# Whether `name` stands in `line` with no name byte right after it.
+function names_whole(line: str, name: str) -> bool
+    rest: str @= line
+    at: i64? @= strings.index_of(text: rest, needle: name)
+
+    while !at.is_err()
+        end = at.must() + name.len()
+
+        if end >= rest.len() || !is_name_byte(rest[end])
+            return true
+        rest @ rest.slice(from: end, to: rest.len())
+        at @ strings.index_of(text: rest, needle: name)
+
+    return false
+
+# Each word one side holds and the other does not, said with the side.
+function marks_apart(quoted: [str], read: [str]) -> [str]
+    apart: [str] @= []
+
+    for word in quoted
+        if !holds(list: read, word: word)
+            apart @ apart.push(
+                "`" + word + "`: quoted by the spec's `Extern`, and " + MARK_SOURCE + " reads no `" + constant_of(word) + "`"
+            )
+
+    for word in read
+        if !holds(list: quoted, word: word)
+            apart @ apart.push(
+                "`" + word + "`: read by " + MARK_SOURCE + " as `" + constant_of(word) + "`, and not quoted by the spec's `Extern`"
+            )
+
+    return apart
+
+function holds(list: [str], word: str) -> bool
+    for one in list
+        if one == word
+            return true
+
+    return false
 
 ## Reading the blocks
 
@@ -587,7 +722,7 @@ function one_production(body: str) -> Production
     cut = strings.index_of(text: body, needle: "=")
     name: str = strings.trimmed(body.slice(from: 0, to: cut.default(0)))
     rest = body.slice(from: cut.default(0) + 1, to: body.len())
-    return Production(name: name, uses: names_outside_quotes(rest))
+    return Production(name: name, uses: names_outside_quotes(rest), body: rest)
 
 function names_outside_quotes(text: str) -> [str]
     out: [str] @= []
@@ -613,3 +748,35 @@ function names_outside_quotes(text: str) -> [str]
         out @ out.push(word)
 
     return out
+
+test "the marks Extern quotes are held to the constants the group head reads, both ways (panel 240)"
+    out = "Productions, collected from x\n\n    Extern = \"extern\" string [ ( \"link\" | \"pkgconfig\" ) string ] NEWLINE\n             INDENT { Member } DEDENT .\n"
+    quoted = marks_quoted(found: productions_of(out), name: "Extern", reserved: ["extern", "function"])
+    assert quoted == ["link", "pkgconfig"]
+    read = marks_read(
+        text: "# keywords.WORD_TAG in a comment is read by nothing\n    if word != keywords.WORD_LINK && word != keywords.WORD_PKGCONFIG\n",
+        declared: ["as", "link", "pkgconfig", "tag"]
+    )
+    assert read == ["link", "pkgconfig"]
+    assert marks_apart(quoted: quoted, read: read).len() == 0
+
+    # The half-landed rename this check exists for, each way round: the spec
+    # respelled over the parser's old constant, and the parser over the spec's.
+    old_spec = marks_quoted(
+        found: productions_of(strings.split_text(text: out, separator: "pkgconfig").join("package")),
+        name: "Extern",
+        reserved: ["extern"]
+    )
+    assert old_spec == ["link", "package"]
+    said = marks_apart(quoted: old_spec, read: read)
+    assert said.len() == 2
+    assert said[0] == "`package`: quoted by the spec's `Extern`, and selfhost/parse/group_head.hero reads no `keywords.WORD_PACKAGE`"
+    assert said[1] == "`pkgconfig`: read by selfhost/parse/group_head.hero as `keywords.WORD_PKGCONFIG`, and not quoted by the spec's `Extern`"
+    assert marks_apart(quoted: quoted, read: ["link"]).len() == 1
+    assert marks_apart(quoted: ["link"], read: read).len() == 1
+
+test "a constant is read where its name ends, and never inside a longer one"
+    assert names_whole(line: "x == keywords.WORD_AS)", name: "keywords.WORD_AS")
+    assert !names_whole(line: "x == keywords.WORD_ASK", name: "keywords.WORD_AS")
+    assert names_whole(line: "keywords.WORD_ASK || keywords.WORD_AS", name: "keywords.WORD_AS")
+    assert quoted_words("\"a\" b \"c\"") == ["a", "c"]

@@ -74,8 +74,8 @@ function bindings(s: source.Source, decls: [ast.Decl], package_words: {str: [str
 
                 if !fd.value.library.is_err()
                     match fd.value.library.must()
-                        .link l     => own @ [emit_externs.unquoted(s, span: l.name)]
-                        .package pk => own @ library_names(
+                        .link l       => own @ [emit_externs.unquoted(s, span: l.name)]
+                        .pkgconfig pk => own @ library_names(
                             package_words[emit_externs.unquoted(s, span: pk.name)].default(none)
                         )
                 out @ out.push(

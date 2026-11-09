@@ -265,7 +265,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
 function unjudged(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
     said: [str] @= refused(said: [], names: headers(p, s, decls), what: "header")
     said @ refused(said: said, names: libraries(p, s, decls), what: "link")
-    return refused(said: said, names: packages(p, s, decls), what: "package").join("\n  ")
+    return refused(said: said, names: packages(p, s, decls), what: "pkgconfig").join("\n  ")
 
 function refused(said: [str], names: [str], what: str) -> [str]
     out: [str] @= said
@@ -289,7 +289,7 @@ function library_span(library: ast.Library, want_package: bool) -> token.Span?
             if want_package
                 return fail(code: "none", msg: "a link, not a package")
             return ok(l.name)
-        .package pk =>
+        .pkgconfig pk =>
             if !want_package
                 return fail(code: "none", msg: "a package, not a link")
             return ok(pk.name)
@@ -299,7 +299,7 @@ function library_span(library: ast.Library, want_package: bool) -> token.Span?
 ## Tests
 
 test "headers seed the unit's first header and the os header, dedupe, and see a record-only group"
-    text = "extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_libversion() -> cstr\n\nextern \"raylib.h\" package \"raylib\"\n    record Color\n        r: i64\n\nfunction main()\n    print(1)\n"
+    text = "extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_libversion() -> cstr\n\nextern \"raylib.h\" pkgconfig \"raylib\"\n    record Color\n        r: i64\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -337,7 +337,7 @@ test "a group head's string reaches C as its value, its escapes decoded (panel 1
     assert unquoted(s, span: token.Span(start: 16, end: 21)) == "plain"
 
 test "a name no tool carries is found again before any tool is handed it (panel 188)"
-    text = "extern \"a>b.h\" link \"\"\n    function seven() -> i32\n\nextern \"stdio.h\" package \"zlib zlib\"\n    function puts(s: cstr lent) -> i32\n\nfunction main()\n    print(seven())\n"
+    text = "extern \"a>b.h\" link \"\"\n    function seven() -> i32\n\nextern \"stdio.h\" pkgconfig \"zlib zlib\"\n    function puts(s: cstr lent) -> i32\n\nfunction main()\n    print(seven())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -346,4 +346,4 @@ test "a name no tool carries is found again before any tool is handed it (panel 
     said = unjudged(low.program, s, parsed.decls)
     assert strings.holds(text: said, needle: "holds `>`")
     assert strings.holds(text: said, needle: "library's name is empty")
-    assert strings.holds(text: said, needle: "package's name holds a space")
+    assert strings.holds(text: said, needle: "library's name holds a space")

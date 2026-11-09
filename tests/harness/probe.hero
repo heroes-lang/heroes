@@ -170,7 +170,7 @@ function asks_about_absence(p: Probe) -> bool
         asked @ asked.push(needle)
 
     for one in asked
-        if strings.contains(text: one, needle: "ffi_missing_header") || strings.contains(text: one, needle: "ffi_package") || strings.contains(text: one, needle: "pkg-config is not on this machine")
+        if strings.contains(text: one, needle: "ffi_missing_header") || strings.contains(text: one, needle: "ffi_pkgconfig") || strings.contains(text: one, needle: "pkg-config is not on this machine")
             return true
 
     return false

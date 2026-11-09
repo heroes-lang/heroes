@@ -36,21 +36,21 @@ use source
 # so it can be neither checked against the list nor handed to clang as one
 # word, and it is never taken for no answer; one that cannot be read back is
 # not taken for none either. The message opens with the package marker, which
-# `emit/ffi_build.package_problem` turns into the author's `ffi_package`.
+# `emit/ffi_build.package_problem` turns into the author's `ffi_pkgconfig`.
 function answer(path: str, package: str) -> str?
     read = reading.source_text(path)
 
     if read.is_err()
         return fail(
             code: "failed",
-            msg: "heroes-ffi-package `" + package + "` answered pkg-config's question, and its answer could not be read back from " + path
+            msg: "heroes-ffi-pkgconfig `" + package + "` answered pkg-config's question, and its answer could not be read back from " + path
         )
 
     if read.must().faults.len() == 0
         return ok(strings.without_returns(read.must().text))
     return fail(
         code: "failed",
-        msg: "heroes-ffi-package `" + package + "` answered with bytes that are not UTF-8, `" + one_line(not_text.bytes_written(read.must().text, faults: read.must().faults)) + "`, so its flags can be neither checked nor handed to clang\n  save the package's `.pc` file as UTF-8, or name the library directly with `link`"
+        msg: "heroes-ffi-pkgconfig `" + package + "` answered with bytes that are not UTF-8, `" + one_line(not_text.bytes_written(read.must().text, faults: read.must().faults)) + "`, so its flags can be neither checked nor handed to clang\n  save the library's `.pc` file as UTF-8, or name the library directly with `link`"
     )
 
 # What pkg-config said when it refused, each byte of it that is not UTF-8
@@ -69,7 +69,7 @@ function complaint(path: str) -> str
 # what stands in the way, a package it requires or a version of one. Every
 # refusal was *not installed* until then, above `pkg-config` saying a package
 # the named one requires was not found. The message opens with the package
-# marker (`emit/ffi_build.package_problem` reads it into `ffi_package`), and
+# marker (`emit/ffi_build.package_problem` reads it into `ffi_pkgconfig`), and
 # the not-installed sentence is word for word the one the net reads as a
 # machine lacking the library (`tests/harness/absence.hero`).
 function refused(package: str, complained: str, build_dir: str) -> str
@@ -95,11 +95,11 @@ function worded(package: str, complained: str, present: bool) -> str
 
         if said.len() == 0
             way @ "name the library directly with `link`"
-        return "heroes-ffi-package `" + package + "` is installed, and pkg-config cannot give its flags" + note + "\n  " + way
-    return "heroes-ffi-package `" + package + "` is not installed on this machine" + note + "\n  install its development files, or name the library directly with `link`"
+        return "heroes-ffi-pkgconfig `" + package + "` is installed, and pkg-config cannot give its flags" + note + "\n  " + way
+    return "heroes-ffi-pkgconfig `" + package + "` is not installed on this machine" + note + "\n  install its development files, or name the library directly with `link`"
 
 # What the author is told where `pkg-config` could not be started, so nothing
-# could be asked about `package` (defect 249): the package's `ffi_package` at
+# could be asked about `package` (defect 249): the library's `ffi_pkgconfig` at
 # its string, the marker first, and the way out, where it was a bare line with
 # no code, no place and no route.
 #
@@ -114,8 +114,8 @@ function worded(package: str, complained: str, present: bool) -> str
 # *not on this machine* all the same, and is named by its number now.
 function unasked(package: str, why: i64) -> str
     if why == 2
-        return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
-    return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `package \"" + package + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
+        return "heroes-ffi-pkgconfig `" + package + "` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
+    return "heroes-ffi-pkgconfig `" + package + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `pkgconfig \"" + package + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
 
 # **Whether `package` is installed, asked three ways, any one enough, so *not
 # installed* is said only where all three say no** (defect 292): `pkg-config`
@@ -242,7 +242,7 @@ test "an answer that is not UTF-8 stops the build naming its bytes, and a compla
         .ok _ => assert false
         .err e =>
             assert e.code == "failed"
-            assert e.msg == "heroes-ffi-package `u` answered with bytes that are not UTF-8, `-DX=caf<0xE9> -I/nowhere`, so its flags can be neither checked nor handed to clang\n  save the package's `.pc` file as UTF-8, or name the library directly with `link`"
+            assert e.msg == "heroes-ffi-pkgconfig `u` answered with bytes that are not UTF-8, `-DX=caf<0xE9> -I/nowhere`, so its flags can be neither checked nor handed to clang\n  save the library's `.pc` file as UTF-8, or name the library directly with `link`"
 
     said = complaint(fixtures + "complaint-latin1.txt")
     assert said == "Package caf<0xE9>x was not found in the pkg-config search path.\nPackage 'caf<0xE9>x', required by 'u3', not found\n"
@@ -264,7 +264,7 @@ test "pkg-config's lines ended by a return and a line end are read as lines (def
     said = complaint(complaint_path)
     assert said == "Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n"
     told = refused(package: "heroes-package-no-machine-has-285", complained: said, build_dir: "build")
-    assert told == "heroes-ffi-package `heroes-package-no-machine-has-285` is not installed on this machine\n  pkg-config said: Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n  install its development files, or name the library directly with `link`"
+    assert told == "heroes-ffi-pkgconfig `heroes-package-no-machine-has-285` is not installed on this machine\n  pkg-config said: Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n  install its development files, or name the library directly with `link`"
     answered = answer(path: answer_path, package: "z").must()
     assert answered == "-DSEVEN=7 -lz\n"
     assert shell_split.words(package: "z", said: answered).must() == ["-DSEVEN=7", "-lz"]
@@ -280,14 +280,14 @@ test "a refusal pkg-config gave no reason for is told as one, under either head 
     assert !write_file(path: blank, text: "  \r\n").is_err()
 
     for complained in ["", "  \n\n", complaint(blank)]
-        assert worded(package: "zlib", complained: complained, present: false) == "heroes-ffi-package `zlib` is not installed on this machine\n  pkg-config gave no reason\n  install its development files, or name the library directly with `link`"
-        assert worded(package: "zlib", complained: complained, present: true) == "heroes-ffi-package `zlib` is installed, and pkg-config cannot give its flags\n  pkg-config gave no reason\n  name the library directly with `link`"
+        assert worded(package: "zlib", complained: complained, present: false) == "heroes-ffi-pkgconfig `zlib` is not installed on this machine\n  pkg-config gave no reason\n  install its development files, or name the library directly with `link`"
+        assert worded(package: "zlib", complained: complained, present: true) == "heroes-ffi-pkgconfig `zlib` is installed, and pkg-config cannot give its flags\n  pkg-config gave no reason\n  name the library directly with `link`"
 
-    assert worded(package: "zlib", complained: "Package zlib was not found\n", present: false) == "heroes-ffi-package `zlib` is not installed on this machine\n  pkg-config said: Package zlib was not found\n  install its development files, or name the library directly with `link`"
-    text = "extern \"zlib.h\" package \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
+    assert worded(package: "zlib", complained: "Package zlib was not found\n", present: false) == "heroes-ffi-pkgconfig `zlib` is not installed on this machine\n  pkg-config said: Package zlib was not found\n  install its development files, or name the library directly with `link`"
+    text = "extern \"zlib.h\" pkgconfig \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "silent.hero", text: text)
-    head = "heroes-ffi-package `zlib` is installed, and pkg-config cannot give its flags"
+    head = "heroes-ffi-pkgconfig `zlib` is installed, and pkg-config cannot give its flags"
     d = ffi_build.package_problem(
         s,
         parsed.decls,
@@ -327,19 +327,19 @@ test "the search path's directories are read as pkg-config reads them (defect 29
 
 # Defect 249: where `pkg-config` does not start, the refusal opens with the
 # package marker, so `emit/ffi_build.package_problem` reads it into the
-# group's `ffi_package` at its string, with the way out as its note; the bare
+# group's `ffi_pkgconfig` at its string, with the way out as its note; the bare
 # line it was named no code, no place and no route.
 test "a package asked where pkg-config does not start is told at its string, with the way out (defect 249)"
-    text = "extern \"zlib.h\" package \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
+    text = "extern \"zlib.h\" pkgconfig \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "nopc.hero", text: text)
-    head = "heroes-ffi-package `zlib` cannot be looked up: pkg-config is not on this machine, and `package \"zlib\"` asks it where the library is"
+    head = "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"zlib\"` asks it where the library is"
     told = unasked(package: "zlib", why: 2)
     assert told == head + "\n  install pkg-config, or name the library directly with `link`"
     d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
-    assert d.code == "ffi_package"
+    assert d.code == "ffi_pkgconfig"
     assert source.span_text(s, d.span) == "\"zlib\""
-    assert d.message == "the package `zlib` cannot be looked up: pkg-config is not on this machine, and `package \"zlib\"` asks it where the library is"
+    assert d.message == "the library `zlib` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"zlib\"` asks it where the library is"
     assert d.notes == ["install pkg-config, or name the library directly with `link`"]
 
 # Defect 323, made to fire: a file of mode 644 started by its path, which the
@@ -360,11 +360,11 @@ test "a pkg-config the machine refuses to start is told by its reason, never as 
 
     if process.exe_suffix() != ".exe"
         assert ran.why == 13
-        assert told == "heroes-ffi-package `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `package \"zlib\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
-        head = "heroes-ffi-package `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `package \"zlib\"` asks it where the library is"
-        text = "extern \"zlib.h\" package \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
+        assert told == "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `pkgconfig \"zlib\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
+        head = "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `pkgconfig \"zlib\"` asks it where the library is"
+        text = "extern \"zlib.h\" pkgconfig \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
         parsed = parse.parse(text)
         s = source.new_source(name: "refused.hero", text: text)
         d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
-        assert d.code == "ffi_package"
+        assert d.code == "ffi_pkgconfig"
         assert source.span_text(s, d.span) == "\"zlib\""

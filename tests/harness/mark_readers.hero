@@ -325,7 +325,7 @@ test "a bracket that is not a code is not a diagnostic"
     assert code_of("  note: install it [somewhere else]").is_err()
     assert code_of("no brackets at all").is_err()
     assert code_of("  Perhaps `x.pc'").is_err()
-    assert code_of("error[ffi_package]: ...").must() == "ffi_package"
+    assert code_of("error[ffi_pkgconfig]: ...").must() == "ffi_pkgconfig"
     assert code_of("unsupported[unit_field]: ...").must() == "unit_field"
     assert code_of("x.hero:1:1: error[indentation_not_multiple_of_4]: ...").must() == "indentation_not_multiple_of_4"
 

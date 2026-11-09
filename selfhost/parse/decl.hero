@@ -342,8 +342,8 @@ test "the group is flattened here and only here"
             assert cursor.slice_of(text, fd.value.header.must()) == "\"m.h\""
 
             match fd.value.library.must()
-                .link l  => assert cursor.slice_of(text, l.name) == "\"m\""
-                .package => assert false
+                .link l    => assert cursor.slice_of(text, l.name) == "\"m\""
+                .pkgconfig => assert false
         .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
 
     match p.decls[1].kind

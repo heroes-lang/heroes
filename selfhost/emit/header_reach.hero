@@ -118,7 +118,7 @@ function reached(steps: [clang_place.Place], at: i64, owner: Owner, missing: str
         )
     else
         d.notes @ d.notes.push(
-            "the group's header is on this machine and a header it includes is not: install the development files that provide `" + missing + "`, or pass `--include <dir>` with the directory that holds it; `package` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too"
+            "the group's header is on this machine and a header it includes is not: install the development files that provide `" + missing + "`, or pass `--include <dir>` with the directory that holds it; `pkgconfig` asks the machine where it is when the library ships a `.pc`, and `CPATH` works too"
         )
     return d
 

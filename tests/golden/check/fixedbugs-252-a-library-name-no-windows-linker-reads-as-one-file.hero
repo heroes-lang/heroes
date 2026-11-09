@@ -31,19 +31,19 @@ extern "stdio.h" link "a\\b"  #~ unwritable_name
 extern "stdio.h" link "sub/m"  #~ unwritable_name
     function l4() -> i32
 
-extern "stdio.h" package "p>q"  #~ unwritable_name
+extern "stdio.h" pkgconfig "p>q"  #~ unwritable_name
     function l5() -> i32
 
-extern "stdio.h" package "p\"q"  #~ unwritable_name
+extern "stdio.h" pkgconfig "p\"q"  #~ unwritable_name
     function l6() -> i32
 
-extern "stdio.h" package "p\\q"  #~ unwritable_name
+extern "stdio.h" pkgconfig "p\\q"  #~ unwritable_name
     function l7() -> i32
 
-extern "stdio.h" package "zlib=1"  #~ package_comparison
+extern "stdio.h" pkgconfig "zlib=1"  #~ pkgconfig_comparison
     function l8() -> i32
 
-extern "stdio.h" package "a!b"  #~ package_comparison
+extern "stdio.h" pkgconfig "a!b"  #~ pkgconfig_comparison
     function l9() -> i32
 
 extern "stdio.h" link "C:\\side\\m"  #~ unwritable_name
@@ -52,7 +52,7 @@ extern "stdio.h" link "C:\\side\\m"  #~ unwritable_name
 extern "a\"b.h"  #~ unwritable_name
     function l11() -> i32
 
-extern "stdio.h" package "sub/seven"
+extern "stdio.h" pkgconfig "sub/seven"
     function l12() -> i32
 
 extern "stdio.h" link "a'b"

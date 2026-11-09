@@ -46,7 +46,7 @@ FROM --platform=linux/arm64 silkeh/clang:22
 
 # The same five the bare image lacks and the CI leg has, in the same order as
 # `Dockerfile.amd64`, so a diff of the two files is one line long: lldb for
-# `lldb_breaks_on_a_hero_line`, pkg-config for every `package "…"` binding, the
+# `lldb_breaks_on_a_hero_line`, pkg-config for every `pkgconfig "…"` binding, the
 # two headers `examples/sqlite/` and `examples/curl/` bind, and git, without
 # which the net's own tests carry a red case and the `records` suite cannot run
 # at all. raylib is left out on purpose, exactly as in CI, so `examples/raylib/`

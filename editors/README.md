@@ -22,9 +22,9 @@ refuses (`07`, `1e5`, `0X1F`, `1__000`), a tab outside a comment, a raw
 control character, `//` and a string in backticks. The thesis, in the
 editor.
 
-The contextual words (`as`, `link`, `package`, `rest` and `zero`, and the
+The contextual words (`as`, `link`, `pkgconfig`, `rest` and `zero`, and the
 FFI's marks `tag`, `owned`, `acquires` and the others) are painted only where
-the parser reads them: `as` on a `use` line, `link` and `package` after an
+the parser reads them: `as` on a `use` line, `link` and `pkgconfig` after an
 `extern` line's header, `rest: zero` where it ends a call's list, the others
 on an `extern` group's indented lines, never before a `:`. Anywhere else each
 is an ordinary name, as it is to the compiler.

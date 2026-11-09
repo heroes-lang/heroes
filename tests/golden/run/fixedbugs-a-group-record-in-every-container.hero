@@ -30,7 +30,7 @@
 # This case is the control arm. Every line is a container path that reaches the
 # generated `_eq`, `_hash` or `_desc` of a struct this compiler never declared.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Color
         r: u8
         g: u8

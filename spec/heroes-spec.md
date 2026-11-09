@@ -476,10 +476,10 @@ so it needs one of them; the value is an integer within the result's type for an
 integer result, `true` or `false` for a `bool`. A value takes one of the five words, and they mark only a value
 that reaches a handle, as itself or through a field or an array element; anywhere
 else they are errors.
-A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
-asks the system where its headers and libraries are and what else it needs.
+Instead of `link`, `extern "raylib.h" pkgconfig "raylib"`
+asks the system where its headers and libraries are.
 
-    Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
+    Extern = "extern" string [ ( "link" | "pkgconfig" ) string ] NEWLINE
              INDENT { Member } DEDENT .
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
                [ "->" Type [ "owned" ident ] [ ( "acquires" | "retains" ) ident { "|" ident } | "borrows" ]

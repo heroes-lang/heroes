@@ -21,7 +21,7 @@ extern "a\tb.h"    #~ unwritable_name
 extern "stdio.h" link "m\tx"    #~ unwritable_name
     function h2() -> i32
 
-extern "stdio.h" package "zlib\tzlib"    #~ unwritable_name
+extern "stdio.h" pkgconfig "zlib\tzlib"    #~ unwritable_name
     function h3() -> i32
 
 # Stage E: the next line holds U+200B, a zero width space, between `std` and

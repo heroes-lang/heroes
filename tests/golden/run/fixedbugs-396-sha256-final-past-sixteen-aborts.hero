@@ -4,7 +4,7 @@
 # naming `SHA256_Final`'s `md`, on Darwin and Linux arm64. The buffer ends at
 # a page nothing may touch, so OpenSSL stops on the seventeenth byte, before
 # anything beside the buffer is written.
-extern "fixedbugs-396-openssl.h" package "libcrypto"
+extern "fixedbugs-396-openssl.h" pkgconfig "libcrypto"
     record Sha256Ctx tag SHA256state_st partial
         num: u32
     function SHA256_Init(@c: Sha256Ctx) -> i32

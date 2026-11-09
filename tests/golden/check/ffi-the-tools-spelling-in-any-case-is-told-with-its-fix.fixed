@@ -1,0 +1,21 @@
+# The mark is `pkgconfig` in lower case, and the tool's name in another case
+# is the mark misspelled as surely as `pkg-config` is (panel 240, the critic's
+# C1): `PKGCONFIG`, `Pkgconfig`, `PKG-CONFIG` and `Pkg_Config` are told once
+# each with the certain fix that writes `pkgconfig`, and the program the fixes
+# write checks clean.
+
+extern "stdlib.h" pkgconfig "zlib"  #~ pkgconfig_spelled
+    function abs(n: i32) -> i32
+
+extern "ctype.h" pkgconfig "zlib"  #~ pkgconfig_spelled
+    function toupper(c: i32) -> i32
+
+extern "math.h" pkgconfig "zlib"  #~ pkgconfig_spelled
+    function fabs(x: f64) -> f64
+
+extern "wctype.h" pkgconfig "zlib"  #~ pkgconfig_spelled
+    function iswdigit(c: i32) -> i32
+
+function main()
+    print(abs(n: -1) + toupper(c: 97) + iswdigit(c: 48))
+    print(fabs(x: -1.5))

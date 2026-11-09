@@ -359,8 +359,8 @@ function extern_head(s: source.Source, header: token.Span, library: ast.Library?
 
     if !library.is_err()
         match library.must()
-            .link l     => out @ out + " link " + source.span_text(s, l.name)
-            .package pk => out @ out + " package " + source.span_text(s, pk.name)
+            .link l       => out @ out + " link " + source.span_text(s, l.name)
+            .pkgconfig pk => out @ out + " pkgconfig " + source.span_text(s, pk.name)
     return out
 
 # The two spans a group's members all carry, whatever kind of member
@@ -1830,3 +1830,19 @@ test "a comment in a chain 81 long is worked out once a part, never the chain's 
     assert f.asked.len() > 0
     assert most <= 2
     assert worked <= 2 * f.asked.len()
+
+# Panel 240: the mark that asks `pkg-config` is printed as the parser reads
+# it, `pkgconfig`, and the word beside it, `link`, as itself, each the head's
+# one line; the old word `package` is the parser's refusal and never reaches a
+# printer (`head_package.retired`), so `fmt` refuses it and never respells it.
+test "fmt prints both marks of a group head as written, and the old word stays the parser's"
+    for head in ["extern \"raylib.h\" pkgconfig \"raylib\"", "extern \"m.h\" link \"m\""]
+        text = head + "\n    function f() -> i32\n\nfunction main()\n    print(f())\n"
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+    old = parse.parse("extern \"raylib.h\" package \"raylib\"\n    function f() -> i32\n")
+    assert old.diagnostics.len() == 1
+    assert old.diagnostics[0].code == "old_package_word"

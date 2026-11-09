@@ -22,7 +22,7 @@
 # transitive rule there would make raylib's own `RenderTexture { Texture texture; }`
 # unbuildable.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Color partial
         r: u8
         g: u8

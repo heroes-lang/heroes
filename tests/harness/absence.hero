@@ -3,7 +3,7 @@
 #
 # `unsupported/` builds programs that bind C, so a machine that lacks what a
 # case binds refuses the build in words of its own: `error[ffi_missing_header]`,
-# `error[ffi_package]`, or `pkg-config is not on this machine`. Such a case
+# `error[ffi_pkgconfig]`, or `pkg-config is not on this machine`. Such a case
 # cannot be judged there; the author's answer *A* of 2026-10-03 skips it "there
 # by name" and judges it where the library is (`.claude/rules/platforms.md`).
 #
@@ -31,7 +31,7 @@
 #    § 9), and the place catches a compiler that misnames the header it did
 #    not find (defect 232's class) or blames another line (226's);
 # 2. **the case** (`binds`, `needs`): what is missing must be the header one of
-#    its groups names, a header that header includes, or a `package` it asks
+#    its groups names, a header that header includes, or a `pkgconfig` it asks
 #    for;
 # 3. **the machine**, asked directly (`asked`): `pkg-config` does not start,
 #    or does not know the package, or clang does not find the header on the
@@ -61,8 +61,8 @@ use strings
 # `pkg-config` the package that asked it; `owner` is, for a header another
 # header includes, the header the group names, and "" otherwise. `code` is the
 # diagnostic's, and "" for the sentence about `pkg-config`: the compiler tells it
-# under `ffi_package` at the package's string since defect 249, and a case
-# whose expectation or mark places `ffi_package` there pins the package's own
+# under `ffi_pkgconfig` at the package's string since defect 249, and a case
+# whose expectation or mark places `ffi_pkgconfig` there pins the package's own
 # message, not a machine without `pkg-config`, which the Windows box is and
 # where such a case is skipped by name. `file` and `line` are where it is told,
 # "" and 0 where the output does not say.
@@ -106,7 +106,7 @@ constant HEADER_CODE: str
     "ffi_missing_header"
 
 constant PACKAGE_CODE: str
-    "ffi_package"
+    "ffi_pkgconfig"
 
 constant NOTE: str
     "  note: "
@@ -136,10 +136,10 @@ constant OWNER_TAIL: str
 # name), then one of three closes: not installed, installed with its flags
 # out of reach, or `pkg-config` not on this machine at all.
 constant PACKAGE_HEAD: str
-    "the package "
+    "the library "
 
 constant PACKAGE_MARK: str
-    "heroes-ffi-package `"
+    "heroes-ffi-pkgconfig `"
 
 constant PACKAGE_CLOSE: str
     "` is not installed on this machine"
@@ -151,7 +151,7 @@ constant UNASKED_CLOSE: str
     "` cannot be looked up: "
 
 constant TOOL_OPEN: str
-    "pkg-config is not on this machine, and `package \""
+    "pkg-config is not on this machine, and `pkgconfig \""
 
 constant TOOL_CLOSE: str
     "\"` asks it where the library is"
@@ -253,9 +253,9 @@ function machine_lacks(scratch: str, path: str, expected: str, said: str) -> str
 # compiler's own `at` lines blame inside `path`'s directory is read as well,
 # since a group the compiler blames is where the program binds what is
 # missing (`examples/ledger` binds sqlite in `db/sqlite.hero`); the driver's
-# sentence about `pkg-config` names no file, so a `package` group is found only
+# sentence about `pkg-config` names no file, so a `pkgconfig` group is found only
 # in what the caller passes (the corpus passes a program's whole tree; every
-# other caller its one file, which holds every `package` group the tree has,
+# other caller its one file, which holds every `pkgconfig` group the tree has,
 # the test below).
 function machine_lacks_among(scratch: str, path: str, modules: [str], expected: str, said: str) -> str?
     named = absences(said)
@@ -542,13 +542,13 @@ function refused(lacks: str?) -> str
     return message_of(lacks)
 
 # What a case binds: the header of each `extern` group, and each group's
-# `package`, read from its source.
+# `pkgconfig` name, read from its source.
 record Binds
     headers: [str]
     packages: [str]
 
 constant PACKAGE_WORD: str
-    " package "
+    " pkgconfig "
 
 function binds(source: str) -> Binds
     headers: [str] @= []
@@ -676,7 +676,7 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
 
         if tool.started
             return fail(code: "present", msg: "`pkg-config` runs on this machine")
-        return ok("`pkg-config`, which `package \"" + one.name + "\"` asks, does not start here")
+        return ok("`pkg-config`, which `pkgconfig \"" + one.name + "\"` asks, does not start here")
 
     # A package, not installed or installed with its flags out of reach: the
     # flags must be refused here, and whether `pkg-config` reads the package
@@ -802,7 +802,7 @@ function closes_quotation(row: str) -> bool
     return row == NOTE + NOT_INSTALLED_WAY || row == NOTE + INSTALLED_WAY || row == NOTE + SILENT_WAY
 
 # The expectation as the compiler would write it on THIS machine: each
-# `pkg-config` answer an `ffi_package` message quotes is replaced by what this
+# `pkg-config` answer an `ffi_pkgconfig` message quotes is replaced by what this
 # machine's `pkg-config` answers for that package, and every line of the
 # compiler's own around it is left as written.
 #
@@ -1080,7 +1080,7 @@ function package_said(package: str, at: str) -> str
     return package_open() + package + PACKAGE_CLOSE + "\n  at " + at + "\n"
 
 # The compiler's words where `pkg-config` is not on this machine, told at `at`
-# (`package_answer.unasked`, defect 249): `ffi_package` at the package's
+# (`package_answer.unasked`, defect 249): `ffi_pkgconfig` at the package's
 # string, and the way out under it. They were a bare line with no code, no
 # place and no note until that defect, and this net planted the bare line
 # until defect 328.
@@ -1133,11 +1133,11 @@ test "the four spellings name what is missing, where, and a header reached throu
 
     # A package's name may hold a backtick, so it runs to the line's last
     # close; the brief form carries its place at the head of its line.
-    ticked = absences("p.hero:9:26: error[ffi_package]: the package `a`b` is not installed on this machine\n")
+    ticked = absences("p.hero:9:26: error[ffi_pkgconfig]: the library `a`b` is not installed on this machine\n")
     assert ticked.len() == 1
     assert ticked[0].kind == "package"
     assert ticked[0].name == "a`b"
-    assert ticked[0].code == "ffi_package"
+    assert ticked[0].code == "ffi_pkgconfig"
     assert ticked[0].file == "p.hero"
     assert ticked[0].line == 9
 
@@ -1154,17 +1154,17 @@ test "the four spellings name what is missing, where, and a header reached throu
     # Defect 292's headline: a package installed, whose flags pkg-config
     # cannot give, a backtick in its name as well.
     installed = absences(
-        "p.hero:9:26: error[ffi_package]: the package `a`b` is installed, and pkg-config cannot give its flags\n"
+        "p.hero:9:26: error[ffi_pkgconfig]: the library `a`b` is installed, and pkg-config cannot give its flags\n"
     )
     assert installed.len() == 1
     assert installed[0].kind == "installed"
     assert installed[0].name == "a`b"
-    assert installed[0].code == "ffi_package"
+    assert installed[0].code == "ffi_pkgconfig"
     assert installed[0].line == 9
 
     # A line in no spelling of the compiler's names nothing: the old stub's
     # text, and a refusal clang gave on a header the machine has.
-    assert absences("x.hero:1:1: error[ffi_package]: pkg-config does not know raylib\n").len() == 0
+    assert absences("x.hero:1:1: error[ffi_pkgconfig]: pkg-config does not know raylib\n").len() == 0
     assert absences("error[ffi_return_type]: the header says `seven` returns `long`\n").len() == 0
 
 test "an absence the expectation or a mark makes the case's subject is judged, however its words change"
@@ -1227,8 +1227,8 @@ test "an absence the expectation or a mark makes the case's subject is judged, h
     package = package_said(package: "p", at: "c.hero:1:26")
     asking = Witnesses(
         named: absences(package),
-        reported: ["1:ffi_package"],
-        marked: ["c.hero:1:ffi_package"],
+        reported: ["1:ffi_pkgconfig"],
+        marked: ["c.hero:1:ffi_pkgconfig"],
         path: "c.hero"
     )
     tool = absences(tool_said(package: "p", at: "c.hero:1:26"))
@@ -1238,13 +1238,13 @@ test "an absence the expectation or a mark makes the case's subject is judged, h
     # A package said to be installed where the case pins it as not: the same
     # code at the same place, so the case tests that message and is judged.
     installed = absences(
-        "error[ffi_package]: the package `p` is installed, and pkg-config cannot give its flags\n  at c.hero:1:26\n"
+        "error[ffi_pkgconfig]: the library `p` is installed, and pkg-config cannot give its flags\n  at c.hero:1:26\n"
     )
     assert pinned(one: installed[0], seen: asking)
 
 test "a case binds its groups' headers and packages, read as the language writes a string"
     bound = binds(
-        "extern \"stdio.h\" package \"zz\"  #~ ffi_package\n    function f()\n\nextern \"a\\\"b.h\" link \"m\"\n    function g()\n# extern \"prose.h\" in a comment binds nothing\n"
+        "extern \"stdio.h\" pkgconfig \"zz\"  #~ ffi_pkgconfig\n    function f()\n\nextern \"a\\\"b.h\" link \"m\"\n    function g()\n# extern \"prose.h\" in a comment binds nothing\n"
     )
     assert bound.headers == ["stdio.h", "a\"b.h"]
     assert bound.packages == ["zz"]
@@ -1481,7 +1481,7 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
 
     # A package, as a stand-in `pkg-config` answers for it.
     package = "heroes-absence-328-no-machine-has"
-    asking = "extern \"stdio.h\" package \"" + package + "\"\n" + calling
+    asking = "extern \"stdio.h\" pkgconfig \"" + package + "\"\n" + calling
     answers = [
         "Package " + package + " was not found in the pkg-config search path.\nPackage '" + package + "' not found\n"
         "Package " + package + " was not found in the pkg-config search path.\r\nPackage '" + package + "' not found\r\n"
@@ -1565,7 +1565,7 @@ test "a package answering words the list holds builds and runs, and the words be
     assert !write_file(path: inc + "/pkgcase198.h", text: "#include \"pkgcase198_sys.h\"\n#include \"pkgcase198_joined.h\"\nstatic inline int seven198(void) { return SEVEN198 + NOUGHT198; }\n").is_err()
     assert !write_file(path: sys + "/pkgcase198_sys.h", text: "#define SEVEN198 7\n").is_err()
     assert !write_file(path: joined + "/pkgcase198_joined.h", text: "#define NOUGHT198 0\n").is_err()
-    asking = "extern \"pkgcase198.h\" package \"pkgcase198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
+    asking = "extern \"pkgcase198.h\" pkgconfig \"pkgcase198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
     bin = dir + "/bin-ok"
     admitted = "-I" + inc + " -isystem " + sys + " -isystem" + joined + " -pthread -Wl,--enable-new-dtags -Wl,--export-dynamic\n"
     assert !answering(dir: bin, answer: admitted).is_err()
@@ -1611,7 +1611,7 @@ test "an admitted -Wl,-rpath leaves a RUNPATH where readelf reads the binary, th
     inc = dir + "/inc"
     assert !shell.mkdir_all(inc).is_err()
     assert !write_file(path: inc + "/pkgtag198.h", text: "static inline int seven198(void) { return 7; }\n").is_err()
-    asking = "extern \"pkgtag198.h\" package \"pkgtag198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
+    asking = "extern \"pkgtag198.h\" pkgconfig \"pkgtag198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
     bin = dir + "/bin"
     assert !answering(dir: bin, answer: "-I" + inc + " -Wl,-rpath,/opt/heroes-198-rpath\n").is_err()
     path = dir + "/tag.hero"
@@ -1648,7 +1648,7 @@ test "a package whose admitted word carries @<file> or -l:<file> is refused, nam
     assert !shell.mkdir_all(inc).is_err()
     assert !write_file(path: inc + "/pkgv198.h", text: "static inline int seven198(void) { return 7; }\n").is_err()
     assert !write_file(path: dir + "/rsp.txt", text: "/opt/heroes-198-v\n").is_err()
-    asking = "extern \"pkgv198.h\" package \"pkgv198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
+    asking = "extern \"pkgv198.h\" pkgconfig \"pkgv198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
     shapes = [
         "-Wl,-rpath,@" + dir + "/rsp.txt"
         "-Wl,-rpath -Wl,@" + dir + "/rsp.txt"
@@ -1689,7 +1689,7 @@ test "a package whose admitted word carries @<file> or -l:<file> is refused, nam
 # library this machine does not have is told at the package's string,
 # `ffi_missing_library` as defect 224 tells a `link` group's, naming the
 # package and the word, where the build ended at exit 2 with the linker's text
-# (`package "libiodbc"` on this Mac). The answer is a `--libs` alone, one
+# (`pkgconfig "libiodbc"` on this Mac). The answer is a `--libs` alone, one
 # beside a `-L` that holds no such library, and the split `-l <name>` the list
 # joins.
 test "a package whose -l this machine has no library for is told at its string (defect 528)"
@@ -1700,7 +1700,7 @@ test "a package whose -l this machine has no library for is told at its string (
     dir = scratch + "/lacked528"
     empty = dir + "/lib"
     assert !shell.mkdir_all(empty).is_err()
-    asking = "extern \"stdlib.h\" package \"pkg528\"\n    function abs(n: i32) -> i32\n\nfunction main()\n    print(abs(-7))\n"
+    asking = "extern \"stdlib.h\" pkgconfig \"pkg528\"\n    function abs(n: i32) -> i32\n\nfunction main()\n    print(abs(-7))\n"
     shapes = [
         "-lheroes528absent"
         "-L" + empty + " -lheroes528absent"
@@ -1722,7 +1722,7 @@ test "a package whose -l this machine has no library for is told at its string (
         ).must()
         assert strings.contains(
             text: said,
-            needle: "error[ffi_missing_library]: this machine has no library called `heroes528absent` — the package `pkg528` answered with `-lheroes528absent`, and the linker looked\n  at " + path + ":1:27\n"
+            needle: "error[ffi_missing_library]: this machine has no library called `heroes528absent` — `pkg-config` answered for `pkg528` with `-lheroes528absent`, and the linker looked\n  at " + path + ":1:29\n"
         )
         assert !strings.contains(text: said, needle: "internal error")
         assert !shell.exists(path + ".out")
@@ -2189,13 +2189,13 @@ test "a name a linked library needs and nothing defines is told at its group or 
         scratch: scratch,
         compiler: compiler,
         path: path,
-        source: "extern \"top2365.h\" package \"ptop2365\"\n    function top_value() -> i32\n\nfunction main()\n    print(top_value())\n",
+        source: "extern \"top2365.h\" pkgconfig \"ptop2365\"\n    function top_value() -> i32\n\nfunction main()\n    print(top_value())\n",
         bin: bin,
         alone: false
     ).must()
     assert strings.contains(
         text: told,
-        needle: "error[ffi_missing_link]: the library `top2365`, which the package `ptop2365` answered with, needs `base_helper`, and nothing on the link line defines it\n  at " + path + ":1:28\n"
+        needle: "error[ffi_missing_link]: the library `top2365`, which `pkg-config` answered for `ptop2365`, needs `base_helper`, and nothing on the link line defines it\n  at " + path + ":1:30\n"
     )
     assert !strings.contains(text: told, needle: "internal error")
     assert !shell.exists(path + ".out")
@@ -2498,9 +2498,9 @@ test "a refused skip says why only where the compiler named a library"
 
 # **The premise the driver's sentence about `pkg-config` rests on**, owed its
 # test (`.claude/rules/module-shape.md`): that sentence names a package and no
-# file, so its witness finds the `package` group only in the files a suite
+# file, so its witness finds the `pkgconfig` group only in the files a suite
 # hands the compiler, a program's root, and every root holds a `main`. A
-# `package` group moved into a module would read as bound by nothing on a
+# `pkgconfig` group moved into a module would read as bound by nothing on a
 # machine with no `pkg-config`, and its case would go red there rather than
 # be skipped; this fires first, on every machine.
 test "every package group sits in a program's root, where the pkg-config witness reads"

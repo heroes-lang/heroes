@@ -849,3 +849,28 @@ test "junk past a head over its body is named as junk, and the body is read"
     assert codes(inside.diagnostics) == [eol, eol]
     assert codes(parse("function f() )\n\nfunction main()\n    print(1)\n").diagnostics) == ["missing_body"]
     assert codes(parse("function main()\n    if c )\n    print(1)\n").diagnostics) == ["missing_body"]
+
+# Panel 240: where an `extern` line's mark stands, a name that is no mark or a
+# string with none before it is told with both marks named (the spec-warden's
+# condition 3), the old word and the tool's own spellings with the certain fix
+# writing `pkgconfig`; junk past a mark and its string is any head's junk.
+test "the mark's place after an extern header names both marks, and the old word is told with its fix"
+    eol = "expected_end_of_line"
+    body = "\n    function zlibVersion() -> cstr\n"
+    rule = "after the header's name a group writes `link` or `pkgconfig` and its library's name in quotes, as `link \"sqlite3\"` or `pkgconfig \"raylib\"`, or ends the line there; "
+
+    for mark in [["system \"zlib\"", "a name (`system`)"], ["Package \"zlib\"", "a name (`Package`)"], ["pkgconf \"zlib\"", "a name (`pkgconf`)"], ["\"zlib\"", "a string (`\"zlib\"`)"]]
+        said = parse("extern \"zlib.h\" " + mark[0] + body).diagnostics
+        assert codes(said) == [eol]
+        assert said[0].message == "expected the end of the line after `extern \"zlib.h\"`, found " + mark[1] + " — " + rule + "its signatures go on the lines below it, one level deeper"
+
+    past = parse("extern \"zlib.h\" link \"z\" junk" + body).diagnostics
+    assert codes(past) == [eol]
+    assert past[0].message == "expected the end of the line after `extern \"zlib.h\" link \"z\"`, found a name (`junk`) — its signatures go on the lines below it, one level deeper"
+
+    for old in [["package", "old_package_word"], ["pkg-config", "pkgconfig_spelled"], ["pkg_config", "pkgconfig_spelled"], ["pkgConfig", "pkgconfig_spelled"], ["PkgConfig", "pkgconfig_spelled"], ["PKGCONFIG", "pkgconfig_spelled"], ["PKG-CONFIG", "pkgconfig_spelled"], ["Pkg_Config", "pkgconfig_spelled"]]
+        told = parse("extern \"zlib.h\" " + old[0] + " \"zlib\"" + body)
+        assert codes(told.diagnostics) == [old[1]]
+        assert told.diagnostics[0].fixes[0].replacement == "pkgconfig"
+        assert told.diagnostics[0].fixes[0].certainty == .certain
+        assert told.decls.len() == 1

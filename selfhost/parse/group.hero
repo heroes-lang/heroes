@@ -9,7 +9,7 @@
 # parser knows the word "group".
 #
 # What the head line carries is a header name and, optionally, where the
-# library lives — `link "sqlite3"` or `package "raylib"`, one of the two
+# library lives — `link "sqlite3"` or `pkgconfig "raylib"`, one of the two
 # and never both. An absolute path in either is the machine's answer and
 # not the program's, so it is refused with the span that wrote it; the head
 # line's two strings are read in `parse/group_head.hero` (`machine_locked`).

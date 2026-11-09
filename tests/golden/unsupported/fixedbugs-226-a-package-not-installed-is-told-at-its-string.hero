@@ -6,7 +6,7 @@
 # 188's spec-warden). Beside `ffi-records-only-group-cannot-claim-its-package`,
 # whose group holds only a record.
 
-extern "stdio.h" package "fixedbugs-226-a-package-no-machine-has"  #~ ffi_package
+extern "stdio.h" pkgconfig "fixedbugs-226-a-package-no-machine-has"  #~ ffi_pkgconfig
     function puts(s: cstr lent) -> i32
 
 function main()

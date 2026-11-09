@@ -36,7 +36,7 @@
 # floor. The subscript stays on an array-typed lvalue so UBSan's `array-bounds`
 # keeps its one remaining view of it.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Matrix
         m0: f32
         m4: f32

@@ -3,10 +3,10 @@
 #
 #     heroes run examples/raylib/main.hero
 #
-# **This program is the acceptance test for two milestones.** `package "raylib"`
+# **This program is the acceptance test for two milestones.** `pkgconfig "raylib"`
 # is M-ffi-ladder's: raylib is the ladder's first third-party library, and the
 # rung was unclimbable for a milestone because the language had no way to say
-# where a header lives. `package` says it the same way everywhere — `-I`, `-L`
+# where a header lives. `pkgconfig` says it the same way everywhere — `-I`, `-L`
 # and `-lraylib` here, `-lGL -lX11 -lm -ldl` on Linux, frameworks where
 # frameworks are the answer — from one line with no platform name in it.
 #
@@ -51,11 +51,11 @@
 # program runs unattended on a headless runner in three configurations, so the
 # binding it exercises must need no screen. `ColorToInt`, `ColorAlpha`,
 # `GetSplinePointLinear` and `CheckCollisionPointRec` are all pure computation
-# over structs. The window *was* opened by hand from this same `package` line,
-# and that is recorded in `docs/panel/050` rather than asserted by a
-# test no runner can run.
+# over structs. The window *was* opened by hand from this same line, its mark
+# spelled `package` then, and that is recorded in `docs/panel/050` rather than
+# asserted by a test no runner can run.
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     # raylib's own structs, at raylib's own widths. Four `unsigned char` for a
     # colour, two `float` for a point — a Heroes `i64` anywhere here would be a
     # different struct, and the field assertions are what say so.

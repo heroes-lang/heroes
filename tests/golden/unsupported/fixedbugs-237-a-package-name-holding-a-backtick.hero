@@ -8,7 +8,7 @@
 # head of the message's first line now, and the diagnostic lands on the
 # package string.
 
-extern "stdio.h" package "fixedbugs-237-a`b"  #~ ffi_package
+extern "stdio.h" pkgconfig "fixedbugs-237-a`b"  #~ ffi_pkgconfig
     function puts(s: cstr lent) -> i32
 
 function main()

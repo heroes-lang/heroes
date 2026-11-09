@@ -36,10 +36,10 @@ extern "stdio.h" link "LPT¹"  #~ unwritable_name
 extern "stdio.h" link "CONOUT$"  #~ unwritable_name
     function d8() -> i32
 
-extern "stdio.h" package "conin$"  #~ unwritable_name
+extern "stdio.h" pkgconfig "conin$"  #~ unwritable_name
     function d9() -> i32
 
-extern "stdio.h" package "COM³"  #~ unwritable_name
+extern "stdio.h" pkgconfig "COM³"  #~ unwritable_name
     function d10() -> i32
 
 extern "com0.h"
@@ -54,7 +54,7 @@ extern "COM⁴.h"
 extern "CONERR$.h"
     function d14() -> i32
 
-extern "stdio.h" package "CLOCK$"
+extern "stdio.h" pkgconfig "CLOCK$"
     function d15() -> i32
 
 function main()

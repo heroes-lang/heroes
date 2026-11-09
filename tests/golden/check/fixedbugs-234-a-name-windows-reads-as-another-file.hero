@@ -44,7 +44,7 @@ extern "stdio.h" link "nul"  #~ unwritable_name
 extern "stdio.h" link "ab:c"  #~ machine_locked_path
     function w11() -> i32
 
-extern "stdio.h" package "zz/../x"  #~ machine_locked_path
+extern "stdio.h" pkgconfig "zz/../x"  #~ machine_locked_path
     function w12() -> i32
 
 extern "../i2.h"

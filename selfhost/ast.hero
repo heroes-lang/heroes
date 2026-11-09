@@ -437,7 +437,7 @@ record Case
 # this is a variant and not two fallibles.
 #
 # The distinction is who answers the question. `link` is the program telling the
-# linker a name it already knows. `package` is the program asking the MACHINE
+# linker a name it already knows. `pkgconfig` is the program asking the MACHINE
 # where something is and what else it needs, and getting back a different answer
 # on every platform — frameworks on macOS, `-lGL -lX11` on Linux — from one
 # spelling that never changes (panel 049).
@@ -446,11 +446,11 @@ variant Library
     # flag, so no `.hero` file can hand clang an arbitrary argument.
     link
         name: token.Span
-    # `package "raylib"` — the machine is asked. What comes back is validated
+    # `pkgconfig "raylib"` — the machine is asked, through `pkg-config`. What comes back is validated
     # against a closed set before it reaches clang, because a package file is
     # input this program did not write: Go shipped the same idea without that
     # check and it became CVE-2018-6574.
-    package
+    pkgconfig
         name: token.Span
 
 ## Declarations proper
@@ -691,8 +691,8 @@ test "a group's record carries what the head line said"
             assert r.tag.is_err()
 
             match r.library.must()
-                .link l  => assert l.name == zero
-                .package => assert false
+                .link l    => assert l.name == zero
+                .pkgconfig => assert false
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
 
 test "the operators are the language's own, spelled once"

@@ -91,7 +91,7 @@ function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag
                 if written.len() > name.len() && names_library(line: line, name: written)
                     name @ written
                     span @ ok(l.name)
-            .package => continue
+            .pkgconfig => continue
 
     if span.is_err()
         return fail(code: "none", msg: "no group names this library")
@@ -101,7 +101,7 @@ function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag
         span: span.must()
     )
     d.notes @ d.notes.push(
-        "install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `package \"" + name + "\"` asks the machine for both its headers and its libraries"
+        "install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `pkgconfig \"" + name + "\"` asks the machine for both its headers and its libraries"
     )
     return ok(d)
 
@@ -249,7 +249,7 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
         span: span.must()
     )
     d.notes @ d.notes.push(
-        "the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `package` finds it for you where the library ships a `.pc`, and `CPATH` works too"
+        "the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `pkgconfig` finds it for you where the library ships a `.pc`, and `CPATH` works too"
     )
     return ok(d)
 
@@ -264,7 +264,7 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
 #
 # **The marker is read at the head of the text's first line and nowhere else**
 # (defect 237, 2026-10-03). It was read anywhere on any line, the name cut at
-# its first backtick and every marker on the line replaced, so `package "a`b"`
+# its first backtick and every marker on the line replaced, so `pkgconfig "a`b"`
 # matched no group and the driver's message reached the author raw, marker
 # and all, at exit 1 with no code and no place, and an answer holding the
 # marker's text was quoted with *the package* in its place; panel 188's stage
@@ -281,8 +281,8 @@ function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line:
 
     if span.is_err()
         return fail(code: "none", msg: "no group asked for this package")
-    headline = "the package " + line.slice(from: ffi_lookup.PACKAGE.len(), to: line.len())
-    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_package", message: headline, span: span.must())
+    headline = "the library " + line.slice(from: ffi_lookup.PACKAGE.len(), to: line.len())
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_pkgconfig", message: headline, span: span.must())
     index: i64 @= 0
 
     for one in ffi_lookup.lines(text: stderr)
@@ -301,7 +301,7 @@ function first_line(text: str, line: str) -> bool
 ## Tests
 
 test "the linker's two spellings, the library, the header, the package"
-    text = "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"SDL.h\" link \"sdl2\"\n    function SDL_Init(flags: u32) -> i64\n\nextern \"raylib.h\" package \"raylib\"\n    record Color\n        r: i64\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(sqrt(2.0) + SDL_Init(flags: 1).to_f64())\n"
+    text = "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"SDL.h\" link \"sdl2\"\n    function SDL_Init(flags: u32) -> i64\n\nextern \"raylib.h\" pkgconfig \"raylib\"\n    record Color\n        r: i64\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(sqrt(2.0) + SDL_Init(flags: 1).to_f64())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -350,15 +350,15 @@ test "the linker's two spellings, the library, the header, the package"
 
     # The package: headline keeps its sentence, later lines become
     # notes, the marker becomes plain words.
-    stderr = "heroes-ffi-package `raylib` is not installed on this machine\n  install raylib with your package manager\n  or pass --library and --include yourself\n"
-    line = "heroes-ffi-package `raylib` is not installed on this machine"
+    stderr = "heroes-ffi-pkgconfig `raylib` is not installed on this machine\n  install raylib with your package manager\n  or pass --library and --include yourself\n"
+    line = "heroes-ffi-pkgconfig `raylib` is not installed on this machine"
     pk = package_problem(s, parsed.decls, stderr: stderr, line: line)
-    assert pk.must().code == "ffi_package"
+    assert pk.must().code == "ffi_pkgconfig"
     assert source.span_text(s, pk.must().span) == "\"raylib\""
-    assert pk.must().message == "the package `raylib` is not installed on this machine"
+    assert pk.must().message == "the library `raylib` is not installed on this machine"
     assert pk.must().notes.len() == 2
     assert pk.must().notes[0] == "install raylib with your package manager"
-    assert package_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-package `sdl3` missing").is_err()
+    assert package_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-pkgconfig `sdl3` missing").is_err()
 
 # Lines as clang printed them in lane h158's first pass (2026-10-02, this Mac).
 test "a header no group names is asked of the stack, and one a group names keeps its words"
@@ -441,10 +441,10 @@ test "a header clang could not find is read whole, a quote or an escaped code po
 # quote, a name that is the marker's own text, an answer holding the marker,
 # the marker on a later line, and on a line clang wrote.
 test "the driver's package line is read at its head, whatever a name or an answer holds (defect 237)"
-    text = "extern \"stdio.h\" package \"a`b\"\n    function f1() -> i32\n\nextern \"stdio.h\" package \"a\"\n    function f2() -> i32\n\nextern \"stdio.h\" package \"x'y\"\n    function f3() -> i32\n\nextern \"stdio.h\" package \"heroes-ffi-package\"\n    function f4() -> i32\n\nfunction main()\n    print(f1() + f2() + f3() + f4())\n"
+    text = "extern \"stdio.h\" pkgconfig \"a`b\"\n    function f1() -> i32\n\nextern \"stdio.h\" pkgconfig \"a\"\n    function f2() -> i32\n\nextern \"stdio.h\" pkgconfig \"x'y\"\n    function f3() -> i32\n\nextern \"stdio.h\" pkgconfig \"heroes-ffi-pkgconfig\"\n    function f4() -> i32\n\nfunction main()\n    print(f1() + f2() + f3() + f4())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    tick = "heroes-ffi-package `a`b` is not installed on this machine"
+    tick = "heroes-ffi-pkgconfig `a`b` is not installed on this machine"
     said = package_problem(
         s,
         parsed.decls,
@@ -452,24 +452,24 @@ test "the driver's package line is read at its head, whatever a name or an answe
         line: tick
     ).must()
     assert source.span_text(s, said.span) == "\"a`b\""
-    assert said.message == "the package `a`b` is not installed on this machine"
+    assert said.message == "the library `a`b` is not installed on this machine"
     assert said.notes[0] == "pkg-config said: Package a`b was not found"
-    quote = "heroes-ffi-package `x'y` is not installed on this machine"
+    quote = "heroes-ffi-pkgconfig `x'y` is not installed on this machine"
     assert source.span_text(s, package_problem(s, parsed.decls, stderr: quote, line: quote).must().span) == "\"x'y\""
-    marker = "heroes-ffi-package `heroes-ffi-package` is not installed on this machine"
+    marker = "heroes-ffi-pkgconfig `heroes-ffi-pkgconfig` is not installed on this machine"
     named = package_problem(s, parsed.decls, stderr: marker, line: marker).must()
-    assert source.span_text(s, named.span) == "\"heroes-ffi-package\""
-    assert named.message == "the package `heroes-ffi-package` is not installed on this machine"
-    answer = "heroes-ffi-package `a` answered with `heroes-ffi-package `a`b` is`, which this compiler does not pass on"
+    assert source.span_text(s, named.span) == "\"heroes-ffi-pkgconfig\""
+    assert named.message == "the library `heroes-ffi-pkgconfig` is not installed on this machine"
+    answer = "heroes-ffi-pkgconfig `a` answered with `heroes-ffi-pkgconfig `a`b` is`, which this compiler does not pass on"
     quoted = package_problem(s, parsed.decls, stderr: answer, line: answer).must()
     assert source.span_text(s, quoted.span) == "\"a\""
-    assert quoted.message == "the package `a` answered with `heroes-ffi-package `a`b` is`, which this compiler does not pass on"
-    later = "heroes-ffi-package `a` is not installed on this machine\nheroes-ffi-package `a`b` is not installed on this machine\n"
+    assert quoted.message == "the library `a` answered with `heroes-ffi-pkgconfig `a`b` is`, which this compiler does not pass on"
+    later = "heroes-ffi-pkgconfig `a` is not installed on this machine\nheroes-ffi-pkgconfig `a`b` is not installed on this machine\n"
     assert package_problem(
         s,
         parsed.decls,
         stderr: later,
-        line: "heroes-ffi-package `a`b` is not installed on this machine"
+        line: "heroes-ffi-pkgconfig `a`b` is not installed on this machine"
     ).is_err()
-    clang = "p.c:3:1: error: heroes-ffi-package `a` is not installed"
+    clang = "p.c:3:1: error: heroes-ffi-pkgconfig `a` is not installed"
     assert package_problem(s, parsed.decls, stderr: clang, line: clang).is_err()

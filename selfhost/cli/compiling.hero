@@ -113,7 +113,7 @@ function search_words(c: Compiling) -> [str]
 # under, with no `--include` directory, which is the program's flag and
 # none of the package's, and the package's root where the program's root
 # stands, so its search is the runtime's directory, the package's own
-# `package` groups' answer, which `under` already holds narrowed to the
+# `pkgconfig` groups' answer, which `under` already holds narrowed to the
 # unit's headers (`settled.unit_words`), and its root, and nothing of the
 # program's or of another package. A header the package ships beside its
 # modules is found there without `--include`, a file at its root named
@@ -489,7 +489,7 @@ test "a fetched package's unit reads its own header and the runtime's, never the
 # **A package's header reaching a file outside its root is refused with the
 # path, before anything compiles** (C2): by a relative climb, by `#embed`
 # and by `__has_include`, each a row of the `-M` listing; a header of the
-# machine's that the package's own `package` answer names passes.
+# machine's that the package's own `pkgconfig` answer names passes.
 test "a fetched package's header that reads a file outside its root is refused with its path (panel 235's C2)"
     root = "build/selftest-compiling-package-outside"
     assert !process.remove_tree(root).is_err()

@@ -2,7 +2,7 @@
 # §4.17; defect 528, 2026-10-09): told at the package's string as
 # `ffi_missing_library`, the class defect 224 gives a `link` group's name the
 # linker cannot find, where it was exit 2 and the linker's text. Measured on
-# this Mac: `package "libiodbc"`, whose `.pc` answers `-I/usr/include -liodbc
+# this Mac: `pkgconfig "libiodbc"`, whose `.pc` answers `-I/usr/include -liodbc
 # -liodbcinst -ldl` on a machine with no `iodbc`, ended at *internal error:
 # linking failed: ld: library 'iodbc' not found*.
 #
@@ -161,7 +161,7 @@ function missing(message: str, s: source.Source, decls: [ast.Decl], build: str, 
             continue
 
         match group.must()
-            .package pk =>
+            .pkgconfig pk =>
                 package = emit_externs.unquoted(s, span: pk.name)
 
                 if !asked[package].is_err()
@@ -205,16 +205,16 @@ function told(package: str, lacked: Lacked, span: token.Span) -> diag.Diagnostic
     if !lacked.found
         unsupported: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_missing_library",
-            message: "the package `" + pkg + "` answered with `" + answered + "`, and this machine's linker does not take a framework — `-framework` is macOS's",
+            message: "`pkg-config` answered for `" + pkg + "` with `" + answered + "`, and this machine's linker does not take a framework — `-framework` is macOS's",
             span: span
         )
         unsupported.notes @ unsupported.notes.push(
-            "a `.pc` answering `-framework` suits macOS, where a framework bundles a library and its headers; on this machine the package's answer does not fit — use one built for this platform, or name the library it wraps directly with `link`"
+            "a `.pc` answering `-framework` suits macOS, where a framework bundles a library and its headers; on this machine that answer does not fit — use one built for this platform, or name the library it wraps directly with `link`"
         )
         return unsupported
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_library",
-        message: "this machine has no " + lacked.kind + " called `" + shell_split.shown(lacked.name, keep_lines: false) + "` — the package `" + pkg + "` answered with `" + answered + "`, and the linker looked",
+        message: "this machine has no " + lacked.kind + " called `" + shell_split.shown(lacked.name, keep_lines: false) + "` — `pkg-config` answered for `" + pkg + "` with `" + answered + "`, and the linker looked",
         span: span
     )
     way: str @= ", or name the library directly with `link` and pass `--library <dir>`"
@@ -254,8 +254,8 @@ test "what a refused link reports missing is read from the words the link carrie
     # The words a diagnostic is told with: the package, the kind, the words.
     d = told(package: "libiodbc", lacked: gnu, span: token.Span(start: 0, end: 0))
     assert d.code == "ffi_missing_library"
-    assert d.message == "this machine has no library called `iodbc` — the package `libiodbc` answered with `-liodbc`, and the linker looked"
-    assert told(package: "fw", lacked: framed, span: token.Span(start: 0, end: 0)).message == "this machine has no framework called `Metal2` — the package `fw` answered with `-framework Metal2`, and the linker looked"
+    assert d.message == "this machine has no library called `iodbc` — `pkg-config` answered for `libiodbc` with `-liodbc`, and the linker looked"
+    assert told(package: "fw", lacked: framed, span: token.Span(start: 0, end: 0)).message == "this machine has no framework called `Metal2` — `pkg-config` answered for `fw` with `-framework Metal2`, and the linker looked"
     assert named_library("-lz") == "z"
     assert named_library("-l") == ""
     assert named_library("-L/x") == ""
@@ -298,6 +298,6 @@ test "a -framework a non-ld64 linker refuses is read from the carried word and t
     # Told at exit 1 as macOS's, no `link` way out, and not as an absence.
     said = told(package: "pkg533", lacked: gnu.must(), span: token.Span(start: 0, end: 0))
     assert said.code == "ffi_missing_library"
-    assert said.message == "the package `pkg533` answered with `-framework HeroesAbsent533`, and this machine's linker does not take a framework — `-framework` is macOS's"
+    assert said.message == "`pkg-config` answered for `pkg533` with `-framework HeroesAbsent533`, and this machine's linker does not take a framework — `-framework` is macOS's"
     assert said.notes.len() == 1
-    assert said.notes[0] == "a `.pc` answering `-framework` suits macOS, where a framework bundles a library and its headers; on this machine the package's answer does not fit — use one built for this platform, or name the library it wraps directly with `link`"
+    assert said.notes[0] == "a `.pc` answering `-framework` suits macOS, where a framework bundles a library and its headers; on this machine that answer does not fit — use one built for this platform, or name the library it wraps directly with `link`"

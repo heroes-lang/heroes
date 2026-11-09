@@ -3,7 +3,7 @@
 # ratified 2026-11-07; defect 2351, 2026-11-08; design.md §4.19, §1.12).
 #
 # **A fetched package's unit searches the runtime's directory, then the
-# folders its own `package` groups' answer names, then its own root, and
+# folders its own `pkgconfig` groups' answer names, then its own root, and
 # nothing of the program's** (`compiling.of_package`): every probe of its
 # headers and its compile alike, since the probes are planned per header list
 # and root (`cli/probing.hero`) and the units take their words here
@@ -273,7 +273,7 @@ function refusal(s: source.Source, decls: [ast.Decl], modules: [str], root: str,
     if code == "unread" && said.len() > 0
         d @ diag.new_diagnostic(
             code: "ffi_missing_header",
-            message: "`" + said + "` is not found where a unit of the fetched package at `" + root + "` looks for a header: the package's own root, the runtime's directory, the toolchain's own and the folders its `package` groups' answer names",
+            message: "`" + said + "` is not found where a unit of the fetched package at `" + root + "` looks for a header: the package's own root, the runtime's directory, the toolchain's own and the folders its `pkgconfig` groups' answer names",
             span: at
         )
     else if code == "unread"
@@ -295,7 +295,7 @@ function refusal(s: source.Source, decls: [ast.Decl], modules: [str], root: str,
 
 # What every refusal of C2's says under it.
 constant NOTE: str
-    "a fetched package's unit searches the runtime's directory, the folders its own `package` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `package` group names, installed with its development files"
+    "a fetched package's unit searches the runtime's directory, the folders its own `pkgconfig` groups' answer names and its own root, and reads nothing else: never the program's folders, an `--include` directory or another package's files (panel 235's R9, its C1 and C2). A header it needs ships inside the package, or is a library's that a `pkgconfig` group names, installed with its development files"
 
 # The span of the first declaration of `modules` a group names a header for;
 # of their first declaration where none is one, a unit reading a header of

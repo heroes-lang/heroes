@@ -9,7 +9,7 @@
 record Ordinary
     xs: i32[4]              #~ fixed_outside_a_group
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record TwoDimensional
         grid: i32[2][3]     #~ ffi_field_type
     record AutomationEvent

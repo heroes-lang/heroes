@@ -1,0 +1,20 @@
+# The tool is spelled `pkg-config`, which is three tokens here, and the mark
+# is one word, `pkgconfig` (panel 240). The tool's spelling and the names
+# beside it are told once each with the certain fix that writes the mark, and
+# the program the fixes write checks clean.
+
+extern "stdlib.h" pkg-config "zlib"  #~ pkgconfig_spelled
+    function abs(n: i32) -> i32
+
+extern "ctype.h" pkg_config "zlib"  #~ pkgconfig_spelled
+    function toupper(c: i32) -> i32
+
+extern "math.h" pkgConfig "zlib"  #~ pkgconfig_spelled
+    function fabs(x: f64) -> f64
+
+extern "wctype.h" PkgConfig "zlib"  #~ pkgconfig_spelled
+    function iswdigit(c: i32) -> i32
+
+function main()
+    print(abs(n: -1) + toupper(c: 97) + iswdigit(c: 48))
+    print(fabs(x: -1.5))

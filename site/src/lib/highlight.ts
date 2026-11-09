@@ -431,7 +431,7 @@ export function tokenize(source: string): Token[] {
   /**
    * Where the parser reads a contextual word as a mark, and nowhere else
    * (spec § 1's `Use`, § 13's `Extern`, `Member` and `CParam`): `as` on a
-   * `use` line after its path; `link` or `package` on an `extern` line after
+   * `use` line after its path; `link` or `pkgconfig` on an `extern` line after
    * its header's string; `rest` and `zero` together, as the words `rest:
    * zero` that end a call's list (spec § 13, `selfhost/parse/rest_words.hero`):
    * after a `(` or a `,` or opening a line, and before a `,`, a `)`, a comment
@@ -465,7 +465,7 @@ export function tokenize(source: string): Token[] {
   const markAt = (word: string, start: number, end: number): boolean => {
     if (!marks.has(word)) return false;
     if (word === 'as') return lineHead === 'use' && source[start - 1] === ' ' && previous !== null && previous.kind === 'ident';
-    if (word === 'link' || word === 'package') return lineHead === 'extern' && previous !== null && previous.kind === 's';
+    if (word === 'link' || word === 'pkgconfig') return lineHead === 'extern' && previous !== null && previous.kind === 's';
     if (word === 'rest') return '(,\n'.includes(charBefore(start)) && /^ *: *zero\b *(?:[,)#]|$)/.test(restOfLine(end));
     if (word === 'zero') {
       return (

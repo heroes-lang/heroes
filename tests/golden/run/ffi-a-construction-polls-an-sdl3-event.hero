@@ -21,7 +21,7 @@
 # members of the union and still polls a user event back through two of them,
 # and it builds and prints the same five lines on all three.
 
-extern "SDL3/SDL.h" package "sdl3"
+extern "SDL3/SDL.h" pkgconfig "sdl3"
     record SDL_CommonEvent
         type: u32
         reserved: u32

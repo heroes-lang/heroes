@@ -11,7 +11,7 @@
 # SHA-512's 64 bytes, where the out-count read as an extent wrote past it
 # (the sitting's critic); and a copy of the array taken before the call keeps
 # what it held.
-extern "fixedbugs-396-openssl.h" package "libcrypto"
+extern "fixedbugs-396-openssl.h" pkgconfig "libcrypto"
     constant SHA256_DIGEST_LENGTH: i64
     constant EVP_MAX_MD_SIZE: i64
     record Sha256Ctx tag SHA256state_st partial

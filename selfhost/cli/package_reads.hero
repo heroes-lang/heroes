@@ -1,5 +1,5 @@
 # Every file a fetched package's unit reads lies under the package's root,
-# the runtime, the toolchain's own directories or a folder its own `package`
+# the runtime, the toolchain's own directories or a folder its own `pkgconfig`
 # groups' answer names (panel 235's R9, its C2, ratified 2026-11-07, and the
 # coordinator's ruling of that day; design.md §4.19, §1.12), judged on
 # clang's `-M` listing of what the unit's headers open, before any compile.
@@ -24,7 +24,7 @@
 # `-fsanitize-system-ignorelist`, its resource directory's
 # `asan_ignorelist.txt`, which the `run` suite's `--sanitize` leg met on
 # defect 2351's cases); and the `-I` and `-F` folders of
-# the `pkg-config` answer for the package's own `package` groups, which are
+# the `pkg-config` answer for the package's own `pkgconfig` groups, which are
 # the machine's (the coordinator's ruling). Nothing else: not the program's
 # root, not an `--include` directory, not another package.
 #
@@ -327,7 +327,7 @@ function judged(own: Own, root: str, runtime: str, package_flags: [str], listing
         return ok()
     return fail(
         code: CODE,
-        msg: "a unit of the package at `" + root + "` reads `" + far.join("`, `") + "`, outside its root, the runtime, the toolchain's own directories and the folders its `package` groups' answer names: a fetched package's headers read only the package's own files"
+        msg: "a unit of the package at `" + root + "` reads `" + far.join("`, `") + "`, outside its root, the runtime, the toolchain's own directories and the folders its `pkgconfig` groups' answer names: a fetched package's headers read only the package's own files"
     )
 
 ## Tests

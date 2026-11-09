@@ -314,3 +314,34 @@ could never list as a known change.
   (CLAUDE.md § Hard stops).
 - The landing follows in its own commit, after this file and the decision
   issue, as CLAUDE.md § 4 asks.
+
+## Author's verdict
+
+**Ratified, R1 to R9 as adopted, 2026-11-09**: the author's answer at about
+23:50 the same evening, put with the coordinator's recommendation, *ratify R1 to R9*, recorded
+as a reading (`.claude/rules/records.md` § And the record says whose idea it
+was). What the yes settles: every resolution as adopted, the spelling `pkgconfig`,
+the refusals, the seed and the count in the landing's one commit, the internal
+names a task. What it does not: the predictions below, scored or left open on
+their own clocks. The sitting's decision issue is filed closed with the
+landing's commit.
+
+## Scored at the landing, 2026-11-09
+
+- **The spec-warden's W1: falsified.** The landing's first `--refresh` read T1
+  at **10,904** real on `claude-opus-5`, above 10,900, where W1 had registered
+  10,890 to 10,896 and *above 10,900 falsifies it, and the row then owes a named
+  removal*. So the removal paid in the same landing: R2's sentence lands without
+  *and what else it needs*, which states a behaviour of `pkg-config`'s rather
+  than a rule of the language, and a second `--refresh` read **10,898** real,
+  8314 vendored (row 8314 of `docs/measurements/010-spec-budget-ledger.md`).
+  What it measured: `pkgconfig` costs the reader's tokeniser more than the two
+  vendored tables said, the vendored −6 being a real +4.
+- **The compiler-engineer's prediction** (panel 187's R2 over the frozen
+  recovery corpus reads no finding caused by the rename): **not scored**, since
+  `heroes mutate --recovery` was outside the landing's suites; it is checkable
+  at the next run of the recovery plan and stands open until then.
+- **The spec-warden's W2** (blind readers write `pkgconfig "libcurl"`):
+  unscored, as registered; it needs a paid reader run.
+- **The historian's prediction** (no program needing a second lookup mechanism
+  by M-core-packages' `crypto/sha256` tag): open until that tag.

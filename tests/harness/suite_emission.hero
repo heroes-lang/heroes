@@ -501,7 +501,7 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
 # words are the fewest that decide whether C11 with the compiler's dialect
 # parses and type-checks, `-std=gnu11 -fsigned-char`, its warnings off,
 # since the compiler's own warning words are its build's to hold and a
-# second copy of them here would drift; a group's `package` is asked of
+# second copy of them here would drift; a group's `pkgconfig` is asked of
 # `pkg-config`, as the compiler asks it, and the root of each package a fetch
 # placed beside the program, and each folder a `path` entry of its
 # catalogue names, is searched after the program's folder, as the compiler
@@ -609,7 +609,7 @@ function placed_roots(scratch: str, source: str) -> [str]
 
     return out
 
-# The `pkg-config --cflags` of every `package` a module beside the program
+# The `pkg-config --cflags` of every `pkgconfig` a module beside the program
 # names, its own directory being where its modules are; a package
 # `pkg-config` does not know adds nothing, and the header it would have found
 # is then the machine's lack.
@@ -630,8 +630,8 @@ function package_flags(scratch: str, source: str) -> [str]
             continue
 
         for row in strings.lines(text.must())
-            if strings.starts_with(text: row, prefix: "extern ") && strings.contains(text: row, needle: " package \"")
-                name = strings.split_text(text: strings.split_text(text: row, separator: " package \"")[1], separator: "\"")[0]
+            if strings.starts_with(text: row, prefix: "extern ") && strings.contains(text: row, needle: " pkgconfig \"")
+                name = strings.split_text(text: strings.split_text(text: row, separator: " pkgconfig \"")[1], separator: "\"")[0]
                 asked = shell.attempted(
                     scratch: shell.own_scratch(),
                     program: "pkg-config",

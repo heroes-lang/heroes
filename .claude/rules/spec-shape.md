@@ -151,7 +151,7 @@ the text is the only thing that changes); **then the move, measured alone**;
 **then each merge and each addition, measured alone** (`heroes measure <draft>`
 counts any file offline); **then the real count** (`heroes measure
 spec/heroes-spec.md --refresh`, whose output is pasted into
-`tests/harness/suite_spec.hero` and `selfhost/cli/measure.hero` in one commit,
+`tests/harness/suite_spec.hero` and `selfhost/measure/pinned.hero` in one commit,
 with the ledger's row). A change to a fence is compiled before it is written:
 an example in the one document a reader is told to trust is a claim, and an
 unexecuted claim expires in silence.

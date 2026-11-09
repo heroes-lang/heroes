@@ -143,7 +143,7 @@ function emit_for(target: emit_decls.BuildTarget, p: containers.Program, c: stat
 # source — wrote it to disk, and then emitted 157 translation units
 # that made it redundant. What the driver actually needs from here on
 # that path is the GATE (a refusal is program-wide) and the `link` and
-# `package` names, and neither is in the text.
+# `pkgconfig` names, and neither is in the text.
 #
 # `--emit-c`, `heroes test` and the seed still take `text: true`: they
 # ARE the artifact path, and R1 says it stays one fused unit.

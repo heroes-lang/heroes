@@ -25,7 +25,7 @@
 # head's own line, where it pointed at the group's first member (panel 188's
 # spec-warden).
 
-extern "raylib.h" package "definitely-not-a-real-package-062"   #~ ffi_package
+extern "raylib.h" pkgconfig "definitely-not-a-real-package-062"   #~ ffi_pkgconfig
     record Color
         r: u8
         g: u8

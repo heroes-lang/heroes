@@ -3,4 +3,4 @@ error[ffi_missing_header]: `fixedbugs-232-<U+E000>.h` is not on this machine's i
      |
   14 |     function seven() -> i32  #~ ffi_missing_header
      |     ^^^^^^^^^^^^^^^^^^^^^^^
-  note: the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `package` finds it for you where the library ships a `.pc`, and `CPATH` works too
+  note: the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `pkgconfig` finds it for you where the library ships a `.pc`, and `CPATH` works too

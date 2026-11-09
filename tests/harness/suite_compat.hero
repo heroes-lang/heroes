@@ -129,6 +129,7 @@ function known() -> [Known]
         Known(code: "lend_kept", written: "selfhost/lend_errors.hero", change: "a C parameter without `lent` keeps what it is handed (M-declared-extents step 24, e71d57ff9)")
         Known(code: "callback_name", written: "selfhost/value_errors.hero", change: "a function standing for a type names a pair of one type as the type does (debd83a12)")
         Known(code: "discarded_failure", written: "selfhost/discard_errors.hero", change: "`_ =` no longer drops a failure (M-discard-refusal step 3, 560f4b633)")
+        Known(code: "old_package_word", written: "selfhost/head_package.hero", change: "a group names its library for `pkg-config` with `pkgconfig`, a package being only code others publish (panel 240)")
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?

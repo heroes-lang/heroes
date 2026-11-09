@@ -29,7 +29,7 @@ not measured:
 | `time` | `time.h`: `time`, `timespec_get`, `strftime`, `gmtime_r`, `nanosleep` | writable, POSIX; `tv_nsec: i64` unmeasured on Windows |
 | `math` | `math.h` `link "m"` | writable |
 | `database/sql` | `sqlite3.h`, prepare/step; blobs through `bytes` | writable |
-| `crypto/sha256`, `crypto/hmac` | `package "libcrypto"` | writable, Mac and Linux |
+| `crypto/sha256`, `crypto/hmac` | `pkgconfig "libcrypto"` | writable, Mac and Linux |
 | `net/http` client | libcurl, two modules for `curl_easy_setopt`'s two value types (panel 094 R4) | writable |
 | `net` | a runtime part, or one file per platform — the sitting's questions (iv) and (vi) | per platform only |
 | `net/http` server | Heroes alone over `net`, `io`, `strings` | writable, one thread |
@@ -86,7 +86,7 @@ observation that opened M-reflection-verdict's question (iii); the two halves ar
 homed apart because `docs/work/SCHEDULED.md (retired 2026-09-12)`'s second-contextual-word item already
 sits here, moved from M-declared-freer on 2026-09-07). The language has six words
 a program writes after the thing they modify and the compiler reads — `owned`,
-`tag`, `partial`, `link`, `package`, `as` — every one a contextual word matched by
+`tag`, `partial`, `link`, `package` (`pkgconfig` since panel 240), `as` — every one a contextual word matched by
 its text in `selfhost/parse/` and none in `selfhost/keywords.hero`'s table of 21,
 every one gated to one position, every one carrying a check: `owned` types the
 probe `char *` and refuses the program's own call of the freer, `partial` refuses

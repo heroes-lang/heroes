@@ -13,31 +13,31 @@
 # `--` before the name and refuses the `-` as well, resting on no `pkg-config`
 # (Go's `SafeArg`), so the refusal is no thesis rule.
 
-extern "stdio.h" package "zlib sqlite3"    #~ unwritable_name
+extern "stdio.h" pkgconfig "zlib sqlite3"    #~ unwritable_name
     function p1() -> i32
 
-extern "stdio.h" package "zlib,sqlite3"    #~ unwritable_name
+extern "stdio.h" pkgconfig "zlib,sqlite3"    #~ unwritable_name
     function p2() -> i32
 
-extern "stdio.h" package "zlib >= 99"    #~ unwritable_name
+extern "stdio.h" pkgconfig "zlib >= 99"    #~ unwritable_name
     function p3() -> i32
 
-extern "stdio.h" package "zlib>=1"    #~ unwritable_name
+extern "stdio.h" pkgconfig "zlib>=1"    #~ unwritable_name
     function p4() -> i32
 
-extern "stdio.h" package "seven.pc"    #~ machine_locked_path
+extern "stdio.h" pkgconfig "seven.pc"    #~ machine_locked_path
     function p5() -> i32
 
-extern "stdio.h" package "seven.PC"    #~ machine_locked_path
+extern "stdio.h" pkgconfig "seven.PC"    #~ machine_locked_path
     function p8() -> i32
 
-extern "stdio.h" package ".pc"    #~ machine_locked_path
+extern "stdio.h" pkgconfig ".pc"    #~ machine_locked_path
     function p9() -> i32
 
-extern "stdio.h" package "sub/seven"
+extern "stdio.h" pkgconfig "sub/seven"
     function p6() -> i32
 
-extern "stdio.h" package "-x"    #~ option_like_name
+extern "stdio.h" pkgconfig "-x"    #~ option_like_name
     function p7() -> i32
 
 function main()

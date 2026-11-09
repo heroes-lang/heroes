@@ -78,7 +78,7 @@ function words(package: str, said: str) -> [str]?
     if quote.len() > 0
         return fail(
             code: "failed",
-            msg: "heroes-ffi-package `" + package + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + one_line(said) + "`"
+            msg: "heroes-ffi-pkgconfig `" + package + "` answered with a `" + quote + "` that nothing closes, which this compiler does not read: `" + one_line(said) + "`"
         )
 
     if in_word
@@ -161,7 +161,7 @@ test "pkg-config's answer is read as a shell reads it, and nothing in it is expa
 
     match open_quote
         .ok    => assert false
-        .err e => assert e.msg == "heroes-ffi-package `q` answered with a `'` that nothing closes, which this compiler does not read: `-I'/inc/open`"
+        .err e => assert e.msg == "heroes-ffi-pkgconfig `q` answered with a `'` that nothing closes, which this compiler does not read: `-I'/inc/open`"
 
 # pkgconf 3.0.7's answer for lane h158's `s7.pc`, `prefix=/opt/with space`
 # (2026-10-02, defect 183): the path comes back as two words.
@@ -188,4 +188,4 @@ test "a control character in pkg-config's text is written by its code, a line en
 
     match open_line
         .ok    => assert false
-        .err e => assert e.msg == "heroes-ffi-package `q` answered with a `'` that nothing closes, which this compiler does not read: `-I'/a<U+000A>b`"
+        .err e => assert e.msg == "heroes-ffi-pkgconfig `q` answered with a `'` that nothing closes, which this compiler does not read: `-I'/a<U+000A>b`"

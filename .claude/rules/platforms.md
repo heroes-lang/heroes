@@ -39,7 +39,7 @@ a batch go back. The box stays where a Windows defect is reproduced.
 
 **A case on a header or a library one platform does not have** (the
 author's answer *A*, 2026-10-03): skipped there by name, its build reading
-`ffi_missing_header` or `ffi_package`, it is judged on the platforms that
+`ffi_missing_header` or `ffi_pkgconfig`, it is judged on the platforms that
 have the header, each read one case at a time; and where the defect's
 shape can be written on a header of the program's own, a twin of the case
 is written and runs on every platform. Measured the day it was given: four

@@ -174,7 +174,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # here, one call earlier, and the message used to be printed raw.
         # Measured 2026-08-18 by tests/harness on
         # `unsupported/ffi-records-only-group-cannot-claim-its-package`:
-        # the terminal got `heroes-ffi-package ...` and four bare lines —
+        # the terminal got `heroes-ffi-pkgconfig ...` and four bare lines —
         # no code, no `at file:line:col`, no source snippet, no notes,
         # which is every part of §4.17 at once, in the one class where the
         # compiler is allowed to blame the author's own `extern` (§7).

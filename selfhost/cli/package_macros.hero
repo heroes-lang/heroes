@@ -64,14 +64,14 @@ function refused_said(said: str) -> bool
 # gave Go's CVE-2018-6574 as the reason and advised `link`, which hands clang
 # none of the package's `-I`, so the header was no longer found.
 function notes(package: str) -> str
-    return "\n  a `-D` or `-U` stands before every header this compiler's C reads and before every guard it writes around a group's header, so nothing undoes it: the guard gives back a header's own `#define` of such a name after the header, and has nothing to give back for a word that stood before it\n  the word is the package's: take it out of the `Cflags` of the `" + package + "` `.pc` file, which `pkg-config --variable=pcfiledir " + package + "` names the folder of, and every other word of its answer, its header folders among them, still reaches the build"
+    return "\n  a `-D` or `-U` stands before every header this compiler's C reads and before every guard it writes around a group's header, so nothing undoes it: the guard gives back a header's own `#define` of such a name after the header, and has nothing to give back for a word that stood before it\n  the word is `pkg-config`'s answer: take it out of the `Cflags` of the `" + package + "` `.pc` file, which `pkg-config --variable=pcfiledir " + package + "` names the folder of, and every other word of its answer, its header folders among them, still reaches the build"
 
 # What a refusal owes its reader after the word it names, or "" where `refused`
 # says no.
 function told(flag: str, value: str) -> str
     if !refused(flag: flag, value: value)
         return ""
-    return ": `" + macro_of(value) + "` is a name the C this compiler writes, and no package's answer defines or undefines one: it would stand before every header and every guard"
+    return ": `" + macro_of(value) + "` is a name the C this compiler writes, and no `pkg-config` answer defines or undefines one: it would stand before every header and every guard"
 
 # Whether `-D<value>` is one of this compiler's own words, as written or with
 # the `=1` a bare `-D` means.
@@ -114,7 +114,7 @@ function macro_of(value: str) -> str
 test "a -D or -U of a name the C this compiler writes is refused, and a switch is not (defect 2333)"
     for value in ["__builtin_add_overflow(a,b,r)=0", "_Static_assert", "__OPTIMIZE__=1", "true=0", "INT64_C(c)=c", "main=SDL_main", "_USE_MATH_DEFINES=0"]
         assert refused(flag: "-D", value: value)
-        assert told(flag: "-D", value: value) == ": `" + macro_of(value) + "` is a name the C this compiler writes, and no package's answer defines or undefines one: it would stand before every header and every guard"
+        assert told(flag: "-D", value: value) == ": `" + macro_of(value) + "` is a name the C this compiler writes, and no `pkg-config` answer defines or undefines one: it would stand before every header and every guard"
 
     for value in ["__has_feature", "_CRT_SECURE_NO_WARNINGS", "main"]
         assert refused(flag: "-U", value: value)

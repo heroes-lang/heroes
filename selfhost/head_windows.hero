@@ -14,7 +14,7 @@
 # platforms, of this Mac's 1,371 library and 487 `.pc` names, and of the
 # tree's group-head strings.
 #
-# A header's value is a file's whole name; a `link`'s and a `package`'s are
+# A header's value is a file's whole name; a `link`'s and a `pkgconfig`'s are
 # the stem of one the tool builds, `X.lib` from clang's Windows driver
 # (measured with `-###`) and `X.pc`, so the end of their last part is not the
 # end of a file's name, and a `.` or a space there is no reason to refuse.
@@ -88,7 +88,7 @@ function control_byte(value: str) -> i64
 
     return -1
 
-# What a `link`'s or a `package`'s name holds past `unwritable`'s that names
+# What a `link`'s or a `pkgconfig`'s name holds past `unwritable`'s that names
 # no one file on every machine, as its reason, or "" (defect 252). Measured
 # on the box on 2026-10-07, clang 23.1.1 driving lld-link over NTFS: `>` and
 # `"` stand in no file's name there, `CopyFileW` into `a>b.lib`, `a"b.lib`,

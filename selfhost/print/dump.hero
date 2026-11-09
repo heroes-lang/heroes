@@ -161,8 +161,8 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
 
     if !library.is_err()
         match library.must()
-            .link l     => out @ out + " link " + source.span_text(s, l.name)
-            .package pk => out @ out + " package " + source.span_text(s, pk.name)
+            .link l       => out @ out + " link " + source.span_text(s, l.name)
+            .pkgconfig pk => out @ out + " pkgconfig " + source.span_text(s, pk.name)
     return out + " "
 
 function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
@@ -230,11 +230,11 @@ test "the dump names every field the formatter can print"
     # deleting it, which is exactly how `as` shipped (CLAUDE.md §9).
     # `owned <C function>` joined the list at M-declared-freer step 2, in
     # both positions the mark can take.
-    text = "use geom\n\n# A point in the plane.\nrecord Point\n    x: i64\n    y: i64\n\nextern \"raylib.h\" package \"raylib\"\n    record Font tag FontT partial\n        size: i64\n    constant FLAG: i64\n    function draw(f: Font, n: i64)\n    function copy(s: cstr lent) -> cstr owned free\n    function run(@e: cstr owned drop) -> i64\n    function grab(h: Font consumes) -> Font acquires release\n\nvariant Shape\n    dot\n    box\n        w: i64\n\nfunction dist<T>(a: T, @b: i64) -> i64\n    b @ b + 1\n    return b\n\ntest \"a title\"\n    assert 1 == 1\n"
+    text = "use geom\n\n# A point in the plane.\nrecord Point\n    x: i64\n    y: i64\n\nextern \"raylib.h\" pkgconfig \"raylib\"\n    record Font tag FontT partial\n        size: i64\n    constant FLAG: i64\n    function draw(f: Font, n: i64)\n    function copy(s: cstr lent) -> cstr owned free\n    function run(@e: cstr owned drop) -> i64\n    function grab(h: Font consumes) -> Font acquires release\n\nvariant Shape\n    dot\n    box\n        w: i64\n\nfunction dist<T>(a: T, @b: i64) -> i64\n    b @ b + 1\n    return b\n\ntest \"a title\"\n    assert 1 == 1\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     got = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
-    expected = "file t.hero\n  use geom\n  record Point\n    doc # A point in the plane.\n    field x: i64\n    field y: i64\n  extern \"raylib.h\" package \"raylib\" record Font tag FontT partial\n    field size: i64\n  extern \"raylib.h\" package \"raylib\" constant FLAG: i64\n  extern \"raylib.h\" package \"raylib\" function draw(f: Font, n: i64) -> ()\n  extern \"raylib.h\" package \"raylib\" function copy(s: cstr lent) -> cstr owned free\n  extern \"raylib.h\" package \"raylib\" function run(@e: cstr owned drop) -> i64\n  extern \"raylib.h\" package \"raylib\" function grab(h: Font consumes) -> Font acquires release\n  variant Shape\n    case dot\n    case box\n      field w: i64\n  function dist<T>(a: T, @b: i64) -> i64\n    mutate b @ (b + 1)\n    return b\n  test \"a title\"\n    assert (1 == 1)\n"
+    expected = "file t.hero\n  use geom\n  record Point\n    doc # A point in the plane.\n    field x: i64\n    field y: i64\n  extern \"raylib.h\" pkgconfig \"raylib\" record Font tag FontT partial\n    field size: i64\n  extern \"raylib.h\" pkgconfig \"raylib\" constant FLAG: i64\n  extern \"raylib.h\" pkgconfig \"raylib\" function draw(f: Font, n: i64) -> ()\n  extern \"raylib.h\" pkgconfig \"raylib\" function copy(s: cstr lent) -> cstr owned free\n  extern \"raylib.h\" pkgconfig \"raylib\" function run(@e: cstr owned drop) -> i64\n  extern \"raylib.h\" pkgconfig \"raylib\" function grab(h: Font consumes) -> Font acquires release\n  variant Shape\n    case dot\n    case box\n      field w: i64\n  function dist<T>(a: T, @b: i64) -> i64\n    mutate b @ (b + 1)\n    return b\n  test \"a title\"\n    assert (1 == 1)\n"
     assert got == expected
 
 # A package's mark (panel 235's R1) is part of the module's name, and the dump

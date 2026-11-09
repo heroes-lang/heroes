@@ -343,7 +343,7 @@ jobs:
       # clang is named rather than assumed: it is the backend (CLAUDE.md §7), and
       # a job that found it only because the image happened to carry it is a job
       # that breaks when the image changes.
-      # pkg-config is what `package "…"` asks, so it is named on every platform
+      # pkg-config is what `pkgconfig "…"` asks, so it is named on every platform
       # rather than assumed. macOS runners carry it via Homebrew.
       - name: Install clang, pkg-config, and the C libraries the FFI examples bind
         if: runner.os == 'Linux'
@@ -351,7 +351,7 @@ jobs:
           sudo apt-get update
           # raylib is deliberately not installed: `examples/raylib/` is then a
           # live test of the skip rule, which reads the compiler's own
-          # `ffi_package` diagnostic rather than a list of program names.
+          # `ffi_pkgconfig` diagnostic rather than a list of program names.
           # lldb is named for the same reason clang is, and it was found missing
           # the hard way: `lldb_breaks_on_a_hero_line` had been *skipping* here
           # since it was written, silently, as a pass — so design.md §2's claim
@@ -431,7 +431,7 @@ jobs:
           # itself, since brew loads the untrusted-tap notice before acting.
           brew untap aws/tap >/dev/null 2>&1 || true
           command -v pkg-config >/dev/null || brew install pkgconf
-          # And `pkg-config --exists raylib` is the question `package "raylib"`
+          # And `pkg-config --exists raylib` is the question `pkgconfig "raylib"`
           # itself asks, rather than *is the formula present*.
           pkg-config --exists raylib || brew install raylib
           # **`|| true` used to swallow all of this, and that is the defect this
@@ -442,10 +442,10 @@ jobs:
           # the step now says whether it did what its name claims.
           # The messages are SINGLE-quoted, and that is not style: a backtick
           # inside a double-quoted shell string is command substitution, so
-          # "every `package` binding" runs `package` and prints the sentence with
+          # "every `pkgconfig` binding" runs `pkgconfig` and prints the sentence with
           # a hole in it. Measured, in this file's own repair.
           command -v pkg-config >/dev/null \
-            || { echo '::error::pkg-config is still missing — every `package "…"` binding would fall back to the skip rule'; exit 1; }
+            || { echo '::error::pkg-config is still missing — every `pkgconfig "…"` binding would fall back to the skip rule'; exit 1; }
           pkg-config --exists raylib \
             || { echo '::error::raylib is still missing — examples/raylib/ would SKIP on the one leg meant to cover it'; exit 1; }
           # **lldb, for the net's `lldb` suite** (issue 944, 2026-10-12): it

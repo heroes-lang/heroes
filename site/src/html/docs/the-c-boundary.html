@@ -125,11 +125,11 @@ function rounded_power(base: f64, exponent: f64) -&gt; i64
 
   <h3>Finding libraries and dependencies</h3>
   <p>
-    <code>link "m"</code> names the library to link with the program. If paths or other dependencies are also needed, you can name a <b>package</b> whose settings are known to the system:
+    <code>link "m"</code> names the library to link with the program. If paths or other dependencies are also needed, you can name the library as <code>pkg-config</code> knows it, and the system is asked for its settings:
   </p>
-  <pre><code>extern "raylib.h" package "raylib"</code></pre>
+  <pre><code>extern "raylib.h" pkgconfig "raylib"</code></pre>
   <p>
-    This declaration asks the system for header paths, libraries and other required dependencies, such as frameworks on macOS or <code>-lGL -lX11</code> on Linux. The Heroes syntax stays the same across platforms. If the package requests unsupported options, the compiler lists them and stops the build.
+    This declaration asks the system for header paths, libraries and other required dependencies, such as frameworks on macOS or <code>-lGL -lX11</code> on Linux. The Heroes syntax stays the same across platforms. If the answer requests unsupported options, the compiler lists them and stops the build.
   </p>
   <p>
     A group can also declare a <code>constant</code>, whose value comes from the

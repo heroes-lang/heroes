@@ -1,0 +1,15 @@
+# The mark a group names its library for `pkg-config` with is `pkgconfig`
+# since panel 240 (2026-11-09); until then it was `package`, a word the
+# language now keeps for code others publish (spec § 1). The old word is told
+# once, at the word, with the certain fix that writes `pkgconfig`, and the head
+# is read as the group it is, so each group's old word is told and nothing
+# else is: the program the fixes write checks clean.
+
+extern "stdlib.h" pkgconfig "zlib"  #~ old_package_word
+    function abs(n: i32) -> i32
+
+extern "ctype.h" pkgconfig "zlib"  #~ old_package_word
+    function toupper(c: i32) -> i32
+
+function main()
+    print(abs(n: -1) + toupper(c: 97))

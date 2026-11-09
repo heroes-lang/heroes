@@ -24,7 +24,7 @@ extern "COM1::"  #~ unwritable_name
 extern "stdio.h" link "nul:"  #~ unwritable_name
     function d4() -> i32
 
-extern "stdio.h" package "con:"  #~ unwritable_name
+extern "stdio.h" pkgconfig "con:"  #~ unwritable_name
     function d5() -> i32
 
 extern "nul:x.h"

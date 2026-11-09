@@ -33,7 +33,7 @@ use token
 # classes read. Held with the lookups so the file that decides whose
 # mistake this is holds every marker it matches.
 constant PACKAGE: str
-    "heroes-ffi-package "
+    "heroes-ffi-pkgconfig "
 
 # What clang prints on the line of a _Static_assert that failed.
 # Required before a line is read as one of ours, because clang ECHOES
@@ -160,7 +160,7 @@ function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.S
 
     return fail(code: "none", msg: "no group names this header")
 
-# The span of the `package` string of the group whose package the driver's
+# The span of the `pkgconfig` string of the group whose package the driver's
 # line names: the marker, the name between backticks and a space, at the
 # line's head, as `cli/libraries.hero` and `cli/shell_split.hero` write it.
 # Each group's own name is asked, the longest standing there winning, so no
@@ -186,7 +186,7 @@ function package_span(s: source.Source, decls: [ast.Decl], line: str) -> token.S
             continue
 
         match library.must()
-            .package pk =>
+            .pkgconfig pk =>
                 name = emit_externs.unquoted(s, span: pk.name)
 
                 if name.len() > longest && bytes.bytes_at(text: line, at: 0, needle: PACKAGE + "`" + name + "` ")
@@ -361,7 +361,7 @@ function trimmed(text: str) -> str
 ## Tests
 
 test "declaration finds all three kinds and refuses the rest"
-    text = "extern \"m.h\" package \"raylib\"\n    function draw(x: i64)\n    constant LIMIT: i64\n    record Color\n        r: i64\n\nfunction local_one() -> i64\n    return 1\n\nfunction main()\n    draw(x: LIMIT + local_one() + Color(r: 1).r)\n"
+    text = "extern \"m.h\" pkgconfig \"raylib\"\n    function draw(x: i64)\n    constant LIMIT: i64\n    record Color\n        r: i64\n\nfunction local_one() -> i64\n    return 1\n\nfunction main()\n    draw(x: LIMIT + local_one() + Color(r: 1).r)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -383,8 +383,8 @@ test "declaration finds all three kinds and refuses the rest"
     # The group lookups: the head line and the package question.
     assert !group_head(s, parsed.decls, header: "m.h").is_err()
     assert group_head(s, parsed.decls, header: "other.h").is_err()
-    assert source.span_text(s, package_span(s, parsed.decls, line: "heroes-ffi-package `raylib` is not installed").must()) == "\"raylib\""
-    assert package_span(s, parsed.decls, line: "heroes-ffi-package `sdl3` is not installed").is_err()
+    assert source.span_text(s, package_span(s, parsed.decls, line: "heroes-ffi-pkgconfig `raylib` is not installed").must()) == "\"raylib\""
+    assert package_span(s, parsed.decls, line: "heroes-ffi-pkgconfig `sdl3` is not installed").is_err()
 
 test "add_once keeps one diagnostic per span, and the splitter reads clang's shapes"
     a = diag.new_diagnostic(code: "x", message: "first", span: token.Span(start: 3, end: 7))

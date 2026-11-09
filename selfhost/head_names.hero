@@ -1,5 +1,5 @@
 # What a group head's three strings may hold: the header of `extern
-# "math.h"`, the library of `link "m"`, the package of `package "raylib"`
+# "math.h"`, the library of `link "m"`, the library of `pkgconfig "raylib"`
 # (design.md §4.19; spec § 13; panels 055 and 188). Each is judged on its
 # VALUE, its escapes decoded as spec § 2 defines them, because the value is
 # what reaches C (`emit/externs.unquoted` hands every reader the same); a
@@ -23,7 +23,7 @@ use shown_char
 use token
 
 # The diagnostic a group head's string earns, if any. `spelled` is its token,
-# quotes included; `what` is the word naming it: `header`, `link`, `package`.
+# quotes included; `what` is the word naming it: `header`, `link`, `pkgconfig`.
 function judged(spelled: str, span: token.Span, what: str) -> diag.Diagnostic?
     value = escape.unescape(spelled)
     cannot = cannot_carry(spelled: spelled, value: value, span: span, what: what)
@@ -39,7 +39,7 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
     if value.len() == 0 || held.len() > 0
         return ok(diag.new_diagnostic(code: "unwritable_name", message: unwritable(what: what, held: held), span: span))
 
-    if what == "package"
+    if what == "pkgconfig"
         package_says = head_package.cannot_carry(value: value, span: span)
 
         if !package_says.is_err()
@@ -105,7 +105,7 @@ function thesis(spelled: str, value: str, span: token.Span, what: str) -> diag.D
     if machine.len() > 0
         return windows_said(code: "machine_locked_path", reason: machine, spelled: spelled, span: span, what: what)
 
-    if what == "package"
+    if what == "pkgconfig"
         return head_package.thesis(written: inside(spelled), value: value, span: span)
 
     if what == "header"
@@ -120,7 +120,7 @@ function windows_said(code: str, reason: str, spelled: str, span: token.Span, wh
     )
 
 function noun(what: str) -> str
-    if what == "link"
+    if what == "link" || what == "pkgconfig"
         return "library"
     return what
 
@@ -128,8 +128,8 @@ function example(what: str) -> str
     if what == "link"
         return "`link \"m\"`"
 
-    if what == "package"
-        return "`package \"raylib\"`"
+    if what == "pkgconfig"
+        return "`pkgconfig \"raylib\"`"
     return "`extern \"math.h\"`"
 
 # The spelling between the quotes, as the author wrote it. **Every slice in
@@ -161,8 +161,8 @@ function unwritable(what: str, held: str) -> str
 
     if what == "link"
         reason @ "the linker reports a missing library on one line"
-    else if what == "package"
-        reason @ "`pkg-config` reads a line end between two packages"
+    else if what == "pkgconfig"
+        reason @ "`pkg-config` reads a line end between two names"
 
     if held == "a NUL byte"
         reason @ "C reads a name only up to its first NUL, so no file is named by one"
@@ -219,11 +219,11 @@ function locked(written: str, what: str) -> str
 
 function route(what: str) -> str
     if what == "header"
-        return "set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
+        return "set `CPATH` to the directory holding it, or name its library with `pkgconfig` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
 
-    if what == "package"
-        return "name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`"
-    return "pass `--library <dir>` with the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
+    if what == "pkgconfig"
+        return "name the library, as `pkgconfig \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`"
+    return "pass `--library <dir>` with the directory holding it, or name it with `pkgconfig` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
 
 # What a header's name cannot carry past what every string shares: `>`, which
 # ends it in C's `#include <...>`, and C's own `<name>` and `"name"` carried in
@@ -385,8 +385,8 @@ test "a control character is named by its code, told before a thesis rule where 
     assert said(spelled: "\"éa.h\"", what: "header") == ""
     assert said(spelled: "\"aé\"", what: "header") == ""
     assert said(spelled: "\"é\"", what: "link") == ""
-    assert said(spelled: "\"aé.pc\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"é\"", what: "package") == ""
+    assert said(spelled: "\"aé.pc\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"é\"", what: "pkgconfig") == ""
     assert unshowable_character("a\tb") == "the control character U+0009"
     assert unshowable_character("ab") == ""
     tab = judged(spelled: "\"a\\tb>c.h\"", span: token.Span(start: 0, end: 11), what: "header").must()
@@ -416,25 +416,25 @@ test "a library's name shares the first classes and none of a header's"
     assert said(spelled: "\"m-x\"", what: "link") == ""
 
 test "a package's string names one package (panel 188)"
-    assert said(spelled: "\"raylib\"", what: "package") == ""
-    assert said(spelled: "\"gtk+-3.0\"", what: "package") == ""
-    assert said(spelled: "\"zlib sqlite3\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"zlib,sqlite3\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"zlib >= 1\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"zlib\\tx\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"zlib>=1\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"zlib=1\"", what: "package") == "package_comparison"
-    assert said(spelled: "\"a!b\"", what: "package") == "package_comparison"
-    assert said(spelled: "\"seven.pc\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"seven.PC\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"seven.pC\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\".pc\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"seven.pcx\"", what: "package") == ""
-    assert said(spelled: "\"pc\"", what: "package") == ""
-    assert said(spelled: "\"sub/seven.pc\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"/opt/x.pc\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"-x\"", what: "package") == "option_like_name"
-    assert said(spelled: "\"--atleast-pkgconfig-version=0\"", what: "package") == "option_like_name"
+    assert said(spelled: "\"raylib\"", what: "pkgconfig") == ""
+    assert said(spelled: "\"gtk+-3.0\"", what: "pkgconfig") == ""
+    assert said(spelled: "\"zlib sqlite3\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"zlib,sqlite3\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"zlib >= 1\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"zlib\\tx\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"zlib>=1\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"zlib=1\"", what: "pkgconfig") == "pkgconfig_comparison"
+    assert said(spelled: "\"a!b\"", what: "pkgconfig") == "pkgconfig_comparison"
+    assert said(spelled: "\"seven.pc\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"seven.PC\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"seven.pC\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\".pc\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"seven.pcx\"", what: "pkgconfig") == ""
+    assert said(spelled: "\"pc\"", what: "pkgconfig") == ""
+    assert said(spelled: "\"sub/seven.pc\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"/opt/x.pc\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"-x\"", what: "pkgconfig") == "option_like_name"
+    assert said(spelled: "\"--atleast-pkgconfig-version=0\"", what: "pkgconfig") == "option_like_name"
     assert said(spelled: "\"-x\"", what: "link") == "option_like_name"
 
 test "C's spelling carried in is dropped by a certain fix, and only where what is left passes"
@@ -464,9 +464,9 @@ test "what Windows stores as another file is unwritable, and what depends on the
     assert said(spelled: "\"m.\"", what: "link") == ""
     assert said(spelled: "\"nul\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"ab:c\"", what: "link") == "machine_locked_path"
-    assert said(spelled: "\"x~1\"", what: "package") == "machine_locked_path"
-    assert said(spelled: "\"con\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"sub/seven\"", what: "package") == ""
+    assert said(spelled: "\"x~1\"", what: "pkgconfig") == "machine_locked_path"
+    assert said(spelled: "\"con\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"sub/seven\"", what: "pkgconfig") == ""
 
 # Defect 252, measured on the Windows box: `>` and `"` stand in no file's name
 # there, a `\` is a directory to lld-link and a byte to ld64 and GNU ld, and a
@@ -477,9 +477,9 @@ test "a library's and a package's name holds no `>`, `\"` or `\\`, and a library
     assert said(spelled: "\"a\\\"b\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"a\\\\b\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"sub/m\"", what: "link") == "unwritable_name"
-    assert said(spelled: "\"p>q\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"p\\\"q\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"p\\\\q\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"p>q\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"p\\\"q\"", what: "pkgconfig") == "unwritable_name"
+    assert said(spelled: "\"p\\\\q\"", what: "pkgconfig") == "unwritable_name"
     assert said(spelled: "\"/opt/foo/lib/libfoo.a\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"C:\\\\side\\\\m\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"C:/side/lp188\"", what: "link") == "unwritable_name"
@@ -518,10 +518,10 @@ test "a rooted library's `/` and `\\` are what nothing carries as written, with 
     assert said(spelled: "\"/out:pwn\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"\\\\x\"", what: "link") == "unwritable_name"
     assert said(spelled: "\":/opt/foo/libfoo.a\"", what: "link") == "unwritable_name"
-    assert said(spelled: "\"\\\\p\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"\\\\p\"", what: "pkgconfig") == "unwritable_name"
     assert said(spelled: "\"C:x\"", what: "link") == "machine_locked_path"
     assert said(spelled: "\":libm.a\"", what: "link") == "machine_locked_path"
-    assert said(spelled: "\"/opt/x\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"/opt/x\"", what: "pkgconfig") == "machine_locked_path"
     assert said(spelled: "\"/opt/x.h\"", what: "header") == "machine_locked_path"
     rooted_link = judged(spelled: "\"/opt/foo\"", span: token.Span(start: 0, end: 10), what: "link").must()
     assert rooted_link.message == "this library's name holds `/`, which macOS's and Linux's linkers read below each directory they search and not from the root it names, and `/opt/foo` names a path from a root, where this machine keeps the library rather than what the machine has\n  " + route("link")
@@ -534,11 +534,11 @@ test "a rooted library's `/` and `\\` are what nothing carries as written, with 
 test "a control byte below U+0020 names no file on Windows, and DEL and C1 stay the thesis rule's (defect 445)"
     assert said(spelled: "\"a\\u{1}b.h\"", what: "header") == "unwritable_name"
     assert said(spelled: "\"a\\u{1f}b\"", what: "link") == "unwritable_name"
-    assert said(spelled: "\"a\\u{1b}b\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"a\\u{1b}b\"", what: "pkgconfig") == "unwritable_name"
     assert said(spelled: "\"a\\u{7f}b.h\"", what: "header") == "unshowable_name"
     assert said(spelled: "\"a\\u{80}b.h\"", what: "header") == "unshowable_name"
     assert said(spelled: "\"a\\u{200b}b.h\"", what: "header") == "unshowable_name"
-    assert said(spelled: "\"zlib\\tx\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib\\tx\"", what: "pkgconfig") == "unwritable_name"
     esc = judged(spelled: "\"a\\u{1b}b.h\"", span: token.Span(start: 0, end: 13), what: "header").must()
     assert esc.message == "this header's name holds the control character U+001B, which no file's name on Windows can hold and no message can show: write the name without it, as `extern \"math.h\"`"
     assert head_windows.control_byte("ab\u{7f}") == -1
@@ -551,6 +551,6 @@ test "a part ending in `:` names a device or no file, and `nul:x.h` a stream (de
     assert said(spelled: "\"NUL:\"", what: "header") == "unwritable_name"
     assert said(spelled: "\"sub/ab:\"", what: "header") == "unwritable_name"
     assert said(spelled: "\"nul:\"", what: "link") == "unwritable_name"
-    assert said(spelled: "\"con:\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"con:\"", what: "pkgconfig") == "unwritable_name"
     assert said(spelled: "\"nul:x.h\"", what: "header") == "machine_locked_path"
     assert said(spelled: "\"ab:\"", what: "link") == "machine_locked_path"

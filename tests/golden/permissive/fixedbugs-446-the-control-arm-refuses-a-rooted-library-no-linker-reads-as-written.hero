@@ -28,7 +28,7 @@ extern "stdio.h" link "\\side\\m"  #~ unwritable_name
 extern "stdio.h" link ":/opt/foo/libfoo.a"  #~ unwritable_name
     function r5() -> i32
 
-extern "stdio.h" package "C:\\pc\\x"  #~ unwritable_name
+extern "stdio.h" pkgconfig "C:\\pc\\x"  #~ unwritable_name
     function r6() -> i32
 
 extern "stdio.h" link "C:x"
@@ -37,7 +37,7 @@ extern "stdio.h" link "C:x"
 extern "/opt/foo/include/foo.h"
     function r8() -> i32
 
-extern "stdio.h" package "/opt/x.pc"
+extern "stdio.h" pkgconfig "/opt/x.pc"
     function r9() -> i32
 
 function main()

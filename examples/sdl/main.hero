@@ -45,7 +45,7 @@
 # `SDL_Surface`, all structs by value. That is `M-struct-passing`, which is the
 # next milestone precisely because a third of every C boundary is behind it.
 
-extern "SDL3/SDL.h" package "sdl3"
+extern "SDL3/SDL.h" pkgconfig "sdl3"
     function SDL_GetRevision() -> cstr
     function SDL_GetNumVideoDrivers() -> i32
 

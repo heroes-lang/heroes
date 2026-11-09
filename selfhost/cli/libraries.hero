@@ -103,7 +103,7 @@ function filter_words(package: str, said: str) -> [str]?
             if index + 1 >= parts.len()
                 return fail(
                     code: "failed",
-                    msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(word, keep_lines: false) + "` and nothing after it"
+                    msg: "heroes-ffi-pkgconfig `" + package + "` answered with `" + shell_split.shown(word, keep_lines: false) + "` and nothing after it"
                 )
 
             if !package_words.is_value(flag: word, value: next)
@@ -214,7 +214,7 @@ function link_words(package_flags: [str]) -> [str]
 # refusal's note names the list word for word* holds it to them (panel 198's
 # R3: the note is the rule's only statement a reader meets).
 function refused(package: str, said: str, told: str) -> [str]?
-    head = "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told
+    head = "heroes-ffi-pkgconfig `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told
 
     # A kept name's `-D` or `-U`, a word the list admits refused for its value,
     # is told with notes of its own (defect 2348).
@@ -765,7 +765,7 @@ test "a package pkg-config reads and refuses is told installed, and one it canno
             .err e =>
                 assert strings.starts_with(
                     text: e.msg,
-                    prefix: "heroes-ffi-package `" + pc + "` is installed, and pkg-config cannot give its flags\n  pkg-config said: "
+                    prefix: "heroes-ffi-pkgconfig `" + pc + "` is installed, and pkg-config cannot give its flags\n  pkg-config said: "
                 )
                 assert has_text(text: e.msg, needle: "heroes-package-no-machine-has-292")
                 assert strings.ends_with(
@@ -778,7 +778,7 @@ test "a package pkg-config reads and refuses is told installed, and one it canno
             .err e =>
                 assert strings.starts_with(
                     text: e.msg,
-                    prefix: "heroes-ffi-package `" + dir + "/absent292.pc` is not installed on this machine\n  pkg-config said: "
+                    prefix: "heroes-ffi-pkgconfig `" + dir + "/absent292.pc` is not installed on this machine\n  pkg-config said: "
                 )
                 assert strings.ends_with(
                     text: e.msg,

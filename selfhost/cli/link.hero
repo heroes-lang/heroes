@@ -182,7 +182,7 @@ function link_line(objects: [str], level: str, sanitize: bool, target: str, sear
     # since two groups side by side do not resolve across (GNU ld 2.44 in the
     # `heroes-linux-arm64` container, measured by panel 238's critic and again
     # by lane b26-link). A package cannot answer a group of its own: an
-    # answer holding `-Wl,--start-group` is refused `ffi_package` at the
+    # answer holding `-Wl,--start-group` is refused `ffi_pkgconfig` at the
     # package's string (measured, lane b26-link), no such word being on the
     # list `libraries.refused` names.
     if library.len() > 0 && link_flags.groups_libraries(target)

@@ -6,7 +6,7 @@
 # past every sanitizer. Under R7 the local lives against a page nothing may
 # touch, so C stops on the second byte and the runtime names the local, the
 # call and the parameter.
-extern "fixedbugs-396-openssl.h" package "libcrypto"
+extern "fixedbugs-396-openssl.h" pkgconfig "libcrypto"
     record Sha256Ctx tag SHA256state_st partial
         num: u32
     function SHA256_Init(@c: Sha256Ctx) -> i32

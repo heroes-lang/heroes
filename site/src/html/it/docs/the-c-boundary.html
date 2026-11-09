@@ -126,11 +126,11 @@ function rounded_power(base: f64, exponent: f64) -&gt; i64
 
   <h3>Trovare librerie e dipendenze</h3>
   <p>
-    <code>link "m"</code> indica la libreria da collegare al programma. Se servono anche percorsi o altre dipendenze, puoi indicare un <b>package</b>, un pacchetto di cui il sistema conosce le impostazioni:
+    <code>link "m"</code> indica la libreria da collegare al programma. Se servono anche percorsi o altre dipendenze, puoi indicare la libreria con il nome che le dà <code>pkg-config</code>, e il sistema ne fornisce le impostazioni:
   </p>
-  <pre><code>extern "raylib.h" package "raylib"</code></pre>
+  <pre><code>extern "raylib.h" pkgconfig "raylib"</code></pre>
   <p>
-    Questa dichiarazione chiede al sistema i percorsi degli header, le librerie e le altre dipendenze necessarie, come i framework su macOS o <code>-lGL -lX11</code> su Linux. La sintassi Heroes resta uguale sulle diverse piattaforme. Se il pacchetto richiede opzioni non supportate, il compilatore le segnala e interrompe la compilazione.
+    Questa dichiarazione chiede al sistema i percorsi degli header, le librerie e le altre dipendenze necessarie, come i framework su macOS o <code>-lGL -lX11</code> su Linux. La sintassi Heroes resta uguale sulle diverse piattaforme. Se la risposta richiede opzioni non supportate, il compilatore le segnala e interrompe la compilazione.
   </p>
   <p>
     Un gruppo può anche dichiarare una <code>constant</code>, il cui valore

@@ -1,0 +1,29 @@
+# Right after a group's header only `link` or `pkgconfig` may stand, then the
+# library's name in quotes (spec § 13). Any other word there, or a string with
+# no mark before it, is told with the two words that may stand there, where
+# until panel 240 the message sent the writer to the lines below (the
+# spec-warden's condition 3, the critic's C1). No fix: which of the two the
+# writer meant is theirs to say. The retired `package` and the tool's own
+# spellings have their own cases, each with its certain fix.
+
+extern "stdlib.h" system "zlib"  #~ expected_end_of_line
+    function abs(n: i32) -> i32
+
+extern "ctype.h" Package "zlib"  #~ expected_end_of_line
+    function toupper(c: i32) -> i32
+
+extern "math.h" pkgconf "zlib"  #~ expected_end_of_line
+    function fabs(x: f64) -> f64
+
+extern "wctype.h" library "z"  #~ expected_end_of_line
+    function iswdigit(c: i32) -> i32
+
+extern "string.h" "zlib"  #~ expected_end_of_line
+    function strlen(s: cstr) -> u64
+
+extern "stdio.h" pkg config "zlib"  #~ expected_end_of_line
+    function getchar() -> i32
+
+function main()
+    print(abs(n: -1) + toupper(c: 97) + iswdigit(c: 48) + getchar())
+    print(fabs(x: -1.5))

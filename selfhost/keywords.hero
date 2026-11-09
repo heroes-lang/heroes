@@ -80,8 +80,8 @@ constant WORD_AS: str
 constant WORD_LINK: str
     "link"
 
-constant WORD_PACKAGE: str
-    "package"
+constant WORD_PKGCONFIG: str
+    "pkgconfig"
 
 constant WORD_TAG: str
     "tag"
@@ -137,7 +137,7 @@ function contextual() -> [str]
     return [
         WORD_AS
         WORD_LINK
-        WORD_PACKAGE
+        WORD_PKGCONFIG
         WORD_TAG
         WORD_PARTIAL
         WORD_OWNED

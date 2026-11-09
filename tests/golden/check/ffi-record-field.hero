@@ -11,7 +11,7 @@
 record Local
     n: i32
 
-extern "raylib.h" package "raylib"
+extern "raylib.h" pkgconfig "raylib"
     record Bad
         name: str               #~ ffi_field_type
         xs: [i64]               #~ ffi_field_type
