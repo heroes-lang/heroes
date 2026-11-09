@@ -1,0 +1,6 @@
+# The package's module of defect 2373's case beside it: it calls `deep`, of
+# its own `text/strs`, which it names in no `use`.
+
+# A greeting.
+function hello() -> str
+    return deep()  #~ needs_qualifying

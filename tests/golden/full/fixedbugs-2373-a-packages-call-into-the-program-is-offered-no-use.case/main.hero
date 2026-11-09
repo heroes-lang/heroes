@@ -1,0 +1,15 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, a shape beside it: in the
+# package `core`'s own file, a call of a function the program's own
+# `other/greetings` declares, a module no `use` of a package's file names.
+#
+# SYMPTOM: `needs_qualifying` said to add `use other/greetings`, which in the
+# package's file names `<core>/other/greetings`, a module there is not.
+#
+# FIX: no `use` is offered where none of the file's could name the module;
+# the name is told as one nothing in reach declares.
+use <core>/strings
+
+use other/greetings
+
+function main()
+    print(strings.hello() + greetings.greeting_of_the_program())

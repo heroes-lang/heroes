@@ -1,0 +1,12 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, a shape beside it: in the
+# package `core`'s own file, `use text/strs` beside a function `strs`.
+#
+# SYMPTOM: `shadowed_binding` said *`use strs` binds `strs`*: the binding
+# quoted as the line, which no file holds; the program's own file read so
+# too (`fixedbugs-2373-a-programs-nested-use-beside-its-declaration`).
+#
+# FIX: the line is quoted as written, `use text/strs` binds `strs`.
+use <core>/strings
+
+function main()
+    print(strings.hello())

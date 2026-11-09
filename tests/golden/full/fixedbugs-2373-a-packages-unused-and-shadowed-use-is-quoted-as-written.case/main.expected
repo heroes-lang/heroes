@@ -1,0 +1,14 @@
+note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-unused-and-shadowed-use-is-quoted-as-written.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[unused_binding]: `use text/strs` is never used — nothing in this file names anything from `text/strs`
+  at tests/golden/full/fixedbugs-2373-a-packages-unused-and-shadowed-use-is-quoted-as-written.case/vendor/core/strings.hero:3:5
+    |
+  3 | use text/strs  #~ unused_binding
+    |     ^^^^^^^^^
+  note: delete the line: an import that is not read is a dependency that is not real
+
+error[shadowed_binding]: `strs` is what this file calls the module `text/strs`, so a local may not take it — shadowing is an error here
+  at tests/golden/full/fixedbugs-2373-a-packages-unused-and-shadowed-use-is-quoted-as-written.case/vendor/core/strings.hero:7:5
+    |
+  7 |     strs = "x"  #~ shadowed_binding
+    |     ^^^^
+  note: rename the module for this file with `use text/strs as <other>`, which clears every collision in it at once, or rename this binding

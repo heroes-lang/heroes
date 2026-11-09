@@ -1,0 +1,22 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, a shape beside it in the
+# program's own file: a nested `use`, and one with an `as`, each beside a
+# function of the name it binds.
+#
+# SYMPTOM: `shadowed_binding` quoted the binding as the line, *`use strs`
+# binds `strs`* for `use text/strs` and *`use clip` binds `clip`* for
+# `use text/words as clip`, lines this file does not hold.
+#
+# FIX: each line is quoted as written, its `as` too.
+use text/strs  #~ shadowed_binding
+use text/words as clip  #~ shadowed_binding
+
+# What the first use would name.
+function strs() -> str
+    return "x"
+
+# What the second use would name.
+function clip() -> str
+    return "y"
+
+function main()
+    print(strs() + clip())

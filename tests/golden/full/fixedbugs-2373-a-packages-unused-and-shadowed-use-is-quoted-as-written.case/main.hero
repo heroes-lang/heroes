@@ -1,0 +1,15 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, the issue's own reproducer: in
+# the package `core`'s own file, `use text/strs` and a local `strs` taking
+# its name.
+#
+# SYMPTOM: `unused_binding` said `use <core>/text/strs` is never used, and
+# `shadowed_binding`'s note said to write `use <core>/text/strs as <other>`:
+# the compilation's name for the module, a line the file never wrote, and
+# written there it is refused `unknown_entry`, a package's own modules being
+# written bare in its files.
+#
+# FIX: both quote the line as the file writes it, `use text/strs`.
+use <core>/strings
+
+function main()
+    print(strings.hello())

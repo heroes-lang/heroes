@@ -1,0 +1,7 @@
+# A module of the package `core` of defect 2373's case beside it, the one
+# that names `text/strs`, so the module is in the compilation.
+use text/strs
+
+# A word, through the module.
+function other() -> str
+    return strs.deep()

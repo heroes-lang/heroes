@@ -1,0 +1,14 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, a shape beside it: in the
+# package `core`'s own file, `use <text>/cut`, `text` being its catalogue's
+# alias for the package the program calls `words`, and a local `cut`.
+#
+# SYMPTOM: both messages quoted `use <words>/cut`, the program's alias, which
+# `core`'s catalogue does not hold.
+#
+# FIX: the line as the file writes it, and the note's line by the alias
+# `core`'s own catalogue gives the package (`placed.written_in`).
+use <core>/strings
+use <words>/cut
+
+function main()
+    print(strings.hello() + cut.cut())

@@ -1,0 +1,14 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, the issue's shape in a
+# fetched package: `core` placed by `heroes add` from an index (its tree
+# under `heroes.packages/`, its sum in the catalogue), whose `strings` writes
+# `use text/strs` and a local `strs` taking its name. The index is not here:
+# `check` reads the placed tree and its fingerprint alone.
+#
+# SYMPTOM: `unused_binding` and `shadowed_binding`'s note quoted
+# `use <core>/text/strs`, a line the package's file never wrote and cannot.
+#
+# FIX: both quote `use text/strs`, the line as the file writes it.
+use <core>/strings
+
+function main()
+    print(strings.hello())

@@ -15,19 +15,19 @@
 # extern declarations were too — `hero_args_count()` from any user module
 # was check-clean at exit 0, measured 2026-08-25, zero users in the tree.
 
-use token
 use ast
-use source
 use inventory
-use resolved
-use resolve/state
-use resolve/did_you_mean
-use resolve/offered
-use resolve/errors
-use resolve/qualified
-use resolve/type_argument
-use module/diagnostics
 use keywords
+use module/diagnostics
+use resolve/did_you_mean
+use resolve/errors
+use resolve/offered
+use resolve/qualified
+use resolve/state
+use resolve/type_argument
+use resolved
+use source
+use token
 
 # `called` says the name is a call's callee, `sqrt(2.0)`: one nothing binds
 # is then told how a function of C is bound (defect 270).
@@ -120,7 +120,7 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     if type_argument.written(s, text, span)
         state.push_diagnostic(@r, type_argument.told(text, span))
         return
-    elsewhere = qualified.name_declared_elsewhere(@r, text, span)
+    elsewhere = qualified.name_declared_elsewhere(@r, s, text, span)
 
     if !elsewhere.is_err()
         state.push_diagnostic(@r, elsewhere.must())
@@ -218,7 +218,7 @@ function method_name(@r: state.Resolver, s: source.Source, decls: [ast.Decl], at
 
     # `p.dist2(o)` where `dist2` is imported: UFCS finds only this file's
     # functions, and this is the message that says so (panel 031 R5).
-    elsewhere = qualified.name_declared_elsewhere(@r, text, called)
+    elsewhere = qualified.name_declared_elsewhere(@r, s, text, called)
 
     if !elsewhere.is_err()
         state.push_diagnostic(@r, elsewhere.must())

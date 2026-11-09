@@ -19,18 +19,19 @@
 # sentence about qualification: an unqualified name that exists in another
 # module is an error carrying the repair, at the call site (panel 031 R5).
 
-use token
-use diag
 use ast
-use source
-use resolved
-use resolve/state
-use resolve/did_you_mean
-use resolve/offered
-use resolve/errors
+use diag
 use module/diagnostics
+use module/placed
 use resolve/binding as resolve_binding
+use resolve/did_you_mean
+use resolve/errors
 use resolve/missing_use
+use resolve/offered
+use resolve/state
+use resolved
+use source
+use token
 
 # `geom.f(...)` — the receiver is a module this file names. Returns whether
 # it handled the expression; everything it does not handle falls through to
@@ -137,7 +138,7 @@ function is_bare_name(a: ast.Ast, id: i64) -> bool
 
 # The name is real and lives somewhere else. Panel 031 R5's diagnostic,
 # which is what the spec buys instead of a sentence about qualification.
-function name_declared_elsewhere(@r: state.Resolver, text: str, span: token.Span) -> diag.Diagnostic?
+function name_declared_elsewhere(@r: state.Resolver, s: source.Source, text: str, span: token.Span) -> diag.Diagnostic?
     found = resolved.module_declaring(r.out, from: r.module, name: text)
 
     if found.is_err()
@@ -159,7 +160,16 @@ function name_declared_elsewhere(@r: state.Resolver, text: str, span: token.Span
         # `use shapes/other as main` — a message describing a line the author
         # never wrote.
         return ok(diagnostics.needs_qualifying(name: text, qualifier: local.must(), module: module, span: span))
-    return ok(diagnostics.needs_a_use(name: text, module: module, span: span))
+
+    # The line to add, as this file writes it (defect 2373): in a package's
+    # own file its module is bare. A module no `use` of this file can name,
+    # a program's from a package's file or a package its catalogue does not
+    # hold, is no answer, and the name is told as unknown.
+    written = placed.written_in(s.reached.aliases, from: r.module, module: module)
+
+    if written == ""
+        return fail(code: "absent", msg: "no `use` of this file names the module declaring it")
+    return ok(diagnostics.needs_a_use(name: text, module: module, written: written, span: span))
 
 ## Tests
 
@@ -292,7 +302,8 @@ test "elsewhere splits on the use line, and neither repair is certain"
     span = token.Span(start: 5, end: 10)
 
     # No use line yet: the fix is a guess, the file still needs the use.
-    missing = name_declared_elsewhere(@r, "dist2", span)
+    s = fixture()
+    missing = name_declared_elsewhere(@r, s, "dist2", span)
     assert missing.must().fixes[0].certainty == .guess
 
     # With the use written, the same name earns the rewrite — and since
@@ -301,11 +312,11 @@ test "elsewhere splits on the use line, and neither repair is certain"
     # fix that reproduces itself is no fix (module/diagnostics.hero says
     # the rest; M-robustness-guards step 2).
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
-    have = name_declared_elsewhere(@r, "dist2", span)
+    have = name_declared_elsewhere(@r, s, "dist2", span)
     assert have.must().fixes[0].certainty == .guess
     assert have.must().fixes[0].replacement == "geom.dist2"
 
     # A name only the library declares is not "elsewhere".
     resolved.declare_top(@r.out, module: "library", name: "range", decl: 1)
-    quiet = name_declared_elsewhere(@r, "range", span)
+    quiet = name_declared_elsewhere(@r, s, "range", span)
     assert quiet.is_err()

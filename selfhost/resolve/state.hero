@@ -31,20 +31,20 @@
 # - **A write through an `@` parameter is a use.** §4.8's copy-out always
 #   happens. Every other write is not a use: only a read is.
 
-use token
 use ast
 use diag
-use source
-use resolved
+use module/diagnostics
 use name_rows
-use resolve/vocab
+use resolve/asked
 use resolve/binding as resolve_binding
+use resolve/braced_names
 use resolve/builtin_names
 use resolve/errors
-use resolve/asked
-use resolve/braced_names
 use resolve/offered
-use module/diagnostics
+use resolve/vocab
+use resolved
+use source
+use token
 
 ## The stack
 
@@ -340,7 +340,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     used = resolved.used_module_named(r.out, from: source.module_at(s, name.start), binding: text)
 
     if !used.is_err()
-        push_diagnostic(@r, diagnostics.local_shadows_a_use(name: text, module: used.must(), span: name))
+        push_diagnostic(@r, diagnostics.local_shadows_a_use(name: text, module: used.must(), s: s, span: name))
 
     # A built-in's name is taken everywhere, not only at the top level: a
     # local `ok` makes `ok(x)` on the next line mean the local, which is

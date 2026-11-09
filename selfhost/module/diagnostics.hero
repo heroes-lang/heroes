@@ -20,28 +20,44 @@
 # Two `use` lines binding one name, `module_binding_taken`, and the alias its
 # fix writes are `module/binding_taken.hero`'s since defect 2368, when that
 # alias grew a package's rule past this file's ceiling.
+#
+# **A `use` line is quoted as the file writes it, never as the compilation
+# names its module** (defect 2373): in a package's own file `use text/strs`
+# is the module `<core>/text/strs`, and a message quoting that, or offering
+# `use <core>/text/strs`, names a line the file cannot hold, refused
+# `unknown_entry` there. Each caller hands in the line's own text where it
+# stands on one, and `placed.written_in` answers where it does not; the module
+# itself, named in prose, keeps its identity.
 
 use diag
 use module/names as module_names
+use module/placed
+use source
 use token
 
 # One module named twice in one file. Not a shadowing error and not a
 # duplicate declaration — it is a line that does nothing, and saying which
 # of the three it is costs nothing here and a guess to the reader otherwise.
-function used_twice(name: str, span: token.Span) -> diag.Diagnostic
+# `written` is the path the line writes.
+function used_twice(written: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "used_twice",
-        message: "`" + name + "` is already named by a `use` in this file — one `use` per module is all there is to say",
+        message: "`" + written + "` is already named by a `use` in this file — one `use` per module is all there is to say",
         span: span
     )
 
 # `use geom` in a file that also declares `geom`. Spec's shadowing rule,
 # reached because `use` BINDS (panel 031 R3): the module name and the
 # declaration are one name meaning two things.
-function use_shadows_a_declaration(name: str, declared_at: str, span: token.Span) -> diag.Diagnostic
+#
+# `line` is what the line writes after `use`, its `as` too, and `binding`
+# the name it takes: until defect 2373 the binding was quoted as the line,
+# so `use text/strs` was told as *`use strs` binds `strs`*, a line no file
+# held, in the program's own file as in a package's.
+function use_shadows_a_declaration(line: str, binding: str, declared_at: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "shadowed_binding",
-        message: "`use " + name + "` binds `" + name + "`, and this file already declares `" + name + "` at " + declared_at + " — shadowing is an error here, so one of the two has to be renamed",
+        message: "`use " + line + "` binds `" + binding + "`, and this file already declares `" + binding + "` at " + declared_at + " — shadowing is an error here, so one of the two has to be renamed",
         span: span
     )
 
@@ -51,22 +67,33 @@ function use_shadows_a_declaration(name: str, declared_at: str, span: token.Span
 # record field in one function and a module function in another, exit 0.
 # The fix stays a **`guess`** for panel 101 R4's reason: either name may give
 # way, and §8 makes `certain` machine-applicable.
-function local_shadows_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
+#
+# The module is named as the local's file writes it, `placed.written_in`
+# asked here rather than by the caller, which stands in a module already
+# past its ceiling (`resolve/state.hero`); a module bound by a line of the
+# file always has that path, and its identity stands in for the "" no line
+# reaches.
+function local_shadows_a_use(name: str, module: str, s: source.Source, span: token.Span) -> diag.Diagnostic
+    shown: str @= placed.written_in(s.reached.aliases, from: source.module_at(s, span.start), module: module)
+
+    if shown == ""
+        shown @ module
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "shadowed_binding",
-        message: "`" + name + "` is what this file calls the module `" + module + "`, so a local may not take it — shadowing is an error here",
+        message: "`" + name + "` is what this file calls the module `" + shown + "`, so a local may not take it — shadowing is an error here",
         span: span
     )
     d.notes @ d.notes.push(
-        "rename the module for this file with `use " + module + " as <other>`, which clears every collision in it at once, or rename this binding"
+        "rename the module for this file with `use " + shown + " as <other>`, which clears every collision in it at once, or rename this binding"
     )
     return d
 
-# A `use` nothing read. The unused rule, reached the same way.
-function unused_use(name: str, span: token.Span) -> diag.Diagnostic
+# A `use` nothing read. The unused rule, reached the same way. `written` is
+# the path the line writes.
+function unused_use(written: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unused_binding",
-        message: "`use " + name + "` is never used — nothing in this file names anything from `" + name + "`",
+        message: "`use " + written + "` is never used — nothing in this file names anything from `" + written + "`",
         span: span
     )
     d.notes @ d.notes.push("delete the line: an import that is not read is a dependency that is not real")
@@ -149,15 +176,18 @@ function needs_qualifying(name: str, qualifier: str, module: str, span: token.Sp
 # offers must therefore be what that `use` WOULD bind. That is the language's
 # default rule, and `module_names.binding_of` is where the rule lives. Every
 # other site asks `resolved.binding_in`, because every other site has a file.
-function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
+# The line to add is `written`, the path this file's `use` writes for the
+# module (`placed.written_in`; defect 2373): in a package's own file the
+# package's module is written bare, `use text/strs`.
+function needs_a_use(name: str, module: str, written: str, span: token.Span) -> diag.Diagnostic
     binding = module_names.binding_of(module)
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "needs_qualifying",
-        message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + module + "` at the top and write `" + binding + "." + name + "`",
+        message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + written + "` at the top and write `" + binding + "." + name + "`",
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `" + binding + "." + name + "` (and add `use " + module + "`)", replacement: binding + "." + name, span: span, certainty: .guess)
+        diag.Fix(title: "write `" + binding + "." + name + "` (and add `use " + written + "`)", replacement: binding + "." + name, span: span, certainty: .guess)
     )
     return d
 
@@ -250,7 +280,7 @@ test "neither qualification fix is certain, and the used half's reason is measur
     have = needs_qualifying(name: "dist2", qualifier: "geom", module: "geom", span: span)
     assert have.fixes[0].certainty == .guess
     assert have.fixes[0].replacement == "geom.dist2"
-    missing = needs_a_use(name: "dist2", module: "geom", span: span)
+    missing = needs_a_use(name: "dist2", module: "geom", written: "geom", span: span)
     assert missing.fixes[0].certainty == .guess
     assert missing.code == "needs_qualifying"
 
@@ -265,7 +295,7 @@ test "the list reads as prose, whatever its length"
     assert listed(three) == "`x`, `y` and `z`"
 
 test "an unused use carries its note, not a fix"
-    d = unused_use(name: "geom", span: token.Span(start: 0, end: 8))
+    d = unused_use(written: "geom", span: token.Span(start: 0, end: 8))
     assert d.fixes.len() == 0
     assert d.notes.len() == 1
     assert d.notes[0] == "delete the line: an import that is not read is a dependency that is not real"

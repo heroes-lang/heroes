@@ -30,6 +30,7 @@ use resolve/state
 use resolve/unused_sweep
 use resolved
 use source
+use token
 use use_key
 
 function collect(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
@@ -170,8 +171,13 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
         # for one mistake.
         return
 
+    # What the line writes, which every message about the line quotes: the
+    # module's identity is the compilation's name for it, and in a
+    # package's own file it is a path no line there holds (defect 2373).
+    written = source.span_text(s, used.name)
+
     if resolved.is_used_module(r.out, from: from, module: named)
-        state.push_diagnostic(@r, diagnostics.used_twice(named, span: used.name))
+        state.push_diagnostic(@r, diagnostics.used_twice(written, span: used.name))
         return
 
     # What a `use` introduces into this file is its BINDING — the name
@@ -193,7 +199,7 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
     if !taken.is_err()
         state.push_diagnostic(
             @r,
-            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: source.span_text(s, used.name), has_alias: used.binding.end != used.name.end, span: used.binding)
+            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: written, has_alias: used.binding.end != used.name.end, span: used.binding)
         )
         return
     already = resolved.top_in(r.out, module: from, name: binding)
@@ -202,7 +208,7 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
         at = source.elsewhere(s, here: used.binding.start, there: decls[already.must()].name.start)
         state.push_diagnostic(
             @r,
-            diagnostics.use_shadows_a_declaration(name: binding, declared_at: at, span: used.binding)
+            diagnostics.use_shadows_a_declaration(line: source.span_text(s, token.Span(start: used.name.start, end: used.binding.end)), binding: binding, declared_at: at, span: used.binding)
         )
         return
     resolved.declare_use(@r.out, from: from, binding: binding, module: named)
@@ -257,7 +263,7 @@ function unused_uses(@r: state.Resolver, s: source.Source, uses: [ast.Use])
         # already has its one diagnostic.
         if !resolved.is_used_module(r.out, from: from, module: named)
             continue
-        state.push_diagnostic(@r, diagnostics.unused_use(named, span: used.name))
+        state.push_diagnostic(@r, diagnostics.unused_use(source.span_text(s, used.name), span: used.name))
 
 ## Tests
 
