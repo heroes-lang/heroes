@@ -1,0 +1,6 @@
+error[ffi_missing_link]: `top2372` is defined inline in `fixedbugs-2372-fast.h` line 4, and its body calls `base2372_helper`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs-2372-an-inline-body-calling-a-name-nothing-links-is-told-at-its-binding.hero:12:5
+     |
+  12 |     function top2372() -> i32  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs a `link` naming the library that defines `base2372_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; name it in this group's own `link`, `extern "fixedbugs-2372-fast.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares

@@ -1,0 +1,15 @@
+# fixedbugs, defect 2372, lane b26-cli, 2026-11-09.
+#
+# The header defines `top2372` `static inline`, its body calling
+# `base2372_helper`, which the header declares and nothing on the link line
+# defines. The reference stands in this program's own object, compiled from
+# the header's text, so until 2026-11-09 every linker's refusal was told
+# *internal error: linking failed* at exit 2. The header is now asked
+# whether its text names the name, and the binding that brings the body in
+# is told, with the `link` the program needs, this group's own first.
+
+extern "fixedbugs-2372-fast.h"
+    function top2372() -> i32  #~ ffi_missing_link
+
+function main()
+    print(top2372())

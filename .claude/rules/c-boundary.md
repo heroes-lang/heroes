@@ -82,7 +82,19 @@ precedent):
   undefined name the linker reports must be referenced from a library a
   `link` or a package's `-l` names (`cli/link_report.hero` reads who refers
   to each, in GNU ld's, ld64's and the lld family's words), so a reference
-  from the program's own object stays exit 2;
+  from the program's own object stays exit 2; and, widened 2026-11-09 by
+  defect 2372 (lane b26-cli, on the same precedent), a name **the text of a
+  group's header puts in the program's own object**, a `static inline`
+  body that calls it or a bound name the header makes a macro for it, told
+  `ffi_missing_link` at the binding whose header's text reaches it, the
+  header, the function and the name named (`cli/header_needs.hero`). The
+  narrowing is clang's answer, never the linker's words, which name the
+  header's function at `-O0` and the compiler's own caller at `-O2`: every
+  reference in a module's own object or a library the program names, the
+  name bound by no group and of none of the compiler's forms, declared by
+  none of the unit's opening read alone, and named by a body or a macro of
+  the module's header list (`cli/header_bodies.hero`); a reference no
+  header's text explains stays exit 2;
 - **a `ptr` lend C would write through, rooted at a name the program may not
   write** — added 2026-09-19 (panel 166, defect 065). The lend crosses as
   `const void *` from a `=` binding or a by-value parameter, and clang's own

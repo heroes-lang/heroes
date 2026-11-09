@@ -1,0 +1,195 @@
+# What `cli/header_needs.hero` tells (design.md §4.17, §4.19; defect 2372,
+# 2026-11-09), split from it the day it was written, past §11's 300 lines,
+# along the seam between finding whose a name is and saying it: the text of
+# a group's header that names a name nothing on the link line defines, the
+# names, and the `link` the program needs, with everything to write it and
+# no other file opened.
+
+use ast
+use cli/header_bodies
+use cli/library_needs
+use diag
+use emit/macro_guard
+use source
+use token
+
+# One diagnostic in the making: where it is told and the header its group
+# names, the binding told at (`""` at a group's string), the name its macro
+# stands for (`""` for none), the body naming the missing names where one
+# does and that body's file as the program names it, and those names.
+record Finding
+    span: token.Span
+    header: str
+    binding: str
+    macro: str
+    body: header_bodies.Body?
+    file: str
+    names: [str]
+
+# The finding told: the header's text that names the missing names, the
+# names, and the `link` the program needs. `linking` says whether the group
+# told at already links a library or names a package.
+function diagnostic(one: Finding, linking: bool) -> diag.Diagnostic
+    names = library_needs.listed(one.names)
+    said: str @= ""
+
+    if one.macro != ""
+        said @ "`" + one.binding + "` is a macro for `" + one.macro + "` where this group reads it from `" + one.header + "`"
+
+    if one.body.is_err()
+        said @ said + ", and nothing on the link line defines " + names
+    else
+        body = one.body.must()
+        place = defined(body) + " in `" + one.file + "` line " + body.line.to_str()
+
+        if one.binding == "" && one.file == one.header
+            said @ "`" + body.name + "` is " + place + ", which this group names"
+        else if one.binding == ""
+            said @ "`" + body.name + "` is " + place + ", which this group reads through `" + one.header + "`"
+        else if body.name == start_of(one)
+            said @ joined(said: said, part: "`" + body.name + "` is " + place)
+        else
+            said @ joined(said: said, part: "`" + start_of(one) + "` reaches `" + body.name + "`, " + place)
+        said @ said + ", and its body " + verb(body, names: one.names) + " " + names + ", which nothing on the link line defines"
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_missing_link", message: said, span: one.span)
+    d.notes @ d.notes.push(
+        "this program needs a `link` naming the library that defines " + names + ": " + compiled(one) + ", and a library is linked only where a group names it; " + remedy(one, linking: linking)
+    )
+    return d
+
+function defined(body: header_bodies.Body) -> str
+    if body.inline
+        return "defined inline"
+    return "defined"
+
+# The name the told text starts from: the macro's where one stands, else
+# the binding's.
+function start_of(one: Finding) -> str
+    if one.macro != ""
+        return one.macro
+    return one.binding
+
+function joined(said: str, part: str) -> str
+    if said == ""
+        return part
+    return said + ", and " + part
+
+# What the header's text does to this program's object.
+function compiled(one: Finding) -> str
+    if one.body.is_err()
+        return "where this program's C writes `" + one.binding + "` it writes `" + one.macro + "`, which its own object then refers to, at `-O0` and `-O2` alike"
+    return "the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike"
+
+# The group the program writes, this group's own `link` first where it
+# names no library yet.
+function remedy(one: Finding, linking: bool) -> str
+    own = "give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+
+    if linking
+        return own
+    return "name it in this group's own `link`, `extern \"" + one.header + "\" link \"<library>\"`, or " + own
+
+# How a body names `names`: it calls functions and reads objects.
+function verb(body: header_bodies.Body, names: [str]) -> str
+    calls: bool @= true
+    reads: bool @= true
+
+    for name in names
+        if !holds(body.calls, name: name)
+            calls @ false
+
+        if !holds(body.reads, name: name)
+            reads @ false
+
+    if calls
+        return "calls"
+
+    if reads
+        return "reads"
+    return "refers to"
+
+# Whether the group told at already links a library or names a package: the
+# binding's own group, or the group whose header string is the one told at.
+function group_links(s: source.Source, decls: [ast.Decl], at: Finding) -> bool
+    for decl in decls
+        header = macro_guard.header_of(decl)
+
+        if header.is_err() || source.is_library(s, decl.name.start)
+            continue
+        here: bool @= header.must().start == at.span.start
+
+        if at.binding != ""
+            here @ source.span_text(s, decl.name) == at.binding
+
+        if here
+            return !library_needs.group_span(decl, want_package: false).is_err() || !library_needs.group_span(decl, want_package: true).is_err()
+
+    return false
+
+function holds(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+test "a header's text that needs a name nothing links is told with the link it needs (defect 2372)"
+    at = token.Span(start: 0, end: 0)
+    fast = header_bodies.Body(
+        name: "top_fast",
+        file: "./fast.h",
+        line: 2,
+        inline: true,
+        calls: ["base_helper"],
+        reads: []
+    )
+    d = diagnostic(
+        Finding(span: at, header: "fast.h", binding: "top_fast", macro: "", body: ok(fast), file: "fast.h", names: ["base_helper"]),
+        linking: true
+    )
+    assert d.code == "ffi_missing_link"
+    assert d.message == "`top_fast` is defined inline in `fast.h` line 2, and its body calls `base_helper`, which nothing on the link line defines"
+    assert d.notes == ["this program needs a `link` naming the library that defines `base_helper`: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike, and a library is linked only where a group names it; give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"]
+
+    # A group with no `link` is offered its own first; a macro, a body
+    # reached through another, and a body no binding reaches.
+    bare = diagnostic(
+        Finding(span: at, header: "fast.h", binding: "top_fast", macro: "", body: ok(fast), file: "fast.h", names: ["base_helper"]),
+        linking: false
+    )
+    assert library_needs.pronoun(["x"]) == "it"
+    assert remedy(Finding(span: at, header: "fast.h", binding: "", macro: "", body: ok(fast), file: "fast.h", names: []), linking: false) == "name it in this group's own `link`, `extern \"fast.h\" link \"<library>\"`, or give this program a group for that library, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    assert bare.message == d.message
+    alias = diagnostic(
+        Finding(span: at, header: "fastalias.h", binding: "top_fast", macro: "base_helper", body: fail(code: "none", msg: "a macro"), file: "", names: ["base_helper"]),
+        linking: true
+    )
+    assert alias.message == "`top_fast` is a macro for `base_helper` where this group reads it from `fastalias.h`, and nothing on the link line defines `base_helper`"
+    mid = header_bodies.Body(
+        name: "mid",
+        file: "./inner.h",
+        line: 2,
+        inline: true,
+        calls: ["base_two"],
+        reads: ["base_count"]
+    )
+    reached = diagnostic(
+        Finding(span: at, header: "fast.h", binding: "top_fast", macro: "", body: ok(mid), file: "./inner.h", names: ["base_two", "base_count"]),
+        linking: true
+    )
+    assert reached.message == "`top_fast` reaches `mid`, defined inline in `./inner.h` line 2, and its body refers to `base_two` and `base_count`, which nothing on the link line defines"
+    plain = header_bodies.Body(
+        name: "helper",
+        file: "./inner.h",
+        line: 4,
+        inline: false,
+        calls: [],
+        reads: ["base_count"]
+    )
+    unreached = diagnostic(
+        Finding(span: at, header: "fast.h", binding: "", macro: "", body: ok(plain), file: "./inner.h", names: ["base_count"]),
+        linking: true
+    )
+    assert unreached.message == "`helper` is defined in `./inner.h` line 4, which this group reads through `fast.h`, and its body reads `base_count`, which nothing on the link line defines"
