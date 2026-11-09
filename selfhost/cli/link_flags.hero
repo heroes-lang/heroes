@@ -67,10 +67,14 @@ use cli/strings
 # platform axis: it asks a question and gets a fact.
 function link_flags() -> [str]
     # **`-rdynamic` on every POSIX link line** (panel 104, 2026-09-03). The stack
-    # guard names the function that ran out of stack through `dladdr`, and glibc's
-    # `dladdr` reads only `.dynsym` — measured in the Linux image: without the
-    # flag the message is `panic: stack exhausted` and nothing more; with it,
-    # `… in d100000.down`, and the binary grows 134,640 → 142,832 bytes. Darwin
+    # guard names the function that ran out of stack. On Linux it asks the
+    # executable's own `.symtab` first, `static` functions included
+    # (`runtime/parts/symbols.c`, defect 2371, 2026-11-09), and `dladdr` after
+    # it, for an address outside the executable or a binary whose table is gone
+    # (stripped, or no `/proc`); glibc's `dladdr` reads only `.dynsym`, which
+    # this flag fills. Measured in the Linux image before that table was read:
+    # without the flag the message is `panic: stack exhausted` and nothing more;
+    # with it, `… in d100000.down`, and the binary grows 134,640 → 142,832 bytes. Darwin
     # names the symbol either way, from its symbol table under every debug word
     # (`in deep.down` under `-g`, line tables and `-g0` alike, panel 197; this
     # said *`-g` on every build*, which was never the cause), nothing strips,
