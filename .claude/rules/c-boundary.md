@@ -262,9 +262,20 @@ and the body calling `(*hero_bound_t1())`, and the extern table's reference
 the same; a bound name of no such form is written as before, so no program
 that binds none moved a byte of its C (233 `run` cases' `--emit-c` and the
 three `examples/` that bind `hero_thread_*`, against the compiler of the
-round's base, measured that day). **Not yet stepped around**: a group's
-record whose typedef has one of those names, `record t1`, which a temporary
-`t1` hides wherever the body spells the type, still exit 2.
+round's base, measured that day). **A group's record of one of those names**,
+`record t1` beside the temporary `t1`, is a type a body spells after hiding it,
+so it is renamed rather than reached: right after the group's include the unit
+writes `typedef t1 hero_bound_type_t1;` and the unit's own names spell the
+record by the alias (`emit/bound_type.hero`); a record the header tags lives in
+C's tag namespace and keeps its spelling. The alias is the unit's alone: a
+probe compiled apart builds names of its own and spells the header's `t1`,
+which nothing there hides, and given the alias the layout screen read *use of
+undeclared identifier* on each of its rows, measured that day before the
+alias was kept out of it. Built, received from C, lent with `@`, held as
+another group record's field and passed between two modules, `record t1` and
+`record h0_p` now build and run, with every C file of their builds that names
+the alias declaring it, and the same 233 cases and three examples
+byte-identical.
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, or linked the

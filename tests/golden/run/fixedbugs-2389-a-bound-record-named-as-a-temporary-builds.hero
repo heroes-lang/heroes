@@ -1,0 +1,33 @@
+# fixedbugs, defect 2389, 2026-11-09, the type beside the function.
+#
+# SYMPTOM: a group's record whose typedef is named `t1` was *internal error*
+# at exit 2: the body declared its temporary `int64_t t1` and then spelled the
+# type, `t2 = (t1){.a = t1};`, *expected identifier or '('*.
+#
+# FIX: the unit writes `typedef t1 hero_bound_type_t1;` right after the
+# group's include and spells the record by that alias (`emit/bound_type.hero`),
+# so it is built, passed, received, lent with `@` and held as another
+# record's field, each printing 42.
+
+extern "fixedbugs-2389-a-bound-record-named-as-a-temporary-builds.h"
+    record t1
+        a: i64
+    record outer
+        inner: t1
+        b: i64
+    function get(v: t1) -> i64
+    function make(x: i64) -> t1
+    function bump(@v: t1)
+    function sum(o: outer) -> i64
+
+function main()
+    r = t1(a: 42)
+    print(get(v: r))
+    m = make(x: 41)
+    print(m.a + 1)
+    n: t1 @= t1(a: 41)
+    bump(@n)
+    print(n.a)
+    o = outer(inner: t1(a: 40), b: 2)
+    print(sum(o: o))
+    print(o.inner.a + 2)
