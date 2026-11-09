@@ -1,0 +1,19 @@
+# fixedbugs, defect 2385, 2026-11-09: `y : 8` straddles two bytes in one
+# arm of a union, over bits 4 and 5 of the other arm's `x : 6`, so its
+# `--` read 3 and left its high byte zero, which the lend then wrote zero.
+# Each named bit-field is written zero before its `--` now; C reads every
+# bit no arm names zero and `y` as it set it.
+extern "fixedbugs-2385-arms.h"
+    record Straddle tag fixedbugs_2385_straddle partial
+        k: i32
+    function fixedbugs_2385_mk_straddle() -> Straddle
+    function fixedbugs_2385_check_straddle(@p: Straddle) -> i64
+    function fixedbugs_2385_straddle_value(@p: Straddle) -> i64
+
+record Held
+    one: Straddle
+    n: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2385_mk_straddle(), n: 1)
+    print(fixedbugs_2385_check_straddle(@h.one), " ", fixedbugs_2385_straddle_value(@h.one))

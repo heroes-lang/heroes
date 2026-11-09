@@ -1,0 +1,21 @@
+# fixedbugs, defect 2385, 2026-11-09: two arms of a union name `x : 3`
+# and `y : 5` over the same bits. The padding pass's `--` on `y` read the
+# 7 `x`'s `--` had set and left 6, so the masks cleared bits `y` holds at
+# every lend, and C read `y` as 6 where it had written 31, at exit 0, in the
+# defect's reproducer. Each named bit-field is written zero before its `--`
+# now, the masks are the union of every arm's bits, and C reads every bit no
+# arm names zero and `y` as it set it.
+extern "fixedbugs-2385-arms.h"
+    record Two tag fixedbugs_2385_two partial
+        k: i32
+    function fixedbugs_2385_mk_two() -> Two
+    function fixedbugs_2385_check_two(@p: Two) -> i64
+    function fixedbugs_2385_two_value(@p: Two) -> i64
+
+record Held
+    one: Two
+    n: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2385_mk_two(), n: 1)
+    print(fixedbugs_2385_check_two(@h.one), " ", fixedbugs_2385_two_value(@h.one))

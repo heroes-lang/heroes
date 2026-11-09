@@ -1,0 +1,20 @@
+# fixedbugs, defect 2385, 2026-11-09: three arms of a union name `a : 2`,
+# `b : 4` after a bit and `c : 7`, over the same bits. In the order the
+# padding pass took them each `--` read what the arm before it set, `c` the
+# last, so before the repair no bit of the byte was a named one's and the
+# lend wrote it zero, `c` with it. C reads every bit no arm names zero and
+# `c` as it set it.
+extern "fixedbugs-2385-arms.h"
+    record Three tag fixedbugs_2385_three partial
+        k: i32
+    function fixedbugs_2385_mk_three() -> Three
+    function fixedbugs_2385_check_three(@p: Three) -> i64
+    function fixedbugs_2385_three_value(@p: Three) -> i64
+
+record Held
+    one: Three
+    n: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2385_mk_three(), n: 1)
+    print(fixedbugs_2385_check_three(@h.one), " ", fixedbugs_2385_three_value(@h.one))

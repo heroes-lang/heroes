@@ -116,11 +116,19 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
 # A record's bit-field tables (panel 223, defect 2099): room for a mask per
 # byte its named bit-fields can reach and how many masks there are, at file
 # scope; and the constructor's block that finds them and the record's gaps,
-# the answer. C finds the bits itself, endianness and ABI alike: `--` on each
-# named bit-field of a zeroed object sets exactly its bits, all of them,
-# whatever its type, so every byte it reaches, and `hero_pad_bits` reads the
-# object's bytes. Each name the block spells is guarded from the header's
-# macros, as a member's is in the table.
+# the answer. C finds the bits itself, endianness and ABI alike: each named
+# bit-field of a zeroed object written zero and then `--`'d holds exactly its
+# own bits set, all of them, whatever its type, so every byte it reaches, and
+# `hero_pad_bits` reads the object's bytes (`all_set`). Each name the block
+# spells is guarded from the header's macros, as a member's is in the table.
+#
+# **EACH IS WRITTEN ZERO BEFORE ITS `--`** (defect 2385): two arms of a union
+# name bit-fields over the same bits, and a `--` reads what the arm before it
+# set, so `y : 5` after `x : 3` read 7 and set its bits to 6, three of them
+# left zero; the masks then cleared bits `y` holds at every lend, and C read
+# `y` as 6 where it had written 31, at exit 0. Written zero first, each `--`
+# sets every bit its own field holds, and the object's set bits are the union
+# of every arm's named bits, whatever their order.
 #
 # **NO BYTE OF A BIT-FIELD IS WRITTEN AS A NUMBER** (defect 2383): the table
 # holds members alone, and the bytes each named bit-field reaches are the
@@ -144,7 +152,7 @@ function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) ->
     steps: [str] @= []
 
     for path in held.bits
-        steps @ steps.push(OBJECT + "->" + path + "--;")
+        steps @ steps.push(all_set(path))
 
         for name in membership.names_in(path)
             spelled[name] @ true
@@ -164,6 +172,13 @@ function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) ->
 # The name of the zeroed record a bit-field block runs `--` on.
 constant OBJECT: str
     "hero_pad_o"
+
+# The C that sets every bit of the named bit-field at `path` of the object and
+# no other: written zero, whatever another arm of a union left in its bits,
+# then `--`, which takes zero to every bit set in any integer type C allows a
+# bit-field, `_Bool` and signed ones among them.
+function all_set(path: str) -> str
+    return OBJECT + "->" + path + " = 0; " + OBJECT + "->" + path + "--;"
 
 # The group records one extern call lends: the record, or fixed array of
 # records, each `@` argument is, and the element of each array whose buffer
@@ -207,3 +222,11 @@ function reached(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
 
     for one in held.must().arrays
         reached(c, names, s, decls, decl: one.element, @lent)
+
+## Tests
+
+# Each named bit-field is written zero before its `--` (defect 2385), so an
+# arm of a union never decrements bits another arm set.
+test "a named bit-field is set whole from zero, whatever an earlier arm left in its bits (defect 2385)"
+    assert all_set("u.q.y") == "hero_pad_o->u.q.y = 0; hero_pad_o->u.q.y--;"
+    assert all_set("b") == "hero_pad_o->b = 0; hero_pad_o->b--;"

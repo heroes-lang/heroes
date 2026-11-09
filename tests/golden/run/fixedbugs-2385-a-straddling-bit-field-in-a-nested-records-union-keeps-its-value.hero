@@ -1,0 +1,18 @@
+# fixedbugs, defect 2385, 2026-11-09: the union of the straddling case, a
+# member of a record the bound record holds, its bit-fields reached through
+# `in.s.u.p.x` and `in.s.u.q.y`. C reads every bit no arm names zero and
+# `y` as it set it.
+extern "fixedbugs-2385-arms.h"
+    record Nested tag fixedbugs_2385_nested partial
+        h: i64
+    function fixedbugs_2385_mk_nested() -> Nested
+    function fixedbugs_2385_check_nested(@p: Nested) -> i64
+    function fixedbugs_2385_nested_value(@p: Nested) -> i64
+
+record Held
+    one: Nested
+    n: i64
+
+function main()
+    h: Held @= Held(one: fixedbugs_2385_mk_nested(), n: 1)
+    print(fixedbugs_2385_check_nested(@h.one), " ", fixedbugs_2385_nested_value(@h.one))
