@@ -1,0 +1,27 @@
+# Fixed defect 2390, 2026-11-09, lane b27-place: a `use` naming the folder a
+# fetch placed a package in, the lines of the issue, whose program held
+# `examples/rpn/`'s catalogue and tree; the parser tells these lines and reads
+# neither, so the case holds the lines alone.
+#
+# SYMPTOM: each line was `use_holds_an_address`, *the catalogue holds that
+# address*, which it does not, and advised `use <strconv>/parse` and, nested,
+# `use <strconv>/internal/shown` with a `guess` writing it, the module taken
+# for the entry: lines the compiler refuses, `unknown_entry`.
+#
+# CAUSE: `heroes.packages` holds a dot before its `/`, so the line was read as
+# Go's host, owner and repository, the folder's last part as the entry.
+#
+# FIX: the line is told it names the folder a fetch placed a package in, and
+# the line reaching the same module through its entry, `use <core>/strconv`,
+# with a `guess` writing it, bare and in the mark: only the catalogue says its
+# entry `core` placed this folder. A module under the package's `internal`
+# folder is told no `use` of the program reaches it, and offered nothing.
+#
+# The key opens with `2e3`: the lexer's `exponent_literal` on each line is
+# defect 2391's, told apart.
+use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv  #~ exponent_literal package_unmarked
+use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ exponent_literal package_unmarked
+use <heroes.packages/core@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ exponent_literal package_unmarked
+
+function main()
+    print(strconv.atoi("12").must())

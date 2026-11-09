@@ -18,6 +18,11 @@
 # - `use <github.com/acme/json>/parse`, an address, and the same without the
 #   brackets: the catalogue holds an address and the `use` its entry, which
 #   only the catalogue names, so the repair is a `guess`;
+# - `use heroes.packages/core@0.1.0-<key>/strconv`, the folder a fetch placed
+#   a package in, bare, quoted or in the mark: no address, and told what it
+#   is (`placed_use.hero`, defect 2390), the repair writing its entry's line,
+#   a `guess` for the same reason, only the catalogue saying its entry
+#   `core` placed that folder;
 # - `use <json>`, a package with no module, an unclosed mark and an empty one:
 #   no repair, which module or name is meant being the author's.
 
@@ -25,6 +30,7 @@ use describe
 use diag
 use keywords
 use module_text
+use placed_use
 use token
 
 # The diagnostic owed by the mark at `tokens[at]`, a `<`, or none where the
@@ -86,7 +92,29 @@ function unmarked(tokens: [token.Token], at: i64, text: str, first: token.Span) 
     if !module_text.is_address(written)
         none: [diag.Diagnostic] = []
         return none
-    return [address_told(module_text.read_address(written), span: span)]
+    return [told_whole(written, span: span)]
+
+# What a `use` is told where the whole of what it names, quoted or not, is an
+# address or holds the folder a fetch placed a package in: `heroes.packages`
+# holds a dot before its `/`, as a host does, so the folder is asked first.
+function told_whole(written: str, span: token.Span) -> diag.Diagnostic
+    if placed_use.is_placed(written)
+        return placed_told(placed_use.read(written), span: span)
+    return address_told(module_text.read_address(written), span: span)
+
+# A placed folder told (defect 2390): what it is, and the repair, a `guess`,
+# writing its entry and its module in its place where no `internal` folder
+# holds the module.
+function placed_told(held: placed_use.Placed, span: token.Span) -> diag.Diagnostic
+    written = placed_use.repair(held)
+    return repaired(
+        code: "package_unmarked",
+        message: placed_use.said(held),
+        span: span,
+        written: written,
+        offered: written.len() > 0,
+        certain: false
+    )
 
 # An address told where it is the whole of what a `use` names, quoted or not:
 # the repair, a `guess`, writes the entry and the module in its place.
@@ -252,8 +280,12 @@ function address(line: [token.Token], text: str, close: i64) -> diag.Diagnostic
     if close < 0
         last @ line.len() - 1
         end @ last
+    inside = module_text.unquote(text.slice(from: line[1].span.start, to: line[last].span.end))
+
+    if placed_use.is_placed(inside)
+        return placed_marked(line, text: text, close: close, inside: inside)
     span = token.Span(start: line[0].span.start, end: line[end].span.end)
-    held = module_text.read_address(module_text.unquote(text.slice(from: line[1].span.start, to: line[last].span.end)))
+    held = module_text.read_address(inside)
     after = module_after(line, text, close: close)
 
     if after.len() > 0
@@ -274,13 +306,50 @@ function address(line: [token.Token], text: str, close: i64) -> diag.Diagnostic
         )
     return address_told(held, span: span)
 
+# `use <heroes.packages/core@0.1.0-<key>>/strconv`: a placed folder in the
+# mark, told as the bare line is, over the mark and the module after it; the
+# repair offered where nothing but an `as` follows.
+function placed_marked(line: [token.Token], text: str, close: i64, inside: str) -> diag.Diagnostic
+    held = placed_use.read(inside)
+    end: i64 @= close
+    module: str @= held.module
+
+    if close < 0
+        end @ line.len() - 1
+    after = module_after(line, text, close: close)
+
+    if after.len() > 0
+        end @ after_end(line, close: close)
+
+        if module.len() > 0
+            module @ module + "/" + after
+        else
+            module @ after
+    d: diag.Diagnostic @= placed_told(
+        placed_use.Placed(folder: held.folder, entry: held.entry, module: module),
+        span: token.Span(start: line[0].span.start, end: line[end].span.end)
+    )
+
+    if !ends_cleanly(line, text, from: end + 1)
+        d.fixes @ []
+    return d
+
 # The path written after a mark's `>` and its `/`, "" where none is.
 function module_after(line: [token.Token], text: str, close: i64) -> str
-    if close < 0 || close + 2 >= line.len() || line[close + 1].kind != .slash || line[close + 2].kind != .ident
+    end = after_end(line, close: close)
+
+    if end < 0
         return ""
+    return text.slice(from: line[close + 2].span.start, to: line[end].span.end)
+
+# Where the path after a mark's `>` and its `/` ends in `line`, -1 where none
+# is written.
+function after_end(line: [token.Token], close: i64) -> i64
+    if close < 0 || close + 2 >= line.len() || line[close + 1].kind != .slash || line[close + 2].kind != .ident
+        return -1
     at: i64 @= close + 2
 
     while at + 2 < line.len() && line[at + 1].kind == .slash && line[at + 2].kind == .ident
         at @ at + 2
 
-    return text.slice(from: line[close + 2].span.start, to: line[at].span.end)
+    return at

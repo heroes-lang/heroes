@@ -285,7 +285,8 @@ test "a refused use line does not eat the next one, and this is a fixed defect"
 # The parser's half of the mark (`parse/use_mark.hero`), asked here because
 # that module cannot reach the parser. Each habit is told by its own code, and
 # a repair is `certain` only where the line it writes is the one meant
-# whatever the catalogue holds (panel 235's R18).
+# whatever the catalogue holds (panel 235's R18). A placed tree's folder is a
+# `guess`, only the catalogue saying which entry placed it (defect 2390).
 test "a package's mark: each habit is told, and only a sure repair is certain"
     texts: [str] = [
         "use <json/parse>\n"
@@ -297,6 +298,9 @@ test "a package's mark: each habit is told, and only a sure repair is certain"
         "use github.com/acme/json/parse\n"
         "use <json\n"
         "use <>/x\n"
+        "use heroes.packages/core@0.1.0-k/strconv\n"
+        "use <heroes.packages/core@0.1.0-k>/strconv\n"
+        "use heroes.packages/core@0.1.0-k/strconv/internal/shown\n"
     ]
     codes: [str] = [
         "package_mark_holds_a_path"
@@ -308,9 +312,12 @@ test "a package's mark: each habit is told, and only a sure repair is certain"
         "use_holds_an_address"
         "package_mark_unclosed"
         "package_wants_a_name"
+        "package_unmarked"
+        "package_unmarked"
+        "package_unmarked"
     ]
-    certain: [str] = ["<json>/parse", "/", "json", "<json>/parse", "", "", "", "", ""]
-    guessed: [str] = ["", "", "", "", "", "<json>", "<json>/parse", "", ""]
+    certain: [str] = ["<json>/parse", "/", "json", "<json>/parse", "", "", "", "", "", "", "", ""]
+    guessed: [str] = ["", "", "", "", "", "<json>", "<json>/parse", "", "", "<core>/strconv", "<core>/strconv", ""]
     at: i64 @= 0
 
     while at < texts.len()
