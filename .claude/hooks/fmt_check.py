@@ -413,7 +413,9 @@ def marks_against_expectation(compiler, place):
     stem = place.rel[: place.rel.rfind(".")]
     if not marks.judged_narrowed(place.tree, stem + ".hero"):
         return []
-    name = os.path.basename(stem)
+    # The name its case runs under: the folder's less `.case` for a file of a
+    # folder case (defect 2370), the file's stem for a flat one.
+    name = marks.case_named(place.tree, stem + ".hero").name
     limit = left()
     found = marks.disagreements(compiler, place.tree, [name], limit) if limit is not None else None
     if not found or name not in found:

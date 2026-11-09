@@ -2025,6 +2025,150 @@ class NotCanonicalOnPurpose(unittest.TestCase):
         self.assertIn("is not canonical", said)
 
 
+class FolderCases(unittest.TestCase):
+    """Defect 2370: a case that is a folder, `<name>.case/` holding `main.hero`
+    and `main.expected` (`tests/harness/cases.hero`), is a case of the golden
+    directory above it: marked and not canonical on purpose in an exempt
+    directory it is judged by its marks, under the folder's name, its modules
+    in a folder inside it too; one under a directory the `canonical` suite
+    reads, a flat case's module folder, and a `.case` folder deeper than the
+    directory's own entries are still held to `fmt`."""
+
+    UNCANONICAL = "use b\nuse a  UNCANONICAL  #~ module_binding_taken\n"
+
+    def setUp(self):
+        self.top = fresh("hooks-2370-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        write(os.path.join(self.tree, "tests", "harness", "suite_annotations.hero"), ANNOTATIONS)
+
+    def folder(self, at, name, marked=True, expected=True):
+        """The folder case `<at>/<name>.case`, its `main.hero` marked and not
+        canonical, staged: the path of its `main.hero`."""
+        rel = at + "/" + name + ".case/main.hero"
+        staged(self.tree, rel, self.UNCANONICAL if marked else "use b\nuse a  UNCANONICAL\n")
+        if expected:
+            staged(self.tree, at + "/" + name + ".case/main.expected", "main.hero:2:5: error[module_binding_taken]: ...\n")
+        return rel
+
+    def commit(self, *rels):
+        return guard_bash.verdict("git commit -F m -- " + " ".join(rels), self.tree)
+
+    def test_the_issue_s_reproducer_a_marked_folder_case_not_canonical_is_committed(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-2367-x): 1 passed, 0 failed\n")
+        rel = self.folder("tests/golden/full", "fixedbugs-2367-x")
+        self.assertIsNone(self.commit(rel))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-2367-x"])
+
+    def test_a_marked_folder_case_its_suite_fails_is_refused_by_its_name_with_the_suite_words(self):
+        answer(
+            self.tree, "annotations", 1,
+            "FAIL annotations/fixedbugs-2367-x\n  the annotations and the diagnostics disagree\n"
+            "  annotations (only fixedbugs-2367-x): 0 passed, 1 failed\n",
+        )
+        rel = self.folder("tests/golden/check", "fixedbugs-2367-x")
+        said = self.commit(rel)
+        self.assertIsNotNone(said)
+        self.assertIn(rel + "'s marks and its expectation disagree", said)
+        self.assertIn("the annotations and the diagnostics disagree", said)
+        self.assertNotIn("is not canonical", said)
+
+    def test_a_marked_module_in_a_folder_inside_a_case_is_judged_by_its_case(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-2367-x): 1 passed, 0 failed\n")
+        self.folder("tests/golden/full", "fixedbugs-2367-x", marked=False)
+        git(self.tree, "commit", "-q", "-m", "case", "--", "tests/golden")
+        for module in ("other/zeta.hero", "vendor/core/text/strs.hero", "zeta.hero"):
+            rel = "tests/golden/full/fixedbugs-2367-x.case/" + module
+            staged(self.tree, rel, self.UNCANONICAL)
+            self.assertIsNone(self.commit(rel), rel)
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-2367-x"] * 3)
+
+    def test_the_single_file_case_is_judged_as_it_was(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-2367-y): 1 passed, 0 failed\n")
+        rel = "tests/golden/full/fixedbugs-2367-y.hero"
+        staged(self.tree, rel, self.UNCANONICAL)
+        staged(self.tree, "tests/golden/full/fixedbugs-2367-y.expected", "x\n")
+        self.assertIsNone(self.commit(rel))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-2367-y"])
+
+    def test_a_folder_case_and_a_flat_one_are_asked_in_one_run(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-2367-): 2 passed, 0 failed\n")
+        one = self.folder("tests/golden/full", "fixedbugs-2367-x")
+        staged(self.tree, "tests/golden/check/fixedbugs-2367-y.hero", self.UNCANONICAL)
+        staged(self.tree, "tests/golden/check/fixedbugs-2367-y.expected", "x\n")
+        self.assertIsNone(self.commit(one, "tests/golden/check/fixedbugs-2367-y.hero"))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-2367-"])
+
+    def test_a_folder_case_under_a_directory_not_exempt_is_still_held_to_fmt(self):
+        for at in ("tests/golden/run", "tests/golden/fixedbugs", "tests/golden/emit"):
+            rel = self.folder(at, "fixedbugs-2367-x")
+            self.assertIn(rel + " is not canonical", self.commit(rel))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_nothing_beside_a_folder_case_widens(self):
+        # A folder of a flat case's modules, a `.case` folder deeper than the
+        # directory's own entries, which the harness never reads as a case, a
+        # folder named `.case` alone, and a folder case with no expectation.
+        for rel in (
+            "tests/golden/full/fixedbugs2367/zeta.hero",
+            "tests/golden/full/deeper/fixedbugs-2367-x.case/main.hero",
+            "tests/golden/full/.case/main.hero",
+        ):
+            staged(self.tree, rel, self.UNCANONICAL)
+            self.assertIn(rel + " is not canonical", self.commit(rel))
+        rel = self.folder("tests/golden/full", "lonely", expected=False)
+        self.assertIn(rel + " is not canonical", self.commit(rel))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_folder_case_with_no_mark_not_canonical_is_still_refused(self):
+        rel = self.folder("tests/golden/full", "plain", marked=False)
+        self.assertIn(rel + " is not canonical", self.commit(rel))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_the_write_hook_judges_a_marked_folder_case_by_its_marks_under_its_name(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-2367-x): 1 passed, 0 failed\n")
+        rel = self.folder("tests/golden/full", "fixedbugs-2367-x")
+        code, said = written(self.tree, os.path.join(self.tree, rel))
+        self.assertEqual((code, said), (0, ""))
+        code, said = written(self.tree, os.path.join(self.tree, rel[: -len(".hero")] + ".expected"))
+        self.assertEqual((code, said), (0, ""))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-2367-x"] * 2)
+
+    def test_the_write_hook_tells_a_folder_case_its_suite_fails(self):
+        answer(self.tree, "annotations", 1, "FAIL annotations/fixedbugs-2367-x\n  disagree\n")
+        rel = self.folder("tests/golden/full", "fixedbugs-2367-x")
+        code, said = written(self.tree, os.path.join(self.tree, rel))
+        self.assertEqual(code, 2, said)
+        self.assertIn("marks and its expectation disagree", said)
+        self.assertNotIn("is not canonical", said)
+
+    def test_the_write_hook_holds_a_folder_case_not_exempt_to_fmt(self):
+        rel = self.folder("tests/golden/run", "fixedbugs-2367-x")
+        code, said = written(self.tree, os.path.join(self.tree, rel))
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_case_s_name_and_files_are_the_harness_s(self):
+        dirs = ["tests/golden/check", "tests/golden/full"]
+        flat = marks.case_of(dirs, "tests/golden/check/a.hero")
+        self.assertEqual((flat.name, flat.source, flat.expected), ("a", "tests/golden/check/a.hero", "tests/golden/check/a.expected"))
+        for inside in ("main.hero", "zeta.hero", "other/zeta.hero", "a/b/c.hero"):
+            case = marks.case_of(dirs, "tests/golden/full/b.case/" + inside)
+            self.assertEqual(
+                (case.name, case.source, case.expected),
+                ("b", "tests/golden/full/b.case/main.hero", "tests/golden/full/b.case/main.expected"),
+            )
+        for none in (
+            "tests/golden/run/b.case/main.hero",
+            "tests/golden/full/mods/zeta.hero",
+            "tests/golden/full/deeper/b.case/main.hero",
+            "tests/golden/full/.case/main.hero",
+            "tests/golden/fullness/a.hero",
+            "tests/golden/full/b.case",
+        ):
+            self.assertIsNone(marks.case_of(dirs, none), none)
+
+
 class ProbeFixtures(unittest.TestCase):
     """Defect 603: a probe fixture under a run root the `canonical` suite does
     not read (`tests/golden/surface-fixtures/`) parses and is not canonical on
