@@ -241,6 +241,31 @@ own names are held to those forms by the compiler's tests (R4), and
 `<heroes library>` and the unit's own `.c`, as the `#line`s name them, are the
 compiler's files (R5, `group_file.compilers`).
 
+**Widened 2026-11-09 by defect 2389** (lane b27-names). The emitter's forms a
+header's macro meets are now every name a function's body declares: `t<N>`,
+`h<N>_<name>` (a parameter or a local), `ph<N>_<name>` (an `@` parameter's
+pointer), and the names it writes there itself, `hero_here` before every C
+call, `found` in a map lookup and the rest of `emit/shadowed.hero`'s `LOCALS`
+and `GROWN`. Its test reads every word the emitter's code writes in a string
+literal where C declares or assigns a name, and fails on one the set does not
+know, past the words it lists as standing where no bound function is named
+(`ELSEWHERE`: C's own words, struct members, the locals of `main`, a thunk,
+the per-type functions and renderers, and the C of a probe).
+And the macro is read from the first note under the error that expands one,
+wherever that note stands: `#define t1 t2` puts clang's *redefinition of 't2'*
+at the real `t2`, its first note *previous definition is here*, and was exit 2
+until then, as was `#define f_left f_right`. The other half is no blame rule:
+a group that BINDS a C function of one of those names is a correct program, so
+the emitter steps around it rather than refusing it, an accessor written before
+any body (`static inline __typeof__(t1) *hero_bound_t1(void) { return &t1; }`)
+and the body calling `(*hero_bound_t1())`, and the extern table's reference
+the same; a bound name of no such form is written as before, so no program
+that binds none moved a byte of its C (233 `run` cases' `--emit-c` and the
+three `examples/` that bind `hero_thread_*`, against the compiler of the
+round's base, measured that day). **Not yet stepped around**: a group's
+record whose typedef has one of those names, `record t1`, which a temporary
+`t1` hides wherever the body spells the type, still exit 2.
+
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, or linked the
 library that defines it, so a symbol nobody declared and no library of the

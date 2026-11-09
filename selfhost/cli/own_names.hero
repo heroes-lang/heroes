@@ -164,6 +164,9 @@ function whose(name: str) -> str
     if form == "local"
         return "the name the C it writes gives the parameter or local `" + held(name) + "` of a function of the program's own, which that function declares"
 
+    if form == "own"
+        return "a name the C it writes declares inside a function's body or a call's block"
+
     if form == "pointer"
         return "the name the C it writes gives the pointer the `@` parameter `" + held(name) + "` of a function of the program's own arrives through"
     return "a name the C it writes for every program declares, of the forms it keeps to itself: " + FORMS

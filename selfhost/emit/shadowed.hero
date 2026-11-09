@@ -3,8 +3,12 @@
 # before any body (design.md §4.19, §3.1; CLAUDE.md §7; defect 2389).
 #
 # **The names a body declares**: `t<N>`, a temporary (`mangle.value`),
-# `h<N>_<name>`, a parameter or a local (`mangle.slot`), and `ph<N>_<name>`,
-# the pointer a mutable parameter arrives through (`mangle.out_param`). The
+# `h<N>_<name>`, a parameter or a local (`mangle.slot`), `ph<N>_<name>`, the
+# pointer a mutable parameter arrives through (`mangle.out_param`), and the
+# locals and parameters the emitter writes by name inside a function or a
+# call's block, `hero_here` before every C call among them (`LOCALS`, and
+# `GROWN` for those it composes). The last set is held to the emitter's own
+# code by the test below, which reads every name its C declares. The
 # specification reserves no prefix (panel 214), so a group may bind a C
 # function of any of those forms, and until 2026-11-09 a call to it in a body
 # that declares the same name read the body's own variable: `t2 = t1(t1);` was
@@ -28,6 +32,10 @@
 # (`cli/own_names.hero`, panel 214's R3).
 
 use ast
+use cli/process
+use cli/strings
+use emit/c_words
+use emit/ffi_lookup
 use emit/writer
 use ir/containers
 use source
@@ -35,9 +43,36 @@ use source
 constant HEAD: str
     "hero_bound_"
 
+# The names the emitter declares inside a function or a block of its own by
+# name: the call's place (`stop_place.HERE`) and the caller's
+# (`stop_place.CALLER`), a discarded result a `when` reads, a converted
+# text's two, an element store's header, a map lookup's entry, the extern
+# table's reference, a library function's held result, and the out
+# parameter of a result returned through a pointer.
+constant LOCALS: [str]
+    [
+        "found"
+        "hero_caller"
+        "hero_here"
+        "hero_out"
+        "hero_ref"
+        "hero_result"
+        "hero_slot"
+        "hero_vb_status"
+        "hero_vb_text"
+        "hero_when"
+    ]
+
+# The heads of the names it composes there: a handle's life
+# (`handle_text.life_c`), a lent buffer's and its extent
+# (`emit/lend_buffer.hero`) and a lent local's pointer (`emit/lend_local.hero`),
+# a large value's room (`emit/large_value.hero`).
+constant GROWN: [str]
+    ["hero_life_", "hero_lend_", "hero_big_"]
+
 # What the C a body declares uses `name` for: `"temporary"`, `"local"` (a
-# parameter or a local), `"pointer"` (a mutable parameter's), or `""` where
-# no body declares a name of its form.
+# parameter or a local), `"pointer"` (a mutable parameter's), `"own"` (one
+# the emitter writes by name), or `""` where no body declares it.
 function form(name: str) -> str
     if name.len() > 1 && name[0] == 't' && digits_end(name, from: 1) == name.len()
         return "temporary"
@@ -47,6 +82,15 @@ function form(name: str) -> str
 
     if name.len() > 1 && name[0] == 'h' && slot_shaped(name, from: 1)
         return "local"
+
+    for one in LOCALS
+        if name == one
+            return "own"
+
+    for head in GROWN
+        if name.len() > head.len() && strings.starts_with(text: name, prefix: head)
+            return "own"
+
     return ""
 
 # The index just past the decimal digits that start at `from`.
@@ -163,3 +207,144 @@ test "a body's own forms are read from the name, and only they reach an accessor
     assert written("plus", s: s, decls: []) == "plus"
     assert written("t1", s: s, decls: []) == "(*hero_bound_t1())"
     assert written("h0_p", s: s, decls: []) == "(*hero_bound_h0_p())"
+    assert written("hero_here", s: s, decls: []) == "(*hero_bound_hero_here())"
+    assert form("hero_life_3_0") == "own"
+    assert form("hero_lend_b4_0") == "own"
+    assert form("hero_twice") == ""
+
+# **The set is the emitter's own**: every word its code writes inside a
+# string literal where C declares or assigns a name, after a space or a `*`
+# and before ` =` or `;`, is of a form above, or one of the few it writes
+# where no body of a program stands (`ELSEWHERE`). A new local the set does
+# not know fails here with its file, before a program that binds its name is
+# refused. What a literal does not spell, a name composed in Heroes, is read
+# by its head in `GROWN`.
+test "every name the emitter declares in a body is one the accessors step around (defect 2389)"
+    files = process.files_under("selfhost/emit").must().push("selfhost/emit.hero")
+    unknown: [str] @= []
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero")
+            code = c_words.without_tests(read_file(path).must())
+            spelled = literals(code)
+
+            for word in sort(keys(c_words.quoted_words(code)))
+                if declares(spelled: spelled, word: word) && form(word) == "" && !elsewhere(word)
+                    unknown @ unknown.push(path + ": " + word)
+
+    assert unknown.join(" ") == ""
+
+# Every string literal of `code` outside its comments, one per line, as
+# `c_words.quoted_words` reads them.
+function literals(code: str) -> str
+    out: [str] @= []
+
+    for line in ffi_lookup.lines(text: code)
+        at: i64 @= 0
+
+        while at < line.len() && line[at] == ' '
+            at @ at + 1
+
+        if at < line.len() && line[at] == '#'
+            continue
+        i: i64 @= at
+
+        while i < line.len()
+            if line[i] == '"'
+                i @ i + 1
+                begin = i
+
+                while i < line.len() && line[i] != '"'
+                    if line[i] == '\\'
+                        i @ i + 1
+                    i @ i + 1
+
+                out @ out.push(line.slice(from: begin, to: i))
+            i @ i + 1
+
+    return out.join("\n")
+
+# Whether `spelled` holds `word` where C declares or assigns it.
+function declares(spelled: str, word: str) -> bool
+    for before in [" ", "*"]
+        for after in [" =", ";"]
+            if strings.holds(text: spelled, needle: before + word + after)
+                return true
+
+    return false
+
+# The words of that shape that stand where no bound C function is named, so
+# no accessor is owed them; read 2026-11-09 from the test's own list, by file.
+# A word here that a function of the program's body declares is this file's
+# mistake.
+function elsewhere(word: str) -> bool
+    for one in ELSEWHERE
+        if word == one
+            return true
+
+    return false
+
+# C's own words and a value (`return;`, `break;`, `= true;`), the members of
+# an option's and a variant's structs (`types.hero`), a word of a Heroes text
+# a constant holds (`callback_guard.hero`, `_`) and a statement the runtime
+# defines (`inst.hero`); the locals of functions that call no bound C
+# function, C's `main` (`which`), a thunk (`f`), the per-type functions and
+# an assertion's renderers (`elem`, `h`, `p`, `v`), the layout tables (`a`,
+# `b`, `c`, `g`, `n`); and the words of the C a probe or a question to clang
+# compiles apart from the program's unit (`ffi_*`, `value_probe`,
+# `probe_cut`, `field_asked`, `header_reach`, `c_spellings`, `extern_union`).
+constant ELSEWHERE: [str]
+    [
+        "break"
+        "false"
+        "return"
+        "struct"
+        "true"
+        "as"
+        "err"
+        "ok"
+        "tag"
+        "_"
+        "HERO_ELEMENT_WRITE_NOT_EMITTED"
+        "which"
+        "f"
+        "elem"
+        "h"
+        "p"
+        "v"
+        "a"
+        "b"
+        "c"
+        "g"
+        "n"
+        "MISSPELLED"
+        "W"
+        "at"
+        "bytes"
+        "cell"
+        "check"
+        "extent"
+        "field"
+        "from"
+        "hero_a"
+        "hero_b"
+        "hero_c"
+        "hero_r"
+        "hero_v"
+        "i"
+        "it"
+        "main_body"
+        "member"
+        "name"
+        "one"
+        "opening"
+        "repair"
+        "sqlite3"
+        "stand"
+        "target"
+        "time"
+        "under"
+        "valid"
+        "value"
+        "write"
+    ]

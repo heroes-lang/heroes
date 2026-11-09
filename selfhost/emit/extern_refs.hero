@@ -20,6 +20,7 @@
 
 use ast
 use emit/externs as emit_externs
+use emit/shadowed
 use emit/writer
 use ir/containers
 use source
@@ -64,7 +65,7 @@ function references(@w: writer.Writer, p: containers.Program, s: source.Source, 
 
     # ORDER: by name, so the unit's text is a function of the program.
     for name in sort(keys(called))
-        writer.line(@w, text: "    hero_ref = (const void *)&" + name + ";")
+        writer.line(@w, text: "    hero_ref = (const void *)&" + shadowed.written(name, s: s, decls: decls) + ";")
 
     writer.line(@w, text: "    (void)hero_ref;")
     writer.line(@w, text: "}")
