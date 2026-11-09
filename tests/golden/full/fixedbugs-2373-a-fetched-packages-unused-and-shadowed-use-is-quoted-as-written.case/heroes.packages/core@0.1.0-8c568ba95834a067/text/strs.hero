@@ -1,0 +1,6 @@
+# A module of the package `core` of defect 2373's case, fetched, named by the
+# package's own files.
+
+# A word.
+function deep() -> str
+    return "d"

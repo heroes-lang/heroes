@@ -1,0 +1,11 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, a shape beside it: in the
+# package `core`'s own file, `use text/strs` twice.
+#
+# SYMPTOM: `used_twice` said `<core>/text/strs` is already named by a `use`,
+# where the lines name `text/strs`.
+#
+# FIX: it names the module as the line writes it.
+use <core>/strings
+
+function main()
+    print(strings.hello())

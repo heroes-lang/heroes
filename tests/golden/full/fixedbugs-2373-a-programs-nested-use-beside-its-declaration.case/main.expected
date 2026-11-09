@@ -1,0 +1,11 @@
+error[shadowed_binding]: `use text/strs` binds `strs`, and this file already declares `strs` at line 14 — shadowing is an error here, so one of the two has to be renamed
+  at tests/golden/full/fixedbugs-2373-a-programs-nested-use-beside-its-declaration.case/main.hero:10:10
+     |
+  10 | use text/strs  #~ shadowed_binding
+     |          ^^^^
+
+error[shadowed_binding]: `use text/words as clip` binds `clip`, and this file already declares `clip` at line 18 — shadowing is an error here, so one of the two has to be renamed
+  at tests/golden/full/fixedbugs-2373-a-programs-nested-use-beside-its-declaration.case/main.hero:11:19
+     |
+  11 | use text/words as clip  #~ shadowed_binding
+     |                   ^^^^

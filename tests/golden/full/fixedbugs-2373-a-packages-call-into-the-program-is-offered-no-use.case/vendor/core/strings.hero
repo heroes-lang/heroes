@@ -1,0 +1,6 @@
+# The package's module of defect 2373's case beside it: it calls a function
+# only the program declares.
+
+# A greeting.
+function hello() -> str
+    return greeting_of_the_program()  #~ unknown_name

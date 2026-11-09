@@ -1,0 +1,13 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, a shape beside it: in the
+# package `core`'s own file, `deep()`, declared in its own `text/strs`, which
+# that file names in no `use`.
+#
+# SYMPTOM: `needs_qualifying` said to add `use <core>/text/strs`, in its
+# message and its fix, a line refused `unknown_entry` in that file.
+#
+# FIX: the line to add is the one the file writes, `use text/strs`.
+use <core>/strings
+use <core>/user
+
+function main()
+    print(strings.hello() + user.other())

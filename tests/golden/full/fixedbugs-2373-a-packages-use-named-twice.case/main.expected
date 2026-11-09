@@ -1,0 +1,6 @@
+note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-use-named-twice.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[used_twice]: `text/strs` is already named by a `use` in this file — one `use` per module is all there is to say
+  at tests/golden/full/fixedbugs-2373-a-packages-use-named-twice.case/vendor/core/strings.hero:4:5
+    |
+  4 | use text/strs  #~ used_twice
+    |     ^^^^^^^^^

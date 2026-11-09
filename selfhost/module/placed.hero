@@ -8,10 +8,10 @@
 # either way (R1, the spec-warden's first condition). Every reader of a module
 # name asks here which of the two it holds, and none looks for a `<` itself.
 
-use module/reached
-use module/catalogue
-use module_text
 use cli/sha256
+use module/catalogue
+use module/reached
+use module_text
 
 # Whether `module` is a package's: its name opens with the mark.
 function is_package(module: str) -> bool
@@ -70,6 +70,36 @@ function identity(aliases: [reached.Alias], from: str, named: str) -> str
 
     return ""
 
+# The path a `use` of the module `from` writes for `module`, the inverse of
+# `identity` and the one rule a message asks where it quotes a `use` line no
+# line in hand holds (defect 2373): a module as it is from a file of the
+# program's own; one of `from`'s own package by its path inside it, bare
+# (R4), so `<core>/text/strs` is `text/strs` in `core`'s files; one of
+# another package by the alias `from`'s own catalogue gives it, marked; ""
+# where no `use` of `from` names it, a module of the program's own or a
+# package its catalogue does not hold. A line in hand is quoted as it is
+# written, which is this answer for that line (the test below holds the two
+# together). Until then the module's identity was quoted, and in a
+# package's file `use <core>/text/strs` is refused `unknown_entry`.
+function written_in(aliases: [reached.Alias], from: str, module: str) -> str
+    owner = entry_of(from)
+
+    if owner.len() == 0
+        return module
+
+    if !is_package(module)
+        return ""
+    meant = entry_of(module)
+
+    if meant == owner
+        return inside_of(module)
+
+    for one in aliases
+        if one.package == owner && one.meant == meant
+            return "<" + one.written + ">/" + inside_of(module)
+
+    return ""
+
 # The folder under `heroes.packages/` a fetched entry's tree is placed in,
 # keyed by the package's identity and never by its alias (R3, R7): its name
 # and version, or its address's last part and tag, as a reader finds it, then
@@ -122,6 +152,32 @@ test "a dependency's bare use starts at its own root, and its brackets read its 
     assert identity(aliases, from: "<json>/parse", named: "<text>/cut") == "<strings>/cut"
     assert identity(aliases, from: "<json>/parse", named: "<yaml>/load") == ""
     assert identity(aliases, from: "<yaml>/load", named: "<text>/cut") == ""
+
+# Defect 2373: what a file writes for a module, the identity read back.
+test "a module is written as its file's own use writes it, and reads back to the module"
+    aliases: [reached.Alias] = [reached.Alias(package: "json", written: "text", meant: "strings")]
+    assert written_in(aliases, from: "main", module: "geom/area") == "geom/area"
+    assert written_in(aliases, from: "main", module: "<json>/parse") == "<json>/parse"
+    assert written_in(aliases, from: "<json>/parse", module: "<json>/internal/scan") == "internal/scan"
+    assert written_in(aliases, from: "<json>/parse", module: "<strings>/cut") == "<text>/cut"
+
+    # No `use` of a package's file names the program's modules, nor a
+    # package its catalogue does not hold.
+    assert written_in(aliases, from: "<json>/parse", module: "geom/area") == ""
+    assert written_in(aliases, from: "<json>/parse", module: "<yaml>/load") == ""
+    assert written_in(aliases, from: "<yaml>/load", module: "<strings>/cut") == ""
+
+    # Every line a file can write is read back to itself: a line quoted as
+    # written and a module named by this rule are one text.
+    lines = [
+        ["main", "geom/area"]
+        ["main", "<json>/parse"]
+        ["<json>/parse", "internal/scan"]
+        ["<json>/parse", "<text>/cut"]
+    ]
+
+    for line in lines
+        assert written_in(aliases, from: line[0], module: identity(aliases, from: line[0], named: line[1])) == line[1]
 
 test "a placed tree is keyed by the package's identity, and every field moves the key"
     sum = "sha256-" + "a".repeat(64.to_u64().must())

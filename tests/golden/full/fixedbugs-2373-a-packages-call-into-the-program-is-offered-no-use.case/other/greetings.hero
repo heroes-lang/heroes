@@ -1,0 +1,6 @@
+# The program's own module of defect 2373's case beside it, which no file of
+# the package can name.
+
+# A greeting only the program declares.
+function greeting_of_the_program() -> str
+    return "p"

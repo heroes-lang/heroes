@@ -1,0 +1,13 @@
+error[unused_binding]: `use text/strs` is never used — nothing in this file names anything from `text/strs`
+  at tests/golden/full/fixedbugs-2373-the-programs-own-file-reads-as-before.case/main.hero:5:5
+    |
+  5 | use text/strs  #~ unused_binding
+    |     ^^^^^^^^^
+  note: delete the line: an import that is not read is a dependency that is not real
+
+error[shadowed_binding]: `strs` is what this file calls the module `text/strs`, so a local may not take it — shadowing is an error here
+  at tests/golden/full/fixedbugs-2373-the-programs-own-file-reads-as-before.case/main.hero:8:5
+    |
+  8 |     strs = "x"  #~ shadowed_binding
+    |     ^^^^
+  note: rename the module for this file with `use text/strs as <other>`, which clears every collision in it at once, or rename this binding

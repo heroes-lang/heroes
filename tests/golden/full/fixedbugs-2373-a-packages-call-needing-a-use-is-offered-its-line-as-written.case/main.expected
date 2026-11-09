@@ -1,0 +1,7 @@
+note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-call-needing-a-use-is-offered-its-line-as-written.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[needs_qualifying]: `deep` is declared in module `<core>/text/strs`, which this file does not name — add `use text/strs` at the top and write `strs.deep`
+  at tests/golden/full/fixedbugs-2373-a-packages-call-needing-a-use-is-offered-its-line-as-written.case/vendor/core/strings.hero:6:12
+    |
+  6 |     return deep()  #~ needs_qualifying
+    |            ^^^^
+  fix (guess): write `strs.deep` (and add `use text/strs`)

@@ -1,0 +1,9 @@
+# Fixed defect 2373, 2026-11-09, lane b26-misc, the shape beside it the
+# repair must leave as it was: in the program's own file the line and the
+# module are one text, so `unused_binding` and `shadowed_binding`'s note
+# read `use text/strs`, as before the repair.
+use text/strs  #~ unused_binding
+
+function main()
+    strs = "x"  #~ shadowed_binding
+    print(strs)
