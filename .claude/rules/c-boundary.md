@@ -4,6 +4,7 @@ paths:
   - "examples/**"
   - "selfhost/emit/ffi*"
   - "selfhost/parse/group.hero"
+  - "selfhost/cli/**"
 ---
 
 # The C boundary
@@ -47,7 +48,7 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has twelve members
+is exit 1 with a diagnostic on the `.hero` line, and it has thirteen members
 (panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
 defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
 blamed moves, the line between accepted and refused does not; the seventh,
@@ -55,7 +56,7 @@ eighth and ninth by panel 202, ratified 2026-10-10, its R2; the tenth by its
 R3, the same day; the eleventh by panel 208, ratified 2026-10-10, its R2,
 which counted it the seventh on the trunk's list of that hour; the twelfth
 by defects 591 and 592, 2026-10-11, with no sitting, on defect 360's
-precedent):
+precedent; the thirteenth by panel 239, 2026-11-09, provisional, its R1):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -148,6 +149,30 @@ precedent):
   A label is the symbol as written, with no platform prefix, so
   `redefine_extname labs llabs` fails on Darwin and links in the Linux arm64
   image, where `llabs` is the symbol's own spelling.
+- **a C name a group binds, or the runtime calls or defines, that a library
+  the program names other than the one meant would supply**: added 2026-11-09
+  (panel 239's R1 and R2, provisional, author ratification pending, decision
+  2374; defects 2363 and 2378). Told `ffi_defined_elsewhere` on the binding,
+  or on the group whose library defines a name of the runtime's, both files
+  named, the same words in every order of the modules and under every name
+  (`cli/supplied.hero`, `cli/supplied_words.hero`). It moves both lines the
+  preamble's history names: **the line between accepted and refused**, on
+  robustness's rank (`sig_sorted` built and died by a memory fault, Bus error
+  on this Mac and SIGSEGV on Linux arm64; `dup_sorted` built and printed
+  another library's `2`; `interpose`'s `puts` from a library of the program
+  died the same way; `runtime_name`'s `printf` printed nothing), and **who is
+  blamed** (`hero_name`, a library defining `hero_print_end`, and GNU ld's
+  `multiple definition` of a bound name in one order, `internal error:
+  linking failed` at exit 2 until then). The link is asked who supplied each
+  name (GNU ld's and lld's trace, Apple's map), and where the program names
+  two or more libraries a link with them in the other order and one with
+  every library file of objects loaded whole, their answers kept by the key
+  of every library file read (design.md §4.19). A library the program does
+  not name is never judged; a group of the defining library that binds a
+  runtime name says the replacement is meant. Not refused, said: a name no
+  group binds and the runtime does not call, defined twice among the
+  program's libraries (defect 2375, the author's to rule), and Windows, asked
+  nothing yet (defect 2376).
 
 **Since panel 214 (2026-10-14, provisional, author ratification pending) whose
 a refused header is, where no reader names it, is decided by a clang run and
@@ -167,8 +192,12 @@ own names are held to those forms by the compiler's tests (R4), and
 compiler's files (R5, `group_file.compilers`).
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
-a name and asks whether *this program* declared it `extern`, so a symbol nobody
-declared stays exit 2 and the compiler's fault. The fifth member recovers the
+a name and asks whether *this program* declared it `extern`, or linked the
+library that defines it, so a symbol nobody declared and no library of the
+program defines stays exit 2 and the compiler's fault. The second half is the
+thirteenth member's (panel 239, 2026-11-09): a name the runtime calls or defines
+is the author's where a library a `link` or a package of the program names
+supplies it, recovered through that library, never through the name. The fifth member recovers the
 lend from the IR at the line clang names, which is the same question asked of
 the call: a qualifier error at a line where no immutable lend is passed to C
 stays exit 2.
