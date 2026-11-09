@@ -10,27 +10,28 @@
 #
 # **The narrowing is the program's own words, as `ffi_build.missing_library`'s
 # is**: a library this program named, by a `link` or through a package's
-# answer, is the author's business, and only where EVERY undefined name the
-# linker reports is referenced from such a library (`cli/link_report.hero`
-# reads who refers to each) is the refusal told. A reference from one of the
-# program's own objects, from the runtime or from a file the program did not
-# name, or a report nobody can place, leaves the refusal the compiler's, exit
-# 2: a name the C this compiler writes uses and nobody defines is the
-# compiler's defect, as panel 048 ruled.
+# answer, is the author's business, and a name is this reader's only where
+# EVERY reference to it is from such a library (`cli/link_report.hero` reads
+# who refers to each). A name one of the program's own objects, the runtime
+# or a file the program did not name refers to, or a report nobody can place,
+# is not; a link is told only where every name it reports is this reader's
+# or `cli/header_needs.hero`'s (`cli/link_needs.hero`, defect 2381), else it
+# stays the compiler's, exit 2: a name the C this compiler writes uses and
+# nobody defines is the compiler's defect, as panel 048 ruled.
 #
 # **No fix is offered**, as `ffi_build.missing_link` offers none: the repair
 # is a group naming the library that defines the name, and the compiler does
 # not know which library that is.
 
 use ast
-use diag
-use source
-use token
-use emit/externs as emit_externs
 use cli/libraries
 use cli/link_report
 use cli/package_missing
 use cli/shell_split
+use diag
+use emit/externs as emit_externs
+use source
+use token
 
 # What one library of the program needs: the name the program linked it by,
 # the file the linker read, as the linker named it, and every undefined name
@@ -39,24 +40,6 @@ record Needing
     name: str
     file: str
     symbols: [str]
-
-# The diagnostics for a refused link's `message`, one per library of the
-# program that refers to a name nothing defines; none unless every undefined
-# name it reports is referenced from such a library. `linked` are the
-# packages' flags the link carried, and `build` is where a package is asked
-# again which of them answered a library (`package_missing.answers`).
-function told(message: str, s: source.Source, decls: [ast.Decl], build: str, linked: [str]) -> [diag.Diagnostic]
-    none: [diag.Diagnostic] = []
-    out: [diag.Diagnostic] @= []
-
-    for need in needed(message: message, names: names_of(s, decls: decls, linked: linked))
-        at = told_at(s, decls: decls, need: need, build: build)
-
-        if at.is_err()
-            return none
-        out @ out.push(at.must())
-
-    return out
 
 # Every library name the program's words link: each `link` group's name, then
 # each `-l<name>` among the packages' link words.
@@ -101,18 +84,18 @@ function group_span(decl: ast.Decl, want_package: bool) -> token.Span?
                 return fail(code: "none", msg: "a package's group")
             return ok(pk.name)
 
-# The libraries among `names` that `message` reports needing a name nothing
-# defines, in the linker's order; none where any undefined name it reports is
-# referenced from anything else, or from nothing it can place.
-function needed(message: str, names: [str]) -> [Needing]
-    none: [Needing] = []
+# The libraries among `names` and the names nothing defines that they alone
+# refer to, in the linker's order: a name is theirs where every reference to
+# it is placed in one of them, judged one name at a time (defect 2381), so a
+# name another file refers to, or nothing this reader can place, is left to
+# the other reader or to the compiler.
+function owned(refs: [link_report.Reference], names: [str]) -> [Needing]
     out: [Needing] @= []
 
-    for one in link_report.references(message)
+    for one in refs
+        if one.symbol == "" || !libraries_alone(refs, symbol: one.symbol, names: names)
+            continue
         name = library_named(file: one.file, names: names)
-
-        if name == "" || one.symbol == ""
-            return none
         at: i64 @= -1
 
         for i in range(from: 0, to: out.len())
@@ -125,6 +108,15 @@ function needed(message: str, names: [str]) -> [Needing]
             out[at].symbols @ out[at].symbols.push(one.symbol)
 
     return out
+
+# Whether every reference of `refs` to `symbol` is placed in a library among
+# `names`.
+function libraries_alone(refs: [link_report.Reference], symbol: str, names: [str]) -> bool
+    for one in refs
+        if one.symbol == symbol && library_named(file: one.file, names: names) == ""
+            return false
+
+    return true
 
 # The longest of `names` whose library `file` is, `lib<name>.a`,
 # `lib<name>.so` or `<name>.lib` standing at its end after a path's
@@ -259,22 +251,22 @@ test "a name a library needs is told with the library, on every linker's report 
     lld_shared = "ld.lld: error: undefined reference: base_helper\n>>> referenced by s/libtop.so (disallowed by --no-allow-shlib-undefined)\n\nld.lld: error: undefined reference: base_two\n>>> referenced by s/libtop.so (disallowed by --no-allow-shlib-undefined)\n"
 
     for report in [gnu, ld64, lld, gnu_shared, lld_shared]
-        got = needed(message: report, names: ["top", "base"])
+        got = owned(link_report.references(report), names: ["top", "base"])
         assert got.len() == 1
         assert got[0].name == "top"
         assert got[0].symbols == both
 
-    assert needed(message: gnu, names: ["top"])[0].file == "libtop.a"
-    assert needed(message: gnu_shared, names: ["top"])[0].file == "libtop.so"
-    windows = needed(
-        message: "lld-link: error: undefined symbol: base_helper\n>>> referenced by top.lib(top.obj):(top_value)\n",
+    assert owned(link_report.references(gnu), names: ["top"])[0].file == "libtop.a"
+    assert owned(link_report.references(gnu_shared), names: ["top"])[0].file == "libtop.so"
+    windows = owned(
+        link_report.references("lld-link: error: undefined symbol: base_helper\n>>> referenced by top.lib(top.obj):(top_value)\n"),
         names: ["top"]
     )
     assert windows.len() == 1 && windows[0].file == "top.lib"
 
     # Two libraries of the program, each told with its own names.
-    two = needed(
-        message: gnu + "/usr/bin/ld: a/libcli.a(cli.o): in function `run':\ncli.c:(.text+0x4): undefined reference to `net_open'\n",
+    two = owned(
+        link_report.references(gnu + "/usr/bin/ld: a/libcli.a(cli.o): in function `run':\ncli.c:(.text+0x4): undefined reference to `net_open'\n"),
         names: ["top", "cli"]
     )
     assert two.len() == 2
@@ -297,7 +289,7 @@ test "a name a library needs is told with the library, on every linker's report 
     assert p.message == "the library `top`, which the package `ptop` answered with, needs `base_helper` and `base_two`, and nothing on the link line defines them"
     assert listed(["a", "b", "c"]) == "`a`, `b` and `c`"
 
-test "a name the program's own object or an unnamed library refers to leaves the refusal the compiler's (defect 2365)"
+test "a name the program's own object or an unnamed library refers to is not a library's (defects 2365 and 2381)"
     # The program's object refers to `base_helper` too: measured on all three
     # linkers, each naming the object.
     gnu = "/usr/bin/ld: /tmp/m3-39b8ed.o: in function `main':\nm3.c:(.text+0x18): undefined reference to `base_helper'\n/usr/bin/ld: a/libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n"
@@ -305,19 +297,25 @@ test "a name the program's own object or an unnamed library refers to leaves the
     lld = "ld.lld: error: undefined symbol: base_helper\n>>> referenced by m3.c\n>>>               /tmp/m3-55a8f7.o:(main)\n>>> referenced by top.c\n>>>               top.o:(top_value) in archive a/libtop.a\n"
     data = "/usr/bin/ld: a/libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n/usr/bin/ld: /tmp/m-83ddc3.o:(.data+0x0): undefined reference to `main_var'\n"
 
-    for report in [gnu, ld64, lld, data]
-        assert needed(message: report, names: ["top"]).len() == 0
+    for report in [gnu, ld64, lld]
+        assert owned(link_report.references(report), names: ["top"]).len() == 0
+
+    # One name at a time (defect 2381): `base_helper`, which only the library
+    # refers to, is this reader's, and `main_var`, which the program's object
+    # refers to, is left to the other reader.
+    beside = owned(link_report.references(data), names: ["top"])
+    assert beside.len() == 1 && beside[0].symbols == ["base_helper"]
 
     # A library the program does not name, a name that is another's end, a
     # name with a space, a report with no reference under its name, and
     # words that are no report.
     only = "/usr/bin/ld: a/libtop.a(top.o): in function `f':\ntop.c:(.text+0x8): undefined reference to `g'\n"
-    assert needed(message: only, names: ["base"]).len() == 0
-    assert needed(message: only, names: ["op"]).len() == 0
-    assert needed(message: "/usr/bin/ld: a/libxtop.a(x.o): in function `f':\nx.c:(.text+0x8): undefined reference to `g'\n", names: ["top"]).len() == 0
+    assert owned(link_report.references(only), names: ["base"]).len() == 0
+    assert owned(link_report.references(only), names: ["op"]).len() == 0
+    assert owned(link_report.references("/usr/bin/ld: a/libxtop.a(x.o): in function `f':\nx.c:(.text+0x8): undefined reference to `g'\n"), names: ["top"]).len() == 0
     assert library_named(file: "a/libmy lib.a", names: ["my lib", "lib"]) == "my lib"
     assert library_named(file: "/usr/bin/ld: ./libtop.a", names: ["op", "top"]) == "top"
-    assert needed(message: "lld-link: error: undefined symbol: base_helper\n", names: ["top"]).len() == 0
-    assert needed(message: "ld: library 'top' not found\n", names: ["top"]).len() == 0
-    assert needed(message: "", names: ["top"]).len() == 0
+    assert owned(link_report.references("lld-link: error: undefined symbol: base_helper\n"), names: ["top"]).len() == 0
+    assert owned(link_report.references("ld: library 'top' not found\n"), names: ["top"]).len() == 0
+    assert owned(link_report.references(""), names: ["top"]).len() == 0
     assert base_of("/usr/bin/ld: ./libtop.a") == "libtop.a"
