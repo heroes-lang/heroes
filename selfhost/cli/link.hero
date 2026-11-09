@@ -760,8 +760,12 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
 # GNU ld makes only in a group; with the two in one object every shape linked
 # without the words, and this test passed on a compiler that wrote none (lane
 # b26-link's falsifier, `groups_libraries` answering false, in the
-# container). Not asked on Windows, where no group stands and an archive made
-# by `ar` is unrun.
+# container). **And a sixth, beside defect 2366**: a package's whole answer,
+# `-pthread` and `-Wl,-rpath,<dir>` among the words `libraries.link_words`
+# passes on, standing in the group before a `link` name, which GNU ld 2.44
+# links (lane b26-link, the container: `lp_pthread` built and printed `41 2`,
+# and an `lp_*` program did under `run`, `test` and `--sanitize`). Not asked
+# on Windows, where no group stands and an archive made by `ar` is unrun.
 test "a library that needs another links in every order its words are written in (panel 238; defects 2365 and 2366)"
     if process.exe_suffix() == ".exe"
         return
@@ -799,8 +803,15 @@ test "a library that needs another links in every order its words are written in
 
     lib = "-L" + dir
     none: [str] = []
-    names = [["top", "base"], ["base", "top"], ["top"], none, none]
-    packages = [none, none, [lib, "-lbase"], [lib, "-ltop", lib, "-lbase"], [lib, "-lbase", lib, "-ltop"]]
+    names = [["top", "base"], ["base", "top"], ["top"], none, none, ["top"]]
+    packages = [
+        none
+        none
+        [lib, "-lbase"]
+        [lib, "-ltop", lib, "-lbase"]
+        [lib, "-lbase", lib, "-ltop"]
+        [lib, "-pthread", "-Wl,-rpath," + dir, "-lbase"]
+    ]
 
     for at in range(from: 0, to: names.len())
         binary = link_objects(
