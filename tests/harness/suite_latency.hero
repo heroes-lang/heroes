@@ -313,6 +313,6 @@ test "the newest row under the level passes, and one past it is named clock by c
     assert told.failed == 1
     assert strings.contains(
         text: told.failures[0],
-        needle: "    check: 7.51 s, above its ceiling of 7.50 s\n    build: 42.00 s, above its ceiling of 41.00 s\n"
+        needle: "    check: " + latency_clock.seconds_text(CHECK_CEILING_MS + 10) + " s, above its ceiling of " + latency_clock.seconds_text(CHECK_CEILING_MS) + " s\n    build: " + latency_clock.seconds_text(BUILD_CEILING_MS + 1000) + " s, above its ceiling of " + latency_clock.seconds_text(BUILD_CEILING_MS) + " s\n"
     )
     assert !strings.contains(text: told.failures[0], needle: "seed:")
