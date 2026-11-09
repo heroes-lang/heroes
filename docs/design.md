@@ -2773,8 +2773,9 @@ replaces, with no new form. **What is never judged** is a library the program do
 with no list of the platform's libraries. **What is not refused**, said: a name no group binds and
 the runtime does not call, defined by two libraries the program names and needed by a third, since
 static FFmpeg and static X11 carry identical copies on purpose and no symbol tells one from two
-different definitions (defect 2375, the author's to rule); a shared library's second definition of
-such a name; and Windows, whose link is asked nothing yet (defect 2376). **What it costs**: the
+different definitions, a known cost kept by the author's ruling of 2026-11-09 on decision 2374's
+second question (defect 2375) and pinned by the net's own case that builds it (`intern`, `100 2 7`);
+a shared library's second definition of such a name; and Windows, whose link is asked nothing yet (defect 2376). **What it costs**: the
 probes' answers are kept by the link's words, the compiler that links them and the key of every
 library file the links read (`cli/supplied_kept.hero`), so a warm build runs its own link alone,
 and a library rebuilt, removed or shadowed is asked again; measured on this Mac on 2026-11-09,

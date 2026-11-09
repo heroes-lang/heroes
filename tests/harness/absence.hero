@@ -2029,6 +2029,37 @@ test "the probes' answer kept for a warm build is asked again once a library the
     )
     assert !shell.remove_tree(scratch).is_err()
 
+# PANEL 239's R3, a known cost pinned (defect 2375): a name no group binds and
+# the runtime does not call, `base_helper`, defined by two libraries the
+# program links, `libbase`'s returning 40 and `libother`'s 99, and needed by a
+# third, `libtop`, whose `top_value` adds one to it, reaches whichever the
+# link takes, and nothing is told: `100` where `libbase`'s would give `41`, on
+# this Mac and in the Linux arm64 container (2026-11-09, the sitting's
+# `intern_sorted`, the ffi-pragmatist's prediction `100 2 7`). It is not
+# refused because refusing every such duplicate refuses correct static
+# programs whose libraries carry identical copies on purpose: static FFmpeg,
+# 40 names defined in two of `libavcodec.a`, `libavformat.a` and
+# `libavutil.a`, and static X11, `xreallocarray` in `libX11.a` and
+# `libXext.a`, as the sitting measured, and no symbol tells an identical copy
+# from two different ones. Kept so by the author's answer of 2026-11-09 to
+# decision 2374's second question (defect 2375). This case pins the silence:
+# the day a route tells the shape, it moves here, and is read.
+test "a name no group binds, defined by two libraries and needed by a third, stays silent, a known cost (defect 2375)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/intern2375"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "top", sources: [Written(name: "top.c", text: "int base_helper(void);\nint top_value(void) { return base_helper() + 1; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "base", sources: [Written(name: "base_helper.c", text: "int base_helper(void) { return 40; }\n"), Written(name: "base_other.c", text: "int base_other(void) { return 2; }\n")], shared: false).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "other", sources: [Written(name: "other.c", text: "int base_helper(void) { return 99; }\nint other_only(void) { return 7; }\n")], shared: false).is_err()
+    assert !wrote(dir: dir, files: [Written(name: "top.h", text: "int top_value(void);\n"), Written(name: "base.h", text: "int base_other(void);\n"), Written(name: "other.h", text: "int other_only(void);\n"), Written(name: "top_lib.hero", text: "extern \"top.h\" link \"top\"\n    function top_value() -> i32\n\nfunction value() -> i32\n    return top_value()\n"), Written(name: "base_lib.hero", text: other_module(header: "base.h", library: "base", bound: "base_other")), Written(name: "other_lib.hero", text: other_module(header: "other.h", library: "other", bound: "other_only")), Written(name: "intern.hero", text: "use other_lib\nuse base_lib\nuse top_lib\n\nfunction main()\n    print(top_lib.value())\n    print(base_lib.only())\n    print(other_lib.only())\n")]).is_err()
+    kept = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "intern")
+    assert kept.err == "wrote " + dir + "/intern.out\n" && kept.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/intern.out") == "100\n2\n7\n"
+    assert !shell.remove_tree(scratch).is_err()
+
 test "two libraries of the platform a program names, each its group's, build as they did (panel 239)"
     if !shell.can_run_scripts()
         return

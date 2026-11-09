@@ -190,8 +190,9 @@ its R4, the same day, both provisional, author ratification pending):
   not name is never judged; a group of the defining library that binds a
   runtime name says the replacement is meant. Not refused, said: a name no
   group binds and the runtime does not call, defined twice among the
-  program's libraries (defect 2375, the author's to rule), and Windows, asked
-  nothing yet (defect 2376).
+  program's libraries, a known cost kept by the author's ruling of 2026-11-09
+  on decision 2374's second question (defect 2375, pinned by the net's own
+  case `intern`), and Windows, asked nothing yet (defect 2376).
 - **a group record another module's unit reads otherwise than its own
   module's unit does, where no order of the headers makes the two alike**:
   added 2026-11-09 (panel 239's R4 and R5, provisional, author ratification
