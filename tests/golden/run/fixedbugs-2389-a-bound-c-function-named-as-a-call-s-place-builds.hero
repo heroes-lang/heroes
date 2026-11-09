@@ -1,0 +1,20 @@
+# fixedbugs, defect 2389, 2026-11-09, the shapes beside the temporary.
+#
+# SYMPTOM: a group binding a C function named `hero_here`, the place every C
+# call's block declares before the call, was *internal error* at exit 2: the
+# call read the block's own record, *called object type 'HeroPlace' is not a
+# function*. `found`, the entry a map lookup's block declares, is of the same
+# kind, the emitter writing it by name.
+#
+# FIX: every name the emitter declares inside a body is one of
+# `emit/shadowed.hero`'s, a bound function of such a name reached through an
+# accessor, so both calls print.
+
+extern "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.h"
+    function hero_here(x: i64) -> i64
+    function found(x: i64) -> i64
+
+function main()
+    print(hero_here(x: 41))
+    ages = {"ziggy": 21}
+    print(found(x: ages["ziggy"].must()))
