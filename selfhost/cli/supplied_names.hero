@@ -5,8 +5,10 @@
 # parsed for one (panel 188's rule for a library's name), as
 # `cli/library_needs.hero` asks it.
 
+use cli/process
 use cli/strings
 use emit/ffi_lookup
+use module/reading as file_reading
 
 # The library names among `named` that name `file`, as the link found it;
 # asked of the file's bytes first, so the platform's files a link names for
@@ -192,7 +194,110 @@ function byte_at(text: str, byte: u8) -> i64
 
     return -1
 
+# The folders a link line names with `-L`, in its order, as its words wrote
+# them: the program's `--library` folders and its packages' `-L` words.
+function dirs_of(line: [str]) -> [str]
+    dirs: [str] @= []
+
+    for index in range(from: 0, to: line.len())
+        if line[index] == "-L" && index + 1 < line.len()
+            dirs @ dirs.push(line[index + 1])
+        else if strings.starts_with(text: line[index], prefix: "-L") && line[index].len() > 2
+            dirs @ dirs.push(line[index].slice(from: 2, to: line[index].len()))
+
+    return dirs
+
+# The one name a note gives the definition in `file`, whichever answer named
+# it (defect 2384: Apple's linker writes a duplicate's file by its absolute
+# path and its map by the path the line gave, and a definition was told
+# twice): the library file as the program's own words reach it, a `-L`
+# folder of its line as written and the file's name, where that folder holds
+# this very file, the same bytes, or, the link naming a file by its name
+# alone as Windows' maps do, a file of that name; else the path as the link
+# gave it; the object after it, Apple's `[n]` taken off.
+function shown(file: str, dirs: [str]) -> str
+    plain = without_index(file)
+    archive = archive_of(plain)
+    member = plain.slice(from: archive.len(), to: plain.len())
+    base = base_of(archive)
+    key = file_reading.key_of(archive).default("")
+
+    for dir in dirs
+        candidate = dir + "/" + base
+
+        if candidate == archive
+            return plain
+
+        if archive == base && process.path_exists(candidate)
+            return candidate + member
+
+        if key != "" && file_reading.key_of(candidate).default("") == key
+            return candidate + member
+
+    return plain
+
+# What tells two names of one definition apart from two definitions: the
+# library file's bytes (its key) and the object in it, or the name where the
+# file cannot be read.
+function identity(name: str) -> str
+    archive = archive_of(name)
+    key = file_reading.key_of(archive)
+
+    if key.is_err()
+        return name
+    return key.must() + name.slice(from: archive.len(), to: name.len())
+
+# A note for each definition among `files`, one whichever answers named it
+# and however they spelled it, each by the one name `shown`
+# gives, in the order of those names (defect 2384).
+function with_files(notes: [str], files: [str], dirs: [str]) -> [str]
+    seen: [str] @= []
+    names: [str] @= []
+
+    for file in files
+        for one in each_file(file)
+            named = shown(file: one, dirs: dirs)
+            same = identity(named)
+
+            if !named_in(seen, name: same)
+                seen @ seen.push(same)
+                names @ names.push(named)
+
+    out: [str] @= notes
+
+    for named in sort(names)
+        out @ out.push("a definition is in `" + named + "`")
+
+    return out
+
+function each_file(field: str) -> [str]
+    out: [str] @= []
+
+    for one in split_on(field: field, separator: "|")
+        if one.len() > 0
+            out @ out.push(one)
+
+    return out
+
 ## Tests
+
+# Defect 2384's shapes, the files made under `build/`: a relative folder
+# holding the file, the absolute path Apple's duplicate writes for it, and a
+# Windows map's bare name; a file no folder of the line holds keeps its path.
+test "a definition's file is named by the folder the line gave, whichever answer named it (defect 2384)"
+    dir = "build/selftest-shown-2384"
+    assert !process.mkdir_all(dir + "/lib").is_err()
+    assert !write_file(path: dir + "/lib/liba.a", text: "!<arch>\n2384\n").is_err()
+    assert !write_file(path: dir + "/lib/a.lib", text: "2384 lib\n").is_err()
+    dirs = [dir + "/other", dir + "/lib"]
+    assert shown(file: dir + "/lib/liba.a(pick_a.o)", dirs: dirs) == dir + "/lib/liba.a(pick_a.o)"
+    assert shown(file: dir + "/./lib/liba.a[2](pick_a.o)", dirs: dirs) == dir + "/lib/liba.a(pick_a.o)"
+    assert shown(file: "a.lib(pick_a.obj)", dirs: dirs) == dir + "/lib/a.lib(pick_a.obj)"
+    assert shown(file: "/usr/lib/libz.a(deflate.o)", dirs: dirs) == "/usr/lib/libz.a(deflate.o)"
+    assert identity(dir + "/lib/liba.a(pick_a.o)") == identity(dir + "/./lib/liba.a(pick_a.o)")
+    assert identity(dir + "/lib/liba.a(pick_a.o)") != identity(dir + "/lib/liba.a(a_only.o)")
+    assert dirs_of(["clang", "-L", "lib", "-L/opt/lib", "x.o", "-la"]) == ["lib", "/opt/lib"]
+    assert !process.remove_tree(dir).is_err()
 
 test "a field is cut at each of its separator's bytes, an empty part kept (panel 239)"
     assert split_on(field: "a\tb\t\tc", separator: "\t") == ["a", "b", "", "c"]

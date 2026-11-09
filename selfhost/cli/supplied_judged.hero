@@ -203,6 +203,20 @@ function without_decl(found: [str], decl: i64) -> [str]
 
     return out
 
+# The link line's `-L` folders the refusal's words carry (`supplied.folders`).
+function folders_of(message: str) -> [str]
+    out: [str] @= []
+
+    for line in supplied_names.byte_lines(text: message, needles: [MARK], stops: [])
+        f = fields(line)
+
+        if f.len() == 7 && f[1] == "dirs"
+            for dir in supplied_names.split_on(field: f[4], separator: "|")
+                if dir.len() > 0
+                    out @ out.push(dir)
+
+    return out
+
 ## Tests
 
 test "a name another group's library supplies is judged, the platform's and its own are not (panel 239)"

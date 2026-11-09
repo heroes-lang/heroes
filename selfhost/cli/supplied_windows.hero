@@ -103,14 +103,7 @@ function words_of(line: str) -> [str]
 # library by its name alone (defect 2376). A library the program's folders do
 # not hold is the platform's, and is not keyed.
 function resolved(line: [str], named: [str]) -> [str]
-    dirs: [str] @= []
-
-    for index in range(from: 0, to: line.len())
-        if line[index] == "-L" && index + 1 < line.len()
-            dirs @ dirs.push(line[index + 1])
-        else if strings.starts_with(text: line[index], prefix: "-L") && line[index].len() > 2
-            dirs @ dirs.push(line[index].slice(from: 2, to: line[index].len()))
-
+    dirs = supplied_names.dirs_of(line)
     out: [str] @= []
 
     for name in named

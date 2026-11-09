@@ -202,7 +202,7 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
         return Reading(
             told: none,
             verdict: fail(code: "failed", msg: "the linker refused the objects clang compiled"),
-            internal: message
+            internal: supplied_words.unmarked(message)
         )
     return Reading(told: none, verdict: fail(code: "failed", msg: refused), internal: message)
 
