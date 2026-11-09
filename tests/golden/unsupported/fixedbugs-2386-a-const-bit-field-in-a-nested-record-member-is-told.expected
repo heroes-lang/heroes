@@ -1,0 +1,13 @@
+error[ffi_const_field]: `fixedbugs-2386-nested-const.h` declares `Nested`'s member `k` as `const`, nested in one of `Nested`'s members, so C still refuses to assign any `Nested` — and this line is that assignment
+  at tests/golden/unsupported/fixedbugs-2386-a-const-bit-field-in-a-nested-record-member-is-told.hero:23:21
+     |
+  23 |     built: Nested = Nested(a: 1, d: 2.0, rest: zero)  #~ ffi_const_field
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a member nested in another is in every `Nested` C assigns, whatever fields the record names: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here
+
+error[ffi_const_field]: `fixedbugs-2386-nested-const.h` declares `Nested`'s member `k` as `const`, nested in one of `Nested`'s members, so C still refuses to assign any `Nested` — and this line is that assignment
+  at tests/golden/unsupported/fixedbugs-2386-a-const-bit-field-in-a-nested-record-member-is-told.hero:24:11
+     |
+  24 |     got = fixedbugs_2386_nested_make()  #~ ffi_const_field
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a member nested in another is in every `Nested` C assigns, whatever fields the record names: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here

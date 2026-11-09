@@ -28,8 +28,10 @@
 # **AND THE BITS BESIDE A NAMED BIT-FIELD** (panel 223, defect 2099): in a
 # byte one shares, the bits no named bit-field holds are written zero by an
 # atomic `and`, each byte's mask found once before `main` by C itself, `--` on
-# each named bit-field of a zeroed object (`emit/padding_tables.hero`), so no
-# bit a named bit-field holds is written, even while C's own thread writes it.
+# each named bit-field of a zeroed object, each written zero first so that no
+# arm of a union decrements bits another set (defect 2385,
+# `emit/padding_tables.hero`), so no bit a named bit-field holds is written,
+# even while C's own thread writes it.
 #
 # **AND WHICH BYTES A BIT-FIELD HOLDS IS C'S ANSWER TOO, never a number of
 # this machine's** (defect 2383): the same `--` sets every byte a named

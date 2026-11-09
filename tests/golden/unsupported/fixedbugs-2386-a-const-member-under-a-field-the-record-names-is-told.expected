@@ -1,0 +1,6 @@
+error[ffi_const_field]: `fixedbugs-2386-nested-const.h` declares `Deep`'s member `k` as `const`, nested in one of `Deep`'s members, so C still refuses to assign any `Deep` — and this line is that assignment
+  at tests/golden/unsupported/fixedbugs-2386-a-const-member-under-a-field-the-record-names-is-told.hero:27:19
+     |
+  27 |     built: Deep = Deep(a: 1, mid: Mid(m: 2, rest: zero), d: 2.0, rest: zero)  #~ ffi_const_field
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a member nested in another is in every `Deep` C assigns, whatever fields the record names: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here

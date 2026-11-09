@@ -1,0 +1,25 @@
+# FIXED DEFECT 2386, 2026-11-09, lane b26-pad (found by lane b26-win beside
+# defect 2383).
+#
+# SYMPTOM: a group record whose `const` member lies inside another of its
+# members ended the build at exit 2, *internal error*, built or received by
+# value, where the same member at the top was told `ffi_const_field`.
+#
+# CAUSE: clang words the assignment it refuses *nested const-qualified data
+# member*, and no reader read that wording.
+#
+# FIX: `emit/ffi_const_built.hero` reads it too, told on the record whose
+# assignment clang refuses, worded for where the member lies.
+#
+# This case: a `const` member, no bit-field, two records deep.
+
+extern "fixedbugs-2386-nested-const.h"
+    record Deep tag fixedbugs_2386_deep partial
+        a: i32
+        d: f64
+    function fixedbugs_2386_deep_make() -> Deep
+
+function main()
+    built: Deep = Deep(a: 1, d: 2.0, rest: zero)  #~ ffi_const_field
+    got = fixedbugs_2386_deep_make()  #~ ffi_const_field
+    print(built.a + got.a)
