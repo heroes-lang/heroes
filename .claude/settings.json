@@ -52,7 +52,11 @@
       "Edit(**/build/opened/**)"
     ],
     "ask": [
-      "Bash(git push*)"
+      "Bash(git push)",
+      "Bash(git push -*)",
+      "Bash(git push origin*)",
+      "Bash(git push git@*)",
+      "Bash(git push https*)"
     ]
   },
   "hooks": {

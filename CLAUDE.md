@@ -45,7 +45,8 @@ Refusals, not trade-offs; no measurement and no deadline outranks them.
   body is read by strangers. **Except an issue's writes through
   `tests/harness/issues.hero`, asked once** (author, 2026-10-12), **and the
   pushes of a session the author leaves unattended, asked once as they leave,
-  for that session alone** (author, 2026-10-14).
+  for that session alone** (author, 2026-10-14). A push to the box, `win`, is never
+  asked (author, 2026-11-09).
 - **Destructive operations are asked for.**
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.
