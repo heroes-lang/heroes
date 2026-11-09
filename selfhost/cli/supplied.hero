@@ -38,6 +38,7 @@ use cli/supplied_kept
 use cli/supplied_names
 use cli/supplied_probe
 use cli/supplied_read
+use cli/supplied_versions
 use cli/supplied_windows
 use cli/toolchain
 use emit/externs as emit_externs
@@ -214,6 +215,17 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
 
     found @ supplied_judged.platform_kept(
         found,
+        alone: lone,
+        first: first,
+        turned: probes.taken,
+        platform: probes.platform
+    )
+
+    # Two files of one C library, glibc's `libm.so.6` and `libc.so.6` for
+    # `ldexp`, are one definition, asked of their versions (defect 2395).
+    found @ supplied_versions.one_library(
+        t,
+        found: found,
         alone: lone,
         first: first,
         turned: probes.taken,

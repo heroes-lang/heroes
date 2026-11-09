@@ -1,0 +1,6 @@
+# A module that links `m` for `sqrt`.
+extern "math.h" link "m"
+    function sqrt(x: f64) -> f64
+
+function root() -> f64
+    return sqrt(x: 16.0)
