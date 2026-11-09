@@ -1,0 +1,12 @@
+error[ffi_record_two_layouts]: `Pa` is 8 bytes, at a multiple of 8, where module `fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way` reads `fixedbugs-2364-pa.h` after `fixedbugs-2364-rb.h`, and 4 bytes, at a multiple of 4, where module `fixedbugs2364/then_pa` reads it
+  at tests/golden/unsupported/fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way.hero:8:9
+    |
+  8 |     p = then_pa.make(v: 4)  #~ ffi_record_two_layouts
+    |         ^^^^^^^^^^^^^^^^^^
+  note: `Pa.w` is `long long` at byte 0 where module `fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way` reads it, and `int` at byte 0 where module `fixedbugs2364/then_pa` does
+  note: `Rb` is 8 bytes, at a multiple of 8, where module `fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way` reads `fixedbugs-2364-rb.h` after `fixedbugs-2364-pa.h`, and 4 bytes, at a multiple of 4, where module `fixedbugs2364/rb` reads it
+  note: `Rb.a` is `long long` at byte 0 where module `fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way` reads it, and `int` at byte 0 where module `fixedbugs2364/rb` does
+  note: `Pa` is bound at `tests/golden/unsupported/fixedbugs2364/then_pa.hero:6:12` and read as module `fixedbugs2364/then_pa` reads `fixedbugs-2364-pa.h`: a change to its fields changes neither reading, so the binding is not what to change
+  note: `Rb` is bound at `tests/golden/unsupported/fixedbugs2364/rb.hero:4:12` and read as module `fixedbugs2364/rb` reads `fixedbugs-2364-rb.h`: a change to its fields changes neither reading, so the binding is not what to change
+  note: a group's `record` is its header's struct as its own module reads it (spec § 13), and a value of `Pa` passes between module `fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way` and module `fixedbugs2364/then_pa`, so both must read it alike; no order of the headers module `fixedbugs-2364-two-records-whose-headers-change-each-other-are-refused-in-one-module-the-other-way` reads, nor module `fixedbugs2364/then_pa`'s earlier headers before `fixedbugs-2364-pa.h`, makes them alike
+  note: spell `Pa` only in modules that do not also read `fixedbugs-2364-rb.h`, and `Rb` only in modules that do not also read `fixedbugs-2364-pa.h`

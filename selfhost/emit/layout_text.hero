@@ -41,12 +41,15 @@
 # false refusal pass for a true one.
 
 use ast
-use source
-use emit/ctype
-use emit/layout_rows
-use emit/c_text
 use bytes
+use cli/strings
+use emit/c_text
+use emit/ctype
 use emit/guarded_names
+use emit/header_region
+use emit/header_state
+use emit/layout_rows
+use source
 
 # A group record the dump is asked about: its declaration and its C type.
 record Asked
@@ -108,8 +111,17 @@ function asked(s: source.Source, decls: [ast.Decl]) -> [Asked]
 
     return out
 
+# **The includes are read as the unit's own lines read them**, inside the
+# region a header's code is judged in, every state a header can leave set
+# given back after them (`emit/header_state.hero`, defect 582; panel 239): a
+# `#pragma pack(1)` a later header left set packed the wrappers below, so the
+# dump read another alignment of a record the pragma never touched
+# (`pragma/rp_first`, the compiler-engineer's first prototype, § 5a and 17d).
 function dump_unit(headers: [str], wanted: [Asked]) -> str
-    lines: [str] @= guarded_names.reserved_around(c_text.includes(headers))
+    lines: [str] @= strings.with_all(list: header_region.opening(), more: header_state.SAVED)
+    lines @ strings.with_all(list: lines, more: guarded_names.reserved_around(c_text.includes(headers)))
+    lines @ strings.with_all(list: lines, more: header_state.GIVEN_BACK)
+    lines @ lines.push(header_region.CLOSING)
 
     for one in wanted
         wrap = "struct " + layout_rows.PREFIX + one.decl.to_str()

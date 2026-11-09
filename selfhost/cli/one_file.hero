@@ -26,30 +26,28 @@
 #
 # A refusal is `ffi_one_file`, at exit 1, and no file is written.
 
-use source
 use ast
-use diag
-use token
-use ir/containers
-use emit/externs as emit_externs
-use emit/unit_plan
-use cli/toolchain
-use cli/compiling
-use cli/order_trial
-use cli/header_meaning
-use cli/dump_meaning
-use cli/two_ways_ask
-use cli/clang_first
 use cli/caret_bytes
+use cli/clang_first
+use cli/compiling
+use cli/dump_meaning
+use cli/header_meaning
 use cli/header_refused
 use cli/headers_together
+use cli/order_trial
 use cli/package_units
+use cli/toolchain
+use cli/two_ways_ask
+use diag
+use emit/externs as emit_externs
+use emit/unit_plan
+use source
+use token
 
-# The refusal of `text`, the one file, or none where it means what the units
-# do.
-function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, s: source.Source, decls: [ast.Decl], text: str, plans: [unit_plan.Plan]) -> [diag.Diagnostic]
+# The refusal of `text`, the one file written under `whole`, its headers
+# (`cli/agreed.fused`, panel 239), or none where it means what the units do.
+function refused(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], text: str, plans: [unit_plan.Plan], whole: [str]) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
-    whole = emit_externs.headers(p, s, decls)
     fused = order_trial.theirs(whole)
     differing: [unit_plan.Plan] @= []
 

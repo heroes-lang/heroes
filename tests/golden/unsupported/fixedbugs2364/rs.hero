@@ -1,0 +1,11 @@
+# fixedbugs, defect 2364: a record its header lays out wide where a macro
+# another header defines is read before it, and narrow alone, as this module
+# reads it.
+extern "fixedbugs-2364-rs.h"
+    record Rs
+        a: i32
+        b: i32
+    function rs_make(v: i32) -> Rs
+
+function make(v: i32) -> Rs
+    return rs_make(v: v)

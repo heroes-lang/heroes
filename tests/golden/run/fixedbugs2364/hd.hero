@@ -1,0 +1,12 @@
+# fixedbugs, defect 2364: a handle of a third module, whose header no
+# reordered block holds.
+extern "fixedbugs-2364-hd.h"
+    record Hd tag Hd
+    function hd_none() -> Hd
+    function hd_is_none(h: Hd) -> i32
+
+function none() -> Hd
+    return hd_none()
+
+function is_none(h: Hd) -> i32
+    return hd_is_none(h: h)

@@ -1,0 +1,20 @@
+# fixedbugs, defect 2364, lane p239-land-a, 2026-11-09, a shape beside the
+# repair's own route.
+#
+# This unit reads `fixedbugs-2364-rs.h` before `fixedbugs-2364-wide.h`, the
+# order under which `Rs` reads as module `rs` reads it, and spells `hd.Hd`
+# too, a handle whose header no record is read from. The sitting's prototype
+# composed the list from the records' headers alone, so `fixedbugs-2364-hd.h`
+# was dropped and this correct program was refused, *`hd.h` declares no
+# `Hd`*. A header of the list that no reordered block holds follows them, as
+# it stood.
+use fixedbugs2364/defines_wide
+use fixedbugs2364/hd
+use fixedbugs2364/rs
+
+function main()
+    h = hd.none()
+    p = defines_wide.make(v: 4)
+    r = rs.make(v: 3)
+    print(p.w + r.a + r.b)
+    print(hd.is_none(h: h))

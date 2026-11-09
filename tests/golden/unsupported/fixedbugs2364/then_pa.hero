@@ -1,0 +1,11 @@
+# fixedbugs, defect 2364: a record whose header lays it out wide where the
+# macro of `fixedbugs-2364-rb.h` is read before it, in a header that defines
+# the macro `fixedbugs-2364-rb.h` reads; named so that panel 238's walk
+# reaches it before `rb` or after it (`then_`).
+extern "fixedbugs-2364-pa.h"
+    record Pa
+        w: i32
+    function pa_make(v: i32) -> Pa
+
+function make(v: i32) -> Pa
+    return pa_make(v: v)

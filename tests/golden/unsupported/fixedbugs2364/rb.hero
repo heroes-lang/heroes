@@ -1,0 +1,9 @@
+# fixedbugs, defect 2364: the other half of `pa`: a record its header widens
+# where the macro of `fixedbugs-2364-pa.h` is read before it.
+extern "fixedbugs-2364-rb.h"
+    record Rb
+        a: i32
+    function rb_make(v: i32) -> Rb
+
+function make(v: i32) -> Rb
+    return rb_make(v: v)

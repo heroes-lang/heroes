@@ -1,0 +1,13 @@
+# fixedbugs, defect 2364: a module whose first group's header defines the
+# macro its second group's header reads, so it reads `Rs` wide.
+extern "fixedbugs-2364-cfg.h"
+    function cfg_one() -> i32
+
+extern "fixedbugs-2364-rs.h"
+    record Rs
+        a: i64
+        b: i32
+    function rs_make(v: i32) -> Rs
+
+function make(v: i32) -> Rs
+    return rs_make(v: v + cfg_one())

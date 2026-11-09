@@ -1,0 +1,17 @@
+# fixedbugs, defect 2364, lane p239-land-a, 2026-11-09 (panel 239's R4; the
+# compiler-engineer's `union2`).
+#
+# `fixedbugs-2364-box.h` widens the union `Un` where the macro of
+# `fixedbugs-2364-wide.h` is read before it, and `Box.t` follows the union.
+# Before the repair this unit read `wide.h` first, so `Box.t` stood at byte
+# 8 here and at byte 4 in `rbox`'s unit, and the program built at exit 0
+# printing `0` for 1000.
+use fixedbugs2364/defines_wide
+use fixedbugs2364/rbox
+
+function main()
+    p = defines_wide.make(v: 4)
+    b = rbox.make(v: 3)
+    print(p.w)
+    print(b.u.i)
+    print(b.t)

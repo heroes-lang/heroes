@@ -934,7 +934,8 @@ A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
 `build` and `run` compile one unit per module, prototypes across them and each
 unit cached, and each unit reads the headers of its own module's groups and of
 the group records it spells, never another module's, which every probe of the
-headers asks alike. `heroes test` compiles a unit per module too, the root's
+headers asks alike, each such record laid out as its own module's unit lays it out
+(§4.19; panel 239's R4, provisional, author ratification pending). `heroes test` compiles a unit per module too, the root's
 `main` running every module's tests (panel 202 R3, defect 560), and `--emit-c`
 writes the whole program as one `.c`, which is the seed's bootstrap, refused at
 exit 1 where that file cannot mean the program the units build: where it does
@@ -2364,6 +2365,20 @@ error: incompatible types
 The signature, the record definition, where it lives, and two concrete routes. The model fixes it
 **in one turn**, without opening anything.
 
+**At the C boundary, in the specification's words** (panel 239's R6, provisional, author
+ratification pending). A refusal names what the specification names: a group, its header, its
+`link` library, a module, a function, a record and its field, a size in bytes, and what a header
+defines; the header's own C words stand as the header writes them (`long long`, `#pragma pack`, a
+macro's name), since spec § 13 sends the reader to the header. It leans on no word of the machinery
+the specification does not use (*unit*, *archive*, *link line*, *linker*, *object*, each `grep -ciw`
+0 over it on 2026-11-09), nor on *member* in a linker's sense, which the specification spends on a
+struct's member and a group's; it names every record or library it is about in a fixed order, by
+name, never the order the compiler walked; and a note cites the specification by its own section,
+*spec § 13*, never this document's, which a reader holding the specification alone takes for its
+own section 4. (On 2026-11-09, 49 message lines in 25 files of `selfhost/` still cited this
+document's sections, counted by `git grep -n -E '"[^"]*\(§[0-9]+\.[0-9]+\)[^"]*"' -- selfhost`; a
+defect drafted at panel 239 and not yet filed owes their repair, and this clause leaves with it.)
+
 **Fixes are tagged `certain | guess`, and only `certain` fixes are machine-applicable.** The
 example above shows why: "convert: `to_i64(user.id)`" may be right, but "change save's signature to
 accept a str id" is usually the *wrong* repair — and a model will apply whatever the compiler
@@ -2684,7 +2699,8 @@ clang's own `stdbool.h` and `stddef.h`, then `hero_os.h` (`SEEDS` in `emit/exter
 header of the C library is read before the groups (panel 205 R3, defect 568). Then, between
 `heroes_guard_open.h` and `heroes_guard_close.h`, each header the module's groups name, once, where
 its first group stands, a group holding only records in its place like any other; after them, the
-header of each record of another module's group the unit spells (§4.1). After the guard's close
+headers of each record of another module's group the unit spells, read as that module reads them
+(§4.1; the paragraph below). After the guard's close
 comes `heroes_standard.h`, which reads `<stdint.h>` and `<math.h>` and defines again from clang's
 predefined macros the ten of their names the unit's own C writes (`INT64_C`, `UINT64_C`,
 `INT64_MIN`, `HUGE_VAL`, and since defect 567 `INT8_MIN`, `INT16_MIN`, `INT32_MIN` and `INT8_C`,
@@ -2731,6 +2747,33 @@ group names* (`cli/switch_ask.hero`). And a `package`'s words, its `-D` among th
 units that read a header a group naming that package names (defect 572, `emit/header_packages.hero`),
 never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
 where `main` named `ncursesw`, and was told *declares no* otherwise.
+
+**A record a group binds is laid out, in every unit that spells it, as its own module's unit lays it
+out** (panel 239's R4 and R5, provisional, author ratification pending; defect 2364). Where another
+module's unit reads the record's header after headers its own module's unit does not read before
+it, clang's record-layout dump of each unit's header list is compared, the size, the alignment and
+each field's byte and type (`cli/agreed_layout.hero`): a macro another header defines, a `#pragma
+pack` another header leaves set, a hidden field a macro adds to a `partial` record and a union a
+macro widens each move it, and a field's type assertion sees none of the last three. Where the two
+readings differ, the compiler orders the other modules' headers in that unit, one block per module
+owning such a record, the blocks sorted by those modules' names and tried in every order of up to
+four, then each preceded by its owner's own earlier headers (`cli/agreed_order.hero`); the unit's
+own headers stay first, as the paragraph above requires, and the first list under which every
+record agrees is the unit's. `--emit-c`'s one file is one more list, its blocks every module's own
+headers. Where no list agrees the build is refused before any unit compiles,
+`ffi_record_two_layouts` (`ffi_one_file` for the one file), told where the reading module spells the
+record, the two sizes, the first fields that differ and what each module reads before the record's
+header named (`cli/agreed_told.hero`), never as `ffi_field_type` against a header read alone, where
+the field is right. Where the reading unit's own list does not compile, nothing is compared and the
+unit's compile says why, so panel 204's ruled `ffi_header_refused` of a record whose header compiles
+only after its module's earlier one stands. A build whose units spell no other module's group record
+asks clang nothing more, the compiler's own among them. Until this sitting two other modules'
+records read in one unit followed the order the modules were walked in: a correct program was
+refused with a false message whose fix led nowhere, four shapes built at exit 0 and printed a wrong
+value, and panel 238's walk by module name made each follow the names instead. **The specification
+gains no sentence** (the sitting's spec-warden): spec § 13's *A group's `record` is the header's
+struct* already gives the meaning, and what is refused is what no order of the headers can make
+mean it, as with the other refusals this section names.
 
 **A `constant` is the group's second kind of member, and its value is the header's**
 (panel 038). It carries no body — inside a group a declaration is a *signature, not a

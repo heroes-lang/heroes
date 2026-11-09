@@ -1,0 +1,10 @@
+# fixedbugs, defect 2364: a group whose header defines the macro under which
+# another module's header packs its record; named so that panel 238's walk
+# reaches it before that module (`defines_`) or after it (`then_`).
+extern "fixedbugs-2364-packed.h"
+    record Pk
+        w: i32
+    function pk_make(v: i32) -> Pk
+
+function make(v: i32) -> Pk
+    return pk_make(v: v)

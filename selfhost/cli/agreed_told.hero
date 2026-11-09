@@ -1,0 +1,382 @@
+# The words of a group record read two ways that no order of the headers
+# makes alike (design.md §4.17, §4.19; panel 239's R5 and R6, provisional,
+# author ratification pending; defect 2364): `ffi_record_two_layouts` for a
+# module's unit, `ffi_one_file` for the one file `--emit-c` writes.
+#
+# **In the specification's words** (spec § 13; R6): a module reads a header,
+# a record has a size in bytes and fields of a type at a byte, its alignment
+# is said as *at a multiple of 8*, and the header's own C words (`long long`)
+# stand as clang prints them; never a unit, a member, an offset or an
+# alignment, words the specification does not use. The size and the first
+# two fields that differ are named, never every field: a real header's struct
+# has a hundred (libjpeg's 93, the critic's W1). Every record that disagreed
+# in some list tried is named, by name, so the words owe nothing to the order
+# the lists were tried in; a note cites the specification by its own section.
+#
+# **Told where the reading module spells the record** (R5, the spec-warden's
+# § 12c): the first value of it, or the first place its type is written, in
+# that module's files, since that is where the author can change something;
+# a note says the binding is not what to change, since a binding is judged as
+# its own module reads its header. Told at the binding until panel 239,
+# today's `ffi_field_type` pointed at a correct field and its `guess` walked
+# in a circle (`fixguess`). **What changes a record** is what its reader reads
+# before its header and its own module does not (`cause_of`): both of libjpeg's
+# modules read `stdio.h` first, and one read `cfgbool.h`. No `Fix`: the
+# repair is a module moved or a header named elsewhere, never an edit of one
+# line.
+
+use check/table
+use cli/agreed_layout
+use cli/clang_told
+use cli/strings
+use diag
+use emit/externs as emit_externs
+use emit/layout_rows
+use source
+use token
+
+# The refusal of module `module`'s unit, every record of `tried` named, told
+# where the module first spells one of them, or one of `spelled`, the records
+# of other modules its unit spells, where it spells none of these by name.
+function in_module(a: agreed_layout.Asking, tried: agreed_layout.Tried, module: str, spelled: [i64]) -> diag.Diagnostic
+    records = by_record_name(a, tried: tried)
+    reader = "module `" + agreed_layout.module_name(a, component: module) + "`"
+    d: diag.Diagnostic @= told(
+        a,
+        tried: tried,
+        records: records,
+        reader: reader,
+        code: "ffi_record_two_layouts",
+        at: spelled_at(a, module: module, records: records, spelled: spelled)
+    )
+
+    for decl in records
+        d.notes @ d.notes.push(bound_note(a, decl: decl))
+
+    first = records[0]
+    owner = owner_name(a, decl: first)
+    d.notes @ d.notes.push(
+        "a group's `record` is its header's struct as its own module reads it (spec § 13), and a value of `" + record_name(a, decl: first) + "` passes between " + reader + " and module `" + owner + "`, so both must read it alike; no order of the headers " + reader + " reads, nor module `" + owner + "`'s earlier headers before `" + agreed_layout.header_of(a, decl: first) + "`, makes them alike"
+    )
+    own = agreed_layout.own_headers(a, component: module)
+    apart: [str] @= []
+
+    for decl in records
+        causes = cause_of(a, tried: tried, decl: decl)
+        owns: [str] @= []
+
+        for one in causes
+            if agreed_layout.holds(own, one: one)
+                owns @ owns.push(one)
+
+        called = record_name(a, decl: decl)
+        theirs = owner_name(a, decl: decl)
+
+        if owns.len() > 0
+            d.notes @ d.notes.push(
+                reader + "'s own " + listed(owns) + " changes `" + called + "`: spell `" + called + "` only in modules that read it as module `" + theirs + "` does, or have module `" + theirs + "` read first the header that changes it, so both read it alike"
+            )
+        else if causes.len() > 0
+            apart @ apart.push("`" + called + "` only in modules that do not also read " + listed(causes))
+
+    if apart.len() > 0
+        d.notes @ d.notes.push("spell " + apart.join(", and "))
+
+    return d
+
+# The refusal of the one file `--emit-c` writes, which reads every module's
+# headers: told at the first record's binding, since no module of the program
+# reads the file, and `build` builds the program.
+function in_one_file(a: agreed_layout.Asking, tried: agreed_layout.Tried) -> diag.Diagnostic
+    records = by_record_name(a, tried: tried)
+    d: diag.Diagnostic @= told(
+        a,
+        tried: tried,
+        records: records,
+        reader: "the one file `--emit-c` writes",
+        code: "ffi_one_file",
+        at: a.decls[records[0]].name
+    )
+    names: [str] @= []
+
+    for decl in records
+        names @ names.push("`" + record_name(a, decl: decl) + "`")
+
+    d.notes @ d.notes.push(
+        "`--emit-c` writes the program as one file, which reads every module's headers, and in no order of them does each of " + names.join(", ") + " read as its own module reads it; `heroes build` and `heroes run` read each module's own headers and build it"
+    )
+    return d
+
+# The headline and each record's first differing fields.
+function told(a: agreed_layout.Asking, tried: agreed_layout.Tried, records: [i64], reader: str, code: str, at: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: code,
+        message: headline(a, tried: tried, decl: records[0], reader: reader),
+        span: at
+    )
+    index: i64 @= 0
+
+    for decl in records
+        if index > 0
+            d.notes @ d.notes.push(headline(a, tried: tried, decl: decl, reader: reader))
+
+        for one in differing(a, tried: tried, decl: decl, reader: reader)
+            d.notes @ d.notes.push(one)
+
+        index @ index + 1
+
+    return d
+
+# Every record of `tried`, sorted by its name and its module's.
+function by_record_name(a: agreed_layout.Asking, tried: agreed_layout.Tried) -> [i64]
+    keyed: {str: i64} @= {}
+
+    # ORDER: none, a map whose keys are sorted below.
+    for decl in keys(tried.lists)
+        keyed[record_name(a, decl: decl) + "\n" + owner_name(a, decl: decl)] @ decl
+
+    out: [i64] @= []
+
+    for key in sort(keys(keyed))
+        out @ out.push(keyed[key].must())
+
+    return out
+
+# Where module `module` first spells one of `records`, a value of one or its
+# type written, else one of `spelled`; the first record's binding where it
+# spells neither, which no unit planned from the module's code can reach.
+function spelled_at(a: agreed_layout.Asking, module: str, records: [i64], spelled: [i64]) -> token.Span
+    for wanted in [records, spelled]
+        found = first_spelling(a, module: module, wanted: wanted)
+
+        if !found.is_err()
+            return found.must()
+
+    return a.decls[records[0]].name
+
+function first_spelling(a: agreed_layout.Asking, module: str, wanted: [i64]) -> token.Span?
+    best: token.Span? @= fail(code: "none", msg: "the module spells none of them")
+    at: i64 @= 0
+
+    # The checker types every expression of the arena, one entry each; the
+    # bounds are asked all the same, so a shorter table reads as no spelling.
+    for e in a.tree.exprs
+        if at < a.checked.expr_types.len() && earlier(best, span: e.span) && is_one_of(a, ty: a.checked.expr_types[at], wanted: wanted) && source.component_at(a.s, e.span.start) == module
+            best @ ok(e.span)
+        at @ at + 1
+
+    # ORDER: none, the earliest place is kept.
+    for node in keys(a.checked.written_types)
+        if node >= 0 && node < a.tree.types.len()
+            span = a.tree.types[node].span
+
+            if earlier(best, span: span) && is_one_of(a, ty: a.checked.written_types[node].must(), wanted: wanted) && source.component_at(a.s, span.start) == module
+                best @ ok(span)
+
+    return best
+
+function earlier(best: token.Span?, span: token.Span) -> bool
+    match best
+        .ok held => return span.start < held.start
+        .err     => return true
+
+function is_one_of(a: agreed_layout.Asking, ty: i64, wanted: [i64]) -> bool
+    match table.get(a.checked.types, ty)
+        .named n =>
+            for decl in wanted
+                if decl == n.decl
+                    return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => return false
+        .array | .fixed | .map | .fallible | .function_ty | .case_ty => return false
+        .failure | .generic | .error                                 => return false
+
+    return false
+
+# That the binding is judged as its own module reads its header, so no edit
+# of it makes the two readings alike.
+function bound_note(a: agreed_layout.Asking, decl: i64) -> str
+    at = source.locate(a.s, a.decls[decl].name.start)
+    return "`" + record_name(a, decl: decl) + "` is bound at `" + at.file + ":" + at.line.to_str() + ":" + at.col.to_str() + "` and read as module `" + owner_name(a, decl: decl) + "` reads `" + agreed_layout.header_of(a, decl: decl) + "`: a change to its fields changes neither reading, so the binding is not what to change"
+
+# The headers a record's reader reads before its header that its own module
+# does not read before it, in the reader's order: what changes it.
+function cause_of(a: agreed_layout.Asking, tried: agreed_layout.Tried, decl: i64) -> [str]
+    theirs = owner_before(a, decl: decl)
+    out: [str] @= []
+
+    for one in before_here(a, tried: tried, decl: decl)
+        if !agreed_layout.holds(theirs, one: one)
+            out @ out.push(one)
+
+    return out
+
+# A record's two sizes and alignments, and where each is read.
+function headline(a: agreed_layout.Asking, tried: agreed_layout.Tried, decl: i64, reader: str) -> str
+    name = record_name(a, decl: decl)
+    here = last_row(tried.here[decl].must())
+    theirs = last_row(tried.theirs[decl].must())
+    where_here = "where " + reader + " reads `" + agreed_layout.header_of(a, decl: decl) + "`" + after(before_here(a, tried: tried, decl: decl))
+    where_theirs = "where module `" + owner_name(a, decl: decl) + "` reads it" + after(owner_before(a, decl: decl))
+    hs = number_after(text: here, word: "sizeof=")
+    ts = number_after(text: theirs, word: "sizeof=")
+    ha = number_after(text: here, word: "align=")
+    ta = number_after(text: theirs, word: "align=")
+
+    if hs == ts && ha == ta
+        return "`" + name + "` is read two ways, " + where_here + " and " + where_theirs
+    return "`" + name + "` is " + hs + " bytes, at a multiple of " + ha + ", " + where_here + ", and " + ts + " bytes, at a multiple of " + ta + ", " + where_theirs
+
+# The first two fields that differ between the two readings, the owner's
+# order first: a field at another byte or of another type, or one only one
+# side holds.
+function differing(a: agreed_layout.Asking, tried: agreed_layout.Tried, decl: i64, reader: str) -> [str]
+    name = record_name(a, decl: decl)
+    owner = "module `" + owner_name(a, decl: decl) + "`"
+    here = fields_of(tried.here[decl].must())
+    theirs = fields_of(tried.theirs[decl].must())
+    out: [str] @= []
+
+    for one in theirs
+        at = field_at(here, key: one.key)
+
+        if out.len() >= 2
+            return out
+
+        if at < 0
+            out @ out.push(
+                "`" + name + "." + one.name + "` (`" + one.type_text + "`, at byte " + one.byte + ") is in it only where " + owner + " reads it"
+            )
+        else if here[at].type_text != one.type_text
+            out @ out.push(
+                "`" + name + "." + one.name + "` is `" + here[at].type_text + "` at byte " + here[at].byte + " where " + reader + " reads it, and `" + one.type_text + "` at byte " + one.byte + " where " + owner + " does"
+            )
+        else if here[at].byte != one.byte
+            out @ out.push(
+                "`" + name + "." + one.name + "` is at byte " + here[at].byte + " where " + reader + " reads it, and at byte " + one.byte + " where " + owner + " does"
+            )
+
+    for one in here
+        if out.len() < 2 && field_at(theirs, key: one.key) < 0
+            out @ out.push(
+                "`" + name + "." + one.name + "` (`" + one.type_text + "`, at byte " + one.byte + ") is in it only where " + reader + " reads it"
+            )
+
+    return out
+
+# One row of a block below the wrapper's `v`: its depth and name, which pair
+# the two readings, its byte as the dump prints it, and its type.
+record Field
+    key: str
+    name: str
+    byte: str
+    type_text: str
+
+function fields_of(block: str) -> [Field]
+    rows = clang_told.lines_of(block)
+    out: [Field] @= []
+
+    # Row 0 is the wrapper's `v`, the last its size.
+    for at in range(from: 1, to: rows.len() - 1)
+        row = rows[at]
+        bar = layout_rows.byte_index(text: row, needle: "| ")
+
+        if bar > 0
+            rest = row.slice(from: bar + 2, to: row.len())
+            text = strings.trimmed(rest)
+            space: i64 @= text.len() - 1
+
+            while space > 0 && text[space] != ' '
+                space @ space - 1
+
+            if space > 0
+                depth = rest.len() - strings.trimmed(rest).len()
+                field = text.slice(from: space + 1, to: text.len())
+                out @ out.push(
+                    Field(key: depth.to_str() + ":" + field, name: field, byte: strings.trimmed(row.slice(from: 0, to: bar)), type_text: text.slice(from: 0, to: space))
+                )
+
+    return out
+
+function field_at(fields: [Field], key: str) -> i64
+    at: i64 @= 0
+
+    for one in fields
+        if one.key == key
+            return at
+        at @ at + 1
+
+    return 0 - 1
+
+function record_name(a: agreed_layout.Asking, decl: i64) -> str
+    return source.span_text(a.s, a.decls[decl].name)
+
+function owner_name(a: agreed_layout.Asking, decl: i64) -> str
+    return agreed_layout.module_name(a, component: agreed_layout.owner_of(a, decl: decl))
+
+# The headers read before the record's in the list where it first disagreed,
+# the compiler's own left out.
+function before_here(a: agreed_layout.Asking, tried: agreed_layout.Tried, decl: i64) -> [str]
+    return visible(agreed_layout.before_all(tried.lists[decl].must(), header: agreed_layout.header_of(a, decl: decl)))
+
+# The headers the record's own module reads before its header.
+function owner_before(a: agreed_layout.Asking, decl: i64) -> [str]
+    found = agreed_layout.plan_of(a, module: agreed_layout.owner_of(a, decl: decl))
+
+    if found.is_err()
+        return []
+    return visible(agreed_layout.before_all(found.must().headers, header: agreed_layout.header_of(a, decl: decl)))
+
+function visible(list: [str]) -> [str]
+    out: [str] @= []
+
+    for one in list
+        if !emit_externs.is_own(one)
+            out @ out.push(one)
+
+    return out
+
+function after(headers: [str]) -> str
+    if headers.len() == 0
+        return ""
+    return " after " + listed(headers)
+
+function listed(headers: [str]) -> str
+    quoted: [str] @= []
+
+    for one in headers
+        quoted @ quoted.push("`" + one + "`")
+
+    return quoted.join(", ")
+
+function last_row(block: str) -> str
+    rows = clang_told.lines_of(block)
+
+    if rows.len() == 0
+        return ""
+    return rows[rows.len() - 1]
+
+# The digits after `word` in `text`, `?` where it is not there.
+function number_after(text: str, word: str) -> str
+    at = layout_rows.byte_index(text: text, needle: word)
+
+    if at < 0
+        return "?"
+    start = at + word.len()
+    end: i64 @= start
+
+    while end < text.len() && text[end] >= '0' && text[end] <= '9'
+        end @ end + 1
+
+    return text.slice(from: start, to: end)
+
+## Tests
+
+test "a block's rows pair by depth and name, each with its byte and type"
+    block = "         0 |   Rs v\n         0 |     long long a\n         8 |     int b\n           | [sizeof=16, align=8]"
+    fields = fields_of(block)
+    assert fields.len() == 2
+    assert fields[0] == Field(key: "4:a", name: "a", byte: "0", type_text: "long long")
+    assert fields[1].byte == "8"
+    assert number_after(text: last_row(block), word: "sizeof=") == "16"
+    assert number_after(text: last_row(block), word: "align=") == "8"
+    assert number_after(text: "", word: "align=") == "?"
