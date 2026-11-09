@@ -14,20 +14,42 @@
 # program's group, and a member no record of the program builds or receives at
 # that line stays the compiler's, exit 2. It reads clang's ERROR line alone,
 # as `const_member` does.
+#
+# **AND A `const` MEMBER NESTED IN ANOTHER** (defect 2386): clang says
+# *nested const-qualified data member* where the `const` member lies inside a
+# member of the struct, a named record, an anonymous struct or a union's arm,
+# and that wording reached no reader, so the build ended at exit 2 with
+# *internal error*. It is told the same way, worded for where the member
+# lies, on the record whose assignment clang refuses: the LAST record built or
+# received at the line, since a record built for a field of another is built
+# before it and is told in clang's own line about it. What it does not reach,
+# said: a `const` member inside an ELEMENT of an array member, which clang
+# 21 and 22 assign without a word, so the program builds and C reads the
+# member as it set it; refusing it moves the line between accepted and
+# refused, a question for a sitting.
 
 use ast
-use token
-use source
 use diag
-use ir
-use ir/containers
+use emit/externs as emit_externs
+use emit/ffi_field
 use emit/ffi_lookup
 use emit/ffi_site
-use emit/ffi_field
-use emit/externs as emit_externs
+use ir
+use ir/containers
+use source
+use token
+
+# clang's wording where the `const` member lies inside another member.
+constant NESTED_MEMBER: str
+    "with nested const-qualified data member '"
 
 function left_out(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str) -> diag.Diagnostic?
-    tail = ffi_lookup.after(text: line, marker: ffi_field.CONST_MEMBER)
+    nested: bool @= false
+    tail: str? @= ffi_lookup.after(text: line, marker: ffi_field.CONST_MEMBER)
+
+    if tail.is_err()
+        tail @ ffi_lookup.after(text: line, marker: NESTED_MEMBER)
+        nested @ true
 
     if tail.is_err()
         return fail(code: "none", msg: "not a const-member line")
@@ -36,6 +58,7 @@ function left_out(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: contain
 
     if at.is_err()
         return fail(code: "none", msg: "no usable location")
+    last: diag.Diagnostic? @= fail(code: "none", msg: "no group record is built or received at that line")
 
     for f in p.functions
         for blk in f.blocks
@@ -46,12 +69,19 @@ function left_out(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: contain
 
                 if built.is_err()
                     continue
+
+                if nested
+                    told_nested = told_inside(s, decls, at: built.must(), member: member, span: inst.span)
+
+                    if !told_nested.is_err()
+                        last @ told_nested
+                    continue
                 told = told_left_out(s, decls, at: built.must(), member: member, span: inst.span)
 
                 if !told.is_err()
                     return told
 
-    return fail(code: "none", msg: "no group record is built or received at that line")
+    return last
 
 # The declaration index of the group record an instruction builds or
 # receives by value, or none.
@@ -120,6 +150,28 @@ function told_left_out(s: source.Source, decls: [ast.Decl], at: i64, member: str
             )
             d.notes @ d.notes.push(
                 "a `partial` record is the header's whole struct, its size C's, so a member it leaves out is still in every `" + owner + "` C assigns: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here"
+            )
+            return ok(d)
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
+
+# The refusal where the `const` member lies inside another member of the
+# group record at `at` (defect 2386): in a member it leaves out or in one it
+# names, so the words say where it lies and never that the record leaves it
+# out; the rest are the top-level case's.
+function told_inside(s: source.Source, decls: [ast.Decl], at: i64, member: str, span: token.Span) -> diag.Diagnostic?
+    match decls[at].kind
+        .record_decl rec =>
+            if rec.header.is_err()
+                return fail(code: "none", msg: "not a group record")
+            header = emit_externs.unquoted(s, span: rec.header.must())
+            owner = source.span_text(s, decls[at].name)
+            d: diag.Diagnostic @= diag.new_diagnostic(
+                code: "ffi_const_field",
+                message: "`" + header + "` declares `" + owner + "`'s member `" + member + "` as `const`, nested in one of `" + owner + "`'s members, so C still refuses to assign any `" + owner + "` — and this line is that assignment",
+                span: span
+            )
+            d.notes @ d.notes.push(
+                "a member nested in another is in every `" + owner + "` C assigns, whatever fields the record names: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here"
             )
             return ok(d)
         .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
