@@ -1,4 +1,4 @@
-<title>Piano di esempio</title>
+<title>An example plan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -153,24 +153,26 @@ footer { font-size: 13px; color: var(--muted); max-width: 80ch; }
 (function () {
   "use strict";
 
-  /* DATA BEGIN: the only part a session edits (.claude/skills/graph/SKILL.md). */
+  /* DATA BEGIN: the only part a session edits (.claude/skills/graph/SKILL.md). Every word below is
+     the page's, so a session writes it in the language of its chat; the example is English, as
+     every file of the repository is (CLAUDE.md § 11). */
   var META = {
-    eyebrow: "Heroes · piano «esempio» · 2026-11-09",
-    title: "Piano di esempio",
-    intro: "Solo questo piano. In alto la mappa dei passi, in fondo ogni foglia. Clicca un nodo per scendere alle sue foglie.",
-    footer: "Letto alle 21:10 del 2026-11-09 da `git log` e `gh issue list`. Una foglia è una cosa nominabile: un commit, un difetto, una risoluzione, un controllo. La percentuale conta cose e non ore. Un rosso è un fallimento osservato, un trattino una voce saltata: né l'uno né l'altro entrano nei conti. Gli hash in grigio sono commit non ancora spinti.",
-    heads: { map: "La mappa dei passi", path: "Cosa sta tra oggi e il traguardo", leaves: "Ogni foglia" },
+    eyebrow: "Heroes · the plan «example» · 2026-11-09",
+    title: "An example plan",
+    intro: "This plan only. The map of the steps at the top, every leaf at the bottom. Click a node to go down to its leaves.",
+    footer: "Read at 21:10 on 2026-11-09 from `git log` and `gh issue list`. A leaf is a nameable thing: a commit, a defect, a resolution, a check. The percentage counts things, not hours. A red leaf is an observed failure and a dash a skipped one: neither enters the counts. Grey hashes are commits not yet pushed.",
+    heads: { map: "The map of the steps", path: "What stands between now and the goal", leaves: "Every leaf" },
     view: [1212, 274],
-    bands: [["FATTO", 20, 26, "start"], ["IN CORSO E DA FARE", 1192, 160, "end"]],
+    bands: [["DONE", 20, 26, "start"], ["RUNNING AND TO DO", 1192, 160, "end"]],
     figures: {
-      goal: ["Fino al traguardo", "foglie fatte dal passo 0 al traguardo"],
-      whole: ["Piano intero", "con i passi che vengono dopo il traguardo"],
-      run: ["In corso adesso", "foglie in lavoro"],
-      you: ["Aspetta te", "decisioni e letture che spettano all'autore"]
+      goal: ["Up to the goal", "leaves done from step 0 to the goal"],
+      whole: ["The whole plan", "with the steps after the goal"],
+      run: ["Running now", "leaves in progress"],
+      you: ["Waiting on you", "decisions and readings that are the author's"]
     },
     aside: "",
-    names: { ok: "fatto", run: "in corso", you: "aspetta te", todo: "da fare", ko: "fallito", skip: "saltato", part: "iniziato" },
-    words: { all: "Tutte", of: "di", done: "fatte", map: "Grafo dei passi del piano", figures: "Le cifre", legend: "Legenda", filters: "Filtra le foglie per stato", local: "commit non ancora spinto" }
+    names: { ok: "done", run: "running", you: "waiting on you", todo: "to do", ko: "failed", skip: "skipped", part: "started" },
+    words: { all: "All", of: "of", done: "done", map: "Graph of the plan's steps", figures: "The figures", legend: "Legend", filters: "Filter the leaves by state", local: "commit not yet pushed" }
   };
   var REPO = "https://github.com/heroes-lang/heroes";
   var LOCAL = { "0000000aa": 1 };
@@ -180,25 +182,25 @@ footer { font-size: 13px; color: var(--muted); max-width: 80ch; }
      A leaf: [status, text, refs, note]; status ok run you todo ko skip; a ref is a short
      hash or "#NNN" for an issue. */
   var PH = [
-    { id: "S0", x: 20, y: 40, tag: "Passo 0", title: ["Apertura"], toGoal: true,
-      sub: "Cosa questo passo consegna, in una frase.",
+    { id: "S0", x: 20, y: 40, tag: "Step 0", title: ["Opening"], toGoal: true,
+      sub: "What this step delivers, in one sentence.",
       groups: [
-        { t: "Gruppo", L: [
-          ["ok", "Una foglia fatta, con il suo commit", ["0000000aa"]],
-          ["ok", "Una foglia chiusa da una issue", ["#1"]] ] } ] },
-    { id: "S1", x: 220, y: 40, tag: "Passo 1", title: ["Lavoro", "in corso"], toGoal: true,
-      sub: "Un passo con una foglia in corso.",
+        { t: "A group", L: [
+          ["ok", "A leaf done, with its commit", ["0000000aa"]],
+          ["ok", "A leaf closed by an issue", ["#1"]] ] } ] },
+    { id: "S1", x: 220, y: 40, tag: "Step 1", title: ["Work", "in progress"], toGoal: true,
+      sub: "A step with one leaf running.",
       groups: [
-        { t: "Gruppo", L: [
-          ["ok", "Fatta"],
-          ["run", "In corso", null, "cosa sta girando adesso"],
-          ["todo", "Da fare"] ] } ] },
-    { id: "S2", x: 420, y: 176, tag: "Passo 2", title: ["Traguardo"], toGoal: true,
-      sub: "Il traguardo: un tag, una spinta.",
-      groups: [ { t: "Gruppo", L: [ ["todo", "Da fare"], ["you", "Una risposta dell'autore"] ] } ] },
-    { id: "S3", x: 620, y: 176, tag: "Passo 3", title: ["Dopo il", "traguardo"], toGoal: false,
-      sub: "Un passo che viene dopo.",
-      groups: [ { t: "Gruppo", L: [ ["todo", "Da fare"], ["skip", "Saltata, con il motivo"], ["ko", "Fallita: la riparazione è una foglia altrove"] ] } ] }
+        { t: "A group", L: [
+          ["ok", "Done"],
+          ["run", "Running", null, "what is running now"],
+          ["todo", "To do"] ] } ] },
+    { id: "S2", x: 420, y: 176, tag: "Step 2", title: ["The goal"], toGoal: true,
+      sub: "The goal: a tag, a push.",
+      groups: [ { t: "A group", L: [ ["todo", "To do"], ["you", "An answer of the author's"] ] } ] },
+    { id: "S3", x: 620, y: 176, tag: "Step 3", title: ["After the", "goal"], toGoal: false,
+      sub: "A step that comes after.",
+      groups: [ { t: "A group", L: [ ["todo", "To do"], ["skip", "Skipped, with the reason"], ["ko", "Failed: its repair is a leaf elsewhere"] ] } ] }
   ];
 
   /* An edge: [from, to], [from, to, label], or [from, to, label, { from: "R", to: "T", via: [[x, y], ...] }]
@@ -208,8 +210,8 @@ footer { font-size: 13px; color: var(--muted); max-width: 80ch; }
 
   /* The critical path, in order: [status, text, note]. */
   var PATH = [
-    ["run", "Il passo in corso", "cosa sta girando"],
-    ["todo", "Il traguardo", "cosa lo giudica"]
+    ["run", "The step running", "what is running"],
+    ["todo", "The goal", "what judges it"]
   ];
   /* DATA END */
 
@@ -277,7 +279,7 @@ footer { font-size: 13px; color: var(--muted); max-width: 80ch; }
   }
   var defs = el("defs", {});
   var mk = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs);
-  el("path", { d: "M0 0 L10 5 L0 10 z", "class": "arrow" }, mk);
+  el("path", { d: "M 0 0 L 10 5 L 0 10 z", "class": "arrow" }, mk);
   META.bands.forEach(function (b) { var t = el("text", { x: b[1], y: b[2], "class": "band", "text-anchor": b[3] || "start" }); t.textContent = b[0]; });
 
   var SIDE = {

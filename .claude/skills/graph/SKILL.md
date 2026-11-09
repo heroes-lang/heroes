@@ -20,9 +20,11 @@ worth the wait.
 
 ## Output language: the language this chat is being held in
 
-This file is English (CLAUDE.md § 11). The PAGE is written in the language the
-author speaks in this chat, every label included; the template's labels are
-Italian because the author's chats are. Plain words, no em dashes (CL-029).
+This file and the template are English (CLAUDE.md § 11). The PAGE is written in
+the language the author speaks in this chat, every label included, in the
+session's own copy under `.claude/worktrees/plan-graph/`, which no check reads:
+a chat held in Italian writes the template's words in Italian there. Plain
+words, no em dashes (CL-029).
 
 ## Step 1: Find the plan, outermost first
 
