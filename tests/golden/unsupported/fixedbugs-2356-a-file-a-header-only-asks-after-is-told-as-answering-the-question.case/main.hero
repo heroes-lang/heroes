@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2356, lane b26-cli, 2026-11-09: `lib.h` asks
+# `__has_include(<stdio.h>)` and includes nothing, and a `stdio.h` beside
+# `main.hero`, in the program's own folder, answers it ahead of the library's.
+# Panel 237's R2 refuses such a file wherever a named folder found it, and
+# the refusal stands; until this defect it said the C this compiler writes
+# reads the file, where only the header's question finds it. Told at the
+# program's first byte, the note naming the question and the folder; this
+# line is its mark.
+extern "lib.h"
+    constant HAS: i64
+
+function main()
+    print(HAS)
