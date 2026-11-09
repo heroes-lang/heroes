@@ -1,0 +1,374 @@
+# Whether a group record the program builds or receives by value holds a
+# `const` member inside an ELEMENT of an array member, asked of C element by
+# element in the layout round (design.md §4.19, §1.12; defect 2388,
+# 2026-11-09). What is told, and where, is `emit/ffi_const_element.hero`.
+#
+# **Why the round asks and clang's refusal does not.** C11 makes a struct
+# holding a `const` member anywhere, *"including, recursively, any member or
+# element of all contained aggregates or unions"* (§6.3.2.1p1), no
+# modifiable lvalue, and clang 21 and 22 refuse its assignment where the
+# member is at the top or in a nested member (defects 2131 and 2386) and say
+# nothing where it lies in an array's element: their walk stops at the array.
+# So the question is put to clang where it does answer, on the ELEMENT: a
+# never-called `*a = *b` of the element's own type, at `#line <decl + 1>
+# "hero_cq"`, whose refusal names the record by its line and the member in
+# clang's own words, the words `ffi_field.const_member` and
+# `ffi_const_built` read.
+#
+# **Which arrays, read from the layout dump's shape alone.** A record the
+# screen vouched for has exactly its declared fields, so its arrays are the
+# fields typed `X[n]` whose element can hold a member, at any depth of the
+# fields typed by another of the group's records; a record the round dumped
+# has its arrays among the dump's leaves, a type that ends `]` and not `[]`
+# (`layout_text.Member.flexible`'s fact, one character wider).
+#
+# **What each element is, asked of C.** An array's innermost element type is
+# a chain of typedefs, each `ELEMENT_OF` the one before: C's own answer to
+# *is this an array* (`__builtin_types_compatible_p` of the type and of a
+# value of it after the comma operator, which turns an array into a pointer
+# and leaves every other type as it is), the first element where it is one
+# and the type itself where it is not. So a pointer, whose text may also end
+# `]` (`int (*)[3]`), is never followed, and a `typedef`'d row of a 2-D array
+# is unwrapped as its other dimension is. The element is laid out in a
+# wrapper of its own, and the wrapper's block says what it is: a record,
+# whose members follow and whose own arrays are asked next round, or a
+# scalar, which holds no member. `DIMENSIONS` links unwrap at most that many
+# dimensions; an element still an array after them is not asked.
+#
+# **Bounded.** A record holds no record of its own type by value, so the
+# walk ends; it is also bounded by `ROUNDS` rounds and `MOST` wrappers, past
+# which what is left is not asked. Every unit is kept by its digest under the
+# screen's key (`layout_runs.kept_dump`, `layout_runs.judged`), so a warm
+# build runs no clang for it, and a program with no array of aggregates
+# among its built records runs none at all. A dump or a unit that does not
+# compile answers nothing, and the record builds as before: this check only
+# ever adds the refusal clang makes of the element itself.
+
+use check/state
+use check/table
+use cli/layout_runs
+use emit/ffi_const_built
+use emit/ffi_const_element
+use emit/ffi_field
+use emit/ffi_lookup
+use emit/layout_rows
+use emit/layout_screen
+use emit/layout_text
+use ir/containers
+use source
+
+# The file every probe's `#line` names, and the prefix of every typedef.
+constant PLACE: str
+    "hero_cq"
+
+# The most rounds of wrappers, the most wrappers, and the most dimensions of
+# one array, one check asks.
+constant ROUNDS: i64
+    32
+
+constant MOST: i64
+    4096
+
+constant DIMENSIONS: i64
+    16
+
+# An array still to be asked: the record it lies in, by its declaration and
+# its C type, and the C path of each array on the way to it, the first on
+# the record and each next on the innermost element of the one before.
+record Reach
+    decl: i64
+    c_type: str
+    hops: [str]
+
+# The refusal of every record some instruction builds or receives whose
+# `const` member lies inside an array's element, one marker line each; `ok`
+# where there is none. `rows` are the round's dump of `laying`, empty where
+# nothing was dumped.
+function checked(a: layout_runs.Asking, p: containers.Program, sum: str, rows: [str], wanted: [layout_text.Asked], laying: [layout_text.Asked]) -> ()?
+    built = ffi_const_element.sites(a.c, a.decls, p)
+    laid: {i64: bool} @= {}
+
+    for one in laying
+        laid[one.decl] @ true
+
+    opened: {i64: i64} @= {}
+
+    if rows.len() > 0 && layout_text.control_holds(rows)
+        opened @ layout_text.heads(rows)
+    frontier: [Reach] @= []
+
+    for one in wanted
+        if !built[one.decl].is_err()
+            for path in arrays_of(a, rows: rows, opened: opened, laid: laid, decl: one.decl, depth: 0)
+                frontier @ frontier.push(Reach(decl: one.decl, c_type: one.c_type, hops: [path]))
+
+    if frontier.len() == 0
+        return ok()
+    probes = walked(a, sum: sum, frontier: frontier)
+
+    if probes.len() == 0
+        return ok()
+    return probed(a, sum: sum, probes: probes)
+
+# The C paths of the arrays in the record at `decl` whose element may hold a
+# member: from its dump where the round dumped it, else from its declared
+# fields, which the screen proved are its members.
+function arrays_of(a: layout_runs.Asking, rows: [str], opened: {i64: i64}, laid: {i64: bool}, decl: i64, depth: i64) -> [str]
+    out: [str] @= []
+
+    if depth > ROUNDS
+        return out
+
+    if !laid[decl].is_err()
+        start = opened[decl]
+
+        if start.is_err()
+            return out
+        tree = layout_text.members(rows: rows, from: start.must())
+
+        if tree.is_err()
+            return out
+        return arrays_in(tree.must())
+
+    match a.decls[decl].kind
+        .record_decl rec =>
+            for field in rec.fields
+                name = source.span_text(a.s, field.name)
+                written = state.written_type(a.c, field.ty)
+
+                if written.is_err()
+                    continue
+
+                match table.get(a.c.types, written.must())
+                    .fixed x =>
+                        if may_hold(a, ty: x.element)
+                            out @ out.push(name)
+                    .named n =>
+                        if !ffi_const_element.group_record(a.decls, decl: n.decl).is_err()
+                            for inner in arrays_of(a, rows: rows, opened: opened, laid: laid, decl: n.decl, depth: depth + 1)
+                                out @ out.push(name + "." + inner)
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+                    .array | .map | .fallible | .function_ty                  => continue
+                    .case_ty | .failure | .generic | .error                   => continue
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return out
+
+    return out
+
+# The paths of a block's members that are arrays with a length.
+function arrays_in(tree: [layout_text.Member]) -> [str]
+    out: [str] @= []
+
+    for m in tree
+        if !m.bitfield && !m.flexible && m.path.len() > 0 && ends_bracket(m.type_text)
+            out @ out.push(m.path)
+
+    return out
+
+# Whether an array's declared element can hold a member: a record or
+# another array, never a number, a pointer or a handle.
+function may_hold(a: layout_runs.Asking, ty: i64) -> bool
+    match table.get(a.c.types, ty)
+        .named n => return !ffi_const_element.group_record(a.decls, decl: n.decl).is_err()
+        .fixed => return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .map | .fallible | .function_ty => return false
+        .case_ty | .failure | .generic | .error => return false
+
+    return false
+
+# The arrays whose innermost element is a record or a union, every one the
+# frontier reaches, each element laid out in a wrapper of its own, round by
+# round.
+function walked(a: layout_runs.Asking, sum: str, frontier: [Reach]) -> [Reach]
+    none: [layout_text.Asked] = []
+    probes: [Reach] @= []
+    at: [Reach] @= frontier
+    round: i64 @= 0
+    asked: i64 @= 0
+
+    while at.len() > 0 && round < ROUNDS && asked + at.len() <= MOST
+        asked @ asked + at.len()
+        round @ round + 1
+        lines: [str] @= []
+        k: i64 @= 0
+
+        while k < at.len()
+            for line in chain(k, one: at[k])
+                lines @ lines.push(line)
+
+            wrap = "struct " + layout_rows.PREFIX + k.to_str()
+            lines @ lines.push(
+                wrap + " { " + innermost(k, one: at[k]) + " v; }; _Static_assert(sizeof(" + wrap + ") > 0, \"\");"
+            )
+            k @ k + 1
+
+        text = layout_text.dump_unit(a.headers, wanted: none) + lines.join("\n") + "\n"
+        made = layout_runs.kept_dump(a, sum: sum, dump_text: text)
+
+        if made.is_err()
+            return probes
+        rows = layout_rows.rows_of(layout_rows.wrapper_rows(made.must()).join("\n") + "\n")
+
+        if !layout_text.control_holds(rows)
+            return probes
+        opened = layout_text.heads(rows)
+        next: [Reach] @= []
+        k @ 0
+
+        while k < at.len()
+            start = opened[k]
+
+            if !start.is_err()
+                tree = layout_text.members(rows: rows, from: start.must())
+
+                if !tree.is_err() && tree.must().len() > 0
+                    probes @ probes.push(at[k])
+
+                    for path in arrays_in(tree.must())
+                        next @ next.push(Reach(decl: at[k].decl, c_type: at[k].c_type, hops: at[k].hops.push(path)))
+            k @ k + 1
+
+        at @ next
+
+    return probes
+
+# The typedefs that name the innermost element of each array on `one`'s way,
+# the `k`th reach of a unit: per hop, the array's type on the type before
+# (the record's own for the first), then `DIMENSIONS` links of
+# `element_of`.
+function chain(k: i64, one: Reach) -> [str]
+    out: [str] @= []
+    before: str @= one.c_type
+    hop: i64 @= 0
+
+    while hop < one.hops.len()
+        first = named(k: k, hop: hop, link: 0)
+        out @ out.push("typedef __typeof__(((" + before + " *)0)->" + one.hops[hop] + ") " + first + ";")
+        link: i64 @= 1
+
+        while link <= DIMENSIONS
+            out @ out.push(
+                "typedef " + element_of(named(k: k, hop: hop, link: link - 1)) + " " + named(k: k, hop: hop, link: link) + ";"
+            )
+            link @ link + 1
+
+        before @ named(k: k, hop: hop, link: DIMENSIONS)
+        hop @ hop + 1
+
+    return out
+
+# The typedef `chain` ends at: the innermost element of the last array.
+function innermost(k: i64, one: Reach) -> str
+    return named(k: k, hop: one.hops.len() - 1, link: DIMENSIONS)
+
+function named(k: i64, hop: i64, link: i64) -> str
+    return PLACE + "_" + k.to_str() + "_" + hop.to_str() + "_" + link.to_str()
+
+# The first element's type where the type `t` is an array, else `t` itself:
+# the comma operator turns an array into a pointer to its element and leaves
+# any other type as it is, so the two are compatible exactly where `t` is no
+# array, and the choice takes the element or the value through its address.
+function element_of(t: str) -> str
+    value = "(*(" + t + " *)0)"
+    return "__typeof__(*__builtin_choose_expr(__builtin_types_compatible_p(" + t + ", __typeof__((0, " + value + "))), &" + value + ", " + value + "))"
+
+# Whether a dump's type is an array with a length: it ends `]`, and not `[]`.
+function ends_bracket(text: str) -> bool
+    n = text.len()
+
+    if n == 0 || text[n - 1] != ']'
+        return false
+    return n < 2 || text[n - 2] != '['
+
+# The unit that assigns each element to another of its type, at its record's
+# line, and what clang refused there.
+function probed(a: layout_runs.Asking, sum: str, probes: [Reach]) -> ()?
+    none: [layout_text.Asked] = []
+    lines: [str] @= []
+    k: i64 @= 0
+
+    while k < probes.len()
+        one = probes[k]
+
+        for line in chain(k, one: one)
+            lines @ lines.push(line)
+
+        typed = innermost(k, one: one)
+        lines @ lines.push("#line " + (one.decl + 1).to_str() + " \"" + PLACE + "\"")
+        lines @ lines.push(
+            "__attribute__((unused)) static void " + PLACE + "_" + k.to_str() + "(" + typed + " *a, " + typed + " *b) { *a = *b; }"
+        )
+        k @ k + 1
+
+    verdict = layout_runs.judged(
+        a,
+        sum: sum,
+        text: layout_text.dump_unit(a.headers, wanted: none) + lines.join("\n") + "\n"
+    )
+
+    match verdict
+        .ok _ => return ok()
+        .err e =>
+            if e.code != "clang"
+                return verdict
+            told = refused(said: e.msg)
+
+            if told.len() == 0
+                return ok()
+            out: [str] @= []
+
+            # ORDER: by declaration index, the marker lines' order, which a
+            # second build of the same program gives alike.
+            for decl in sort(keys(told))
+                out @ out.push(ffi_const_element.marker(decl: decl, member: told[decl].must()))
+
+            return fail(code: "clang", msg: out.join("\n") + "\n")
+
+    return ok()
+
+# Each record clang refused an element's assignment of, by the probe's line,
+# with the first `const` member it named.
+function refused(said: str) -> {i64: str}
+    out: {i64: str} @= {}
+
+    for line in ffi_lookup.lines(text: said)
+        placed = layout_screen.placed(said: line, file: PLACE)
+
+        if placed.len() != 1
+            continue
+        tail: str? @= ffi_lookup.after(text: line, marker: ffi_field.CONST_MEMBER)
+
+        if tail.is_err()
+            tail @ ffi_lookup.after(text: line, marker: ffi_const_built.NESTED_MEMBER)
+
+        if tail.is_err()
+            continue
+
+        for decl in keys(placed)
+            if out[decl].is_err()
+                out[decl] @ ffi_lookup.up_to_quote(tail.must())
+
+    return out
+
+## Tests
+
+test "an array is a type ending in a length"
+    assert ends_bracket("struct inner[2]") && ends_bracket("anon_t[2][3]") && ends_bracket("int (*)[3]")
+    assert !ends_bracket("int[]") && !ends_bracket("int32_t") && !ends_bracket("")
+
+test "an element is named by a chain of typedefs, one hop per array on the way"
+    one = Reach(decl: 4, c_type: "struct outer", hops: ["items", "leaves"])
+    lines = chain(2, one: one)
+    assert lines.len() == 2 * (DIMENSIONS + 1)
+    assert lines[0] == "typedef __typeof__(((struct outer *)0)->items) hero_cq_2_0_0;"
+    assert lines[1] == "typedef " + element_of("hero_cq_2_0_0") + " hero_cq_2_0_1;"
+    assert lines[DIMENSIONS + 1] == "typedef __typeof__(((hero_cq_2_0_16 *)0)->leaves) hero_cq_2_1_0;"
+    assert innermost(2, one: one) == "hero_cq_2_1_16"
+    assert element_of("t") == "__typeof__(*__builtin_choose_expr(__builtin_types_compatible_p(t, __typeof__((0, (*(t *)0)))), &(*(t *)0), (*(t *)0)))"
+
+test "clang's refusal of a probe names the record by its line and the member in its words"
+    said = "hero_cq:4:84: error: cannot assign to lvalue with const-qualified data member 'k'\nhero_cq:4:84: error: cannot assign to lvalue with const-qualified data member 'j'\nhero_cq:7:84: error: cannot assign to lvalue with nested const-qualified data member 'n'\nhero_cq:9:84: error: read-only variable is not assignable\n"
+    got = refused(said: said)
+    assert got.len() == 2
+    assert got[3].must() == "k" && got[6].must() == "n"
+    assert got[8].is_err()

@@ -1,0 +1,25 @@
+# FIXED DEFECT 2388, 2026-11-09, lane b27-const (decision 2387, the shape
+# defect 2386's repair left said in `emit/ffi_const_built.hero`).
+#
+# SYMPTOM: a group record whose `const` member lies inside an ELEMENT of an
+# array member built at exit 0, built or received by value: C11 makes such a
+# struct no modifiable lvalue (6.3.2.1p1), and clang 21 and 22 assign it
+# without a word, so C wrote a member the header declares `const`.
+#
+# CAUSE: clang's walk for a `const` member stops at an array, and the
+# compiler had no word of its own.
+#
+# FIX: the layout round asks clang to assign the ELEMENT itself
+# (`cli/const_elements.hero`), and the record is told `ffi_const_field` on
+# every line that builds or receives one (`emit/ffi_const_element.hero`).
+#
+# This case: the reproducer, received by value from the header's function.
+
+extern "fixedbugs-2388-const-in-an-element.h"
+    record Outer tag fixedbugs_2388_outer partial
+        n: i32
+    function fixedbugs_2388_outer_make() -> Outer
+
+function main()
+    got = fixedbugs_2388_outer_make()  #~ ffi_const_field
+    print(got.n)

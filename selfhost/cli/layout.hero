@@ -49,6 +49,7 @@ use ast
 use check/state
 use checker
 use cli/compiling
+use cli/const_elements
 use cli/deps
 use cli/digest
 use cli/kept
@@ -110,7 +111,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
         screen = kept.read(dir + "/screen-" + known.must() + ".txt")
 
         if !screen.is_err()
-            return answered(a, wanted: wanted, sum: known.must(), said: screen.must(), @laid)
+            return answered(a, p, wanted: wanted, sum: known.must(), said: screen.must(), @laid)
     process.mkdir_all(dir)?
     screen_c = pointee.unit_path(dir: dir, stem: "screen", text: screen_text)
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
@@ -139,7 +140,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     listing = deps.pointer_text(rows.must())
     sum = listing.slice(from: 0, to: 16)
     kept.write(path: dir + "/screen-" + sum + ".txt", text: said.must())?
-    verdict = answered(a, wanted: wanted, sum: sum, said: said.must(), @laid)
+    verdict = answered(a, p, wanted: wanted, sum: sum, said: said.must(), @laid)
     publish.write_whole(path: listed, text: listing, keyed: true)?
     return verdict
 
@@ -149,7 +150,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
 # the screen's own two answers, unless clang erred outside the screen too:
 # then the headers did not compile alone, and the program's own compile says
 # so on the author's line.
-function answered(a: layout_runs.Asking, wanted: [layout_text.Asked], sum: str, said: str, @laid: {i64: str}) -> ()?
+function answered(a: layout_runs.Asking, p: containers.Program, wanted: [layout_text.Asked], sum: str, said: str, @laid: {i64: str}) -> ()?
     opaque = layout_screen.no_layout(said, wanted: wanted)
 
     if opaque.len() > 0 && !layout_screen.strays(said)
@@ -171,8 +172,12 @@ function answered(a: layout_runs.Asking, wanted: [layout_text.Asked], sum: str, 
         else
             laid[one.decl] @ membership.DECLARED
 
+    # A `const` member inside an array's element is asked of C after the
+    # rest (defect 2388, `cli/const_elements.hero`).
+    none: [str] = []
+
     if laying.len() == 0
-        return ok()
+        return const_elements.checked(a, p, sum: sum, rows: none, wanted: wanted, laying: laying)
     made = layout_runs.kept_dump(a, sum: sum, dump_text: layout_text.dump_unit(a.headers, wanted: laying))
 
     # A dump that did not compile names a record the build's own compile
@@ -183,10 +188,10 @@ function answered(a: layout_runs.Asking, wanted: [layout_text.Asked], sum: str, 
     rows = layout_rows.wrapper_rows(made.must()).join("\n") + "\n"
     lay(rows, laying: laying, @laid)
 
-    if dumped.len() == 0
-        return ok()
-    text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
-    return layout_runs.judged(a, sum: sum, text: text)
+    if dumped.len() > 0
+        text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
+        layout_runs.judged(a, sum: sum, text: text)?
+    return const_elements.checked(a, p, sum: sum, rows: layout_rows.rows_of(rows), wanted: wanted, laying: laying)
 
 # What `emit/padding.hero` reads of each record laid out (panel 215's R1):
 # the leaves of its block, where the reader knows the dump's shape and the

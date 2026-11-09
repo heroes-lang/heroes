@@ -1,0 +1,26 @@
+# FIXED DEFECT 2388, 2026-11-09, lane b27-const: the shapes beside a `const`
+# member in an array's element that C11 lets a program assign still build.
+# The layout round asks clang to assign each array's element
+# (`cli/const_elements.hero`); here no element holds a `const` member, and a
+# `const` only in a pointer's pointee is never followed, so every record
+# builds, is received by value, and reads what C wrote.
+
+extern "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.h"
+    record Cell tag fixedbugs_2388_cell
+        k: i32
+        v: i32
+    record Plain tag fixedbugs_2388_plain
+        items: Cell[2]
+        n: i32
+    record Pointing tag fixedbugs_2388_pointing partial
+        n: i32
+    function fixedbugs_2388_plain_make() -> Plain
+    function fixedbugs_2388_pointing_make() -> Pointing
+
+function main()
+    built: Plain = Plain(items: [Cell(k: 1, v: 2), Cell(k: 3, v: 4)], n: 5)
+    got = fixedbugs_2388_plain_make()
+    print(built.items[1].k + got.items[1].v + got.n)
+    pointing: Pointing = Pointing(n: 7, rest: zero)
+    handed = fixedbugs_2388_pointing_make()
+    print(pointing.n + handed.n)
