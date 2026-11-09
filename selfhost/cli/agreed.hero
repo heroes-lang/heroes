@@ -1,0 +1,188 @@
+# Every group record a unit spells of another module is read there as its own
+# module reads it: made so by the compiler where an order of the headers can,
+# and refused where none can, before any unit compiles (design.md §4.19,
+# §1.12; panel 239's R4 and R5, provisional, author ratification pending;
+# defect 2364).
+#
+# **What it closed.** Two other modules' records read in one unit followed the
+# order the modules were walked in, so a correct program was refused with a
+# false `ffi_field_type` whose fix led nowhere (`two_others`), and four shapes
+# built at exit 0 and printed a wrong value: a macro packing the record
+# (`pack`), a `#pragma pack` another header left set (`pragma`), a member a
+# macro adds to a `partial` record (`partial`), a union widened inside one
+# (`union2`); `--emit-c`'s one file read every module's headers in one order
+# and wrote the same wrong program for a record whose functions a library
+# defines (`packlib`). Panel 238's walk by module name made each of them
+# follow the names instead, so the class lands here, never after it (R7).
+#
+# **Four modules, one direction.** This one asks the two questions a build
+# has: `planned`, each unit's list before the rounds, and `fused`, the one
+# file's before `--emit-c` writes it. `cli/agreed_layout.hero` is the judge,
+# a record's layout under two lists compared from clang's dump;
+# `cli/agreed_order.hero` tries other lists where a unit's own disagrees; and
+# `cli/agreed_told.hero` says, in the specification's words, what no list
+# made alike.
+
+use cli/agreed_layout
+use cli/agreed_order
+use cli/agreed_told
+use cli/compile
+use cli/compiling
+use cli/package_units
+use cli/probing
+use cli/settled
+use cli/toolchain
+use cli/units
+use diag
+use emit/decls as emit_decls
+use emit/externs as emit_externs
+use emit/unit_plan
+use source
+
+# The build's plans and their probes, each unit's list the one under which
+# every record it spells of another module reads as that module reads it;
+# the refusals told where no list does (`ffi_record_two_layouts`). Asked of a
+# build whose units spell no such record, it is `probing.planned`'s answer
+# and asks clang nothing more, which is every build of the compiler itself.
+function planned(t: toolchain.Toolchain, under: compiling.Compiling, art: compile.Artifact, s: source.Source, site: settled.Site, target: emit_decls.BuildTarget) -> probing.Planned?
+    probed = probing.planned(
+        t,
+        under: under,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        components: units.components(s),
+        target: target,
+        package_words: site.package_words,
+        by_header: site.by_header
+    )
+    foreign: [[i64]] @= []
+    crossing: bool @= false
+
+    for plan in probed.plans
+        mine = agreed_layout.foreign_of(s, art.decls, plan: plan)
+        foreign @ foreign.push(mine)
+
+        if mine.len() > 0
+            crossing @ true
+
+    # A fetched package's headers reading outside its places are told before
+    # any clang run reads them (panel 235's R9, its C2;
+    # `cli/package_stand_in.hero`), so no list is asked while one is.
+    if !crossing || probing.outside(probed.probings, s: s, decls: art.decls).len() > 0
+        return ok(probed)
+    a = agreed_layout.asking(
+        t,
+        under: under,
+        s,
+        art.decls,
+        tree: art.tree,
+        checked: art.checked,
+        planned: probed,
+        package_words: site.package_words,
+        by_header: site.by_header
+    )
+    memo: {str: str} @= probing.digests_of(probed.probings)
+    dumps: {str: str} @= {}
+    plans: [unit_plan.Plan] @= []
+    refusals: [diag.Diagnostic] @= []
+    changed: bool @= false
+    at: i64 @= 0
+
+    for plan in probed.plans
+        mine = foreign[at]
+        chosen: unit_plan.Plan @= plan
+        at @ at + 1
+
+        if mine.len() > 0
+            words = agreed_layout.plan_words(a, plan: plan)
+            wrong = agreed_layout.disagreeing(
+                a,
+                headers: plan.headers,
+                words: words,
+                wanted: mine,
+                memo: @memo,
+                dumps: @dumps
+            )
+
+            if wrong.len() > 0
+                made = agreed_order.composed(a, plan: plan, wanted: mine, wrong: wrong, memo: @memo, dumps: @dumps)
+
+                if made.found.is_err()
+                    refusals @ refusals.push(
+                        agreed_told.in_module(a, tried: made.tried, module: plan.module, spelled: mine)
+                    )
+                else
+                    chosen.headers @ made.found.must()
+                    changed @ true
+        plans @ plans.push(chosen)
+
+    if refusals.len() > 0
+        _ = compile.stage(refusals, s, permissive: false).is_err()
+        return fail(code: "diagnostics", msg: "a group record would be read two ways")
+
+    if !changed
+        return ok(probed)
+    probings = probing.probings_of(
+        t,
+        under: under,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        plans: plans,
+        package_words: site.package_words,
+        by_header: site.by_header
+    )
+    return ok(probing.Planned(whole: probed.whole, plans: plans, probings: probings))
+
+# The headers of the one file `--emit-c` writes, which reads every module's:
+# their written order where every group record reads in it as its own module
+# reads it, else the first order of the modules' own headers under which every
+# one does, else refused (`ffi_one_file`), told here.
+function fused(t: toolchain.Toolchain, under: compiling.Compiling, art: compile.Artifact, s: source.Source, site: settled.Site, probed: probing.Planned) -> [str]?
+    whole = emit_externs.headers(art.program, s, art.decls)
+    every: [i64] @= []
+
+    for decl in range(from: 0, to: art.decls.len())
+        if agreed_layout.laid_out(art.decls, decl: decl)
+            every @ every.push(decl)
+
+    if every.len() == 0
+        return ok(whole)
+    a = agreed_layout.asking(
+        t,
+        under: under,
+        s,
+        art.decls,
+        tree: art.tree,
+        checked: art.checked,
+        planned: probed,
+        package_words: site.package_words,
+        by_header: site.by_header
+    )
+    memo: {str: str} @= probing.digests_of(probed.probings)
+    dumps: {str: str} @= {}
+
+    # The one file is asked of clang under the units' words with every
+    # package's root searched (`cli/one_file.hero`, panel 235's C1).
+    words = compiling.probe_words(package_units.with_roots(under, s))
+    wrong = agreed_layout.disagreeing(a, headers: whole, words: words, wanted: every, memo: @memo, dumps: @dumps)
+
+    if wrong.len() == 0
+        return ok(whole)
+    made = agreed_order.composed_fused(
+        a,
+        whole: whole,
+        words: words,
+        wanted: every,
+        wrong: wrong,
+        memo: @memo,
+        dumps: @dumps
+    )
+
+    if !made.found.is_err()
+        return made.found
+    _ = compile.stage([agreed_told.in_one_file(a, tried: made.tried)], s, permissive: false).is_err()
+    return fail(code: "diagnostics", msg: "the one file would not read a group record as its own module does")

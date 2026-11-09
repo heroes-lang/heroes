@@ -1,0 +1,13 @@
+# fixedbugs, defect 2364: a record holding a union its header widens where a
+# macro another header defines is read before it, and a field after the
+# union, which the wider union moves.
+extern "fixedbugs-2364-box.h"
+    record Un partial
+        i: i32
+    record Box
+        u: Un
+        t: i32
+    function box_make(v: i32) -> Box
+
+function make(v: i32) -> Box
+    return box_make(v: v)

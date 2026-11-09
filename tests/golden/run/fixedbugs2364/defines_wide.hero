@@ -1,0 +1,10 @@
+# fixedbugs, defect 2364: a group whose header defines the macro another
+# module's header reads, and a record of its own; named so that panel 238's
+# walk reaches it before the other module (`defines_`) or after it (`then_`).
+extern "fixedbugs-2364-wide.h"
+    record Pw
+        w: i32
+    function pw_make(v: i32) -> Pw
+
+function make(v: i32) -> Pw
+    return pw_make(v: v)

@@ -1,0 +1,11 @@
+# fixedbugs, defect 2364: a group whose header leaves `#pragma pack(1)` set
+# past its end, which packs a record another module's header declares after
+# it; named so that panel 238's walk reaches it before that module
+# (`leaves_`) or after it (`then_`).
+extern "fixedbugs-2364-leaves-pack.h"
+    record Pl
+        w: i32
+    function pl_make(v: i32) -> Pl
+
+function make(v: i32) -> Pl
+    return pl_make(v: v)

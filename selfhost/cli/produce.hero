@@ -20,32 +20,32 @@
 # themselves to `cli/rounds.hero` on 2026-10-10 (panel 202), once each asked
 # every module's headers apart.
 
-use source
-use modules
-use emit/ffi_asked
-use emit/externs as emit_externs
-use emit/header_packages
-use emit/provenance
-use cli/io
-use cli/compile
-use cli/toolchain
-use cli/pointee_ask
-use cli/clang_floor
+use bytes
+use cli/agreed
 use cli/artifact
+use cli/clang_floor
+use cli/compile
+use cli/compiling
+use cli/input
+use cli/io
+use cli/kept
+use cli/libraries
+use cli/pointee_ask
+use cli/process
+use cli/publish
+use cli/rounds
+use cli/runtime_bound
 use cli/settled
 use cli/shadowed
-use cli/rounds
-use cli/probing
-use cli/units
-use cli/libraries
-use cli/input
-use cli/process
+use cli/toolchain
 use cli/whose
+use emit/externs as emit_externs
+use emit/ffi_asked
+use emit/header_packages
+use emit/provenance
 use library_source
-use cli/kept
-use cli/runtime_bound
-use cli/publish
-use bytes
+use modules
+use source
 
 record Produced
     binary: str
@@ -216,19 +216,10 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # module's headers its questions, then compiles and links, and runs again
     # where clang asked `struct` for a handle's tag. What a build settles
     # before any of them, each module's plan and the probes of their headers,
-    # is planned once (panel 202's C0, `cli/probing.hero`).
-    planned = probing.planned(
-        t,
-        under: under,
-        art.must().program,
-        art.must().checked,
-        s,
-        art.must().decls,
-        components: units.components(s),
-        target: options.target,
-        package_words: site.package_words,
-        by_header: site.by_header
-    )
+    # is planned once (panel 202's C0, `cli/probing.hero`), every group record a
+    # unit spells of another module read there as its own module reads it, or
+    # refused before any of them (panel 239, `cli/agreed.hero`).
+    planned = agreed.planned(t, under: under, art.must(), s, site, target: options.target)?
     went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
 
     if went.verdict.is_err()
@@ -250,8 +241,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             under: under,
             struct_tags: went.struct_tags,
             kept: went.kept,
-            version: version,
-            sources: sources
+            site: site
         )
 
         # The one file refused, told already (defect 453).
@@ -318,6 +308,85 @@ test "a clang without its sanitizer runtime is told so, and nothing else is (def
     assert sanitizer_absent(said)
     assert !sanitizer_absent("runtime/parts/os.c:12:3: error: use of undeclared identifier 'x'\n")
     assert !sanitizer_absent("fatal error: 'stdio.h' file not found\n")
+
+# DEFECT 2364's `packlib` (panel 239's R4, the critic's R3): `rp_make` is a
+# library's, built from `rp.h` read alone, so `Rp` is padded there, and
+# `pk.h` defines the macro under which `rp.h` packs `Rp`. The one file
+# `--emit-c` writes reads every module's headers, `pk.h` first in the order
+# the modules are walked, so until the repair it was written at exit 0 and,
+# compiled with the compiler's own words and the library, printed
+# `-402653184` for 1000, where `build` printed what it now prints too. It is
+# written with `rp.h` before `pk.h`, the order under which `Rp` reads as
+# module `rp` reads it. The library is clang's alone (`-shared`, no `ar`),
+# named and found alike on Darwin and Linux, the run's directory the
+# repository's root; the Windows target's is a DLL beside an import library,
+# another shape, judged on the box.
+test "the one file reads another module's record as its own module does, beside a library (defect 2364)"
+    if process.exe_suffix() == ".exe"
+        return
+    library = library_source.text()
+    dir = "build/selftest-agreed-packlib-" + process.pid().to_str()
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    files = [
+        ["pk.h", "#define PACKLIB_PACKED 1\ntypedef struct Pk { int w; } Pk;\nstatic inline Pk pk_make(int v) { Pk x = { v }; return x; }\n"]
+        ["rp.h", "#ifdef PACKLIB_PACKED\n#pragma pack(push, 1)\n#endif\ntypedef struct Rp { char c; int b; } Rp;\n#ifdef PACKLIB_PACKED\n#pragma pack(pop)\n#endif\nRp rp_make(int v);\n"]
+        ["rp.c", "#include \"rp.h\"\nRp rp_make(int v) { Rp x = { 1, v }; return x; }\n"]
+        ["pk.hero", "extern \"pk.h\"\n    record Pk\n        w: i32\n    function pk_make(v: i32) -> Pk\n\nfunction make(v: i32) -> Pk\n    return pk_make(v: v)\n"]
+        ["rp.hero", "extern \"rp.h\" link \"rp\"\n    record Rp\n        c: i8\n        b: i32\n    function rp_make(v: i32) -> Rp\n\nfunction make(v: i32) -> Rp\n    return rp_make(v: v)\n"]
+        ["main.hero", "use pk\nuse rp\n\nfunction main()\n    p = pk.make(v: 4)\n    r = rp.make(v: 1000)\n    print(p.w)\n    print(r.c)\n    print(r.b)\n"]
+    ]
+
+    for one in files
+        assert !write_file(path: dir + "/" + one[0], text: one[1]).is_err()
+
+    said = dir + "/said.txt"
+    shared = process.run(
+        program: "clang",
+        words: ["clang", "-shared", "-fPIC", "-I", dir, dir + "/rp.c", "-o", dir + "/librp.so"],
+        out: process.discard(),
+        err: said
+    )
+    assert shared.started && shared.code == 0
+    s = input.read_compilation(path: dir + "/main.hero", library: library).must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-packlib").must()
+    t.build @ dir + "/build"
+    none: [str] = []
+    options = compile.Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: true,
+        output: ok(dir + "/one.c"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: none,
+        library: [dir],
+        permissive: false
+    )
+    assert !produce(path: dir + "/main.hero", s: s, options: options, t: t, version: "0.0.0-port").is_err()
+    one = read_file(dir + "/one.c").must()
+    rp_at = bytes.locate(text: one, needle: "#include <rp.h>", from: 0).must()
+    assert rp_at < bytes.locate(text: one, needle: "#include <pk.h>", from: 0).must()
+
+    # The file compiled as a unit is, with the runtime's own object.
+    words = compiling.unit_words(
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: dir)
+    )
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+    line: [str] @= ["clang"]
+
+    for word in words
+        line @ line.push(word)
+
+    for word in [dir + "/one.c", runtime, "-L" + dir, "-lrp", "-Wl,-rpath," + dir, "-o", dir + "/one"]
+        line @ line.push(word)
+
+    built = process.run(program: "clang", words: line, out: process.discard(), err: said)
+    assert built.started && built.code == 0
+    ran = process.run(program: dir + "/one", words: [dir + "/one"], out: dir + "/one.txt", err: said)
+    assert ran.started && ran.code == 0
+    assert read_file(dir + "/one.txt").must() == "4\n1\n1000\n"
+    assert !process.remove_tree(dir).is_err()
 
 # A build that cannot put its binary or its C where the author asked,
 # with every other step fine: the failure names the path and says why, and

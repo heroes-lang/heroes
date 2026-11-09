@@ -180,7 +180,10 @@ test "a compilation's lines are ordered file by file, and never across files"
 # The goldens whose subject is a walk order name their modules so that order
 # is this key's (panel 238's R4): defect 560's default case, `unsupported`'s
 # 555 and 2136, and `surface`'s `onefile453type`, `onefile453macro` and
-# `onefile453macrofirst`; 2143's expectation tells its units in this order. A
+# `onefile453macrofirst`; 2143's expectation tells its units in this order;
+# and defect 2364's `run` and `unsupported` pairs, each named so that the
+# module whose header changes another's record is walked before that module
+# and, in its twin, after it (panel 239's R8). A
 # key that reversed one of these pairs would turn its case into one that passes
 # on the compiler it was written against, or tells another pair, so this test
 # fails first and names the cases to rename.
@@ -191,6 +194,26 @@ test "the pairs the walk-order goldens are named for stay in their order"
     assert in_order(["then_hundred", "narrow"]) == ["narrow", "then_hundred"]
     assert in_order(["narrow", "hundred"]) == ["hundred", "narrow"]
     assert in_order(["fixedbugs2143/wide", "fixedbugs2143/vals"]) == ["fixedbugs2143/vals", "fixedbugs2143/wide"]
+    walked = [
+        "then_wide"
+        "then_packed"
+        "then_pa"
+        "then_mixes"
+        "then_leaves_pack"
+        "rx"
+        "rs"
+        "rp"
+        "rbox"
+        "rb"
+        "pa"
+        "outer"
+        "mixes"
+        "leaves_pack"
+        "hd"
+        "defines_wide"
+        "defines_packed"
+    ]
+    assert in_order(walked) == ["defines_packed", "defines_wide", "hd", "leaves_pack", "mixes", "outer", "pa", "rb", "rbox", "rp", "rs", "rx", "then_leaves_pack", "then_mixes", "then_pa", "then_packed", "then_wide"]
 
 function parse_uses(s: source.Source) -> [ast.Use]
     return parse.parse(s.text).uses

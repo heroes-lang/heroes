@@ -1,0 +1,10 @@
+error[ffi_record_two_layouts]: `Rs` is 16 bytes, at a multiple of 8, where module `fixedbugs2364/mixes` reads `fixedbugs-2364-rs.h` after `fixedbugs-2364-m.h`, and 8 bytes, at a multiple of 4, where module `fixedbugs2364/rs` reads it
+  at tests/golden/unsupported/fixedbugs2364/mixes.hero:11:19
+     |
+  11 | function total(x: rs.Rs) -> i64  #~ ffi_record_two_layouts
+     |                   ^^^^^
+  note: `Rs.a` is `long long` at byte 0 where module `fixedbugs2364/mixes` reads it, and `int` at byte 0 where module `fixedbugs2364/rs` does
+  note: `Rs.b` is at byte 8 where module `fixedbugs2364/mixes` reads it, and at byte 4 where module `fixedbugs2364/rs` does
+  note: `Rs` is bound at `tests/golden/unsupported/fixedbugs2364/rs.hero:5:12` and read as module `fixedbugs2364/rs` reads `fixedbugs-2364-rs.h`: a change to its fields changes neither reading, so the binding is not what to change
+  note: a group's `record` is its header's struct as its own module reads it (spec § 13), and a value of `Rs` passes between module `fixedbugs2364/mixes` and module `fixedbugs2364/rs`, so both must read it alike; no order of the headers module `fixedbugs2364/mixes` reads, nor module `fixedbugs2364/rs`'s earlier headers before `fixedbugs-2364-rs.h`, makes them alike
+  note: module `fixedbugs2364/mixes`'s own `fixedbugs-2364-m.h` changes `Rs`: spell `Rs` only in modules that read it as module `fixedbugs2364/rs` does, or have module `fixedbugs2364/rs` read first the header that changes it, so both read it alike

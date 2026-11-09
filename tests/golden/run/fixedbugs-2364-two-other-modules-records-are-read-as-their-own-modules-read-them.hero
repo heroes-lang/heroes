@@ -1,0 +1,17 @@
+# fixedbugs, defect 2364, lane p239-land-a, 2026-11-09 (panel 239's R4).
+#
+# This module spells `rs.Rs` and `defines_wide.Pw`, so its unit reads both
+# headers; `fixedbugs-2364-wide.h` defines the macro under which
+# `fixedbugs-2364-rs.h` lays `Rs` out wide, and module `rs` reads `rs.h`
+# alone, narrow, as its binding says. Before the repair the unit read the
+# two in the order the modules are walked, `wide.h` first, so `Rs` was wide
+# here and the build was refused, *`Rs.a` is `long long`*, a false message
+# whose fix was refused the other way. Now the unit reads `rs.h` first, the
+# order under which `Rs` reads as module `rs` reads it, and prints 9.
+use fixedbugs2364/defines_wide
+use fixedbugs2364/rs
+
+function main()
+    p = defines_wide.make(v: 4)
+    r = rs.make(v: 3)
+    print(p.w + r.a + r.b)

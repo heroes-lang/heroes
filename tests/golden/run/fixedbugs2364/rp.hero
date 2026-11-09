@@ -1,0 +1,11 @@
+# fixedbugs, defect 2364: a record its header packs where a macro another
+# header defines is read before it, or where another header left
+# `#pragma pack(1)` set, and lays out padded alone, as this module reads it.
+extern "fixedbugs-2364-rp.h"
+    record Rp
+        c: i8
+        b: i32
+    function rp_make(v: i32) -> Rp
+
+function make(v: i32) -> Rp
+    return rp_make(v: v)

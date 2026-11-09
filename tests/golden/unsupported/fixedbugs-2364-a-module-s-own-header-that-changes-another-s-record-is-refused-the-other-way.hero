@@ -1,0 +1,8 @@
+# fixedbugs, defect 2364, lane p239-land-a, 2026-11-09 (panel 239's R5), the
+# other walk: the module reading the record wide is walked after `rs`, and
+# is told the same words.
+use fixedbugs2364/rs
+use fixedbugs2364/then_mixes
+
+function main()
+    print(then_mixes.total(x: rs.make(v: 3)))
