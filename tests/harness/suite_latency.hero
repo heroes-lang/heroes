@@ -23,22 +23,22 @@ use report
 use strings
 
 constant LEDGER_ROWS: i64
-    3
+    4
 
 constant NEWEST_TAKEN: str
-    "2026-11-01"
+    "2026-11-09"
 
 constant NEWEST_SOURCES: str
-    "200a93d749fe1443"
+    "7273148d6736fed6"
 
 constant CHECK_MS: i64
-    6980
+    8100
 
 constant SEED_MS: i64
-    8240
+    9320
 
 constant BUILD_MS: i64
-    37580
+    44680
 
 # THE LEVEL, decision 2282 (2026-10-31): the first row's bests, 6.81, 8.18
 # and 37.25 s, plus 10 % rounded to a tenth, about seven times the spread that
@@ -48,14 +48,23 @@ constant BUILD_MS: i64
 # of two neighbouring tags sees. The seed's is the threshold the site's start
 # page spells (`site/src/lib/claims.ts`, defect 2281), so the two ring
 # together.
+# **8.9, 10.3 and 49.1 s since 2026-11-09**, raised at M-package-manager's
+# close by the same rule over that close's row, 8.10, 9.32 and 44.68 s, with
+# its cause named in the decision issue that took it: the compiler's own
+# source grew 11.5 % with the package manager (182,687 to 203,681 lines,
+# the seed 29.0 to 33.0 MB), so the clocks that read it grew with it, the
+# previous tag's compiler taking 8.00 s of `check` on that tree; and 1.4 %
+# of `check` is the compiler's own, 0.8 % of it entering at M-package-
+# manager step 4 (b17a032da, bisected over the close's tree), the rest under
+# the floor at every step after.
 constant CHECK_CEILING_MS: i64
-    7500
+    8900
 
 constant SEED_CEILING_MS: i64
-    9000
+    10300
 
 constant BUILD_CEILING_MS: i64
-    41000
+    49100
 
 constant WRITE_THEM: str
     "\n  write the newest row's values into tests/harness/suite_latency.hero in the commit that carries the row, so the number lands where a reader can audit it"
