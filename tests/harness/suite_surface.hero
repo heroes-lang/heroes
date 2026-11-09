@@ -183,7 +183,13 @@ function warning_told_once(scratch: str, compiler: str, @r: report.Report)
 # visibility back (`selfhost/emit/header_state.hero`). `thread_deep` is a
 # module whose C component is `threaddeep`, and the guard names it as the
 # program spells it (panel 230's R1, kind 3; the critic's finding 12), the
-# spelling its `main` handed the runtime before anything ran.
+# spelling its `main` handed the runtime before anything ran. `generic` is
+# `mutual` with one of the two a generic function's instance, which the
+# compiler writes `static`: glibc's `dladdr` reads only exported symbols, so on
+# Linux the walk lost it and the line its recursion, until the runtime read
+# the executable's own symbol table there (defect 2371,
+# `runtime/parts/symbols.c`); its instance is told with its hash, which names
+# the type it was made for.
 record Told
     file: str
     posix: [str]
@@ -196,6 +202,7 @@ function recursion_rows() -> [Told]
         Told(file: "direct", posix: ["panic: stack exhausted in direct.down"], origin: "defect 521")
         Told(file: "hidden", posix: ["panic: stack exhausted in hidden.down"], origin: "defect 582")
         Told(file: "thread_deep", posix: ["panic: stack exhausted in thread_deep.down"], origin: "panel 230's R1, kind 3")
+        Told(file: "generic", posix: ["panic: stack exhausted in generic.ask, inside the recursion of generic.zag_1b9a87 and generic.ask", "panic: stack exhausted in generic.zag_1b9a87, inside the recursion of generic.zag_1b9a87 and generic.ask"], origin: "defect 2371")
     ]
 
 function recursion_named(scratch: str, compiler: str, @r: report.Report)

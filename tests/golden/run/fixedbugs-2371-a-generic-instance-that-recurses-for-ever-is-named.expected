@@ -1,0 +1,3 @@
+before
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2371-a-generic-instance-that-recurses-for-ever-is-named.down_

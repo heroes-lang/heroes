@@ -1,0 +1,2 @@
+before
+!panic: stack exhausted in fixedbugs-2371-a-generic-instance-whose-room-is-full-is-named.go_
