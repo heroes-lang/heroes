@@ -1,5 +1,5 @@
 # Defect 453, lane b18-ffi, 2026-10-10: a module whose header defines a macro
-# `twice`.
+# `twice`. Named to be walked after `narrow` (panel 238's R4).
 extern "onefile-macro.h"
     function dbl(x: i64) -> i64
 

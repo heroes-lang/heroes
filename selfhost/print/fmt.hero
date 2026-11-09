@@ -10,7 +10,8 @@
 # THE MAP (CLAUDE.md §11's due for a knot). State: `page.Fmt`{printed,
 # next_comment, last_line, dropped, moved}, threaded as the one @ parameter.
 # - format_file: item order, top-level blank lines, group runs;
-#   entry point, calls declaration.
+#   entry point, calls declaration. The one reorder `fmt` makes, the `use`
+#   block's, is `print/use_order.hero`'s, a pass over the text before this.
 # - declaration/field_line/case_line + extern_head_once: one item's
 #   shape (fmt_decl + fmt_extern); a function's signature is
 #   `print/headline.hero`'s.
@@ -58,24 +59,24 @@
 # two groups two; the port keys on the whole head line's text, which
 # is the comment's claim implemented.
 
-use token
 use ast
-use source
-use source_extent
-use print/types
+use lexer
+use parse
+use print/around
 use print/bodies
-use print/page
+use print/brackets
+use print/breaks
+use print/groups
+use print/headline
 use print/margins
 use print/owners
-use lexer
+use print/page
 use print/parens
-use print/brackets
-use print/around
-use print/breaks
-use print/headline
-use print/groups
-use parse
+use print/types
+use source
+use source_extent
 use stable
+use token
 
 # Where a line stops being one line. Not a language rule — one
 # constant, and the only thing that decides single- versus multi-line
@@ -109,9 +110,12 @@ record Item
 # Canonical Heroes source for a parsed file. Callers must check that
 # the file had no diagnostics first: formatting a tree built out of
 # recovery guesses would rewrite the author's file into the parser's
-# guess. SOURCE ORDER, never a canonical order: reordering is where a
-# formatter starts deleting the author's remarks — gofmt sorts imports
-# and can afford to, it has a comment model this one does not.
+# guess. The PRINTER keeps source order: reordering items is where a
+# formatter starts deleting the author's remarks, since the comment
+# stream here moves one way. The one reorder `fmt` makes, the `use`
+# block's (panel 238), happens before this, over the text, in
+# `print/use_order.hero`, which `print/guard.hero`'s `checked` calls and
+# judges first.
 function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> str
     return page.whole(format_page(tree, s, all_comments, uses, decls))
 
@@ -218,8 +222,6 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
         # One blank line between top-level declarations — but not
         # between two use lines, which are a block the way a run of
         # fields is.
-        after_use = previous_was_use
-
         if have_previous
             run = previous_was_use && item.is_use || continues
 
@@ -234,8 +236,11 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
             # §4.1 and it is the file header that needs it: a blank
             # line between a comment and the first use is what makes
             # that comment a remark about the file instead of
-            # documentation for the line under it.
-            if !after_use && f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
+            # documentation for the line under it. Above any other use
+            # too since panel 238: `print/use_order.hero` decides where the
+            # block has one, between its two groups and above a run that
+            # moves with its line, and this keeps what it wrote.
+            if f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
                 page.blank_line(@f)
             page.put_line(@f, indent: 0, text: use_line(s, used: uses[item.at]))
             page.ended(@f, s, comments, line: line)

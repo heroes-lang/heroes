@@ -1,0 +1,196 @@
+# The one order of a file's `use` lines (panel 238, ratified 2026-11-08;
+# design.md §4.15). It is the order `heroes fmt` writes the block in
+# (`print/use_order.hero`) and the order the compiler follows the lines in:
+# the module walk (`modules.load_edited`), the cycle walk (`modules.cycles`)
+# and the binding of names (`resolve/top.read_uses`). One key in one place,
+# so the formatter and the compiler cannot disagree, and a formatted file and
+# its source are one program by construction: the order an author writes
+# reaches no output but that file's own line numbers. Until that sitting the
+# walk followed the order written, so a sorting `fmt --in-place` could move a
+# program's emission, its link line and which C definition a name bound.
+#
+# THE KEY. A package's module (`use <name>/...`) before the program's own;
+# inside a group the path with the package's `<` `>` taken out, compared by
+# its bytes; then the alias, a line with none first; then the order the
+# lines were given in. `/` (0x2F) sorts below every byte a part of a path may
+# hold, a digit, a letter or `_` (the parser refuses any other), so comparing
+# bytes is comparing the path part by part: `<core>/y` before `<core2>/x`,
+# `a/b` before `a0` before `a_b` before `ab`. Case is not folded, `Zeta`
+# before `alpha`, gofmt's byte-wise order. A space joins the path to its
+# alias, and it sorts below `/` and every byte of a name, so `a` comes before
+# `a/b` and `alpha` before `alpha as a2`.
+#
+# The key is compared as one text by the built-in `sort` (a `str` by its
+# bytes), and the order is `stable.order` over each key's rank, so equal keys
+# keep the order they came in and nothing here is quadratic.
+#
+# The goldens whose subject is a walk order name their modules for this key
+# (panel 238's R4), and the last test below names them, since a change of the
+# key would reverse each in silence as a reformat would have.
+
+use ast
+use parse
+use source
+use stable
+
+# 0 for a package's module, `use <name>/...`, 1 for the program's own.
+function group_of(written: str) -> i64
+    if written.len() > 0 && written[0] == '<'
+        return 0
+    return 1
+
+# The path with a package's brackets taken out, `<core>/x` read `core/x`. Cut
+# beside each `<` and `>`, a byte that is never inside another character.
+function path_key(written: str) -> str
+    parts: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < written.len()
+        if written[i] == '<' || written[i] == '>'
+            parts @ parts.push(written.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    parts @ parts.push(written.slice(from: start, to: written.len()))
+    return parts.join("")
+
+# The text the order compares by its bytes: the group's digit, the path
+# without its brackets, a space, and the alias (`""` where the line has none).
+function key(written: str, alias: str) -> str
+    return group_of(written).to_str() + path_key(written) + " " + alias
+
+# The indices of `written` in the one order, each path's alias at the same
+# index of `aliases`, which may be shorter (an alias it lacks is none): the
+# module walk knows the paths alone, and a tie between one path written twice
+# keeps the order given.
+function order_of(written: [str], aliases: [str]) -> [i64]
+    texts: [str] @= []
+
+    for at in range(from: 0, to: written.len())
+        alias: str @= ""
+
+        if at < aliases.len()
+            alias @ aliases[at]
+        texts @ texts.push(key(written: written[at], alias: alias))
+
+    return stable.order(by: ranks(texts))
+
+# Each key's place among the distinct keys ascending by bytes; equal keys
+# share one, which is what lets `stable.order` keep them as they came.
+function ranks(texts: [str]) -> [i64]
+    place: {str: i64} @= {}
+    next: i64 @= 0
+
+    for k in sort(texts)
+        if place[k].is_err()
+            place[k] @ next
+            next @ next + 1
+
+    out: [i64] @= []
+
+    for k in texts
+        out @ out.push(place[k].must())
+
+    return out
+
+# The paths as one file writes them, in the one order: what the module walk
+# follows.
+function in_order(written: [str]) -> [str]
+    none: [str] = []
+    out: [str] @= []
+
+    for at in order_of(written: written, aliases: none)
+        out @ out.push(written[at])
+
+    return out
+
+# What a `use` line binds by `as`, or `""` where it binds its path's last
+# part: the parser sets the binding's span on the alias only where there is
+# one (`ast.Use.binding`).
+function alias_of(s: source.Source, used: ast.Use) -> str
+    if used.binding.end != used.name.end
+        return source.span_text(s, used.binding)
+    return ""
+
+# A compilation's `use` lines in the one order: the files in the order the
+# walk loaded them, each file's lines by the key, and a tie in the order the
+# list holds them. What the binding of names and the cycle walk read. The
+# file is asked of each line rather than assumed from the list's runs.
+function ordered_uses(s: source.Source, uses: [ast.Use]) -> [ast.Use]
+    texts: [str] @= []
+    files: [i64] @= []
+
+    for used in uses
+        texts @ texts.push(key(written: source.span_text(s, used.name), alias: alias_of(s, used: used)))
+        files @ files.push(source.file_of(s, used.span.start))
+
+    # A rank is below the count of lines, so the file's index times that
+    # count, plus the rank, orders by the file first and the key second.
+    places = ranks(texts)
+    by: [i64] @= []
+
+    for at in range(from: 0, to: uses.len())
+        by @ by.push(files[at] * uses.len() + places[at])
+
+    out: [ast.Use] @= []
+
+    for at in stable.order(by: by)
+        out @ out.push(uses[at])
+
+    return out
+
+## Tests
+
+test "a package's module first, then the path part by part by its bytes"
+    written = ["zeta", "<core2>/x", "ab", "lib/beta", "<core>/y", "alpha", "a_b", "a0", "Zeta", "a/b"]
+    assert in_order(written) == ["<core>/y", "<core2>/x", "Zeta", "a/b", "a0", "a_b", "ab", "alpha", "lib/beta", "zeta"]
+
+    # The whole line by bytes would put `<core2>` first, `>` being 0x3E.
+    assert in_order(["<core2>/x", "<core>/y"]) == ["<core>/y", "<core2>/x"]
+
+    # A path that is the start of another comes first, and nothing is lost.
+    assert in_order(["a/b/c", "a/b", "a"]) == ["a", "a/b", "a/b/c"]
+    none: [str] = []
+    assert in_order(none).len() == 0
+
+test "the alias breaks a tie, a line with none first, then the order given"
+    assert order_of(written: ["alpha", "alpha", "alpha"], aliases: ["b2", "", "a2"]) == [1, 2, 0]
+    assert order_of(written: ["beta", "alpha"], aliases: ["a_first", "z_last"]) == [1, 0]
+
+    # The walk knows no alias: one path written twice keeps its order.
+    none: [str] = []
+    assert order_of(written: ["b", "a", "b"], aliases: none) == [1, 0, 2]
+
+test "a compilation's lines are ordered file by file, and never across files"
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use zeta\nuse lib/beta as zeta\nuse <core>/x\n", is_library: false)
+        source.InputFile(name: "zeta.hero", module: "zeta", text: "use b\nuse a\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    used = parse_uses(s)
+    assert used.len() == 5
+    shown: [str] @= []
+
+    for one in ordered_uses(s, uses: used)
+        shown @ shown.push(source.span_text(s, one.name) + "/" + alias_of(s, used: one))
+
+    assert shown == ["<core>/x/", "lib/beta/zeta", "zeta/", "a/", "b/"]
+
+# The goldens whose subject is a walk order name their modules so that order
+# is this key's (panel 238's R4): defect 560's default case, `unsupported`'s
+# 555 and 2136, and `surface`'s `onefile453type`, `onefile453macro` and
+# `onefile453macrofirst`; 2143's expectation tells its units in this order. A
+# key that reversed one of these pairs would turn its case into one that passes
+# on the compiler it was written against, or tells another pair, so this test
+# fails first and names the cases to rename.
+test "the pairs the walk-order goldens are named for stay in their order"
+    assert in_order(["fixedbugs560/then_cap_ten", "fixedbugs560/limit_half"]) == ["fixedbugs560/limit_half", "fixedbugs560/then_cap_ten"]
+    assert in_order(["fixedbugs555/then_defines", "fixedbugs555/long_twice", "fixedbugs555/half"]) == ["fixedbugs555/half", "fixedbugs555/long_twice", "fixedbugs555/then_defines"]
+    assert in_order(["num", "defines_wide"]) == ["defines_wide", "num"]
+    assert in_order(["then_hundred", "narrow"]) == ["narrow", "then_hundred"]
+    assert in_order(["narrow", "hundred"]) == ["hundred", "narrow"]
+    assert in_order(["fixedbugs2143/wide", "fixedbugs2143/vals"]) == ["fixedbugs2143/vals", "fixedbugs2143/wide"]
+
+function parse_uses(s: source.Source) -> [ast.Use]
+    return parse.parse(s.text).uses

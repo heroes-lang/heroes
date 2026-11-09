@@ -32,19 +32,20 @@
 #   on the POSIX machines the fixpoint runs on, and the divergence is
 #   this comment.
 
-use token
+use ast
 use diag
-use source
 use module/names as module_names
+use module/package_told
+use module/packages
 use module/paths
+use module/placed as places
+use module/reached
 use module/reading
 use module/spelling
-use module/packages
-use module/reached
-use module/placed as places
-use module/package_told
-use ast
 use parse
+use source
+use token
+use use_key
 
 # The directory files are OPENED through (`paths.open_directory`, where it
 # moved at panel 235's landing): its callers outside discovery ask here.
@@ -52,11 +53,12 @@ function open_directory(path: str) -> str
     return paths.open_directory(path)
 
 # Every file of the compilation rooted at path, in load order, with
-# the library last. DEPTH-FIRST IN SOURCE ORDER, each module loaded
-# once: the order is part of the compiler's output — it decides line
-# numbers in every diagnostic and the order declarations reach the
-# emitter — so it is fixed by the source text and never by a
-# filesystem listing. The seen list is what makes this terminate on a
+# the library last. DEPTH-FIRST, each file's `use` lines in the one
+# order of `use_key.hero` and never as written (panel 238), each module
+# loaded once: the order is part of the compiler's output — it decides
+# line numbers in every diagnostic and the order declarations reach the
+# emitter — so it is fixed by the modules' names and never by a
+# filesystem listing, nor by the order a formatter may rewrite. The seen list is what makes this terminate on a
 # cycle; it is not the cycle CHECK, which needs spans and lives in
 # errors().
 function load_text(path: str, root_text: str, library: str) -> source.Source?
@@ -81,7 +83,7 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
     while pending.len() > 0
         index = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
-        named = paths.uses_of(files[index].text)
+        named = use_key.in_order(paths.uses_of(files[index].text))
         added: [i64] @= []
 
         for written in named
@@ -117,8 +119,8 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
             each @ each.push(found.must().faults)
             added @ reading.followed(added, file: found.must(), at: files.len() - 1)
 
-        # files is in source order; pending is reversed so that
-        # popping it scans in source order too. Both orders are
+        # files is in the key's order; pending is reversed so that
+        # popping it scans in that order too. Both orders are
         # output, not bookkeeping.
         at: i64 @= added.len() - 1
 
@@ -283,7 +285,9 @@ function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> 
 
     edges: [Edge] @= []
 
-    for used in uses
+    # The edges in the key's order, so which ring is told, and from which
+    # line, is the modules' and not the order they were written in.
+    for used in use_key.ordered_uses(s, uses)
         from_at = source.file_of(s, used.span.start)
         name = places.identity(
             s.reached.aliases,

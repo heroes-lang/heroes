@@ -42,26 +42,47 @@
 # identically; and the dump carries names, structure and doc comments,
 # never spans or columns.
 #
+# ONE STEP BEFORE THE PRINTER, judged on its own (panel 238). `fmt` writes a
+# file's `use` lines as one block in one order, and the printer keeps source
+# order, so the reorder is a pass over the text (`print/use_order.hero`) that
+# `checked` runs first. The four checks pair the printer's input with its
+# output, and a moved line is no pair, so the pass has a judge of its own,
+# `reorder_refused`: the lines it wrote are the lines it read, a blank one
+# aside, each as many times, and the tree is the same with its `use` lines
+# read as a set, every declaration and its doc as it was. The printer then
+# reads the ordered text and the four checks judge it against that text; the
+# second pass asks the reorder to leave the output unchanged as well.
+#
 # Every failure is the COMPILER's (§7): `fmt` exits 2, the author's file
 # untouched.
 
-use source
-use source_extent
 use diag
 use parse
+use print/anchors
 use print/dump
 use print/fmt
-use print/page
-use print/anchors
 use print/owners
+use print/page
+use print/use_order
+use source
+use source_extent
+use text_lines
 
 # What `fmt` made of one source: the input's parse, and when it holds no
 # diagnostic, the canonical text, the parse of that text, and the guard's
 # word on it: `ok` with the reason when `fmt` accuses itself, `fail` when
 # every check held. With diagnostics nothing is formatted, `formatted` is
 # empty and `output` is the parse of that empty text.
+#
+# `ordered` is the text the printer read, the input with its `use` block in
+# the one order (`print/use_order.hero`), and `ordered_input` its parse: the
+# input itself and its parse where the block already was. Where the reorder's
+# own judge refuses it, nothing is printed: `formatted` is empty and `output`
+# the parse of the ordered text it refused.
 record Checked
     input: parse.ParseOutput
+    ordered: str
+    ordered_input: parse.ParseOutput
     formatted: str
     output: parse.ParseOutput
     refusal: str?
@@ -69,16 +90,33 @@ record Checked
 # The formatter and its guard over `s`, read as `fmt` reads a file: the
 # root file alone (`input.read_root_only`), named `path`.
 function checked(path: str, s: source.Source) -> Checked
-    out = parse.parse_source(s)
+    first = parse.parse_source(s)
 
-    if out.diagnostics.len() > 0
+    if first.diagnostics.len() > 0
         return Checked(
-            input: out,
+            input: first,
+            ordered: "",
+            ordered_input: first,
             formatted: "",
             output: parse.parse(""),
             refusal: fail(code: "unformatted", msg: "the file has diagnostics")
         )
-    printed = fmt.format_lexed(out.tree, s, out.comments, out.uses, out.decls, out.tokens)
+
+    # The `use` block in its one order, judged before the printer reads it;
+    # the printer then reads that text, in source order as ever.
+    text = source_extent.user_text(s)
+    order = use_order.reordered(s, first.uses, first.comments, first.decls)
+    out: parse.ParseOutput @= first
+    read_from: source.Source @= s
+
+    if order != text
+        read_from @ source.new_source(name: path, text: order)
+        out @ parse.parse_source(read_from)
+        wrong = reorder_refused(path: path, text: text, order: order, order_parse: out)
+
+        if !wrong.is_err()
+            return Checked(input: first, ordered: order, ordered_input: out, formatted: "", output: out, refusal: wrong)
+    printed = fmt.format_lexed(out.tree, read_from, out.comments, out.uses, out.decls, out.tokens)
     formatted = page.whole(printed)
 
     # The file alone is what the guard compares against, and `fmt` read it
@@ -89,12 +127,12 @@ function checked(path: str, s: source.Source) -> Checked
     before: parse.ParseOutput @= out
     read: owners.Lines @= printed.lines
 
-    if s.files.len() != 1
-        before @ parse.parse(source_extent.user_text(s))
+    if read_from.files.len() != 1
+        before @ parse.parse(source_extent.user_text(read_from))
         read @ owners.none()
     judged = judged_output(
         path: path,
-        original: source_extent.user_text(s),
+        original: source_extent.user_text(read_from),
         before: before,
         read: read,
         formatted: formatted
@@ -108,7 +146,63 @@ function checked(path: str, s: source.Source) -> Checked
         refusal @ ok(
             "`fmt` cannot keep the comment on line " + printed.moved.to_str() + " of `" + path + "` where it is written"
         )
-    return Checked(input: out, formatted: formatted, output: judged.output, refusal: refusal)
+    return Checked(
+        input: first,
+        ordered: source_extent.user_text(read_from),
+        ordered_input: out,
+        formatted: formatted,
+        output: judged.output,
+        refusal: refusal
+    )
+
+# The reorder's own judge, asked before the printer reads its text: `ok`
+# with the reason where the pass broke the file, `fail` where it held. The
+# lines written are the lines read, a blank one aside, each as many times; and
+# the tree is the same, its `use` rows read as a set and every declaration,
+# its documentation included, as it was, so a comment the pass made a
+# declaration's doc is refused here.
+function reorder_refused(path: str, text: str, order: str, order_parse: parse.ParseOutput) -> str?
+    if order_parse.diagnostics.len() > 0
+        return ok("`fmt` put the `use` lines of `" + path + "` in an order that does not parse")
+
+    if kept(text) != kept(order)
+        return ok("`fmt` lost or added a line putting the `use` lines of `" + path + "` in order")
+    was = parse.parse(text)
+    a = dump.dump_ast(was.tree, source.new_source(name: path, text: text), was.uses, was.decls)
+    b = dump.dump_ast(order_parse.tree, source.new_source(name: path, text: order), order_parse.uses, order_parse.decls)
+
+    if settled(a) != settled(b)
+        return ok("`fmt` changed the TREE of `" + path + "` putting its `use` lines in order")
+    return fail(code: "clean", msg: "the same lines and the same program, its `use` lines in order")
+
+# The text's lines but the blank ones, sorted by their bytes.
+function kept(text: str) -> [str]
+    out: [str] @= []
+
+    for line in use_order.split_lines(text, starts: text_lines.starts_of(text))
+        if !use_order.is_blank(line)
+            out @ out.push(line)
+
+    return sort(out)
+
+# A dump with its `use` rows read as a set: those sorted, then every other row
+# in its order.
+function settled(dumped: str) -> [str]
+    uses: [str] @= []
+    rows: [str] @= []
+
+    for row in use_order.split_lines(dumped, starts: text_lines.starts_of(dumped))
+        if row.len() >= 6 && row.slice(from: 0, to: 6) == "  use "
+            uses @ uses.push(row)
+        else
+            rows @ rows.push(row)
+
+    out: [str] @= sort(uses)
+
+    for row in rows
+        out @ out.push(row)
+
+    return out
 
 # The guard over a pair, the original parsed here.
 function refuse_output_the_formatter_broke(path: str, original: str, formatted: str) -> str?
@@ -141,7 +235,9 @@ function judged_output(path: str, original: str, before: parse.ParseOutput, read
         )
     again = fmt.format_lexed(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls, reparsed.tokens)
 
-    if page.whole(again) != formatted
+    # The second pass is the whole of `fmt`'s: the reorder must leave the
+    # output as it is, as the printer must.
+    if page.whole(again) != formatted || use_order.reordered(after, reparsed.uses, reparsed.comments, reparsed.decls) != formatted
         return Judged(refusal: ok("`fmt` is not a fixpoint on its own output for `" + path + "`"), output: reparsed)
 
     if again.moved > 0
@@ -262,3 +358,14 @@ test "a comment after the parenthesis around a map's key stays after it"
         assert done.input.diagnostics.len() == 0
         assert done.formatted == printed[at]
         assert done.refusal.is_err()
+
+# What `reorder_refused` and the fixpoint check read of the dump, written as
+# a premise with the test that fires when it dies: a `use` line is a row of
+# its own opening `  use `, the alias with it, in the order written. Were the
+# dump to print them otherwise, `settled` would read them as ordinary rows and
+# every reorder would be refused at exit 2, loud, and this test says why.
+test "the dump prints each use line as a row of its own, in the order written"
+    text = "use zeta\nuse <core>/x as near_x\n"
+    parsed = parse.parse(text)
+    rows = dump.dump_ast(parsed.tree, source.new_source(name: "t.hero", text: text), parsed.uses, parsed.decls)
+    assert settled(rows) == ["  use <core>/x as near_x", "  use zeta", "file t.hero", ""]

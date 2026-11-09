@@ -1,5 +1,6 @@
 # fixedbugs, defect 560: a module whose header caps at `LIMIT`, 10 where no
-# header read before it defines one.
+# header read before it defines one. Named to be walked after `limit_half`
+# (panel 238's R4).
 extern "fixedbugs-560-cap.h"
     function cap(v: i32) -> i32
 

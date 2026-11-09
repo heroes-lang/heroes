@@ -1,0 +1,17 @@
+# Panel 238's R1.4: a `use` written after a declaration joins the block, its
+# glued comment with it, and leaves a blank line where it stood, so the doc
+# below it stays the declaration's.
+use zeta
+
+function shown() -> i64
+    return zeta.two() + alpha.one() + beta.three()
+
+# the module the helper reads
+use alpha
+# the doc of helper
+function helper() -> i64
+    return 1
+
+## Tests
+
+use beta

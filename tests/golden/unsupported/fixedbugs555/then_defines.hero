@@ -1,5 +1,6 @@
 # A module of defect 555's cases (lane b18-ffi, 2026-10-10): its header
-# defines `twice` and `helper`, so the program links.
+# defines `twice` and `helper`, so the program links. Named to be walked
+# after the modules beside it (panel 238's R4).
 
 extern "fixedbugs-555-defines.h"
     function one() -> i32

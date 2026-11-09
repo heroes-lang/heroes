@@ -126,10 +126,10 @@ HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e2013
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_main_main(void);
-int64_t h_geompoint_span(h_geompoint_Point h0_from, h_geompoint_Point h1_to);
 int64_t h_geomarea_rect(h_geompoint_Point h0_a, h_geompoint_Point h1_b);
 int64_t h_geomarea_perimeter(h_geompoint_Point h0_a, h_geompoint_Point h1_b);
 int64_t h_geomarea_height(h_geompoint_Point h0_a, h_geompoint_Point h1_b);
+int64_t h_geompoint_span(h_geompoint_Point h0_from, h_geompoint_Point h1_to);
 HeroStr h_renderascii_bar(int64_t h0_width);
 HeroStr h_renderascii_frame(int64_t h0_width, int64_t h1_height);
 int64_t h_renderascii_scaled(int64_t h0_width);
@@ -153,6 +153,26 @@ void h_main_main(void) { h_geompoint_Point h0_corner; h_geompoint_Point h1_far; 
     return;
 }
 
+#line 10 "examples/shapes/geom/area.hero"
+int64_t h_geomarea_rect(h_geompoint_Point h0_a, h_geompoint_Point h1_b) { HERO_NODEBUG h_geompoint_Point t1, t2, t4, t5; HERO_NODEBUG int64_t t3, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_a; t2 = h1_b; t3 = h_geompoint_span(t1, t2); t4 = h0_a; t5 = h1_b; t6 = h_geomarea_height(t4, t5); if (__builtin_mul_overflow(t3, t6, &t7)) hero_panic_overflow_at("geom/area.hero", "area.rect", 11, 12); return t7;
+#line 160 "main.c"
+}
+
+#line 13 "examples/shapes/geom/area.hero"
+int64_t h_geomarea_perimeter(h_geompoint_Point h0_a, h_geompoint_Point h1_b) { HERO_NODEBUG int64_t t1, t4, t7, t8, t9; HERO_NODEBUG h_geompoint_Point t2, t3, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(2); t2 = h0_a; t3 = h1_b; t4 = h_geompoint_span(t2, t3); t5 = h0_a; t6 = h1_b; t7 = h_geomarea_height(t5, t6); if (__builtin_add_overflow(t4, t7, &t8)) hero_panic_overflow_at("geom/area.hero", "area.perimeter", 14, 17); if (__builtin_mul_overflow(t1, t8, &t9)) hero_panic_overflow_at("geom/area.hero", "area.perimeter", 14, 12); return t9;
+#line 166 "main.c"
+}
+
+#line 18 "examples/shapes/geom/area.hero"
+int64_t h_geomarea_height(h_geompoint_Point h0_a, h_geompoint_Point h1_b) { h_geompoint_Point h2_swapped_a; h_geompoint_Point h3_swapped_b; HERO_NODEBUG int64_t t1, t2, t4, t5, t9; HERO_NODEBUG h_geompoint_Point t3, t6, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_a.f_y; t2 = h0_a.f_x; t3 = (h_geompoint_Point){.f_x = t1, .f_y = t2}; h2_swapped_a = t3;
+    t4 = h1_b.f_y; t5 = h1_b.f_x; t6 = (h_geompoint_Point){.f_x = t4, .f_y = t5}; h3_swapped_b = t6;
+    t7 = h2_swapped_a; t8 = h3_swapped_b; t9 = h_geompoint_span(t7, t8); return t9;
+#line 174 "main.c"
+}
+
 #line 14 "examples/shapes/geom/point.hero"
 int64_t h_geompoint_span(h_geompoint_Point h0_from, h_geompoint_Point h1_to) { int64_t h2_dx; HERO_NODEBUG int64_t h3_ret0, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_to.f_x; t2 = h0_from.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("geom/point.hero", "point.span", 15, 10); h2_dx = t3;
@@ -162,29 +182,9 @@ int64_t h_geompoint_span(h_geompoint_Point h0_from, h_geompoint_Point h1_to) { i
     t10 = h2_dx; h3_ret0 = t10; goto bb4; bb2:
 #line 18
     t7 = INT64_C(0); t8 = h2_dx; if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow_at("geom/point.hero", "point.span", 18, 16); h3_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 166 "main.c"
+#line 186 "main.c"
     t11 = h3_ret0;
     return t11;
-}
-
-#line 10 "examples/shapes/geom/area.hero"
-int64_t h_geomarea_rect(h_geompoint_Point h0_a, h_geompoint_Point h1_b) { HERO_NODEBUG h_geompoint_Point t1, t2, t4, t5; HERO_NODEBUG int64_t t3, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_a; t2 = h1_b; t3 = h_geompoint_span(t1, t2); t4 = h0_a; t5 = h1_b; t6 = h_geomarea_height(t4, t5); if (__builtin_mul_overflow(t3, t6, &t7)) hero_panic_overflow_at("geom/area.hero", "area.rect", 11, 12); return t7;
-#line 174 "main.c"
-}
-
-#line 13 "examples/shapes/geom/area.hero"
-int64_t h_geomarea_perimeter(h_geompoint_Point h0_a, h_geompoint_Point h1_b) { HERO_NODEBUG int64_t t1, t4, t7, t8, t9; HERO_NODEBUG h_geompoint_Point t2, t3, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(2); t2 = h0_a; t3 = h1_b; t4 = h_geompoint_span(t2, t3); t5 = h0_a; t6 = h1_b; t7 = h_geomarea_height(t5, t6); if (__builtin_add_overflow(t4, t7, &t8)) hero_panic_overflow_at("geom/area.hero", "area.perimeter", 14, 17); if (__builtin_mul_overflow(t1, t8, &t9)) hero_panic_overflow_at("geom/area.hero", "area.perimeter", 14, 12); return t9;
-#line 180 "main.c"
-}
-
-#line 18 "examples/shapes/geom/area.hero"
-int64_t h_geomarea_height(h_geompoint_Point h0_a, h_geompoint_Point h1_b) { h_geompoint_Point h2_swapped_a; h_geompoint_Point h3_swapped_b; HERO_NODEBUG int64_t t1, t2, t4, t5, t9; HERO_NODEBUG h_geompoint_Point t3, t6, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_a.f_y; t2 = h0_a.f_x; t3 = (h_geompoint_Point){.f_x = t1, .f_y = t2}; h2_swapped_a = t3;
-    t4 = h1_b.f_y; t5 = h1_b.f_x; t6 = (h_geompoint_Point){.f_x = t4, .f_y = t5}; h3_swapped_b = t6;
-    t7 = h2_swapped_a; t8 = h3_swapped_b; t9 = h_geompoint_span(t7, t8); return t9;
-#line 188 "main.c"
 }
 
 #line 14 "examples/shapes/render/ascii.hero"
@@ -386,10 +386,10 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("053d35951151652e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("34796b08251a6620", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
-    hero_stack_spell("geompoint\tpoint\ngeomarea\tarea\nrenderascii\tascii\nrenderscale\tscale\n");
+    hero_stack_spell("geomarea\tarea\ngeompoint\tpoint\nrenderascii\tascii\nrenderscale\tscale\n");
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

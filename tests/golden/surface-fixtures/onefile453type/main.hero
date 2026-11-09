@@ -2,9 +2,15 @@
 # makes `onefile_num` an `int` read alone, and a `long long` read after the
 # other module's header, so `onefile_size` returns 4 in `build` and 8 in the
 # one file `--emit-c` writes.
-use wide
+#
+# Its modules are named for the key the compiler walks `use` lines by (panel
+# 238's R4, `selfhost/use_key.hero`): `defines_wide` before `num`, so the one
+# file reads the header that defines the macro first, the order the refusal
+# is about. Read the other way the one file means what the units mean, and
+# `--emit-c` writes it, correctly.
+use defines_wide
 use num
 
 function main()
     print(num.size())
-    print(wide.bits())
+    print(defines_wide.bits())

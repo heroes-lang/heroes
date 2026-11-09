@@ -35,18 +35,18 @@
 # carry (`.claude/rules/cli-surface.md`).
 
 use bytes
-use source
+use cli/argv
+use cli/io
+use cli/process
+use cli/table as cli_table
 use diag
 use module/reading
 use parse
-use cli/argv
-use cli/io
-use cli/table as cli_table
-use cli/process
-use probe/seed
 use probe/judge
 use probe/lines
 use probe/reduce
+use probe/seed
+use source
 
 # The formatter's fixture directories: every directory a `fmt` row of the
 # surface suite reads, which that suite's `probe` rows check against its
@@ -67,6 +67,7 @@ constant FIXTURES: [str]
         "tests/golden/surface-fixtures/braces173"
         "tests/golden/surface-fixtures/escape251"
         "tests/golden/surface-fixtures/mark235"
+        "tests/golden/surface-fixtures/useorder238"
     ]
 
 # How many failures past the first the report names.
@@ -381,7 +382,9 @@ test "a family the probe does not make is named with the seven, and a path that 
     # surface suite's `fmt` rows over `\u{1b}` in a string and an `f` literal.
     # 13 -> 14 on 2026-11-07: `mark235`, panel 235's R1, a package's mark on
     # every shape a `use` line takes, the surface suite's `fmt` row over it.
-    assert FIXTURES.len() == 14
+    # 14 -> 15 on 2026-11-09: `useorder238`, panel 238's R1, the `use` block
+    # in its one order, the surface suite's `fmt` rows over its three files.
+    assert FIXTURES.len() == 15
 
 test "a stride is a whole number from 1 up"
     assert judge.counted("2") == 2

@@ -112,26 +112,6 @@ HERO_STR_STATIC(hero_str_3ff0, "||");
 HERO_STR_STATIC(hero_str_2c, ",");
 HERO_STR_STATIC(hero_str_749f9455, "end of line");
 HERO_STR_STATIC(hero_str_73d1c1ad, "end of file");
-HERO_STR_STATIC(hero_str_2dfda7a5, "expected `");
-HERO_STR_STATIC(hero_str_7a5d94f6, "`, found `");
-HERO_STR_STATIC(hero_str_34e508eb, "expected a name, found the number `");
-HERO_STR_STATIC(hero_str_3aedf865, "expected a name, found the string `");
-HERO_STR_STATIC(hero_str_7441fe7c, "a keyword");
-HERO_STR_STATIC(hero_str_42f055b4, "an operator");
-HERO_STR_STATIC(hero_str_6a58703d, "punctuation");
-HERO_STR_STATIC(hero_str_19b6ec3a, "expected a name, found the end of the line");
-HERO_STR_STATIC(hero_str_18e91992, "expected a name, found the end of the file");
-HERO_STR_STATIC(hero_str_868cc04, "expected a name, found ");
-HERO_STR_STATIC(hero_str_887ad06, "` cannot follow a comparison \342\200\224 write it as two comparisons joined by `&&`");
-HERO_STR_STATIC(hero_str_1c8bc6f5, "an operator with nothing on its left");
-HERO_STR_STATIC(hero_str_340a1642, "a sign with nothing after it");
-HERO_STR_STATIC(hero_str_6bb0184d, "a `)` with no `(`");
-HERO_STR_STATIC(hero_str_30ea22c7, "a `,` outside an argument list");
-HERO_STR_STATIC(hero_str_7b65ce0, "the end of the line");
-HERO_STR_STATIC(hero_str_6e88a38, "the end of the file");
-HERO_STR_STATIC(hero_str_19375826, "expected a value, found ");
-HERO_STR_STATIC(hero_str_54f2e6e0, "not_a_comparison");
-HERO_STR_STATIC(hero_str_659f44c5, "` is not a comparison");
 HERO_STR_STATIC(hero_str_58cbfee0, "no function is named `");
 HERO_STR_STATIC(hero_str_1989cb77, "` is ");
 HERO_STR_STATIC(hero_str_15b0d318, " calls deep \342\200\224 a script that recurses without an end stops here rather than in the machine's stack");
@@ -156,6 +136,26 @@ HERO_STR_STATIC(hero_str_875f8, " (`");
 HERO_STR_STATIC(hero_str_3149, "`)");
 HERO_STR_STATIC(hero_str_73a616c5, "expected ");
 HERO_STR_STATIC(hero_str_7f933ce3, ", found ");
+HERO_STR_STATIC(hero_str_2dfda7a5, "expected `");
+HERO_STR_STATIC(hero_str_7a5d94f6, "`, found `");
+HERO_STR_STATIC(hero_str_34e508eb, "expected a name, found the number `");
+HERO_STR_STATIC(hero_str_3aedf865, "expected a name, found the string `");
+HERO_STR_STATIC(hero_str_7441fe7c, "a keyword");
+HERO_STR_STATIC(hero_str_42f055b4, "an operator");
+HERO_STR_STATIC(hero_str_6a58703d, "punctuation");
+HERO_STR_STATIC(hero_str_19b6ec3a, "expected a name, found the end of the line");
+HERO_STR_STATIC(hero_str_18e91992, "expected a name, found the end of the file");
+HERO_STR_STATIC(hero_str_868cc04, "expected a name, found ");
+HERO_STR_STATIC(hero_str_887ad06, "` cannot follow a comparison \342\200\224 write it as two comparisons joined by `&&`");
+HERO_STR_STATIC(hero_str_1c8bc6f5, "an operator with nothing on its left");
+HERO_STR_STATIC(hero_str_340a1642, "a sign with nothing after it");
+HERO_STR_STATIC(hero_str_6bb0184d, "a `)` with no `(`");
+HERO_STR_STATIC(hero_str_30ea22c7, "a `,` outside an argument list");
+HERO_STR_STATIC(hero_str_7b65ce0, "the end of the line");
+HERO_STR_STATIC(hero_str_6e88a38, "the end of the file");
+HERO_STR_STATIC(hero_str_19375826, "expected a value, found ");
+HERO_STR_STATIC(hero_str_54f2e6e0, "not_a_comparison");
+HERO_STR_STATIC(hero_str_659f44c5, "` is not a comparison");
 HERO_STR_STATIC(hero_str_3ca42064, "` closes a block that was never opened");
 HERO_STR_STATIC(hero_str_37e62ccf, "a parameter is named twice in `(");
 HERO_STR_STATIC(hero_str_155b, ")`");
@@ -245,11 +245,6 @@ typedef struct h_lexscan_Read {
     int64_t f_next;
 } h_lexscan_Read;
 
-typedef struct h_syncursor_Cursor {
-    HeroArrayHeader * f_tokens;
-    int64_t f_at;
-} h_syncursor_Cursor;
-
 typedef enum h_runvalue_0Value_tag {
     h_runvalue_0Value_tag_number = 0,
     h_runvalue_0Value_tag_text = 1,
@@ -306,6 +301,11 @@ typedef struct h_runvalue_Request {
     HeroArrayHeader * f_given;
     h_runvalue_Frame f_frame;
 } h_runvalue_Request;
+
+typedef struct h_syncursor_Cursor {
+    HeroArrayHeader * f_tokens;
+    int64_t f_at;
+} h_syncursor_Cursor;
 
 typedef enum h_syntree_0Op_tag {
     h_syntree_0Op_tag_add = 0,
@@ -517,21 +517,6 @@ typedef struct h_0opt_3be6656d {
     } as;
 } h_0opt_3be6656d;
 
-typedef struct h_0opt_a8ea2 {
-    int64_t tag;
-    union {
-        HeroFailure err;
-    } as;
-} h_0opt_a8ea2;
-
-typedef struct h_0opt_3ce1b94c {
-    int64_t tag;
-    union {
-        h_syntree_Op ok;
-        HeroFailure err;
-    } as;
-} h_0opt_3ce1b94c;
-
 typedef h_0opt_1be8f195 (*h_0fn_64cad294)(h_runvalue_Request);
 typedef struct h_0opt_4d124e2a {
     int64_t tag;
@@ -550,6 +535,21 @@ typedef struct h_0opt_473cb9ae {
 } h_0opt_473cb9ae;
 
 typedef HeroStr (*h_0fn_23d647b0)(h_runvalue_Value);
+typedef struct h_0opt_a8ea2 {
+    int64_t tag;
+    union {
+        HeroFailure err;
+    } as;
+} h_0opt_a8ea2;
+
+typedef struct h_0opt_3ce1b94c {
+    int64_t tag;
+    union {
+        h_syntree_Op ok;
+        HeroFailure err;
+    } as;
+} h_0opt_3ce1b94c;
+
 typedef struct h_0opt_2270cbe7 {
     int64_t tag;
     union {
@@ -604,10 +604,6 @@ HERO_TU_LOCAL void h_lexscan_0Read_retain(const h_lexscan_Read *v);
 HERO_TU_LOCAL void h_lexscan_0Read_release(h_lexscan_Read *v);
 HERO_TU_LOCAL bool h_lexscan_0Read_eq(const h_lexscan_Read *a, const h_lexscan_Read *b);
 HERO_TU_LOCAL uint64_t h_lexscan_0Read_hash(const void *elem);
-HERO_TU_LOCAL void h_syncursor_0Cursor_retain(const h_syncursor_Cursor *v);
-HERO_TU_LOCAL void h_syncursor_0Cursor_release(h_syncursor_Cursor *v);
-HERO_TU_LOCAL bool h_syncursor_0Cursor_eq(const h_syncursor_Cursor *a, const h_syncursor_Cursor *b);
-HERO_TU_LOCAL uint64_t h_syncursor_0Cursor_hash(const void *elem);
 HERO_TU_LOCAL bool h_runvalue_0Value_c_number_eq(const h_runvalue_0Value_c_number *a, const h_runvalue_0Value_c_number *b);
 HERO_TU_LOCAL uint64_t h_runvalue_0Value_c_number_hash(const void *elem);
 HERO_TU_LOCAL void h_runvalue_0Value_c_text_retain(const h_runvalue_0Value_c_text *v);
@@ -636,6 +632,10 @@ HERO_TU_LOCAL void h_runvalue_0Request_retain(const h_runvalue_Request *v);
 HERO_TU_LOCAL void h_runvalue_0Request_release(h_runvalue_Request *v);
 HERO_TU_LOCAL bool h_runvalue_0Request_eq(const h_runvalue_Request *a, const h_runvalue_Request *b);
 HERO_TU_LOCAL uint64_t h_runvalue_0Request_hash(const void *elem);
+HERO_TU_LOCAL void h_syncursor_0Cursor_retain(const h_syncursor_Cursor *v);
+HERO_TU_LOCAL void h_syncursor_0Cursor_release(h_syncursor_Cursor *v);
+HERO_TU_LOCAL bool h_syncursor_0Cursor_eq(const h_syncursor_Cursor *a, const h_syncursor_Cursor *b);
+HERO_TU_LOCAL uint64_t h_syncursor_0Cursor_hash(const void *elem);
 HERO_TU_LOCAL bool h_syntree_0Op_eq(const h_syntree_Op *a, const h_syntree_Op *b);
 HERO_TU_LOCAL uint64_t h_syntree_0Op_hash(const void *elem);
 HERO_TU_LOCAL bool h_syntree_0Expr_c_number_eq(const h_syntree_0Expr_c_number *a, const h_syntree_0Expr_c_number *b);
@@ -724,14 +724,6 @@ HERO_TU_LOCAL void h_0opt_3be6656d_retain(const h_0opt_3be6656d *v);
 HERO_TU_LOCAL void h_0opt_3be6656d_release(h_0opt_3be6656d *v);
 HERO_TU_LOCAL bool h_0opt_3be6656d_eq(const h_0opt_3be6656d *a, const h_0opt_3be6656d *b);
 HERO_TU_LOCAL uint64_t h_0opt_3be6656d_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_3ce1b94c_retain(const h_0opt_3ce1b94c *v);
-HERO_TU_LOCAL void h_0opt_3ce1b94c_release(h_0opt_3ce1b94c *v);
-HERO_TU_LOCAL bool h_0opt_3ce1b94c_eq(const h_0opt_3ce1b94c *a, const h_0opt_3ce1b94c *b);
-HERO_TU_LOCAL uint64_t h_0opt_3ce1b94c_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_4d124e2a_retain(const h_0opt_4d124e2a *v);
 HERO_TU_LOCAL void h_0opt_4d124e2a_release(h_0opt_4d124e2a *v);
 HERO_TU_LOCAL bool h_0opt_4d124e2a_eq(const h_0opt_4d124e2a *a, const h_0opt_4d124e2a *b);
@@ -740,6 +732,14 @@ HERO_TU_LOCAL void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *v);
 HERO_TU_LOCAL void h_0opt_473cb9ae_release(h_0opt_473cb9ae *v);
 HERO_TU_LOCAL bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *a, const h_0opt_473cb9ae *b);
 HERO_TU_LOCAL uint64_t h_0opt_473cb9ae_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_3ce1b94c_retain(const h_0opt_3ce1b94c *v);
+HERO_TU_LOCAL void h_0opt_3ce1b94c_release(h_0opt_3ce1b94c *v);
+HERO_TU_LOCAL bool h_0opt_3ce1b94c_eq(const h_0opt_3ce1b94c *a, const h_0opt_3ce1b94c *b);
+HERO_TU_LOCAL uint64_t h_0opt_3ce1b94c_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v);
 HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v);
 HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b);
@@ -941,33 +941,6 @@ HeroStr h_lexscan_refusal_of(h_0opt_7f1de476 h0_said);
 h_lextoken_Token h_lextoken_worded(HeroStr h0_word);
 HeroStr h_lextoken_shown(h_lextoken_Token h0_t);
 bool h_lextoken_opens_a_value(h_lextoken_Token h0_t);
-HeroStr h_syncursor_ERR_PARSE(void);
-h_syncursor_Cursor h_syncursor_over(HeroArrayHeader * h0_tokens);
-h_lextoken_Token h_syncursor_here(h_syncursor_Cursor h0_c);
-h_lextoken_Token h_syncursor_after(h_syncursor_Cursor h0_c);
-h_lextoken_Token h_syncursor_bump(h_syncursor_Cursor *ph0_c);
-bool h_syncursor_accepted(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want);
-h_0opt_a8ea2 h_syncursor_expected(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want);
-h_0opt_f87774a h_syncursor_name_here(h_syncursor_Cursor *ph0_c);
-h_0opt_f87774a h_syncursor_keyword_taken(h_lextoken_Token h0_t, HeroStr h1_said);
-void h_syncursor_skipped_lines(h_syncursor_Cursor *ph0_c);
-bool h_syncursor_done(h_syncursor_Cursor h0_c);
-HeroStr h_syncursor_refusal_message(h_0opt_a8ea2 h0_said);
-HeroStr h_syncursor_refusal_message_of_name(h_0opt_f87774a h0_said);
-HeroStr h_synexpr_ERR_PARSE(void);
-h_0opt_e201354 h_synexpr_parsed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_either(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_both(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_compared(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_summed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_scaled(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_unary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_primary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-h_0opt_e201354 h_synexpr_not_a_value(HeroStr h0_said);
-h_0opt_e201354 h_synexpr_named(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t, HeroStr h2_word);
-h_0opt_e201354 h_synexpr_grouped(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
-bool h_synexpr_is_scaling(h_lextoken_Token h0_t);
-h_0opt_3ce1b94c h_synexpr_comparison_of(h_lextoken_Token h0_t);
 HeroStr h_runeval_ERR_NAME(void);
 HeroStr h_runeval_ERR_ARITY(void);
 HeroStr h_runeval_ERR_DEPTH(void);
@@ -1016,6 +989,33 @@ h_0opt_473cb9ae h_runvalue_not_a_condition(h_runvalue_Value h0_v);
 h_0opt_e201354 h_runvalue_number_of(h_runvalue_Value h0_v);
 h_0opt_f87774a h_runvalue_text_of(h_runvalue_Value h0_v);
 HeroStr h_runvalue_message_of_bool(h_0opt_473cb9ae h0_said);
+HeroStr h_syncursor_ERR_PARSE(void);
+h_syncursor_Cursor h_syncursor_over(HeroArrayHeader * h0_tokens);
+h_lextoken_Token h_syncursor_here(h_syncursor_Cursor h0_c);
+h_lextoken_Token h_syncursor_after(h_syncursor_Cursor h0_c);
+h_lextoken_Token h_syncursor_bump(h_syncursor_Cursor *ph0_c);
+bool h_syncursor_accepted(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want);
+h_0opt_a8ea2 h_syncursor_expected(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want);
+h_0opt_f87774a h_syncursor_name_here(h_syncursor_Cursor *ph0_c);
+h_0opt_f87774a h_syncursor_keyword_taken(h_lextoken_Token h0_t, HeroStr h1_said);
+void h_syncursor_skipped_lines(h_syncursor_Cursor *ph0_c);
+bool h_syncursor_done(h_syncursor_Cursor h0_c);
+HeroStr h_syncursor_refusal_message(h_0opt_a8ea2 h0_said);
+HeroStr h_syncursor_refusal_message_of_name(h_0opt_f87774a h0_said);
+HeroStr h_synexpr_ERR_PARSE(void);
+h_0opt_e201354 h_synexpr_parsed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_either(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_both(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_compared(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_summed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_scaled(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_unary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_primary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+h_0opt_e201354 h_synexpr_not_a_value(HeroStr h0_said);
+h_0opt_e201354 h_synexpr_named(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t, HeroStr h2_word);
+h_0opt_e201354 h_synexpr_grouped(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
+bool h_synexpr_is_scaling(h_lextoken_Token h0_t);
+h_0opt_3ce1b94c h_synexpr_comparison_of(h_lextoken_Token h0_t);
 HeroStr h_synparse_ERR_PARSE(void);
 h_0opt_60498281 h_synparse_program(HeroStr h0_source);
 h_0opt_e201354 h_synparse_statement(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t);
@@ -2128,818 +2128,10 @@ bb2:
 #line 2129 "main.c"
 }
 
-#line 25 "examples/interpreter/syn/cursor.hero"
-HeroStr h_syncursor_ERR_PARSE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_3b1d407a);
-#line 2135 "main.c"
-    hero_str_incref(t1);
-    return t1;
-}
-
-#line 32 "examples/interpreter/syn/cursor.hero"
-h_syncursor_Cursor h_syncursor_over(HeroArrayHeader * h0_tokens) { HERO_NODEBUG h_syncursor_Cursor h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_tokens; t2 = INT64_C(0); hero_array_incref(t1); t3 = (h_syncursor_Cursor){.f_tokens = t1, .f_at = t2}; t4 = h1_own1; h1_own1 = t3; h_syncursor_0Cursor_release(&t4);
-#line 2143 "main.c"
-    h_syncursor_0Cursor_retain(&t3);
-    h_syncursor_0Cursor_release(hero_slot_escape(&h1_own1));
-    return t3;
-}
-
-#line 37 "examples/interpreter/syn/cursor.hero"
-h_lextoken_Token h_syncursor_here(h_syncursor_Cursor h0_c) { HERO_NODEBUG h_lextoken_Token h1_ret0 = {0}, h2_own2 = {0}, t5, t8, t9, t10; HERO_NODEBUG int64_t t1, t3, t7; HERO_NODEBUG HeroArrayHeader *t2, *t6; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c.f_at; t2 = h0_c.f_tokens; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = t1 >= t3; if (t4) goto bb2; else goto bb3; bb1:
-#line 41
-    t6 = h0_c.f_tokens; t7 = h0_c.f_at; t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "syn/cursor.hero", "cursor.here", 41, 12) : (void)0), (void)(t6->elem->size != sizeof(h_lextoken_Token) ? hero_unreachable() : (void)0), ((h_lextoken_Token const *)(const void *)(t6 + 1))[t7]); h1_ret0 = t8; goto bb4; bb2:
-#line 39
-    t5 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_finish}; t10 = h2_own2; h2_own2 = t5; h_lextoken_0Token_release(&t10); h1_ret0 = t5; goto bb4; bb3: goto bb1; bb4:
-#line 2156 "main.c"
-    t9 = h1_ret0;
-    h_lextoken_0Token_retain(&t9);
-    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
-    return t9;
-}
-
-#line 45 "examples/interpreter/syn/cursor.hero"
-h_lextoken_Token h_syncursor_after(h_syncursor_Cursor h0_c) { HERO_NODEBUG h_lextoken_Token h1_ret0 = {0}, h2_own2 = {0}, t7, t12, t13, t14; HERO_NODEBUG int64_t t1, t2, t3, t5, t9, t10, t11; HERO_NODEBUG HeroArrayHeader *t4, *t8; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c.f_at; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("syn/cursor.hero", "cursor.after", 46, 8); t4 = h0_c.f_tokens; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 >= t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 49
-    t8 = h0_c.f_tokens; t9 = h0_c.f_at; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("syn/cursor.hero", "cursor.after", 49, 21); t12 = ((void)((t8 == NULL || t11 < 0 || t11 >= t8->len) ? hero_panic_index_at(t8, t11, "syn/cursor.hero", "cursor.after", 49, 12) : (void)0), (void)(t8->elem->size != sizeof(h_lextoken_Token) ? hero_unreachable() : (void)0), ((h_lextoken_Token const *)(const void *)(t8 + 1))[t11]); h1_ret0 = t12; goto bb4; bb2:
-#line 47
-    t7 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_finish}; t14 = h2_own2; h2_own2 = t7; h_lextoken_0Token_release(&t14); h1_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
-#line 2170 "main.c"
-    t13 = h1_ret0;
-    h_lextoken_0Token_retain(&t13);
-    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
-    return t13;
-}
-
-#line 52 "examples/interpreter/syn/cursor.hero"
-h_lextoken_Token h_syncursor_bump(h_syncursor_Cursor *ph0_c) { h_lextoken_Token h1_taken = {0}; HERO_NODEBUG h_lextoken_Token h2_own2 = {0}, h3_own3 = {0}, t2, t10, t11, t12, t13; HERO_NODEBUG h_syncursor_Cursor t1; HERO_NODEBUG int64_t t3, t5, t7, t8, t9; HERO_NODEBUG HeroArrayHeader *t4; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t11 = h2_own2; h2_own2 = t2; h_lextoken_0Token_release(&t11); t12 = h1_taken; h_lextoken_0Token_retain(&t2); h1_taken = t2; h_lextoken_0Token_release(&t12);
-#line 55
-    t3 = (*ph0_c).f_at; t4 = (*ph0_c).f_tokens; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb1:
-#line 58
-    t10 = h1_taken;
-#line 2184 "main.c"
-    h_lextoken_0Token_retain(&t10);
-#line 58 "examples/interpreter/syn/cursor.hero"
-    t13 = h3_own3; h3_own3 = t10; h_lextoken_0Token_release(&t13);
-#line 2188 "main.c"
-    h_lextoken_0Token_retain(&t10);
-    h_lextoken_0Token_release(hero_slot_escape(&h1_taken));
-    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
-    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
-    return t10;
-bb2:
-#line 56 "examples/interpreter/syn/cursor.hero"
-    t7 = (*ph0_c).f_at; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("syn/cursor.hero", "cursor.bump", 56, 16); (*ph0_c).f_at = t9; goto bb1; bb3: goto bb1;
-#line 2197 "main.c"
-}
-
-#line 61 "examples/interpreter/syn/cursor.hero"
-bool h_syncursor_accepted(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want) { HERO_NODEBUG bool h2_ret0, t4, t6, t7, t8; HERO_NODEBUG h_lextoken_Token h3_own3 = {0}, h4_own4 = {0}, t2, t3, t5, t9, t10; HERO_NODEBUG h_syncursor_Cursor t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t9 = h3_own3; h3_own3 = t2; h_lextoken_0Token_release(&t9); t3 = h1_want; t4 = h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb1:
-#line 66
-    t7 = false; h2_ret0 = t7; goto bb4; bb2:
-#line 63
-    t5 = h_syncursor_bump(&(*ph0_c)); t10 = h4_own4; h4_own4 = t5; h_lextoken_0Token_release(&t10);
-    t6 = true; h2_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 2208 "main.c"
-    t8 = h2_ret0;
-    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
-    h_lextoken_0Token_release(hero_slot_escape(&h4_own4));
-    return t8;
-}
-
-#line 69 "examples/interpreter/syn/cursor.hero"
-h_0opt_a8ea2 h_syncursor_expected(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want) { HERO_NODEBUG h_0opt_a8ea2 h2_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t3, t17, t18, t27, t28; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t7, t8, t9, t10, t13, t14, t15, t16, t19, t20, t21, t22, t24, t25, t26; HERO_NODEBUG h_lextoken_Token h7_own7 = {0}, t1, t6, t12, t23; HERO_NODEBUG bool t2; HERO_NODEBUG h_syncursor_Cursor t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_want; t2 = h_syncursor_accepted(&(*ph0_c), t1); if (t2) goto bb2; else goto bb3; bb1:
-#line 74
-    t4 = h_syncursor_ERR_PARSE(); t19 = h3_own3; h3_own3 = t4; hero_str_decref(t19);
-    t5 = HERO_STR_LIT(hero_str_2dfda7a5); t6 = h1_want; t7 = h_lextoken_shown(t6); t20 = h4_own4; h4_own4 = t7; hero_str_decref(t20); t8 = hero_str_concat(t5, t7); t21 = h5_own5; h5_own5 = t8; hero_str_decref(t21); t9 = HERO_STR_LIT(hero_str_7a5d94f6); t10 = hero_str_concat(t8, t9); t22 = h6_own6; h6_own6 = t10; hero_str_decref(t22); t11 = (*ph0_c); t12 = h_syncursor_here(t11); t23 = h7_own7; h7_own7 = t12; h_lextoken_0Token_release(&t23); t13 = h_lextoken_shown(t12); t24 = h8_own8; h8_own8 = t13; hero_str_decref(t24); t14 = hero_str_concat(t10, t13); t25 = h9_own9; h9_own9 = t14; hero_str_decref(t25); t15 = HERO_STR_LIT(hero_str_60); t16 = hero_str_concat(t14, t15); t26 = h10_own10; h10_own10 = t16; hero_str_decref(t26);
-#line 73
-    hero_str_incref(t4); hero_str_incref(t16); t17 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t16}}; t27 = h11_own11; h11_own11 = t17; h_0opt_a8ea2_release(&t27); h2_ret0 = t17; goto bb4; bb2:
-#line 71
-    t3 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t28 = h12_own12; h12_own12 = t3; h_0opt_a8ea2_release(&t28); h2_ret0 = t3; goto bb4; bb3: goto bb1; bb4:
-#line 2225 "main.c"
-    t18 = h2_ret0;
-    h_0opt_a8ea2_retain(&t18);
-    hero_str_release_at(&h3_own3);
-    hero_str_release_at(&h4_own4);
-    hero_str_release_at(&h5_own5);
-    hero_str_release_at(&h6_own6);
-    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
-    hero_str_release_at(&h8_own8);
-    hero_str_release_at(&h9_own9);
-    hero_str_release_at(&h10_own10);
-    h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
-    h_0opt_a8ea2_release(hero_slot_escape(&h12_own12));
-    return t18;
-}
-
-#line 79 "examples/interpreter/syn/cursor.hero"
-h_0opt_f87774a h_syncursor_name_here(h_syncursor_Cursor *ph0_c) { HERO_NODEBUG h_lextoken_Token h1_s0 = {0}, h6_own6 = {0}, h18_own18 = {0}, h20_own20 = {0}, h22_own22 = {0}, h24_own24 = {0}, h26_own26 = {0}, h28_own28 = {0}, h30_own30 = {0}, t1, t2, t4, t14, t23, t27, t30, t33, t36, t39, t42, t45, t55, t56, t73, t76, t79, t82, t85, t88, t91; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h21_own21 = {0}, h23_own23 = {0}, h25_own25 = {0}, h27_own27 = {0}, h29_own29 = {0}, h31_own31 = {0}, h33_own33 = {0}, h35_own35 = {0}, t13, t22, t26, t29, t32, t35, t38, t41, t44, t47, t50, t53, t54, t57, t62, t63, t68, t69, t71, t72, t74, t75, t77, t78, t80, t81, t83, t84, t86, t87, t89, t90, t92, t93, t95, t96, t98, t99; h_lextoken_0Token_c_number h3_n; h_lextoken_0Token_c_text h4_x = {0}; h_lextoken_0Token_c_name h5_n = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h32_own32 = {0}, h34_own34 = {0}, t6, t7, t9, t10, t11, t12, t16, t17, t18, t19, t20, t21, t25, t28, t31, t34, t37, t40, t43, t46, t48, t49, t51, t52, t58, t59, t60, t61, t65, t66, t67, t94, t97; HERO_NODEBUG int64_t t3, t8; HERO_NODEBUG h_lextoken_0Token_c_number t5; HERO_NODEBUG h_lextoken_0Token_c_text t15, t64; HERO_NODEBUG h_lextoken_0Token_c_name t24, t70; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_syncursor_bump(&(*ph0_c)); t55 = h6_own6; h6_own6 = t1; h_lextoken_0Token_release(&t55); t56 = h1_s0; h_lextoken_0Token_retain(&t1); h1_s0 = t1; h_lextoken_0Token_release(&t56); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb5; case 5: goto bb5; case 6: goto bb5; case 7: goto bb5; case 8: goto bb6; case 9: goto bb6; case 10: goto bb6; case 11: goto bb6; case 12: goto bb7; case 13: goto bb7; case 14: goto bb8; case 15: goto bb8; case 16: goto bb8; case 17: goto bb8; case 18: goto bb8; case 19: goto bb9; case 20: goto bb9; case 21: goto bb9; case 22: goto bb9; case 23: goto bb9; case 24: goto bb10; case 25: goto bb10; case 26: goto bb10; case 27: goto bb10; case 28: goto bb10; case 29: goto bb11; case 30: goto bb11; case 31: goto bb11; case 32: goto bb12; case 33: goto bb13; default: hero_unreachable(); } bb1: t54 = h2_r0;
-#line 2244 "main.c"
-    h_0opt_f87774a_retain(&t54);
-#line 80 "examples/interpreter/syn/cursor.hero"
-    t57 = h7_own7; h7_own7 = t54; h_0opt_f87774a_release(&t57);
-#line 2248 "main.c"
-    h_0opt_f87774a_retain(&t54);
-    h_lextoken_0Token_release(hero_slot_escape(&h1_s0));
-    h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
-    h_lextoken_0Token_c_text_release(hero_slot_escape(&h4_x));
-    h_lextoken_0Token_c_name_release(hero_slot_escape(&h5_n));
-    h_lextoken_0Token_release(hero_slot_escape(&h6_own6));
-    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
-    hero_str_release_at(&h8_own8);
-    hero_str_release_at(&h9_own9);
-    hero_str_release_at(&h10_own10);
-    hero_str_release_at(&h11_own11);
-    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
-    hero_str_release_at(&h13_own13);
-    hero_str_release_at(&h14_own14);
-    hero_str_release_at(&h15_own15);
-    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
-    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
-    h_lextoken_0Token_release(hero_slot_escape(&h18_own18));
-    h_0opt_f87774a_release(hero_slot_escape(&h19_own19));
-    h_lextoken_0Token_release(hero_slot_escape(&h20_own20));
-    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
-    h_lextoken_0Token_release(hero_slot_escape(&h22_own22));
-    h_0opt_f87774a_release(hero_slot_escape(&h23_own23));
-    h_lextoken_0Token_release(hero_slot_escape(&h24_own24));
-    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
-    h_lextoken_0Token_release(hero_slot_escape(&h26_own26));
-    h_0opt_f87774a_release(hero_slot_escape(&h27_own27));
-    h_lextoken_0Token_release(hero_slot_escape(&h28_own28));
-    h_0opt_f87774a_release(hero_slot_escape(&h29_own29));
-    h_lextoken_0Token_release(hero_slot_escape(&h30_own30));
-    h_0opt_f87774a_release(hero_slot_escape(&h31_own31));
-    hero_str_release_at(&h32_own32);
-    h_0opt_f87774a_release(hero_slot_escape(&h33_own33));
-    hero_str_release_at(&h34_own34);
-    h_0opt_f87774a_release(hero_slot_escape(&h35_own35));
-    return t54;
-bb2:
-#line 81 "examples/interpreter/syn/cursor.hero"
-    t4 = h1_s0; t5 = t4.as.c_number; h3_n = t5; t6 = h_syncursor_ERR_PARSE(); t58 = h8_own8; h8_own8 = t6; hero_str_decref(t58); t7 = HERO_STR_LIT(hero_str_34e508eb); t8 = h3_n.f_value; t9 = hero_int_to_str(t8); t59 = h9_own9; h9_own9 = t9; hero_str_decref(t59); t10 = hero_str_concat(t7, t9); t60 = h10_own10; h10_own10 = t10; hero_str_decref(t60); t11 = HERO_STR_LIT(hero_str_60); t12 = hero_str_concat(t10, t11); t61 = h11_own11; h11_own11 = t12; hero_str_decref(t61); hero_str_incref(t6); hero_str_incref(t12); t13 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t12}}; t62 = h12_own12; h12_own12 = t13; h_0opt_f87774a_release(&t62);
-#line 80
-    t63 = h2_r0; h_0opt_f87774a_retain(&t13); h2_r0 = t13; h_0opt_f87774a_release(&t63); goto bb1; bb3:
-#line 82
-    t14 = h1_s0; t15 = t14.as.c_text; t64 = h4_x; h_lextoken_0Token_c_text_retain(&t15); h4_x = t15; h_lextoken_0Token_c_text_release(&t64); t16 = h_syncursor_ERR_PARSE(); t65 = h13_own13; h13_own13 = t16; hero_str_decref(t65); t17 = HERO_STR_LIT(hero_str_3aedf865); t18 = h4_x.f_value; t19 = hero_str_concat(t17, t18); t66 = h14_own14; h14_own14 = t19; hero_str_decref(t66); t20 = HERO_STR_LIT(hero_str_60); t21 = hero_str_concat(t19, t20); t67 = h15_own15; h15_own15 = t21; hero_str_decref(t67); hero_str_incref(t16); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t16, .msg = t21}}; t68 = h16_own16; h16_own16 = t22; h_0opt_f87774a_release(&t68);
-#line 80
-    t69 = h2_r0; h_0opt_f87774a_retain(&t22); h2_r0 = t22; h_0opt_f87774a_release(&t69); goto bb1; bb4:
-#line 83
-    t23 = h1_s0; t24 = t23.as.c_name; t70 = h5_n; h_lextoken_0Token_c_name_retain(&t24); h5_n = t24; h_lextoken_0Token_c_name_release(&t70); t25 = h5_n.f_value; hero_str_incref(t25); t26 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t25}; t71 = h17_own17; h17_own17 = t26; h_0opt_f87774a_release(&t71);
-#line 80
-    t72 = h2_r0; h_0opt_f87774a_retain(&t26); h2_r0 = t26; h_0opt_f87774a_release(&t72); goto bb1; bb5:
-#line 84
-    t27 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_kw_let}; t73 = h18_own18; h18_own18 = t27; h_lextoken_0Token_release(&t73); t28 = HERO_STR_LIT(hero_str_7441fe7c); t29 = h_syncursor_keyword_taken(t27, t28); t74 = h19_own19; h19_own19 = t29; h_0opt_f87774a_release(&t74);
-#line 80
-    t75 = h2_r0; h_0opt_f87774a_retain(&t29); h2_r0 = t29; h_0opt_f87774a_release(&t75); goto bb1; bb6:
-#line 85
-    t30 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_kw_fn}; t76 = h20_own20; h20_own20 = t30; h_lextoken_0Token_release(&t76); t31 = HERO_STR_LIT(hero_str_7441fe7c); t32 = h_syncursor_keyword_taken(t30, t31); t77 = h21_own21; h21_own21 = t32; h_0opt_f87774a_release(&t77);
-#line 80
-    t78 = h2_r0; h_0opt_f87774a_retain(&t32); h2_r0 = t32; h_0opt_f87774a_release(&t78); goto bb1; bb7:
-#line 86
-    t33 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_kw_true}; t79 = h22_own22; h22_own22 = t33; h_lextoken_0Token_release(&t79); t34 = HERO_STR_LIT(hero_str_7441fe7c); t35 = h_syncursor_keyword_taken(t33, t34); t80 = h23_own23; h23_own23 = t35; h_0opt_f87774a_release(&t80);
-#line 80
-    t81 = h2_r0; h_0opt_f87774a_retain(&t35); h2_r0 = t35; h_0opt_f87774a_release(&t81); goto bb1; bb8:
-#line 87
-    t36 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_plus}; t82 = h24_own24; h24_own24 = t36; h_lextoken_0Token_release(&t82); t37 = HERO_STR_LIT(hero_str_42f055b4); t38 = h_syncursor_keyword_taken(t36, t37); t83 = h25_own25; h25_own25 = t38; h_0opt_f87774a_release(&t83);
-#line 80
-    t84 = h2_r0; h_0opt_f87774a_retain(&t38); h2_r0 = t38; h_0opt_f87774a_release(&t84); goto bb1; bb9:
-#line 88
-    t39 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_equals}; t85 = h26_own26; h26_own26 = t39; h_lextoken_0Token_release(&t85); t40 = HERO_STR_LIT(hero_str_42f055b4); t41 = h_syncursor_keyword_taken(t39, t40); t86 = h27_own27; h27_own27 = t41; h_0opt_f87774a_release(&t86);
-#line 80
-    t87 = h2_r0; h_0opt_f87774a_retain(&t41); h2_r0 = t41; h_0opt_f87774a_release(&t87); goto bb1; bb10:
-#line 89
-    t42 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bang}; t88 = h28_own28; h28_own28 = t42; h_lextoken_0Token_release(&t88); t43 = HERO_STR_LIT(hero_str_42f055b4); t44 = h_syncursor_keyword_taken(t42, t43); t89 = h29_own29; h29_own29 = t44; h_0opt_f87774a_release(&t89);
-#line 80
-    t90 = h2_r0; h_0opt_f87774a_retain(&t44); h2_r0 = t44; h_0opt_f87774a_release(&t90); goto bb1; bb11:
-#line 90
-    t45 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_lparen}; t91 = h30_own30; h30_own30 = t45; h_lextoken_0Token_release(&t91); t46 = HERO_STR_LIT(hero_str_6a58703d); t47 = h_syncursor_keyword_taken(t45, t46); t92 = h31_own31; h31_own31 = t47; h_0opt_f87774a_release(&t92);
-#line 80
-    t93 = h2_r0; h_0opt_f87774a_retain(&t47); h2_r0 = t47; h_0opt_f87774a_release(&t93); goto bb1; bb12:
-#line 91
-    t48 = h_syncursor_ERR_PARSE(); t94 = h32_own32; h32_own32 = t48; hero_str_decref(t94); t49 = HERO_STR_LIT(hero_str_19b6ec3a); hero_str_incref(t48); hero_str_incref(t49); t50 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t48, .msg = t49}}; t95 = h33_own33; h33_own33 = t50; h_0opt_f87774a_release(&t95);
-#line 80
-    t96 = h2_r0; h_0opt_f87774a_retain(&t50); h2_r0 = t50; h_0opt_f87774a_release(&t96); goto bb1; bb13:
-#line 92
-    t51 = h_syncursor_ERR_PARSE(); t97 = h34_own34; h34_own34 = t51; hero_str_decref(t97); t52 = HERO_STR_LIT(hero_str_18e91992); hero_str_incref(t51); hero_str_incref(t52); t53 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t51, .msg = t52}}; t98 = h35_own35; h35_own35 = t53; h_0opt_f87774a_release(&t98);
-#line 80
-    t99 = h2_r0; h_0opt_f87774a_retain(&t53); h2_r0 = t53; h_0opt_f87774a_release(&t99); goto bb1;
-#line 2334 "main.c"
-}
-
-#line 98 "examples/interpreter/syn/cursor.hero"
-h_0opt_f87774a h_syncursor_keyword_taken(h_lextoken_Token h0_t, HeroStr h1_said) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t5, t7, t8; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}, t6, t9; HERO_ENTRY_STOP; goto bb0; bb0:
-#line 100
-    t2 = h_syncursor_ERR_PARSE(); t7 = h2_own2; h2_own2 = t2; hero_str_decref(t7); t3 = HERO_STR_LIT(hero_str_868cc04); t4 = h1_said; t5 = hero_str_concat(t3, t4); t8 = h3_own3; h3_own3 = t5; hero_str_decref(t8); hero_str_incref(t2); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t2, .msg = t5}}; t9 = h4_own4; h4_own4 = t6; h_0opt_f87774a_release(&t9);
-#line 2341 "main.c"
-    h_0opt_f87774a_retain(&t6);
-    hero_str_release_at(&h2_own2);
-    hero_str_release_at(&h3_own3);
-    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
-    return t6;
-}
-
-#line 104 "examples/interpreter/syn/cursor.hero"
-void h_syncursor_skipped_lines(h_syncursor_Cursor *ph0_c) { HERO_NODEBUG h_lextoken_Token h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t5, t6, t7, t8; HERO_NODEBUG h_syncursor_Cursor t1; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
-    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t6 = h1_own1; h1_own1 = t2; h_lextoken_0Token_release(&t6); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_newline}; t7 = h2_own2; h2_own2 = t3; h_lextoken_0Token_release(&t7); t4 = h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb2:
-    t5 = h_syncursor_bump(&(*ph0_c)); t8 = h3_own3; h3_own3 = t5; h_lextoken_0Token_release(&t8); goto bb1; bb3:
-#line 2353 "main.c"
-    h_lextoken_0Token_release(hero_slot_escape(&h1_own1));
-    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
-    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
-    return;
-}
-
-#line 109 "examples/interpreter/syn/cursor.hero"
-bool h_syncursor_done(h_syncursor_Cursor h0_c) { HERO_NODEBUG h_lextoken_Token h1_own1 = {0}, h2_own2 = {0}, t2, t3, t5, t6; HERO_NODEBUG h_syncursor_Cursor t1; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = h_syncursor_here(t1); t5 = h1_own1; h1_own1 = t2; h_lextoken_0Token_release(&t5); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_finish}; t6 = h2_own2; h2_own2 = t3; h_lextoken_0Token_release(&t6); t4 = h_lextoken_0Token_eq(&t2, &t3);
-#line 2363 "main.c"
-    h_lextoken_0Token_release(hero_slot_escape(&h1_own1));
-    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
-    return t4;
-}
-
-#line 164 "examples/interpreter/syn/cursor.hero"
-HeroStr h_syncursor_refusal_message(h_0opt_a8ea2 h0_said) { HERO_NODEBUG h_0opt_a8ea2 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_said; t9 = h1_s0; h_0opt_a8ea2_retain(&t1); h1_s0 = t1; h_0opt_a8ea2_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 2372 "main.c"
-    hero_str_incref(t8);
-    h_0opt_a8ea2_release(hero_slot_escape(&h1_s0));
-    hero_str_release_at(&h2_r0);
-    hero_failure_release(&h3_e);
-    return t8;
-bb2:
-#line 166 "examples/interpreter/syn/cursor.hero"
-    t4 = HERO_STR_LIT(hero_str_16ecc41b);
-#line 165
-    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
-#line 167
-    t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.msg;
-#line 165
-    t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
-#line 2387 "main.c"
-}
-
-#line 169 "examples/interpreter/syn/cursor.hero"
-HeroStr h_syncursor_refusal_message_of_name(h_0opt_f87774a h0_said) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_said; t9 = h1_s0; h_0opt_f87774a_retain(&t1); h1_s0 = t1; h_0opt_f87774a_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 2393 "main.c"
-    hero_str_incref(t8);
-    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
-    hero_str_release_at(&h2_r0);
-    hero_failure_release(&h3_e);
-    return t8;
-bb2:
-#line 171 "examples/interpreter/syn/cursor.hero"
-    t4 = HERO_STR_LIT(hero_str_16ecc41b);
-#line 170
-    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
-#line 172
-    t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.msg;
-#line 170
-    t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
-#line 2408 "main.c"
-}
-
-#line 32 "examples/interpreter/syn/expr.hero"
-HeroStr h_synexpr_ERR_PARSE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_3b1d407a);
-#line 2414 "main.c"
-    hero_str_incref(t1);
-    return t1;
-}
-
-#line 36 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_parsed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}, t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_either(&(*ph0_c), &(*ph1_t)); t2 = h2_own2; h2_own2 = t1; h_0opt_e201354_release(&t2);
-#line 2422 "main.c"
-    h_0opt_e201354_retain(&t1);
-    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
-    return t1;
-}
-
-#line 39 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_either(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, t1, t2, t6, t8, t9, t16, t17, t21, t23, t24, t32, t33, t34, t35, t36, t40, t41, t42, t44; int64_t h3_left; int64_t h5_right; HERO_NODEBUG h_lextoken_Token h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t12, t13, t15, t37, t38, t39; HERO_NODEBUG h_syntree_Expr h14_own14 = {0}, t29, t43; HERO_NODEBUG int64_t t3, t4, t10, t18, t19, t25, t27, t28, t30, t31; HERO_NODEBUG bool t5, t14, t20; HERO_NODEBUG HeroFailure t7, t22; HERO_NODEBUG h_syncursor_Cursor t11; HERO_NODEBUG h_syntree_Op t26; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_both(&(*ph0_c), &(*ph1_t)); t34 = h7_own7; h7_own7 = t1; h_0opt_e201354_release(&t34); t35 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t35); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t36 = h8_own8; h8_own8 = t8; h_0opt_e201354_release(&t36); h6_ret0 = t8; goto bb8; bb3:
-#line 42
-    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t37 = h9_own9; h9_own9 = t12; h_lextoken_0Token_release(&t37); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bars}; t38 = h10_own10; h10_own10 = t13; h_lextoken_0Token_release(&t38); t14 = h_lextoken_0Token_eq(&t12, &t13); if (t14) goto bb4; else goto bb5; bb4:
-    t15 = h_syncursor_bump(&(*ph0_c)); t39 = h11_own11; h11_own11 = t15; h_lextoken_0Token_release(&t39);
-    t16 = h_synexpr_both(&(*ph0_c), &(*ph1_t)); t40 = h12_own12; h12_own12 = t16; h_0opt_e201354_release(&t40); t41 = h4_f1; h_0opt_e201354_retain(&t16); h4_f1 = t16; h_0opt_e201354_release(&t41); t17 = h4_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb6; else goto bb7; bb5:
-#line 47
-    t31 = h3_left; t32 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t31}; t42 = h13_own13; h13_own13 = t32; h_0opt_e201354_release(&t42); h6_ret0 = t32; goto bb8; bb6:
-#line 44
-    t24 = h4_f1; t25 = t24.as.ok; h5_right = t25;
-    t26 = (h_syntree_Op){.tag = h_syntree_0Op_tag_either}; t27 = h3_left; t28 = h5_right; t29 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t26, .f_left = t27, .f_right = t28}}; t43 = h14_own14; h14_own14 = t29; h_syntree_0Expr_release(&t43); t30 = h_syntree_added_expr(&(*ph1_t), t29); h3_left = t30; goto bb3; bb7:
-#line 44
-    t21 = h4_f1; t22 = t21.as.err; hero_failure_retain(&t22); t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22}; t44 = h15_own15; h15_own15 = t23; h_0opt_e201354_release(&t44); h6_ret0 = t23; goto bb8; bb8:
-#line 2442 "main.c"
-    t33 = h6_ret0;
-    h_0opt_e201354_retain(&t33);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
-    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
-    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
-    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
-    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
-    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
-    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
-    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
-    h_syntree_0Expr_release(hero_slot_escape(&h14_own14));
-    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
-    return t33;
-}
-
-#line 49 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_both(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, t1, t2, t6, t8, t9, t16, t17, t21, t23, t24, t32, t33, t34, t35, t36, t40, t41, t42, t44; int64_t h3_left; int64_t h5_right; HERO_NODEBUG h_lextoken_Token h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t12, t13, t15, t37, t38, t39; HERO_NODEBUG h_syntree_Expr h14_own14 = {0}, t29, t43; HERO_NODEBUG int64_t t3, t4, t10, t18, t19, t25, t27, t28, t30, t31; HERO_NODEBUG bool t5, t14, t20; HERO_NODEBUG HeroFailure t7, t22; HERO_NODEBUG h_syncursor_Cursor t11; HERO_NODEBUG h_syntree_Op t26; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_compared(&(*ph0_c), &(*ph1_t)); t34 = h7_own7; h7_own7 = t1; h_0opt_e201354_release(&t34); t35 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t35); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t36 = h8_own8; h8_own8 = t8; h_0opt_e201354_release(&t36); h6_ret0 = t8; goto bb8; bb3:
-#line 52
-    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t37 = h9_own9; h9_own9 = t12; h_lextoken_0Token_release(&t37); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_ampersands}; t38 = h10_own10; h10_own10 = t13; h_lextoken_0Token_release(&t38); t14 = h_lextoken_0Token_eq(&t12, &t13); if (t14) goto bb4; else goto bb5; bb4:
-    t15 = h_syncursor_bump(&(*ph0_c)); t39 = h11_own11; h11_own11 = t15; h_lextoken_0Token_release(&t39);
-    t16 = h_synexpr_compared(&(*ph0_c), &(*ph1_t)); t40 = h12_own12; h12_own12 = t16; h_0opt_e201354_release(&t40); t41 = h4_f1; h_0opt_e201354_retain(&t16); h4_f1 = t16; h_0opt_e201354_release(&t41); t17 = h4_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb6; else goto bb7; bb5:
-#line 57
-    t31 = h3_left; t32 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t31}; t42 = h13_own13; h13_own13 = t32; h_0opt_e201354_release(&t42); h6_ret0 = t32; goto bb8; bb6:
-#line 54
-    t24 = h4_f1; t25 = t24.as.ok; h5_right = t25;
-    t26 = (h_syntree_Op){.tag = h_syntree_0Op_tag_both}; t27 = h3_left; t28 = h5_right; t29 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t26, .f_left = t27, .f_right = t28}}; t43 = h14_own14; h14_own14 = t29; h_syntree_0Expr_release(&t43); t30 = h_syntree_added_expr(&(*ph1_t), t29); h3_left = t30; goto bb3; bb7:
-#line 54
-    t21 = h4_f1; t22 = t21.as.err; hero_failure_retain(&t22); t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22}; t44 = h15_own15; h15_own15 = t23; h_0opt_e201354_release(&t44); h6_ret0 = t23; goto bb8; bb8:
-#line 2473 "main.c"
-    t33 = h6_ret0;
-    h_0opt_e201354_retain(&t33);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
-    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
-    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
-    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
-    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
-    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
-    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
-    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
-    h_syntree_0Expr_release(hero_slot_escape(&h14_own14));
-    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
-    return t33;
-}
-
-#line 64 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_compared(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_f2 = {0}, h12_ret0 = {0}, h13_own13 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h24_own24 = {0}, h30_own30 = {0}, t1, t2, t6, t8, t9, t20, t22, t23, t27, t29, t30, t62, t64, t65, t66, t67, t72, t74, t75, t76, t78, t84, t90; int64_t h3_left; h_0opt_3ce1b94c h4_op = {0}; HERO_NODEBUG h_0opt_3ce1b94c h5_f1 = {0}, h8_f3 = {0}, h11_f4 = {0}, h15_own15 = {0}, h23_own23 = {0}, t13, t14, t15, t32, t33, t37, t39, t47, t48, t49, t69, t70, t71, t77, t81, t82, t83; int64_t h7_right; int64_t h9_made; h_0opt_3ce1b94c h10_second = {0}; HERO_NODEBUG h_lextoken_Token h14_own14 = {0}, h17_own17 = {0}, h22_own22 = {0}, h26_own26 = {0}, t12, t21, t46, t57, t68, t73, t80, t86; HERO_NODEBUG h_syntree_Expr h21_own21 = {0}, t43, t79; HERO_NODEBUG HeroStr h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, t54, t55, t58, t59, t60, t61, t85, t87, t88, t89; HERO_NODEBUG int64_t t3, t4, t10, t16, t17, t19, t24, t25, t31, t34, t35, t41, t42, t44, t50, t51, t63; HERO_NODEBUG bool t5, t18, t26, t36, t52, t53; HERO_NODEBUG HeroFailure t7, t28, t38; HERO_NODEBUG h_syncursor_Cursor t11, t45, t56; HERO_NODEBUG h_syntree_Op t40; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_summed(&(*ph0_c), &(*ph1_t)); t66 = h13_own13; h13_own13 = t1; h_0opt_e201354_release(&t66); t67 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t67); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10;
-    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t68 = h14_own14; h14_own14 = t12; h_lextoken_0Token_release(&t68); t13 = h_synexpr_comparison_of(t12); t69 = h15_own15; h15_own15 = t13; h_0opt_3ce1b94c_release(&t69); t70 = h4_op; h_0opt_3ce1b94c_retain(&t13); h4_op = t13; h_0opt_3ce1b94c_release(&t70);
-#line 68
-    t14 = h4_op; t71 = h5_f1; h_0opt_3ce1b94c_retain(&t14); h5_f1 = t14; h_0opt_3ce1b94c_release(&t71); t15 = h5_f1; t16 = t15.tag; t17 = INT64_C(1); t18 = t16 == t17; if (t18) goto bb4; else goto bb5; bb2:
-#line 65
-    t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t72 = h16_own16; h16_own16 = t8; h_0opt_e201354_release(&t72); h12_ret0 = t8; goto bb13; bb3:
-#line 70
-    t21 = h_syncursor_bump(&(*ph0_c)); t73 = h17_own17; h17_own17 = t21; h_lextoken_0Token_release(&t73);
-    t22 = h_synexpr_summed(&(*ph0_c), &(*ph1_t)); t74 = h18_own18; h18_own18 = t22; h_0opt_e201354_release(&t74); t75 = h6_f2; h_0opt_e201354_retain(&t22); h6_f2 = t22; h_0opt_e201354_release(&t75); t23 = h6_f2; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb6; else goto bb7; bb4:
-#line 69
-    t19 = h3_left; t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t19}; t76 = h19_own19; h19_own19 = t20; h_0opt_e201354_release(&t76); h12_ret0 = t20; goto bb13; bb5: goto bb3; bb6:
-#line 71
-    t30 = h6_f2; t31 = t30.as.ok; h7_right = t31;
-    t32 = h4_op; t77 = h8_f3; h_0opt_3ce1b94c_retain(&t32); h8_f3 = t32; h_0opt_3ce1b94c_release(&t77); t33 = h8_f3; t34 = t33.tag; t35 = INT64_C(0); t36 = t34 == t35; if (t36) goto bb8; else goto bb9; bb7:
-#line 71
-    t27 = h6_f2; t28 = t27.as.err; hero_failure_retain(&t28); t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28}; t78 = h20_own20; h20_own20 = t29; h_0opt_e201354_release(&t78); h12_ret0 = t29; goto bb13; bb8:
-    t39 = h8_f3; t40 = t39.as.ok; t41 = h3_left; t42 = h7_right; t43 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t40, .f_left = t41, .f_right = t42}}; t79 = h21_own21; h21_own21 = t43; h_syntree_0Expr_release(&t79); t44 = h_syntree_added_expr(&(*ph1_t), t43); h9_made = t44;
-    t45 = (*ph0_c); t46 = h_syncursor_here(t45); t80 = h22_own22; h22_own22 = t46; h_lextoken_0Token_release(&t80); t47 = h_synexpr_comparison_of(t46); t81 = h23_own23; h23_own23 = t47; h_0opt_3ce1b94c_release(&t81); t82 = h10_second; h_0opt_3ce1b94c_retain(&t47); h10_second = t47; h_0opt_3ce1b94c_release(&t82);
-#line 75
-    t48 = h10_second; t83 = h11_f4; h_0opt_3ce1b94c_retain(&t48); h11_f4 = t48; h_0opt_3ce1b94c_release(&t83); t49 = h11_f4; t50 = t49.tag; t51 = INT64_C(1); t52 = t50 == t51; t53 = !t52; if (t53) goto bb11; else goto bb12; bb9:
-#line 72
-    t37 = h8_f3; t38 = t37.as.err;
-#line 2514 "main.c"
-    hero_panic_must_at(t38, "syn/expr.hero", "expr.compared", 72, 44);
-    hero_unreachable();
-bb10:
-#line 81 "examples/interpreter/syn/expr.hero"
-    t63 = h9_made; t64 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t63}; t84 = h24_own24; h24_own24 = t64; h_0opt_e201354_release(&t84); h12_ret0 = t64; goto bb13; bb11:
-#line 77
-    t54 = h_synexpr_ERR_PARSE(); t85 = h25_own25; h25_own25 = t54; hero_str_decref(t85);
-    t55 = HERO_STR_LIT(hero_str_60); t56 = (*ph0_c); t57 = h_syncursor_here(t56); t86 = h26_own26; h26_own26 = t57; h_lextoken_0Token_release(&t86); t58 = h_lextoken_shown(t57); t87 = h27_own27; h27_own27 = t58; hero_str_decref(t87); t59 = hero_str_concat(t55, t58); t88 = h28_own28; h28_own28 = t59; hero_str_decref(t88); t60 = HERO_STR_LIT(hero_str_887ad06); t61 = hero_str_concat(t59, t60); t89 = h29_own29; h29_own29 = t61; hero_str_decref(t89);
-#line 76
-    hero_str_incref(t54); hero_str_incref(t61); t62 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t61}}; t90 = h30_own30; h30_own30 = t62; h_0opt_e201354_release(&t90); h12_ret0 = t62; goto bb13; bb12: goto bb10; bb13:
-#line 2525 "main.c"
-    t65 = h12_ret0;
-    h_0opt_e201354_retain(&t65);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h4_op));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h5_f1));
-    h_0opt_e201354_release(hero_slot_escape(&h6_f2));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h8_f3));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h10_second));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h11_f4));
-    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
-    h_lextoken_0Token_release(hero_slot_escape(&h14_own14));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h15_own15));
-    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
-    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
-    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
-    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
-    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
-    h_syntree_0Expr_release(hero_slot_escape(&h21_own21));
-    h_lextoken_0Token_release(hero_slot_escape(&h22_own22));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h23_own23));
-    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
-    hero_str_release_at(&h25_own25);
-    h_lextoken_0Token_release(hero_slot_escape(&h26_own26));
-    hero_str_release_at(&h27_own27);
-    hero_str_release_at(&h28_own28);
-    hero_str_release_at(&h29_own29);
-    h_0opt_e201354_release(hero_slot_escape(&h30_own30));
-    return t65;
-}
-
-#line 83 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_summed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_f1 = {0}, h8_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h15_own15 = {0}, h18_own18 = {0}, h20_own20 = {0}, t1, t2, t6, t8, t9, t25, t26, t30, t32, t33, t41, t42, t43, t44, t45, t50, t53, t54, t56; int64_t h3_left; HERO_NODEBUG bool h4_b0, t5, t14, t18, t19, t23, t29; h_syntree_Op h5_op; int64_t h7_right; HERO_NODEBUG h_lextoken_Token h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, t12, t13, t16, t17, t21, t22, t46, t47, t48, t49, t51, t52; HERO_NODEBUG h_syntree_Expr h19_own19 = {0}, t38, t55; HERO_NODEBUG int64_t t3, t4, t10, t27, t28, t34, t36, t37, t39, t40; HERO_NODEBUG HeroFailure t7, t31; HERO_NODEBUG h_syncursor_Cursor t11, t15; HERO_NODEBUG h_syntree_Op t20, t24, t35; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_scaled(&(*ph0_c), &(*ph1_t)); t43 = h9_own9; h9_own9 = t1; h_0opt_e201354_release(&t43); t44 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t44); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t45 = h10_own10; h10_own10 = t8; h_0opt_e201354_release(&t45); h8_ret0 = t8; goto bb13; bb3:
-#line 86
-    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t46 = h11_own11; h11_own11 = t12; h_lextoken_0Token_release(&t46); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_plus}; t47 = h12_own12; h12_own12 = t13; h_lextoken_0Token_release(&t47); t14 = h_lextoken_0Token_eq(&t12, &t13); h4_b0 = t14; if (t14) goto bb7; else goto bb6; bb4:
-    t20 = (h_syntree_Op){.tag = h_syntree_0Op_tag_add}; h5_op = t20;
-#line 89
-    t21 = h_syncursor_bump(&(*ph0_c)); t48 = h13_own13; h13_own13 = t21; h_lextoken_0Token_release(&t48); t22 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_minus}; t49 = h14_own14; h14_own14 = t22; h_lextoken_0Token_release(&t49); t23 = h_lextoken_0Token_eq(&t21, &t22); if (t23) goto bb9; else goto bb10; bb5:
-#line 94
-    t40 = h3_left; t41 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t40}; t50 = h15_own15; h15_own15 = t41; h_0opt_e201354_release(&t50); h8_ret0 = t41; goto bb13; bb6:
-#line 86
-    t15 = (*ph0_c); t16 = h_syncursor_here(t15); t51 = h16_own16; h16_own16 = t16; h_lextoken_0Token_release(&t51); t17 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_minus}; t52 = h17_own17; h17_own17 = t17; h_lextoken_0Token_release(&t52); t18 = h_lextoken_0Token_eq(&t16, &t17); h4_b0 = t18; goto bb7; bb7: t19 = h4_b0; if (t19) goto bb4; else goto bb5; bb8:
-#line 91
-    t25 = h_synexpr_scaled(&(*ph0_c), &(*ph1_t)); t53 = h18_own18; h18_own18 = t25; h_0opt_e201354_release(&t53); t54 = h6_f1; h_0opt_e201354_retain(&t25); h6_f1 = t25; h_0opt_e201354_release(&t54); t26 = h6_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb11; else goto bb12; bb9:
-#line 90
-    t24 = (h_syntree_Op){.tag = h_syntree_0Op_tag_subtract}; h5_op = t24; goto bb8; bb10: goto bb8; bb11:
-    t33 = h6_f1; t34 = t33.as.ok; h7_right = t34;
-    t35 = h5_op; t36 = h3_left; t37 = h7_right; t38 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t35, .f_left = t36, .f_right = t37}}; t55 = h19_own19; h19_own19 = t38; h_syntree_0Expr_release(&t55); t39 = h_syntree_added_expr(&(*ph1_t), t38); h3_left = t39; goto bb3; bb12:
-#line 91
-    t30 = h6_f1; t31 = t30.as.err; hero_failure_retain(&t31); t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t31}; t56 = h20_own20; h20_own20 = t32; h_0opt_e201354_release(&t56); h8_ret0 = t32; goto bb13; bb13:
-#line 2576 "main.c"
-    t42 = h8_ret0;
-    h_0opt_e201354_retain(&t42);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
-    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
-    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
-    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
-    h_lextoken_0Token_release(hero_slot_escape(&h12_own12));
-    h_lextoken_0Token_release(hero_slot_escape(&h13_own13));
-    h_lextoken_0Token_release(hero_slot_escape(&h14_own14));
-    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
-    h_lextoken_0Token_release(hero_slot_escape(&h16_own16));
-    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
-    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
-    h_syntree_0Expr_release(hero_slot_escape(&h19_own19));
-    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
-    return t42;
-}
-
-#line 96 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_scaled(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_f1 = {0}, h8_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h14_own14 = {0}, h16_own16 = {0}, h18_own18 = {0}, t1, t2, t6, t8, t9, t24, t25, t29, t31, t32, t40, t41, t42, t43, t44, t49, t51, t52, t54; int64_t h3_left; h_syntree_Op h4_op; h_lextoken_Token h5_taken = {0}; int64_t h7_right; HERO_NODEBUG h_lextoken_Token h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, t12, t15, t16, t17, t20, t21, t45, t46, t47, t48, t50; HERO_NODEBUG h_syntree_Expr h17_own17 = {0}, t37, t53; HERO_NODEBUG int64_t t3, t4, t10, t26, t27, t33, t35, t36, t38, t39; HERO_NODEBUG bool t5, t13, t18, t22, t28; HERO_NODEBUG HeroFailure t7, t30; HERO_NODEBUG h_syncursor_Cursor t11; HERO_NODEBUG h_syntree_Op t14, t19, t23, t34; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t42 = h9_own9; h9_own9 = t1; h_0opt_e201354_release(&t42); t43 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t43); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t44 = h10_own10; h10_own10 = t8; h_0opt_e201354_release(&t44); h8_ret0 = t8; goto bb14; bb3:
-#line 99
-    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t45 = h11_own11; h11_own11 = t12; h_lextoken_0Token_release(&t45); t13 = h_synexpr_is_scaling(t12); if (t13) goto bb4; else goto bb5; bb4:
-    t14 = (h_syntree_Op){.tag = h_syntree_0Op_tag_multiply}; h4_op = t14;
-    t15 = h_syncursor_bump(&(*ph0_c)); t46 = h12_own12; h12_own12 = t15; h_lextoken_0Token_release(&t46); t47 = h5_taken; h_lextoken_0Token_retain(&t15); h5_taken = t15; h_lextoken_0Token_release(&t47);
-#line 103
-    t16 = h5_taken; t17 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_slash}; t48 = h13_own13; h13_own13 = t17; h_lextoken_0Token_release(&t48); t18 = h_lextoken_0Token_eq(&t16, &t17); if (t18) goto bb7; else goto bb8; bb5:
-#line 111
-    t39 = h3_left; t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t39}; t49 = h14_own14; h14_own14 = t40; h_0opt_e201354_release(&t49); h8_ret0 = t40; goto bb14; bb6:
-#line 106
-    t20 = h5_taken; t21 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_percent}; t50 = h15_own15; h15_own15 = t21; h_lextoken_0Token_release(&t50); t22 = h_lextoken_0Token_eq(&t20, &t21); if (t22) goto bb10; else goto bb11; bb7:
-#line 104
-    t19 = (h_syntree_Op){.tag = h_syntree_0Op_tag_divide}; h4_op = t19; goto bb6; bb8: goto bb6; bb9:
-#line 108
-    t24 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t51 = h16_own16; h16_own16 = t24; h_0opt_e201354_release(&t51); t52 = h6_f1; h_0opt_e201354_retain(&t24); h6_f1 = t24; h_0opt_e201354_release(&t52); t25 = h6_f1; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb12; else goto bb13; bb10:
-#line 107
-    t23 = (h_syntree_Op){.tag = h_syntree_0Op_tag_remainder}; h4_op = t23; goto bb9; bb11: goto bb9; bb12:
-    t32 = h6_f1; t33 = t32.as.ok; h7_right = t33;
-    t34 = h4_op; t35 = h3_left; t36 = h7_right; t37 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t34, .f_left = t35, .f_right = t36}}; t53 = h17_own17; h17_own17 = t37; h_syntree_0Expr_release(&t53); t38 = h_syntree_added_expr(&(*ph1_t), t37); h3_left = t38; goto bb3; bb13:
-#line 108
-    t29 = h6_f1; t30 = t29.as.err; hero_failure_retain(&t30); t31 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t30}; t54 = h18_own18; h18_own18 = t31; h_0opt_e201354_release(&t54); h8_ret0 = t31; goto bb14; bb14:
-#line 2619 "main.c"
-    t41 = h8_ret0;
-    h_0opt_e201354_retain(&t41);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_lextoken_0Token_release(hero_slot_escape(&h5_taken));
-    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
-    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
-    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
-    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
-    h_lextoken_0Token_release(hero_slot_escape(&h12_own12));
-    h_lextoken_0Token_release(hero_slot_escape(&h13_own13));
-    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
-    h_lextoken_0Token_release(hero_slot_escape(&h15_own15));
-    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
-    h_syntree_0Expr_release(hero_slot_escape(&h17_own17));
-    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
-    return t41;
-}
-
-#line 115 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_unary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_ret0 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h20_own20 = {0}, h21_own21 = {0}, t6, t7, t11, t13, t14, t19, t25, t26, t30, t32, t33, t38, t39, t40, t46, t47, t49, t50, t51, t53, t54, t56, t57; int64_t h3_on; int64_t h5_on; HERO_NODEBUG h_lextoken_Token h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h17_own17 = {0}, t2, t3, t5, t21, t22, t24, t41, t42, t43, t44, t45, t52; HERO_NODEBUG h_syntree_Expr h13_own13 = {0}, h19_own19 = {0}, t17, t36, t48, t55; HERO_NODEBUG h_syncursor_Cursor t1, t20; HERO_NODEBUG bool t4, t10, t23, t29; HERO_NODEBUG int64_t t8, t9, t15, t16, t18, t27, t28, t34, t35, t37; HERO_NODEBUG HeroFailure t12, t31; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t41 = h7_own7; h7_own7 = t2; h_lextoken_0Token_release(&t41); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_minus}; t42 = h8_own8; h8_own8 = t3; h_lextoken_0Token_release(&t42); t4 = h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb1:
-#line 121
-    t20 = (*ph0_c); t21 = h_syncursor_here(t20); t43 = h9_own9; h9_own9 = t21; h_lextoken_0Token_release(&t43); t22 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bang}; t44 = h10_own10; h10_own10 = t22; h_lextoken_0Token_release(&t44); t23 = h_lextoken_0Token_eq(&t21, &t22); if (t23) goto bb7; else goto bb8; bb2:
-#line 117
-    t5 = h_syncursor_bump(&(*ph0_c)); t45 = h11_own11; h11_own11 = t5; h_lextoken_0Token_release(&t45);
-    t6 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t46 = h12_own12; h12_own12 = t6; h_0opt_e201354_release(&t46); t47 = h2_f0; h_0opt_e201354_retain(&t6); h2_f0 = t6; h_0opt_e201354_release(&t47); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3: goto bb1; bb4: t14 = h2_f0; t15 = t14.as.ok; h3_on = t15;
-    t16 = h3_on; t17 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_negate, .as.c_negate = {.f_on = t16}}; t48 = h13_own13; h13_own13 = t17; h_syntree_0Expr_release(&t48); t18 = h_syntree_added_expr(&(*ph1_t), t17); t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t18}; t49 = h14_own14; h14_own14 = t19; h_0opt_e201354_release(&t49); h6_ret0 = t19; goto bb11; bb5:
-#line 118
-    t11 = h2_f0; t12 = t11.as.err; hero_failure_retain(&t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t12}; t50 = h15_own15; h15_own15 = t13; h_0opt_e201354_release(&t50); h6_ret0 = t13; goto bb11; bb6:
-#line 126
-    t39 = h_synexpr_primary(&(*ph0_c), &(*ph1_t)); t51 = h16_own16; h16_own16 = t39; h_0opt_e201354_release(&t51); h6_ret0 = t39; goto bb11; bb7:
-#line 122
-    t24 = h_syncursor_bump(&(*ph0_c)); t52 = h17_own17; h17_own17 = t24; h_lextoken_0Token_release(&t52);
-    t25 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t53 = h18_own18; h18_own18 = t25; h_0opt_e201354_release(&t53); t54 = h4_f1; h_0opt_e201354_retain(&t25); h4_f1 = t25; h_0opt_e201354_release(&t54); t26 = h4_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb9; else goto bb10; bb8: goto bb6; bb9: t33 = h4_f1; t34 = t33.as.ok; h5_on = t34;
-    t35 = h5_on; t36 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_invert, .as.c_invert = {.f_on = t35}}; t55 = h19_own19; h19_own19 = t36; h_syntree_0Expr_release(&t55); t37 = h_syntree_added_expr(&(*ph1_t), t36); t38 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t37}; t56 = h20_own20; h20_own20 = t38; h_0opt_e201354_release(&t56); h6_ret0 = t38; goto bb11; bb10:
-#line 123
-    t30 = h4_f1; t31 = t30.as.err; hero_failure_retain(&t31); t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t31}; t57 = h21_own21; h21_own21 = t32; h_0opt_e201354_release(&t57); h6_ret0 = t32; goto bb11; bb11:
-#line 2657 "main.c"
-    t40 = h6_ret0;
-    h_0opt_e201354_retain(&t40);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
-    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
-    h_lextoken_0Token_release(hero_slot_escape(&h8_own8));
-    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
-    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
-    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
-    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
-    h_syntree_0Expr_release(hero_slot_escape(&h13_own13));
-    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
-    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
-    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
-    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
-    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
-    h_syntree_0Expr_release(hero_slot_escape(&h19_own19));
-    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
-    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
-    return t40;
-}
-
-#line 134 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_primary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_lextoken_Token h2_s0 = {0}, h7_own7 = {0}, t1, t2, t4, t10, t24, t50, t51; HERO_NODEBUG h_0opt_e201354 h3_r0 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t9, t15, t19, t23, t27, t28, t30, t32, t34, t36, t38, t40, t42, t44, t46, t48, t49, t52, t54, t55, t58, t59, t61, t62, t64, t65, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90; h_lextoken_0Token_c_number h4_n; h_lextoken_0Token_c_text h5_x = {0}; h_lextoken_0Token_c_name h6_n = {0}; HERO_NODEBUG h_syntree_Expr h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t7, t13, t17, t21, t53, t57, t60, t63; HERO_NODEBUG int64_t t3, t6, t8, t14, t18, t22; HERO_NODEBUG h_lextoken_0Token_c_number t5; HERO_NODEBUG h_lextoken_0Token_c_text t11, t56; HERO_NODEBUG HeroStr t12, t26, t29, t31, t33, t35, t37, t39, t41, t43, t45, t47; HERO_NODEBUG bool t16, t20; HERO_NODEBUG h_lextoken_0Token_c_name t25, t66; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_syncursor_bump(&(*ph0_c)); t50 = h7_own7; h7_own7 = t1; h_lextoken_0Token_release(&t50); t51 = h2_s0; h_lextoken_0Token_retain(&t1); h2_s0 = t1; h_lextoken_0Token_release(&t51); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb6; case 3: goto bb8; case 4: goto bb8; case 5: goto bb8; case 6: goto bb8; case 7: goto bb8; case 8: goto bb9; case 9: goto bb9; case 10: goto bb9; case 11: goto bb9; case 12: goto bb4; case 13: goto bb5; case 14: goto bb10; case 15: goto bb13; case 16: goto bb10; case 17: goto bb10; case 18: goto bb10; case 19: goto bb11; case 20: goto bb11; case 21: goto bb11; case 22: goto bb11; case 23: goto bb11; case 24: goto bb12; case 25: goto bb12; case 26: goto bb13; case 27: goto bb12; case 28: goto bb12; case 29: goto bb7; case 30: goto bb14; case 31: goto bb15; case 32: goto bb16; case 33: goto bb17; default: hero_unreachable(); } bb1: t49 = h3_r0;
-#line 2683 "main.c"
-    h_0opt_e201354_retain(&t49);
-#line 135 "examples/interpreter/syn/expr.hero"
-    t52 = h8_own8; h8_own8 = t49; h_0opt_e201354_release(&t52);
-#line 2687 "main.c"
-    h_0opt_e201354_retain(&t49);
-    h_lextoken_0Token_release(hero_slot_escape(&h2_s0));
-    h_0opt_e201354_release(hero_slot_escape(&h3_r0));
-    h_lextoken_0Token_c_text_release(hero_slot_escape(&h5_x));
-    h_lextoken_0Token_c_name_release(hero_slot_escape(&h6_n));
-    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
-    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
-    h_syntree_0Expr_release(hero_slot_escape(&h9_own9));
-    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
-    h_syntree_0Expr_release(hero_slot_escape(&h11_own11));
-    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
-    h_syntree_0Expr_release(hero_slot_escape(&h13_own13));
-    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
-    h_syntree_0Expr_release(hero_slot_escape(&h15_own15));
-    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
-    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
-    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
-    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
-    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
-    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
-    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
-    h_0opt_e201354_release(hero_slot_escape(&h23_own23));
-    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
-    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
-    h_0opt_e201354_release(hero_slot_escape(&h26_own26));
-    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
-    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
-    return t49;
-bb2:
-#line 136 "examples/interpreter/syn/expr.hero"
-    t4 = h2_s0; t5 = t4.as.c_number; h4_n = t5; t6 = h4_n.f_value; t7 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_number, .as.c_number = {.f_value = t6}}; t53 = h9_own9; h9_own9 = t7; h_syntree_0Expr_release(&t53); t8 = h_syntree_added_expr(&(*ph1_t), t7); t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t54 = h10_own10; h10_own10 = t9; h_0opt_e201354_release(&t54);
-#line 135
-    t55 = h3_r0; h_0opt_e201354_retain(&t9); h3_r0 = t9; h_0opt_e201354_release(&t55); goto bb1; bb3:
-#line 137
-    t10 = h2_s0; t11 = t10.as.c_text; t56 = h5_x; h_lextoken_0Token_c_text_retain(&t11); h5_x = t11; h_lextoken_0Token_c_text_release(&t56); t12 = h5_x.f_value; hero_str_incref(t12); t13 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_text, .as.c_text = {.f_value = t12}}; t57 = h11_own11; h11_own11 = t13; h_syntree_0Expr_release(&t57); t14 = h_syntree_added_expr(&(*ph1_t), t13); t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t14}; t58 = h12_own12; h12_own12 = t15; h_0opt_e201354_release(&t58);
-#line 135
-    t59 = h3_r0; h_0opt_e201354_retain(&t15); h3_r0 = t15; h_0opt_e201354_release(&t59); goto bb1; bb4:
-#line 138
-    t16 = true; t17 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_truth, .as.c_truth = {.f_value = t16}}; t60 = h13_own13; h13_own13 = t17; h_syntree_0Expr_release(&t60); t18 = h_syntree_added_expr(&(*ph1_t), t17); t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t18}; t61 = h14_own14; h14_own14 = t19; h_0opt_e201354_release(&t61);
-#line 135
-    t62 = h3_r0; h_0opt_e201354_retain(&t19); h3_r0 = t19; h_0opt_e201354_release(&t62); goto bb1; bb5:
-#line 139
-    t20 = false; t21 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_truth, .as.c_truth = {.f_value = t20}}; t63 = h15_own15; h15_own15 = t21; h_syntree_0Expr_release(&t63); t22 = h_syntree_added_expr(&(*ph1_t), t21); t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t22}; t64 = h16_own16; h16_own16 = t23; h_0opt_e201354_release(&t64);
-#line 135
-    t65 = h3_r0; h_0opt_e201354_retain(&t23); h3_r0 = t23; h_0opt_e201354_release(&t65); goto bb1; bb6:
-#line 140
-    t24 = h2_s0; t25 = t24.as.c_name; t66 = h6_n; h_lextoken_0Token_c_name_retain(&t25); h6_n = t25; h_lextoken_0Token_c_name_release(&t66); t26 = h6_n.f_value; t27 = h_synexpr_named(&(*ph0_c), &(*ph1_t), t26); t67 = h17_own17; h17_own17 = t27; h_0opt_e201354_release(&t67);
-#line 135
-    t68 = h3_r0; h_0opt_e201354_retain(&t27); h3_r0 = t27; h_0opt_e201354_release(&t68); goto bb1; bb7:
-#line 141
-    t28 = h_synexpr_grouped(&(*ph0_c), &(*ph1_t)); t69 = h18_own18; h18_own18 = t28; h_0opt_e201354_release(&t69);
-#line 135
-    t70 = h3_r0; h_0opt_e201354_retain(&t28); h3_r0 = t28; h_0opt_e201354_release(&t70); goto bb1; bb8:
-#line 142
-    t29 = HERO_STR_LIT(hero_str_7441fe7c); t30 = h_synexpr_not_a_value(t29); t71 = h19_own19; h19_own19 = t30; h_0opt_e201354_release(&t71);
-#line 135
-    t72 = h3_r0; h_0opt_e201354_retain(&t30); h3_r0 = t30; h_0opt_e201354_release(&t72); goto bb1; bb9:
-#line 143
-    t31 = HERO_STR_LIT(hero_str_7441fe7c); t32 = h_synexpr_not_a_value(t31); t73 = h20_own20; h20_own20 = t32; h_0opt_e201354_release(&t73);
-#line 135
-    t74 = h3_r0; h_0opt_e201354_retain(&t32); h3_r0 = t32; h_0opt_e201354_release(&t74); goto bb1; bb10:
-#line 144
-    t33 = HERO_STR_LIT(hero_str_1c8bc6f5); t34 = h_synexpr_not_a_value(t33); t75 = h21_own21; h21_own21 = t34; h_0opt_e201354_release(&t75);
-#line 135
-    t76 = h3_r0; h_0opt_e201354_retain(&t34); h3_r0 = t34; h_0opt_e201354_release(&t76); goto bb1; bb11:
-#line 146
-    t35 = HERO_STR_LIT(hero_str_1c8bc6f5);
-#line 145
-    t36 = h_synexpr_not_a_value(t35); t77 = h22_own22; h22_own22 = t36; h_0opt_e201354_release(&t77);
-#line 135
-    t78 = h3_r0; h_0opt_e201354_retain(&t36); h3_r0 = t36; h_0opt_e201354_release(&t78); goto bb1; bb12:
-#line 148
-    t37 = HERO_STR_LIT(hero_str_1c8bc6f5); t38 = h_synexpr_not_a_value(t37); t79 = h23_own23; h23_own23 = t38; h_0opt_e201354_release(&t79);
-#line 135
-    t80 = h3_r0; h_0opt_e201354_retain(&t38); h3_r0 = t38; h_0opt_e201354_release(&t80); goto bb1; bb13:
-#line 149
-    t39 = HERO_STR_LIT(hero_str_340a1642); t40 = h_synexpr_not_a_value(t39); t81 = h24_own24; h24_own24 = t40; h_0opt_e201354_release(&t81);
-#line 135
-    t82 = h3_r0; h_0opt_e201354_retain(&t40); h3_r0 = t40; h_0opt_e201354_release(&t82); goto bb1; bb14:
-#line 150
-    t41 = HERO_STR_LIT(hero_str_6bb0184d); t42 = h_synexpr_not_a_value(t41); t83 = h25_own25; h25_own25 = t42; h_0opt_e201354_release(&t83);
-#line 135
-    t84 = h3_r0; h_0opt_e201354_retain(&t42); h3_r0 = t42; h_0opt_e201354_release(&t84); goto bb1; bb15:
-#line 151
-    t43 = HERO_STR_LIT(hero_str_30ea22c7); t44 = h_synexpr_not_a_value(t43); t85 = h26_own26; h26_own26 = t44; h_0opt_e201354_release(&t85);
-#line 135
-    t86 = h3_r0; h_0opt_e201354_retain(&t44); h3_r0 = t44; h_0opt_e201354_release(&t86); goto bb1; bb16:
-#line 152
-    t45 = HERO_STR_LIT(hero_str_7b65ce0); t46 = h_synexpr_not_a_value(t45); t87 = h27_own27; h27_own27 = t46; h_0opt_e201354_release(&t87);
-#line 135
-    t88 = h3_r0; h_0opt_e201354_retain(&t46); h3_r0 = t46; h_0opt_e201354_release(&t88); goto bb1; bb17:
-#line 153
-    t47 = HERO_STR_LIT(hero_str_6e88a38); t48 = h_synexpr_not_a_value(t47); t89 = h28_own28; h28_own28 = t48; h_0opt_e201354_release(&t89);
-#line 135
-    t90 = h3_r0; h_0opt_e201354_retain(&t48); h3_r0 = t48; h_0opt_e201354_release(&t90); goto bb1;
-#line 2783 "main.c"
-}
-
-#line 155 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_not_a_value(HeroStr h0_said) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t6, t7; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}, t5, t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_ERR_PARSE(); t6 = h1_own1; h1_own1 = t1; hero_str_decref(t6); t2 = HERO_STR_LIT(hero_str_19375826); t3 = h0_said; t4 = hero_str_concat(t2, t3); t7 = h2_own2; h2_own2 = t4; hero_str_decref(t7); hero_str_incref(t1); hero_str_incref(t4); t5 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t4}}; t8 = h3_own3; h3_own3 = t5; h_0opt_e201354_release(&t8);
-#line 2789 "main.c"
-    h_0opt_e201354_retain(&t5);
-    hero_str_release_at(&h1_own1);
-    hero_str_release_at(&h2_own2);
-    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
-    return t5;
-}
-
-#line 160 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_named(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t, HeroStr h2_word) { HeroArrayHeader * h3_given = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h5_f1 = {0}, h7_ret0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h19_own19 = {0}, h20_own20 = {0}, h22_own22 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, t8, t20, t22, t23, t27, t29, t30, t36, t37, t41, t43, t44, t55, t62, t63, t72, t73, t74, t77, t78, t80, t81, t85, t87, t88; HERO_NODEBUG h_0opt_a8ea2 h6_f2 = {0}, h24_own24 = {0}, t48, t49, t53, t83, t84; HERO_NODEBUG h_lextoken_Token h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h17_own17 = {0}, h21_own21 = {0}, h23_own23 = {0}, t2, t3, t9, t12, t13, t15, t33, t47, t64, t65, t66, t69, t70, t75, t79, t82; HERO_NODEBUG HeroArrayHeader *h11_own11 = {0}, *t10, *t17, *t59, *t67, *t68; HERO_NODEBUG h_syntree_Expr h14_own14 = {0}, h18_own18 = {0}, h26_own26 = {0}, t6, t18, t60, t71, t76, t86; HERO_NODEBUG h_syncursor_Cursor t1, t11; HERO_NODEBUG bool t4, t14, t26, t34, t40, t52; HERO_NODEBUG HeroStr t5, t16, t58; HERO_NODEBUG int64_t t7, t19, t24, t25, t31, t38, t39, t45, t50, t51, t61; HERO_NODEBUG HeroFailure t28, t42, t54; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t64 = h8_own8; h8_own8 = t2; h_lextoken_0Token_release(&t64); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_lparen}; t65 = h9_own9; h9_own9 = t3; h_lextoken_0Token_release(&t65); t4 = !h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb1:
-#line 163
-    t9 = h_syncursor_bump(&(*ph0_c)); t66 = h10_own10; h10_own10 = t9; h_lextoken_0Token_release(&t66);
-#line 167
-    t10 = hero_array_new(&hero_desc_int, 1); t67 = h11_own11; h11_own11 = t10; hero_array_decref(t67); t68 = h3_given; hero_array_incref(t10); h3_given = t10; hero_array_decref(t68);
-#line 169
-    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t69 = h12_own12; h12_own12 = t12; h_lextoken_0Token_release(&t69); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_rparen}; t70 = h13_own13; h13_own13 = t13; h_lextoken_0Token_release(&t70); t14 = h_lextoken_0Token_eq(&t12, &t13); if (t14) goto bb5; else goto bb6; bb2:
-#line 162
-    t5 = h2_word; hero_str_incref(t5); t6 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_name, .as.c_name = {.f_value = t5}}; t71 = h14_own14; h14_own14 = t6; h_syntree_0Expr_release(&t71); t7 = h_syntree_added_expr(&(*ph1_t), t6); t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t7}; t72 = h15_own15; h15_own15 = t8; h_0opt_e201354_release(&t72); h7_ret0 = t8; goto bb16; bb3: goto bb1; bb4:
-#line 178
-    t22 = h_synexpr_parsed(&(*ph0_c), &(*ph1_t)); t73 = h16_own16; h16_own16 = t22; h_0opt_e201354_release(&t73); t74 = h4_f0; h_0opt_e201354_retain(&t22); h4_f0 = t22; h_0opt_e201354_release(&t74); t23 = h4_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb7; else goto bb8; bb5:
-#line 170
-    t15 = h_syncursor_bump(&(*ph0_c)); t75 = h17_own17; h17_own17 = t15; h_lextoken_0Token_release(&t75);
-    t16 = h2_word; t17 = h3_given; hero_str_incref(t16); hero_array_incref(t17); t18 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_call, .as.c_call = {.f_name = t16, .f_args = t17}}; t76 = h18_own18; h18_own18 = t18; h_syntree_0Expr_release(&t76); t19 = h_syntree_added_expr(&(*ph1_t), t18); t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t19}; t77 = h19_own19; h19_own19 = t20; h_0opt_e201354_release(&t77); h7_ret0 = t20; goto bb16; bb6: goto bb4; bb7:
-#line 178
-    t30 = h4_f0; t31 = t30.as.ok; hero_array_push_owned(&h3_given, &t31); goto bb9; bb8: t27 = h4_f0; t28 = t27.as.err; hero_failure_retain(&t28); t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28}; t78 = h20_own20; h20_own20 = t29; h_0opt_e201354_release(&t78); h7_ret0 = t29; goto bb16; bb9:
-#line 180
-    t33 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_comma}; t79 = h21_own21; h21_own21 = t33; h_lextoken_0Token_release(&t79); t34 = h_syncursor_accepted(&(*ph0_c), t33); if (t34) goto bb10; else goto bb11; bb10:
-    t36 = h_synexpr_parsed(&(*ph0_c), &(*ph1_t)); t80 = h22_own22; h22_own22 = t36; h_0opt_e201354_release(&t80); t81 = h5_f1; h_0opt_e201354_retain(&t36); h5_f1 = t36; h_0opt_e201354_release(&t81); t37 = h5_f1; t38 = t37.tag; t39 = INT64_C(0); t40 = t38 == t39; if (t40) goto bb12; else goto bb13; bb11:
-#line 183
-    t47 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_rparen}; t82 = h23_own23; h23_own23 = t47; h_lextoken_0Token_release(&t82); t48 = h_syncursor_expected(&(*ph0_c), t47); t83 = h24_own24; h24_own24 = t48; h_0opt_a8ea2_release(&t83); t84 = h6_f2; h_0opt_a8ea2_retain(&t48); h6_f2 = t48; h_0opt_a8ea2_release(&t84); t49 = h6_f2; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb14; else goto bb15; bb12:
-#line 181
-    t44 = h5_f1; t45 = t44.as.ok; hero_array_push_owned(&h3_given, &t45); goto bb9; bb13: t41 = h5_f1; t42 = t41.as.err; hero_failure_retain(&t42); t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t42}; t85 = h25_own25; h25_own25 = t43; h_0opt_e201354_release(&t85); h7_ret0 = t43; goto bb16; bb14:
-#line 184
-    t58 = h2_word; t59 = h3_given; hero_str_incref(t58); hero_array_incref(t59); t60 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_call, .as.c_call = {.f_name = t58, .f_args = t59}}; t86 = h26_own26; h26_own26 = t60; h_syntree_0Expr_release(&t86); t61 = h_syntree_added_expr(&(*ph1_t), t60); t62 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t61}; t87 = h27_own27; h27_own27 = t62; h_0opt_e201354_release(&t87); h7_ret0 = t62; goto bb16; bb15:
-#line 183
-    t53 = h6_f2; t54 = t53.as.err; hero_failure_retain(&t54); t55 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t54}; t88 = h28_own28; h28_own28 = t55; h_0opt_e201354_release(&t88); h7_ret0 = t55; goto bb16; bb16:
-#line 2826 "main.c"
-    t63 = h7_ret0;
-    h_0opt_e201354_retain(&t63);
-    hero_array_release_at(&h3_given);
-    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
-    h_0opt_e201354_release(hero_slot_escape(&h5_f1));
-    h_0opt_a8ea2_release(hero_slot_escape(&h6_f2));
-    h_lextoken_0Token_release(hero_slot_escape(&h8_own8));
-    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
-    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
-    hero_array_release_at(&h11_own11);
-    h_lextoken_0Token_release(hero_slot_escape(&h12_own12));
-    h_lextoken_0Token_release(hero_slot_escape(&h13_own13));
-    h_syntree_0Expr_release(hero_slot_escape(&h14_own14));
-    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
-    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
-    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
-    h_syntree_0Expr_release(hero_slot_escape(&h18_own18));
-    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
-    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
-    h_lextoken_0Token_release(hero_slot_escape(&h21_own21));
-    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
-    h_lextoken_0Token_release(hero_slot_escape(&h23_own23));
-    h_0opt_a8ea2_release(hero_slot_escape(&h24_own24));
-    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
-    h_syntree_0Expr_release(hero_slot_escape(&h26_own26));
-    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
-    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
-    return t63;
-}
-
-#line 186 "examples/interpreter/syn/expr.hero"
-h_0opt_e201354 h_synexpr_grouped(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_ret0 = {0}, h6_own6 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t1, t2, t6, t8, t9, t19, t23, t24, t25, t26, t30, t31, t32; int64_t h3_inside; HERO_NODEBUG h_0opt_a8ea2 h4_f1 = {0}, h8_own8 = {0}, t12, t13, t17, t28, t29; HERO_NODEBUG h_lextoken_Token h7_own7 = {0}, t11, t27; HERO_NODEBUG int64_t t3, t4, t10, t14, t15, t22; HERO_NODEBUG bool t5, t16; HERO_NODEBUG HeroFailure t7, t18; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_synexpr_parsed(&(*ph0_c), &(*ph1_t)); t25 = h6_own6; h6_own6 = t1; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t26); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_inside = t10;
-    t11 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_rparen}; t27 = h7_own7; h7_own7 = t11; h_lextoken_0Token_release(&t27); t12 = h_syncursor_expected(&(*ph0_c), t11); t28 = h8_own8; h8_own8 = t12; h_0opt_a8ea2_release(&t28); t29 = h4_f1; h_0opt_a8ea2_retain(&t12); h4_f1 = t12; h_0opt_a8ea2_release(&t29); t13 = h4_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb3; else goto bb4; bb2:
-#line 187
-    t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t30 = h9_own9; h9_own9 = t8; h_0opt_e201354_release(&t30); h5_ret0 = t8; goto bb5; bb3:
-#line 189
-    t22 = h3_inside; t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t22}; t31 = h10_own10; h10_own10 = t23; h_0opt_e201354_release(&t31); h5_ret0 = t23; goto bb5; bb4:
-#line 188
-    t17 = h4_f1; t18 = t17.as.err; hero_failure_retain(&t18); t19 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t18}; t32 = h11_own11; h11_own11 = t19; h_0opt_e201354_release(&t32); h5_ret0 = t19; goto bb5; bb5:
-#line 2867 "main.c"
-    t24 = h5_ret0;
-    h_0opt_e201354_retain(&t24);
-    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
-    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
-    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
-    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
-    h_0opt_a8ea2_release(hero_slot_escape(&h8_own8));
-    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
-    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
-    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
-    return t24;
-}
-
-#line 191 "examples/interpreter/syn/expr.hero"
-bool h_synexpr_is_scaling(h_lextoken_Token h0_t) { HERO_NODEBUG bool h1_b0, h2_b1, t3, t6, t7, t10, t11; HERO_NODEBUG h_lextoken_Token h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t4, t5, t8, t9, t12, t13, t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t; t2 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_star}; t12 = h3_own3; h3_own3 = t2; h_lextoken_0Token_release(&t12); t3 = h_lextoken_0Token_eq(&t1, &t2); h2_b1 = t3; if (t3) goto bb2; else goto bb1; bb1: t4 = h0_t; t5 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_slash}; t13 = h4_own4; h4_own4 = t5; h_lextoken_0Token_release(&t13); t6 = h_lextoken_0Token_eq(&t4, &t5); h2_b1 = t6; goto bb2; bb2: t7 = h2_b1; h1_b0 = t7; if (t7) goto bb4; else goto bb3; bb3: t8 = h0_t; t9 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_percent}; t14 = h5_own5; h5_own5 = t9; h_lextoken_0Token_release(&t14); t10 = h_lextoken_0Token_eq(&t8, &t9); h1_b0 = t10; goto bb4; bb4: t11 = h1_b0;
-#line 2884 "main.c"
-    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
-    h_lextoken_0Token_release(hero_slot_escape(&h4_own4));
-    h_lextoken_0Token_release(hero_slot_escape(&h5_own5));
-    return t11;
-}
-
-#line 197 "examples/interpreter/syn/expr.hero"
-h_0opt_3ce1b94c h_synexpr_comparison_of(h_lextoken_Token h0_t) { HERO_NODEBUG h_0opt_3ce1b94c h1_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, t5, t10, t15, t20, t25, t30, t38, t39, t42, t44, t46, t48, t50, t54, t55; HERO_NODEBUG h_lextoken_Token h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, t1, t2, t6, t7, t11, t12, t16, t17, t21, t22, t26, t27, t33, t40, t41, t43, t45, t47, t49; HERO_NODEBUG HeroStr h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t31, t32, t34, t35, t36, t37, t51, t52, t53; HERO_NODEBUG bool t3, t8, t13, t18, t23, t28; HERO_NODEBUG h_syntree_Op t4, t9, t14, t19, t24, t29; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t; t2 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_less}; t40 = h2_own2; h2_own2 = t2; h_lextoken_0Token_release(&t40); t3 = h_lextoken_0Token_eq(&t1, &t2); if (t3) goto bb2; else goto bb3; bb1:
-#line 201
-    t6 = h0_t; t7 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_less_equal}; t41 = h3_own3; h3_own3 = t7; h_lextoken_0Token_release(&t41); t8 = h_lextoken_0Token_eq(&t6, &t7); if (t8) goto bb5; else goto bb6; bb2:
-#line 199
-    t4 = (h_syntree_Op){.tag = h_syntree_0Op_tag_less}; t5 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t4}; t42 = h4_own4; h4_own4 = t5; h_0opt_3ce1b94c_release(&t42); h1_ret0 = t5; goto bb19; bb3: goto bb1; bb4:
-#line 204
-    t11 = h0_t; t12 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_greater}; t43 = h5_own5; h5_own5 = t12; h_lextoken_0Token_release(&t43); t13 = h_lextoken_0Token_eq(&t11, &t12); if (t13) goto bb8; else goto bb9; bb5:
-#line 202
-    t9 = (h_syntree_Op){.tag = h_syntree_0Op_tag_less_equal}; t10 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t9}; t44 = h6_own6; h6_own6 = t10; h_0opt_3ce1b94c_release(&t44); h1_ret0 = t10; goto bb19; bb6: goto bb4; bb7:
-#line 207
-    t16 = h0_t; t17 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_greater_equal}; t45 = h7_own7; h7_own7 = t17; h_lextoken_0Token_release(&t45); t18 = h_lextoken_0Token_eq(&t16, &t17); if (t18) goto bb11; else goto bb12; bb8:
-#line 205
-    t14 = (h_syntree_Op){.tag = h_syntree_0Op_tag_greater}; t15 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t14}; t46 = h8_own8; h8_own8 = t15; h_0opt_3ce1b94c_release(&t46); h1_ret0 = t15; goto bb19; bb9: goto bb7; bb10:
-#line 210
-    t21 = h0_t; t22 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_equal_equal}; t47 = h9_own9; h9_own9 = t22; h_lextoken_0Token_release(&t47); t23 = h_lextoken_0Token_eq(&t21, &t22); if (t23) goto bb14; else goto bb15; bb11:
-#line 208
-    t19 = (h_syntree_Op){.tag = h_syntree_0Op_tag_greater_equal}; t20 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t19}; t48 = h10_own10; h10_own10 = t20; h_0opt_3ce1b94c_release(&t48); h1_ret0 = t20; goto bb19; bb12: goto bb10; bb13:
-#line 213
-    t26 = h0_t; t27 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bang_equal}; t49 = h11_own11; h11_own11 = t27; h_lextoken_0Token_release(&t49); t28 = h_lextoken_0Token_eq(&t26, &t27); if (t28) goto bb17; else goto bb18; bb14:
-#line 211
-    t24 = (h_syntree_Op){.tag = h_syntree_0Op_tag_equal}; t25 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t24}; t50 = h12_own12; h12_own12 = t25; h_0opt_3ce1b94c_release(&t50); h1_ret0 = t25; goto bb19; bb15: goto bb13; bb16:
-#line 216
-    t31 = HERO_STR_LIT(hero_str_54f2e6e0); t32 = HERO_STR_LIT(hero_str_60); t33 = h0_t; t34 = h_lextoken_shown(t33); t51 = h13_own13; h13_own13 = t34; hero_str_decref(t51); t35 = hero_str_concat(t32, t34); t52 = h14_own14; h14_own14 = t35; hero_str_decref(t52); t36 = HERO_STR_LIT(hero_str_659f44c5); t37 = hero_str_concat(t35, t36); t53 = h15_own15; h15_own15 = t37; hero_str_decref(t53); hero_str_incref(t31); hero_str_incref(t37); t38 = (h_0opt_3ce1b94c){.tag = INT64_C(1), .as.err = {.code = t31, .msg = t37}}; t54 = h16_own16; h16_own16 = t38; h_0opt_3ce1b94c_release(&t54); h1_ret0 = t38; goto bb19; bb17:
-#line 214
-    t29 = (h_syntree_Op){.tag = h_syntree_0Op_tag_unequal}; t30 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t29}; t55 = h17_own17; h17_own17 = t30; h_0opt_3ce1b94c_release(&t55); h1_ret0 = t30; goto bb19; bb18: goto bb16; bb19:
-#line 2918 "main.c"
-    t39 = h1_ret0;
-    h_0opt_3ce1b94c_retain(&t39);
-    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
-    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h4_own4));
-    h_lextoken_0Token_release(hero_slot_escape(&h5_own5));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h6_own6));
-    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h8_own8));
-    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h10_own10));
-    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h12_own12));
-    hero_str_release_at(&h13_own13);
-    hero_str_release_at(&h14_own14);
-    hero_str_release_at(&h15_own15);
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h16_own16));
-    h_0opt_3ce1b94c_release(hero_slot_escape(&h17_own17));
-    return t39;
-}
-
 #line 34 "examples/interpreter/run/eval.hero"
 HeroStr h_runeval_ERR_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 2943 "main.c"
+#line 2135 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -2947,7 +2139,7 @@ HeroStr h_runeval_ERR_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
 #line 37 "examples/interpreter/run/eval.hero"
 HeroStr h_runeval_ERR_ARITY(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_36145e4a);
-#line 2951 "main.c"
+#line 2143 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -2955,7 +2147,7 @@ HeroStr h_runeval_ERR_ARITY(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; go
 #line 40 "examples/interpreter/run/eval.hero"
 HeroStr h_runeval_ERR_DEPTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1526a387);
-#line 2959 "main.c"
+#line 2151 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -2963,13 +2155,13 @@ HeroStr h_runeval_ERR_DEPTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; go
 #line 72 "examples/interpreter/run/eval.hero"
 int64_t h_runeval_DEPTH(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(38); return t1;
-#line 2967 "main.c"
+#line 2159 "main.c"
 }
 
 #line 76 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_run(h_syntree_Tree h0_nodes) { HERO_NODEBUG h_runvalue_Frame h1_own1 = {0}, t3, t5; HERO_NODEBUG h_0opt_1be8f195 h2_own2 = {0}, t4, t6; HERO_NODEBUG h_syntree_Tree t1; HERO_NODEBUG HeroArrayHeader *t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_nodes; t2 = h0_nodes.f_top; t3 = h_runvalue_fresh(); t5 = h1_own1; h1_own1 = t3; h_runvalue_0Frame_release(&t5); t4 = h_runeval_body(t1, t2, t3); t6 = h2_own2; h2_own2 = t4; h_0opt_1be8f195_release(&t6);
-#line 2973 "main.c"
+#line 2165 "main.c"
     h_0opt_1be8f195_retain(&t4);
     h_runvalue_0Frame_release(hero_slot_escape(&h1_own1));
     h_0opt_1be8f195_release(hero_slot_escape(&h2_own2));
@@ -2992,7 +2184,7 @@ h_0opt_1be8f195 h_runeval_body(h_syntree_Tree h0_nodes, HeroArrayHeader * h1_ids
     t12 = h3_walking.f_stopping; h7_b0 = t12; goto bb7; bb7: t13 = h7_b0; if (t13) goto bb8; else goto bb9; bb8:
     t14 = h3_walking; h_runvalue_0Frame_retain(&t14); t15 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t14}; t40 = h12_own12; h12_own12 = t15; h_0opt_1be8f195_release(&t40); h9_ret0 = t15; goto bb12; bb9: goto bb5; bb10:
     t27 = h8_f0; t28 = t27.as.ok; t41 = h3_walking; h_runvalue_0Frame_retain(&t28); h3_walking = t28; h_runvalue_0Frame_release(&t41); goto bb3; bb11: t24 = h8_f0; t25 = t24.as.err; hero_failure_retain(&t25); t26 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t25}; t42 = h13_own13; h13_own13 = t26; h_0opt_1be8f195_release(&t42); h9_ret0 = t26; goto bb12; bb12:
-#line 2996 "main.c"
+#line 2188 "main.c"
     t34 = h9_ret0;
     h_0opt_1be8f195_retain(&t34);
     h_runvalue_0Frame_release(hero_slot_escape(&h3_walking));
@@ -3008,7 +2200,7 @@ h_0opt_1be8f195 h_runeval_body(h_syntree_Tree h0_nodes, HeroArrayHeader * h1_ids
 #line 91 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_one(h_syntree_Tree h0_nodes, int64_t h1_id, h_runvalue_Frame h2_f) { HERO_NODEBUG h_syntree_Stmt h3_s0 = {0}, t3, t4, t6, t13, t19, t27, t34, t40, t46, t53, t60; HERO_NODEBUG h_0opt_1be8f195 h4_r0 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, h21_own21 = {0}, t12, t18, t26, t33, t39, t45, t52, t58, t59, t62, t63, t64, t65, t67, t68, t70, t71, t72, t73, t74, t75, t78, t79, t80, t81; h_syntree_0Stmt_c_bind h5_b = {0}; h_syntree_0Stmt_c_say h6_s; h_syntree_0Stmt_c_when h7_w = {0}; h_syntree_0Stmt_c_while_loop h8_w = {0}; h_syntree_0Stmt_c_give h9_g; h_syntree_0Stmt_c_stop h10_s; h_syntree_0Stmt_c_define h11_d = {0}; h_syntree_0Stmt_c_evaluate h12_e; HERO_NODEBUG h_runvalue_Frame h19_own19 = {0}, t11, t17, t25, t32, t38, t44, t48, t51, t57, t77; HERO_NODEBUG HeroArrayHeader *t1, *t23, *t24, *t31; HERO_NODEBUG int64_t t2, t5, t10, t16, t22, t30, t37, t43, t50, t56; HERO_NODEBUG h_syntree_0Stmt_c_bind t7, t61; HERO_NODEBUG h_syntree_Tree t8, t15, t21, t29, t36, t42, t55; HERO_NODEBUG HeroStr t9, t49; HERO_NODEBUG h_syntree_0Stmt_c_say t14; HERO_NODEBUG h_syntree_0Stmt_c_when t20, t66; HERO_NODEBUG h_syntree_0Stmt_c_while_loop t28, t69; HERO_NODEBUG h_syntree_0Stmt_c_give t35; HERO_NODEBUG h_syntree_0Stmt_c_stop t41; HERO_NODEBUG h_syntree_0Stmt_c_define t47, t76; HERO_NODEBUG h_syntree_0Stmt_c_evaluate t54; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_nodes.f_stmts; t2 = h1_id; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "run/eval.hero", "eval.one", 92, 18) : (void)0), (void)(t1->elem->size != sizeof(h_syntree_Stmt) ? hero_unreachable() : (void)0), ((h_syntree_Stmt const *)(const void *)(t1 + 1))[t2]); t60 = h3_s0; h_syntree_0Stmt_retain(&t3); h3_s0 = t3; h_syntree_0Stmt_release(&t60); t4 = h3_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; case 6: goto bb8; case 7: goto bb9; default: hero_unreachable(); } bb1: t59 = h4_r0;
-#line 3012 "main.c"
+#line 2204 "main.c"
     h_0opt_1be8f195_retain(&t59);
     h_syntree_0Stmt_release(hero_slot_escape(&h3_s0));
     h_0opt_1be8f195_release(hero_slot_escape(&h4_r0));
@@ -3059,7 +2251,7 @@ bb2:
     t53 = h3_s0; t54 = t53.as.c_evaluate; h12_e = t54; t55 = h0_nodes; t56 = h12_e.f_value; t57 = h2_f; t58 = h_runeval_spent(t55, t56, t57); t80 = h21_own21; h21_own21 = t58; h_0opt_1be8f195_release(&t80);
 #line 92
     t81 = h4_r0; h_0opt_1be8f195_retain(&t58); h4_r0 = t58; h_0opt_1be8f195_release(&t81); goto bb1;
-#line 3063 "main.c"
+#line 2255 "main.c"
 }
 
 #line 102 "examples/interpreter/run/eval.hero"
@@ -3070,7 +2262,7 @@ h_0opt_1be8f195 h_runeval_bound(h_syntree_Tree h0_nodes, HeroStr h1_name, int64_
     t18 = h6_home; h_runvalue_0Frame_retain(&t18); t19 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t18}; t25 = h9_own9; h9_own9 = t19; h_0opt_1be8f195_release(&t25); h7_ret0 = t19; goto bb3; bb2:
 #line 103
     t10 = h4_f0; t11 = t10.as.err; hero_failure_retain(&t11); t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11}; t26 = h10_own10; h10_own10 = t12; h_0opt_1be8f195_release(&t26); h7_ret0 = t12; goto bb3; bb3:
-#line 3074 "main.c"
+#line 2266 "main.c"
     t20 = h7_ret0;
     h_0opt_1be8f195_retain(&t20);
     h_0opt_4d124e2a_release(hero_slot_escape(&h4_f0));
@@ -3090,7 +2282,7 @@ h_0opt_1be8f195 h_runeval_said(h_syntree_Tree h0_nodes, int64_t h1_at, h_runvalu
     t20 = h5_home; h_runvalue_0Frame_retain(&t20); t21 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t20}; t30 = h10_own10; h10_own10 = t21; h_0opt_1be8f195_release(&t30); h6_ret0 = t21; goto bb3; bb2:
 #line 109
     t10 = h3_f0; t11 = t10.as.err; hero_failure_retain(&t11); t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11}; t31 = h11_own11; h11_own11 = t12; h_0opt_1be8f195_release(&t31); h6_ret0 = t12; goto bb3; bb3:
-#line 3094 "main.c"
+#line 2286 "main.c"
     t22 = h6_ret0;
     h_0opt_1be8f195_retain(&t22);
     h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
@@ -3116,7 +2308,7 @@ h_0opt_1be8f195 h_runeval_chosen(h_syntree_Tree h0_nodes, int64_t h1_at, HeroArr
 #line 117
     t24 = h7_f1; t25 = t24.as.ok; if (t25) goto bb6; else goto bb7; bb5: t21 = h7_f1; t22 = t21.as.err; hero_failure_retain(&t22); t23 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t22}; t42 = h13_own13; h13_own13 = t23; h_0opt_1be8f195_release(&t42); h8_ret0 = t23; goto bb8; bb6:
     t26 = h0_nodes; t27 = h2_then; t28 = h6_step.f_frame; t29 = h_runeval_body(t26, t27, t28); t43 = h14_own14; h14_own14 = t29; h_0opt_1be8f195_release(&t43); h8_ret0 = t29; goto bb8; bb7: goto bb3; bb8:
-#line 3120 "main.c"
+#line 2312 "main.c"
     t34 = h8_ret0;
     h_0opt_1be8f195_retain(&t34);
     h_0opt_4d124e2a_release(hero_slot_escape(&h5_f0));
@@ -3159,7 +2351,7 @@ h_0opt_1be8f195 h_runeval_looped(h_syntree_Tree h0_nodes, int64_t h1_at, HeroArr
 #line 133
     t46 = h4_walking.f_stopping; h9_b0 = t46; goto bb15; bb15: t47 = h9_b0; if (t47) goto bb16; else goto bb17; bb16:
     t48 = h4_walking; h_runvalue_0Frame_retain(&t48); t49 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t48}; t68 = h19_own19; h19_own19 = t49; h_0opt_1be8f195_release(&t68); h10_ret0 = t49; goto bb18; bb17: goto bb13; bb18:
-#line 3163 "main.c"
+#line 2355 "main.c"
     t52 = h10_ret0;
     h_0opt_1be8f195_retain(&t52);
     h_runvalue_0Frame_release(hero_slot_escape(&h4_walking));
@@ -3188,7 +2380,7 @@ h_0opt_1be8f195 h_runeval_given_back(h_syntree_Tree h0_nodes, int64_t h1_at, h_r
     t18 = h5_home; h_runvalue_0Frame_retain(&t18); t19 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t18}; t26 = h8_own8; h8_own8 = t19; h_0opt_1be8f195_release(&t26); h6_ret0 = t19; goto bb3; bb2:
 #line 139
     t10 = h3_f0; t11 = t10.as.err; hero_failure_retain(&t11); t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11}; t27 = h9_own9; h9_own9 = t12; h_0opt_1be8f195_release(&t27); h6_ret0 = t12; goto bb3; bb3:
-#line 3192 "main.c"
+#line 2384 "main.c"
     t20 = h6_ret0;
     h_0opt_1be8f195_retain(&t20);
     h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
@@ -3213,7 +2405,7 @@ h_0opt_1be8f195 h_runeval_stopped(h_syntree_Tree h0_nodes, int64_t h1_at, h_runv
     t28 = h5_home; h_runvalue_0Frame_retain(&t28); t29 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t28}; t38 = h11_own11; h11_own11 = t29; h_0opt_1be8f195_release(&t38); h7_ret0 = t29; goto bb5; bb4:
 #line 149
     t23 = h6_f1; t24 = t23.as.err; hero_failure_retain(&t24); t25 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t24}; t39 = h12_own12; h12_own12 = t25; h_0opt_1be8f195_release(&t39); h7_ret0 = t25; goto bb5; bb5:
-#line 3217 "main.c"
+#line 2409 "main.c"
     t30 = h7_ret0;
     h_0opt_1be8f195_retain(&t30);
     h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
@@ -3234,7 +2426,7 @@ h_0opt_1be8f195 h_runeval_spent(h_syntree_Tree h0_nodes, int64_t h1_at, h_runval
     t15 = h4_step.f_frame; h_runvalue_0Frame_retain(&t15); t16 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t15}; t21 = h7_own7; h7_own7 = t16; h_0opt_1be8f195_release(&t21); h5_ret0 = t16; goto bb3; bb2:
 #line 156
     t10 = h3_f0; t11 = t10.as.err; hero_failure_retain(&t11); t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11}; t22 = h8_own8; h8_own8 = t12; h_0opt_1be8f195_release(&t22); h5_ret0 = t12; goto bb3; bb3:
-#line 3238 "main.c"
+#line 2430 "main.c"
     t17 = h5_ret0;
     h_0opt_1be8f195_retain(&t17);
     h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
@@ -3250,7 +2442,7 @@ h_runvalue_Frame h_runeval_with_function(h_runvalue_Frame h0_f, HeroStr h1_name,
     t1 = h0_f; t5 = h3_home; h_runvalue_0Frame_retain(&t1); h3_home = t1; h_runvalue_0Frame_release(&t5);
     t2 = h1_name; t3 = h2_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"run/eval.hero", "eval.with_function", 161, 5}; hero_map_set_at(&(h3_home.f_fns), &t2, &t3, &hero_here); }
     t4 = h3_home;
-#line 3254 "main.c"
+#line 2446 "main.c"
     h_runvalue_0Frame_retain(&t4);
     h_runvalue_0Frame_release(hero_slot_escape(&h3_home));
     return t4;
@@ -3274,7 +2466,7 @@ h_0opt_1be8f195 h_runeval_called(h_runvalue_Request h0_r) { h_0opt_e201354 h1_wh
     hero_str_incref(t19); hero_str_incref(t29); t30 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = {.code = t19, .msg = t29}}; t70 = h19_own19; h19_own19 = t30; h_0opt_1be8f195_release(&t70); h7_ret0 = t30; goto bb13; bb6: goto bb4; bb7:
 #line 179
     t39 = h3_f1; t40 = t39.as.ok; t41 = ((void)((t31 == NULL || t40 < 0 || t40 >= t31->len) ? hero_panic_index_at(t31, t40, "run/eval.hero", "eval.called", 179, 18) : (void)0), (void)(t31->elem->size != sizeof(h_syntree_Stmt) ? hero_unreachable() : (void)0), ((h_syntree_Stmt const *)(const void *)(t31 + 1))[t40]); t71 = h4_s0; h_syntree_0Stmt_retain(&t41); h4_s0 = t41; h_syntree_0Stmt_release(&t71); t42 = h4_s0; t43 = t42.tag; switch (t43) { case 0: goto bb11; case 1: goto bb11; case 2: goto bb11; case 3: goto bb11; case 4: goto bb12; case 5: goto bb12; case 6: goto bb10; case 7: goto bb12; default: hero_unreachable(); } bb8: t37 = h3_f1; t38 = t37.as.err;
-#line 3278 "main.c"
+#line 2470 "main.c"
     hero_panic_must_at(t38, "run/eval.hero", "eval.called", 179, 32);
     hero_unreachable();
 bb9:
@@ -3291,7 +2483,7 @@ bb9:
     t52 = h0_r; t53 = h_runeval_not_a_function(t52); t77 = h22_own22; h22_own22 = t53; h_0opt_1be8f195_release(&t77);
 #line 179
     t78 = h5_r0; h_0opt_1be8f195_retain(&t53); h5_r0 = t53; h_0opt_1be8f195_release(&t78); goto bb9; bb13:
-#line 3295 "main.c"
+#line 2487 "main.c"
     t55 = h7_ret0;
     h_0opt_1be8f195_retain(&t55);
     h_0opt_e201354_release(hero_slot_escape(&h1_where));
@@ -3321,7 +2513,7 @@ bb9:
 #line 184 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_not_a_function(h_runvalue_Request h0_r) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t1, t2, t3, t4, t5, t6, t8, t9, t10; HERO_NODEBUG h_0opt_1be8f195 h4_own4 = {0}, t7, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_runeval_ERR_NAME(); t8 = h1_own1; h1_own1 = t1; hero_str_decref(t8); t2 = HERO_STR_LIT(hero_str_60); t3 = h0_r.f_name; t4 = hero_str_concat(t2, t3); t9 = h2_own2; h2_own2 = t4; hero_str_decref(t9); t5 = HERO_STR_LIT(hero_str_74a60873); t6 = hero_str_concat(t4, t5); t10 = h3_own3; h3_own3 = t6; hero_str_decref(t10); hero_str_incref(t1); hero_str_incref(t6); t7 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t6}}; t11 = h4_own4; h4_own4 = t7; h_0opt_1be8f195_release(&t11);
-#line 3325 "main.c"
+#line 2517 "main.c"
     h_0opt_1be8f195_retain(&t7);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -3356,7 +2548,7 @@ h_0opt_1be8f195 h_runeval_entered(h_runvalue_Request h0_r, HeroArrayHeader * h1_
     t68 = h8_home; h_runvalue_0Frame_retain(&t68); t69 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t68}; t93 = h25_own25; h25_own25 = t69; h_0opt_1be8f195_release(&t93); h9_ret0 = t69; goto bb9; bb8:
 #line 205
     t60 = h6_f0; t61 = t60.as.err; hero_failure_retain(&t61); t62 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t61}; t94 = h26_own26; h26_own26 = t62; h_0opt_1be8f195_release(&t94); h9_ret0 = t62; goto bb9; bb9:
-#line 3360 "main.c"
+#line 2552 "main.c"
     t70 = h9_ret0;
     h_0opt_1be8f195_retain(&t70);
     h_runvalue_0Frame_release(hero_slot_escape(&h3_inner));
@@ -3387,7 +2579,7 @@ h_0opt_1be8f195 h_runeval_entered(h_runvalue_Request h0_r, HeroArrayHeader * h1_
 #line 35 "examples/interpreter/run/expr.hero"
 HeroStr h_runexpr_ERR_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 3391 "main.c"
+#line 2583 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3395,7 +2587,7 @@ HeroStr h_runexpr_ERR_NAME(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
 #line 38 "examples/interpreter/run/expr.hero"
 HeroStr h_runexpr_ERR_MATH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_dac94bd);
-#line 3399 "main.c"
+#line 2591 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3403,7 +2595,7 @@ HeroStr h_runexpr_ERR_MATH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
 #line 41 "examples/interpreter/run/expr.hero"
 HeroStr h_runexpr_ERR_TYPE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 3407 "main.c"
+#line 2599 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3411,19 +2603,19 @@ HeroStr h_runexpr_ERR_TYPE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; got
 #line 44 "examples/interpreter/run/expr.hero"
 int64_t h_runexpr_MAX(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(9223372036854775807); return t1;
-#line 3415 "main.c"
+#line 2607 "main.c"
 }
 
 #line 47 "examples/interpreter/run/expr.hero"
 int64_t h_runexpr_MIN(void) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); t2 = INT64_C(9223372036854775807); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow_at("run/expr.hero", "expr.MIN", 48, 5); t4 = INT64_C(1); if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow_at("run/expr.hero", "expr.MIN", 48, 5); return t5;
-#line 3421 "main.c"
+#line 2613 "main.c"
 }
 
 #line 57 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_evaluated(h_syntree_Tree h0_nodes, int64_t h1_id, h_runvalue_Frame h2_f, h_0fn_64cad294 h3_call) { HERO_NODEBUG h_syntree_Expr h4_s0 = {0}, t3, t4, t6, t13, t20, t27, t32, t39, t46, t55, t64; HERO_NODEBUG h_0opt_4d124e2a h5_r0 = {0}, h16_own16 = {0}, h19_own19 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, t12, t19, t26, t31, t38, t45, t54, t62, t63, t67, t68, t72, t73, t76, t77, t79, t80, t81, t82, t83, t84, t85, t86, t88, t89; h_syntree_0Expr_c_number h6_n; h_syntree_0Expr_c_text h7_x = {0}; h_syntree_0Expr_c_truth h8_b; h_syntree_0Expr_c_name h9_n = {0}; h_syntree_0Expr_c_negate h10_u; h_syntree_0Expr_c_invert h11_u; h_syntree_0Expr_c_binary h12_b; h_syntree_0Expr_c_call h13_c = {0}; HERO_NODEBUG h_runvalue_Value h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, t10, t17, t24, t65, t70, t74; HERO_NODEBUG h_runexpr_Answer h15_own15 = {0}, h18_own18 = {0}, h21_own21 = {0}, t11, t18, t25, t66, t71, t75; HERO_NODEBUG HeroArrayHeader *t1, *t59; HERO_NODEBUG int64_t t2, t5, t9, t35, t42, t50, t51; HERO_NODEBUG h_syntree_0Expr_c_number t7; HERO_NODEBUG h_runvalue_Frame t8, t15, t22, t29, t36, t43, t52, t60; HERO_NODEBUG h_syntree_0Expr_c_text t14, t69; HERO_NODEBUG HeroStr t16, t30, t58; HERO_NODEBUG h_syntree_0Expr_c_truth t21; HERO_NODEBUG bool t23; HERO_NODEBUG h_syntree_0Expr_c_name t28, t78; HERO_NODEBUG h_syntree_0Expr_c_negate t33; HERO_NODEBUG h_syntree_Tree t34, t41, t48, t57; HERO_NODEBUG h_0fn_64cad294 t37, t44, t53, t61; HERO_NODEBUG h_syntree_0Expr_c_invert t40; HERO_NODEBUG h_syntree_0Expr_c_binary t47; HERO_NODEBUG h_syntree_Op t49; HERO_NODEBUG h_syntree_0Expr_c_call t56, t87; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_nodes.f_exprs; t2 = h1_id; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "run/expr.hero", "expr.evaluated", 58, 18) : (void)0), (void)(t1->elem->size != sizeof(h_syntree_Expr) ? hero_unreachable() : (void)0), ((h_syntree_Expr const *)(const void *)(t1 + 1))[t2]); t64 = h4_s0; h_syntree_0Expr_retain(&t3); h4_s0 = t3; h_syntree_0Expr_release(&t64); t4 = h4_s0; t5 = t4.tag; switch (t5) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; case 6: goto bb8; case 7: goto bb9; default: hero_unreachable(); } bb1: t63 = h5_r0;
-#line 3427 "main.c"
+#line 2619 "main.c"
     h_0opt_4d124e2a_retain(&t63);
     h_syntree_0Expr_release(hero_slot_escape(&h4_s0));
     h_0opt_4d124e2a_release(hero_slot_escape(&h5_r0));
@@ -3478,7 +2670,7 @@ bb2:
     t55 = h4_s0; t56 = t55.as.c_call; t87 = h13_c; h_syntree_0Expr_c_call_retain(&t56); h13_c = t56; h_syntree_0Expr_c_call_release(&t87); t57 = h0_nodes; t58 = h13_c.f_name; t59 = h13_c.f_args; t60 = h2_f; t61 = h3_call; t62 = h_runexpr_applied(t57, t58, t59, t60, t61); t88 = h27_own27; h27_own27 = t62; h_0opt_4d124e2a_release(&t88);
 #line 58
     t89 = h5_r0; h_0opt_4d124e2a_retain(&t62); h5_r0 = t62; h_0opt_4d124e2a_release(&t89); goto bb1;
-#line 3482 "main.c"
+#line 2674 "main.c"
 }
 
 #line 68 "examples/interpreter/run/expr.hero"
@@ -3492,7 +2684,7 @@ h_0opt_4d124e2a h_runexpr_looked_up(h_runvalue_Frame h0_f, HeroStr h1_word) { h_
     t9 = h_runexpr_ERR_NAME(); t33 = h7_own7; h7_own7 = t9; hero_str_decref(t33); t10 = HERO_STR_LIT(hero_str_60); t11 = h1_word; t12 = hero_str_concat(t10, t11); t34 = h8_own8; h8_own8 = t12; hero_str_decref(t34); t13 = HERO_STR_LIT(hero_str_5ee985cf); t14 = hero_str_concat(t12, t13); t35 = h9_own9; h9_own9 = t14; hero_str_decref(t35); hero_str_incref(t9); hero_str_incref(t14); t15 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t14}}; t36 = h10_own10; h10_own10 = t15; h_0opt_4d124e2a_release(&t36); h5_ret0 = t15; goto bb6; bb3: goto bb1; bb4:
 #line 74
     t24 = h4_f1; t25 = t24.as.ok; h_runvalue_0Frame_retain(&t16); h_runvalue_0Value_retain(&t25); t26 = (h_runexpr_Answer){.f_frame = t16, .f_got = t25}; t37 = h11_own11; h11_own11 = t26; h_runexpr_0Answer_release(&t37); h_runexpr_0Answer_retain(&t26); t27 = (h_0opt_4d124e2a){.tag = INT64_C(0), .as.ok = t26}; t38 = h12_own12; h12_own12 = t27; h_0opt_4d124e2a_release(&t38); h5_ret0 = t27; goto bb6; bb5: t22 = h4_f1; t23 = t22.as.err;
-#line 3496 "main.c"
+#line 2688 "main.c"
     hero_panic_must_at(t23, "run/expr.hero", "expr.looked_up", 74, 37);
     hero_unreachable();
 bb6:
@@ -3526,7 +2718,7 @@ h_0opt_4d124e2a h_runexpr_negated(h_syntree_Tree h0_nodes, int64_t h1_id, h_runv
     t32 = h5_inner.f_frame; t33 = INT64_C(0); t34 = h7_n; if (__builtin_sub_overflow(t33, t34, &t35)) hero_panic_overflow_at("run/expr.hero", "expr.negated", 83, 58); t36 = (h_runvalue_Value){.tag = h_runvalue_0Value_tag_number, .as.c_number = {.f_v = t35}}; t47 = h13_own13; h13_own13 = t36; h_runvalue_0Value_release(&t47); h_runvalue_0Frame_retain(&t32); h_runvalue_0Value_retain(&t36); t37 = (h_runexpr_Answer){.f_frame = t32, .f_got = t36}; t48 = h14_own14; h14_own14 = t37; h_runexpr_0Answer_release(&t48); h_runexpr_0Answer_retain(&t37); t38 = (h_0opt_4d124e2a){.tag = INT64_C(0), .as.ok = t37}; t49 = h15_own15; h15_own15 = t38; h_0opt_4d124e2a_release(&t49); h8_ret0 = t38; goto bb8; bb6:
 #line 81
     t29 = h_runexpr_ERR_MATH(); t50 = h16_own16; h16_own16 = t29; hero_str_decref(t50); t30 = HERO_STR_LIT(hero_str_2ad7d3d8); hero_str_incref(t29); hero_str_incref(t30); t31 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t30}}; t51 = h17_own17; h17_own17 = t31; h_0opt_4d124e2a_release(&t51); h8_ret0 = t31; goto bb8; bb7: goto bb5; bb8:
-#line 3530 "main.c"
+#line 2722 "main.c"
     t39 = h8_ret0;
     h_0opt_4d124e2a_retain(&t39);
     h_0opt_4d124e2a_release(hero_slot_escape(&h4_f0));
@@ -3551,7 +2743,7 @@ h_0opt_4d124e2a h_runexpr_inverted(h_syntree_Tree h0_nodes, int64_t h1_id, h_run
 #line 86
     t10 = h4_f0; t11 = t10.as.err; hero_failure_retain(&t11); t12 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t11}; t37 = h10_own10; h10_own10 = t12; h_0opt_4d124e2a_release(&t37); h7_ret0 = t12; goto bb5; bb3:
     t25 = h6_f1; t26 = t25.as.ok; t27 = !t26; t28 = (h_runvalue_Value){.tag = h_runvalue_0Value_tag_truth, .as.c_truth = {.f_b = t27}}; t38 = h11_own11; h11_own11 = t28; h_runvalue_0Value_release(&t38); h_runvalue_0Frame_retain(&t15); h_runvalue_0Value_retain(&t28); t29 = (h_runexpr_Answer){.f_frame = t15, .f_got = t28}; t39 = h12_own12; h12_own12 = t29; h_runexpr_0Answer_release(&t39); h_runexpr_0Answer_retain(&t29); t30 = (h_0opt_4d124e2a){.tag = INT64_C(0), .as.ok = t29}; t40 = h13_own13; h13_own13 = t30; h_0opt_4d124e2a_release(&t40); h7_ret0 = t30; goto bb5; bb4: t22 = h6_f1; t23 = t22.as.err; hero_failure_retain(&t23); t24 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t23}; t41 = h14_own14; h14_own14 = t24; h_0opt_4d124e2a_release(&t41); h7_ret0 = t24; goto bb5; bb5:
-#line 3555 "main.c"
+#line 2747 "main.c"
     t31 = h7_ret0;
     h_0opt_4d124e2a_retain(&t31);
     h_0opt_4d124e2a_release(hero_slot_escape(&h4_f0));
@@ -3610,7 +2802,7 @@ h_0opt_4d124e2a h_runexpr_joined(h_syntree_Tree h0_nodes, h_syntree_Op h1_op, in
     t139 = h17_second.f_frame; t140 = h19_got; h_runvalue_0Frame_retain(&t139); h_runvalue_0Value_retain(&t140); t141 = (h_runexpr_Answer){.f_frame = t139, .f_got = t140}; t187 = h50_own50; h50_own50 = t141; h_runexpr_0Answer_release(&t187); h_runexpr_0Answer_retain(&t141); t142 = (h_0opt_4d124e2a){.tag = INT64_C(0), .as.ok = t141}; t188 = h51_own51; h51_own51 = t142; h_0opt_4d124e2a_release(&t188); h20_ret0 = t142; goto bb31; bb30:
 #line 108
     t134 = h18_f8; t135 = t134.as.err; hero_failure_retain(&t135); t136 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t135}; t189 = h52_own52; h52_own52 = t136; h_0opt_4d124e2a_release(&t189); h20_ret0 = t136; goto bb31; bb31:
-#line 3614 "main.c"
+#line 2806 "main.c"
     t143 = h20_ret0;
     h_0opt_4d124e2a_retain(&t143);
     h_0opt_4d124e2a_release(hero_slot_escape(&h6_f0));
@@ -3702,7 +2894,7 @@ h_0opt_6dcd62e6 h_runexpr_combined(h_syntree_Op h0_op, h_runvalue_Value h1_a, h_
     t227 = h1_a; t228 = h2_b; t229 = !h_runvalue_0Value_eq(&t227, &t228); t230 = (h_runvalue_Value){.tag = h_runvalue_0Value_tag_truth, .as.c_truth = {.f_b = t229}}; t325 = h74_own74; h74_own74 = t230; h_runvalue_0Value_release(&t325); h_runvalue_0Value_retain(&t230); t231 = (h_0opt_6dcd62e6){.tag = INT64_C(0), .as.ok = t230}; t326 = h75_own75; h75_own75 = t231; h_0opt_6dcd62e6_release(&t326); h23_ret0 = t231; goto bb65; bb60: goto bb58; bb61:
 #line 139
     t242 = h21_f17; t243 = t242.as.ok; t244 = h2_b; t245 = h_runvalue_number_of(t244); t327 = h76_own76; h76_own76 = t245; h_0opt_e201354_release(&t327); t328 = h22_f18; h_0opt_e201354_retain(&t245); h22_f18 = t245; h_0opt_e201354_release(&t328); t246 = h22_f18; t247 = t246.tag; t248 = INT64_C(0); t249 = t247 == t248; if (t249) goto bb63; else goto bb64; bb62: t239 = h21_f17; t240 = t239.as.err; hero_failure_retain(&t240); t241 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t240}; t329 = h77_own77; h77_own77 = t241; h_0opt_6dcd62e6_release(&t329); h23_ret0 = t241; goto bb65; bb63: t253 = h22_f18; t254 = t253.as.ok; t255 = h_runexpr_ordered(t232, t243, t254); t330 = h78_own78; h78_own78 = t255; h_0opt_6dcd62e6_release(&t330); h23_ret0 = t255; goto bb65; bb64: t250 = h22_f18; t251 = t250.as.err; hero_failure_retain(&t251); t252 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t251}; t331 = h79_own79; h79_own79 = t252; h_0opt_6dcd62e6_release(&t331); h23_ret0 = t252; goto bb65; bb65:
-#line 3706 "main.c"
+#line 2898 "main.c"
     t256 = h23_ret0;
     h_0opt_6dcd62e6_retain(&t256);
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -3802,7 +2994,7 @@ h_0opt_6dcd62e6 h_runexpr_ordered(h_syntree_Op h0_op, int64_t h1_a, int64_t h2_b
     t33 = h_runexpr_ERR_TYPE(); t48 = h10_own10; h10_own10 = t33; hero_str_decref(t48); t34 = HERO_STR_LIT(hero_str_60); t35 = h0_op; t36 = h_syntree_shown_op(t35); t49 = h11_own11; h11_own11 = t36; hero_str_decref(t49); t37 = hero_str_concat(t34, t36); t50 = h12_own12; h12_own12 = t37; hero_str_decref(t50); t38 = HERO_STR_LIT(hero_str_546064ab); t39 = hero_str_concat(t37, t38); t51 = h13_own13; h13_own13 = t39; hero_str_decref(t51); hero_str_incref(t33); hero_str_incref(t39); t40 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t39}}; t52 = h14_own14; h14_own14 = t40; h_0opt_6dcd62e6_release(&t52); h3_ret0 = t40; goto bb13; bb11:
 #line 152
     t28 = h1_a; t29 = h2_b; t30 = t28 >= t29; t31 = (h_runvalue_Value){.tag = h_runvalue_0Value_tag_truth, .as.c_truth = {.f_b = t30}}; t53 = h15_own15; h15_own15 = t31; h_runvalue_0Value_release(&t53); h_runvalue_0Value_retain(&t31); t32 = (h_0opt_6dcd62e6){.tag = INT64_C(0), .as.ok = t31}; t54 = h16_own16; h16_own16 = t32; h_0opt_6dcd62e6_release(&t54); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 3806 "main.c"
+#line 2998 "main.c"
     t41 = h3_ret0;
     h_0opt_6dcd62e6_retain(&t41);
     h_runvalue_0Value_release(hero_slot_escape(&h4_own4));
@@ -3824,7 +3016,7 @@ h_0opt_6dcd62e6 h_runexpr_ordered(h_syntree_Op h0_op, int64_t h1_a, int64_t h2_b
 #line 156 "examples/interpreter/run/expr.hero"
 bool h_runexpr_is_text(h_runvalue_Value h0_v) { HERO_NODEBUG h_runvalue_Value h1_s0 = {0}, t1, t2, t9; HERO_NODEBUG bool h2_r0, t4, t5, t6, t7, t8; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t9 = h1_s0; h_runvalue_0Value_retain(&t1); h1_s0 = t1; h_runvalue_0Value_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb2; case 2: goto bb4; case 3: goto bb5; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 3828 "main.c"
+#line 3020 "main.c"
     h_runvalue_0Value_release(hero_slot_escape(&h1_s0));
     return t8;
 bb2:
@@ -3844,7 +3036,7 @@ bb2:
     t7 = false;
 #line 157
     h2_r0 = t7; goto bb1;
-#line 3848 "main.c"
+#line 3040 "main.c"
 }
 
 #line 165 "examples/interpreter/run/expr.hero"
@@ -3860,7 +3052,7 @@ h_0opt_e201354 h_runexpr_plus(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h2
 #line 169
     t17 = h0_a; t18 = h_runexpr_MIN(); t19 = h1_b; if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow_at("run/expr.hero", "expr.plus", 169, 21); t21 = t17 < t20; h3_b1 = t21; goto bb8; bb8: t22 = h3_b1; if (t22) goto bb9; else goto bb10; bb9:
     t23 = h0_a; t24 = h1_b; t25 = HERO_STR_LIT(hero_str_2b); t26 = h_runexpr_too_big(t23, t24, t25); t34 = h7_own7; h7_own7 = t26; h_0opt_e201354_release(&t34); h4_ret0 = t26; goto bb11; bb10: goto bb6; bb11:
-#line 3864 "main.c"
+#line 3056 "main.c"
     t31 = h4_ret0;
     h_0opt_e201354_retain(&t31);
     h_0opt_e201354_release(hero_slot_escape(&h5_own5));
@@ -3882,7 +3074,7 @@ h_0opt_e201354 h_runexpr_minus(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h
 #line 178
     t17 = h0_a; t18 = h_runexpr_MIN(); t19 = h1_b; if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("run/expr.hero", "expr.minus", 178, 21); t21 = t17 < t20; h3_b1 = t21; goto bb8; bb8: t22 = h3_b1; if (t22) goto bb9; else goto bb10; bb9:
     t23 = h0_a; t24 = h1_b; t25 = HERO_STR_LIT(hero_str_2d); t26 = h_runexpr_too_big(t23, t24, t25); t34 = h7_own7; h7_own7 = t26; h_0opt_e201354_release(&t34); h4_ret0 = t26; goto bb11; bb10: goto bb6; bb11:
-#line 3886 "main.c"
+#line 3078 "main.c"
     t31 = h4_ret0;
     h_0opt_e201354_retain(&t31);
     h_0opt_e201354_release(hero_slot_escape(&h5_own5));
@@ -3919,7 +3111,7 @@ h_0opt_e201354 h_runexpr_times(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h
     t44 = h0_a; t45 = h1_b; if (__builtin_mul_overflow(t44, t45, &t46)) hero_panic_overflow_at("run/expr.hero", "expr.times", 214, 15); t47 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t46}; t53 = h11_own11; h11_own11 = t47; h_0opt_e201354_release(&t53); h6_ret0 = t47; goto bb20; bb18:
 #line 212
     t40 = h0_a; t41 = h1_b; t42 = HERO_STR_LIT(hero_str_2a); t43 = h_runexpr_too_big(t40, t41, t42); t54 = h12_own12; h12_own12 = t43; h_0opt_e201354_release(&t54); h6_ret0 = t43; goto bb20; bb19: goto bb17; bb20:
-#line 3923 "main.c"
+#line 3115 "main.c"
     t48 = h6_ret0;
     h_0opt_e201354_retain(&t48);
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -3938,7 +3130,7 @@ int64_t h_runexpr_size_of(int64_t h0_n) { HERO_NODEBUG int64_t h1_ret0, t1, t2, 
     t7 = h0_n; h1_ret0 = t7; goto bb4; bb2:
 #line 220
     t4 = INT64_C(0); t5 = h0_n; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("run/expr.hero", "expr.size_of", 220, 16); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
-#line 3942 "main.c"
+#line 3134 "main.c"
     t8 = h1_ret0;
     return t8;
 }
@@ -3955,7 +3147,7 @@ h_0opt_e201354 h_runexpr_over(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h2
 #line 230
     t15 = h1_b; t16 = INT64_C(0); t17 = INT64_C(1); if (__builtin_sub_overflow(t16, t17, &t18)) hero_panic_overflow_at("run/expr.hero", "expr.over", 230, 25); t19 = t15 == t18; h2_b0 = t19; goto bb6; bb6: t20 = h2_b0; if (t20) goto bb7; else goto bb8; bb7:
     t21 = h0_a; t22 = h1_b; t23 = HERO_STR_LIT(hero_str_2f); t24 = h_runexpr_too_big(t21, t22, t23); t36 = h10_own10; h10_own10 = t24; h_0opt_e201354_release(&t36); h3_ret0 = t24; goto bb9; bb8: goto bb4; bb9:
-#line 3959 "main.c"
+#line 3151 "main.c"
     t29 = h3_ret0;
     h_0opt_e201354_retain(&t29);
     hero_str_release_at(&h4_own4);
@@ -3980,7 +3172,7 @@ h_0opt_e201354 h_runexpr_rest(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG bool h2
 #line 239
     t15 = h1_b; t16 = INT64_C(0); t17 = INT64_C(1); if (__builtin_sub_overflow(t16, t17, &t18)) hero_panic_overflow_at("run/expr.hero", "expr.rest", 239, 25); t19 = t15 == t18; h2_b0 = t19; goto bb6; bb6: t20 = h2_b0; if (t20) goto bb7; else goto bb8; bb7:
     t21 = h0_a; t22 = h1_b; t23 = HERO_STR_LIT(hero_str_25); t24 = h_runexpr_too_big(t21, t22, t23); t36 = h10_own10; h10_own10 = t24; h_0opt_e201354_release(&t36); h3_ret0 = t24; goto bb9; bb8: goto bb4; bb9:
-#line 3984 "main.c"
+#line 3176 "main.c"
     t29 = h3_ret0;
     h_0opt_e201354_retain(&t29);
     hero_str_release_at(&h4_own4);
@@ -4000,7 +3192,7 @@ h_0opt_e201354 h_runexpr_too_big(int64_t h0_a, int64_t h1_b, HeroStr h2_op) { HE
     t2 = h0_a; t3 = hero_int_to_str(t2); t17 = h4_own4; h4_own4 = t3; hero_str_decref(t17); t4 = HERO_STR_LIT(hero_str_20); t5 = hero_str_concat(t3, t4); t18 = h5_own5; h5_own5 = t5; hero_str_decref(t18); t6 = h2_op; t7 = hero_str_concat(t5, t6); t19 = h6_own6; h6_own6 = t7; hero_str_decref(t19); t8 = HERO_STR_LIT(hero_str_20); t9 = hero_str_concat(t7, t8); t20 = h7_own7; h7_own7 = t9; hero_str_decref(t20); t10 = h1_b; t11 = hero_int_to_str(t10); t21 = h8_own8; h8_own8 = t11; hero_str_decref(t21); t12 = hero_str_concat(t9, t11); t22 = h9_own9; h9_own9 = t12; hero_str_decref(t22); t13 = HERO_STR_LIT(hero_str_5f18456e); t14 = hero_str_concat(t12, t13); t23 = h10_own10; h10_own10 = t14; hero_str_decref(t23);
 #line 245
     hero_str_incref(t1); hero_str_incref(t14); t15 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t14}}; t24 = h11_own11; h11_own11 = t15; h_0opt_e201354_release(&t24);
-#line 4004 "main.c"
+#line 3196 "main.c"
     h_0opt_e201354_retain(&t15);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -4040,7 +3232,7 @@ h_0opt_4d124e2a h_runexpr_applied(h_syntree_Tree h0_nodes, HeroStr h1_name, Hero
     t53 = h15_home; t54 = h14_result; h_runvalue_0Frame_retain(&t53); h_runvalue_0Value_retain(&t54); t55 = (h_runexpr_Answer){.f_frame = t53, .f_got = t54}; t75 = h23_own23; h23_own23 = t55; h_runexpr_0Answer_release(&t75); h_runexpr_0Answer_retain(&t55); t56 = (h_0opt_4d124e2a){.tag = INT64_C(0), .as.ok = t55}; t76 = h24_own24; h24_own24 = t56; h_0opt_4d124e2a_release(&t76); h16_ret0 = t56; goto bb9; bb8:
 #line 261
     t44 = h12_f1; t45 = t44.as.err; hero_failure_retain(&t45); t46 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t45}; t77 = h25_own25; h25_own25 = t46; h_0opt_4d124e2a_release(&t77); h16_ret0 = t46; goto bb9; bb9:
-#line 4044 "main.c"
+#line 3236 "main.c"
     t57 = h16_ret0;
     h_0opt_4d124e2a_retain(&t57);
     h_runvalue_0Frame_release(hero_slot_escape(&h5_walking));
@@ -4067,7 +3259,7 @@ h_0opt_4d124e2a h_runexpr_applied(h_syntree_Tree h0_nodes, HeroStr h1_name, Hero
 #line 28 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_ERR_TYPE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 4071 "main.c"
+#line 3263 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -4088,7 +3280,7 @@ h_runvalue_Frame h_runvalue_fresh(void) { HeroMapHeader * h0_vars = {0}; HeroMap
     t11 = INT64_C(0);
 #line 63
     hero_map_incref(t4); hero_array_incref(t5); hero_map_incref(t6); h_runvalue_0Value_retain(&t8); t12 = (h_runvalue_Frame){.f_vars = t4, .f_lines = t5, .f_fns = t6, .f_returned = t7, .f_result = t8, .f_stopping = t9, .f_code = t10, .f_depth = t11}; t20 = h7_own7; h7_own7 = t12; h_runvalue_0Frame_release(&t20);
-#line 4092 "main.c"
+#line 3284 "main.c"
     h_runvalue_0Frame_retain(&t12);
     hero_map_release_at(&h0_vars);
     hero_map_release_at(&h1_fns);
@@ -4104,7 +3296,7 @@ h_runvalue_Frame h_runvalue_fresh(void) { HeroMapHeader * h0_vars = {0}; HeroMap
 #line 91 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_shown(h_runvalue_Value h0_v) { HERO_NODEBUG h_runvalue_Value h1_s0 = {0}, t1, t2, t4, t8, t11, t17; HERO_NODEBUG HeroStr h2_r0 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t10, t14, t15, t16, t18, t19, t21, t22, t23, t24; h_runvalue_0Value_c_number h3_n; h_runvalue_0Value_c_text h4_x = {0}; h_runvalue_0Value_c_truth h5_t; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG h_runvalue_0Value_c_number t5; HERO_NODEBUG h_runvalue_0Value_c_text t9, t20; HERO_NODEBUG h_runvalue_0Value_c_truth t12; HERO_NODEBUG bool t13; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t17 = h1_s0; h_runvalue_0Value_retain(&t1); h1_s0 = t1; h_runvalue_0Value_release(&t17); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; default: hero_unreachable(); } bb1: t16 = h2_r0;
-#line 4108 "main.c"
+#line 3300 "main.c"
     hero_str_incref(t16);
     h_runvalue_0Value_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4129,13 +3321,13 @@ bb2:
     t15 = HERO_STR_LIT(hero_str_3561843e);
 #line 92
     t24 = h2_r0; hero_str_incref(t15); h2_r0 = t15; hero_str_decref(t24); goto bb1;
-#line 4133 "main.c"
+#line 3325 "main.c"
 }
 
 #line 99 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_kind_of(h_runvalue_Value h0_v) { HERO_NODEBUG h_runvalue_Value h1_s0 = {0}, t1, t2, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t5, t6, t7, t8, t10, t11, t12, t13; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t9 = h1_s0; h_runvalue_0Value_retain(&t1); h1_s0 = t1; h_runvalue_0Value_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 4139 "main.c"
+#line 3331 "main.c"
     hero_str_incref(t8);
     h_runvalue_0Value_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4157,13 +3349,13 @@ bb2:
     t7 = HERO_STR_LIT(hero_str_3561843e);
 #line 100
     t13 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t13); goto bb1;
-#line 4161 "main.c"
+#line 3353 "main.c"
 }
 
 #line 110 "examples/interpreter/run/value.hero"
 h_0opt_473cb9ae h_runvalue_condition_of(h_runvalue_Value h0_v) { HERO_NODEBUG h_runvalue_Value h1_s0 = {0}, t1, t2, t4, t8, t10, t12, t15; HERO_NODEBUG h_0opt_473cb9ae h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t9, t11, t13, t14, t16, t17, t18, t19, t20, t21, t22, t23; h_runvalue_0Value_c_truth h3_t; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_runvalue_0Value_c_truth t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t15 = h1_s0; h_runvalue_0Value_retain(&t1); h1_s0 = t1; h_runvalue_0Value_release(&t15); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb4; case 2: goto bb2; case 3: goto bb5; default: hero_unreachable(); } bb1: t14 = h2_r0;
-#line 4167 "main.c"
+#line 3359 "main.c"
     h_0opt_473cb9ae_retain(&t14);
     h_runvalue_0Value_release(hero_slot_escape(&h1_s0));
     h_0opt_473cb9ae_release(hero_slot_escape(&h2_r0));
@@ -4189,7 +3381,7 @@ bb2:
     t12 = h0_v; t13 = h_runvalue_not_a_condition(t12); t22 = h7_own7; h7_own7 = t13; h_0opt_473cb9ae_release(&t22);
 #line 111
     t23 = h2_r0; h_0opt_473cb9ae_retain(&t13); h2_r0 = t13; h_0opt_473cb9ae_release(&t23); goto bb1;
-#line 4193 "main.c"
+#line 3385 "main.c"
 }
 
 #line 117 "examples/interpreter/run/value.hero"
@@ -4199,7 +3391,7 @@ h_0opt_473cb9ae h_runvalue_not_a_condition(h_runvalue_Value h0_v) { HERO_NODEBUG
     t2 = HERO_STR_LIT(hero_str_28f0d8cd); t3 = h0_v; t4 = h_runvalue_kind_of(t3); t15 = h2_own2; h2_own2 = t4; hero_str_decref(t15); t5 = hero_str_concat(t2, t4); t16 = h3_own3; h3_own3 = t5; hero_str_decref(t16); t6 = HERO_STR_LIT(hero_str_875f8); t7 = hero_str_concat(t5, t6); t17 = h4_own4; h4_own4 = t7; hero_str_decref(t17); t8 = h0_v; t9 = h_runvalue_shown(t8); t18 = h5_own5; h5_own5 = t9; hero_str_decref(t18); t10 = hero_str_concat(t7, t9); t19 = h6_own6; h6_own6 = t10; hero_str_decref(t19); t11 = HERO_STR_LIT(hero_str_3149); t12 = hero_str_concat(t10, t11); t20 = h7_own7; h7_own7 = t12; hero_str_decref(t20);
 #line 118
     hero_str_incref(t1); hero_str_incref(t12); t13 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t12}}; t21 = h8_own8; h8_own8 = t13; h_0opt_473cb9ae_release(&t21);
-#line 4203 "main.c"
+#line 3395 "main.c"
     h_0opt_473cb9ae_retain(&t13);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -4215,7 +3407,7 @@ h_0opt_473cb9ae h_runvalue_not_a_condition(h_runvalue_Value h0_v) { HERO_NODEBUG
 #line 124 "examples/interpreter/run/value.hero"
 h_0opt_e201354 h_runvalue_number_of(h_runvalue_Value h0_v) { HERO_NODEBUG h_runvalue_Value h1_s0 = {0}, t1, t2, t4, t9, t12, t15, t18; HERO_NODEBUG h_0opt_e201354 h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t10, t13, t16, t17, t19, t20, t21, t22, t23, t24, t25, t26; h_runvalue_0Value_c_number h3_n; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG h_runvalue_0Value_c_number t5; HERO_NODEBUG HeroStr t8, t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t18 = h1_s0; h_runvalue_0Value_retain(&t1); h1_s0 = t1; h_runvalue_0Value_release(&t18); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; default: hero_unreachable(); } bb1: t17 = h2_r0;
-#line 4219 "main.c"
+#line 3411 "main.c"
     h_0opt_e201354_retain(&t17);
     h_runvalue_0Value_release(hero_slot_escape(&h1_s0));
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -4241,13 +3433,13 @@ bb2:
     t14 = HERO_STR_LIT(hero_str_7cfc63e3); t15 = h0_v; t16 = h_runvalue_0wanted_1b9a87(t14, t15); t25 = h7_own7; h7_own7 = t16; h_0opt_e201354_release(&t25);
 #line 125
     t26 = h2_r0; h_0opt_e201354_retain(&t16); h2_r0 = t16; h_0opt_e201354_release(&t26); goto bb1;
-#line 4245 "main.c"
+#line 3437 "main.c"
 }
 
 #line 131 "examples/interpreter/run/value.hero"
 h_0opt_f87774a h_runvalue_text_of(h_runvalue_Value h0_v) { HERO_NODEBUG h_runvalue_Value h1_s0 = {0}, t1, t2, t4, t9, t12, t15, t18; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t10, t13, t16, t17, t20, t21, t22, t23, t24, t25, t26, t27; h_runvalue_0Value_c_text h3_x = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_runvalue_0Value_c_text t5, t19; HERO_NODEBUG HeroStr t6, t8, t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_v; t18 = h1_s0; h_runvalue_0Value_retain(&t1); h1_s0 = t1; h_runvalue_0Value_release(&t18); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb2; case 2: goto bb4; case 3: goto bb5; default: hero_unreachable(); } bb1: t17 = h2_r0;
-#line 4251 "main.c"
+#line 3443 "main.c"
     h_0opt_f87774a_retain(&t17);
     h_runvalue_0Value_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -4274,13 +3466,13 @@ bb2:
     t14 = HERO_STR_LIT(hero_str_55b18501); t15 = h0_v; t16 = h_runvalue_0wanted_1e58d9(t14, t15); t26 = h7_own7; h7_own7 = t16; h_0opt_f87774a_release(&t26);
 #line 132
     t27 = h2_r0; h_0opt_f87774a_retain(&t16); h2_r0 = t16; h_0opt_f87774a_release(&t27); goto bb1;
-#line 4278 "main.c"
+#line 3470 "main.c"
 }
 
 #line 200 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_message_of_bool(h_0opt_473cb9ae h0_said) { HERO_NODEBUG h_0opt_473cb9ae h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_said; t9 = h1_s0; h_0opt_473cb9ae_retain(&t1); h1_s0 = t1; h_0opt_473cb9ae_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
-#line 4284 "main.c"
+#line 3476 "main.c"
     hero_str_incref(t8);
     h_0opt_473cb9ae_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4295,7 +3487,815 @@ bb2:
     t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.msg;
 #line 201
     t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
-#line 4299 "main.c"
+#line 3491 "main.c"
+}
+
+#line 25 "examples/interpreter/syn/cursor.hero"
+HeroStr h_syncursor_ERR_PARSE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3b1d407a);
+#line 3497 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 32 "examples/interpreter/syn/cursor.hero"
+h_syncursor_Cursor h_syncursor_over(HeroArrayHeader * h0_tokens) { HERO_NODEBUG h_syncursor_Cursor h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_tokens; t2 = INT64_C(0); hero_array_incref(t1); t3 = (h_syncursor_Cursor){.f_tokens = t1, .f_at = t2}; t4 = h1_own1; h1_own1 = t3; h_syncursor_0Cursor_release(&t4);
+#line 3505 "main.c"
+    h_syncursor_0Cursor_retain(&t3);
+    h_syncursor_0Cursor_release(hero_slot_escape(&h1_own1));
+    return t3;
+}
+
+#line 37 "examples/interpreter/syn/cursor.hero"
+h_lextoken_Token h_syncursor_here(h_syncursor_Cursor h0_c) { HERO_NODEBUG h_lextoken_Token h1_ret0 = {0}, h2_own2 = {0}, t5, t8, t9, t10; HERO_NODEBUG int64_t t1, t3, t7; HERO_NODEBUG HeroArrayHeader *t2, *t6; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c.f_at; t2 = h0_c.f_tokens; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = t1 >= t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 41
+    t6 = h0_c.f_tokens; t7 = h0_c.f_at; t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "syn/cursor.hero", "cursor.here", 41, 12) : (void)0), (void)(t6->elem->size != sizeof(h_lextoken_Token) ? hero_unreachable() : (void)0), ((h_lextoken_Token const *)(const void *)(t6 + 1))[t7]); h1_ret0 = t8; goto bb4; bb2:
+#line 39
+    t5 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_finish}; t10 = h2_own2; h2_own2 = t5; h_lextoken_0Token_release(&t10); h1_ret0 = t5; goto bb4; bb3: goto bb1; bb4:
+#line 3518 "main.c"
+    t9 = h1_ret0;
+    h_lextoken_0Token_retain(&t9);
+    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
+    return t9;
+}
+
+#line 45 "examples/interpreter/syn/cursor.hero"
+h_lextoken_Token h_syncursor_after(h_syncursor_Cursor h0_c) { HERO_NODEBUG h_lextoken_Token h1_ret0 = {0}, h2_own2 = {0}, t7, t12, t13, t14; HERO_NODEBUG int64_t t1, t2, t3, t5, t9, t10, t11; HERO_NODEBUG HeroArrayHeader *t4, *t8; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c.f_at; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("syn/cursor.hero", "cursor.after", 46, 8); t4 = h0_c.f_tokens; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 >= t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 49
+    t8 = h0_c.f_tokens; t9 = h0_c.f_at; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("syn/cursor.hero", "cursor.after", 49, 21); t12 = ((void)((t8 == NULL || t11 < 0 || t11 >= t8->len) ? hero_panic_index_at(t8, t11, "syn/cursor.hero", "cursor.after", 49, 12) : (void)0), (void)(t8->elem->size != sizeof(h_lextoken_Token) ? hero_unreachable() : (void)0), ((h_lextoken_Token const *)(const void *)(t8 + 1))[t11]); h1_ret0 = t12; goto bb4; bb2:
+#line 47
+    t7 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_finish}; t14 = h2_own2; h2_own2 = t7; h_lextoken_0Token_release(&t14); h1_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
+#line 3532 "main.c"
+    t13 = h1_ret0;
+    h_lextoken_0Token_retain(&t13);
+    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
+    return t13;
+}
+
+#line 52 "examples/interpreter/syn/cursor.hero"
+h_lextoken_Token h_syncursor_bump(h_syncursor_Cursor *ph0_c) { h_lextoken_Token h1_taken = {0}; HERO_NODEBUG h_lextoken_Token h2_own2 = {0}, h3_own3 = {0}, t2, t10, t11, t12, t13; HERO_NODEBUG h_syncursor_Cursor t1; HERO_NODEBUG int64_t t3, t5, t7, t8, t9; HERO_NODEBUG HeroArrayHeader *t4; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t11 = h2_own2; h2_own2 = t2; h_lextoken_0Token_release(&t11); t12 = h1_taken; h_lextoken_0Token_retain(&t2); h1_taken = t2; h_lextoken_0Token_release(&t12);
+#line 55
+    t3 = (*ph0_c).f_at; t4 = (*ph0_c).f_tokens; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 58
+    t10 = h1_taken;
+#line 3546 "main.c"
+    h_lextoken_0Token_retain(&t10);
+#line 58 "examples/interpreter/syn/cursor.hero"
+    t13 = h3_own3; h3_own3 = t10; h_lextoken_0Token_release(&t13);
+#line 3550 "main.c"
+    h_lextoken_0Token_retain(&t10);
+    h_lextoken_0Token_release(hero_slot_escape(&h1_taken));
+    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
+    return t10;
+bb2:
+#line 56 "examples/interpreter/syn/cursor.hero"
+    t7 = (*ph0_c).f_at; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("syn/cursor.hero", "cursor.bump", 56, 16); (*ph0_c).f_at = t9; goto bb1; bb3: goto bb1;
+#line 3559 "main.c"
+}
+
+#line 61 "examples/interpreter/syn/cursor.hero"
+bool h_syncursor_accepted(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want) { HERO_NODEBUG bool h2_ret0, t4, t6, t7, t8; HERO_NODEBUG h_lextoken_Token h3_own3 = {0}, h4_own4 = {0}, t2, t3, t5, t9, t10; HERO_NODEBUG h_syncursor_Cursor t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t9 = h3_own3; h3_own3 = t2; h_lextoken_0Token_release(&t9); t3 = h1_want; t4 = h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb1:
+#line 66
+    t7 = false; h2_ret0 = t7; goto bb4; bb2:
+#line 63
+    t5 = h_syncursor_bump(&(*ph0_c)); t10 = h4_own4; h4_own4 = t5; h_lextoken_0Token_release(&t10);
+    t6 = true; h2_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
+#line 3570 "main.c"
+    t8 = h2_ret0;
+    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_0Token_release(hero_slot_escape(&h4_own4));
+    return t8;
+}
+
+#line 69 "examples/interpreter/syn/cursor.hero"
+h_0opt_a8ea2 h_syncursor_expected(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want) { HERO_NODEBUG h_0opt_a8ea2 h2_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t3, t17, t18, t27, t28; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t7, t8, t9, t10, t13, t14, t15, t16, t19, t20, t21, t22, t24, t25, t26; HERO_NODEBUG h_lextoken_Token h7_own7 = {0}, t1, t6, t12, t23; HERO_NODEBUG bool t2; HERO_NODEBUG h_syncursor_Cursor t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_want; t2 = h_syncursor_accepted(&(*ph0_c), t1); if (t2) goto bb2; else goto bb3; bb1:
+#line 74
+    t4 = h_syncursor_ERR_PARSE(); t19 = h3_own3; h3_own3 = t4; hero_str_decref(t19);
+    t5 = HERO_STR_LIT(hero_str_2dfda7a5); t6 = h1_want; t7 = h_lextoken_shown(t6); t20 = h4_own4; h4_own4 = t7; hero_str_decref(t20); t8 = hero_str_concat(t5, t7); t21 = h5_own5; h5_own5 = t8; hero_str_decref(t21); t9 = HERO_STR_LIT(hero_str_7a5d94f6); t10 = hero_str_concat(t8, t9); t22 = h6_own6; h6_own6 = t10; hero_str_decref(t22); t11 = (*ph0_c); t12 = h_syncursor_here(t11); t23 = h7_own7; h7_own7 = t12; h_lextoken_0Token_release(&t23); t13 = h_lextoken_shown(t12); t24 = h8_own8; h8_own8 = t13; hero_str_decref(t24); t14 = hero_str_concat(t10, t13); t25 = h9_own9; h9_own9 = t14; hero_str_decref(t25); t15 = HERO_STR_LIT(hero_str_60); t16 = hero_str_concat(t14, t15); t26 = h10_own10; h10_own10 = t16; hero_str_decref(t26);
+#line 73
+    hero_str_incref(t4); hero_str_incref(t16); t17 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t16}}; t27 = h11_own11; h11_own11 = t17; h_0opt_a8ea2_release(&t27); h2_ret0 = t17; goto bb4; bb2:
+#line 71
+    t3 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t28 = h12_own12; h12_own12 = t3; h_0opt_a8ea2_release(&t28); h2_ret0 = t3; goto bb4; bb3: goto bb1; bb4:
+#line 3587 "main.c"
+    t18 = h2_ret0;
+    h_0opt_a8ea2_retain(&t18);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
+    h_0opt_a8ea2_release(hero_slot_escape(&h12_own12));
+    return t18;
+}
+
+#line 79 "examples/interpreter/syn/cursor.hero"
+h_0opt_f87774a h_syncursor_name_here(h_syncursor_Cursor *ph0_c) { HERO_NODEBUG h_lextoken_Token h1_s0 = {0}, h6_own6 = {0}, h18_own18 = {0}, h20_own20 = {0}, h22_own22 = {0}, h24_own24 = {0}, h26_own26 = {0}, h28_own28 = {0}, h30_own30 = {0}, t1, t2, t4, t14, t23, t27, t30, t33, t36, t39, t42, t45, t55, t56, t73, t76, t79, t82, t85, t88, t91; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h21_own21 = {0}, h23_own23 = {0}, h25_own25 = {0}, h27_own27 = {0}, h29_own29 = {0}, h31_own31 = {0}, h33_own33 = {0}, h35_own35 = {0}, t13, t22, t26, t29, t32, t35, t38, t41, t44, t47, t50, t53, t54, t57, t62, t63, t68, t69, t71, t72, t74, t75, t77, t78, t80, t81, t83, t84, t86, t87, t89, t90, t92, t93, t95, t96, t98, t99; h_lextoken_0Token_c_number h3_n; h_lextoken_0Token_c_text h4_x = {0}; h_lextoken_0Token_c_name h5_n = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h32_own32 = {0}, h34_own34 = {0}, t6, t7, t9, t10, t11, t12, t16, t17, t18, t19, t20, t21, t25, t28, t31, t34, t37, t40, t43, t46, t48, t49, t51, t52, t58, t59, t60, t61, t65, t66, t67, t94, t97; HERO_NODEBUG int64_t t3, t8; HERO_NODEBUG h_lextoken_0Token_c_number t5; HERO_NODEBUG h_lextoken_0Token_c_text t15, t64; HERO_NODEBUG h_lextoken_0Token_c_name t24, t70; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_syncursor_bump(&(*ph0_c)); t55 = h6_own6; h6_own6 = t1; h_lextoken_0Token_release(&t55); t56 = h1_s0; h_lextoken_0Token_retain(&t1); h1_s0 = t1; h_lextoken_0Token_release(&t56); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb5; case 5: goto bb5; case 6: goto bb5; case 7: goto bb5; case 8: goto bb6; case 9: goto bb6; case 10: goto bb6; case 11: goto bb6; case 12: goto bb7; case 13: goto bb7; case 14: goto bb8; case 15: goto bb8; case 16: goto bb8; case 17: goto bb8; case 18: goto bb8; case 19: goto bb9; case 20: goto bb9; case 21: goto bb9; case 22: goto bb9; case 23: goto bb9; case 24: goto bb10; case 25: goto bb10; case 26: goto bb10; case 27: goto bb10; case 28: goto bb10; case 29: goto bb11; case 30: goto bb11; case 31: goto bb11; case 32: goto bb12; case 33: goto bb13; default: hero_unreachable(); } bb1: t54 = h2_r0;
+#line 3606 "main.c"
+    h_0opt_f87774a_retain(&t54);
+#line 80 "examples/interpreter/syn/cursor.hero"
+    t57 = h7_own7; h7_own7 = t54; h_0opt_f87774a_release(&t57);
+#line 3610 "main.c"
+    h_0opt_f87774a_retain(&t54);
+    h_lextoken_0Token_release(hero_slot_escape(&h1_s0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
+    h_lextoken_0Token_c_text_release(hero_slot_escape(&h4_x));
+    h_lextoken_0Token_c_name_release(hero_slot_escape(&h5_n));
+    h_lextoken_0Token_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    h_lextoken_0Token_release(hero_slot_escape(&h18_own18));
+    h_0opt_f87774a_release(hero_slot_escape(&h19_own19));
+    h_lextoken_0Token_release(hero_slot_escape(&h20_own20));
+    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
+    h_lextoken_0Token_release(hero_slot_escape(&h22_own22));
+    h_0opt_f87774a_release(hero_slot_escape(&h23_own23));
+    h_lextoken_0Token_release(hero_slot_escape(&h24_own24));
+    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
+    h_lextoken_0Token_release(hero_slot_escape(&h26_own26));
+    h_0opt_f87774a_release(hero_slot_escape(&h27_own27));
+    h_lextoken_0Token_release(hero_slot_escape(&h28_own28));
+    h_0opt_f87774a_release(hero_slot_escape(&h29_own29));
+    h_lextoken_0Token_release(hero_slot_escape(&h30_own30));
+    h_0opt_f87774a_release(hero_slot_escape(&h31_own31));
+    hero_str_release_at(&h32_own32);
+    h_0opt_f87774a_release(hero_slot_escape(&h33_own33));
+    hero_str_release_at(&h34_own34);
+    h_0opt_f87774a_release(hero_slot_escape(&h35_own35));
+    return t54;
+bb2:
+#line 81 "examples/interpreter/syn/cursor.hero"
+    t4 = h1_s0; t5 = t4.as.c_number; h3_n = t5; t6 = h_syncursor_ERR_PARSE(); t58 = h8_own8; h8_own8 = t6; hero_str_decref(t58); t7 = HERO_STR_LIT(hero_str_34e508eb); t8 = h3_n.f_value; t9 = hero_int_to_str(t8); t59 = h9_own9; h9_own9 = t9; hero_str_decref(t59); t10 = hero_str_concat(t7, t9); t60 = h10_own10; h10_own10 = t10; hero_str_decref(t60); t11 = HERO_STR_LIT(hero_str_60); t12 = hero_str_concat(t10, t11); t61 = h11_own11; h11_own11 = t12; hero_str_decref(t61); hero_str_incref(t6); hero_str_incref(t12); t13 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t12}}; t62 = h12_own12; h12_own12 = t13; h_0opt_f87774a_release(&t62);
+#line 80
+    t63 = h2_r0; h_0opt_f87774a_retain(&t13); h2_r0 = t13; h_0opt_f87774a_release(&t63); goto bb1; bb3:
+#line 82
+    t14 = h1_s0; t15 = t14.as.c_text; t64 = h4_x; h_lextoken_0Token_c_text_retain(&t15); h4_x = t15; h_lextoken_0Token_c_text_release(&t64); t16 = h_syncursor_ERR_PARSE(); t65 = h13_own13; h13_own13 = t16; hero_str_decref(t65); t17 = HERO_STR_LIT(hero_str_3aedf865); t18 = h4_x.f_value; t19 = hero_str_concat(t17, t18); t66 = h14_own14; h14_own14 = t19; hero_str_decref(t66); t20 = HERO_STR_LIT(hero_str_60); t21 = hero_str_concat(t19, t20); t67 = h15_own15; h15_own15 = t21; hero_str_decref(t67); hero_str_incref(t16); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t16, .msg = t21}}; t68 = h16_own16; h16_own16 = t22; h_0opt_f87774a_release(&t68);
+#line 80
+    t69 = h2_r0; h_0opt_f87774a_retain(&t22); h2_r0 = t22; h_0opt_f87774a_release(&t69); goto bb1; bb4:
+#line 83
+    t23 = h1_s0; t24 = t23.as.c_name; t70 = h5_n; h_lextoken_0Token_c_name_retain(&t24); h5_n = t24; h_lextoken_0Token_c_name_release(&t70); t25 = h5_n.f_value; hero_str_incref(t25); t26 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t25}; t71 = h17_own17; h17_own17 = t26; h_0opt_f87774a_release(&t71);
+#line 80
+    t72 = h2_r0; h_0opt_f87774a_retain(&t26); h2_r0 = t26; h_0opt_f87774a_release(&t72); goto bb1; bb5:
+#line 84
+    t27 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_kw_let}; t73 = h18_own18; h18_own18 = t27; h_lextoken_0Token_release(&t73); t28 = HERO_STR_LIT(hero_str_7441fe7c); t29 = h_syncursor_keyword_taken(t27, t28); t74 = h19_own19; h19_own19 = t29; h_0opt_f87774a_release(&t74);
+#line 80
+    t75 = h2_r0; h_0opt_f87774a_retain(&t29); h2_r0 = t29; h_0opt_f87774a_release(&t75); goto bb1; bb6:
+#line 85
+    t30 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_kw_fn}; t76 = h20_own20; h20_own20 = t30; h_lextoken_0Token_release(&t76); t31 = HERO_STR_LIT(hero_str_7441fe7c); t32 = h_syncursor_keyword_taken(t30, t31); t77 = h21_own21; h21_own21 = t32; h_0opt_f87774a_release(&t77);
+#line 80
+    t78 = h2_r0; h_0opt_f87774a_retain(&t32); h2_r0 = t32; h_0opt_f87774a_release(&t78); goto bb1; bb7:
+#line 86
+    t33 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_kw_true}; t79 = h22_own22; h22_own22 = t33; h_lextoken_0Token_release(&t79); t34 = HERO_STR_LIT(hero_str_7441fe7c); t35 = h_syncursor_keyword_taken(t33, t34); t80 = h23_own23; h23_own23 = t35; h_0opt_f87774a_release(&t80);
+#line 80
+    t81 = h2_r0; h_0opt_f87774a_retain(&t35); h2_r0 = t35; h_0opt_f87774a_release(&t81); goto bb1; bb8:
+#line 87
+    t36 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_plus}; t82 = h24_own24; h24_own24 = t36; h_lextoken_0Token_release(&t82); t37 = HERO_STR_LIT(hero_str_42f055b4); t38 = h_syncursor_keyword_taken(t36, t37); t83 = h25_own25; h25_own25 = t38; h_0opt_f87774a_release(&t83);
+#line 80
+    t84 = h2_r0; h_0opt_f87774a_retain(&t38); h2_r0 = t38; h_0opt_f87774a_release(&t84); goto bb1; bb9:
+#line 88
+    t39 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_equals}; t85 = h26_own26; h26_own26 = t39; h_lextoken_0Token_release(&t85); t40 = HERO_STR_LIT(hero_str_42f055b4); t41 = h_syncursor_keyword_taken(t39, t40); t86 = h27_own27; h27_own27 = t41; h_0opt_f87774a_release(&t86);
+#line 80
+    t87 = h2_r0; h_0opt_f87774a_retain(&t41); h2_r0 = t41; h_0opt_f87774a_release(&t87); goto bb1; bb10:
+#line 89
+    t42 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bang}; t88 = h28_own28; h28_own28 = t42; h_lextoken_0Token_release(&t88); t43 = HERO_STR_LIT(hero_str_42f055b4); t44 = h_syncursor_keyword_taken(t42, t43); t89 = h29_own29; h29_own29 = t44; h_0opt_f87774a_release(&t89);
+#line 80
+    t90 = h2_r0; h_0opt_f87774a_retain(&t44); h2_r0 = t44; h_0opt_f87774a_release(&t90); goto bb1; bb11:
+#line 90
+    t45 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_lparen}; t91 = h30_own30; h30_own30 = t45; h_lextoken_0Token_release(&t91); t46 = HERO_STR_LIT(hero_str_6a58703d); t47 = h_syncursor_keyword_taken(t45, t46); t92 = h31_own31; h31_own31 = t47; h_0opt_f87774a_release(&t92);
+#line 80
+    t93 = h2_r0; h_0opt_f87774a_retain(&t47); h2_r0 = t47; h_0opt_f87774a_release(&t93); goto bb1; bb12:
+#line 91
+    t48 = h_syncursor_ERR_PARSE(); t94 = h32_own32; h32_own32 = t48; hero_str_decref(t94); t49 = HERO_STR_LIT(hero_str_19b6ec3a); hero_str_incref(t48); hero_str_incref(t49); t50 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t48, .msg = t49}}; t95 = h33_own33; h33_own33 = t50; h_0opt_f87774a_release(&t95);
+#line 80
+    t96 = h2_r0; h_0opt_f87774a_retain(&t50); h2_r0 = t50; h_0opt_f87774a_release(&t96); goto bb1; bb13:
+#line 92
+    t51 = h_syncursor_ERR_PARSE(); t97 = h34_own34; h34_own34 = t51; hero_str_decref(t97); t52 = HERO_STR_LIT(hero_str_18e91992); hero_str_incref(t51); hero_str_incref(t52); t53 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t51, .msg = t52}}; t98 = h35_own35; h35_own35 = t53; h_0opt_f87774a_release(&t98);
+#line 80
+    t99 = h2_r0; h_0opt_f87774a_retain(&t53); h2_r0 = t53; h_0opt_f87774a_release(&t99); goto bb1;
+#line 3696 "main.c"
+}
+
+#line 98 "examples/interpreter/syn/cursor.hero"
+h_0opt_f87774a h_syncursor_keyword_taken(h_lextoken_Token h0_t, HeroStr h1_said) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t5, t7, t8; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}, t6, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 100
+    t2 = h_syncursor_ERR_PARSE(); t7 = h2_own2; h2_own2 = t2; hero_str_decref(t7); t3 = HERO_STR_LIT(hero_str_868cc04); t4 = h1_said; t5 = hero_str_concat(t3, t4); t8 = h3_own3; h3_own3 = t5; hero_str_decref(t8); hero_str_incref(t2); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t2, .msg = t5}}; t9 = h4_own4; h4_own4 = t6; h_0opt_f87774a_release(&t9);
+#line 3703 "main.c"
+    h_0opt_f87774a_retain(&t6);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
+    return t6;
+}
+
+#line 104 "examples/interpreter/syn/cursor.hero"
+void h_syncursor_skipped_lines(h_syncursor_Cursor *ph0_c) { HERO_NODEBUG h_lextoken_Token h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t5, t6, t7, t8; HERO_NODEBUG h_syncursor_Cursor t1; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
+    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t6 = h1_own1; h1_own1 = t2; h_lextoken_0Token_release(&t6); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_newline}; t7 = h2_own2; h2_own2 = t3; h_lextoken_0Token_release(&t7); t4 = h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb2:
+    t5 = h_syncursor_bump(&(*ph0_c)); t8 = h3_own3; h3_own3 = t5; h_lextoken_0Token_release(&t8); goto bb1; bb3:
+#line 3715 "main.c"
+    h_lextoken_0Token_release(hero_slot_escape(&h1_own1));
+    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
+    return;
+}
+
+#line 109 "examples/interpreter/syn/cursor.hero"
+bool h_syncursor_done(h_syncursor_Cursor h0_c) { HERO_NODEBUG h_lextoken_Token h1_own1 = {0}, h2_own2 = {0}, t2, t3, t5, t6; HERO_NODEBUG h_syncursor_Cursor t1; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; t2 = h_syncursor_here(t1); t5 = h1_own1; h1_own1 = t2; h_lextoken_0Token_release(&t5); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_finish}; t6 = h2_own2; h2_own2 = t3; h_lextoken_0Token_release(&t6); t4 = h_lextoken_0Token_eq(&t2, &t3);
+#line 3725 "main.c"
+    h_lextoken_0Token_release(hero_slot_escape(&h1_own1));
+    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
+    return t4;
+}
+
+#line 164 "examples/interpreter/syn/cursor.hero"
+HeroStr h_syncursor_refusal_message(h_0opt_a8ea2 h0_said) { HERO_NODEBUG h_0opt_a8ea2 h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_said; t9 = h1_s0; h_0opt_a8ea2_retain(&t1); h1_s0 = t1; h_0opt_a8ea2_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
+#line 3734 "main.c"
+    hero_str_incref(t8);
+    h_0opt_a8ea2_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    hero_failure_release(&h3_e);
+    return t8;
+bb2:
+#line 166 "examples/interpreter/syn/cursor.hero"
+    t4 = HERO_STR_LIT(hero_str_16ecc41b);
+#line 165
+    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
+#line 167
+    t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.msg;
+#line 165
+    t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
+#line 3749 "main.c"
+}
+
+#line 169 "examples/interpreter/syn/cursor.hero"
+HeroStr h_syncursor_refusal_message_of_name(h_0opt_f87774a h0_said) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_said; t9 = h1_s0; h_0opt_f87774a_retain(&t1); h1_s0 = t1; h_0opt_f87774a_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
+#line 3755 "main.c"
+    hero_str_incref(t8);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    hero_failure_release(&h3_e);
+    return t8;
+bb2:
+#line 171 "examples/interpreter/syn/cursor.hero"
+    t4 = HERO_STR_LIT(hero_str_16ecc41b);
+#line 170
+    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
+#line 172
+    t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.msg;
+#line 170
+    t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
+#line 3770 "main.c"
+}
+
+#line 32 "examples/interpreter/syn/expr.hero"
+HeroStr h_synexpr_ERR_PARSE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3b1d407a);
+#line 3776 "main.c"
+    hero_str_incref(t1);
+    return t1;
+}
+
+#line 36 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_parsed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}, t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_either(&(*ph0_c), &(*ph1_t)); t2 = h2_own2; h2_own2 = t1; h_0opt_e201354_release(&t2);
+#line 3784 "main.c"
+    h_0opt_e201354_retain(&t1);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    return t1;
+}
+
+#line 39 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_either(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, t1, t2, t6, t8, t9, t16, t17, t21, t23, t24, t32, t33, t34, t35, t36, t40, t41, t42, t44; int64_t h3_left; int64_t h5_right; HERO_NODEBUG h_lextoken_Token h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t12, t13, t15, t37, t38, t39; HERO_NODEBUG h_syntree_Expr h14_own14 = {0}, t29, t43; HERO_NODEBUG int64_t t3, t4, t10, t18, t19, t25, t27, t28, t30, t31; HERO_NODEBUG bool t5, t14, t20; HERO_NODEBUG HeroFailure t7, t22; HERO_NODEBUG h_syncursor_Cursor t11; HERO_NODEBUG h_syntree_Op t26; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_both(&(*ph0_c), &(*ph1_t)); t34 = h7_own7; h7_own7 = t1; h_0opt_e201354_release(&t34); t35 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t35); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t36 = h8_own8; h8_own8 = t8; h_0opt_e201354_release(&t36); h6_ret0 = t8; goto bb8; bb3:
+#line 42
+    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t37 = h9_own9; h9_own9 = t12; h_lextoken_0Token_release(&t37); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bars}; t38 = h10_own10; h10_own10 = t13; h_lextoken_0Token_release(&t38); t14 = h_lextoken_0Token_eq(&t12, &t13); if (t14) goto bb4; else goto bb5; bb4:
+    t15 = h_syncursor_bump(&(*ph0_c)); t39 = h11_own11; h11_own11 = t15; h_lextoken_0Token_release(&t39);
+    t16 = h_synexpr_both(&(*ph0_c), &(*ph1_t)); t40 = h12_own12; h12_own12 = t16; h_0opt_e201354_release(&t40); t41 = h4_f1; h_0opt_e201354_retain(&t16); h4_f1 = t16; h_0opt_e201354_release(&t41); t17 = h4_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb6; else goto bb7; bb5:
+#line 47
+    t31 = h3_left; t32 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t31}; t42 = h13_own13; h13_own13 = t32; h_0opt_e201354_release(&t42); h6_ret0 = t32; goto bb8; bb6:
+#line 44
+    t24 = h4_f1; t25 = t24.as.ok; h5_right = t25;
+    t26 = (h_syntree_Op){.tag = h_syntree_0Op_tag_either}; t27 = h3_left; t28 = h5_right; t29 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t26, .f_left = t27, .f_right = t28}}; t43 = h14_own14; h14_own14 = t29; h_syntree_0Expr_release(&t43); t30 = h_syntree_added_expr(&(*ph1_t), t29); h3_left = t30; goto bb3; bb7:
+#line 44
+    t21 = h4_f1; t22 = t21.as.err; hero_failure_retain(&t22); t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22}; t44 = h15_own15; h15_own15 = t23; h_0opt_e201354_release(&t44); h6_ret0 = t23; goto bb8; bb8:
+#line 3804 "main.c"
+    t33 = h6_ret0;
+    h_0opt_e201354_retain(&t33);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_syntree_0Expr_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    return t33;
+}
+
+#line 49 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_both(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, t1, t2, t6, t8, t9, t16, t17, t21, t23, t24, t32, t33, t34, t35, t36, t40, t41, t42, t44; int64_t h3_left; int64_t h5_right; HERO_NODEBUG h_lextoken_Token h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t12, t13, t15, t37, t38, t39; HERO_NODEBUG h_syntree_Expr h14_own14 = {0}, t29, t43; HERO_NODEBUG int64_t t3, t4, t10, t18, t19, t25, t27, t28, t30, t31; HERO_NODEBUG bool t5, t14, t20; HERO_NODEBUG HeroFailure t7, t22; HERO_NODEBUG h_syncursor_Cursor t11; HERO_NODEBUG h_syntree_Op t26; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_compared(&(*ph0_c), &(*ph1_t)); t34 = h7_own7; h7_own7 = t1; h_0opt_e201354_release(&t34); t35 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t35); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t36 = h8_own8; h8_own8 = t8; h_0opt_e201354_release(&t36); h6_ret0 = t8; goto bb8; bb3:
+#line 52
+    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t37 = h9_own9; h9_own9 = t12; h_lextoken_0Token_release(&t37); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_ampersands}; t38 = h10_own10; h10_own10 = t13; h_lextoken_0Token_release(&t38); t14 = h_lextoken_0Token_eq(&t12, &t13); if (t14) goto bb4; else goto bb5; bb4:
+    t15 = h_syncursor_bump(&(*ph0_c)); t39 = h11_own11; h11_own11 = t15; h_lextoken_0Token_release(&t39);
+    t16 = h_synexpr_compared(&(*ph0_c), &(*ph1_t)); t40 = h12_own12; h12_own12 = t16; h_0opt_e201354_release(&t40); t41 = h4_f1; h_0opt_e201354_retain(&t16); h4_f1 = t16; h_0opt_e201354_release(&t41); t17 = h4_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb6; else goto bb7; bb5:
+#line 57
+    t31 = h3_left; t32 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t31}; t42 = h13_own13; h13_own13 = t32; h_0opt_e201354_release(&t42); h6_ret0 = t32; goto bb8; bb6:
+#line 54
+    t24 = h4_f1; t25 = t24.as.ok; h5_right = t25;
+    t26 = (h_syntree_Op){.tag = h_syntree_0Op_tag_both}; t27 = h3_left; t28 = h5_right; t29 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t26, .f_left = t27, .f_right = t28}}; t43 = h14_own14; h14_own14 = t29; h_syntree_0Expr_release(&t43); t30 = h_syntree_added_expr(&(*ph1_t), t29); h3_left = t30; goto bb3; bb7:
+#line 54
+    t21 = h4_f1; t22 = t21.as.err; hero_failure_retain(&t22); t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22}; t44 = h15_own15; h15_own15 = t23; h_0opt_e201354_release(&t44); h6_ret0 = t23; goto bb8; bb8:
+#line 3835 "main.c"
+    t33 = h6_ret0;
+    h_0opt_e201354_retain(&t33);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_syntree_0Expr_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    return t33;
+}
+
+#line 64 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_compared(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_f2 = {0}, h12_ret0 = {0}, h13_own13 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h24_own24 = {0}, h30_own30 = {0}, t1, t2, t6, t8, t9, t20, t22, t23, t27, t29, t30, t62, t64, t65, t66, t67, t72, t74, t75, t76, t78, t84, t90; int64_t h3_left; h_0opt_3ce1b94c h4_op = {0}; HERO_NODEBUG h_0opt_3ce1b94c h5_f1 = {0}, h8_f3 = {0}, h11_f4 = {0}, h15_own15 = {0}, h23_own23 = {0}, t13, t14, t15, t32, t33, t37, t39, t47, t48, t49, t69, t70, t71, t77, t81, t82, t83; int64_t h7_right; int64_t h9_made; h_0opt_3ce1b94c h10_second = {0}; HERO_NODEBUG h_lextoken_Token h14_own14 = {0}, h17_own17 = {0}, h22_own22 = {0}, h26_own26 = {0}, t12, t21, t46, t57, t68, t73, t80, t86; HERO_NODEBUG h_syntree_Expr h21_own21 = {0}, t43, t79; HERO_NODEBUG HeroStr h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, t54, t55, t58, t59, t60, t61, t85, t87, t88, t89; HERO_NODEBUG int64_t t3, t4, t10, t16, t17, t19, t24, t25, t31, t34, t35, t41, t42, t44, t50, t51, t63; HERO_NODEBUG bool t5, t18, t26, t36, t52, t53; HERO_NODEBUG HeroFailure t7, t28, t38; HERO_NODEBUG h_syncursor_Cursor t11, t45, t56; HERO_NODEBUG h_syntree_Op t40; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_summed(&(*ph0_c), &(*ph1_t)); t66 = h13_own13; h13_own13 = t1; h_0opt_e201354_release(&t66); t67 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t67); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10;
+    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t68 = h14_own14; h14_own14 = t12; h_lextoken_0Token_release(&t68); t13 = h_synexpr_comparison_of(t12); t69 = h15_own15; h15_own15 = t13; h_0opt_3ce1b94c_release(&t69); t70 = h4_op; h_0opt_3ce1b94c_retain(&t13); h4_op = t13; h_0opt_3ce1b94c_release(&t70);
+#line 68
+    t14 = h4_op; t71 = h5_f1; h_0opt_3ce1b94c_retain(&t14); h5_f1 = t14; h_0opt_3ce1b94c_release(&t71); t15 = h5_f1; t16 = t15.tag; t17 = INT64_C(1); t18 = t16 == t17; if (t18) goto bb4; else goto bb5; bb2:
+#line 65
+    t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t72 = h16_own16; h16_own16 = t8; h_0opt_e201354_release(&t72); h12_ret0 = t8; goto bb13; bb3:
+#line 70
+    t21 = h_syncursor_bump(&(*ph0_c)); t73 = h17_own17; h17_own17 = t21; h_lextoken_0Token_release(&t73);
+    t22 = h_synexpr_summed(&(*ph0_c), &(*ph1_t)); t74 = h18_own18; h18_own18 = t22; h_0opt_e201354_release(&t74); t75 = h6_f2; h_0opt_e201354_retain(&t22); h6_f2 = t22; h_0opt_e201354_release(&t75); t23 = h6_f2; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb6; else goto bb7; bb4:
+#line 69
+    t19 = h3_left; t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t19}; t76 = h19_own19; h19_own19 = t20; h_0opt_e201354_release(&t76); h12_ret0 = t20; goto bb13; bb5: goto bb3; bb6:
+#line 71
+    t30 = h6_f2; t31 = t30.as.ok; h7_right = t31;
+    t32 = h4_op; t77 = h8_f3; h_0opt_3ce1b94c_retain(&t32); h8_f3 = t32; h_0opt_3ce1b94c_release(&t77); t33 = h8_f3; t34 = t33.tag; t35 = INT64_C(0); t36 = t34 == t35; if (t36) goto bb8; else goto bb9; bb7:
+#line 71
+    t27 = h6_f2; t28 = t27.as.err; hero_failure_retain(&t28); t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28}; t78 = h20_own20; h20_own20 = t29; h_0opt_e201354_release(&t78); h12_ret0 = t29; goto bb13; bb8:
+    t39 = h8_f3; t40 = t39.as.ok; t41 = h3_left; t42 = h7_right; t43 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t40, .f_left = t41, .f_right = t42}}; t79 = h21_own21; h21_own21 = t43; h_syntree_0Expr_release(&t79); t44 = h_syntree_added_expr(&(*ph1_t), t43); h9_made = t44;
+    t45 = (*ph0_c); t46 = h_syncursor_here(t45); t80 = h22_own22; h22_own22 = t46; h_lextoken_0Token_release(&t80); t47 = h_synexpr_comparison_of(t46); t81 = h23_own23; h23_own23 = t47; h_0opt_3ce1b94c_release(&t81); t82 = h10_second; h_0opt_3ce1b94c_retain(&t47); h10_second = t47; h_0opt_3ce1b94c_release(&t82);
+#line 75
+    t48 = h10_second; t83 = h11_f4; h_0opt_3ce1b94c_retain(&t48); h11_f4 = t48; h_0opt_3ce1b94c_release(&t83); t49 = h11_f4; t50 = t49.tag; t51 = INT64_C(1); t52 = t50 == t51; t53 = !t52; if (t53) goto bb11; else goto bb12; bb9:
+#line 72
+    t37 = h8_f3; t38 = t37.as.err;
+#line 3876 "main.c"
+    hero_panic_must_at(t38, "syn/expr.hero", "expr.compared", 72, 44);
+    hero_unreachable();
+bb10:
+#line 81 "examples/interpreter/syn/expr.hero"
+    t63 = h9_made; t64 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t63}; t84 = h24_own24; h24_own24 = t64; h_0opt_e201354_release(&t84); h12_ret0 = t64; goto bb13; bb11:
+#line 77
+    t54 = h_synexpr_ERR_PARSE(); t85 = h25_own25; h25_own25 = t54; hero_str_decref(t85);
+    t55 = HERO_STR_LIT(hero_str_60); t56 = (*ph0_c); t57 = h_syncursor_here(t56); t86 = h26_own26; h26_own26 = t57; h_lextoken_0Token_release(&t86); t58 = h_lextoken_shown(t57); t87 = h27_own27; h27_own27 = t58; hero_str_decref(t87); t59 = hero_str_concat(t55, t58); t88 = h28_own28; h28_own28 = t59; hero_str_decref(t88); t60 = HERO_STR_LIT(hero_str_887ad06); t61 = hero_str_concat(t59, t60); t89 = h29_own29; h29_own29 = t61; hero_str_decref(t89);
+#line 76
+    hero_str_incref(t54); hero_str_incref(t61); t62 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t54, .msg = t61}}; t90 = h30_own30; h30_own30 = t62; h_0opt_e201354_release(&t90); h12_ret0 = t62; goto bb13; bb12: goto bb10; bb13:
+#line 3887 "main.c"
+    t65 = h12_ret0;
+    h_0opt_e201354_retain(&t65);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h4_op));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h5_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f2));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h8_f3));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h10_second));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h11_f4));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_lextoken_0Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_syntree_0Expr_release(hero_slot_escape(&h21_own21));
+    h_lextoken_0Token_release(hero_slot_escape(&h22_own22));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h23_own23));
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
+    hero_str_release_at(&h25_own25);
+    h_lextoken_0Token_release(hero_slot_escape(&h26_own26));
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    h_0opt_e201354_release(hero_slot_escape(&h30_own30));
+    return t65;
+}
+
+#line 83 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_summed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_f1 = {0}, h8_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h15_own15 = {0}, h18_own18 = {0}, h20_own20 = {0}, t1, t2, t6, t8, t9, t25, t26, t30, t32, t33, t41, t42, t43, t44, t45, t50, t53, t54, t56; int64_t h3_left; HERO_NODEBUG bool h4_b0, t5, t14, t18, t19, t23, t29; h_syntree_Op h5_op; int64_t h7_right; HERO_NODEBUG h_lextoken_Token h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, t12, t13, t16, t17, t21, t22, t46, t47, t48, t49, t51, t52; HERO_NODEBUG h_syntree_Expr h19_own19 = {0}, t38, t55; HERO_NODEBUG int64_t t3, t4, t10, t27, t28, t34, t36, t37, t39, t40; HERO_NODEBUG HeroFailure t7, t31; HERO_NODEBUG h_syncursor_Cursor t11, t15; HERO_NODEBUG h_syntree_Op t20, t24, t35; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_scaled(&(*ph0_c), &(*ph1_t)); t43 = h9_own9; h9_own9 = t1; h_0opt_e201354_release(&t43); t44 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t44); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t45 = h10_own10; h10_own10 = t8; h_0opt_e201354_release(&t45); h8_ret0 = t8; goto bb13; bb3:
+#line 86
+    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t46 = h11_own11; h11_own11 = t12; h_lextoken_0Token_release(&t46); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_plus}; t47 = h12_own12; h12_own12 = t13; h_lextoken_0Token_release(&t47); t14 = h_lextoken_0Token_eq(&t12, &t13); h4_b0 = t14; if (t14) goto bb7; else goto bb6; bb4:
+    t20 = (h_syntree_Op){.tag = h_syntree_0Op_tag_add}; h5_op = t20;
+#line 89
+    t21 = h_syncursor_bump(&(*ph0_c)); t48 = h13_own13; h13_own13 = t21; h_lextoken_0Token_release(&t48); t22 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_minus}; t49 = h14_own14; h14_own14 = t22; h_lextoken_0Token_release(&t49); t23 = h_lextoken_0Token_eq(&t21, &t22); if (t23) goto bb9; else goto bb10; bb5:
+#line 94
+    t40 = h3_left; t41 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t40}; t50 = h15_own15; h15_own15 = t41; h_0opt_e201354_release(&t50); h8_ret0 = t41; goto bb13; bb6:
+#line 86
+    t15 = (*ph0_c); t16 = h_syncursor_here(t15); t51 = h16_own16; h16_own16 = t16; h_lextoken_0Token_release(&t51); t17 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_minus}; t52 = h17_own17; h17_own17 = t17; h_lextoken_0Token_release(&t52); t18 = h_lextoken_0Token_eq(&t16, &t17); h4_b0 = t18; goto bb7; bb7: t19 = h4_b0; if (t19) goto bb4; else goto bb5; bb8:
+#line 91
+    t25 = h_synexpr_scaled(&(*ph0_c), &(*ph1_t)); t53 = h18_own18; h18_own18 = t25; h_0opt_e201354_release(&t53); t54 = h6_f1; h_0opt_e201354_retain(&t25); h6_f1 = t25; h_0opt_e201354_release(&t54); t26 = h6_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb11; else goto bb12; bb9:
+#line 90
+    t24 = (h_syntree_Op){.tag = h_syntree_0Op_tag_subtract}; h5_op = t24; goto bb8; bb10: goto bb8; bb11:
+    t33 = h6_f1; t34 = t33.as.ok; h7_right = t34;
+    t35 = h5_op; t36 = h3_left; t37 = h7_right; t38 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t35, .f_left = t36, .f_right = t37}}; t55 = h19_own19; h19_own19 = t38; h_syntree_0Expr_release(&t55); t39 = h_syntree_added_expr(&(*ph1_t), t38); h3_left = t39; goto bb3; bb12:
+#line 91
+    t30 = h6_f1; t31 = t30.as.err; hero_failure_retain(&t31); t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t31}; t56 = h20_own20; h20_own20 = t32; h_0opt_e201354_release(&t56); h8_ret0 = t32; goto bb13; bb13:
+#line 3938 "main.c"
+    t42 = h8_ret0;
+    h_0opt_e201354_retain(&t42);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
+    h_lextoken_0Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_0Token_release(hero_slot_escape(&h13_own13));
+    h_lextoken_0Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_lextoken_0Token_release(hero_slot_escape(&h16_own16));
+    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_syntree_0Expr_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    return t42;
+}
+
+#line 96 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_scaled(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_f1 = {0}, h8_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h14_own14 = {0}, h16_own16 = {0}, h18_own18 = {0}, t1, t2, t6, t8, t9, t24, t25, t29, t31, t32, t40, t41, t42, t43, t44, t49, t51, t52, t54; int64_t h3_left; h_syntree_Op h4_op; h_lextoken_Token h5_taken = {0}; int64_t h7_right; HERO_NODEBUG h_lextoken_Token h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, t12, t15, t16, t17, t20, t21, t45, t46, t47, t48, t50; HERO_NODEBUG h_syntree_Expr h17_own17 = {0}, t37, t53; HERO_NODEBUG int64_t t3, t4, t10, t26, t27, t33, t35, t36, t38, t39; HERO_NODEBUG bool t5, t13, t18, t22, t28; HERO_NODEBUG HeroFailure t7, t30; HERO_NODEBUG h_syncursor_Cursor t11; HERO_NODEBUG h_syntree_Op t14, t19, t23, t34; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t42 = h9_own9; h9_own9 = t1; h_0opt_e201354_release(&t42); t43 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t43); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_left = t10; goto bb3; bb2: t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t44 = h10_own10; h10_own10 = t8; h_0opt_e201354_release(&t44); h8_ret0 = t8; goto bb14; bb3:
+#line 99
+    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t45 = h11_own11; h11_own11 = t12; h_lextoken_0Token_release(&t45); t13 = h_synexpr_is_scaling(t12); if (t13) goto bb4; else goto bb5; bb4:
+    t14 = (h_syntree_Op){.tag = h_syntree_0Op_tag_multiply}; h4_op = t14;
+    t15 = h_syncursor_bump(&(*ph0_c)); t46 = h12_own12; h12_own12 = t15; h_lextoken_0Token_release(&t46); t47 = h5_taken; h_lextoken_0Token_retain(&t15); h5_taken = t15; h_lextoken_0Token_release(&t47);
+#line 103
+    t16 = h5_taken; t17 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_slash}; t48 = h13_own13; h13_own13 = t17; h_lextoken_0Token_release(&t48); t18 = h_lextoken_0Token_eq(&t16, &t17); if (t18) goto bb7; else goto bb8; bb5:
+#line 111
+    t39 = h3_left; t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t39}; t49 = h14_own14; h14_own14 = t40; h_0opt_e201354_release(&t49); h8_ret0 = t40; goto bb14; bb6:
+#line 106
+    t20 = h5_taken; t21 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_percent}; t50 = h15_own15; h15_own15 = t21; h_lextoken_0Token_release(&t50); t22 = h_lextoken_0Token_eq(&t20, &t21); if (t22) goto bb10; else goto bb11; bb7:
+#line 104
+    t19 = (h_syntree_Op){.tag = h_syntree_0Op_tag_divide}; h4_op = t19; goto bb6; bb8: goto bb6; bb9:
+#line 108
+    t24 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t51 = h16_own16; h16_own16 = t24; h_0opt_e201354_release(&t51); t52 = h6_f1; h_0opt_e201354_retain(&t24); h6_f1 = t24; h_0opt_e201354_release(&t52); t25 = h6_f1; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb12; else goto bb13; bb10:
+#line 107
+    t23 = (h_syntree_Op){.tag = h_syntree_0Op_tag_remainder}; h4_op = t23; goto bb9; bb11: goto bb9; bb12:
+    t32 = h6_f1; t33 = t32.as.ok; h7_right = t33;
+    t34 = h4_op; t35 = h3_left; t36 = h7_right; t37 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_binary, .as.c_binary = {.f_op = t34, .f_left = t35, .f_right = t36}}; t53 = h17_own17; h17_own17 = t37; h_syntree_0Expr_release(&t53); t38 = h_syntree_added_expr(&(*ph1_t), t37); h3_left = t38; goto bb3; bb13:
+#line 108
+    t29 = h6_f1; t30 = t29.as.err; hero_failure_retain(&t30); t31 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t30}; t54 = h18_own18; h18_own18 = t31; h_0opt_e201354_release(&t54); h8_ret0 = t31; goto bb14; bb14:
+#line 3981 "main.c"
+    t41 = h8_ret0;
+    h_0opt_e201354_retain(&t41);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_lextoken_0Token_release(hero_slot_escape(&h5_taken));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
+    h_lextoken_0Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_0Token_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_lextoken_0Token_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_syntree_0Expr_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    return t41;
+}
+
+#line 115 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_unary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_ret0 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h20_own20 = {0}, h21_own21 = {0}, t6, t7, t11, t13, t14, t19, t25, t26, t30, t32, t33, t38, t39, t40, t46, t47, t49, t50, t51, t53, t54, t56, t57; int64_t h3_on; int64_t h5_on; HERO_NODEBUG h_lextoken_Token h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h17_own17 = {0}, t2, t3, t5, t21, t22, t24, t41, t42, t43, t44, t45, t52; HERO_NODEBUG h_syntree_Expr h13_own13 = {0}, h19_own19 = {0}, t17, t36, t48, t55; HERO_NODEBUG h_syncursor_Cursor t1, t20; HERO_NODEBUG bool t4, t10, t23, t29; HERO_NODEBUG int64_t t8, t9, t15, t16, t18, t27, t28, t34, t35, t37; HERO_NODEBUG HeroFailure t12, t31; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t41 = h7_own7; h7_own7 = t2; h_lextoken_0Token_release(&t41); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_minus}; t42 = h8_own8; h8_own8 = t3; h_lextoken_0Token_release(&t42); t4 = h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb1:
+#line 121
+    t20 = (*ph0_c); t21 = h_syncursor_here(t20); t43 = h9_own9; h9_own9 = t21; h_lextoken_0Token_release(&t43); t22 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bang}; t44 = h10_own10; h10_own10 = t22; h_lextoken_0Token_release(&t44); t23 = h_lextoken_0Token_eq(&t21, &t22); if (t23) goto bb7; else goto bb8; bb2:
+#line 117
+    t5 = h_syncursor_bump(&(*ph0_c)); t45 = h11_own11; h11_own11 = t5; h_lextoken_0Token_release(&t45);
+    t6 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t46 = h12_own12; h12_own12 = t6; h_0opt_e201354_release(&t46); t47 = h2_f0; h_0opt_e201354_retain(&t6); h2_f0 = t6; h_0opt_e201354_release(&t47); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3: goto bb1; bb4: t14 = h2_f0; t15 = t14.as.ok; h3_on = t15;
+    t16 = h3_on; t17 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_negate, .as.c_negate = {.f_on = t16}}; t48 = h13_own13; h13_own13 = t17; h_syntree_0Expr_release(&t48); t18 = h_syntree_added_expr(&(*ph1_t), t17); t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t18}; t49 = h14_own14; h14_own14 = t19; h_0opt_e201354_release(&t49); h6_ret0 = t19; goto bb11; bb5:
+#line 118
+    t11 = h2_f0; t12 = t11.as.err; hero_failure_retain(&t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t12}; t50 = h15_own15; h15_own15 = t13; h_0opt_e201354_release(&t50); h6_ret0 = t13; goto bb11; bb6:
+#line 126
+    t39 = h_synexpr_primary(&(*ph0_c), &(*ph1_t)); t51 = h16_own16; h16_own16 = t39; h_0opt_e201354_release(&t51); h6_ret0 = t39; goto bb11; bb7:
+#line 122
+    t24 = h_syncursor_bump(&(*ph0_c)); t52 = h17_own17; h17_own17 = t24; h_lextoken_0Token_release(&t52);
+    t25 = h_synexpr_unary(&(*ph0_c), &(*ph1_t)); t53 = h18_own18; h18_own18 = t25; h_0opt_e201354_release(&t53); t54 = h4_f1; h_0opt_e201354_retain(&t25); h4_f1 = t25; h_0opt_e201354_release(&t54); t26 = h4_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb9; else goto bb10; bb8: goto bb6; bb9: t33 = h4_f1; t34 = t33.as.ok; h5_on = t34;
+    t35 = h5_on; t36 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_invert, .as.c_invert = {.f_on = t35}}; t55 = h19_own19; h19_own19 = t36; h_syntree_0Expr_release(&t55); t37 = h_syntree_added_expr(&(*ph1_t), t36); t38 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t37}; t56 = h20_own20; h20_own20 = t38; h_0opt_e201354_release(&t56); h6_ret0 = t38; goto bb11; bb10:
+#line 123
+    t30 = h4_f1; t31 = t30.as.err; hero_failure_retain(&t31); t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t31}; t57 = h21_own21; h21_own21 = t32; h_0opt_e201354_release(&t57); h6_ret0 = t32; goto bb11; bb11:
+#line 4019 "main.c"
+    t40 = h6_ret0;
+    h_0opt_e201354_retain(&t40);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
+    h_lextoken_0Token_release(hero_slot_escape(&h8_own8));
+    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_syntree_0Expr_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_syntree_0Expr_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
+    return t40;
+}
+
+#line 134 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_primary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_lextoken_Token h2_s0 = {0}, h7_own7 = {0}, t1, t2, t4, t10, t24, t50, t51; HERO_NODEBUG h_0opt_e201354 h3_r0 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t9, t15, t19, t23, t27, t28, t30, t32, t34, t36, t38, t40, t42, t44, t46, t48, t49, t52, t54, t55, t58, t59, t61, t62, t64, t65, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90; h_lextoken_0Token_c_number h4_n; h_lextoken_0Token_c_text h5_x = {0}; h_lextoken_0Token_c_name h6_n = {0}; HERO_NODEBUG h_syntree_Expr h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t7, t13, t17, t21, t53, t57, t60, t63; HERO_NODEBUG int64_t t3, t6, t8, t14, t18, t22; HERO_NODEBUG h_lextoken_0Token_c_number t5; HERO_NODEBUG h_lextoken_0Token_c_text t11, t56; HERO_NODEBUG HeroStr t12, t26, t29, t31, t33, t35, t37, t39, t41, t43, t45, t47; HERO_NODEBUG bool t16, t20; HERO_NODEBUG h_lextoken_0Token_c_name t25, t66; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_syncursor_bump(&(*ph0_c)); t50 = h7_own7; h7_own7 = t1; h_lextoken_0Token_release(&t50); t51 = h2_s0; h_lextoken_0Token_retain(&t1); h2_s0 = t1; h_lextoken_0Token_release(&t51); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb6; case 3: goto bb8; case 4: goto bb8; case 5: goto bb8; case 6: goto bb8; case 7: goto bb8; case 8: goto bb9; case 9: goto bb9; case 10: goto bb9; case 11: goto bb9; case 12: goto bb4; case 13: goto bb5; case 14: goto bb10; case 15: goto bb13; case 16: goto bb10; case 17: goto bb10; case 18: goto bb10; case 19: goto bb11; case 20: goto bb11; case 21: goto bb11; case 22: goto bb11; case 23: goto bb11; case 24: goto bb12; case 25: goto bb12; case 26: goto bb13; case 27: goto bb12; case 28: goto bb12; case 29: goto bb7; case 30: goto bb14; case 31: goto bb15; case 32: goto bb16; case 33: goto bb17; default: hero_unreachable(); } bb1: t49 = h3_r0;
+#line 4045 "main.c"
+    h_0opt_e201354_retain(&t49);
+#line 135 "examples/interpreter/syn/expr.hero"
+    t52 = h8_own8; h8_own8 = t49; h_0opt_e201354_release(&t52);
+#line 4049 "main.c"
+    h_0opt_e201354_retain(&t49);
+    h_lextoken_0Token_release(hero_slot_escape(&h2_s0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_r0));
+    h_lextoken_0Token_c_text_release(hero_slot_escape(&h5_x));
+    h_lextoken_0Token_c_name_release(hero_slot_escape(&h6_n));
+    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_syntree_0Expr_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_syntree_0Expr_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_syntree_0Expr_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_syntree_0Expr_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
+    h_0opt_e201354_release(hero_slot_escape(&h23_own23));
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_0opt_e201354_release(hero_slot_escape(&h26_own26));
+    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
+    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
+    return t49;
+bb2:
+#line 136 "examples/interpreter/syn/expr.hero"
+    t4 = h2_s0; t5 = t4.as.c_number; h4_n = t5; t6 = h4_n.f_value; t7 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_number, .as.c_number = {.f_value = t6}}; t53 = h9_own9; h9_own9 = t7; h_syntree_0Expr_release(&t53); t8 = h_syntree_added_expr(&(*ph1_t), t7); t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t54 = h10_own10; h10_own10 = t9; h_0opt_e201354_release(&t54);
+#line 135
+    t55 = h3_r0; h_0opt_e201354_retain(&t9); h3_r0 = t9; h_0opt_e201354_release(&t55); goto bb1; bb3:
+#line 137
+    t10 = h2_s0; t11 = t10.as.c_text; t56 = h5_x; h_lextoken_0Token_c_text_retain(&t11); h5_x = t11; h_lextoken_0Token_c_text_release(&t56); t12 = h5_x.f_value; hero_str_incref(t12); t13 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_text, .as.c_text = {.f_value = t12}}; t57 = h11_own11; h11_own11 = t13; h_syntree_0Expr_release(&t57); t14 = h_syntree_added_expr(&(*ph1_t), t13); t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t14}; t58 = h12_own12; h12_own12 = t15; h_0opt_e201354_release(&t58);
+#line 135
+    t59 = h3_r0; h_0opt_e201354_retain(&t15); h3_r0 = t15; h_0opt_e201354_release(&t59); goto bb1; bb4:
+#line 138
+    t16 = true; t17 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_truth, .as.c_truth = {.f_value = t16}}; t60 = h13_own13; h13_own13 = t17; h_syntree_0Expr_release(&t60); t18 = h_syntree_added_expr(&(*ph1_t), t17); t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t18}; t61 = h14_own14; h14_own14 = t19; h_0opt_e201354_release(&t61);
+#line 135
+    t62 = h3_r0; h_0opt_e201354_retain(&t19); h3_r0 = t19; h_0opt_e201354_release(&t62); goto bb1; bb5:
+#line 139
+    t20 = false; t21 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_truth, .as.c_truth = {.f_value = t20}}; t63 = h15_own15; h15_own15 = t21; h_syntree_0Expr_release(&t63); t22 = h_syntree_added_expr(&(*ph1_t), t21); t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t22}; t64 = h16_own16; h16_own16 = t23; h_0opt_e201354_release(&t64);
+#line 135
+    t65 = h3_r0; h_0opt_e201354_retain(&t23); h3_r0 = t23; h_0opt_e201354_release(&t65); goto bb1; bb6:
+#line 140
+    t24 = h2_s0; t25 = t24.as.c_name; t66 = h6_n; h_lextoken_0Token_c_name_retain(&t25); h6_n = t25; h_lextoken_0Token_c_name_release(&t66); t26 = h6_n.f_value; t27 = h_synexpr_named(&(*ph0_c), &(*ph1_t), t26); t67 = h17_own17; h17_own17 = t27; h_0opt_e201354_release(&t67);
+#line 135
+    t68 = h3_r0; h_0opt_e201354_retain(&t27); h3_r0 = t27; h_0opt_e201354_release(&t68); goto bb1; bb7:
+#line 141
+    t28 = h_synexpr_grouped(&(*ph0_c), &(*ph1_t)); t69 = h18_own18; h18_own18 = t28; h_0opt_e201354_release(&t69);
+#line 135
+    t70 = h3_r0; h_0opt_e201354_retain(&t28); h3_r0 = t28; h_0opt_e201354_release(&t70); goto bb1; bb8:
+#line 142
+    t29 = HERO_STR_LIT(hero_str_7441fe7c); t30 = h_synexpr_not_a_value(t29); t71 = h19_own19; h19_own19 = t30; h_0opt_e201354_release(&t71);
+#line 135
+    t72 = h3_r0; h_0opt_e201354_retain(&t30); h3_r0 = t30; h_0opt_e201354_release(&t72); goto bb1; bb9:
+#line 143
+    t31 = HERO_STR_LIT(hero_str_7441fe7c); t32 = h_synexpr_not_a_value(t31); t73 = h20_own20; h20_own20 = t32; h_0opt_e201354_release(&t73);
+#line 135
+    t74 = h3_r0; h_0opt_e201354_retain(&t32); h3_r0 = t32; h_0opt_e201354_release(&t74); goto bb1; bb10:
+#line 144
+    t33 = HERO_STR_LIT(hero_str_1c8bc6f5); t34 = h_synexpr_not_a_value(t33); t75 = h21_own21; h21_own21 = t34; h_0opt_e201354_release(&t75);
+#line 135
+    t76 = h3_r0; h_0opt_e201354_retain(&t34); h3_r0 = t34; h_0opt_e201354_release(&t76); goto bb1; bb11:
+#line 146
+    t35 = HERO_STR_LIT(hero_str_1c8bc6f5);
+#line 145
+    t36 = h_synexpr_not_a_value(t35); t77 = h22_own22; h22_own22 = t36; h_0opt_e201354_release(&t77);
+#line 135
+    t78 = h3_r0; h_0opt_e201354_retain(&t36); h3_r0 = t36; h_0opt_e201354_release(&t78); goto bb1; bb12:
+#line 148
+    t37 = HERO_STR_LIT(hero_str_1c8bc6f5); t38 = h_synexpr_not_a_value(t37); t79 = h23_own23; h23_own23 = t38; h_0opt_e201354_release(&t79);
+#line 135
+    t80 = h3_r0; h_0opt_e201354_retain(&t38); h3_r0 = t38; h_0opt_e201354_release(&t80); goto bb1; bb13:
+#line 149
+    t39 = HERO_STR_LIT(hero_str_340a1642); t40 = h_synexpr_not_a_value(t39); t81 = h24_own24; h24_own24 = t40; h_0opt_e201354_release(&t81);
+#line 135
+    t82 = h3_r0; h_0opt_e201354_retain(&t40); h3_r0 = t40; h_0opt_e201354_release(&t82); goto bb1; bb14:
+#line 150
+    t41 = HERO_STR_LIT(hero_str_6bb0184d); t42 = h_synexpr_not_a_value(t41); t83 = h25_own25; h25_own25 = t42; h_0opt_e201354_release(&t83);
+#line 135
+    t84 = h3_r0; h_0opt_e201354_retain(&t42); h3_r0 = t42; h_0opt_e201354_release(&t84); goto bb1; bb15:
+#line 151
+    t43 = HERO_STR_LIT(hero_str_30ea22c7); t44 = h_synexpr_not_a_value(t43); t85 = h26_own26; h26_own26 = t44; h_0opt_e201354_release(&t85);
+#line 135
+    t86 = h3_r0; h_0opt_e201354_retain(&t44); h3_r0 = t44; h_0opt_e201354_release(&t86); goto bb1; bb16:
+#line 152
+    t45 = HERO_STR_LIT(hero_str_7b65ce0); t46 = h_synexpr_not_a_value(t45); t87 = h27_own27; h27_own27 = t46; h_0opt_e201354_release(&t87);
+#line 135
+    t88 = h3_r0; h_0opt_e201354_retain(&t46); h3_r0 = t46; h_0opt_e201354_release(&t88); goto bb1; bb17:
+#line 153
+    t47 = HERO_STR_LIT(hero_str_6e88a38); t48 = h_synexpr_not_a_value(t47); t89 = h28_own28; h28_own28 = t48; h_0opt_e201354_release(&t89);
+#line 135
+    t90 = h3_r0; h_0opt_e201354_retain(&t48); h3_r0 = t48; h_0opt_e201354_release(&t90); goto bb1;
+#line 4145 "main.c"
+}
+
+#line 155 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_not_a_value(HeroStr h0_said) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t6, t7; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}, t5, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_ERR_PARSE(); t6 = h1_own1; h1_own1 = t1; hero_str_decref(t6); t2 = HERO_STR_LIT(hero_str_19375826); t3 = h0_said; t4 = hero_str_concat(t2, t3); t7 = h2_own2; h2_own2 = t4; hero_str_decref(t7); hero_str_incref(t1); hero_str_incref(t4); t5 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t4}}; t8 = h3_own3; h3_own3 = t5; h_0opt_e201354_release(&t8);
+#line 4151 "main.c"
+    h_0opt_e201354_retain(&t5);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    return t5;
+}
+
+#line 160 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_named(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t, HeroStr h2_word) { HeroArrayHeader * h3_given = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h5_f1 = {0}, h7_ret0 = {0}, h15_own15 = {0}, h16_own16 = {0}, h19_own19 = {0}, h20_own20 = {0}, h22_own22 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, t8, t20, t22, t23, t27, t29, t30, t36, t37, t41, t43, t44, t55, t62, t63, t72, t73, t74, t77, t78, t80, t81, t85, t87, t88; HERO_NODEBUG h_0opt_a8ea2 h6_f2 = {0}, h24_own24 = {0}, t48, t49, t53, t83, t84; HERO_NODEBUG h_lextoken_Token h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h17_own17 = {0}, h21_own21 = {0}, h23_own23 = {0}, t2, t3, t9, t12, t13, t15, t33, t47, t64, t65, t66, t69, t70, t75, t79, t82; HERO_NODEBUG HeroArrayHeader *h11_own11 = {0}, *t10, *t17, *t59, *t67, *t68; HERO_NODEBUG h_syntree_Expr h14_own14 = {0}, h18_own18 = {0}, h26_own26 = {0}, t6, t18, t60, t71, t76, t86; HERO_NODEBUG h_syncursor_Cursor t1, t11; HERO_NODEBUG bool t4, t14, t26, t34, t40, t52; HERO_NODEBUG HeroStr t5, t16, t58; HERO_NODEBUG int64_t t7, t19, t24, t25, t31, t38, t39, t45, t50, t51, t61; HERO_NODEBUG HeroFailure t28, t42, t54; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_c); t2 = h_syncursor_here(t1); t64 = h8_own8; h8_own8 = t2; h_lextoken_0Token_release(&t64); t3 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_lparen}; t65 = h9_own9; h9_own9 = t3; h_lextoken_0Token_release(&t65); t4 = !h_lextoken_0Token_eq(&t2, &t3); if (t4) goto bb2; else goto bb3; bb1:
+#line 163
+    t9 = h_syncursor_bump(&(*ph0_c)); t66 = h10_own10; h10_own10 = t9; h_lextoken_0Token_release(&t66);
+#line 167
+    t10 = hero_array_new(&hero_desc_int, 1); t67 = h11_own11; h11_own11 = t10; hero_array_decref(t67); t68 = h3_given; hero_array_incref(t10); h3_given = t10; hero_array_decref(t68);
+#line 169
+    t11 = (*ph0_c); t12 = h_syncursor_here(t11); t69 = h12_own12; h12_own12 = t12; h_lextoken_0Token_release(&t69); t13 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_rparen}; t70 = h13_own13; h13_own13 = t13; h_lextoken_0Token_release(&t70); t14 = h_lextoken_0Token_eq(&t12, &t13); if (t14) goto bb5; else goto bb6; bb2:
+#line 162
+    t5 = h2_word; hero_str_incref(t5); t6 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_name, .as.c_name = {.f_value = t5}}; t71 = h14_own14; h14_own14 = t6; h_syntree_0Expr_release(&t71); t7 = h_syntree_added_expr(&(*ph1_t), t6); t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t7}; t72 = h15_own15; h15_own15 = t8; h_0opt_e201354_release(&t72); h7_ret0 = t8; goto bb16; bb3: goto bb1; bb4:
+#line 178
+    t22 = h_synexpr_parsed(&(*ph0_c), &(*ph1_t)); t73 = h16_own16; h16_own16 = t22; h_0opt_e201354_release(&t73); t74 = h4_f0; h_0opt_e201354_retain(&t22); h4_f0 = t22; h_0opt_e201354_release(&t74); t23 = h4_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb7; else goto bb8; bb5:
+#line 170
+    t15 = h_syncursor_bump(&(*ph0_c)); t75 = h17_own17; h17_own17 = t15; h_lextoken_0Token_release(&t75);
+    t16 = h2_word; t17 = h3_given; hero_str_incref(t16); hero_array_incref(t17); t18 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_call, .as.c_call = {.f_name = t16, .f_args = t17}}; t76 = h18_own18; h18_own18 = t18; h_syntree_0Expr_release(&t76); t19 = h_syntree_added_expr(&(*ph1_t), t18); t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t19}; t77 = h19_own19; h19_own19 = t20; h_0opt_e201354_release(&t77); h7_ret0 = t20; goto bb16; bb6: goto bb4; bb7:
+#line 178
+    t30 = h4_f0; t31 = t30.as.ok; hero_array_push_owned(&h3_given, &t31); goto bb9; bb8: t27 = h4_f0; t28 = t27.as.err; hero_failure_retain(&t28); t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28}; t78 = h20_own20; h20_own20 = t29; h_0opt_e201354_release(&t78); h7_ret0 = t29; goto bb16; bb9:
+#line 180
+    t33 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_comma}; t79 = h21_own21; h21_own21 = t33; h_lextoken_0Token_release(&t79); t34 = h_syncursor_accepted(&(*ph0_c), t33); if (t34) goto bb10; else goto bb11; bb10:
+    t36 = h_synexpr_parsed(&(*ph0_c), &(*ph1_t)); t80 = h22_own22; h22_own22 = t36; h_0opt_e201354_release(&t80); t81 = h5_f1; h_0opt_e201354_retain(&t36); h5_f1 = t36; h_0opt_e201354_release(&t81); t37 = h5_f1; t38 = t37.tag; t39 = INT64_C(0); t40 = t38 == t39; if (t40) goto bb12; else goto bb13; bb11:
+#line 183
+    t47 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_rparen}; t82 = h23_own23; h23_own23 = t47; h_lextoken_0Token_release(&t82); t48 = h_syncursor_expected(&(*ph0_c), t47); t83 = h24_own24; h24_own24 = t48; h_0opt_a8ea2_release(&t83); t84 = h6_f2; h_0opt_a8ea2_retain(&t48); h6_f2 = t48; h_0opt_a8ea2_release(&t84); t49 = h6_f2; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb14; else goto bb15; bb12:
+#line 181
+    t44 = h5_f1; t45 = t44.as.ok; hero_array_push_owned(&h3_given, &t45); goto bb9; bb13: t41 = h5_f1; t42 = t41.as.err; hero_failure_retain(&t42); t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t42}; t85 = h25_own25; h25_own25 = t43; h_0opt_e201354_release(&t85); h7_ret0 = t43; goto bb16; bb14:
+#line 184
+    t58 = h2_word; t59 = h3_given; hero_str_incref(t58); hero_array_incref(t59); t60 = (h_syntree_Expr){.tag = h_syntree_0Expr_tag_call, .as.c_call = {.f_name = t58, .f_args = t59}}; t86 = h26_own26; h26_own26 = t60; h_syntree_0Expr_release(&t86); t61 = h_syntree_added_expr(&(*ph1_t), t60); t62 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t61}; t87 = h27_own27; h27_own27 = t62; h_0opt_e201354_release(&t87); h7_ret0 = t62; goto bb16; bb15:
+#line 183
+    t53 = h6_f2; t54 = t53.as.err; hero_failure_retain(&t54); t55 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t54}; t88 = h28_own28; h28_own28 = t55; h_0opt_e201354_release(&t88); h7_ret0 = t55; goto bb16; bb16:
+#line 4188 "main.c"
+    t63 = h7_ret0;
+    h_0opt_e201354_retain(&t63);
+    hero_array_release_at(&h3_given);
+    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f1));
+    h_0opt_a8ea2_release(hero_slot_escape(&h6_f2));
+    h_lextoken_0Token_release(hero_slot_escape(&h8_own8));
+    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_0Token_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    h_lextoken_0Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_0Token_release(hero_slot_escape(&h13_own13));
+    h_syntree_0Expr_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_lextoken_0Token_release(hero_slot_escape(&h17_own17));
+    h_syntree_0Expr_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_lextoken_0Token_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
+    h_lextoken_0Token_release(hero_slot_escape(&h23_own23));
+    h_0opt_a8ea2_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_syntree_0Expr_release(hero_slot_escape(&h26_own26));
+    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
+    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
+    return t63;
+}
+
+#line 186 "examples/interpreter/syn/expr.hero"
+h_0opt_e201354 h_synexpr_grouped(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_ret0 = {0}, h6_own6 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t1, t2, t6, t8, t9, t19, t23, t24, t25, t26, t30, t31, t32; int64_t h3_inside; HERO_NODEBUG h_0opt_a8ea2 h4_f1 = {0}, h8_own8 = {0}, t12, t13, t17, t28, t29; HERO_NODEBUG h_lextoken_Token h7_own7 = {0}, t11, t27; HERO_NODEBUG int64_t t3, t4, t10, t14, t15, t22; HERO_NODEBUG bool t5, t16; HERO_NODEBUG HeroFailure t7, t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_synexpr_parsed(&(*ph0_c), &(*ph1_t)); t25 = h6_own6; h6_own6 = t1; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t1); h2_f0 = t1; h_0opt_e201354_release(&t26); t2 = h2_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h2_f0; t10 = t9.as.ok; h3_inside = t10;
+    t11 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_rparen}; t27 = h7_own7; h7_own7 = t11; h_lextoken_0Token_release(&t27); t12 = h_syncursor_expected(&(*ph0_c), t11); t28 = h8_own8; h8_own8 = t12; h_0opt_a8ea2_release(&t28); t29 = h4_f1; h_0opt_a8ea2_retain(&t12); h4_f1 = t12; h_0opt_a8ea2_release(&t29); t13 = h4_f1; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb3; else goto bb4; bb2:
+#line 187
+    t6 = h2_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t30 = h9_own9; h9_own9 = t8; h_0opt_e201354_release(&t30); h5_ret0 = t8; goto bb5; bb3:
+#line 189
+    t22 = h3_inside; t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t22}; t31 = h10_own10; h10_own10 = t23; h_0opt_e201354_release(&t31); h5_ret0 = t23; goto bb5; bb4:
+#line 188
+    t17 = h4_f1; t18 = t17.as.err; hero_failure_retain(&t18); t19 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t18}; t32 = h11_own11; h11_own11 = t19; h_0opt_e201354_release(&t32); h5_ret0 = t19; goto bb5; bb5:
+#line 4229 "main.c"
+    t24 = h5_ret0;
+    h_0opt_e201354_retain(&t24);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_a8ea2_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    return t24;
+}
+
+#line 191 "examples/interpreter/syn/expr.hero"
+bool h_synexpr_is_scaling(h_lextoken_Token h0_t) { HERO_NODEBUG bool h1_b0, h2_b1, t3, t6, t7, t10, t11; HERO_NODEBUG h_lextoken_Token h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t4, t5, t8, t9, t12, t13, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_t; t2 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_star}; t12 = h3_own3; h3_own3 = t2; h_lextoken_0Token_release(&t12); t3 = h_lextoken_0Token_eq(&t1, &t2); h2_b1 = t3; if (t3) goto bb2; else goto bb1; bb1: t4 = h0_t; t5 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_slash}; t13 = h4_own4; h4_own4 = t5; h_lextoken_0Token_release(&t13); t6 = h_lextoken_0Token_eq(&t4, &t5); h2_b1 = t6; goto bb2; bb2: t7 = h2_b1; h1_b0 = t7; if (t7) goto bb4; else goto bb3; bb3: t8 = h0_t; t9 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_percent}; t14 = h5_own5; h5_own5 = t9; h_lextoken_0Token_release(&t14); t10 = h_lextoken_0Token_eq(&t8, &t9); h1_b0 = t10; goto bb4; bb4: t11 = h1_b0;
+#line 4246 "main.c"
+    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_0Token_release(hero_slot_escape(&h4_own4));
+    h_lextoken_0Token_release(hero_slot_escape(&h5_own5));
+    return t11;
+}
+
+#line 197 "examples/interpreter/syn/expr.hero"
+h_0opt_3ce1b94c h_synexpr_comparison_of(h_lextoken_Token h0_t) { HERO_NODEBUG h_0opt_3ce1b94c h1_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, t5, t10, t15, t20, t25, t30, t38, t39, t42, t44, t46, t48, t50, t54, t55; HERO_NODEBUG h_lextoken_Token h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, t1, t2, t6, t7, t11, t12, t16, t17, t21, t22, t26, t27, t33, t40, t41, t43, t45, t47, t49; HERO_NODEBUG HeroStr h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t31, t32, t34, t35, t36, t37, t51, t52, t53; HERO_NODEBUG bool t3, t8, t13, t18, t23, t28; HERO_NODEBUG h_syntree_Op t4, t9, t14, t19, t24, t29; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_t; t2 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_less}; t40 = h2_own2; h2_own2 = t2; h_lextoken_0Token_release(&t40); t3 = h_lextoken_0Token_eq(&t1, &t2); if (t3) goto bb2; else goto bb3; bb1:
+#line 201
+    t6 = h0_t; t7 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_less_equal}; t41 = h3_own3; h3_own3 = t7; h_lextoken_0Token_release(&t41); t8 = h_lextoken_0Token_eq(&t6, &t7); if (t8) goto bb5; else goto bb6; bb2:
+#line 199
+    t4 = (h_syntree_Op){.tag = h_syntree_0Op_tag_less}; t5 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t4}; t42 = h4_own4; h4_own4 = t5; h_0opt_3ce1b94c_release(&t42); h1_ret0 = t5; goto bb19; bb3: goto bb1; bb4:
+#line 204
+    t11 = h0_t; t12 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_greater}; t43 = h5_own5; h5_own5 = t12; h_lextoken_0Token_release(&t43); t13 = h_lextoken_0Token_eq(&t11, &t12); if (t13) goto bb8; else goto bb9; bb5:
+#line 202
+    t9 = (h_syntree_Op){.tag = h_syntree_0Op_tag_less_equal}; t10 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t9}; t44 = h6_own6; h6_own6 = t10; h_0opt_3ce1b94c_release(&t44); h1_ret0 = t10; goto bb19; bb6: goto bb4; bb7:
+#line 207
+    t16 = h0_t; t17 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_greater_equal}; t45 = h7_own7; h7_own7 = t17; h_lextoken_0Token_release(&t45); t18 = h_lextoken_0Token_eq(&t16, &t17); if (t18) goto bb11; else goto bb12; bb8:
+#line 205
+    t14 = (h_syntree_Op){.tag = h_syntree_0Op_tag_greater}; t15 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t14}; t46 = h8_own8; h8_own8 = t15; h_0opt_3ce1b94c_release(&t46); h1_ret0 = t15; goto bb19; bb9: goto bb7; bb10:
+#line 210
+    t21 = h0_t; t22 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_equal_equal}; t47 = h9_own9; h9_own9 = t22; h_lextoken_0Token_release(&t47); t23 = h_lextoken_0Token_eq(&t21, &t22); if (t23) goto bb14; else goto bb15; bb11:
+#line 208
+    t19 = (h_syntree_Op){.tag = h_syntree_0Op_tag_greater_equal}; t20 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t19}; t48 = h10_own10; h10_own10 = t20; h_0opt_3ce1b94c_release(&t48); h1_ret0 = t20; goto bb19; bb12: goto bb10; bb13:
+#line 213
+    t26 = h0_t; t27 = (h_lextoken_Token){.tag = h_lextoken_0Token_tag_bang_equal}; t49 = h11_own11; h11_own11 = t27; h_lextoken_0Token_release(&t49); t28 = h_lextoken_0Token_eq(&t26, &t27); if (t28) goto bb17; else goto bb18; bb14:
+#line 211
+    t24 = (h_syntree_Op){.tag = h_syntree_0Op_tag_equal}; t25 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t24}; t50 = h12_own12; h12_own12 = t25; h_0opt_3ce1b94c_release(&t50); h1_ret0 = t25; goto bb19; bb15: goto bb13; bb16:
+#line 216
+    t31 = HERO_STR_LIT(hero_str_54f2e6e0); t32 = HERO_STR_LIT(hero_str_60); t33 = h0_t; t34 = h_lextoken_shown(t33); t51 = h13_own13; h13_own13 = t34; hero_str_decref(t51); t35 = hero_str_concat(t32, t34); t52 = h14_own14; h14_own14 = t35; hero_str_decref(t52); t36 = HERO_STR_LIT(hero_str_659f44c5); t37 = hero_str_concat(t35, t36); t53 = h15_own15; h15_own15 = t37; hero_str_decref(t53); hero_str_incref(t31); hero_str_incref(t37); t38 = (h_0opt_3ce1b94c){.tag = INT64_C(1), .as.err = {.code = t31, .msg = t37}}; t54 = h16_own16; h16_own16 = t38; h_0opt_3ce1b94c_release(&t54); h1_ret0 = t38; goto bb19; bb17:
+#line 214
+    t29 = (h_syntree_Op){.tag = h_syntree_0Op_tag_unequal}; t30 = (h_0opt_3ce1b94c){.tag = INT64_C(0), .as.ok = t29}; t55 = h17_own17; h17_own17 = t30; h_0opt_3ce1b94c_release(&t55); h1_ret0 = t30; goto bb19; bb18: goto bb16; bb19:
+#line 4280 "main.c"
+    t39 = h1_ret0;
+    h_0opt_3ce1b94c_retain(&t39);
+    h_lextoken_0Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_0Token_release(hero_slot_escape(&h3_own3));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h4_own4));
+    h_lextoken_0Token_release(hero_slot_escape(&h5_own5));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h6_own6));
+    h_lextoken_0Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h8_own8));
+    h_lextoken_0Token_release(hero_slot_escape(&h9_own9));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h10_own10));
+    h_lextoken_0Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h16_own16));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h17_own17));
+    return t39;
 }
 
 #line 33 "examples/interpreter/syn/parse.hero"
@@ -5730,28 +5730,6 @@ HERO_TU_LOCAL uint64_t h_lexscan_0Read_hash(const void *elem) {
     return h;
 }
 
-HERO_TU_LOCAL void h_syncursor_0Cursor_retain(const h_syncursor_Cursor *v) {
-    hero_array_incref(v->f_tokens);
-}
-
-HERO_TU_LOCAL void h_syncursor_0Cursor_release(h_syncursor_Cursor *v) {
-    hero_array_decref(v->f_tokens);
-}
-
-HERO_TU_LOCAL bool h_syncursor_0Cursor_eq(const h_syncursor_Cursor *a, const h_syncursor_Cursor *b) {
-    if (!(hero_array_eq(a->f_tokens, b->f_tokens))) return false;
-    if (!(a->f_at == b->f_at)) return false;
-    return true;
-}
-
-HERO_TU_LOCAL uint64_t h_syncursor_0Cursor_hash(const void *elem) {
-    const h_syncursor_Cursor *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_array)->hash(&v->f_tokens)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_at)) * UINT64_C(0x100000001b3);
-    return h;
-}
-
 HERO_TU_LOCAL bool h_runvalue_0Value_c_number_eq(const h_runvalue_0Value_c_number *a, const h_runvalue_0Value_c_number *b) {
     if (!(a->f_v == b->f_v)) return false;
     return true;
@@ -5955,6 +5933,28 @@ HERO_TU_LOCAL uint64_t h_runvalue_0Request_hash(const void *elem) {
     h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_array)->hash(&v->f_given)) * UINT64_C(0x100000001b3);
     h = (h ^ h_runvalue_0Frame_hash(&v->f_frame)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL void h_syncursor_0Cursor_retain(const h_syncursor_Cursor *v) {
+    hero_array_incref(v->f_tokens);
+}
+
+HERO_TU_LOCAL void h_syncursor_0Cursor_release(h_syncursor_Cursor *v) {
+    hero_array_decref(v->f_tokens);
+}
+
+HERO_TU_LOCAL bool h_syncursor_0Cursor_eq(const h_syncursor_Cursor *a, const h_syncursor_Cursor *b) {
+    if (!(hero_array_eq(a->f_tokens, b->f_tokens))) return false;
+    if (!(a->f_at == b->f_at)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_syncursor_0Cursor_hash(const void *elem) {
+    const h_syncursor_Cursor *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_array)->hash(&v->f_tokens)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_at)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -6632,70 +6632,6 @@ HERO_TU_LOCAL uint64_t h_0opt_3be6656d_hash(const void *elem) {
     return (h ^ (&h_lextoken_0Token_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_retain(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_release(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return true;
-}
-
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
-        * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
-    }
-    return h;
-}
-
-HERO_TU_LOCAL void h_0opt_3ce1b94c_retain(const h_0opt_3ce1b94c *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_retain(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL void h_0opt_3ce1b94c_release(h_0opt_3ce1b94c *v) {
-    if (v->tag == INT64_C(0)) {
-        return;
-    } else {
-        hero_failure_release(&v->as.err);
-    }
-}
-
-HERO_TU_LOCAL bool h_0opt_3ce1b94c_eq(const h_0opt_3ce1b94c *a, const h_0opt_3ce1b94c *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_syntree_0Op_desc)->eq(&a->as.ok, &b->as.ok);
-}
-
-HERO_TU_LOCAL uint64_t h_0opt_3ce1b94c_hash(const void *elem) {
-    const h_0opt_3ce1b94c *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
-        * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
-    }
-    return (h ^ (&h_syntree_0Op_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
-}
-
 HERO_TU_LOCAL void h_0opt_4d124e2a_retain(const h_0opt_4d124e2a *v) {
     if (v->tag == INT64_C(0)) {
         h_runexpr_0Answer_retain(&v->as.ok);
@@ -6758,6 +6694,70 @@ HERO_TU_LOCAL uint64_t h_0opt_473cb9ae_hash(const void *elem) {
         return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
     }
     return (h ^ (&hero_desc_bool)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+}
+
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return h;
+}
+
+HERO_TU_LOCAL void h_0opt_3ce1b94c_retain(const h_0opt_3ce1b94c *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_retain(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL void h_0opt_3ce1b94c_release(h_0opt_3ce1b94c *v) {
+    if (v->tag == INT64_C(0)) {
+        return;
+    } else {
+        hero_failure_release(&v->as.err);
+    }
+}
+
+HERO_TU_LOCAL bool h_0opt_3ce1b94c_eq(const h_0opt_3ce1b94c *a, const h_0opt_3ce1b94c *b) {
+    if (a->tag != b->tag) return false;
+    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+    return (&h_syntree_0Op_desc)->eq(&a->as.ok, &b->as.ok);
+}
+
+HERO_TU_LOCAL uint64_t h_0opt_3ce1b94c_hash(const void *elem) {
+    const h_0opt_3ce1b94c *v = elem;
+    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+        * UINT64_C(0x100000001b3);
+    if (v->tag != INT64_C(0)) {
+        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    }
+    return (h ^ (&h_syntree_0Op_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v) {
@@ -6825,10 +6825,10 @@ HERO_TU_LOCAL uint64_t h_0opt_5a58f2ca_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4761ff843083addc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("769e34f7444caece", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
-    hero_stack_spell("lexscan\tscan\nlextoken\ttoken\nsyncursor\tcursor\nsynexpr\texpr\nruneval\teval\nrunexpr\texpr\nrunvalue\tvalue\nsynparse\tparse\nsyntree\ttree\nutileach\teach\n");
+    hero_stack_spell("lexscan\tscan\nlextoken\ttoken\nruneval\teval\nrunexpr\texpr\nrunvalue\tvalue\nsyncursor\tcursor\nsynexpr\texpr\nsynparse\tparse\nsyntree\ttree\nutileach\teach\n");
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

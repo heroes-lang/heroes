@@ -63,10 +63,6 @@ typedef struct h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_H
     HeroStr f_b;
 } h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held;
 
-typedef struct h_fixedbugs2030one_Held {
-    int64_t f_a;
-} h_fixedbugs2030one_Held;
-
 typedef struct h_fixedbugs2030aheld_Held {
     int64_t f_a;
 } h_fixedbugs2030aheld_Held;
@@ -74,6 +70,10 @@ typedef struct h_fixedbugs2030aheld_Held {
 typedef struct h_fixedbugs2030bheld_Held {
     HeroStr f_b;
 } h_fixedbugs2030bheld_Held;
+
+typedef struct h_fixedbugs2030one_Held {
+    int64_t f_a;
+} h_fixedbugs2030one_Held;
 
 typedef struct h_0opt_2b8e1d5b {
     int64_t tag;
@@ -137,14 +137,14 @@ HERO_TU_LOCAL void h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstanc
 HERO_TU_LOCAL void h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_0Held_release(h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held *v);
 HERO_TU_LOCAL bool h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_0Held_eq(const h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held *a, const h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held *b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_0Held_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2030one_0Held_eq(const h_fixedbugs2030one_Held *a, const h_fixedbugs2030one_Held *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2030one_0Held_hash(const void *elem);
 HERO_TU_LOCAL bool h_fixedbugs2030aheld_0Held_eq(const h_fixedbugs2030aheld_Held *a, const h_fixedbugs2030aheld_Held *b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2030aheld_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_fixedbugs2030bheld_0Held_retain(const h_fixedbugs2030bheld_Held *v);
 HERO_TU_LOCAL void h_fixedbugs2030bheld_0Held_release(h_fixedbugs2030bheld_Held *v);
 HERO_TU_LOCAL bool h_fixedbugs2030bheld_0Held_eq(const h_fixedbugs2030bheld_Held *a, const h_fixedbugs2030bheld_Held *b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2030bheld_0Held_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2030one_0Held_eq(const h_fixedbugs2030one_Held *a, const h_fixedbugs2030one_Held *b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2030one_0Held_hash(const void *elem);
 HERO_TU_LOCAL void h_0opt_2b8e1d5b_retain(const h_0opt_2b8e1d5b *v);
 HERO_TU_LOCAL void h_0opt_2b8e1d5b_release(h_0opt_2b8e1d5b *v);
 HERO_TU_LOCAL bool h_0opt_2b8e1d5b_eq(const h_0opt_2b8e1d5b *a, const h_0opt_2b8e1d5b *b);
@@ -239,10 +239,10 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs2030bheld_0Held_desc = {
 h_0opt_2b8e1d5b h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_mine(void);
 int64_t h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_weigh(h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held h0_h);
 void h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_main(void);
-h_0opt_7090cf3b h_fixedbugs2030one_made(void);
-int64_t h_fixedbugs2030one_weigh(h_fixedbugs2030one_Held h0_h);
 h_fixedbugs2030aheld_Held h_fixedbugs2030aheld_made(void);
 h_fixedbugs2030bheld_Held h_fixedbugs2030bheld_made(void);
+h_0opt_7090cf3b h_fixedbugs2030one_made(void);
+int64_t h_fixedbugs2030one_weigh(h_fixedbugs2030one_Held h0_h);
 HERO_TU_LOCAL HeroStr h_fixedbugs2030one_0failure_21bceee4(h_0opt_7090cf3b h0_result);
 HERO_TU_LOCAL HeroStr h_fixedbugs2030one_0failure_19775961(h_0opt_2b8e1d5b h0_result);
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_0count_21bceee4(HeroArrayHeader * h0_xs);
@@ -311,10 +311,25 @@ void h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_main(void) 
     return;
 }
 
+#line 7 "tests/golden/run/fixedbugs2030/a/held.hero"
+h_fixedbugs2030aheld_Held h_fixedbugs2030aheld_made(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2030aheld_Held t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = (h_fixedbugs2030aheld_Held){.f_a = t1}; return t2;
+#line 318 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+}
+
+#line 6 "tests/golden/run/fixedbugs2030/b/held.hero"
+h_fixedbugs2030bheld_Held h_fixedbugs2030bheld_made(void) { HERO_NODEBUG h_fixedbugs2030bheld_Held h0_own0 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_78); hero_str_incref(t1); t2 = (h_fixedbugs2030bheld_Held){.f_b = t1}; t3 = h0_own0; h0_own0 = t2; h_fixedbugs2030bheld_0Held_release(&t3);
+#line 324 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+    h_fixedbugs2030bheld_0Held_retain(&t2);
+    h_fixedbugs2030bheld_0Held_release(hero_slot_escape(&h0_own0));
+    return t2;
+}
+
 #line 24 "tests/golden/run/fixedbugs2030/one.hero"
 h_0opt_7090cf3b h_fixedbugs2030one_made(void) { HERO_NODEBUG h_0opt_7090cf3b h0_own0 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2030one_Held t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = (h_fixedbugs2030one_Held){.f_a = t1}; t3 = (h_0opt_7090cf3b){.tag = INT64_C(0), .as.ok = t2}; t4 = h0_own0; h0_own0 = t3; h_0opt_7090cf3b_release(&t4);
-#line 318 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 333 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
     h_0opt_7090cf3b_retain(&t3);
     h_0opt_7090cf3b_release(hero_slot_escape(&h0_own0));
     return t3;
@@ -323,22 +338,7 @@ h_0opt_7090cf3b h_fixedbugs2030one_made(void) { HERO_NODEBUG h_0opt_7090cf3b h0_
 #line 27 "tests/golden/run/fixedbugs2030/one.hero"
 int64_t h_fixedbugs2030one_weigh(h_fixedbugs2030one_Held h0_h) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_h.f_a; return t1;
-#line 327 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
-}
-
-#line 7 "tests/golden/run/fixedbugs2030/a/held.hero"
-h_fixedbugs2030aheld_Held h_fixedbugs2030aheld_made(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2030aheld_Held t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); t2 = (h_fixedbugs2030aheld_Held){.f_a = t1}; return t2;
-#line 333 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
-}
-
-#line 6 "tests/golden/run/fixedbugs2030/b/held.hero"
-h_fixedbugs2030bheld_Held h_fixedbugs2030bheld_made(void) { HERO_NODEBUG h_fixedbugs2030bheld_Held h0_own0 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_78); hero_str_incref(t1); t2 = (h_fixedbugs2030bheld_Held){.f_b = t1}; t3 = h0_own0; h0_own0 = t2; h_fixedbugs2030bheld_0Held_release(&t3);
-#line 339 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
-    h_fixedbugs2030bheld_0Held_retain(&t2);
-    h_fixedbugs2030bheld_0Held_release(hero_slot_escape(&h0_own0));
-    return t2;
+#line 342 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
@@ -462,18 +462,6 @@ HERO_TU_LOCAL uint64_t h_fixedbugs2030agenericattwomodulestypesofonenameistwoins
     return h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2030one_0Held_eq(const h_fixedbugs2030one_Held *a, const h_fixedbugs2030one_Held *b) {
-    if (!(a->f_a == b->f_a)) return false;
-    return true;
-}
-
-HERO_TU_LOCAL uint64_t h_fixedbugs2030one_0Held_hash(const void *elem) {
-    const h_fixedbugs2030one_Held *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    return h;
-}
-
 HERO_TU_LOCAL bool h_fixedbugs2030aheld_0Held_eq(const h_fixedbugs2030aheld_Held *a, const h_fixedbugs2030aheld_Held *b) {
     if (!(a->f_a == b->f_a)) return false;
     return true;
@@ -503,6 +491,18 @@ HERO_TU_LOCAL uint64_t h_fixedbugs2030bheld_0Held_hash(const void *elem) {
     const h_fixedbugs2030bheld_Held *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_b)) * UINT64_C(0x100000001b3);
+    return h;
+}
+
+HERO_TU_LOCAL bool h_fixedbugs2030one_0Held_eq(const h_fixedbugs2030one_Held *a, const h_fixedbugs2030one_Held *b) {
+    if (!(a->f_a == b->f_a)) return false;
+    return true;
+}
+
+HERO_TU_LOCAL uint64_t h_fixedbugs2030one_0Held_hash(const void *elem) {
+    const h_fixedbugs2030one_Held *v = elem;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    h = (h ^ (&hero_desc_int)->hash(&v->f_a)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -667,10 +667,10 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("19d8942c1031a798", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4914c99f23faa88a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
-    hero_stack_spell("fixedbugs2030agenericattwomodulestypesofonenameistwoinstances\tfixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances\nfixedbugs2030one\tone\nfixedbugs2030aheld\theld\nfixedbugs2030bheld\theld\n");
+    hero_stack_spell("fixedbugs2030agenericattwomodulestypesofonenameistwoinstances\tfixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances\nfixedbugs2030aheld\theld\nfixedbugs2030bheld\theld\nfixedbugs2030one\tone\n");
     h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_main();
     hero_runtime_check_leaks();
     return 0;

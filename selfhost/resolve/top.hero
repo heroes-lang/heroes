@@ -19,16 +19,17 @@
 # entries, and the diagnostic order is the driver's sort anyway.
 
 use ast
-use source
-use resolved
-use resolve/builtin_names
-use parse
-use resolve/state
-use resolve/unused_sweep
-use resolve/decls as resolve_decls
-use resolve/errors
 use module/diagnostics
 use module/placed
+use parse
+use resolve/builtin_names
+use resolve/decls as resolve_decls
+use resolve/errors
+use resolve/state
+use resolve/unused_sweep
+use resolved
+use source
+use use_key
 
 function collect(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
     r.library @ builtin_names.of_library(s, decls)
@@ -111,8 +112,12 @@ function enter(@r: state.Resolver, s: source.Source, decls: [ast.Decl], index: i
 # its file: declaring something with that name is the shadowing error the
 # spec already has, and never reading it is the unused error it already
 # has. Neither needed a word of specification; both need a table.
+#
+# **In the one order of `use_key.hero`, never as written** (panel 238): of
+# two lines that clash, the one read second is the one told, and a
+# formatter that reorders the block must not move which.
 function read_uses(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
-    for used in uses
+    for used in use_key.ordered_uses(s, uses)
         from = source.module_at(s, used.span.start)
         named = placed.identity(s.reached.aliases, from: from, named: source.span_text(s, used.name))
 

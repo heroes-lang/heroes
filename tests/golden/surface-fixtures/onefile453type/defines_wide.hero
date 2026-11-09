@@ -1,5 +1,6 @@
 # Defect 453, lane b18-ffi, 2026-10-10: a module whose header defines the
-# macro the other module's header chooses a type by.
+# macro the other module's header chooses a type by. Named to be walked
+# before `num` (panel 238's R4).
 extern "onefile-wide.h"
     function width() -> i64
 

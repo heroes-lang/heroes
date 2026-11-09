@@ -1,0 +1,8 @@
+# Defect 453, the macro fixture read the other way: a module binding a
+# `static inline twice` of `int`, which the other module's macro rewrites in
+# one file.
+extern "onefile-int.h"
+    function twice(x: i32) -> i32
+
+function doubled(x: i32) -> i32
+    return twice(x: x)

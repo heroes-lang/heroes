@@ -2,9 +2,13 @@
 # `macro3`): `build` prints 300 and 8; in the one file `--emit-c` writes, the
 # first module's macro rewrites the second's `twice`, which clang compiles
 # into another program. Until 2026-10-10 it was written at exit 0.
+#
+# Its modules are named for the key the compiler walks `use` lines by (panel
+# 238's R4, `selfhost/use_key.hero`): `narrow` before `then_hundred`, the
+# order in which the refusal names the binding the macro rewrites.
 use narrow
-use hundred
+use then_hundred
 
 function main()
-    print(hundred.hundredfold(x: 3))
+    print(then_hundred.hundredfold(x: 3))
     print(narrow.doubled(x: 4))
