@@ -192,7 +192,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-void h_ffiafilledrecordisaskedfor_blank(struct slot *hero_out) {
+__attribute__((__noinline__)) void h_ffiafilledrecordisaskedfor_blank(struct slot *hero_out) {
 #line 42
 #define t10 (*hero_big_t10)
 #line 42
@@ -208,7 +208,7 @@ __attribute__((unused)) struct slot hero_value_h_ffiafilledrecordisaskedfor_blan
 }
 
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-void h_ffiafilledrecordisaskedfor_main(void) {
+__attribute__((__noinline__)) void h_ffiafilledrecordisaskedfor_main(void) {
 #line 45
 #define h0_s (*hero_lend_h0_s)
 #line 45
@@ -352,7 +352,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d4c65952ea4e13e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2c889b09426de230", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiafilledrecordisaskedfor\tffi-a-filled-record-is-asked-for\n");

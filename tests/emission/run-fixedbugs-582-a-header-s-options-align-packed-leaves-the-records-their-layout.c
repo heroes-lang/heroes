@@ -406,7 +406,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("45e30f3112658ebe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("751f44a4262e8fb0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersoptionsalignpackedleavestherecordstheirlayout\tfixedbugs-582-a-header-s-options-align-packed-leaves-the-records-their-layout\nfixedbugs582pair\tpair\n");

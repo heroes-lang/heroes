@@ -166,7 +166,7 @@ void h_fixedbugs2278countedheld_grow(h_fixedbugs2278countedheld_S3 *hero_out, h_
 void h_fixedbugs2278countedheld_retag(h_fixedbugs2278countedheld_S3 *hero_out, const h_fixedbugs2278countedheld_S3 *hero_in_h0_x, HeroStr h1_tag);
 
 #line 7 "tests/golden/run/fixedbugs-2278-a-counted-record-past-the-line-keeps-its-strings-at-every-level.hero"
-void h_fixedbugs2278acountedrecordpastthelinekeepsitsstringsateverylevel_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278acountedrecordpastthelinekeepsitsstringsateverylevel_main(void) {
 #line 7
 #define h3_three (*hero_big_h3_three)
 #line 7
@@ -236,7 +236,7 @@ void h_fixedbugs2278acountedrecordpastthelinekeepsitsstringsateverylevel_main(vo
 #undef t41
 
 #line 37 "tests/golden/run/fixedbugs2278/counted/held.hero"
-void h_fixedbugs2278countedheld_grow(h_fixedbugs2278countedheld_S3 *hero_out, h_fixedbugs2278countedheld_S2 h0_v) {
+__attribute__((__noinline__)) void h_fixedbugs2278countedheld_grow(h_fixedbugs2278countedheld_S3 *hero_out, h_fixedbugs2278countedheld_S2 h0_v) {
 #line 37
 #define h1_own1 (*hero_big_h1_own1)
 #line 37
@@ -260,7 +260,7 @@ void h_fixedbugs2278countedheld_grow(h_fixedbugs2278countedheld_S3 *hero_out, h_
 #undef t10
 
 #line 40 "tests/golden/run/fixedbugs2278/counted/held.hero"
-void h_fixedbugs2278countedheld_retag(h_fixedbugs2278countedheld_S3 *hero_out, const h_fixedbugs2278countedheld_S3 *hero_in_h0_x, HeroStr h1_tag) {
+__attribute__((__noinline__)) void h_fixedbugs2278countedheld_retag(h_fixedbugs2278countedheld_S3 *hero_out, const h_fixedbugs2278countedheld_S3 *hero_in_h0_x, HeroStr h1_tag) {
 #line 40
 #define h0_x (*hero_in_h0_x)
 #line 40
@@ -555,7 +555,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("74c6eef865071bdc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2403246c78d01cce", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278acountedrecordpastthelinekeepsitsstringsateverylevel\tfixedbugs-2278-a-counted-record-past-the-line-keeps-its-strings-at-every-level\nfixedbugs2278countedheld\theld\n");

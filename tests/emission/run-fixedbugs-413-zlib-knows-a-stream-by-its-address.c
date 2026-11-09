@@ -250,7 +250,7 @@ int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s
 }
 
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
-void h_fixedbugs413zlibknowsastreambyitsaddress_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs413zlibknowsastreambyitsaddress_main(void) {
 #line 30
 #define h0_s (*hero_lend_h0_s)
 #line 30
@@ -406,7 +406,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f138b0812a9f4c2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e4fc07c2672f5b4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413zlibknowsastreambyitsaddress\tfixedbugs-413-zlib-knows-a-stream-by-its-address\n");

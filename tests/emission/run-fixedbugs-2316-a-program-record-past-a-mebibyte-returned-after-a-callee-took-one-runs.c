@@ -193,7 +193,7 @@ void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_m
 void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_main(void);
 
 #line 72 "tests/golden/run/fixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs.hero"
-int64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_helper(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_helper(int64_t h0_n) {
 #line 72
 #define h1_e (*hero_big_h1_e)
 #line 72
@@ -208,7 +208,7 @@ int64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookonerun
 #undef t2
 
 #line 76 "tests/golden/run/fixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs.hero"
-void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_fill(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_fill(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_out, int64_t h0_n) {
 #line 76
 #define h5_e4 (*hero_big_h5_e4)
 #line 76
@@ -285,7 +285,7 @@ void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_f
 #undef t56
 
 #line 85 "tests/golden/run/fixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs.hero"
-void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_make(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_make(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_out, int64_t h0_n) {
 #line 85
 #define h1_out (*hero_big_h1_out)
 #line 85
@@ -304,7 +304,7 @@ void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_m
 #undef t7
 
 #line 90 "tests/golden/run/fixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs.hero"
-void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_main(void) {
 #line 90
 #define h0_e (*hero_big_h0_e)
 #line 90
@@ -582,7 +582,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d8e66f1161a63d8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cca9c6529e364ca", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns\tfixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs\n");

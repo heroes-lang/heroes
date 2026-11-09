@@ -181,7 +181,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 21 "tests/golden/run/fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero"
-int64_t h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
 #line 21
 #define h1_b (*hero_big_h1_b)
 #line 21
@@ -199,7 +199,7 @@ int64_t h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsro
 #undef t4
 
 #line 25 "tests/golden/run/fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_box *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_box *hero_out, int64_t h0_n) {
 #line 25
 #define h1_out (*hero_big_h1_out)
 #line 25
@@ -226,7 +226,7 @@ __attribute__((unused)) struct fixedbugs_2316_box hero_value_h_fixedbugs2316agro
 }
 
 #line 30 "tests/golden/run/fixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback_main(void) {
 #line 30
 #define h0_b (*hero_big_h0_b)
 #line 30
@@ -358,7 +358,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f2eeaa31d9068bf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e6b2016315969b1", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316agrouprecordholdingapartialonereturnediscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-group-record-holding-a-partial-one-returned-is-copied-before-its-room-goes-back\n");

@@ -218,7 +218,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 15 "tests/golden/run/fixedbugs-2284-a-partial-record-of-many-nested-named-members-builds.hero"
-void h_fixedbugs2284apartialrecordofmanynestednamedmembersbuilds_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2284apartialrecordofmanynestednamedmembersbuilds_main(void) {
 #line 15
 #define h0_held (*hero_big_h0_held)
 #line 15
@@ -339,7 +339,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6694c7a2205a68f1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("15d0fd16342369e3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2284apartialrecordofmanynestednamedmembersbuilds\tfixedbugs-2284-a-partial-record-of-many-nested-named-members-builds\n");

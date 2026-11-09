@@ -255,7 +255,7 @@ h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O3 h_fixedbugs2278alargeop
 }
 
 #line 82 "tests/golden/run/fixedbugs-2278-a-large-option-holds-its-payload-off-the-frame.hero"
-void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make4(h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O4 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make4(h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O4 *hero_out, int64_t h0_n) {
 #line 82
 #define t17 (*hero_big_t17)
 #line 82
@@ -266,7 +266,7 @@ void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make4(h_fixedbugs2278
 #undef t17
 
 #line 85 "tests/golden/run/fixedbugs-2278-a-large-option-holds-its-payload-off-the-frame.hero"
-void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make5(h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O5 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make5(h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O5 *hero_out, int64_t h0_n) {
 #line 85
 #define t2 (*hero_big_t2)
 #line 85
@@ -301,7 +301,7 @@ void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make5(h_fixedbugs2278
 #undef t17
 
 #line 88 "tests/golden/run/fixedbugs-2278-a-large-option-holds-its-payload-off-the-frame.hero"
-void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make6(h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O6 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make6(h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_O6 *hero_out, int64_t h0_n) {
 #line 88
 #define t2 (*hero_big_t2)
 #line 88
@@ -336,7 +336,7 @@ void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_make6(h_fixedbugs2278
 #undef t17
 
 #line 91 "tests/golden/run/fixedbugs-2278-a-large-option-holds-its-payload-off-the-frame.hero"
-void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_boxed(h_0opt_7b19c530 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_boxed(h_0opt_7b19c530 *hero_out, int64_t h0_n) {
 #line 91
 #define h1_ret0 (*hero_big_h1_ret0)
 #line 91
@@ -390,7 +390,7 @@ void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_boxed(h_0opt_7b19c530
 #undef t12
 
 #line 97 "tests/golden/run/fixedbugs-2278-a-large-option-holds-its-payload-off-the-frame.hero"
-void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargeoptionholdsitspayloadofftheframe_main(void) {
 #line 97
 #define h0_f0 (*hero_big_h0_f0)
 #line 97
@@ -788,7 +788,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d9422b53fc39d0d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2cd05829538c9dff", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278alargeoptionholdsitspayloadofftheframe\tfixedbugs-2278-a-large-option-holds-its-payload-off-the-frame\n");

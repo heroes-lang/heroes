@@ -193,7 +193,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-void h_ffirestzeroapartialrecord_built(SP *hero_out) {
+__attribute__((__noinline__)) void h_ffirestzeroapartialrecord_built(SP *hero_out) {
 #line 12
 #define t2 (*hero_big_t2)
 #line 12
@@ -209,7 +209,7 @@ __attribute__((unused)) SP hero_value_h_ffirestzeroapartialrecord_built(void) {
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-void h_ffirestzeroapartialrecord_main(void) {
+__attribute__((__noinline__)) void h_ffirestzeroapartialrecord_main(void) {
 #line 15
 #define h0_s (*hero_lend_h0_s)
 #line 15
@@ -328,7 +328,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("280b1fb87c765baa", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5747552b103f5c9d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffirestzeroapartialrecord\tffi-rest-zero-a-partial-record\n");

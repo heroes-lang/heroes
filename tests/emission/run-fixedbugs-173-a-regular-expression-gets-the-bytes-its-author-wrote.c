@@ -243,7 +243,7 @@ int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
-bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr h0_pattern, HeroStr h1_text) {
+__attribute__((__noinline__)) bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr h0_pattern, HeroStr h1_text) {
 #line 26
 #define h2_re (*hero_lend_h2_re)
 #line 26
@@ -393,7 +393,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("429250dd732ae964", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("71ce865006f3ea57", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs173aregularexpressiongetsthebytesitsauthorwrote\tfixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote\n");

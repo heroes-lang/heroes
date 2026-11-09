@@ -209,7 +209,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 17 "tests/golden/run/fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero"
-void h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_make(struct fixedbugs_2338_padded *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_make(struct fixedbugs_2338_padded *hero_out, int64_t h0_n) {
 #line 17
 #define t4 (*hero_big_t4)
 #line 17
@@ -241,7 +241,7 @@ __attribute__((unused)) int64_t hero_value_h_fixedbugs2286apaddedpartialrecordcr
 }
 
 #line 25 "tests/golden/run/fixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero.hero"
-void h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero_main(void) {
 #line 25
 #define h0_p (*hero_lend_h0_p)
 #line 25
@@ -365,7 +365,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("322fb06e51483f21", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("616be5e165114013", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apaddedpartialrecordcrossesherooutandapointerandcreadsitspaddingzero\tfixedbugs-2286-a-padded-partial-record-crosses-hero-out-and-a-pointer-and-c-reads-its-padding-zero\n");

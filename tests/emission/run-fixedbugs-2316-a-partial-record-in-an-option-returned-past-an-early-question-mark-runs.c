@@ -202,7 +202,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 13 "tests/golden/run/fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.hero"
-int64_t h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_helper(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_helper(int64_t h0_n) {
 #line 13
 #define h1_h (*hero_big_h1_h)
 #line 13
@@ -232,7 +232,7 @@ h_0opt_e201354 h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestio
 }
 
 #line 22 "tests/golden/run/fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.hero"
-void h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_make(h_0opt_5fa67f06 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_make(h_0opt_5fa67f06 *hero_out, int64_t h0_n) {
 #line 22
 #define h1_out (*hero_big_h1_out)
 #line 22
@@ -297,7 +297,7 @@ void h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_
 #undef t24
 
 #line 28 "tests/golden/run/fixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs.hero"
-void h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns_main(void) {
 #line 28
 #define h0_f0 (*hero_big_h0_f0)
 #line 28
@@ -512,7 +512,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("068243ed0ee9a9f2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("35be796022b2aae4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns\tfixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs\n");

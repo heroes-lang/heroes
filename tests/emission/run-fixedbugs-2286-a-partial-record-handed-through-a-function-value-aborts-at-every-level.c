@@ -227,7 +227,7 @@ h_0fn_46dcdb64 h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsate
 }
 
 #line 22 "tests/golden/run/fixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level.hero"
-void h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_go(h_0fn_46dcdb64 h0_f) {
+__attribute__((__noinline__)) void h_fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel_go(h_0fn_46dcdb64 h0_f) {
 #line 22
 #define h1_h (*hero_big_h1_h)
 #line 22
@@ -445,7 +445,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7297af4b586a7ad4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("21d3e4bf6c337bc6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apartialrecordhandedthroughafunctionvalueabortsateverylevel\tfixedbugs-2286-a-partial-record-handed-through-a-function-value-aborts-at-every-level\n");

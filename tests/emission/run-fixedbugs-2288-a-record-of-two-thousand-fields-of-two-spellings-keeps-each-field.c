@@ -2166,7 +2166,7 @@ void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_fill(
 void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_main(void);
 
 #line 2061 "tests/golden/run/fixedbugs-2288-a-record-of-two-thousand-fields-of-two-spellings-keeps-each-field.hero"
-void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_fill(h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_B *hero_out) {
+__attribute__((__noinline__)) void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_fill(h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_B *hero_out) {
 #line 2061
 #define t3073 (*hero_big_t3073)
 #line 2061
@@ -4227,7 +4227,7 @@ void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_fill(
 #undef t3073
 
 #line 4113 "tests/golden/run/fixedbugs-2288-a-record-of-two-thousand-fields-of-two-spellings-keeps-each-field.hero"
-void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield_main(void) {
 #line 4113
 #define h0_b (*hero_big_h0_b)
 #line 4113
@@ -8458,7 +8458,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("59c6fa3560584163", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09032fa974214255", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2288arecordoftwothousandfieldsoftwospellingskeepseachfield\tfixedbugs-2288-a-record-of-two-thousand-fields-of-two-spellings-keeps-each-field\n");

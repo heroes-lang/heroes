@@ -3539,7 +3539,7 @@ HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3cf49bd228384775", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c30d1453c014867", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("bookentry\tentry\n1corestrings\tstrings\ndbsqlite\tsqlite\nreportlines\tlines\n1corestringsinternalscan\tscan\n");

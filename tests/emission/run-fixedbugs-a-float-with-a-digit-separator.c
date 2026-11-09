@@ -215,7 +215,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("06c5ad6c7093561d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3601e2df045c5710", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsafloatwithadigitseparator\tfixedbugs-a-float-with-a-digit-separator\n");

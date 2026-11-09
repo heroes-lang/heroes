@@ -225,7 +225,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("15864bad2ba57c99", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("44c281203f6e7d8b", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("interpolationdesugar\tinterpolation-desugar\n");

@@ -246,7 +246,7 @@ int64_t h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero
 #undef h0_o
 
 #line 38 "tests/golden/run/fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero"
-int64_t h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_hand_on(const h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap *hero_in_h0_w) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_hand_on(const h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap *hero_in_h0_w) {
 #line 38
 #define h0_w (*hero_in_h0_w)
 #line 38
@@ -261,7 +261,7 @@ int64_t h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero
 #undef t1
 
 #line 42 "tests/golden/run/fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero"
-void h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_main(void) {
 #line 42
 #define h0_w (*hero_big_h0_w)
 #line 42
@@ -426,7 +426,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("25c243ee7bae65ca", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("54fe79610f7766bd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero\tfixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero\n");

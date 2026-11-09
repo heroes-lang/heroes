@@ -302,7 +302,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5f94a6092e429cf3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ed0db7d420b9de5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs157ahandleandarecordreachataggedunionbytypedefs\tfixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs\n");

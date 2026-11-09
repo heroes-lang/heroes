@@ -196,7 +196,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 19 "tests/golden/run/fixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread.hero"
-int64_t h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_worker(int64_t h0_n) {
 #line 19
 #define h1_held (*hero_big_h1_held)
 #line 19
@@ -329,7 +329,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0390516b21781bd2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("32cc86de35411cc4", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread\tfixedbugs-2253-a-frame-larger-than-every-stack-aborts-on-a-spawned-thread\n");

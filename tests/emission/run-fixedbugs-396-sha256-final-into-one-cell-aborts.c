@@ -202,7 +202,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
-void h_fixedbugs396sha256finalintoonecellaborts_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs396sha256finalintoonecellaborts_main(void) {
 #line 16
 #define h0_c (*hero_lend_h0_c)
 #line 16
@@ -326,7 +326,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5cb04f114edc9143", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0bec848562a59235", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396sha256finalintoonecellaborts\tfixedbugs-396-sha256-final-into-one-cell-aborts\n");

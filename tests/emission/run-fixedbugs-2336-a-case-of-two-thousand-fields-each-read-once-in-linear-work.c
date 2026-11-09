@@ -2174,7 +2174,7 @@ int64_t h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_total(co
 void h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_main(void);
 
 #line 2062 "tests/golden/run/fixedbugs-2336-a-case-of-two-thousand-fields-each-read-once-in-linear-work.hero"
-int64_t h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_total(const h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_Shape *hero_in_h0_s) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_total(const h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_Shape *hero_in_h0_s) {
 #line 2062
 #define h0_s (*hero_in_h0_s)
 #line 2062
@@ -4260,7 +4260,7 @@ int64_t h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_total(co
 #undef t5
 
 #line 4117 "tests/golden/run/fixedbugs-2336-a-case-of-two-thousand-fields-each-read-once-in-linear-work.hero"
-void h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork_main(void) {
 #line 4117
 #define h0_s (*hero_big_h0_s)
 #line 4117
@@ -10550,7 +10550,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7da12dcf00193e4c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2cdd634313e23f3e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2336acaseoftwothousandfieldseachreadonceinlinearwork\tfixedbugs-2336-a-case-of-two-thousand-fields-each-read-once-in-linear-work\n");

@@ -128,8 +128,13 @@ constant LEAST_FILES: i64
 # **7 -> 10 on 2026-09-25**, panel 177's dead set: one `hero_malloc_raw` in its
 # growth and two `free`s, the old table's and a dropped generation's, all
 # inside `alloc.c` where the single point says they belong.
+#
+# **10 -> 13 at batch 25's gate, 2026-11-08**, told by this suite's own
+# `FLOOR` line: 13 calls, past a quarter above 10, the newest the `calloc`
+# of `hero_calloc_raw`, the zeroed record a bit-field's masks are found in
+# (defect 2354, lane b25-misc).
 constant LEAST_AT_THE_POINT: i64
-    10
+    13
 
 constant LEAST_REFCOUNT: i64
     6

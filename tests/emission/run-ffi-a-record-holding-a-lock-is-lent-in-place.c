@@ -219,7 +219,7 @@ void h_ffiarecordholdingalockislentinplace_twice(struct counter *ph0_c) { HERO_E
 }
 
 #line 28 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-void h_ffiarecordholdingalockislentinplace_main(void) {
+__attribute__((__noinline__)) void h_ffiarecordholdingalockislentinplace_main(void) {
 #line 28
 #define h0_c (*hero_lend_h0_c)
 #line 28
@@ -375,7 +375,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7989df5d1feb15bc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("28c614d133b416ae", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiarecordholdingalockislentinplace\tffi-a-record-holding-a-lock-is-lent-in-place\n");

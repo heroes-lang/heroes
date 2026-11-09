@@ -199,7 +199,7 @@ void h_fixedbugs2278levels_make5(h_fixedbugs2278levels_E5 *hero_out, int64_t h0_
 void h_fixedbugs2278levels_make6(h_fixedbugs2278levels_E6 *hero_out, int64_t h0_n);
 
 #line 7 "tests/golden/run/fixedbugs-2278-a-two-mib-record-built-level-by-level-runs-at-every-level.hero"
-void h_fixedbugs2278atwomibrecordbuiltlevelbylevelrunsateverylevel_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278atwomibrecordbuiltlevelbylevelrunsateverylevel_main(void) {
 #line 7
 #define h0_v (*hero_big_h0_v)
 #line 7
@@ -269,7 +269,7 @@ h_fixedbugs2278levels_E3 h_fixedbugs2278levels_make3(int64_t h0_n) { HERO_NODEBU
 }
 
 #line 105 "tests/golden/run/fixedbugs2278/levels.hero"
-void h_fixedbugs2278levels_make4(h_fixedbugs2278levels_E4 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278levels_make4(h_fixedbugs2278levels_E4 *hero_out, int64_t h0_n) {
 #line 105
 #define t17 (*hero_big_t17)
 #line 105
@@ -290,7 +290,7 @@ void h_fixedbugs2278levels_make4(h_fixedbugs2278levels_E4 *hero_out, int64_t h0_
 #undef t17
 
 #line 117 "tests/golden/run/fixedbugs2278/levels.hero"
-void h_fixedbugs2278levels_make5(h_fixedbugs2278levels_E5 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278levels_make5(h_fixedbugs2278levels_E5 *hero_out, int64_t h0_n) {
 #line 117
 #define t2 (*hero_big_t2)
 #line 117
@@ -335,7 +335,7 @@ void h_fixedbugs2278levels_make5(h_fixedbugs2278levels_E5 *hero_out, int64_t h0_
 #undef t17
 
 #line 129 "tests/golden/run/fixedbugs2278/levels.hero"
-void h_fixedbugs2278levels_make6(h_fixedbugs2278levels_E6 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278levels_make6(h_fixedbugs2278levels_E6 *hero_out, int64_t h0_n) {
 #line 129
 #define t2 (*hero_big_t2)
 #line 129
@@ -643,7 +643,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a33cb6623bf268a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("297000da3788277c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278atwomibrecordbuiltlevelbylevelrunsateverylevel\tfixedbugs-2278-a-two-mib-record-built-level-by-level-runs-at-every-level\nfixedbugs2278levels\tlevels\n");

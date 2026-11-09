@@ -362,7 +362,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("343e1fa50e16199d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("637a551821df1a8f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2291afinalizethatanswersanerrorstillendsthestatement\tfixedbugs-2291-a-finalize-that-answers-an-error-still-ends-the-statement\n");

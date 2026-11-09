@@ -181,7 +181,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 17 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero"
-int64_t h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
 #line 17
 #define h1_h (*hero_big_h1_h)
 #line 17
@@ -196,7 +196,7 @@ int64_t h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomg
 #undef t2
 
 #line 25 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_Which h0_w, int64_t h1_n) {
 #line 25
 #define h2_out (*hero_big_h2_out)
 #line 25
@@ -253,7 +253,7 @@ __attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apa
 }
 
 #line 37 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback_main(void) {
 #line 37
 #define t3 (*hero_big_t3)
 #line 37
@@ -391,7 +391,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7d6bae5225bd840e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ca7e3c639868500", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordreturnedfromamatcharmiscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-partial-record-returned-from-a-match-arm-is-copied-before-its-room-goes-back\n");

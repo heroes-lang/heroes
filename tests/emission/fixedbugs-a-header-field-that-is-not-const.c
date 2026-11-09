@@ -198,7 +198,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
-void h_aheaderfieldthatisnotconst_main(void) {
+__attribute__((__noinline__)) void h_aheaderfieldthatisnotconst_main(void) {
 #line 46
 #define h0_empty (*hero_big_h0_empty)
 #line 46
@@ -325,7 +325,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("42fa435b44eb842d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("723678ce58b4851f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("aheaderfieldthatisnotconst\ta-header-field-that-is-not-const\n");

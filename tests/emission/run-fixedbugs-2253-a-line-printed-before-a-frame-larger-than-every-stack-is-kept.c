@@ -192,7 +192,7 @@ void h_fixedbugs2253alineprintedbeforeaframelargerthaneverystackiskept_main(void
 }
 
 #line 12 "tests/golden/run/fixedbugs2253/held.hero"
-int64_t h_fixedbugs2253held_kept(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2253held_kept(int64_t h0_n) {
 #line 12
 #define h1_held (*hero_big_h1_held)
 #line 12
@@ -313,7 +313,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ba897387b3217a7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ae4ccac0efb189a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2253alineprintedbeforeaframelargerthaneverystackiskept\tfixedbugs-2253-a-line-printed-before-a-frame-larger-than-every-stack-is-kept\nfixedbugs2253held\theld\n");

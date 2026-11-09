@@ -8326,7 +8326,7 @@ h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_B h_fix
 }
 
 #line 8222 "tests/golden/run/fixedbugs-2288-a-record-of-four-thousand-one-byte-fields-built-once-keeps-each-field.hero"
-void h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_spread(h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_L *hero_out, h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_B h0_b) {
+__attribute__((__noinline__)) void h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_spread(h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_L *hero_out, h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_B h0_b) {
 #line 8222
 #define t9 (*hero_big_t9)
 #line 8222
@@ -8337,7 +8337,7 @@ void h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_sp
 #undef t9
 
 #line 8225 "tests/golden/run/fixedbugs-2288-a-record-of-four-thousand-one-byte-fields-built-once-keeps-each-field.hero"
-void h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield_main(void) {
 #line 8225
 #define h1_l (*hero_big_h1_l)
 #line 8225
@@ -16678,7 +16678,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ac64a457cc2ebe4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a027fb8108becd7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2288arecordoffourthousandonebytefieldsbuiltoncekeepseachfield\tfixedbugs-2288-a-record-of-four-thousand-one-byte-fields-built-once-keeps-each-field\n");

@@ -285,7 +285,7 @@ int32_t h_fixedbugs413libuvkeepseveryhandlesaddress_start(void * h0_loop, struct
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void) {
 #line 34
 #define h1_a (*hero_lend_h1_a)
 #line 34
@@ -435,7 +435,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("55ec8a376eac906e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0528bfab02759161", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs413libuvkeepseveryhandlesaddress\tfixedbugs-413-libuv-keeps-every-handles-address\n");

@@ -314,7 +314,7 @@ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 h_fixedbugs2278are
 }
 
 #line 110 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make9(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make9(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_out, int64_t h0_n) {
 #line 110
 #define t7 (*hero_big_t7)
 #line 110
@@ -325,7 +325,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make9(h_fixedbug
 #undef t7
 
 #line 113 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make10(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make10(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_out, int64_t h0_n) {
 #line 113
 #define t2 (*hero_big_t2)
 #line 113
@@ -342,7 +342,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make10(h_fixedbu
 #undef t7
 
 #line 116 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make11(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make11(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_out, int64_t h0_n) {
 #line 116
 #define t2 (*hero_big_t2)
 #line 116
@@ -359,7 +359,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make11(h_fixedbu
 #undef t7
 
 #line 119 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make12(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make12(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_out, int64_t h0_n) {
 #line 119
 #define t2 (*hero_big_t2)
 #line 119
@@ -376,7 +376,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make12(h_fixedbu
 #undef t7
 
 #line 122 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make13(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make13(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_out, int64_t h0_n) {
 #line 122
 #define t2 (*hero_big_t2)
 #line 122
@@ -393,7 +393,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make13(h_fixedbu
 #undef t7
 
 #line 125 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make14(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make14(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_out, int64_t h0_n) {
 #line 125
 #define t2 (*hero_big_t2)
 #line 125
@@ -410,7 +410,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make14(h_fixedbu
 #undef t7
 
 #line 128 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make15(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make15(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_out, int64_t h0_n) {
 #line 128
 #define t2 (*hero_big_t2)
 #line 128
@@ -427,7 +427,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make15(h_fixedbu
 #undef t7
 
 #line 131 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make16(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make16(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_out, int64_t h0_n) {
 #line 131
 #define t2 (*hero_big_t2)
 #line 131
@@ -444,7 +444,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make16(h_fixedbu
 #undef t7
 
 #line 134 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make17(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make17(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_out, int64_t h0_n) {
 #line 134
 #define t2 (*hero_big_t2)
 #line 134
@@ -461,7 +461,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make17(h_fixedbu
 #undef t7
 
 #line 137 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make18(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make18(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_out, int64_t h0_n) {
 #line 137
 #define t2 (*hero_big_t2)
 #line 137
@@ -478,7 +478,7 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make18(h_fixedbu
 #undef t7
 
 #line 140 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_main(void) {
 #line 140
 #define h0_r (*hero_big_h0_r)
 #line 140
@@ -855,7 +855,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e5b979f35ab19d5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d97cd1249741ac7", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel\tfixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level\n");

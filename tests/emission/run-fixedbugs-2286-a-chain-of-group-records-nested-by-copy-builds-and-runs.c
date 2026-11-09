@@ -378,7 +378,7 @@ struct fixedbugs_2286_g8 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsan
 }
 
 #line 73 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(struct fixedbugs_2286_g9 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(struct fixedbugs_2286_g9 *hero_out, int64_t h0_n) {
 #line 73
 #define t8 (*hero_big_t8)
 #line 73
@@ -394,7 +394,7 @@ __attribute__((unused)) struct fixedbugs_2286_g9 hero_value_h_fixedbugs2286achai
 }
 
 #line 76 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(struct fixedbugs_2286_g10 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(struct fixedbugs_2286_g10 *hero_out, int64_t h0_n) {
 #line 76
 #define t2 (*hero_big_t2)
 #line 76
@@ -416,7 +416,7 @@ __attribute__((unused)) struct fixedbugs_2286_g10 hero_value_h_fixedbugs2286acha
 }
 
 #line 79 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(struct fixedbugs_2286_g11 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(struct fixedbugs_2286_g11 *hero_out, int64_t h0_n) {
 #line 79
 #define t2 (*hero_big_t2)
 #line 79
@@ -438,7 +438,7 @@ __attribute__((unused)) struct fixedbugs_2286_g11 hero_value_h_fixedbugs2286acha
 }
 
 #line 82 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(struct fixedbugs_2286_g12 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(struct fixedbugs_2286_g12 *hero_out, int64_t h0_n) {
 #line 82
 #define t2 (*hero_big_t2)
 #line 82
@@ -460,7 +460,7 @@ __attribute__((unused)) struct fixedbugs_2286_g12 hero_value_h_fixedbugs2286acha
 }
 
 #line 85 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(struct fixedbugs_2286_g13 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(struct fixedbugs_2286_g13 *hero_out, int64_t h0_n) {
 #line 85
 #define t2 (*hero_big_t2)
 #line 85
@@ -482,7 +482,7 @@ __attribute__((unused)) struct fixedbugs_2286_g13 hero_value_h_fixedbugs2286acha
 }
 
 #line 88 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(struct fixedbugs_2286_g14 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(struct fixedbugs_2286_g14 *hero_out, int64_t h0_n) {
 #line 88
 #define t2 (*hero_big_t2)
 #line 88
@@ -504,7 +504,7 @@ __attribute__((unused)) struct fixedbugs_2286_g14 hero_value_h_fixedbugs2286acha
 }
 
 #line 91 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(struct fixedbugs_2286_g15 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(struct fixedbugs_2286_g15 *hero_out, int64_t h0_n) {
 #line 91
 #define t2 (*hero_big_t2)
 #line 91
@@ -526,7 +526,7 @@ __attribute__((unused)) struct fixedbugs_2286_g15 hero_value_h_fixedbugs2286acha
 }
 
 #line 94 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(struct fixedbugs_2286_g16 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(struct fixedbugs_2286_g16 *hero_out, int64_t h0_n) {
 #line 94
 #define t2 (*hero_big_t2)
 #line 94
@@ -548,7 +548,7 @@ __attribute__((unused)) struct fixedbugs_2286_g16 hero_value_h_fixedbugs2286acha
 }
 
 #line 97 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_main(void) {
 #line 97
 #define h0_r (*hero_big_h0_r)
 #line 97
@@ -881,7 +881,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4ee21ab164ede314", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e1e502478b6e406", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns\tfixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs\n");

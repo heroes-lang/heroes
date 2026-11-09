@@ -234,7 +234,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-void h_ffialentfieldcountedbyaconstant_main(void) {
+__attribute__((__noinline__)) void h_ffialentfieldcountedbyaconstant_main(void) {
 #line 30
 #define h2_b (*hero_big_h2_b)
 #line 30
@@ -386,7 +386,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7cba1fa84c66bb06", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bf6551c602fbbf8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffialentfieldcountedbyaconstant\tffi-a-lent-field-counted-by-a-constant\n");

@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("233163f843c4f8f9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("526d996b578df9eb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2258neonahandlegivenbacknamesitsplace\tfixedbugs-2258-ne-on-a-handle-given-back-names-its-place\n");

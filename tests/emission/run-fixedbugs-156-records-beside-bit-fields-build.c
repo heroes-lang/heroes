@@ -209,22 +209,22 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(BF), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(UNNAMED), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     {
-        BF hero_pad_o;
-        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+        BF *const hero_pad_o = (BF *)hero_pad_object(sizeof(BF));
     #pragma push_macro("flag")
     #undef flag
     #pragma push_macro("rest")
     #undef rest
-        hero_pad_o.flag--; hero_pad_o.rest--;
+        hero_pad_o->flag--; hero_pad_o->rest--;
     #pragma pop_macro("flag")
     #pragma pop_macro("rest")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 1, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_0, 5);
+        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 1, hero_pad_o, sizeof(BF), hero_pad_m_0, 5);
+        hero_pad_object_give(hero_pad_o);
     }
 }
 
 
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
 #line 22
 #define h0_built (*hero_big_h0_built)
 #line 22
@@ -376,7 +376,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3cacd8647c92b35d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6be90dd7105bb450", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs156recordsbesidebitfieldsbuild\tfixedbugs-156-records-beside-bit-fields-build\n");

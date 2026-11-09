@@ -210,7 +210,7 @@ void h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_go
 void h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_main(void);
 
 #line 78 "tests/golden/run/fixedbugs-2278-a-large-record-returned-through-a-function-value-runs-at-every-level.hero"
-void h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_give(h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_E7 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_give(h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_E7 *hero_out, int64_t h0_n) {
 #line 78
 #define h5_u4 (*hero_big_h5_u4)
 #line 78
@@ -342,7 +342,7 @@ h_0fn_90e0429 h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsatever
 }
 
 #line 95 "tests/golden/run/fixedbugs-2278-a-large-record-returned-through-a-function-value-runs-at-every-level.hero"
-void h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_go(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel_go(void) {
 #line 95
 #define h1_a (*hero_big_h1_a)
 #line 95
@@ -657,7 +657,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1024f25927136d10", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f6127cc3adc6e02", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278alargerecordreturnedthroughafunctionvaluerunsateverylevel\tfixedbugs-2278-a-large-record-returned-through-a-function-value-runs-at-every-level\n");

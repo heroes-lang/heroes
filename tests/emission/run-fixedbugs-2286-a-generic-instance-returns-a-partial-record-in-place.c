@@ -172,7 +172,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 13 "tests/golden/run/fixedbugs-2286-a-generic-instance-returns-a-partial-record-in-place.hero"
-void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_go(void) {
+__attribute__((__noinline__)) void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_go(void) {
 #line 13
 #define h0_h (*hero_big_h0_h)
 #line 13
@@ -197,7 +197,7 @@ void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_main(void) { HE
 }
 
 #line 10 "tests/golden/run/fixedbugs-2286-a-generic-instance-returns-a-partial-record-in-place.hero"
-/* same<Held> */ HERO_TU_LOCAL void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_0same_52d4fd5f(struct heroes_held *hero_out, const struct heroes_held *hero_in_h0_x) {
+/* same<Held> */ __attribute__((__noinline__)) HERO_TU_LOCAL void h_fixedbugs2286agenericinstancereturnsapartialrecordinplace_0same_52d4fd5f(struct heroes_held *hero_out, const struct heroes_held *hero_in_h0_x) {
 #line 10
 #define h0_x (*hero_in_h0_x)
 #line 10
@@ -319,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6f64fc892b026786", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ea131fd3ecb6878", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286agenericinstancereturnsapartialrecordinplace\tfixedbugs-2286-a-generic-instance-returns-a-partial-record-in-place\n");

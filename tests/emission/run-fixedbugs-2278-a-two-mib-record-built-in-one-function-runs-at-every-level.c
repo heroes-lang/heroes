@@ -192,7 +192,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 void h_fixedbugs2278atwomibrecordbuiltinonefunctionrunsateverylevel_main(void);
 
 #line 68 "tests/golden/run/fixedbugs-2278-a-two-mib-record-built-in-one-function-runs-at-every-level.hero"
-void h_fixedbugs2278atwomibrecordbuiltinonefunctionrunsateverylevel_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278atwomibrecordbuiltinonefunctionrunsateverylevel_main(void) {
 #line 68
 #define h4_v4 (*hero_big_h4_v4)
 #line 68
@@ -537,7 +537,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("554820484e472a7c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("048455bc62102b6e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278atwomibrecordbuiltinonefunctionrunsateverylevel\tfixedbugs-2278-a-two-mib-record-built-in-one-function-runs-at-every-level\n");

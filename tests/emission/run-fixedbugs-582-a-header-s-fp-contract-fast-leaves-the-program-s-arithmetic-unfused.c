@@ -270,7 +270,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("65aa71372f0597f1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14e6a6ab42ce98e3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs582aheadersfpcontractfastleavestheprogramsarithmeticunfused\tfixedbugs-582-a-header-s-fp-contract-fast-leaves-the-program-s-arithmetic-unfused\n");

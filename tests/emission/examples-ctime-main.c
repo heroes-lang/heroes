@@ -375,7 +375,7 @@ __attribute__((unused)) int64_t hero_value_h_main_hour_of(struct tm h0_b) {
 }
 
 #line 82 "examples/ctime/main.hero"
-void h_main_made(h_0opt_13b8cf25 *hero_out, int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour) {
+__attribute__((__noinline__)) void h_main_made(h_0opt_13b8cf25 *hero_out, int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour) {
 #line 82
 #define h12_ret0 (*hero_big_h12_ret0)
 #line 82
@@ -487,7 +487,7 @@ void h_main_made(h_0opt_13b8cf25 *hero_out, int64_t h0_year, int64_t h1_month, i
 #undef t68
 
 #line 89 "examples/ctime/main.hero"
-HeroStr h_main_shown(const struct tm *hero_in_h0_b) {
+__attribute__((__noinline__)) HeroStr h_main_shown(const struct tm *hero_in_h0_b) {
 #line 89
 #define h0_b (*hero_in_h0_b)
 #line 89
@@ -552,7 +552,7 @@ bb2:
 }
 
 #line 98 "examples/ctime/main.hero"
-void h_main_main(void) {
+__attribute__((__noinline__)) void h_main_main(void) {
 #line 98
 #define h0_f0 (*hero_big_h0_f0)
 #line 98
@@ -892,7 +892,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("500e945c1a712ff0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f4ac9cf2e3a30e2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

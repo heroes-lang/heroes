@@ -170,7 +170,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 17 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.hero"
-int64_t h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
 #line 17
 #define h1_h (*hero_big_h1_h)
 #line 17
@@ -185,7 +185,7 @@ int64_t h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_helpe
 #undef t2
 
 #line 21 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, int64_t h0_n) {
 #line 21
 #define h1_out (*hero_big_h1_out)
 #line 21
@@ -209,7 +209,7 @@ __attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apa
 }
 
 #line 26 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback_main(void) {
 #line 26
 #define h0_h (*hero_big_h0_h)
 #line 26
@@ -327,7 +327,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ca6e43f19ff8812", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4be319b22dc88904", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordreturnediscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-partial-record-returned-is-copied-before-its-room-goes-back\n");

@@ -184,9 +184,13 @@ function trees() -> [Tree]
     # more than a quarter, the 39 `.hero` files that batch added under
     # `examples/`: the core packages' canonical tree and its driver, five, and
     # the 34 copies of its files that fourteen programs carry.
+    # The selfhost row raised 2026-11-08 at batch 25's gate, to what the suite
+    # asked: 758 seeds and 6822 variants, past 599 and 5391 by more than a
+    # quarter, the 159 files added under `selfhost/` since batch 18 raised it,
+    # the floor having passed every one of them in silence until then.
     none: [str] = []
     return [
-        Tree(name: "selfhost, multi", root: "selfhost", seeds: 599, floor: Floor(family: "multi", generated: 5391, parsing: 5391), known: none)
+        Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 1798, floor: Floor(family: "multi", generated: 16182, parsing: 16182), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 159, floor: Floor(family: "multi", generated: 1431, parsing: 1431), known: none)
     ]

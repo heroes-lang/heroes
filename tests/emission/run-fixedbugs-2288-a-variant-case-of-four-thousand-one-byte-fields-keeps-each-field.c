@@ -4222,7 +4222,7 @@ void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_fill(h
 void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_main(void);
 
 #line 4109 "tests/golden/run/fixedbugs-2288-a-variant-case-of-four-thousand-one-byte-fields-keeps-each-field.hero"
-void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_fill(h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_V *hero_out) {
+__attribute__((__noinline__)) void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_fill(h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_V *hero_out) {
 #line 4109
 #define t4097 (*hero_big_t4097)
 #line 4109
@@ -8331,7 +8331,7 @@ void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_fill(h
 #undef t4097
 
 #line 8209 "tests/golden/run/fixedbugs-2288-a-variant-case-of-four-thousand-one-byte-fields-keeps-each-field.hero"
-void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield_main(void) {
 #line 8209
 #define h0_v (*hero_big_h0_v)
 #line 8209
@@ -16681,7 +16681,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("494874f8197f3772", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7884aa6b2d483864", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2288avariantcaseoffourthousandonebytefieldskeepseachfield\tfixedbugs-2288-a-variant-case-of-four-thousand-one-byte-fields-keeps-each-field\n");

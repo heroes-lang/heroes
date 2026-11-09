@@ -196,7 +196,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 20 "tests/golden/run/fixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written.hero"
-int64_t h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten_worker(int64_t h0_n) {
 #line 20
 #define h1_held (*hero_big_h1_held)
 #line 20
@@ -329,7 +329,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("48c7c06a70531c54", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7803f5dd041c1d47", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2277acallbackwhoseframepassesthestackisnamedaswritten\tfixedbugs-2277-a-callback-whose-frame-passes-the-stack-is-named-as-written\n");

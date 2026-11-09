@@ -275,7 +275,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6814652b62e608e0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("17509a9f76af09d2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs462astrreadafteritslastreleasestopsattheread\tfixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read\n");

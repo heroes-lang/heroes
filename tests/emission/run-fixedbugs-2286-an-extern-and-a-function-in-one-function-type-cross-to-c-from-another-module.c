@@ -179,7 +179,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 9 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/main.hero"
-void h_main_main(void) {
+__attribute__((__noinline__)) void h_main_main(void) {
 #line 9
 #define t7 (*hero_big_t7)
 #line 9
@@ -307,7 +307,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ec7af0a4862f4bc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4e03e47d5c2bf5ae", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_main_main();

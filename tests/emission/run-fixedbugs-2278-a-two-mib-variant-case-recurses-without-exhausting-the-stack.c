@@ -244,7 +244,7 @@ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 h_fixedbug
 }
 
 #line 89 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_out, int64_t h0_n) {
 #line 89
 #define t17 (*hero_big_t17)
 #line 89
@@ -255,7 +255,7 @@ void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(h_
 #undef t17
 
 #line 92 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_out, int64_t h0_n) {
 #line 92
 #define t2 (*hero_big_t2)
 #line 92
@@ -290,7 +290,7 @@ void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(h_
 #undef t17
 
 #line 95 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make6(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make6(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_out, int64_t h0_n) {
 #line 95
 #define t2 (*hero_big_t2)
 #line 95
@@ -325,7 +325,7 @@ void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make6(h_
 #undef t17
 
 #line 98 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-int64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_deep(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_deep(int64_t h0_n) {
 #line 98
 #define h1_big (*hero_big_h1_big)
 #line 98
@@ -681,7 +681,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ddde0b65af09e76", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4d1a16296eb99f68", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack\tfixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack\n");

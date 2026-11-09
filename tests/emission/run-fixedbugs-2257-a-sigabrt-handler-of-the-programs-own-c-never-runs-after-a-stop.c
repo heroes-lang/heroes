@@ -372,7 +372,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("62209d6d2502b620", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("115cd2e138cbb712", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2257asigabrthandleroftheprogramsowncneverrunsafterastop\tfixedbugs-2257-a-sigabrt-handler-of-the-programs-own-c-never-runs-after-a-stop\n");

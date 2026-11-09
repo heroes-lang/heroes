@@ -179,7 +179,7 @@ void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_go
 void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.hero"
-void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_make_wrap(h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_make_wrap(h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_Wrap *hero_out, int64_t h0_n) {
 #line 15
 #define t5 (*hero_big_t5)
 #line 15
@@ -193,7 +193,7 @@ void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_ma
 #undef t6
 
 #line 18 "tests/golden/run/fixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level.hero"
-void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_go(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel_go(void) {
 #line 18
 #define h0_w (*hero_big_h0_w)
 #line 18
@@ -332,7 +332,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5572642e2a260843", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("04ae99a23def0935", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278aprogramrecordholdingapartialheaderrecordrunsateverylevel\tfixedbugs-2278-a-program-record-holding-a-partial-header-record-runs-at-every-level\n");

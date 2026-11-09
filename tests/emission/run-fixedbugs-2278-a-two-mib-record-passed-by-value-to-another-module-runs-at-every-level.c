@@ -193,7 +193,7 @@ void h_fixedbugs2278atwomibrecordpassedbyvaluetoanothermodulerunsateverylevel_ma
 int64_t h_fixedbugs2278byvalheld_first(const h_fixedbugs2278byvalheld_E6 *hero_in_h0_e);
 
 #line 7 "tests/golden/run/fixedbugs-2278-a-two-mib-record-passed-by-value-to-another-module-runs-at-every-level.hero"
-void h_fixedbugs2278atwomibrecordpassedbyvaluetoanothermodulerunsateverylevel_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2278atwomibrecordpassedbyvaluetoanothermodulerunsateverylevel_main(void) {
 #line 7
 #define h4_v4 (*hero_big_h4_v4)
 #line 7
@@ -552,7 +552,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("165d4332178e9bb8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("459978a52b579caa", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278atwomibrecordpassedbyvaluetoanothermodulerunsateverylevel\tfixedbugs-2278-a-two-mib-record-passed-by-value-to-another-module-runs-at-every-level\nfixedbugs2278byvalheld\theld\n");

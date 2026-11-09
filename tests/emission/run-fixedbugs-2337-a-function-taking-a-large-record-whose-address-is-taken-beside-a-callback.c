@@ -272,7 +272,7 @@ int64_t h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacall
 #undef h0_e
 
 #line 71 "tests/golden/run/fixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback.hero"
-void h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_main(void) {
 #line 71
 #define h1_e (*hero_big_h1_e)
 #line 71
@@ -495,7 +495,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5784a8b8501e5640", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("06c0de2c63e75732", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback\tfixedbugs-2337-a-function-taking-a-large-record-whose-address-is-taken-beside-a-callback\n");

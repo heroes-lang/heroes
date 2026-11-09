@@ -278,7 +278,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
 #line 30
 #define h0_c (*hero_lend_h0_c)
 #line 30
@@ -436,7 +436,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7c9e6856148a6c07", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2bda9dca28536cf9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396sha256finalfillsitsdigest\tfixedbugs-396-sha256-final-fills-its-digest\n");

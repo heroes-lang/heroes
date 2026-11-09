@@ -179,7 +179,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 15 "tests/golden/emit/fixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value.hero"
-void h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(struct fixedbugs_2286_small *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(struct fixedbugs_2286_small *hero_out, int64_t h0_n) {
 #line 15
 #define t2 (*hero_big_t2)
 #line 15
@@ -310,7 +310,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("001def8b2037faeb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2f5a24fe3400fbdd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue\tfixedbugs-2286-the-thunk-of-a-converted-function-is-asserted-against-its-value\n");

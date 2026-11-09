@@ -172,7 +172,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 17 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-inside-a-loop-is-copied-before-its-room-goes-back.hero"
-int64_t h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_helper(int64_t h0_n) {
 #line 17
 #define h1_h (*hero_big_h1_h)
 #line 17
@@ -187,7 +187,7 @@ int64_t h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroo
 #undef t2
 
 #line 21 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-inside-a-loop-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, int64_t h0_n, int64_t h1_until) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_make(struct fixedbugs_2316_held *hero_out, int64_t h0_n, int64_t h1_until) {
 #line 21
 #define h2_out (*hero_big_h2_out)
 #line 21
@@ -240,7 +240,7 @@ __attribute__((unused)) struct fixedbugs_2316_held hero_value_h_fixedbugs2316apa
 }
 
 #line 32 "tests/golden/run/fixedbugs-2316-a-partial-record-returned-from-inside-a-loop-is-copied-before-its-room-goes-back.hero"
-void h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback_main(void) {
 #line 32
 #define t3 (*hero_big_t3)
 #line 32
@@ -373,7 +373,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("47a2a8dd43b5c6c1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("76dede50577ec7b3", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordreturnedfrominsidealoopiscopiedbeforeitsroomgoesback\tfixedbugs-2316-a-partial-record-returned-from-inside-a-loop-is-copied-before-its-room-goes-back\n");

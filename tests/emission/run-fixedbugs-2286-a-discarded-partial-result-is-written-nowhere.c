@@ -158,7 +158,7 @@ void h_fixedbugs2286adiscardedpartialresultiswrittennowhere_go(void);
 void h_fixedbugs2286adiscardedpartialresultiswrittennowhere_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-2286-a-discarded-partial-result-is-written-nowhere.hero"
-void h_fixedbugs2286adiscardedpartialresultiswrittennowhere_make(struct heroes_held *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286adiscardedpartialresultiswrittennowhere_make(struct heroes_held *hero_out, int64_t h0_n) {
 #line 9
 #define t3 (*hero_big_t3)
 #line 9
@@ -292,7 +292,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e42d6452a56943e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d7f0bb83e1f9530", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286adiscardedpartialresultiswrittennowhere\tfixedbugs-2286-a-discarded-partial-result-is-written-nowhere\n");

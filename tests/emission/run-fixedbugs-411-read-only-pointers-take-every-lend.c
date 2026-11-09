@@ -296,7 +296,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5945360427b74451", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08816b783b804543", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs411readonlypointerstakeeverylend\tfixedbugs-411-read-only-pointers-take-every-lend\n");

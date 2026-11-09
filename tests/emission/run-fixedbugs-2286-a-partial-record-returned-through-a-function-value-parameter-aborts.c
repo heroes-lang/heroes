@@ -171,7 +171,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 9 "tests/golden/run/fixedbugs-2286-a-partial-record-returned-through-a-function-value-parameter-aborts.hero"
-void h_fixedbugs2286apartialrecordreturnedthroughafunctionvalueparameteraborts_make(struct heroes_held *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286apartialrecordreturnedthroughafunctionvalueparameteraborts_make(struct heroes_held *hero_out, int64_t h0_n) {
 #line 9
 #define t2 (*hero_big_t2)
 #line 9
@@ -187,7 +187,7 @@ __attribute__((unused)) struct heroes_held hero_value_h_fixedbugs2286apartialrec
 }
 
 #line 12 "tests/golden/run/fixedbugs-2286-a-partial-record-returned-through-a-function-value-parameter-aborts.hero"
-void h_fixedbugs2286apartialrecordreturnedthroughafunctionvalueparameteraborts_go(h_0fn_46d68573 h0_f) {
+__attribute__((__noinline__)) void h_fixedbugs2286apartialrecordreturnedthroughafunctionvalueparameteraborts_go(h_0fn_46d68573 h0_f) {
 #line 12
 #define h1_h (*hero_big_h1_h)
 #line 12
@@ -311,7 +311,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b5e330a3369dfb0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a9a687d4732e0a2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apartialrecordreturnedthroughafunctionvalueparameteraborts\tfixedbugs-2286-a-partial-record-returned-through-a-function-value-parameter-aborts\n");

@@ -305,76 +305,76 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     hero_pad_n_4 = hero_pad_gaps(sizeof(struct ob), hero_pad_t_4, sizeof hero_pad_t_4 / (2 * sizeof(size_t)), hero_pad_g_4);
     hero_pad_n_5 = hero_pad_gaps(sizeof(struct ar), hero_pad_t_5, sizeof hero_pad_t_5 / (2 * sizeof(size_t)), hero_pad_g_5);
     {
-        struct bf hero_pad_o;
-        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+        struct bf *const hero_pad_o = (struct bf *)hero_pad_object(sizeof(struct bf));
     #pragma push_macro("b")
     #undef b
     #pragma push_macro("c")
     #undef c
-        hero_pad_o.b--; hero_pad_o.c--;
+        hero_pad_o->b--; hero_pad_o->c--;
     #pragma pop_macro("b")
     #pragma pop_macro("c")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 2, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_0, 3);
+        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 2, hero_pad_o, sizeof(struct bf), hero_pad_m_0, 3);
+        hero_pad_object_give(hero_pad_o);
     }
     {
-        struct ux hero_pad_o;
-        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+        struct ux *const hero_pad_o = (struct ux *)hero_pad_object(sizeof(struct ux));
     #pragma push_macro("w")
     #undef w
     #pragma push_macro("x")
     #undef x
-        hero_pad_o.x--; hero_pad_o.w--;
+        hero_pad_o->x--; hero_pad_o->w--;
     #pragma pop_macro("w")
     #pragma pop_macro("x")
-        hero_pad_mn_1 = hero_pad_masks(hero_pad_t_1, 2, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_1, 2);
+        hero_pad_mn_1 = hero_pad_masks(hero_pad_t_1, 2, hero_pad_o, sizeof(struct ux), hero_pad_m_1, 2);
+        hero_pad_object_give(hero_pad_o);
     }
     {
-        struct gp hero_pad_o;
-        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+        struct gp *const hero_pad_o = (struct gp *)hero_pad_object(sizeof(struct gp));
     #pragma push_macro("x")
     #undef x
     #pragma push_macro("y")
     #undef y
-        hero_pad_o.x--; hero_pad_o.y--;
+        hero_pad_o->x--; hero_pad_o->y--;
     #pragma pop_macro("x")
     #pragma pop_macro("y")
-        hero_pad_mn_2 = hero_pad_masks(hero_pad_t_2, 1, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_2, 2);
+        hero_pad_mn_2 = hero_pad_masks(hero_pad_t_2, 1, hero_pad_o, sizeof(struct gp), hero_pad_m_2, 2);
+        hero_pad_object_give(hero_pad_o);
     }
     {
-        struct md hero_pad_o;
-        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+        struct md *const hero_pad_o = (struct md *)hero_pad_object(sizeof(struct md));
     #pragma push_macro("f")
     #undef f
     #pragma push_macro("mid")
     #undef mid
     #pragma push_macro("s")
     #undef s
-        hero_pad_o.mid--; hero_pad_o.s--; hero_pad_o.f--;
+        hero_pad_o->mid--; hero_pad_o->s--; hero_pad_o->f--;
     #pragma pop_macro("f")
     #pragma pop_macro("mid")
     #pragma pop_macro("s")
-        hero_pad_mn_3 = hero_pad_masks(hero_pad_t_3, 2, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_3, 4);
+        hero_pad_mn_3 = hero_pad_masks(hero_pad_t_3, 2, hero_pad_o, sizeof(struct md), hero_pad_m_3, 4);
+        hero_pad_object_give(hero_pad_o);
     }
     {
-        struct ob hero_pad_o;
-        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+        struct ob *const hero_pad_o = (struct ob *)hero_pad_object(sizeof(struct ob));
     #pragma push_macro("b")
     #undef b
     #pragma push_macro("c")
     #undef c
     #pragma push_macro("inr")
     #undef inr
-        hero_pad_o.inr.b--; hero_pad_o.inr.c--;
+        hero_pad_o->inr.b--; hero_pad_o->inr.c--;
     #pragma pop_macro("b")
     #pragma pop_macro("c")
     #pragma pop_macro("inr")
-        hero_pad_mn_4 = hero_pad_masks(hero_pad_t_4, 3, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_4, 3);
+        hero_pad_mn_4 = hero_pad_masks(hero_pad_t_4, 3, hero_pad_o, sizeof(struct ob), hero_pad_m_4, 3);
+        hero_pad_object_give(hero_pad_o);
     }
 }
 
 
 #line 50 "tests/golden/run/ffi-the-bits-beside-a-bit-field-are-zero.hero"
-void h_ffithebitsbesideabitfieldarezero_main(void) {
+__attribute__((__noinline__)) void h_ffithebitsbesideabitfieldarezero_main(void) {
 #line 50
 #define h0_h (*hero_big_h0_h)
 #line 50
@@ -580,7 +580,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("07c1b73864671483", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("36fdecab78301575", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffithebitsbesideabitfieldarezero\tffi-the-bits-beside-a-bit-field-are-zero\n");

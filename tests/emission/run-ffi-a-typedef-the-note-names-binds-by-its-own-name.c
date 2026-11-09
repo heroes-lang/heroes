@@ -204,7 +204,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-void h_ffiatypedefthenotenamesbindsbyitsownname_main(void) {
+__attribute__((__noinline__)) void h_ffiatypedefthenotenamesbindsbyitsownname_main(void) {
 #line 21
 #define h0_m (*hero_lend_h0_m)
 #line 21
@@ -338,7 +338,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("32987b81278ccb94", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("61d4b0f43b55cc86", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffiatypedefthenotenamesbindsbyitsownname\tffi-a-typedef-the-note-names-binds-by-its-own-name\n");

@@ -180,7 +180,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 13 "tests/golden/run/fixedbugs-2286-a-group-record-holding-a-fixed-array-of-partial-records-is-built-in-place.hero"
-void h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_make(struct fixedbugs_2286_held_array *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_make(struct fixedbugs_2286_held_array *hero_out, int64_t h0_n) {
 #line 13
 #define t2 (*hero_big_t2)
 #line 13
@@ -199,7 +199,7 @@ __attribute__((unused)) struct fixedbugs_2286_held_array hero_value_h_fixedbugs2
 }
 
 #line 16 "tests/golden/run/fixedbugs-2286-a-group-record-holding-a-fixed-array-of-partial-records-is-built-in-place.hero"
-void h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_go(void) {
+__attribute__((__noinline__)) void h_fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace_go(void) {
 #line 16
 #define h0_a (*hero_big_h0_a)
 #line 16
@@ -336,7 +336,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2871efaf18fd8deb", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("57ae25222cc68edd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286agrouprecordholdingafixedarrayofpartialrecordsisbuiltinplace\tfixedbugs-2286-a-group-record-holding-a-fixed-array-of-partial-records-is-built-in-place\n");

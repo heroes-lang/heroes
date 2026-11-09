@@ -192,7 +192,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-void h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_main(void) {
 #line 14
 #define h0_t (*hero_lend_h0_t)
 #line 14
@@ -312,7 +312,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("17b09dd004ef2990", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("46ecd34318b82a82", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown\tfixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own\n");

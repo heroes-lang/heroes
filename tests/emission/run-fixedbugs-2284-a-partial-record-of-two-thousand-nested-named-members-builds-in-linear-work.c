@@ -224,7 +224,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 16 "tests/golden/run/fixedbugs-2284-a-partial-record-of-two-thousand-nested-named-members-builds-in-linear-work.hero"
-void h_fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork_main(void) {
 #line 16
 #define h0_held (*hero_big_h0_held)
 #line 16
@@ -345,7 +345,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("67af0fb0490f26d7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("16eb45245cd827c9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2284apartialrecordoftwothousandnestednamedmembersbuildsinlinearwork\tfixedbugs-2284-a-partial-record-of-two-thousand-nested-named-members-builds-in-linear-work\n");

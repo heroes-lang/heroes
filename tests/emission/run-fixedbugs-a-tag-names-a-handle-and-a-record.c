@@ -213,7 +213,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-void h_fixedbugsatagnamesahandleandarecord_main(void) {
+__attribute__((__noinline__)) void h_fixedbugsatagnamesahandleandarecord_main(void) {
 #line 35
 #define h0_h (*hero_lend_h0_h)
 #line 35
@@ -348,7 +348,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4efe00432337f59e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e3a35b63700f690", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugsatagnamesahandleandarecord\tfixedbugs-a-tag-names-a-handle-and-a-record\n");

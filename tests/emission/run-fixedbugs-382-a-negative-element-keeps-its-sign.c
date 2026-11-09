@@ -307,7 +307,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d215e48470654ea", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c5d93bb5acf55dc", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382anegativeelementkeepsitssign\tfixedbugs-382-a-negative-element-keeps-its-sign\n");

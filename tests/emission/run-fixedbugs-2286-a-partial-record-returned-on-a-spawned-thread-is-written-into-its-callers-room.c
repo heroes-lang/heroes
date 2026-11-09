@@ -185,7 +185,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 15 "tests/golden/run/fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero"
-void h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_make(struct heroes_held *hero_out, int64_t h0_n) {
+__attribute__((__noinline__)) void h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_make(struct heroes_held *hero_out, int64_t h0_n) {
 #line 15
 #define t2 (*hero_big_t2)
 #line 15
@@ -201,7 +201,7 @@ __attribute__((unused)) struct heroes_held hero_value_h_fixedbugs2286apartialrec
 }
 
 #line 18 "tests/golden/run/fixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room.hero"
-int64_t h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n) {
 #line 18
 #define h1_h (*hero_big_h1_h)
 #line 18
@@ -332,7 +332,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ebfbcd80442de50", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5dfbf24b180bdf42", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom\tfixedbugs-2286-a-partial-record-returned-on-a-spawned-thread-is-written-into-its-callers-room\n");

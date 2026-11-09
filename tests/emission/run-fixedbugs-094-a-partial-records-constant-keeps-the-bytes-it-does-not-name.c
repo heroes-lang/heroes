@@ -221,7 +221,7 @@ __attribute__((unused)) struct big hero_value_h_fixedbugs094apartialrecordsconst
 }
 
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
-void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) {
+__attribute__((__noinline__)) void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) {
 #line 14
 #define h0_b (*hero_big_h0_b)
 #line 14
@@ -343,7 +343,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("19b358bb691a98c0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("48ef8e2e7ce399b2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname\tfixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name\n");
