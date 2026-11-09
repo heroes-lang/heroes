@@ -1,0 +1,157 @@
+# What a Windows linker says of who supplied a name, of two definitions it
+# refused, and which library files a Windows link reads (design.md §4.19;
+# defect 2376; panel 239's R8, its Windows leg), read for
+# `cli/supplied_read.hero`; its own module, past §11's 300 lines there.
+#
+# **lld-link and MSVC's link.exe write one map** (`/MAP`), measured on the
+# Windows box with clang 23.1.1 on 2026-11-09, both linkers taking the first
+# library's definition in either order of two, a file of objects or a DLL's
+# import library alike, and dying by a memory fault where a DLL exported the
+# C library's `puts`:
+#
+#       Address         Publics by Value              Rva+Base       Lib:Object
+#      0001:00000150       pick              0000000140001150 f   a:pick_a.obj
+#      0001:00015db0       pick              0000000140016db0     a:a.dll
+#      0002:00008a30       __imp_pick        000000014001fa30     a:a.dll
+#
+# naming a library by its name alone, so a library's file is the one the link
+# line's own folders hold (`resolved`); and a duplicate as lld-link's
+# `duplicate symbol: pick` over `>>> defined at a.lib(pick_a.obj)` lines, or
+# link.exe's `b.lib(pick_b.obj) : error LNK2005: pick already defined in
+# a.lib(pick_a.obj)`.
+
+use cli/process
+use cli/strings
+use cli/supplied_names
+
+# A Windows linker's map (`/MAP`): the file of each of `names` among its
+# `Publics by Value`, a library's object or DLL written `<library>.lib(<it>)`
+# as a duplicate names it, a name's own entry before its `__imp_` one. Each
+# line's second and last words are read a byte at a time.
+function publics(map_text: str, names: [str]) -> {str: str}
+    wanted: {str: bool} @= {}
+
+    for name in names
+        wanted[name] @ true
+        wanted["__imp_" + name] @ true
+
+    out: {str: str} @= {}
+    imported: {str: str} @= {}
+    within: bool @= false
+
+    for line in supplied_names.byte_lines(text: map_text, needles: [], stops: [])
+        if strings.holds(text: line, needle: "Publics by Value")
+            within @ true
+            continue
+
+        if !within
+            continue
+
+        if strings.holds(text: line, needle: "entry point at") || strings.holds(text: line, needle: "Static symbols")
+            break
+        words = words_of(line)
+
+        if words.len() < 4 || wanted[words[1]].is_err()
+            continue
+        file = windows_file(words[words.len() - 1])
+
+        if strings.starts_with(text: words[1], prefix: "__imp_")
+            plain = words[1].slice(from: 6, to: words[1].len())
+
+            if imported[plain].is_err()
+                imported[plain] @ file
+        else if out[words[1]].is_err()
+            out[words[1]] @ file
+
+    for name in names
+        if out[name].is_err() && !imported[name].is_err()
+            out[name] @ imported[name].must()
+
+    return out
+
+# A Windows map's file, `a:pick_a.obj` written `a.lib(pick_a.obj)`, an
+# object of the program's own as it stands.
+function windows_file(word: str) -> str
+    at = supplied_names.byte_at(text: word, byte: ':')
+
+    if at < 1
+        return word
+    return word.slice(from: 0, to: at) + ".lib(" + word.slice(from: at + 1, to: word.len()) + ")"
+
+# The words of `line` between its spaces, tabs and returns, cut a byte at a
+# time: link.exe ends its map's lines `\r\n`.
+function words_of(line: str) -> [str]
+    out: [str] @= []
+    start: i64 @= -1
+    at: i64 @= 0
+
+    while at <= line.len()
+        blank = at == line.len() || line[at] == ' ' || line[at] == 9 || line[at] == 13
+
+        if blank && start >= 0
+            out @ out.push(line.slice(from: start, to: at))
+            start @ -1
+        else if !blank && start < 0
+            start @ at
+        at @ at + 1
+
+    return out
+
+# The library file each of `named` is on Windows, where a folder the link
+# line names with `-L` holds `<name>.lib`, the first that does, as the link
+# searches them: what a Windows link's answers are kept by, its map naming a
+# library by its name alone (defect 2376). A library the program's folders do
+# not hold is the platform's, and is not keyed.
+function resolved(line: [str], named: [str]) -> [str]
+    dirs: [str] @= []
+
+    for index in range(from: 0, to: line.len())
+        if line[index] == "-L" && index + 1 < line.len()
+            dirs @ dirs.push(line[index + 1])
+        else if strings.starts_with(text: line[index], prefix: "-L") && line[index].len() > 2
+            dirs @ dirs.push(line[index].slice(from: 2, to: line[index].len()))
+
+    out: [str] @= []
+
+    for name in named
+        for dir in dirs
+            path = dir + "/" + name + ".lib"
+
+            if process.path_exists(path)
+                out @ out.push(path)
+                break
+
+    return out
+
+# Whether a Windows map names an object a library of `named` gave the link,
+# as against a DLL its import library stands for.
+function objects_loaded(map_text: str, named: [str]) -> bool
+    for line in supplied_names.byte_lines(text: map_text, needles: [], stops: [])
+        words = words_of(line)
+
+        if words.len() < 4 || !strings.ends_with(text: words[words.len() - 1], suffix: ".obj")
+            continue
+        file = windows_file(words[words.len() - 1])
+
+        if strings.ends_with(text: file, suffix: ".obj)") && supplied_names.naming(file: file, named: named).len() > 0
+            return true
+
+    return false
+
+# Whether lld's `>>>` names a file of a library or an object,
+# `a.lib(pick_a.obj)`, `runtime-1-2.obj`, `build/runtime-1-2.o`, where it
+# writes a source file and its line beside them.
+function windows_object(file: str) -> bool
+    return strings.holds(text: file, needle: ".lib(") || strings.ends_with(text: file, suffix: ".obj") || strings.ends_with(text: file, suffix: ".o")
+
+## Tests
+
+test "a Windows map's word is read as a library's file, and its line by its words (defect 2376)"
+    assert windows_file("a:pick_a.obj") == "a.lib(pick_a.obj)"
+    assert windows_file("b:b.dll") == "b.lib(b.dll)"
+    assert windows_file("m.obj") == "m.obj"
+    assert words_of(" 0001:00000150       pick                       0000000140001150 f   a:pick_a.obj\r") == ["0001:00000150", "pick", "0000000140001150", "f", "a:pick_a.obj"]
+    assert windows_object("a.lib(pick_a.obj)") && windows_object("build/runtime-1-2.obj") && windows_object("build/runtime-1-2.o")
+    assert !windows_object("pick_a.c") && !windows_object("C:\\w\\runtime\\parts\\panic.c:124")
+    none: [str] = []
+    assert resolved(line: ["clang", "-L", "build/no-such-folder-2376", "-la"], named: ["a"]) == none

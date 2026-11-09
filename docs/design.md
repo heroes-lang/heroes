@@ -2775,7 +2775,14 @@ the runtime does not call, defined by two libraries the program names and needed
 static FFmpeg and static X11 carry identical copies on purpose and no symbol tells one from two
 different definitions, a known cost kept by the author's ruling of 2026-11-09 on decision 2374's
 second question (defect 2375) and pinned by the net's own case that builds it (`intern`, `100 2 7`);
-a shared library's second definition of such a name; and Windows, whose link is asked nothing yet (defect 2376). **What it costs**: the
+and a shared library's second definition of such a name. **On Windows** (defect 2376, measured on
+the Windows box with clang 23.1.1 driving lld-link and MSVC's link.exe, 2026-11-09, where both took
+the first library's definition in either order and a DLL's `puts` died by a memory fault) the link
+is asked by its map, `/MAP`, which names the library and the object or DLL of each name, the probes
+load every library file of objects whole with `/WHOLEARCHIVE:`, and their answers are kept by the
+files the link line's own `-L` folders hold, the map naming a library by its name alone
+(`cli/supplied_windows.hero`); a library's duplicate of a name a library the program does not name
+defines, as `fflush` against Windows' `libucrt.lib`, is told on its group. **What it costs**: the
 probes' answers are kept by the link's words, the compiler that links them and the key of every
 library file the links read (`cli/supplied_kept.hero`), so a warm build runs its own link alone,
 and a library rebuilt, removed or shadowed is asked again; measured on this Mac on 2026-11-09,

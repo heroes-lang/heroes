@@ -15,15 +15,20 @@ function naming(file: str, named: [str]) -> [str]
     out: [str] @= []
 
     for n in named
-        if strings.holds(text: file, needle: "lib" + n + ".") && names_file(base: base_of(file), name: n)
+        if (strings.holds(text: file, needle: "lib" + n + ".") || strings.holds(text: file, needle: n + ".lib")) && names_file(base: base_of(file), name: n)
             out @ out.push(n)
 
     return out
 
 # Whether `base`, a file's last component, is the library `-l<name>` reads:
-# `lib<name>.a`, `.so`, `.so.<version>`, `.dylib`, `.<version>.dylib`, `.tbd`.
+# `lib<name>.a`, `.so`, `.so.<version>`, `.dylib`, `.<version>.dylib`, `.tbd`,
+# and on Windows `<name>.lib`, a file of objects or a DLL's import library
+# (defect 2376).
 function names_file(base: str, name: str) -> bool
     stem = "lib" + name + "."
+
+    if base == name + ".lib"
+        return true
 
     if !strings.starts_with(text: base, prefix: stem)
         return false
@@ -143,6 +148,50 @@ function shares(a: [str], b: [str]) -> bool
 
     return false
 
+# The lines of `text` up to the first that is one of `stops`, those holding
+# one of `needles` (every line for none), cut at its line ends a byte
+# at a time: a long trace or map costs no character list of a line it does
+# not hold (a character list of each line cost a build 0.43G instructions per
+# probe, measured by the sitting on 1,252 lines; Apple's `-t` writes 330 for
+# a program of one library, the landing's measure).
+function byte_lines(text: str, needles: [str], stops: [str]) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    while start < text.len()
+        end: i64 @= start
+
+        while end < text.len() && text[end] != 10
+            end @ end + 1
+
+        line = text.slice(from: start, to: end)
+        start @ end + 1
+
+        if named_in(stops, name: line)
+            return out
+
+        if needles.len() == 0 || holds_one(text: line, needles: needles)
+            out @ out.push(line)
+
+    return out
+
+function holds_one(text: str, needles: [str]) -> bool
+    for needle in needles
+        if strings.holds(text: text, needle: needle)
+            return true
+
+    return false
+
+function byte_at(text: str, byte: u8) -> i64
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == byte
+            return at
+        at @ at + 1
+
+    return -1
+
 ## Tests
 
 test "a field is cut at each of its separator's bytes, an empty part kept (panel 239)"
@@ -156,6 +205,9 @@ test "a library file is the one its -l name reads, and no other (panel 239)"
     assert names_file(base: "libb.dylib", name: "b")
     assert !names_file(base: "libsystem_m.tbd", name: "m")
     assert !names_file(base: "libab.a", name: "a")
+    assert names_file(base: "a.lib", name: "a")
+    assert !names_file(base: "ab.lib", name: "a")
+    assert base_of("a.lib(pick_a.obj)") == "a.lib"
     assert base_of("/w/out/lib/liba.a(pick_a.o)") == "liba.a"
     assert base_of("/w/out/libab.a[2](ab.o)") == "libab.a"
     assert base_of("/lib/aarch64-linux-gnu/libc.so.6") == "libc.so.6"

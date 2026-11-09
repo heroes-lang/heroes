@@ -192,7 +192,10 @@ its R4, the same day, both provisional, author ratification pending):
   group binds and the runtime does not call, defined twice among the
   program's libraries, a known cost kept by the author's ruling of 2026-11-09
   on decision 2374's second question (defect 2375, pinned by the net's own
-  case `intern`), and Windows, asked nothing yet (defect 2376).
+  case `intern`). On Windows the link is asked by its map, `/MAP`, lld-link's
+  and link.exe's alike, and a library defining again a name a library the
+  program does not name defines is told on its group (defect 2376, the
+  Windows box, 2026-11-09).
 - **a group record another module's unit reads otherwise than its own
   module's unit does, where no order of the headers makes the two alike**:
   added 2026-11-09 (panel 239's R4 and R5, provisional, author ratification

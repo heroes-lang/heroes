@@ -99,7 +99,10 @@ function told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagno
     return duplicates_told(message, s, decls)
 
 # A duplicate the link itself refused, read where every file it names is a
-# library the program names or the runtime's own object.
+# library the program names or the runtime's own object, or where one library
+# of the program's defines a name again that a library it does not name
+# defines (a C library linked whole as files of objects, Windows' `libucrt`:
+# the box, 2026-11-09, defect 2376).
 function duplicates_told(message: str, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     named = linked_names(s, decls)
@@ -108,6 +111,7 @@ function duplicates_told(message: str, s: source.Source, decls: [ast.Decl]) -> [
         theirs: [str] @= []
         runtime: i64 @= 0
         unplaced: i64 @= 0
+        members: i64 @= 0
 
         for file in d.files
             found = supplied_names.naming(file: file, named: named)
@@ -118,6 +122,13 @@ function duplicates_told(message: str, s: source.Source, decls: [ast.Decl]) -> [
                 runtime @ runtime + 1
             else if found.len() == 0
                 unplaced @ unplaced + 1
+
+            if found.len() == 0 && library_member(file)
+                members @ members + 1
+
+        if unplaced > 0 && unplaced == members && theirs.len() == 1 && runtime == 0
+            out @ ffi_lookup.add_once(found: out, d: unnamed_told(s, decls, d: d, library: theirs[0]))
+            continue
 
         if unplaced > 0 || theirs.len() == 0
             continue
@@ -162,6 +173,29 @@ function duplicates_told(message: str, s: source.Source, decls: [ast.Decl]) -> [
             out @ ffi_lookup.add_once(found: out, d: d3)
 
     return out
+
+# One library of the program's defining a name again that a library it does
+# not name defines, told on the library's group.
+function unnamed_told(s: source.Source, decls: [ast.Decl], d: supplied_read.Duplicate, library: str) -> diag.Diagnostic
+    at = group_of(s, decls, library: library)
+    span: ast.Decl @= decls[0]
+
+    if at >= 0
+        span @ decls[at]
+    said: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_defined_elsewhere",
+        message: "library `" + library + "`, which " + module_of(s, decls, at: at) + " links, defines `" + d.name + "`, which a library this program does not name defines too, and the program cannot be built with both",
+        span: span.span
+    )
+    said.notes @ with_files(notes: said.notes, files: d.files)
+    said.notes @ said.notes.push(
+        "a program holds one definition of `" + d.name + "`: where library `" + library + "` is built, keep its `" + d.name + "` to itself, or link a library that does not define it"
+    )
+    return said
+
+# Whether `file` is an object of a library file, `x.lib(y.obj)`, `libx.a(y.o)`.
+function library_member(file: str) -> bool
+    return strings.holds(text: file, needle: ".lib(") || strings.holds(text: file, needle: ".a(") || strings.holds(text: file, needle: ".a[")
 
 # Whether `file` is the runtime's object the compiler links into every
 # program, `runtime-<key>-<key>.o` under `build/` (`toolchain.runtime_object`).
@@ -319,3 +353,5 @@ test "the runtime's own object is told from a library's file and from a unit's (
     assert runtime_object("/w/build/runtime-1-2.obj")
     assert !runtime_object("build/tu-0007986b2ac09bfc/main.o")
     assert !runtime_object("/w/lib/libhh.a(hh.o)")
+    assert library_member("libucrt.lib(fflush.obj)") && library_member("/usr/lib/libc.a(fflush.o)")
+    assert !library_member("build/tu-1/main.o")

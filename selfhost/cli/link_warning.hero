@@ -47,16 +47,22 @@ function run_link_heard(line: [str], what: str, err_path: str, traced: [str], @h
     said: str @= ""
 
     if process.exe_suffix() == ".exe"
+        # What it printed is read where it linked (defect 2376), and is in
+        # its refusal's words where it did not, link.exe's being there.
         out_path = publish.private_name(err_path + ".stdout.txt")
-        asked = clang_asked.asked(
+        printed: str @= ""
+        asked = clang_asked.answered(
             program: "clang",
             words: line,
             what: what,
             err_path: err_path,
-            out_path: out_path
+            out_path: out_path,
+            apart: false,
+            printed: @printed
         )
         publish.discard(out_path)
         said @ asked?
+        heard @ printed + said
     else
         out_path = publish.private_name(err_path + ".stdout.txt")
         printed: str @= ""

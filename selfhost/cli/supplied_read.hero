@@ -15,20 +15,29 @@
 #     lld     stdout  /w/liba.a(pick_a.o): definition of pick
 #                     /w/libb.so: shared definition of pick
 #                     /w/liba.a(pick_a.o)            (`-t`: what it loaded)
-#     ld64    map         [  2] /w/liba.a(pick_a.o)      (`# Object files:`)
+#     ld64    map     [  2] /w/liba.a(pick_a.o)      (`# Object files:`)
 #                     0x...  0x...  [  2] _pick      (`# Symbols:`, a dylib's
 #                                                     name as `_pick.stub`)
 #             stdout  /w/libb.a(pick_b.o)            (`-t`: every object of
 #                                                     each archive it parsed)
+#     lld-link and link.exe, `/MAP` (Windows, defect 2376; clang 23.1.1 on
+#     the Windows box, 2026-11-09):
+#                     0001:00000150  pick  0000000140001150  [f]  a:pick_a.obj
+#                     0001:00015db0  pick  0000000140016db0  [f]  a:a.dll
+#                                     (`Publics by Value`: the library by its
+#                                     name, the object or the DLL it loaded)
 #
 # and a duplicate as GNU ld's `multiple definition of `x'`, lld's `duplicate
-# symbol: x` with its `>>>` lines, ld64's `duplicate symbol '_x' in:` with
-# its indented paths. No linker names an object of an archive it did not
+# symbol: x` with its `>>>` lines (`>>> defined at a.lib(pick_a.obj)` from
+# lld-link), ld64's `duplicate symbol '_x' in:` with its indented paths, and
+# link.exe's `b.lib(pick_b.obj) : error LNK2005: pick already defined in
+# a.lib(pick_a.obj)`. No linker names an object of an archive it did not
 # load in its trace or its map: what reads such a definition is another link
 # that loads it (`cli/supplied_probe.hero`).
 
 use cli/strings
 use cli/supplied_names
+use cli/supplied_windows
 use emit/ffi_lookup
 
 # Two or more files the link found defining one name.
@@ -37,11 +46,14 @@ record Duplicate
     files: [str]
 
 # Each traced name's supplier as the linker named it: the map on Apple's
-# linker, else the trace's first regular definition, else its first shared
-# one (`said` holds both of the link's streams).
-function taken(said: str, listing: str, apple: bool, names: [str]) -> {str: str}
+# linker and on Windows', else the trace's first regular definition, else its
+# first shared one (`said` holds both of the link's streams).
+function taken(said: str, listing: str, apple: bool, msvc: bool, names: [str]) -> {str: str}
     if apple
         return mapped(listing, names: names)
+
+    if msvc
+        return supplied_windows.publics(listing, names: names)
     wanted: {str: bool} @= {}
 
     for name in names
@@ -50,7 +62,7 @@ function taken(said: str, listing: str, apple: bool, names: [str]) -> {str: str}
     regular: {str: str} @= {}
     shared: {str: str} @= {}
 
-    for line in byte_lines(text: said, needles: ["definition of "], stops: [])
+    for line in supplied_names.byte_lines(text: said, needles: ["definition of "], stops: [])
         for said_as in [": definition of ", ": shared definition of "]
             at = ffi_lookup.char_index_of(text: line, needle: said_as)
 
@@ -75,40 +87,6 @@ function taken(said: str, listing: str, apple: bool, names: [str]) -> {str: str}
             regular[name] @ shared[name].must()
 
     return regular
-
-# The lines of `text` up to the first that is one of `stops`, those holding
-# one of `needles` (every line for none), cut at its line ends a byte
-# at a time: a long trace or map costs no character list of a line it does
-# not hold (a character list of each line cost a build 0.43G instructions per
-# probe, measured by the sitting on 1,252 lines; Apple's `-t` writes 330 for
-# a program of one library, the landing's measure).
-function byte_lines(text: str, needles: [str], stops: [str]) -> [str]
-    out: [str] @= []
-    start: i64 @= 0
-
-    while start < text.len()
-        end: i64 @= start
-
-        while end < text.len() && text[end] != 10
-            end @ end + 1
-
-        line = text.slice(from: start, to: end)
-        start @ end + 1
-
-        if supplied_names.named_in(stops, name: line)
-            return out
-
-        if needles.len() == 0 || holds_one(text: line, needles: needles)
-            out @ out.push(line)
-
-    return out
-
-function holds_one(text: str, needles: [str]) -> bool
-    for needle in needles
-        if strings.holds(text: text, needle: needle)
-            return true
-
-    return false
 
 # What each file of a library `named` names begins with, `lib<name>.`.
 function stems(named: [str]) -> [str]
@@ -168,8 +146,8 @@ record Entry
     name: str
 
 function map_entry(line: str) -> Entry?
-    open = byte_at(text: line, byte: '[')
-    close = byte_at(text: line, byte: ']')
+    open = supplied_names.byte_at(text: line, byte: '[')
+    close = supplied_names.byte_at(text: line, byte: ']')
 
     if open < 0 || close <= open || close + 2 > line.len()
         return fail(code: "none", msg: "no index")
@@ -184,7 +162,7 @@ function map_entry(line: str) -> Entry?
 function map_files(map_text: str, needles: [str]) -> {i64: str}
     files: {i64: str} @= {}
 
-    for line in byte_lines(text: map_text, needles: needles, stops: ["# Sections:", "# Symbols:"])
+    for line in supplied_names.byte_lines(text: map_text, needles: needles, stops: ["# Sections:", "# Symbols:"])
         indexed = map_entry(line)
 
         if !indexed.is_err()
@@ -202,7 +180,7 @@ function opened(said: str, listing: str, named: [str]) -> [str]
     listed: [str] @= []
     wanted = stems(named)
 
-    for line in byte_lines(text: said, needles: wanted, stops: [])
+    for line in supplied_names.byte_lines(text: said, needles: wanted, stops: [])
         listed @ listed.push(supplied_names.last_field(ffi_lookup.trimmed(line)))
 
     files = map_files(listing, needles: wanted)
@@ -222,7 +200,9 @@ function opened(said: str, listing: str, named: [str]) -> [str]
 # Whether a probe's link read a library file of objects the program names:
 # Apple's map lists each object it loaded before its `# Sections:`, `-t` each
 # file GNU ld opened and each object lld loaded.
-function files_seen(said: str, listing: str, apple: bool, named: [str]) -> bool
+function files_seen(said: str, listing: str, apple: bool, msvc: bool, named: [str]) -> bool
+    if msvc
+        return supplied_windows.objects_loaded(listing, named: named)
     text: str @= said
     stops: [str] @= []
 
@@ -230,22 +210,12 @@ function files_seen(said: str, listing: str, apple: bool, named: [str]) -> bool
         text @ listing
         stops @ ["# Sections:", "# Symbols:"]
 
-    for line in byte_lines(text: text, needles: stems(named), stops: stops)
+    for line in supplied_names.byte_lines(text: text, needles: stems(named), stops: stops)
         if strings.holds(text: line, needle: ".a(") || strings.holds(text: line, needle: ".a[") || strings.ends_with(text: line, suffix: ".a")
             if supplied_names.naming(file: supplied_names.last_field(ffi_lookup.trimmed(line)), named: named).len() > 0
                 return true
 
     return false
-
-function byte_at(text: str, byte: u8) -> i64
-    at: i64 @= 0
-
-    while at < text.len()
-        if text[at] == byte
-            return at
-        at @ at + 1
-
-    return -1
 
 function without_suffix(symbol: str) -> str
     if strings.ends_with(text: symbol, suffix: ".stub")
@@ -266,9 +236,18 @@ function duplicates(said: str) -> [Duplicate]
         gnu = ffi_lookup.after(text: line, marker: "multiple definition of `")
         lld = ffi_lookup.after(text: line, marker: "duplicate symbol: ")
         apple = ffi_lookup.after(text: line, marker: "duplicate symbol '")
+        msvc = ffi_lookup.after(text: line, marker: "error LNK2005: ")
         files: [str] @= []
 
-        if !gnu.is_err()
+        if !msvc.is_err()
+            name = supplied_names.until_text(text: msvc.must(), stop: " already defined in ")
+            first = ffi_lookup.after(text: msvc.must(), marker: " already defined in ")
+
+            if !first.is_err()
+                files @ files.push(ffi_lookup.trimmed(first.must()))
+            files @ files.push(supplied_names.until_text(text: line, stop: " : error LNK2005"))
+            out @ out.push(Duplicate(name: name, files: files))
+        else if !gnu.is_err()
             name = supplied_names.until(text: gnu.must(), stop: "'")
             first = ffi_lookup.after(text: gnu.must(), marker: "; ")
 
@@ -285,11 +264,25 @@ function duplicates(said: str) -> [Duplicate]
         else if !lld.is_err()
             k: i64 @= at + 1
 
+            # A `>>>` line names the file in an archive, or a library's
+            # object or an object (lld-link's `defined at a.lib(x.obj)`), or
+            # under a source's line the object itself, as lld-link names the
+            # runtime's (`>>>            build/runtime-1-2.o`, the Windows
+            # box, 2026-11-09).
             while k < lines.len() && strings.starts_with(text: lines[k], prefix: ">>>")
                 archive = ffi_lookup.after(text: lines[k], marker: " in archive ")
+                coff = ffi_lookup.after(text: lines[k], marker: ">>> defined at ")
+                object = supplied_names.until_text(
+                    text: ffi_lookup.trimmed(lines[k].slice(from: 3, to: lines[k].len())),
+                    stop: ":("
+                )
 
                 if !archive.is_err()
                     files @ files.push(ffi_lookup.trimmed(archive.must()))
+                else if !coff.is_err() && supplied_windows.windows_object(ffi_lookup.trimmed(coff.must()))
+                    files @ files.push(ffi_lookup.trimmed(coff.must()))
+                else if coff.is_err() && supplied_windows.windows_object(object)
+                    files @ files.push(object)
                 k @ k + 1
 
             out @ out.push(Duplicate(name: ffi_lookup.trimmed(lld.must()), files: files))
@@ -311,11 +304,38 @@ function duplicates(said: str) -> [Duplicate]
 
 test "each linker's words name the supplier it took (panel 239)"
     gnu = "/usr/bin/ld: /w/so/libb.so: definition of pick\n/usr/bin/ld: /w/lib/liba.a(pick_a.o): definition of pick\n/usr/bin/ld: /w/so/libc.so: reference to pick\n"
-    assert taken(said: gnu, listing: "", apple: false, names: ["pick"])["pick"].must() == "/w/lib/liba.a(pick_a.o)"
+    assert taken(said: gnu, listing: "", apple: false, msvc: false, names: ["pick"])["pick"].must() == "/w/lib/liba.a(pick_a.o)"
     lld = "/w/so/liba.so: shared definition of pick\n/w/so/libb.so: shared definition of pick\n"
-    assert taken(said: lld, listing: "", apple: false, names: ["pick"])["pick"].must() == "/w/so/liba.so"
+    assert taken(said: lld, listing: "", apple: false, msvc: false, names: ["pick"])["pick"].must() == "/w/so/liba.so"
     listing = "# Object files:\n[  0] linker synthesized\n[  1] /t/m.o\n[  2] /w/so/libb.dylib\n# Symbols:\n0x1\t0x0\t[  2] _pick.stub\n0x2\t0x0\t[  1] _main\n"
-    assert taken(said: "", listing: listing, apple: true, names: ["pick", "main"])["pick"].must() == "/w/so/libb.dylib"
+    assert taken(said: "", listing: listing, apple: true, msvc: false, names: ["pick", "main"])["pick"].must() == "/w/so/libb.dylib"
+
+# Windows' words, captured on the Windows box with clang 23.1.1 driving
+# lld-link and MSVC's link.exe (2026-11-09): a map's lines, link.exe's ended
+# `\r\n`, and each linker's duplicate.
+test "a Windows linker's map names the library and its object or DLL, and its duplicate both files (defect 2376)"
+    listing = " o\r\n  Address         Publics by Value              Rva+Base               Lib:Object\r\n\r\n 0001:00000000       main                       0000000140001000 f   m.obj\r\n 0001:00000150       pick                       0000000140001150 f   b:pick_b.obj\r\n 0001:00015dc0       b_only                     0000000140016dc0     b:b.dll\r\n 0002:00008a40       __imp_b_only               000000014001fa40     b:b.dll\r\n 0002:00008a48       __imp_q_only               000000014001fa48     q:q.dll\r\n entry point at        0001:000003d0\r\n\r\n Static symbols\r\n\r\n 0001:00000010       pick                       0000000140001010 f   a:pick_a.obj\r\n"
+    got = taken(said: "", listing: listing, apple: false, msvc: true, names: ["pick", "b_only", "q_only", "main"])
+    assert got["pick"].must() == "b.lib(pick_b.obj)"
+    assert got["b_only"].must() == "b.lib(b.dll)"
+    assert got["q_only"].must() == "q.lib(q.dll)"
+    assert got["main"].must() == "m.obj"
+    assert supplied_windows.objects_loaded(listing, named: ["b"])
+    assert !supplied_windows.objects_loaded(listing, named: ["q"])
+    lld = duplicates(
+        "lld-link: error: duplicate symbol: pick\n>>> defined at a.lib(pick_a.obj)\n>>> defined at b.lib(pick_b.obj)\nclang: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    )
+    assert lld.len() == 1 && lld[0].name == "pick"
+    assert lld[0].files == ["a.lib(pick_a.obj)", "b.lib(pick_b.obj)"]
+    runtime = duplicates(
+        "lld-link: error: duplicate symbol: hero_print_end\n>>> defined at C:\\w\\runtime\\parts\\panic.c:124\n>>>            build/runtime-3bc71c9f7bddecfa-381487232b3200a3.o\n>>> defined at hh.lib(hh.obj)\n"
+    )
+    assert runtime[0].files == ["build/runtime-3bc71c9f7bddecfa-381487232b3200a3.o", "hh.lib(hh.obj)"]
+    link = duplicates(
+        "b.lib(pick_b.obj) : error LNK2005: pick already defined in a.lib(pick_a.obj)\nwh.exe : fatal error LNK1169: one or more multiply defined symbols found\n"
+    )
+    assert link.len() == 1 && link[0].name == "pick"
+    assert link[0].files == ["a.lib(pick_a.obj)", "b.lib(pick_b.obj)"]
 
 test "each linker's duplicate names both files (panel 239)"
     gnu = duplicates(

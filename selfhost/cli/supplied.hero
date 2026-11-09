@@ -23,19 +23,22 @@
 # its words. `cli/supplied_judged.hero` decides, `cli/supplied_words.hero`
 # tells.
 #
-# **Unrun on Windows**, whose linker is asked nothing here: the class stays
-# open on that platform (defect 2376).
+# **On Windows** (defect 2376) lld-link and MSVC's link.exe are asked by
+# their map (`/MAP`), which names the library and the object or DLL each name
+# came from, the probes loading every library file of objects whole with
+# `/WHOLEARCHIVE:`; their answers are kept by the library files the link
+# line's own folders hold, the map naming a library by its name alone.
 
 use ast
 use cli/link_flags
 use cli/link_warning
-use cli/process
 use cli/publish
 use cli/strings
 use cli/supplied_judged
 use cli/supplied_kept
 use cli/supplied_probe
 use cli/supplied_read
+use cli/supplied_windows
 use cli/toolchain
 use emit/externs as emit_externs
 use source
@@ -114,12 +117,12 @@ function traced(j: Judging) -> [str]
 function asked(t: toolchain.Toolchain, line: [str], bound: [supplied_judged.Bound], objects: [str]) -> Judging
     named = library_names(line)
 
-    if named.len() == 0 || link_flags.msvc(t.target) || process.exe_suffix() == ".exe"
+    if named.len() == 0
         return nothing()
     return Judging(
         asked: true,
         bound: bound,
-        needs: supplied_probe.runtime_needs(t, objects),
+        needs: supplied_kept.runtime_needs(t, objects),
         named: named,
         line: line,
         map_path: publish.private_name(t.build + "/supplied-real") + ".map"
@@ -158,10 +161,13 @@ function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
     publish.discard(j.map_path)
     apple = link_flags.apple(t.target)
     names = traced(j)
-    first = supplied_read.taken(said: said, listing: listing, apple: apple, names: names)
+    msvc = link_flags.msvc(t.target)
+    first = supplied_read.taken(said: said, listing: listing, apple: apple, msvc: msvc, names: names)
     opened: [str] @= []
 
-    if j.named.len() > 1
+    if j.named.len() > 1 && msvc
+        opened @ supplied_windows.resolved(line: j.line, named: j.named)
+    else if j.named.len() > 1
         opened @ supplied_read.opened(said: said, listing: listing, named: j.named)
     at = supplied_kept.path_of(t, line: j.line, names: names)
     probes: supplied_probe.Probes @= supplied_probe.none()
