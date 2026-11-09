@@ -133,6 +133,17 @@ function target_words(target: str) -> [str]
     none: [str] = []
     return none
 
+# **A Linux target reads its libraries as one group** (panel 238): GNU ld
+# searches an archive once, where it stands on the line, so an archive that
+# needs another named before it is an undefined reference (`heroes-linux-arm64`,
+# GNU ld 2.44, `-lbase -ltop`), and the line's order is the module walk's. A
+# group searches them again until nothing new resolves; lld, which needs
+# none, takes the words. Apple's linker refuses them (*unknown options*) and
+# searches every archive again by itself (`man ld`). An MSVC target's linker
+# is unasked (unrun), so it gets none.
+function groups_libraries(target: str) -> bool
+    return strings.holds(text: target, needle: "-linux")
+
 # A triple whose system is Windows and whose environment is MSVC's: the
 # targets clang links with `link.exe` or `lld-link` and compiles with CodeView
 # debug information (`toolchain.object_words`).
@@ -190,3 +201,10 @@ test "a link for an Apple or an MSVC target asks for a reproducible output, and 
     for flag in flags.flags()
         assert flag != "-Wl,-reproducible"
         assert flag != "-Wl,/Brepro"
+
+test "a Linux target's libraries are one group, and no other target's (panel 238)"
+    assert groups_libraries("aarch64-unknown-linux-gnu")
+    assert groups_libraries("x86_64-pc-linux-gnu")
+    assert !groups_libraries("arm64-apple-darwin25.6.0")
+    assert !groups_libraries("x86_64-pc-windows-msvc")
+    assert !groups_libraries("")

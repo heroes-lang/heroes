@@ -145,9 +145,10 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # Windows), the target's (`link_flags.target_words`: a reproducible output
 # from Apple's linker, defect 593), the `--library` directories, the
 # objects, a package's link words (`libraries.link_words`) and the `link`
-# names. No include directory: a link reads none, and until defect 206 the
-# link took the `--include` directories and a package's whole answer, whose
-# `-F` clang on Linux called *argument unused during compilation*.
+# names, these two in one group on a Linux target (panel 238's R3). No
+# include directory: a link reads none, and until defect 206 the link took
+# the `--include` directories and a package's whole answer, whose `-F` clang
+# on Linux called *argument unused during compilation*.
 function link_line(objects: [str], level: str, sanitize: bool, target: str, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(list: line, more: link_flags.link_flags())
@@ -159,13 +160,33 @@ function link_line(objects: [str], level: str, sanitize: bool, target: str, sear
     for object in objects
         line @ line.push(object)
 
+    library: [str] @= []
+
     for flag in libraries.link_words(package_flags)
-        line @ line.push(flag)
+        library @ library.push(flag)
 
     for name in link_names
-        line @ line.push("-l" + name)
+        library @ library.push("-l" + name)
 
-    return line
+    # **One group around every library word**, a package's and a `link`
+    # name's together, where the target's linker reads an archive once, where
+    # it stands (`link_flags.groups_libraries`; defects 2365 and 2366): the
+    # written order is the module walk's, and an archive needing one named
+    # before it was *undefined reference* on GNU ld in that order, or in every
+    # order where a package's words stood first. One group and never two,
+    # since two groups side by side do not resolve across (GNU ld 2.44 in the
+    # `heroes-linux-arm64` container, measured by panel 238's critic and again
+    # by lane b26-link). A package cannot answer a group of its own: an
+    # answer holding `-Wl,--start-group` is refused `ffi_package` at the
+    # package's string (measured, lane b26-link), no such word being on the
+    # list `libraries.refused` names.
+    if library.len() > 0 && link_flags.groups_libraries(target)
+        line @ line.push("-Wl,--start-group")
+        line @ strings.with_all(list: line, more: library)
+        line @ line.push("-Wl,--end-group")
+        return line
+
+    return strings.with_all(list: line, more: library)
 
 # The link written straight into `at`, which is not a file. Answers the
 # author's own spelling, as a link published under `build/` does.
@@ -686,3 +707,122 @@ test "two links of the same objects into one path are one binary (defect 593)"
 
     assert said == link_flags.apple(t.target)
     assert !process.remove_tree(t.build).is_err()
+
+test "a Linux link holds its libraries in one group, and an Apple link holds none (panel 238)"
+    none: [str] = []
+    linux = link_line(
+        objects: ["a.o"],
+        level: "-O0",
+        sanitize: false,
+        target: "aarch64-unknown-linux-gnu",
+        search_library: none,
+        package_flags: ["-lp"],
+        link_names: ["top", "base"]
+    )
+    assert linux.slice(from: linux.len() - 5, to: linux.len()) == ["-Wl,--start-group", "-lp", "-ltop", "-lbase", "-Wl,--end-group"]
+    apple = link_line(
+        objects: ["a.o"],
+        level: "-O0",
+        sanitize: false,
+        target: "arm64-apple-darwin25.6.0",
+        search_library: none,
+        package_flags: ["-lp"],
+        link_names: ["top", "base"]
+    )
+    assert apple.slice(from: apple.len() - 4, to: apple.len()) == ["a.o", "-lp", "-ltop", "-lbase"]
+
+    # A link with no library holds no group.
+    bare = link_line(
+        objects: ["a.o"],
+        level: "-O0",
+        sanitize: false,
+        target: "aarch64-unknown-linux-gnu",
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    )
+
+    for word in bare
+        assert word != "-Wl,--start-group"
+
+# **A library that needs another links in every order the program's words
+# give it** (panel 238's R3; defects 2365 and 2366): `libtop.a`, whose
+# `top_value` calls `base_helper`, and `libbase.a`, which defines it and
+# `base_other` in two objects, archived by the machine's own `ar` and linked
+# in five shapes: two `link` names in both orders (panel 238's `dep_written`
+# and `dep_sorted`, and one module's two groups), a package's words before a
+# `link` name (its `lp_*`, where the package's words stand first whatever
+# the order written), and two packages' words in both orders (its `pp_*`). On
+# GNU ld three of the five were *undefined reference to `base_helper'* until
+# the group (the `heroes-linux-arm64` container, 2026-11-08); ld64 links all
+# five bare. **Two objects, as panel 238's `libbase.a` was**: a link that
+# takes `base_other`'s member leaves `base_helper`'s to a later search, which
+# GNU ld makes only in a group; with the two in one object every shape linked
+# without the words, and this test passed on a compiler that wrote none (lane
+# b26-link's falsifier, `groups_libraries` answering false, in the
+# container). Not asked on Windows, where no group stands and an archive made
+# by `ar` is unrun.
+test "a library that needs another links in every order its words are written in (panel 238; defects 2365 and 2366)"
+    if process.exe_suffix() == ".exe"
+        return
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-link-groups-" + process.pid().to_str()
+    dir = t.build
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    said = dir + "/said.txt"
+    sources = [
+        ["top", "int base_helper(void);\nint top_value(void);\nint top_value(void) { return base_helper() + 1; }\n"]
+        ["base_helper", "int base_helper(void);\nint base_helper(void) { return 40; }\n"]
+        ["base_other", "int base_other(void);\nint base_other(void) { return 2; }\n"]
+        ["main", "int top_value(void);\nint base_other(void);\nint main(void) { return top_value() == 41 && base_other() == 2 ? 0 : 1; }\n"]
+    ]
+
+    for one in sources
+        assert !write_file(path: dir + "/" + one[0] + ".c", text: one[1]).is_err()
+        made = process.run(
+            program: "clang",
+            words: ["clang", "-c", "-fPIC", dir + "/" + one[0] + ".c", "-o", dir + "/" + one[0] + ".o"],
+            out: process.discard(),
+            err: said
+        )
+        assert made.started && made.code == 0
+
+    for members in [["top", "top"], ["base", "base_helper", "base_other"]]
+        words: [str] @= ["ar", "rcs", dir + "/lib" + members[0] + ".a"]
+
+        for member in members.slice(from: 1, to: members.len())
+            words @ words.push(dir + "/" + member + ".o")
+
+        archived = process.run(program: "ar", words: words, out: process.discard(), err: said)
+        assert archived.started && archived.code == 0
+
+    lib = "-L" + dir
+    none: [str] = []
+    names = [["top", "base"], ["base", "top"], ["top"], none, none]
+    packages = [none, none, [lib, "-lbase"], [lib, "-ltop", lib, "-lbase"], [lib, "-lbase", lib, "-ltop"]]
+
+    for at in range(from: 0, to: names.len())
+        binary = link_objects(
+            t,
+            objects: [dir + "/main.o"],
+            module: "groups" + at.to_str(),
+            output: ok(dir + "/shape-" + at.to_str()),
+            level: "-O0",
+            sanitize: false,
+            search_library: [dir],
+            package_flags: packages[at],
+            link_names: names[at]
+        )
+
+        # The linker's words where a shape does not link, read in the failure.
+        assert units.failure_text(binary) == ""
+        ran = process.run(
+            program: binary.must(),
+            words: [binary.must()],
+            out: process.discard(),
+            err: process.discard()
+        )
+        assert ran.started && ran.code == 0
+
+    assert !process.remove_tree(dir).is_err()

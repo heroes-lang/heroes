@@ -89,6 +89,8 @@ constant WORDS: [str]
         "-Wl,-dead_strip"
         "-Wl,--gc-sections"
         "-Wl,/FORCE:UNRESOLVED"
+        "-Wl,--start-group"
+        "-Wl,--end-group"
         "-lm"
         "--rsp-quoting=posix"
         "-x"
