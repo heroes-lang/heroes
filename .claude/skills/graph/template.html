@@ -1,0 +1,381 @@
+<title>Piano di esempio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* The template of .claude/skills/graph/SKILL.md: a plan drawn as a graph of steps, then every leaf of every step as a tree. */
+:root {
+  --bg: #F2F4F3; --surface: #FFFFFF; --ink: #17202A; --muted: #586472; --line: #D2D8D5; --track: #E3E7E5;
+  --accent: #1C4E79; --edge: #7A8592;
+  --ok: #2C7A4D; --run: #B66C0A; --you: #9C2E7A; --todo: #8C95A2; --ko: #B32A1F; --skip: #A6AEB7;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151A; --surface: #18202A; --ink: #E4E9EE; --muted: #97A2AF; --line: #2A3440; --track: #25303B;
+    --accent: #87B7E4; --edge: #6E7986;
+    --ok: #5CBD85; --run: #E2A23B; --you: #DD7CBE; --todo: #6C7684; --ko: #EF665A; --skip: #545F6B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151A; --surface: #18202A; --ink: #E4E9EE; --muted: #97A2AF; --line: #2A3440; --track: #25303B;
+  --accent: #87B7E4; --edge: #6E7986;
+  --ok: #5CBD85; --run: #E2A23B; --you: #DD7CBE; --todo: #6C7684; --ko: #EF665A; --skip: #545F6B;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 700; line-height: 1.1; }
+h2 { font-size: 22px; font-weight: 700; }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 10px; }
+header p { margin: 0; max-width: 72ch; color: var(--muted); }
+code { font-family: var(--f-mono); font-size: 0.88em; background: var(--track); padding: 0 4px; border-radius: 3px; }
+
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fig .num { font-family: var(--f-display); font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.fig .num small { font-size: 15px; color: var(--muted); font-weight: 500; }
+.fig .what { font-size: 13px; color: var(--muted); }
+.bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.g { display: inline-block; width: 11px; height: 11px; flex: none; border-radius: 50%; box-sizing: border-box; }
+.g[data-s="ok"] { background: var(--ok); }
+.g[data-s="run"] { border: 2px solid var(--run); background: conic-gradient(var(--run) 0 50%, transparent 50% 100%); }
+.g[data-s="you"] { background: var(--you); border-radius: 2px; transform: rotate(45deg) scale(0.85); }
+.g[data-s="todo"] { border: 2px solid var(--todo); }
+.g[data-s="ko"] { background: var(--ko); border-radius: 2px; }
+.g[data-s="skip"] { border-radius: 0; height: 2px; background: var(--skip); }
+.g[data-s="part"] { border: 2px dashed var(--run); }
+
+.mapbox { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.mapbox svg { display: block; width: 100%; min-width: 980px; height: auto; }
+svg .band { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.1em; fill: var(--muted); }
+svg .edge { fill: none; stroke: var(--edge); stroke-width: 1.4; stroke-linejoin: round; }
+svg .edge.pending { stroke-dasharray: 5 4; }
+svg .arrow { fill: var(--edge); }
+svg .elabel { font-family: var(--f-mono); font-size: 10px; fill: var(--muted); }
+svg .node { cursor: pointer; }
+svg .node rect.box { fill: var(--surface); stroke-width: 1.6; }
+svg .node:hover rect.box, svg .node:focus-visible rect.box { stroke-width: 2.6; }
+svg .node:focus { outline: none; }
+svg .ntag { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.06em; fill: var(--muted); }
+svg .ntitle { font-family: var(--f-body); font-size: 13.5px; font-weight: 600; fill: var(--ink); }
+svg .nfrac { font-family: var(--f-mono); font-size: 10.5px; fill: var(--muted); }
+svg .track { fill: var(--track); }
+
+.path { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; counter-reset: step; }
+.path li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; min-width: 0; counter-increment: step; }
+.path li::before { content: counter(step); font-family: var(--f-mono); font-size: 12px; color: var(--muted); min-width: 1.2em; }
+.path li .g { margin-top: 5px; }
+.path li div { font-size: 14px; min-width: 0; }
+.path li small { display: block; color: var(--muted); font-size: 12.5px; }
+.aside { font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters button { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; }
+.filters button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.filters button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.filters .c { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+
+.phases { display: flex; flex-direction: column; gap: 22px; }
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 16px; min-width: 0; }
+.phase.flash { box-shadow: 0 0 0 2px var(--accent); }
+.ph-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.ph-head h3 { font-family: var(--f-display); font-size: 19px; font-weight: 700; margin: 0; }
+.pill { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; }
+.ph-sub { margin: 0; color: var(--muted); font-size: 14px; max-width: 80ch; }
+.ph-meter { display: flex; gap: 10px; align-items: center; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.ph-meter .bar { flex: 1; max-width: 260px; }
+.groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px 26px; }
+@media (max-width: 520px) { .groups { grid-template-columns: 1fr; } }
+.grp { min-width: 0; }
+.grp h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); display: flex; gap: 8px; align-items: baseline; }
+.grp h4 .c { font-family: var(--f-mono); font-weight: 400; font-size: 11.5px; }
+.tree { list-style: none; margin: 0; padding: 0 0 0 4px; border-left: 1px solid var(--line); }
+.tree li { position: relative; padding: 3px 0 3px 18px; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.tree li::before { content: ""; position: absolute; left: 0; top: 13px; width: 12px; border-top: 1px solid var(--line); }
+.tree li .g { margin-top: 5px; }
+.tree li .body { min-width: 0; overflow-wrap: anywhere; }
+.refs { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 4px; vertical-align: baseline; }
+.refs a, .refs span { font-family: var(--f-mono); font-size: 11.5px; color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+.refs a:hover { border-bottom-color: currentColor; }
+.refs span { color: var(--muted); }
+.note { display: block; color: var(--muted); font-size: 12.5px; }
+.outside { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; margin: 0; }
+footer { font-size: 13px; color: var(--muted); max-width: 80ch; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p id="intro"></p>
+  </header>
+
+  <section class="figures" id="figures"></section>
+
+  <div class="legend" id="legend"></div>
+
+  <section aria-labelledby="h-map" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-map"></h2>
+    <div class="mapbox"><svg id="map" role="img"></svg></div>
+  </section>
+
+  <section aria-labelledby="h-path" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-path"></h2>
+    <ol class="path" id="path"></ol>
+    <div class="aside" id="aside" hidden></div>
+  </section>
+
+  <section aria-labelledby="h-leaves" style="display:flex;flex-direction:column;gap:14px">
+    <h2 id="h-leaves"></h2>
+    <div class="filters" id="filters" role="group"></div>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* DATA BEGIN: the only part a session edits (.claude/skills/graph/SKILL.md). */
+  var META = {
+    eyebrow: "Heroes · piano «esempio» · 2026-11-09",
+    title: "Piano di esempio",
+    intro: "Solo questo piano. In alto la mappa dei passi, in fondo ogni foglia. Clicca un nodo per scendere alle sue foglie.",
+    footer: "Letto alle 21:10 del 2026-11-09 da `git log` e `gh issue list`. Una foglia è una cosa nominabile: un commit, un difetto, una risoluzione, un controllo. La percentuale conta cose e non ore. Un rosso è un fallimento osservato, un trattino una voce saltata: né l'uno né l'altro entrano nei conti. Gli hash in grigio sono commit non ancora spinti.",
+    heads: { map: "La mappa dei passi", path: "Cosa sta tra oggi e il traguardo", leaves: "Ogni foglia" },
+    view: [1212, 274],
+    bands: [["FATTO", 20, 26, "start"], ["IN CORSO E DA FARE", 1192, 160, "end"]],
+    figures: {
+      goal: ["Fino al traguardo", "foglie fatte dal passo 0 al traguardo"],
+      whole: ["Piano intero", "con i passi che vengono dopo il traguardo"],
+      run: ["In corso adesso", "foglie in lavoro"],
+      you: ["Aspetta te", "decisioni e letture che spettano all'autore"]
+    },
+    aside: "",
+    names: { ok: "fatto", run: "in corso", you: "aspetta te", todo: "da fare", ko: "fallito", skip: "saltato", part: "iniziato" },
+    words: { all: "Tutte", of: "di", done: "fatte", map: "Grafo dei passi del piano", figures: "Le cifre", legend: "Legenda", filters: "Filtra le foglie per stato", local: "commit non ancora spinto" }
+  };
+  var REPO = "https://github.com/heroes-lang/heroes";
+  var LOCAL = { "0000000aa": 1 };
+
+  /* A node: id, x, y (its top-left corner in the map), tag, title (one or two lines),
+     toGoal (counted in the first figure), sub, groups of leaves, and an optional outside line.
+     A leaf: [status, text, refs, note]; status ok run you todo ko skip; a ref is a short
+     hash or "#NNN" for an issue. */
+  var PH = [
+    { id: "S0", x: 20, y: 40, tag: "Passo 0", title: ["Apertura"], toGoal: true,
+      sub: "Cosa questo passo consegna, in una frase.",
+      groups: [
+        { t: "Gruppo", L: [
+          ["ok", "Una foglia fatta, con il suo commit", ["0000000aa"]],
+          ["ok", "Una foglia chiusa da una issue", ["#1"]] ] } ] },
+    { id: "S1", x: 220, y: 40, tag: "Passo 1", title: ["Lavoro", "in corso"], toGoal: true,
+      sub: "Un passo con una foglia in corso.",
+      groups: [
+        { t: "Gruppo", L: [
+          ["ok", "Fatta"],
+          ["run", "In corso", null, "cosa sta girando adesso"],
+          ["todo", "Da fare"] ] } ] },
+    { id: "S2", x: 420, y: 176, tag: "Passo 2", title: ["Traguardo"], toGoal: true,
+      sub: "Il traguardo: un tag, una spinta.",
+      groups: [ { t: "Gruppo", L: [ ["todo", "Da fare"], ["you", "Una risposta dell'autore"] ] } ] },
+    { id: "S3", x: 620, y: 176, tag: "Passo 3", title: ["Dopo il", "traguardo"], toGoal: false,
+      sub: "Un passo che viene dopo.",
+      groups: [ { t: "Gruppo", L: [ ["todo", "Da fare"], ["skip", "Saltata, con il motivo"], ["ko", "Fallita: la riparazione è una foglia altrove"] ] } ] }
+  ];
+
+  /* An edge: [from, to], [from, to, label], or [from, to, label, { from: "R", to: "T", via: [[x, y], ...] }]
+     with sides R L T B; without the fourth field it runs right side to left side, or bottom to
+     top when the two nodes share a column. */
+  var EDGES = [["S0", "S1"], ["S1", "S2", "", { from: "B", to: "L", via: [[306, 209]] }], ["S2", "S3"]];
+
+  /* The critical path, in order: [status, text, note]. */
+  var PATH = [
+    ["run", "Il passo in corso", "cosa sta girando"],
+    ["todo", "Il traguardo", "cosa lo giudica"]
+  ];
+  /* DATA END */
+
+  var NAME = META.names, W = META.words;
+  var NW = 172, NH = 66;
+  var byId = {};
+  PH.forEach(function (p) { byId[p.id] = p; });
+
+  function leaves(p) { var a = []; p.groups.forEach(function (g) { g.L.forEach(function (l) { a.push(l); }); }); return a; }
+  function tally(list) {
+    var t = { ok: 0, run: 0, you: 0, todo: 0, ko: 0, skip: 0 };
+    list.forEach(function (l) { t[l[0]]++; });
+    t.total = t.ok + t.run + t.you + t.todo; return t;
+  }
+  function statusOf(p) {
+    var t = tally(leaves(p));
+    if (t.run) return "run";
+    if (t.you) return "you";
+    if (t.total && t.ok === t.total) return "ok";
+    if (t.ok) return "part";
+    return "todo";
+  }
+  function color(s) { return "var(--" + (s === "part" ? "run" : s) + ")"; }
+  function pct(a, b) { return b ? Math.floor(100 * a / b) : 0; }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function fmt(s) { return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>"); }
+  function put(id, html) { document.getElementById(id).innerHTML = html; }
+
+  /* Words */
+  put("eyebrow", fmt(META.eyebrow)); put("title", fmt(META.title)); put("intro", fmt(META.intro)); put("footer", fmt(META.footer));
+  put("h-map", fmt(META.heads.map)); put("h-path", fmt(META.heads.path)); put("h-leaves", fmt(META.heads.leaves));
+  document.getElementById("figures").setAttribute("aria-label", W.figures);
+  document.getElementById("legend").setAttribute("aria-label", W.legend);
+  document.getElementById("filters").setAttribute("aria-label", W.filters);
+  if (META.aside) { var asideEl = document.getElementById("aside"); asideEl.hidden = false; asideEl.innerHTML = '<span class="g" data-s="you"></span>' + fmt(META.aside); }
+
+  /* Figures */
+  var all = [], goal = [], after = 0;
+  PH.forEach(function (p) { var l = leaves(p); all = all.concat(l); if (p.toGoal) goal = goal.concat(l); else after++; });
+  var tA = tally(all), tG = tally(goal);
+  function barHTML(t) {
+    return '<div class="bar" aria-hidden="true">' +
+      ["ok", "run", "you"].map(function (s) { return '<i style="width:' + (t.total ? 100 * t[s] / t.total : 0) + '%;background:' + color(s) + '"></i>'; }).join("") + "</div>";
+  }
+  function fig(words, t) {
+    return '<div class="fig"><div class="eyebrow">' + fmt(words[0]) + '</div><div class="num">' + pct(t.ok, t.total) + "% <small>" + t.ok + " " + W.of + " " + t.total + "</small></div>" + barHTML(t) + '<div class="what">' + fmt(words[1]) + "</div></div>";
+  }
+  function count(words, n) {
+    return '<div class="fig"><div class="eyebrow">' + fmt(words[0]) + '</div><div class="num">' + n + '</div><div class="what">' + fmt(words[1]) + "</div></div>";
+  }
+  put("figures", (after && goal.length ? fig(META.figures.goal, tG) : "") + fig(META.figures.whole, tA) + count(META.figures.run, tA.run) + count(META.figures.you, tA.you));
+
+  put("legend", ["ok", "run", "you", "todo", "part", "ko", "skip"].map(function (s) {
+    return '<span><i class="g" data-s="' + s + '"></i>' + esc(NAME[s]) + "</span>";
+  }).join(""));
+
+  /* The map */
+  var NS = "http://www.w3.org/2000/svg", svg = document.getElementById("map");
+  svg.setAttribute("viewBox", "0 0 " + META.view[0] + " " + META.view[1]);
+  svg.setAttribute("aria-label", W.map);
+  function el(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e); return e;
+  }
+  var defs = el("defs", {});
+  var mk = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs);
+  el("path", { d: "M0 0 L10 5 L0 10 z", "class": "arrow" }, mk);
+  META.bands.forEach(function (b) { var t = el("text", { x: b[1], y: b[2], "class": "band", "text-anchor": b[3] || "start" }); t.textContent = b[0]; });
+
+  var SIDE = {
+    R: function (n) { return [n.x + NW, n.y + NH / 2]; },
+    L: function (n) { return [n.x, n.y + NH / 2]; },
+    T: function (n) { return [n.x + NW / 2, n.y]; },
+    B: function (n) { return [n.x + NW / 2, n.y + NH]; }
+  };
+  function route(ed) {
+    var A = byId[ed[0]], Bn = byId[ed[1]], r = ed[3];
+    if (r) return [SIDE[r.from || "R"](A)].concat(r.via || []).concat([SIDE[r.to || "L"](Bn)]);
+    if (A.x === Bn.x) return Bn.y > A.y ? [SIDE.B(A), SIDE.T(Bn)] : [SIDE.T(A), SIDE.B(Bn)];
+    return [SIDE.R(A), SIDE.L(Bn)];
+  }
+  EDGES.forEach(function (ed) {
+    if (!byId[ed[0]] || !byId[ed[1]]) throw new Error("edge names a node that does not exist: " + ed[0] + " > " + ed[1]);
+    var pts = route(ed);
+    var done = statusOf(byId[ed[1]]) === "ok";
+    var d = "M" + pts.map(function (p) { return p[0] + " " + p[1]; }).join(" L");
+    el("path", { d: d, "class": "edge" + (done ? "" : " pending"), "marker-end": "url(#arr)" });
+    if (ed[2]) { var lb = el("text", { x: pts[0][0] + 8, y: (pts[0][1] + pts[1][1]) / 2 + 4, "class": "elabel" }); lb.textContent = ed[2]; }
+  });
+
+  PH.forEach(function (p) {
+    var st = statusOf(p), t = tally(leaves(p));
+    var g = el("g", { "class": "node", tabindex: "0", role: "link", "aria-label": p.tag + ", " + p.title.join(" ") + ", " + NAME[st] + ", " + t.ok + " " + W.of + " " + t.total });
+    el("rect", { "class": "box", x: p.x, y: p.y, width: NW, height: NH, rx: 8, stroke: color(st), "stroke-dasharray": st === "part" ? "5 3" : "none" }, g);
+    var tg = el("text", { x: p.x + 11, y: p.y + 16, "class": "ntag" }, g); tg.textContent = p.tag.toUpperCase();
+    var cx = p.x + NW - 13, cy = p.y + 12;
+    if (st === "you") el("rect", { x: cx - 4.5, y: cy - 4.5, width: 9, height: 9, fill: color(st), transform: "rotate(45 " + cx + " " + cy + ")" }, g);
+    else el("circle", { cx: cx, cy: cy, r: 5, fill: st === "ok" ? color(st) : "none", stroke: color(st), "stroke-width": 2 }, g);
+    if (st === "run") el("path", { d: "M" + cx + " " + (cy - 5) + " A5 5 0 0 1 " + cx + " " + (cy + 5) + " Z", fill: color(st) }, g);
+    p.title.forEach(function (line, i) {
+      var tt = el("text", { x: p.x + 11, y: p.y + 35 + i * 15, "class": "ntitle" }, g); tt.textContent = line;
+    });
+    var bw = NW - 64, by = p.y + NH - 9;
+    var fr = el("text", { x: p.x + NW - 11, y: by + 4, "class": "nfrac", "text-anchor": "end" }, g); fr.textContent = t.ok + "/" + t.total;
+    el("rect", { x: p.x + 11, y: by, width: bw, height: 4, rx: 2, "class": "track" }, g);
+    if (t.total) el("rect", { x: p.x + 11, y: by, width: Math.max(0, bw * t.ok / t.total), height: 4, rx: 2, fill: color(st === "part" ? "run" : st) }, g);
+    function go() {
+      var sec = document.getElementById("ph-" + p.id); if (!sec) return;
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      sec.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      sec.classList.add("flash"); setTimeout(function () { sec.classList.remove("flash"); }, 1400);
+    }
+    g.addEventListener("click", go);
+    g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  });
+
+  /* The critical path */
+  put("path", PATH.map(function (s) {
+    return '<li><span class="g" data-s="' + s[0] + '"></span><div>' + fmt(s[1]) + (s[2] ? "<small>" + fmt(s[2]) + "</small>" : "") + "</div></li>";
+  }).join(""));
+
+  /* Every leaf */
+  function refHTML(r) {
+    if (r.charAt(0) === "#") { var n = r.slice(1); return '<a href="' + REPO + "/issues/" + n + '" target="_blank" rel="noopener">' + esc(r) + "</a>"; }
+    if (LOCAL[r]) return '<span title="' + esc(W.local) + '">' + esc(r) + "</span>";
+    return '<a href="' + REPO + "/commit/" + r + '" target="_blank" rel="noopener">' + esc(r) + "</a>";
+  }
+  var phasesEl = document.getElementById("phases");
+  phasesEl.innerHTML = PH.map(function (p) {
+    var st = statusOf(p), t = tally(leaves(p));
+    var head = '<div class="ph-head"><span class="eyebrow">' + esc(p.tag) + "</span><h3>" + esc(p.title.join(" ")) + '</h3><span class="pill" style="color:' + color(st) + '">' + esc(NAME[st]) + "</span></div>";
+    var meter = '<div class="ph-meter">' + (t.total ? barHTML(t) : "") + "<span>" + t.ok + " " + W.of + " " + t.total + " " + W.done + (t.run ? " · " + t.run + " " + NAME.run : "") + (t.todo ? " · " + t.todo + " " + NAME.todo : "") + "</span></div>";
+    var groups = '<div class="groups">' + p.groups.map(function (g) {
+      var gt = tally(g.L);
+      return '<div class="grp"><h4>' + fmt(g.t) + '<span class="c">' + gt.ok + "/" + gt.total + '</span></h4><ul class="tree">' + g.L.map(function (l) {
+        var refs = (l[2] && l[2].length) ? '<span class="refs">' + l[2].map(refHTML).join("") + "</span>" : "";
+        var note = l[3] ? '<span class="note">' + fmt(l[3]) + "</span>" : "";
+        return '<li data-s="' + l[0] + '"><span class="g" data-s="' + l[0] + '" title="' + esc(NAME[l[0]]) + '"></span><span class="body">' + fmt(l[1]) + refs + note + "</span></li>";
+      }).join("") + "</ul></div>";
+    }).join("") + "</div>";
+    var out = p.outside ? '<p class="outside">' + fmt(p.outside) + "</p>" : "";
+    return '<section class="phase" id="ph-' + p.id + '" aria-label="' + esc(p.tag + ", " + p.title.join(" ")) + '">' + head + '<p class="ph-sub">' + fmt(p.sub) + "</p>" + meter + groups + out + "</section>";
+  }).join("");
+
+  /* Filters */
+  var F = [["all", W.all, all.length], ["ok", NAME.ok, tA.ok], ["run", NAME.run, tA.run], ["you", NAME.you, tA.you], ["todo", NAME.todo, tA.todo]];
+  var fEl = document.getElementById("filters");
+  fEl.innerHTML = F.map(function (f, i) {
+    return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (i === 0) + '">' + (f[0] === "all" ? "" : '<i class="g" data-s="' + f[0] + '"></i>') + esc(f[1]) + ' <span class="c">' + f[2] + "</span></button>";
+  }).join("");
+  function apply(f) {
+    Array.prototype.forEach.call(fEl.querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-f") === f)); });
+    Array.prototype.forEach.call(phasesEl.querySelectorAll(".phase"), function (sec) {
+      var any = false;
+      Array.prototype.forEach.call(sec.querySelectorAll(".grp"), function (g) {
+        var vis = false;
+        Array.prototype.forEach.call(g.querySelectorAll("li"), function (li) {
+          var show = f === "all" || li.getAttribute("data-s") === f; li.hidden = !show; if (show) vis = true;
+        });
+        g.hidden = !vis; if (vis) any = true;
+      });
+      var o = sec.querySelector(".outside"); if (o) o.hidden = f !== "all";
+      sec.hidden = !any;
+    });
+  }
+  fEl.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) apply(b.getAttribute("data-f")); });
+})();
+</script>
