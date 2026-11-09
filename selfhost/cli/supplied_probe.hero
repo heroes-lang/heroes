@@ -32,9 +32,8 @@ use cli/publish
 use cli/strings
 use cli/supplied_names
 use cli/supplied_read
+use cli/supplied_windows
 use cli/toolchain
-use emit/ffi_build
-use emit/ffi_lookup
 
 # What one probe link said: whether it linked, its words (both streams where
 # it linked, its refusal's where it did not), what it printed, and its map.
@@ -85,25 +84,38 @@ function probed(t: toolchain.Toolchain, line: [str], names: [str], named: [str])
     if named.len() < 2
         return out
     apple = link_flags.apple(t.target)
+    msvc = link_flags.msvc(t.target)
     second = probe(t, line: reversed(line), names: names, tag: "reversed", trace: true)
     out.reversed @ true
     out.reversed_linked @ second.linked
-    out.files @ supplied_read.opened(said: second.printed, listing: second.listing, named: named)
+    out.files @ files_of(heard: second, line: line, named: named, msvc: msvc)
     seen: bool @= true
 
     if second.linked
-        out.taken @ supplied_read.taken(said: second.said, listing: second.listing, apple: apple, names: names)
-        seen @ supplied_read.files_seen(said: second.said, listing: second.listing, apple: apple, named: named)
+        out.taken @ supplied_read.taken(
+            said: second.said,
+            listing: second.listing,
+            apple: apple,
+            msvc: msvc,
+            names: names
+        )
+        seen @ supplied_read.files_seen(
+            said: second.said,
+            listing: second.listing,
+            apple: apple,
+            msvc: msvc,
+            named: named
+        )
     else
         out.refused @ supplied_read.duplicates(second.said)
 
     if !seen
         return out
     none_traced: [str] = []
-    whole = probe(t, line: whole_line(line, apple: apple), names: none_traced, tag: "whole", trace: false)
+    whole = probe(t, line: whole_line(line, apple: apple, msvc: msvc), names: none_traced, tag: "whole", trace: false)
     out.whole @ true
     out.whole_linked @ whole.linked
-    out.files @ with_new(list: out.files, more: supplied_read.opened(said: whole.printed, listing: "", named: named))
+    out.files @ with_new(list: out.files, more: files_of(heard: whole, line: line, named: named, msvc: msvc))
 
     if !whole.linked
         out.dups @ supplied_read.duplicates(whole.said)
@@ -124,11 +136,12 @@ function with_new(list: [str], more: [str]) -> [str]
 # from it.
 function platform(t: toolchain.Toolchain, line: [str], names: [str]) -> {str: str}?
     apple = link_flags.apple(t.target)
-    alone = probe(t, line: platform_only(line, apple: apple), names: names, tag: "platform", trace: true)
+    msvc = link_flags.msvc(t.target)
+    alone = probe(t, line: platform_only(line, apple: apple, msvc: msvc), names: names, tag: "platform", trace: true)
 
     if !alone.linked
         return fail(code: "refused", msg: alone.said)
-    answered = supplied_read.taken(said: alone.said, listing: alone.listing, apple: apple, names: names)
+    answered = supplied_read.taken(said: alone.said, listing: alone.listing, apple: apple, msvc: msvc, names: names)
     out: {str: str} @= {}
 
     for name in names
@@ -156,8 +169,12 @@ function reversed(line: [str]) -> [str]
 
 # The line with every library file of objects loaded whole and unresolved
 # names allowed: GNU ld's and lld's `--whole-archive` around the `-l` words,
-# which leaves a shared library as it was, and Apple's `-all_load`.
-function whole_line(line: [str], apple: bool) -> [str]
+# which leaves a shared library as it was, Apple's `-all_load`, and on Windows
+# `/WHOLEARCHIVE:` of each `<name>.lib`, which the link finds as it finds the
+# `-l` word (measured on the Windows box, lld-link and link.exe, 2026-11-09;
+# a DLL's import library loaded whole duplicates only its own descriptors,
+# names no group binds).
+function whole_line(line: [str], apple: bool, msvc: bool) -> [str]
     out: [str] @= []
     first: i64 @= -1
     last: i64 @= -1
@@ -169,19 +186,26 @@ function whole_line(line: [str], apple: bool) -> [str]
             last @ index
 
     for index in range(from: 0, to: line.len())
-        if index == first && !apple
+        if index == first && !apple && !msvc
             out @ out.push("-Wl,--whole-archive")
         out @ out.push(line[index])
 
-        if index == last && !apple
+        if index == last && !apple && !msvc
             out @ out.push("-Wl,--no-whole-archive")
+
+    if msvc
+        for word in line
+            if strings.starts_with(text: word, prefix: "-l") && word.len() > 2
+                out @ out.push("-Wl,/WHOLEARCHIVE:" + word.slice(from: 2, to: word.len()) + ".lib")
+
+        return out.push("-Wl,/FORCE:UNRESOLVED").push("-Wl,/errorlimit:0")
 
     if apple
         return out.push("-Wl,-all_load").push("-Wl,-undefined,dynamic_lookup")
     return out.push("-Wl,--unresolved-symbols=ignore-all")
 
 # The line with no library of the program's and its unresolved names allowed.
-function platform_only(line: [str], apple: bool) -> [str]
+function platform_only(line: [str], apple: bool, msvc: bool) -> [str]
     out: [str] @= []
     skip: bool @= false
 
@@ -197,17 +221,25 @@ function platform_only(line: [str], apple: bool) -> [str]
         if !strings.starts_with(text: word, prefix: "-l")
             out @ out.push(word)
 
+    if msvc
+        return out.push("-Wl,/FORCE:UNRESOLVED")
+
     if apple
         return out.push("-Wl,-undefined,dynamic_lookup")
     return out.push("-Wl,--unresolved-symbols=ignore-all")
 
 # The words that ask a link who supplied each of `names`, GNU ld's and lld's
-# trace or Apple's map written to `map_path`, and where `listed`, which files
-# it opened, every linker's `-t`, which each of the three writes on its
-# standard output (measured): what the probes' answers are kept by, asked
-# only where there are probes.
+# trace, or Apple's map or a Windows linker's (`/MAP`, lld-link's and
+# link.exe's alike, defect 2376) written to `map_path`, and where `listed`,
+# which files it opened, a POSIX linker's `-t`, which each of the three
+# writes on its standard output (measured): what the probes' answers are kept
+# by, asked only where there are probes. A Windows link's files are its `-L`
+# folders' (`supplied_read.resolved`), its map naming a library by its name.
 function asking_words(target: str, names: [str], map_path: str, listed: bool) -> [str]
     out: [str] @= []
+
+    if link_flags.msvc(target)
+        return ["-Wl,/MAP:" + map_path]
 
     if link_flags.apple(target)
         out @ ["-Wl,-map," + map_path]
@@ -218,6 +250,21 @@ function asking_words(target: str, names: [str], map_path: str, listed: bool) ->
     if listed
         return out.push("-Wl,-t")
     return out
+
+# The library files of `named` a probe read: its `-t` and Apple's map, or a
+# Windows link's `-L` folders.
+function files_of(heard: Probe, line: [str], named: [str], msvc: bool) -> [str]
+    if msvc
+        return supplied_windows.resolved(line: line, named: named)
+    return supplied_read.opened(said: heard.printed, listing: heard.listing, named: named)
+
+# A link's line as it is run: under `env LC_ALL=C` where `env` is, so GNU
+# ld's words keep their shape, and on Windows, which has no `env`, as it is
+# (`link_warning.run_link`'s rule).
+function run_words(line: [str]) -> [str]
+    if process.exe_suffix() == ".exe"
+        return line
+    return strings.with_all(list: ["env", "LC_ALL=C"], more: line)
 
 # One probe link of `line`, into private names it removes; with `trace`, each
 # name traced; every file it opened listed.
@@ -234,13 +281,14 @@ function probe(t: toolchain.Toolchain, line: [str], names: [str], tag: str, trac
             list: words,
             more: asking_words(target: t.target, names: names, map_path: map_path, listed: true)
         )
-    else
+    else if !link_flags.msvc(t.target)
         words @ words.push("-Wl,-t")
     words @ strings.with_all(list: words, more: ["-o", binary])
     printed: str @= ""
+    run = run_words(words)
     asked = clang_asked.asked_apart(
-        program: "env",
-        words: strings.with_all(list: ["env", "LC_ALL=C"], more: words),
+        program: run[0],
+        words: run,
         what: "asking the link which library supplies each name",
         err_path: err_path,
         out_path: out_path,
@@ -257,65 +305,16 @@ function probe(t: toolchain.Toolchain, line: [str], names: [str], tag: str, trac
         .ok said => return Probe(linked: true, said: printed + said, printed: printed, listing: map_read)
         .err e   => return Probe(linked: false, said: e.msg, printed: printed, listing: "")
 
-# The names the runtime's object needs from outside it, asked once per object:
-# the object linked alone with no library, every name the link calls
-# undefined read back (`ffi_build.undefined_symbol`), kept beside it under
-# `build/`. Measured by the sitting on this Mac: 142 names, `nm -u`'s, and
-# `main`, which is the program's.
-function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
-    nothing: [str] = []
-    runtime: str @= ""
-
-    for object in objects
-        if strings.starts_with(text: supplied_names.base_of(object), prefix: "runtime-")
-            runtime @ object
-
-    if runtime == ""
-        return nothing
-    kept = t.build + "/supplied-needs-" + supplied_names.base_of(runtime) + ".txt"
-    cached = read_file(kept)
-
-    if !cached.is_err()
-        return supplied_read.byte_lines(text: cached.must(), needles: [], stops: [])
-    base = publish.private_name(t.build + "/supplied-needs")
-    err_path = base + ".err.txt"
-    asked = clang_asked.asked(
-        program: "env",
-        words: ["env", "LC_ALL=C", "clang", "-nostdlib", runtime, "-o", base + process.exe_suffix()],
-        what: "asking which names the runtime needs",
-        err_path: err_path,
-        out_path: ""
-    )
-    publish.discard(base + process.exe_suffix())
-    publish.discard(err_path)
-    said: str @= ""
-
-    match asked
-        .ok    => return nothing
-        .err e => said @ e.msg
-
-    out: [str] @= []
-    seen: {str: bool} @= {}
-
-    for line in ffi_lookup.lines(text: said)
-        name = ffi_build.undefined_symbol(line)
-
-        if name.is_err() || name.must() == "main" || !seen[name.must()].is_err()
-            continue
-        seen[name.must()] @ true
-        out @ out.push(name.must())
-
-    if out.len() > 0
-        _ = publish.rewrite(path: kept, text: out.join("\n") + "\n").is_err()
-    return out
-
 ## Tests
 
 test "the reversed, the whole and the platform's lines move the -l words alone (panel 239)"
     line = ["clang", "-L", "d", "x.o", "-Wl,--start-group", "-la", "-lb", "-lc", "-Wl,--end-group"]
     assert reversed(line) == ["clang", "-L", "d", "x.o", "-Wl,--start-group", "-lc", "-lb", "-la", "-Wl,--end-group"]
-    assert whole_line(["clang", "x.o", "-la", "-lb"], apple: false) == ["clang", "x.o", "-Wl,--whole-archive", "-la", "-lb", "-Wl,--no-whole-archive", "-Wl,--unresolved-symbols=ignore-all"]
-    assert whole_line(["clang", "x.o", "-la"], apple: true) == ["clang", "x.o", "-la", "-Wl,-all_load", "-Wl,-undefined,dynamic_lookup"]
-    assert platform_only(["clang", "x.o", "-lm", "-framework", "Cocoa"], apple: true) == ["clang", "x.o", "-Wl,-undefined,dynamic_lookup"]
+    assert whole_line(["clang", "x.o", "-la", "-lb"], apple: false, msvc: false) == ["clang", "x.o", "-Wl,--whole-archive", "-la", "-lb", "-Wl,--no-whole-archive", "-Wl,--unresolved-symbols=ignore-all"]
+    assert whole_line(["clang", "x.o", "-la"], apple: true, msvc: false) == ["clang", "x.o", "-la", "-Wl,-all_load", "-Wl,-undefined,dynamic_lookup"]
+    assert platform_only(["clang", "x.o", "-lm", "-framework", "Cocoa"], apple: true, msvc: false) == ["clang", "x.o", "-Wl,-undefined,dynamic_lookup"]
     assert asking_words(target: "arm64-apple-darwin25.0.0", names: ["pick"], map_path: "m.map", listed: true) == ["-Wl,-map,m.map", "-Wl,-t"]
+    assert whole_line(["clang", "x.obj", "-la", "-lb"], apple: false, msvc: true) == ["clang", "x.obj", "-la", "-lb", "-Wl,/WHOLEARCHIVE:a.lib", "-Wl,/WHOLEARCHIVE:b.lib", "-Wl,/FORCE:UNRESOLVED", "-Wl,/errorlimit:0"]
+    assert platform_only(["clang", "x.obj", "-la"], apple: false, msvc: true) == ["clang", "x.obj", "-Wl,/FORCE:UNRESOLVED"]
+    assert asking_words(target: "x86_64-pc-windows-msvc", names: ["pick"], map_path: "m.map", listed: true) == ["-Wl,/MAP:m.map"]
     assert asking_words(target: "aarch64-unknown-linux-gnu", names: ["pick", "puts"], map_path: "", listed: false) == ["-Wl,--trace-symbol=pick", "-Wl,--trace-symbol=puts"]

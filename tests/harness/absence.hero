@@ -1742,8 +1742,9 @@ test "a package whose -l this machine has no library for is told at its string (
 # other way round (one text, byte for byte), and with its group's module
 # renamed to sort first, which turns the libraries round (one text but that
 # name). A library is built with clang alone where it is shared and with the
-# machine's `ar` where it is a file of objects; a machine that runs no script,
-# Windows, is not asked here (defect 2376).
+# machine's `ar` where it is a file of objects; on Windows, which runs no
+# script and has no `ar`, a library is a DLL clang builds, its names exported,
+# and the shared case alone is asked (defect 2376).
 
 # A file a case writes: its name in the case's folder and its text.
 record Written
@@ -1776,9 +1777,22 @@ function darwin(scratch: str) -> bool
     return !said.is_err() && said.must().out == "Darwin\n"
 
 # `lib<library>` in `dir` of `sources`, each a `.c` compiled: a file of
-# objects by `ar`, or shared by clang alone where `shared`.
+# objects by `ar`, or shared by clang alone where `shared`; on Windows
+# `<library>.dll` and the import library `<library>.lib` beside it.
 function c_library(scratch: str, dir: str, library: str, sources: [Written], shared: bool) -> ()?
     wrote(dir: dir, files: sources)?
+
+    if shared && shell.exe_suffix() == ".exe"
+        dll: [str] @= ["clang", "-shared", "-o", dir + "/" + library + ".dll"]
+
+        for one in sources
+            dll @ dll.push(dir + "/" + one.name)
+
+        made = shell.run(scratch: scratch, program: "clang", words: dll)?
+
+        if made.code != 0
+            return fail(code: "not_built", msg: library + ".dll: " + made.out + made.err)
+        return ok()
     words: [str] @= ["ar", "rcs", dir + "/lib" + library + ".a"]
 
     if shared && darwin(scratch)
@@ -1822,26 +1836,37 @@ function refused_at(got: shell.Run, dir: str, module: str, headline: str, progra
     at = "error[ffi_defined_elsewhere]: " + headline
     return got.code == 1 && strings.contains(text: got.err, needle: at) && strings.contains(text: got.err, needle: "\n  at " + dir + "/" + module + ".hero:2:5\n") && !strings.contains(text: got.err, needle: "internal error") && !shell.exists(dir + "/" + program + ".out")
 
+# A C file's text with its names exported where it is a DLL's, `X` before
+# each, and nothing elsewhere.
+function exported(text: str) -> str
+    return "#ifdef _WIN32\n#define X __declspec(dllexport)\n#else\n#define X\n#endif\n" + text
+
 # `said` with every `from` written `to`.
 function renamed(said: str, from: str, to: str) -> str
     return strings.split_text(text: said, separator: from).join(to)
 
-test "a C name two shared libraries define, or one the C library defines, is refused in every order (defect 2363)"
-    if !shell.can_run_scripts()
+test "a C name two shared libraries define, or one the C library defines, is refused in every order (defects 2363 and 2376)"
+    if !shell.can_run_scripts() && shell.exe_suffix() != ".exe"
         return
     scratch = shell.own_scratch()
     compiler = shell.some_compiler().must()
     dir = scratch + "/shared2363"
     assert !shell.mkdir_all(dir).is_err()
-    assert !c_library(scratch: scratch, dir: dir, library: "a", sources: [Written(name: "pick_a.c", text: "int pick(void) { return 1; }\n"), Written(name: "a_only.c", text: "int a_only(void) { return 10; }\n")], shared: true).is_err()
-    assert !c_library(scratch: scratch, dir: dir, library: "b", sources: [Written(name: "pick_b.c", text: "int pick(void) { return 2; }\n"), Written(name: "b_only.c", text: "int b_only(void) { return 20; }\n")], shared: true).is_err()
-    assert !c_library(scratch: scratch, dir: dir, library: "q", sources: [Written(name: "q_only.c", text: "int q_only(void) { return 30; }\n"), Written(name: "puts_q.c", text: "int puts(int *out) { *out = 5; return 1; }\n")], shared: true).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "a", sources: [Written(name: "pick_a.c", text: exported("X int pick(void) { return 1; }\n")), Written(name: "a_only.c", text: exported("X int a_only(void) { return 10; }\n"))], shared: true).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "b", sources: [Written(name: "pick_b.c", text: exported("X int pick(void) { return 2; }\n")), Written(name: "b_only.c", text: exported("X int b_only(void) { return 20; }\n"))], shared: true).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "q", sources: [Written(name: "q_only.c", text: exported("X int q_only(void) { return 30; }\n")), Written(name: "puts_q.c", text: exported("X int puts(int *out) { *out = 5; return 1; }\n"))], shared: true).is_err()
     assert !wrote(dir: dir, files: [Written(name: "a.h", text: "int pick(void);\nint a_only(void);\n"), Written(name: "b.h", text: "int b_only(void);\n"), Written(name: "q.h", text: "int q_only(void);\n"), Written(name: "picker.hero", text: PICKER), Written(name: "apick.hero", text: PICKER), Written(name: "extra.hero", text: other_module(header: "b.h", library: "b", bound: "b_only")), Written(name: "quiet.hero", text: other_module(header: "q.h", library: "q", bound: "q_only")), Written(name: "printer.hero", text: "extern \"stdio.h\"\n    function puts(s: cstr lent) -> i32\n\nfunction chosen() -> i32\n    return puts(s: \"hello\".cstr())\n"), Written(name: "written.hero", text: both_used(first: "picker", second: "extra", group: "picker", other: "extra")), Written(name: "sorted.hero", text: both_used(first: "extra", second: "picker", group: "picker", other: "extra")), Written(name: "flip.hero", text: both_used(first: "apick", second: "extra", group: "apick", other: "extra")), Written(name: "interpose.hero", text: both_used(first: "printer", second: "quiet", group: "printer", other: "quiet"))]).is_err()
     headline = "`pick`, bound here from library `a`, is also defined by library `b`, which module `extra` links, and a program holds one `pick`: which of the two its calls reach would rest on the order of the libraries, which no line of the program writes"
     written = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "written")
     assert refused_at(written, dir: dir, module: "picker", headline: headline, program: "written")
-    assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/liba.")
-    assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/libb.")
+
+    # A Windows map names a library by its name and the DLL it stands for.
+    if shell.exe_suffix() == ".exe"
+        assert strings.contains(text: written.err, needle: "  note: a definition is in `a.lib(a.dll)`\n")
+        assert strings.contains(text: written.err, needle: "  note: a definition is in `b.lib(b.dll)`\n")
+    else
+        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/liba.")
+        assert strings.contains(text: written.err, needle: "  note: a definition is in `" + dir + "/libb.")
     sorted = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "sorted")
     assert sorted.err == written.err
     flip = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "flip")

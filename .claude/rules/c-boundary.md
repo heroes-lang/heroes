@@ -171,8 +171,10 @@ precedent; the thirteenth by panel 239, 2026-11-09, provisional, its R1):
   not name is never judged; a group of the defining library that binds a
   runtime name says the replacement is meant. Not refused, said: a name no
   group binds and the runtime does not call, defined twice among the
-  program's libraries (defect 2375, the author's to rule), and Windows, asked
-  nothing yet (defect 2376).
+  program's libraries (defect 2375, the author's to rule). On Windows the link
+  is asked by its map, `/MAP`, lld-link's and link.exe's alike, and a library
+  defining again a name a library the program does not name defines is told
+  on its group (defect 2376, the Windows box, 2026-11-09).
 
 **Since panel 214 (2026-10-14, provisional, author ratification pending) whose
 a refused header is, where no reader names it, is decided by a clang run and

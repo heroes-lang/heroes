@@ -24,13 +24,17 @@
 # group naming no library, and they change with the toolchain, whose key
 # names the answer.
 
+use cli/clang_asked
 use cli/digest
+use cli/link_flags
 use cli/process
 use cli/publish
 use cli/supplied_names
 use cli/supplied_probe
 use cli/supplied_read
+use cli/strings
 use cli/toolchain
+use emit/ffi_build
 use module/reading as file_reading
 
 # The first line of a kept answer, its number moved whenever what a probe
@@ -49,7 +53,7 @@ function path_of(t: toolchain.Toolchain, line: [str], names: [str]) -> str
 # them; an error where there is none or it no longer holds.
 function kept(path: str, opened: [str]) -> supplied_probe.Probes?
     text = read_file(path)?
-    lines = supplied_read.byte_lines(text: text, needles: [], stops: [])
+    lines = supplied_names.byte_lines(text: text, needles: [], stops: [])
 
     if lines.len() == 0 || lines[0] != HEAD
         return fail(code: "stale", msg: "another shape of answer")
@@ -161,6 +165,73 @@ function flag(b: bool) -> str
     if b
         return "1"
     return "0"
+
+# The names the runtime's object needs from outside it, asked once per object:
+# the object linked alone with no library, every name the link calls
+# undefined read back (`ffi_build.undefined_symbol`), kept beside it under
+# `build/`. Measured by the sitting on this Mac: 142 names, `nm -u`'s, and
+# `main`, which is the program's.
+function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
+    nothing: [str] = []
+    runtime: str @= ""
+
+    for object in objects
+        if strings.starts_with(text: supplied_names.base_of(object), prefix: "runtime-")
+            runtime @ object
+
+    if runtime == ""
+        return nothing
+    needs_at = t.build + "/supplied-needs-" + supplied_names.base_of(runtime) + ".txt"
+    cached = read_file(needs_at)
+
+    if !cached.is_err()
+        return supplied_names.byte_lines(text: cached.must(), needles: [], stops: [])
+    base = publish.private_name(t.build + "/supplied-needs")
+    err_path = base + ".err.txt"
+    run = supplied_probe.run_words(
+        strings.with_all(list: ["clang", "-nostdlib", runtime, "-o", base + process.exe_suffix()], more: alone_words(t))
+    )
+    asked = clang_asked.asked(
+        program: run[0],
+        words: run,
+        what: "asking which names the runtime needs",
+        err_path: err_path,
+        out_path: ""
+    )
+    publish.discard(base + process.exe_suffix())
+    publish.discard(err_path)
+    said: str @= ""
+
+    match asked
+        .ok    => return nothing
+        .err e => said @ e.msg
+
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for line in supplied_names.byte_lines(text: said, needles: [], stops: [])
+        name = ffi_build.undefined_symbol(line)
+
+        if name.is_err() || name.must() == "main" || !seen[name.must()].is_err()
+            continue
+        seen[name.must()] @ true
+        out @ out.push(name.must())
+
+    if out.len() > 0
+        _ = publish.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
+    return out
+
+# What a Windows link of the runtime's object alone needs to name every name
+# it lacks: lld-link and link.exe stop at *subsystem must be defined* before
+# any, and lld-link at twenty errors (measured on the Windows box, 2026-11-09:
+# 104 names by both once these are given; link.exe ignores the error limit
+# with a warning, LNK4044).
+function alone_words(t: toolchain.Toolchain) -> [str]
+    none: [str] = []
+
+    if !link_flags.msvc(t.target)
+        return none
+    return ["-Wl,/SUBSYSTEM:CONSOLE", "-Wl,/ENTRY:main", "-Wl,/errorlimit:0"]
 
 ## Tests
 
