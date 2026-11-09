@@ -1893,7 +1893,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5cd2095e1368fc72", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("727036060c2c6ca6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs170variants32deepbuild\tfixedbugs-170-variants-32-deep-build\n");

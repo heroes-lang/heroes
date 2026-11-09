@@ -335,7 +335,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("744cd4e1134bd2c9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("09eb018a0c0f42fd", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2102aleasepastavariadicprototypeisacopycmaywrite\tfixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write\n");

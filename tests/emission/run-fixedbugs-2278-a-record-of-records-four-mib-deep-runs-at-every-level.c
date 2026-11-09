@@ -855,7 +855,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d97cd1249741ac7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5335f9ba42378afb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel\tfixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level\n");

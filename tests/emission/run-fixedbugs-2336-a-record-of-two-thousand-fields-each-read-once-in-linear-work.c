@@ -14596,7 +14596,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1c9628514c23b2b5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("323454f944e722e9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2336arecordoftwothousandfieldseachreadonceinlinearwork\tfixedbugs-2336-a-record-of-two-thousand-fields-each-read-once-in-linear-work\n");

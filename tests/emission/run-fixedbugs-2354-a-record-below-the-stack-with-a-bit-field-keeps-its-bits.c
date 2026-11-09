@@ -179,22 +179,21 @@ void *hero_pad_nowhere(void);
 #undef a
 #pragma push_macro("rest")
 #undef rest
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2354_small, a), sizeof(((struct fixedbugs_2354_small *)0)->a), __builtin_offsetof(struct fixedbugs_2354_small, rest), sizeof(((struct fixedbugs_2354_small *)0)->rest), (0) + 8, 1};
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2354_small, a), sizeof(((struct fixedbugs_2354_small *)0)->a), __builtin_offsetof(struct fixedbugs_2354_small, rest), sizeof(((struct fixedbugs_2354_small *)0)->rest)};
 #pragma pop_macro("a")
 #pragma pop_macro("rest")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 6];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static size_t hero_pad_m_0[2];
+__attribute__((unused)) static size_t hero_pad_m_0[4];
 __attribute__((unused)) static size_t hero_pad_mn_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
-    hero_pad_n_0 = hero_pad_gaps(sizeof(struct fixedbugs_2354_small), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     {
         struct fixedbugs_2354_small *const hero_pad_o = (struct fixedbugs_2354_small *)hero_pad_object(sizeof(struct fixedbugs_2354_small));
     #pragma push_macro("b")
     #undef b
-        hero_pad_o->b--;
+        hero_pad_o->b = 0; hero_pad_o->b--;
     #pragma pop_macro("b")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 2, hero_pad_o, sizeof(struct fixedbugs_2354_small), hero_pad_m_0, 1);
+        hero_pad_n_0 = hero_pad_bits(sizeof(struct fixedbugs_2354_small), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_0, hero_pad_m_0, 2, &hero_pad_mn_0);
         hero_pad_object_give(hero_pad_o);
     }
 }
@@ -212,7 +211,7 @@ __attribute__((__noinline__)) void h_fixedbugs2354arecordbelowthestackwithabitfi
     t2 = INT64_C(7); t3 = *(struct fixedbugs_2354_small *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.a = t2; h0_held = t3; hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_small), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_small), 1, hero_pad_m_0, hero_pad_mn_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-a-record-below-the-stack-with-a-bit-field-keeps-its-bits.hero", "fixedbugs-2354-a-record-below-the-stack-with-a-bit-field-keeps-its-bits.main", 14, 5}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_small_dirty", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_small), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_small), 1, hero_pad_m_0, hero_pad_mn_0); (void)fixedbugs_2354_small_dirty(&h0_held); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-a-record-below-the-stack-with-a-bit-field-keeps-its-bits.hero", "fixedbugs-2354-a-record-below-the-stack-with-a-bit-field-keeps-its-bits.main", 15, 11}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_small_check", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_small), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_small), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2354_small_check(&h0_held); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_held); hero_frame_give(hero_big_t3); return;
-#line 216 "fixedbugs2354arecordbelowthestackwithabitfieldkeepsitsbits.c"
+#line 215 "fixedbugs2354arecordbelowthestackwithabitfieldkeepsitsbits.c"
 }
 #undef h0_held
 #undef t3
@@ -321,7 +320,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f01dffe0391bad3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14a00ca77c552b06", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2354arecordbelowthestackwithabitfieldkeepsitsbits\tfixedbugs-2354-a-record-below-the-stack-with-a-bit-field-keeps-its-bits\n");

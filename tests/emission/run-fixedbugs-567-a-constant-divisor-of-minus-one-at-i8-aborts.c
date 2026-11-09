@@ -210,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2911e8294c37ac14", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3eb014d144fb1c48", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs567aconstantdivisorofminusoneati8aborts\tfixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts\n");

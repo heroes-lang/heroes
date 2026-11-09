@@ -210,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1bc091855e91b515", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("315ebe2d57552549", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("adversarialoverflowaborts\tadversarial-overflow-aborts\n");

@@ -62,9 +62,12 @@ constant CITED_ROOTS: [str]
 
 # The citations the check resolved on 2026-10-11, the day it was written: a
 # run that reads fewer is not reading the tree, and one past it by more than
-# `floors.SLACK` is told the number to write here.
+# `floors.SLACK` is told the number to write here. **9491 on 2026-11-09**,
+# raised by batch 26's closing as its gate told it (`FLOOR
+# records/defects-cited`): the citations the code and the cases gained since
+# the check was written, 2,034 past the first count.
 constant CITED_FLOOR: i64
-    7457
+    9491
 
 constant LABEL_CITED: str
     "records/defects-cited"

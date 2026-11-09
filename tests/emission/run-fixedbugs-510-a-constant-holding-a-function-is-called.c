@@ -254,7 +254,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2ee524f532d43153", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4483519d2b97a187", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs510aconstantholdingafunctioniscalled\tfixedbugs-510-a-constant-holding-a-function-is-called\n");

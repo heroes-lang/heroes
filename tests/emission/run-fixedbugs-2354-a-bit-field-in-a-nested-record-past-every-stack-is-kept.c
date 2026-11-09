@@ -183,27 +183,26 @@ void *hero_pad_nowhere(void);
 #undef k
 #pragma push_macro("rest")
 #undef rest
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2354_nested, a), sizeof(((struct fixedbugs_2354_nested *)0)->a), __builtin_offsetof(struct fixedbugs_2354_nested, in.k), sizeof(((struct fixedbugs_2354_nested *)0)->in.k), __builtin_offsetof(struct fixedbugs_2354_nested, rest), sizeof(((struct fixedbugs_2354_nested *)0)->rest), (0) + 10, 1};
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2354_nested, a), sizeof(((struct fixedbugs_2354_nested *)0)->a), __builtin_offsetof(struct fixedbugs_2354_nested, in.k), sizeof(((struct fixedbugs_2354_nested *)0)->in.k), __builtin_offsetof(struct fixedbugs_2354_nested, rest), sizeof(((struct fixedbugs_2354_nested *)0)->rest)};
 #pragma pop_macro("a")
 #pragma pop_macro("in")
 #pragma pop_macro("k")
 #pragma pop_macro("rest")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 6];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static size_t hero_pad_m_0[2];
+__attribute__((unused)) static size_t hero_pad_m_0[4];
 __attribute__((unused)) static size_t hero_pad_mn_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
-    hero_pad_n_0 = hero_pad_gaps(sizeof(struct fixedbugs_2354_nested), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     {
         struct fixedbugs_2354_nested *const hero_pad_o = (struct fixedbugs_2354_nested *)hero_pad_object(sizeof(struct fixedbugs_2354_nested));
     #pragma push_macro("b")
     #undef b
     #pragma push_macro("in")
     #undef in
-        hero_pad_o->in.b--;
+        hero_pad_o->in.b = 0; hero_pad_o->in.b--;
     #pragma pop_macro("b")
     #pragma pop_macro("in")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 3, hero_pad_o, sizeof(struct fixedbugs_2354_nested), hero_pad_m_0, 1);
+        hero_pad_n_0 = hero_pad_bits(sizeof(struct fixedbugs_2354_nested), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_0, hero_pad_m_0, 2, &hero_pad_mn_0);
         hero_pad_object_give(hero_pad_o);
     }
 }
@@ -221,7 +220,7 @@ __attribute__((__noinline__)) void h_fixedbugs2354abitfieldinanestedrecordpastev
     t2 = INT64_C(7); t3 = *(struct fixedbugs_2354_nested *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.a = t2; h0_held = t3; hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_m_0, hero_pad_mn_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.hero", "fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.main", 16, 5}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_nested_dirty", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_m_0, hero_pad_mn_0); (void)fixedbugs_2354_nested_dirty(&h0_held); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.hero", "fixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept.main", 17, 11}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_nested_check", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_held, sizeof(struct fixedbugs_2354_nested), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2354_nested_check(&h0_held); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_held); hero_frame_give(hero_big_t3); return;
-#line 225 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
+#line 224 "fixedbugs2354abitfieldinanestedrecordpasteverystackiskept.c"
 }
 #undef h0_held
 #undef t3
@@ -330,7 +329,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1365fe221d8bdd71", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("29042aca164f4da5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2354abitfieldinanestedrecordpasteverystackiskept\tfixedbugs-2354-a-bit-field-in-a-nested-record-past-every-stack-is-kept\n");

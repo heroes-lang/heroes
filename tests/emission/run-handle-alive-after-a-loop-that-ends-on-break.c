@@ -300,7 +300,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3053d2982920bf6c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("45f1ff4021e42fa0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("handlealiveafteraloopthatendsonbreak\thandle-alive-after-a-loop-that-ends-on-break\n");

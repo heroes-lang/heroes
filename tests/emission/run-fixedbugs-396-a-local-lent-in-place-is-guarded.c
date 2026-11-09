@@ -570,7 +570,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("156840353ef671fd", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2b066cdd37b9e231", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs396alocallentinplaceisguarded\tfixedbugs-396-a-local-lent-in-place-is-guarded\n");

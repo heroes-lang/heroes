@@ -179,10 +179,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 }
 
 
-#line 14 "tests/golden/run/fixedbugs-2357-a-program-holds-a-fetched-packages-record-by-value.case/main.hero"
+#line 15 "tests/golden/run/fixedbugs-2357-a-program-holds-a-fetched-packages-record-by-value.case/main.hero"
 void h_main_main(void) { struct pt_point h0_p; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7; HERO_NODEBUG struct pt_point t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(3); t2 = INT64_C(4); t3 = h_1ptpt_make(t1, t2); h0_p = t3; hero_pad_fill(&h0_p, sizeof(struct pt_point), 1, hero_pad_g_1, hero_pad_n_1);
-    t4 = h0_p.x; t5 = h0_p.y; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.main", 16, 11); hero_print_int(t6); hero_print_end();
+    t4 = h0_p.x; t5 = h0_p.y; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("main.hero", "main.main", 17, 11); hero_print_int(t6); hero_print_end();
     t7 = h_geoshape_sum(); hero_print_int(t7); hero_print_end(); return;
 #line 188 "main.c"
 }
@@ -310,7 +310,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3cf2451e46452ad6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6733bbb22ea52541", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1ptpt\tpt\ngeoshape\tshape\n");

@@ -210,7 +210,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("14f021c17339f57c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a8e4e696bfd65b0", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs567au64divisionattwotothe63byitsmaximumprints\tfixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints\n");

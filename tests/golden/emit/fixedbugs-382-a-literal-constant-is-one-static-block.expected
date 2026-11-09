@@ -374,7 +374,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ae871fb774c2bd4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("20869ea3700f9c08", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs382aliteralconstantisonestaticblock\tfixedbugs-382-a-literal-constant-is-one-static-block\n");

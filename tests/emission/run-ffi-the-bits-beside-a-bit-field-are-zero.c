@@ -234,29 +234,29 @@ void *hero_pad_nowhere(void);
 #undef a
 #pragma push_macro("d")
 #undef d
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct bf, a), sizeof(((struct bf *)0)->a), __builtin_offsetof(struct bf, d), sizeof(((struct bf *)0)->d), (0) + 1, 1, (0) + 1, 2};
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct bf, a), sizeof(((struct bf *)0)->a), __builtin_offsetof(struct bf, d), sizeof(((struct bf *)0)->d)};
 #pragma pop_macro("a")
 #pragma pop_macro("d")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 10];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static size_t hero_pad_m_0[6];
+__attribute__((unused)) static size_t hero_pad_m_0[8];
 __attribute__((unused)) static size_t hero_pad_mn_0;
 #pragma push_macro("k")
 #undef k
 #pragma push_macro("y")
 #undef y
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {__builtin_offsetof(struct ux, k), sizeof(((struct ux *)0)->k), __builtin_offsetof(struct ux, y), sizeof(((struct ux *)0)->y), (0) + 4, 1, (0) + 5, 1};
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {__builtin_offsetof(struct ux, k), sizeof(((struct ux *)0)->k), __builtin_offsetof(struct ux, y), sizeof(((struct ux *)0)->y)};
 #pragma pop_macro("k")
 #pragma pop_macro("y")
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 10];
 __attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static size_t hero_pad_m_1[4];
+__attribute__((unused)) static size_t hero_pad_m_1[8];
 __attribute__((unused)) static size_t hero_pad_mn_1;
 #pragma push_macro("z")
 #undef z
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(struct gp, z), sizeof(((struct gp *)0)->z), (0) + 0, 1, (0) + 2, 1};
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(struct gp, z), sizeof(((struct gp *)0)->z)};
 #pragma pop_macro("z")
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 6];
 __attribute__((unused)) static size_t hero_pad_n_2;
 __attribute__((unused)) static size_t hero_pad_m_2[4];
 __attribute__((unused)) static size_t hero_pad_mn_2;
@@ -264,12 +264,12 @@ __attribute__((unused)) static size_t hero_pad_mn_2;
 #undef lo
 #pragma push_macro("n")
 #undef n
-__attribute__((unused)) static const size_t hero_pad_t_3[] = {__builtin_offsetof(struct md, lo), sizeof(((struct md *)0)->lo), __builtin_offsetof(struct md, n), sizeof(((struct md *)0)->n), (0) + 1, 2, (0) + 2, 1, (0) + 2, 1};
+__attribute__((unused)) static const size_t hero_pad_t_3[] = {__builtin_offsetof(struct md, lo), sizeof(((struct md *)0)->lo), __builtin_offsetof(struct md, n), sizeof(((struct md *)0)->n)};
 #pragma pop_macro("lo")
 #pragma pop_macro("n")
-__attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 14];
 __attribute__((unused)) static size_t hero_pad_n_3;
-__attribute__((unused)) static size_t hero_pad_m_3[8];
+__attribute__((unused)) static size_t hero_pad_m_3[12];
 __attribute__((unused)) static size_t hero_pad_mn_3;
 #pragma push_macro("a")
 #undef a
@@ -279,14 +279,14 @@ __attribute__((unused)) static size_t hero_pad_mn_3;
 #undef inr
 #pragma push_macro("k")
 #undef k
-__attribute__((unused)) static const size_t hero_pad_t_4[] = {__builtin_offsetof(struct ob, k), sizeof(((struct ob *)0)->k), __builtin_offsetof(struct ob, inr.a), sizeof(((struct ob *)0)->inr.a), __builtin_offsetof(struct ob, inr.d), sizeof(((struct ob *)0)->inr.d), (0) + 9, 1, (0) + 9, 2};
+__attribute__((unused)) static const size_t hero_pad_t_4[] = {__builtin_offsetof(struct ob, k), sizeof(((struct ob *)0)->k), __builtin_offsetof(struct ob, inr.a), sizeof(((struct ob *)0)->inr.a), __builtin_offsetof(struct ob, inr.d), sizeof(((struct ob *)0)->inr.d)};
 #pragma pop_macro("a")
 #pragma pop_macro("d")
 #pragma pop_macro("inr")
 #pragma pop_macro("k")
-__attribute__((unused)) static size_t hero_pad_g_4[sizeof hero_pad_t_4 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_4[sizeof hero_pad_t_4 / sizeof(size_t) + 10];
 __attribute__((unused)) static size_t hero_pad_n_4;
-__attribute__((unused)) static size_t hero_pad_m_4[6];
+__attribute__((unused)) static size_t hero_pad_m_4[8];
 __attribute__((unused)) static size_t hero_pad_mn_4;
 #pragma push_macro("e")
 #undef e
@@ -298,11 +298,6 @@ __attribute__((unused)) static const size_t hero_pad_t_5[] = {__builtin_offsetof
 __attribute__((unused)) static size_t hero_pad_g_5[sizeof hero_pad_t_5 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_5;
 __attribute__((constructor)) static void hero_pad_init(void) {
-    hero_pad_n_0 = hero_pad_gaps(sizeof(struct bf), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
-    hero_pad_n_1 = hero_pad_gaps(sizeof(struct ux), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
-    hero_pad_n_2 = hero_pad_gaps(sizeof(struct gp), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
-    hero_pad_n_3 = hero_pad_gaps(sizeof(struct md), hero_pad_t_3, sizeof hero_pad_t_3 / (2 * sizeof(size_t)), hero_pad_g_3);
-    hero_pad_n_4 = hero_pad_gaps(sizeof(struct ob), hero_pad_t_4, sizeof hero_pad_t_4 / (2 * sizeof(size_t)), hero_pad_g_4);
     hero_pad_n_5 = hero_pad_gaps(sizeof(struct ar), hero_pad_t_5, sizeof hero_pad_t_5 / (2 * sizeof(size_t)), hero_pad_g_5);
     {
         struct bf *const hero_pad_o = (struct bf *)hero_pad_object(sizeof(struct bf));
@@ -310,10 +305,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     #undef b
     #pragma push_macro("c")
     #undef c
-        hero_pad_o->b--; hero_pad_o->c--;
+        hero_pad_o->b = 0; hero_pad_o->b--; hero_pad_o->c = 0; hero_pad_o->c--;
     #pragma pop_macro("b")
     #pragma pop_macro("c")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 2, hero_pad_o, sizeof(struct bf), hero_pad_m_0, 3);
+        hero_pad_n_0 = hero_pad_bits(sizeof(struct bf), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_0, hero_pad_m_0, 4, &hero_pad_mn_0);
         hero_pad_object_give(hero_pad_o);
     }
     {
@@ -322,10 +317,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     #undef w
     #pragma push_macro("x")
     #undef x
-        hero_pad_o->x--; hero_pad_o->w--;
+        hero_pad_o->x = 0; hero_pad_o->x--; hero_pad_o->w = 0; hero_pad_o->w--;
     #pragma pop_macro("w")
     #pragma pop_macro("x")
-        hero_pad_mn_1 = hero_pad_masks(hero_pad_t_1, 2, hero_pad_o, sizeof(struct ux), hero_pad_m_1, 2);
+        hero_pad_n_1 = hero_pad_bits(sizeof(struct ux), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_1, hero_pad_m_1, 4, &hero_pad_mn_1);
         hero_pad_object_give(hero_pad_o);
     }
     {
@@ -334,10 +329,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     #undef x
     #pragma push_macro("y")
     #undef y
-        hero_pad_o->x--; hero_pad_o->y--;
+        hero_pad_o->x = 0; hero_pad_o->x--; hero_pad_o->y = 0; hero_pad_o->y--;
     #pragma pop_macro("x")
     #pragma pop_macro("y")
-        hero_pad_mn_2 = hero_pad_masks(hero_pad_t_2, 1, hero_pad_o, sizeof(struct gp), hero_pad_m_2, 2);
+        hero_pad_n_2 = hero_pad_bits(sizeof(struct gp), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_2, hero_pad_m_2, 2, &hero_pad_mn_2);
         hero_pad_object_give(hero_pad_o);
     }
     {
@@ -348,11 +343,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     #undef mid
     #pragma push_macro("s")
     #undef s
-        hero_pad_o->mid--; hero_pad_o->s--; hero_pad_o->f--;
+        hero_pad_o->mid = 0; hero_pad_o->mid--; hero_pad_o->s = 0; hero_pad_o->s--; hero_pad_o->f = 0; hero_pad_o->f--;
     #pragma pop_macro("f")
     #pragma pop_macro("mid")
     #pragma pop_macro("s")
-        hero_pad_mn_3 = hero_pad_masks(hero_pad_t_3, 2, hero_pad_o, sizeof(struct md), hero_pad_m_3, 4);
+        hero_pad_n_3 = hero_pad_bits(sizeof(struct md), hero_pad_t_3, sizeof hero_pad_t_3 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_3, hero_pad_m_3, 6, &hero_pad_mn_3);
         hero_pad_object_give(hero_pad_o);
     }
     {
@@ -363,11 +358,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     #undef c
     #pragma push_macro("inr")
     #undef inr
-        hero_pad_o->inr.b--; hero_pad_o->inr.c--;
+        hero_pad_o->inr.b = 0; hero_pad_o->inr.b--; hero_pad_o->inr.c = 0; hero_pad_o->inr.c--;
     #pragma pop_macro("b")
     #pragma pop_macro("c")
     #pragma pop_macro("inr")
-        hero_pad_mn_4 = hero_pad_masks(hero_pad_t_4, 3, hero_pad_o, sizeof(struct ob), hero_pad_m_4, 3);
+        hero_pad_n_4 = hero_pad_bits(sizeof(struct ob), hero_pad_t_4, sizeof hero_pad_t_4 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_4, hero_pad_m_4, 4, &hero_pad_mn_4);
         hero_pad_object_give(hero_pad_o);
     }
 }
@@ -401,7 +396,7 @@ __attribute__((__noinline__)) void h_ffithebitsbesideabitfieldarezero_main(void)
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 56, 9}; hero_pad_fill(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_g_4, hero_pad_n_4); hero_pad_clear(&h0_h.f_ob, sizeof(struct ob), 1, hero_pad_m_4, hero_pad_mn_4); t13 = check_ob(&h0_h.f_ob); } h5_e = t13;
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-the-bits-beside-a-bit-field-are-zero.hero", "ffi-the-bits-beside-a-bit-field-are-zero.main", 57, 9}; hero_pad_fill(&h0_h.f_ar, sizeof(struct ar), 1, hero_pad_g_5, hero_pad_n_5); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_h.f_ar) + hero_pad_k0 * sizeof(struct ar) + __builtin_offsetof(struct ar, e), sizeof(struct bf), sizeof(((struct ar *)0)->e) / sizeof(struct bf), hero_pad_m_0, hero_pad_mn_0); } t14 = check_ar(&h0_h.f_ar); } h6_f = t14;
     t15 = h1_a; t16 = HERO_STR_LIT(hero_str_20); t17 = h2_b; t18 = HERO_STR_LIT(hero_str_20); t19 = h3_c; t20 = HERO_STR_LIT(hero_str_20); t21 = h4_d; t22 = HERO_STR_LIT(hero_str_20); t23 = h5_e; t24 = HERO_STR_LIT(hero_str_20); t25 = h6_f; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_str(t18); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_int(t23); hero_print_str(t24); hero_print_int(t25); hero_print_end(); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_h); return;
-#line 405 "ffithebitsbesideabitfieldarezero.c"
+#line 400 "ffithebitsbesideabitfieldarezero.c"
 }
 #undef h0_h
 #undef t1
@@ -580,7 +575,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("36fdecab78301575", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4c9c195370f385a9", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffithebitsbesideabitfieldarezero\tffi-the-bits-beside-a-bit-field-are-zero\n");

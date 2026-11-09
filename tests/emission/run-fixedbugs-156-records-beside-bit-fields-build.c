@@ -196,17 +196,16 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("kind")
 #undef kind
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(BF, kind), sizeof(((BF *)0)->kind), (0) + 4, 1, (0) + 4, 4};
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(BF, kind), sizeof(((BF *)0)->kind)};
 #pragma pop_macro("kind")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 14];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static size_t hero_pad_m_0[10];
+__attribute__((unused)) static size_t hero_pad_m_0[12];
 __attribute__((unused)) static size_t hero_pad_mn_0;
 __attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(UNNAMED *)hero_pad_nowhere()) == 13 ? sizeof(UNNAMED) : 0), __builtin_offsetof(UNNAMED, a), sizeof(((UNNAMED *)0)->a), __builtin_offsetof(UNNAMED, b), sizeof(((UNNAMED *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
-    hero_pad_n_0 = hero_pad_gaps(sizeof(BF), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(UNNAMED), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     {
         BF *const hero_pad_o = (BF *)hero_pad_object(sizeof(BF));
@@ -214,10 +213,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
     #undef flag
     #pragma push_macro("rest")
     #undef rest
-        hero_pad_o->flag--; hero_pad_o->rest--;
+        hero_pad_o->flag = 0; hero_pad_o->flag--; hero_pad_o->rest = 0; hero_pad_o->rest--;
     #pragma pop_macro("flag")
     #pragma pop_macro("rest")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 1, hero_pad_o, sizeof(BF), hero_pad_m_0, 5);
+        hero_pad_n_0 = hero_pad_bits(sizeof(BF), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_0, hero_pad_m_0, 6, &hero_pad_mn_0);
         hero_pad_object_give(hero_pad_o);
     }
 }
@@ -238,7 +237,7 @@ __attribute__((__noinline__)) void h_fixedbugs156recordsbesidebitfieldsbuild_mai
     t5 = h0_built.kind; hero_print_int(t5); hero_print_end();
     t6 = INT64_C(1); t7 = INT64_C(2); t8 = (UNNAMED){.a = t6, .b = t7}; h1_u = t8; hero_pad_fill(&h1_u, sizeof(UNNAMED), 1, hero_pad_g_1, hero_pad_n_1);
     t9 = h1_u; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 16}; t10 = make_unnamed(); } t11 = h_fixedbugs156recordsbesidebitfieldsbuild_0UNNAMED_eq(&t9, &t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h1_u.b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 43}; t14 = make_zerow(); } t15 = t14.b; if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow_at("fixedbugs-156-records-beside-bit-fields-build.hero", "fixedbugs-156-records-beside-bit-fields-build.main", 27, 37); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t16); hero_print_end(); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_built); return;
-#line 242 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 241 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 #undef h0_built
 #undef t1
@@ -376,7 +375,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6be90dd7105bb450", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("01873a80091f2484", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs156recordsbesidebitfieldsbuild\tfixedbugs-156-records-beside-bit-fields-build\n");

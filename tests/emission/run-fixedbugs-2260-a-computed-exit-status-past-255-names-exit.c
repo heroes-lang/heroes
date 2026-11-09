@@ -341,7 +341,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("46c567fa414fb148", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c6394a23a13217c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2260acomputedexitstatuspast255namesexit\tfixedbugs-2260-a-computed-exit-status-past-255-names-exit\n");

@@ -335,17 +335,17 @@ __attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
 __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
 
-#line 26 "examples/adventure/main.hero"
+#line 27 "examples/adventure/main.hero"
 void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t10, t11, t13, t21, t26, t27; HeroFailure h2_e = {0}; HeroStr h3_script = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t7, *t16, *t24, *t25; HERO_NODEBUG int64_t t3, t4, t8, t12, t17; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t9, t15, t18, t19, t20, t22, t23, t29; HERO_NODEBUG HeroFailure t14, t28; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 27, 13}; t1 = h_library_args(&hero_here); } t24 = h4_own4; h4_own4 = t1; hero_array_decref(t24); t25 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t25);
-#line 29
-    t2 = h0_given; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
-#line 33
-    t7 = h0_given; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "main.hero", "main.main", 33, 21) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 33, 11}; t10 = h_library_read_file(t9, &hero_here); } t26 = h5_own5; h5_own5 = t10; h_0opt_f87774a_release(&t26); t27 = h1_s0; h_0opt_f87774a_retain(&t10); h1_s0 = t10; h_0opt_f87774a_release(&t27); t11 = h1_s0; t12 = t11.tag; switch (t12) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
+    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 28, 13}; t1 = h_library_args(&hero_here); } t24 = h4_own4; h4_own4 = t1; hero_array_decref(t24); t25 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t25);
 #line 30
-    t6 = HERO_STR_LIT(hero_str_244a49c7); hero_print_str(t6); hero_print_end(); goto bb7; bb3: goto bb1; bb4: goto bb7; bb5:
+    t2 = h0_given; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 34
-    t13 = h1_s0; t14 = t13.as.err; t28 = h2_e; hero_failure_retain(&t14); h2_e = t14; hero_failure_release(&t28); t15 = HERO_STR_LIT(hero_str_2d78c599); t16 = h0_given; t17 = INT64_C(0); t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "main.hero", "main.main", 34, 45) : (void)0), (void)(t16->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t16 + 1))[t17]); t19 = HERO_STR_LIT(hero_str_1dce); t20 = h2_e.code; hero_print_str(t15); hero_print_str(t18); hero_print_str(t19); hero_print_str(t20); hero_print_end(); goto bb4; bb6:
+    t7 = h0_given; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "main.hero", "main.main", 34, 21) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 34, 11}; t10 = h_library_read_file(t9, &hero_here); } t26 = h5_own5; h5_own5 = t10; h_0opt_f87774a_release(&t26); t27 = h1_s0; h_0opt_f87774a_retain(&t10); h1_s0 = t10; h_0opt_f87774a_release(&t27); t11 = h1_s0; t12 = t11.tag; switch (t12) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
+#line 31
+    t6 = HERO_STR_LIT(hero_str_244a49c7); hero_print_str(t6); hero_print_end(); goto bb7; bb3: goto bb1; bb4: goto bb7; bb5:
+#line 35
+    t13 = h1_s0; t14 = t13.as.err; t28 = h2_e; hero_failure_retain(&t14); h2_e = t14; hero_failure_release(&t28); t15 = HERO_STR_LIT(hero_str_2d78c599); t16 = h0_given; t17 = INT64_C(0); t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "main.hero", "main.main", 35, 45) : (void)0), (void)(t16->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t16 + 1))[t17]); t19 = HERO_STR_LIT(hero_str_1dce); t20 = h2_e.code; hero_print_str(t15); hero_print_str(t18); hero_print_str(t19); hero_print_str(t20); hero_print_end(); goto bb4; bb6:
     t21 = h1_s0; t22 = t21.as.ok; t29 = h3_script; hero_str_incref(t22); h3_script = t22; hero_str_decref(t29); t23 = h3_script; h_main_run(t23); goto bb4; bb7:
 #line 351 "main.c"
     hero_array_release_at(&h0_given);
@@ -357,17 +357,17 @@ void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f
     return;
 }
 
-#line 37 "examples/adventure/main.hero"
+#line 38 "examples/adventure/main.hero"
 void h_main_run(HeroStr h0_script) { h_world_World h1_w = {0}; HeroArrayHeader * h2_lines = {0}; h_game_Turn h3_turn = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h8_own8 = {0}, *t3, *t5, *t7, *t10, *t13, *t27, *t28, *t31; HERO_NODEBUG int64_t h5_i0, t8, t9, t11, t14, t17, t18, t19, t21; HeroStr h6_said = {0}; HERO_NODEBUG h_world_World h7_own7 = {0}, t1, t4, t25, t26; HERO_NODEBUG h_game_Turn h9_own9 = {0}, t6, t29, t30; HERO_NODEBUG HeroStr h10_own10 = {0}, t2, t15, t16, t20, t22, t24, t32, t33; HERO_NODEBUG bool t12; HERO_NODEBUG h_game_Game t23; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_world_make(); t25 = h7_own7; h7_own7 = t1; h_world_0World_release(&t25); t26 = h1_w; h_world_0World_retain(&t1); h1_w = t1; h_world_0World_release(&t26);
     t2 = h0_script; t3 = h_main_commands(t2); t27 = h8_own8; h8_own8 = t3; hero_array_decref(t27); t28 = h2_lines; hero_array_incref(t3); h2_lines = t3; hero_array_decref(t28);
     t4 = h1_w; t5 = h2_lines; t6 = h_game_play_all(t4, t5); t29 = h9_own9; h9_own9 = t6; h_game_0Turn_release(&t29); t30 = h3_turn; h_game_0Turn_retain(&t6); h3_turn = t6; h_game_0Turn_release(&t30);
-#line 42
-    t7 = h3_turn.f_said; t31 = h4_xs0; hero_array_incref(t7); h4_xs0 = t7; hero_array_decref(t31); t8 = INT64_C(0); h5_i0 = t8; goto bb1; bb1: t9 = h5_i0; t10 = h4_xs0; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto bb2; else goto bb4; bb2: t13 = h4_xs0; t14 = h5_i0; t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "main.hero", "main.run", 42, 9) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]); t32 = h6_said; hero_str_incref(t15); h6_said = t15; hero_str_decref(t32);
+#line 43
+    t7 = h3_turn.f_said; t31 = h4_xs0; hero_array_incref(t7); h4_xs0 = t7; hero_array_decref(t31); t8 = INT64_C(0); h5_i0 = t8; goto bb1; bb1: t9 = h5_i0; t10 = h4_xs0; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto bb2; else goto bb4; bb2: t13 = h4_xs0; t14 = h5_i0; t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "main.hero", "main.run", 43, 9) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]); t32 = h6_said; hero_str_incref(t15); h6_said = t15; hero_str_decref(t32);
     t16 = h6_said; hero_print_str(t16); hero_print_end(); goto bb3; bb3:
-#line 42
-    t17 = h5_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("main.hero", "main.run", 42, 9); h5_i0 = t19; goto bb1; bb4:
-#line 45
+#line 43
+    t17 = h5_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("main.hero", "main.run", 43, 9); h5_i0 = t19; goto bb1; bb4:
+#line 46
     t20 = HERO_STR_LIT(hero_str_0); hero_print_str(t20); hero_print_end();
     t21 = h3_turn.f_next.f_moves; t22 = HERO_STR_LIT(hero_str_10b469d0); t23 = h3_turn.f_next; t24 = h_main_ending_of(t23); t33 = h10_own10; h10_own10 = t24; hero_str_decref(t33); hero_print_int(t21); hero_print_str(t22); hero_print_str(t24); hero_print_end();
 #line 374 "main.c"
@@ -383,12 +383,12 @@ void h_main_run(HeroStr h0_script) { h_world_World h1_w = {0}; HeroArrayHeader *
     return;
 }
 
-#line 48 "examples/adventure/main.hero"
+#line 49 "examples/adventure/main.hero"
 HeroStr h_main_ending_of(h_game_Game h0_g) { HERO_NODEBUG HeroStr h1_ret0 = {0}, t2, t3, t4; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g.f_won; if (t1) goto bb2; else goto bb3; bb1:
-#line 51
+#line 52
     t3 = HERO_STR_LIT(hero_str_288ba3e0); h1_ret0 = t3; goto bb4; bb2:
-#line 50
+#line 51
     t2 = HERO_STR_LIT(hero_str_3e72a07c); h1_ret0 = t2; goto bb4; bb3: goto bb1; bb4:
 #line 394 "main.c"
     t4 = h1_ret0;
@@ -396,17 +396,17 @@ HeroStr h_main_ending_of(h_game_Game h0_g) { HERO_NODEBUG HeroStr h1_ret0 = {0},
     return t4;
 }
 
-#line 56 "examples/adventure/main.hero"
+#line 57 "examples/adventure/main.hero"
 HeroArrayHeader * h_main_commands(HeroStr h0_script) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t3, *t6, *t9, *t29, *t30, *t31, *t32, *t33; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t18, t26, t27, t28; HeroStr h4_line = {0}; HeroStr h5_head = {0}; HERO_NODEBUG bool h6_b0, t8, t16, t21, t22; HERO_NODEBUG HeroStr h9_own9 = {0}, t2, t11, t12, t13, t14, t15, t17, t24, t34, t35, t36; HERO_NODEBUG uint8_t t19, t20; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t30 = h7_own7; h7_own7 = t1; hero_array_decref(t30); t31 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t31);
-#line 59
-    t2 = h0_script; t3 = h_1corestrings_split_lines(t2); t32 = h8_own8; h8_own8 = t3; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t33); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.commands", 59, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t34 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t34);
+#line 60
+    t2 = h0_script; t3 = h_1corestrings_split_lines(t2); t32 = h8_own8; h8_own8 = t3; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t33); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.commands", 60, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t34 = h4_line; hero_str_incref(t11); h4_line = t11; hero_str_decref(t34);
     t12 = h4_line; t13 = h_1corestrings_trim_space(t12); t35 = h9_own9; h9_own9 = t13; hero_str_decref(t35); t36 = h5_head; hero_str_incref(t13); h5_head = t13; hero_str_decref(t36);
-#line 62
+#line 63
     t14 = h5_head; t15 = HERO_STR_LIT(hero_str_0); t16 = hero_str_eq(t14, t15); h6_b0 = t16; if (t16) goto bb7; else goto bb6; bb3:
-#line 59
-    t26 = h3_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("main.hero", "main.commands", 59, 9); h3_i0 = t28; goto bb1; bb4:
-#line 66
+#line 60
+    t26 = h3_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("main.hero", "main.commands", 60, 9); h3_i0 = t28; goto bb1; bb4:
+#line 67
     t29 = h1_out;
 #line 412 "main.c"
     hero_array_incref(t29);
@@ -419,14 +419,14 @@ HeroArrayHeader * h_main_commands(HeroStr h0_script) { HeroArrayHeader * h1_out 
     hero_str_release_at(&h9_own9);
     return t29;
 bb5:
-#line 64 "examples/adventure/main.hero"
+#line 65 "examples/adventure/main.hero"
     t24 = h5_head; hero_array_push_owned(&h1_out, &t24); goto bb3; bb6:
-#line 62
-    t17 = h5_head; t18 = INT64_C(0); t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "main.hero", "main.commands", 62, 26) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = UINT64_C(35); t21 = t19 == t20; h6_b0 = t21; goto bb7; bb7: t22 = h6_b0; if (t22) goto bb8; else goto bb9; bb8: goto bb3; bb9: goto bb5;
+#line 63
+    t17 = h5_head; t18 = INT64_C(0); t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "main.hero", "main.commands", 63, 26) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = UINT64_C(35); t21 = t19 == t20; h6_b0 = t21; goto bb7; bb7: t22 = h6_b0; if (t22) goto bb8; else goto bb9; bb8: goto bb3; bb9: goto bb5;
 #line 427 "main.c"
 }
 
-#line 17 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 17 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at; HERO_NODEBUG bool h3_ret0, t5, t6, t11, t18, t19, t23, t24; HERO_NODEBUG HeroStr t1, t3, t9, t12, t15; HERO_NODEBUG int64_t t2, t4, t7, t8, t10, t13, t16, t20, t21, t22; HERO_NODEBUG uint8_t t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_prefix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 20
@@ -447,7 +447,7 @@ bool h_1corestrings_has_prefix(HeroStr h0_s, HeroStr h1_prefix) { int64_t h2_at;
     return t24;
 }
 
-#line 30 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 30 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_offset; int64_t h3_at; HERO_NODEBUG bool h4_ret0, t5, t6, t16, t25, t26, t30, t31; HERO_NODEBUG HeroStr t1, t3, t7, t9, t14, t17, t22; HERO_NODEBUG int64_t t2, t4, t8, t10, t11, t12, t13, t15, t18, t19, t20, t23, t27, t28, t29; HERO_NODEBUG uint8_t t21, t24; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_suffix; t2 = hero_str_len(t1); t3 = h0_s; t4 = hero_str_len(t3); t5 = t2 > t4; if (t5) goto bb2; else goto bb3; bb1:
 #line 33
@@ -469,7 +469,7 @@ bool h_1corestrings_has_suffix(HeroStr h0_s, HeroStr h1_suffix) { int64_t h2_off
     return t31;
 }
 
-#line 44 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 44 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t3, t4, t9, t10; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t5, t6; HERO_NODEBUG bool t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_substr; t3 = h_1corestringsinternalscan_first_at(t1, t2); t9 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t9); t10 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t10); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(1); t7 = t5 == t6; t8 = !t7;
 #line 476 "main.c"
@@ -478,7 +478,7 @@ bool h_1corestrings_contains(HeroStr h0_s, HeroStr h1_substr) { HERO_NODEBUG h_0
     return t8;
 }
 
-#line 50 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 50 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_width; int64_t h3_to; int64_t h4_width; HERO_NODEBUG HeroStr h5_own5 = {0}, t3, t6, t15, t20, t29, t32, t33; HERO_NODEBUG int64_t t1, t2, t4, t7, t8, t9, t10, t12, t13, t14, t16, t17, t18, t21, t22, t23, t24, t26, t27, t28, t30, t31; HERO_NODEBUG bool t5, t11, t19, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_from = t1; goto bb1; bb1:
 #line 53
@@ -502,12 +502,12 @@ HeroStr h_1corestrings_trim_space(HeroStr h0_s) { int64_t h1_from; int64_t h2_wi
     hero_str_release_at(&h5_own5);
     return t32;
 bb10:
-#line 67 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 67 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
     t26 = h3_to; t27 = h4_width; if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow_at("<core>/strings.hero", "strings.trim_space", 67, 14); h3_to = t28; goto bb7; bb11: goto bb9; bb12: goto bb10;
 #line 508 "main.c"
 }
 
-#line 74 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 74 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; bool h3_inside; int64_t h4_at; int64_t h5_width; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t41, *t42, *t43; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t6, t9, t17, t20, t35, t37, t39, t44, t45; HERO_NODEBUG int64_t t2, t4, t5, t7, t10, t11, t12, t13, t18, t19, t23, t24, t25, t28, t30, t31, t32, t36, t38; HERO_NODEBUG bool t3, t8, t14, t15, t22, t26, t27, t29, t33; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t42 = h6_own6; h6_own6 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
     t2 = INT64_C(0); h2_start = t2;
@@ -544,12 +544,12 @@ HeroArrayHeader * h_1corestrings_fields(HeroStr h0_s) { HeroArrayHeader * h1_out
     hero_str_release_at(&h8_own8);
     return t41;
 bb14:
-#line 95 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 95 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
     t35 = h0_s; t36 = h2_start; t37 = h0_s; t38 = hero_str_len(t37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.fields", 95, 24}; t39 = hero_str_slice_at(t35, t36, t38, &hero_here); } t45 = h8_own8; h8_own8 = t39; hero_str_decref(t45); hero_array_push_owned(&h1_out, &t39); goto bb13; bb15: goto bb13;
 #line 550 "main.c"
 }
 
-#line 101 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 101 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; int64_t h4_end; HERO_NODEBUG bool h5_b0, t7, t12, t16, t23, t24, t43; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t51, *t52, *t53; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, t5, t8, t17, t29, t32, t41, t45, t47, t49, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t9, t13, t14, t15, t18, t19, t20, t25, t26, t27, t30, t31, t34, t35, t36, t37, t38, t39, t40, t42, t46, t48; HERO_NODEBUG uint8_t t10, t11, t21, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t52 = h6_own6; h6_own6 = t1; hero_array_decref(t52); t53 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t53);
     t2 = INT64_C(0); h2_start = t2;
@@ -581,12 +581,12 @@ HeroArrayHeader * h_1corestrings_split_lines(HeroStr h0_s) { HeroArrayHeader * h
     hero_str_release_at(&h8_own8);
     return t51;
 bb13:
-#line 117 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 117 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
     t45 = h0_s; t46 = h2_start; t47 = h0_s; t48 = hero_str_len(t47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_lines", 117, 24}; t49 = hero_str_slice_at(t45, t46, t48, &hero_here); } t55 = h8_own8; h8_own8 = t49; hero_str_decref(t55); hero_array_push_owned(&h1_out, &t49); goto bb12; bb14: goto bb12;
 #line 587 "main.c"
 }
 
-#line 124 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings.hero"
+#line 124 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings.hero"
 h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t11, t30, t31; int64_t h3_at; HeroStr h4_before = {0}; HeroStr h5_after = {0}; HERO_NODEBUG h_0opt_48a26f25 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t10, t28, t29, t37, t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t2, t13, t16, t17, t19, t22, t24, t25, t26, t32, t33, t34, t35; HERO_NODEBUG h_1corestrings_Halves h10_own10 = {0}, t27, t36; HERO_NODEBUG int64_t t5, t6, t12, t14, t15, t18, t20, t21, t23; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_sep; t3 = h_1corestringsinternalscan_first_at(t1, t2); t30 = h7_own7; h7_own7 = t3; h_0opt_e201354_release(&t30); t31 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t31); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; h3_at = t12;
     t13 = h0_s; t14 = INT64_C(0); t15 = h3_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<core>/strings.hero", "strings.split_once", 126, 14}; t16 = hero_str_slice_at(t13, t14, t15, &hero_here); } t32 = h8_own8; h8_own8 = t16; hero_str_decref(t32); t33 = h4_before; hero_str_incref(t16); h4_before = t16; hero_str_decref(t33);
@@ -609,7 +609,7 @@ h_0opt_48a26f25 h_1corestrings_split_once(HeroStr h0_s, HeroStr h1_sep) { HERO_N
     return t29;
 }
 
-#line 24 "examples/adventure/game.hero"
+#line 25 "examples/adventure/game.hero"
 h_game_Game h_game_begin(h_world_World h0_w) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t7; HERO_NODEBUG HeroMapHeader *h2_own2 = {0}, *t3, *t8; HERO_NODEBUG h_game_Game h3_own3 = {0}, t6, t9; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_w.f_start; t2 = hero_array_new(&hero_desc_str, 1); t7 = h1_own1; h1_own1 = t2; hero_array_decref(t7); t3 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0); t8 = h2_own2; h2_own2 = t3; hero_map_decref(t8); t4 = INT64_C(0); t5 = false; hero_str_incref(t1); hero_array_incref(t2); hero_map_incref(t3); t6 = (h_game_Game){.f_here = t1, .f_carrying = t2, .f_taken = t3, .f_moves = t4, .f_won = t5}; t9 = h3_own3; h3_own3 = t6; h_game_0Game_release(&t9);
 #line 616 "main.c"
@@ -620,30 +620,30 @@ h_game_Game h_game_begin(h_world_World h0_w) { HERO_NODEBUG HeroArrayHeader *h1_
     return t6;
 }
 
-#line 27 "examples/adventure/game.hero"
+#line 28 "examples/adventure/game.hero"
 HeroStr h_game_first_word(HeroStr h0_line) { int64_t h1_i; HERO_NODEBUG bool h2_b0, t5, t10, t11; HERO_NODEBUG HeroStr h3_own3 = {0}, t3, t6, t15, t18, t19; HERO_NODEBUG int64_t t1, t2, t4, t7, t12, t13, t14, t16, t17; HERO_NODEBUG uint8_t t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(0); h1_i = t1; goto bb1; bb1:
-#line 30
+#line 31
     t2 = h1_i; t3 = h0_line; t4 = hero_str_len(t3); t5 = t2 < t4; h2_b0 = t5; if (t5) goto bb4; else goto bb5; bb2:
-    t12 = h1_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("game.hero", "game.first_word", 31, 13); h1_i = t14; goto bb1; bb3:
-#line 33
-    t15 = h0_line; t16 = INT64_C(0); t17 = h1_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.first_word", 33, 12}; t18 = hero_str_slice_at(t15, t16, t17, &hero_here); } t19 = h3_own3; h3_own3 = t18; hero_str_decref(t19);
+    t12 = h1_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("game.hero", "game.first_word", 32, 13); h1_i = t14; goto bb1; bb3:
+#line 34
+    t15 = h0_line; t16 = INT64_C(0); t17 = h1_i; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.first_word", 34, 12}; t18 = hero_str_slice_at(t15, t16, t17, &hero_here); } t19 = h3_own3; h3_own3 = t18; hero_str_decref(t19);
 #line 632 "main.c"
     hero_str_incref(t18);
     hero_str_release_at(&h3_own3);
     return t18;
 bb4:
-#line 30 "examples/adventure/game.hero"
-    t6 = h0_line; t7 = h1_i; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "game.hero", "game.first_word", 30, 29) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = UINT64_C(32); t10 = t8 != t9; h2_b0 = t10; goto bb5; bb5: t11 = h2_b0; if (t11) goto bb2; else goto bb3;
+#line 31 "examples/adventure/game.hero"
+    t6 = h0_line; t7 = h1_i; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "game.hero", "game.first_word", 31, 29) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = UINT64_C(32); t10 = t8 != t9; h2_b0 = t10; goto bb5; bb5: t11 = h2_b0; if (t11) goto bb2; else goto bb3;
 #line 639 "main.c"
 }
 
-#line 35 "examples/adventure/game.hero"
+#line 36 "examples/adventure/game.hero"
 HeroStr h_game_rest_after(HeroStr h0_line, HeroStr h1_word) { HERO_NODEBUG HeroStr h2_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t1, t3, t6, t7, t8, t10, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t2, t4, t9, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_word; t2 = hero_str_len(t1); t3 = h0_line; t4 = hero_str_len(t3); t5 = t2 >= t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 39
+    t7 = h0_line; t8 = h1_word; t9 = hero_str_len(t8); t10 = h0_line; t11 = hero_str_len(t10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.rest_after", 39, 31}; t12 = hero_str_slice_at(t7, t9, t11, &hero_here); } t15 = h3_own3; h3_own3 = t12; hero_str_decref(t15); t13 = h_1corestrings_trim_space(t12); t16 = h4_own4; h4_own4 = t13; hero_str_decref(t16); h2_ret0 = t13; goto bb4; bb2:
 #line 38
-    t7 = h0_line; t8 = h1_word; t9 = hero_str_len(t8); t10 = h0_line; t11 = hero_str_len(t10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.rest_after", 38, 31}; t12 = hero_str_slice_at(t7, t9, t11, &hero_here); } t15 = h3_own3; h3_own3 = t12; hero_str_decref(t15); t13 = h_1corestrings_trim_space(t12); t16 = h4_own4; h4_own4 = t13; hero_str_decref(t16); h2_ret0 = t13; goto bb4; bb2:
-#line 37
     t6 = HERO_STR_LIT(hero_str_0); h2_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
 #line 649 "main.c"
     t14 = h2_ret0;
@@ -653,15 +653,15 @@ HeroStr h_game_rest_after(HeroStr h0_line, HeroStr h1_word) { HERO_NODEBUG HeroS
     return t14;
 }
 
-#line 40 "examples/adventure/game.hero"
+#line 41 "examples/adventure/game.hero"
 bool h_game_carrying(h_game_Game h0_g, HeroStr h1_what) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t1, *t4, *t7, *t19; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t8, t14, t15, t16; HeroStr h4_one = {0}; HERO_NODEBUG bool h5_ret0, t6, t12, t13, t17, t18; HERO_NODEBUG HeroStr t9, t10, t11, t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_g.f_carrying; t19 = h2_xs0; hero_array_incref(t1); h2_xs0 = t1; hero_array_decref(t19); t2 = INT64_C(0); h3_i0 = t2; goto bb1; bb1: t3 = h3_i0; t4 = h2_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h2_xs0; t8 = h3_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "game.hero", "game.carrying", 41, 9) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); t20 = h4_one; hero_str_incref(t9); h4_one = t9; hero_str_decref(t20);
+    t1 = h0_g.f_carrying; t19 = h2_xs0; hero_array_incref(t1); h2_xs0 = t1; hero_array_decref(t19); t2 = INT64_C(0); h3_i0 = t2; goto bb1; bb1: t3 = h3_i0; t4 = h2_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h2_xs0; t8 = h3_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? hero_panic_index_at(t7, t8, "game.hero", "game.carrying", 42, 9) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); t20 = h4_one; hero_str_incref(t9); h4_one = t9; hero_str_decref(t20);
     t10 = h4_one; t11 = h1_what; t12 = hero_str_eq(t10, t11); if (t12) goto bb6; else goto bb7; bb3:
-#line 41
-    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("game.hero", "game.carrying", 41, 9); h3_i0 = t16; goto bb1; bb4:
-#line 45
+#line 42
+    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("game.hero", "game.carrying", 42, 9); h3_i0 = t16; goto bb1; bb4:
+#line 46
     t17 = false; h5_ret0 = t17; goto bb8; bb5: goto bb3; bb6:
-#line 43
+#line 44
     t13 = true; h5_ret0 = t13; goto bb8; bb7: goto bb5; bb8:
 #line 667 "main.c"
     t18 = h5_ret0;
@@ -670,35 +670,35 @@ bool h_game_carrying(h_game_Game h0_g, HeroStr h1_what) { HERO_NODEBUG HeroArray
     return t18;
 }
 
-#line 49 "examples/adventure/game.hero"
+#line 50 "examples/adventure/game.hero"
 h_game_Turn h_game_play(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_line) { HeroStr h3_command = {0}; HeroStr h4_verb = {0}; HERO_NODEBUG h_game_Turn h5_ret0 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, h15_own15 = {0}, h16_own16 = {0}, h20_own20 = {0}, h22_own22 = {0}, t12, t21, t27, t35, t40, t46, t54, t55, t61, t63, t64, t67, t68, t72, t74; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, h13_own13 = {0}, h17_own17 = {0}, h18_own18 = {0}, t1, t2, t3, t4, t5, t6, t13, t14, t18, t19, t20, t22, t23, t28, t29, t33, t36, t37, t41, t42, t48, t49, t50, t51, t52, t56, t57, t58, t59, t62, t65, t69, t70; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h14_own14 = {0}, *h19_own19 = {0}, *h21_own21 = {0}, *t11, *t34, *t45, *t53, *t60, *t66, *t71, *t73; HERO_NODEBUG bool t7, t15, t24, t30, t38, t43; HERO_NODEBUG h_game_Game t8, t10, t17, t26, t31, t32, t39, t44, t47; HERO_NODEBUG h_world_World t9, t16, t25; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h2_line; t2 = h_1corestrings_trim_space(t1); t56 = h6_own6; h6_own6 = t2; hero_str_decref(t56); t57 = h3_command; hero_str_incref(t2); h3_command = t2; hero_str_decref(t57);
     t3 = h3_command; t4 = h_game_first_word(t3); t58 = h7_own7; h7_own7 = t4; hero_str_decref(t58); t59 = h4_verb; hero_str_incref(t4); h4_verb = t4; hero_str_decref(t59);
-#line 53
-    t5 = h4_verb; t6 = HERO_STR_LIT(hero_str_e960783); t7 = hero_str_eq(t5, t6); if (t7) goto bb2; else goto bb3; bb1:
-#line 56
-    t13 = h4_verb; t14 = HERO_STR_LIT(hero_str_3524); t15 = hero_str_eq(t13, t14); if (t15) goto bb5; else goto bb6; bb2:
 #line 54
-    t8 = h1_g; t9 = h0_w; t10 = h1_g; t11 = h_game_describe(t9, t10); t60 = h8_own8; h8_own8 = t11; hero_array_decref(t60); t12 = h_game_same(t8, t11); t61 = h9_own9; h9_own9 = t12; h_game_0Turn_release(&t61); h5_ret0 = t12; goto bb19; bb3: goto bb1; bb4:
-#line 59
-    t22 = h4_verb; t23 = HERO_STR_LIT(hero_str_fa4c7cb); t24 = hero_str_eq(t22, t23); if (t24) goto bb8; else goto bb9; bb5:
+    t5 = h4_verb; t6 = HERO_STR_LIT(hero_str_e960783); t7 = hero_str_eq(t5, t6); if (t7) goto bb2; else goto bb3; bb1:
 #line 57
-    t16 = h0_w; t17 = h1_g; t18 = h3_command; t19 = HERO_STR_LIT(hero_str_3524); t20 = h_game_rest_after(t18, t19); t62 = h10_own10; h10_own10 = t20; hero_str_decref(t62); t21 = h_game_go(t16, t17, t20); t63 = h11_own11; h11_own11 = t21; h_game_0Turn_release(&t63); h5_ret0 = t21; goto bb19; bb6: goto bb4; bb7:
-#line 62
-    t28 = h4_verb; t29 = HERO_STR_LIT(hero_str_19db7c); t30 = hero_str_eq(t28, t29); if (t30) goto bb11; else goto bb12; bb8:
+    t13 = h4_verb; t14 = HERO_STR_LIT(hero_str_3524); t15 = hero_str_eq(t13, t14); if (t15) goto bb5; else goto bb6; bb2:
+#line 55
+    t8 = h1_g; t9 = h0_w; t10 = h1_g; t11 = h_game_describe(t9, t10); t60 = h8_own8; h8_own8 = t11; hero_array_decref(t60); t12 = h_game_same(t8, t11); t61 = h9_own9; h9_own9 = t12; h_game_0Turn_release(&t61); h5_ret0 = t12; goto bb19; bb3: goto bb1; bb4:
 #line 60
-    t25 = h0_w; t26 = h1_g; t27 = h_game_take(t25, t26); t64 = h12_own12; h12_own12 = t27; h_game_0Turn_release(&t64); h5_ret0 = t27; goto bb19; bb9: goto bb7; bb10:
-#line 65
-    t36 = h4_verb; t37 = HERO_STR_LIT(hero_str_efd2e42); t38 = hero_str_eq(t36, t37); if (t38) goto bb14; else goto bb15; bb11:
+    t22 = h4_verb; t23 = HERO_STR_LIT(hero_str_fa4c7cb); t24 = hero_str_eq(t22, t23); if (t24) goto bb8; else goto bb9; bb5:
+#line 58
+    t16 = h0_w; t17 = h1_g; t18 = h3_command; t19 = HERO_STR_LIT(hero_str_3524); t20 = h_game_rest_after(t18, t19); t62 = h10_own10; h10_own10 = t20; hero_str_decref(t62); t21 = h_game_go(t16, t17, t20); t63 = h11_own11; h11_own11 = t21; h_game_0Turn_release(&t63); h5_ret0 = t21; goto bb19; bb6: goto bb4; bb7:
 #line 63
-    t31 = h1_g; t32 = h1_g; t33 = h_game_bag_of(t32); t65 = h13_own13; h13_own13 = t33; hero_str_decref(t65); t34 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t34, &t33); t66 = h14_own14; h14_own14 = t34; hero_array_decref(t66); t35 = h_game_same(t31, t34); t67 = h15_own15; h15_own15 = t35; h_game_0Turn_release(&t67); h5_ret0 = t35; goto bb19; bb12: goto bb10; bb13:
-#line 68
-    t41 = h4_verb; t42 = HERO_STR_LIT(hero_str_0); t43 = hero_str_eq(t41, t42); if (t43) goto bb17; else goto bb18; bb14:
+    t28 = h4_verb; t29 = HERO_STR_LIT(hero_str_19db7c); t30 = hero_str_eq(t28, t29); if (t30) goto bb11; else goto bb12; bb8:
+#line 61
+    t25 = h0_w; t26 = h1_g; t27 = h_game_take(t25, t26); t64 = h12_own12; h12_own12 = t27; h_game_0Turn_release(&t64); h5_ret0 = t27; goto bb19; bb9: goto bb7; bb10:
 #line 66
-    t39 = h1_g; t40 = h_game_open(t39); t68 = h16_own16; h16_own16 = t40; h_game_0Turn_release(&t68); h5_ret0 = t40; goto bb19; bb15: goto bb13; bb16:
-#line 70
-    t47 = h1_g; t48 = HERO_STR_LIT(hero_str_66f37f5); t49 = h4_verb; t50 = hero_str_concat(t48, t49); t69 = h17_own17; h17_own17 = t50; hero_str_decref(t69); t51 = HERO_STR_LIT(hero_str_2e); t52 = hero_str_concat(t50, t51); t70 = h18_own18; h18_own18 = t52; hero_str_decref(t70); t53 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t53, &t52); t71 = h19_own19; h19_own19 = t53; hero_array_decref(t71); t54 = h_game_same(t47, t53); t72 = h20_own20; h20_own20 = t54; h_game_0Turn_release(&t72); h5_ret0 = t54; goto bb19; bb17:
+    t36 = h4_verb; t37 = HERO_STR_LIT(hero_str_efd2e42); t38 = hero_str_eq(t36, t37); if (t38) goto bb14; else goto bb15; bb11:
+#line 64
+    t31 = h1_g; t32 = h1_g; t33 = h_game_bag_of(t32); t65 = h13_own13; h13_own13 = t33; hero_str_decref(t65); t34 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t34, &t33); t66 = h14_own14; h14_own14 = t34; hero_array_decref(t66); t35 = h_game_same(t31, t34); t67 = h15_own15; h15_own15 = t35; h_game_0Turn_release(&t67); h5_ret0 = t35; goto bb19; bb12: goto bb10; bb13:
 #line 69
+    t41 = h4_verb; t42 = HERO_STR_LIT(hero_str_0); t43 = hero_str_eq(t41, t42); if (t43) goto bb17; else goto bb18; bb14:
+#line 67
+    t39 = h1_g; t40 = h_game_open(t39); t68 = h16_own16; h16_own16 = t40; h_game_0Turn_release(&t68); h5_ret0 = t40; goto bb19; bb15: goto bb13; bb16:
+#line 71
+    t47 = h1_g; t48 = HERO_STR_LIT(hero_str_66f37f5); t49 = h4_verb; t50 = hero_str_concat(t48, t49); t69 = h17_own17; h17_own17 = t50; hero_str_decref(t69); t51 = HERO_STR_LIT(hero_str_2e); t52 = hero_str_concat(t50, t51); t70 = h18_own18; h18_own18 = t52; hero_str_decref(t70); t53 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t53, &t52); t71 = h19_own19; h19_own19 = t53; hero_array_decref(t71); t54 = h_game_same(t47, t53); t72 = h20_own20; h20_own20 = t54; h_game_0Turn_release(&t72); h5_ret0 = t54; goto bb19; bb17:
+#line 70
     t44 = h1_g; t45 = hero_array_new(&hero_desc_str, 1); t73 = h21_own21; h21_own21 = t45; hero_array_decref(t73); t46 = h_game_same(t44, t45); t74 = h22_own22; h22_own22 = t46; h_game_0Turn_release(&t74); h5_ret0 = t46; goto bb19; bb18: goto bb16; bb19:
 #line 704 "main.c"
     t55 = h5_ret0;
@@ -725,7 +725,7 @@ h_game_Turn h_game_play(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_line) {
     return t55;
 }
 
-#line 72 "examples/adventure/game.hero"
+#line 73 "examples/adventure/game.hero"
 h_game_Turn h_game_same(h_game_Game h0_g, HeroArrayHeader * h1_said) { HERO_NODEBUG h_game_Turn h2_own2 = {0}, t3, t4; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_game_Game t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h1_said; t2 = h0_g; hero_array_incref(t1); h_game_0Game_retain(&t2); t3 = (h_game_Turn){.f_said = t1, .f_next = t2}; t4 = h2_own2; h2_own2 = t3; h_game_0Turn_release(&t4);
 #line 732 "main.c"
@@ -734,18 +734,18 @@ h_game_Turn h_game_same(h_game_Game h0_g, HeroArrayHeader * h1_said) { HERO_NODE
     return t3;
 }
 
-#line 75 "examples/adventure/game.hero"
+#line 76 "examples/adventure/game.hero"
 HeroArrayHeader * h_game_describe(h_world_World h0_w, h_game_Game h1_g) { HERO_NODEBUG h_0opt_5e724113 h2_s0 = {0}, h8_own8 = {0}, t3, t4, t8, t32, t33; h_world_Room h3_room = {0}; HeroArrayHeader * h4_lines = {0}; HERO_NODEBUG bool h5_b0, t14, t21, t22; HERO_NODEBUG h_0opt_473cb9ae h6_f0 = {0}, h11_own11 = {0}, t17, t18, t38, t39; HERO_NODEBUG HeroArrayHeader *h7_ret0 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t7, *t11, *t30, *t31, *t34, *t36, *t37; HERO_NODEBUG HeroStr h12_own12 = {0}, h13_own13 = {0}, t2, t6, t10, t12, t13, t16, t24, t25, t26, t27, t28, t40, t41; HERO_NODEBUG h_world_World t1; HERO_NODEBUG int64_t t5, t19, t20; HERO_NODEBUG h_world_Room t9, t35; HERO_NODEBUG HeroMapHeader *t15; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_w; t2 = h1_g.f_here; t3 = h_world_room_at(t1, t2); t32 = h8_own8; h8_own8 = t3; h_0opt_5e724113_release(&t32); t33 = h2_s0; h_0opt_5e724113_retain(&t3); h2_s0 = t3; h_0opt_5e724113_release(&t33); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb2:
     t6 = HERO_STR_LIT(hero_str_7f800d8a); t7 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t7, &t6); t34 = h9_own9; h9_own9 = t7; hero_array_decref(t34); h7_ret0 = t7; goto bb9; bb3:
     t8 = h2_s0; t9 = t8.as.ok; t35 = h3_room; h_world_0Room_retain(&t9); h3_room = t9; h_world_0Room_release(&t35);
     t10 = h3_room.f_description; t11 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t11, &t10); t36 = h10_own10; h10_own10 = t11; hero_array_decref(t36); t37 = h4_lines; hero_array_incref(t11); h4_lines = t11; hero_array_decref(t37);
-#line 81
+#line 82
     t12 = h3_room.f_item; t13 = HERO_STR_LIT(hero_str_0); t14 = !hero_str_eq(t12, t13); h5_b0 = t14; if (t14) goto bb5; else goto bb6; bb4:
-#line 83
+#line 84
     t30 = h4_lines; h7_ret0 = t30; goto bb9; bb5:
-#line 81
-    t15 = h1_g.f_taken; t16 = h3_room.f_item; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.describe", 81, 35}; HERO_NODEBUG const void *found = hero_map_find_at(t15, &t16, &hero_here); if (found == NULL) { t17 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t17 = (h_0opt_473cb9ae){.tag = INT64_C(0)}; (&hero_desc_bool)->copy(&t17.as.ok, found); } } t38 = h11_own11; h11_own11 = t17; h_0opt_473cb9ae_release(&t38); t39 = h6_f0; h_0opt_473cb9ae_retain(&t17); h6_f0 = t17; h_0opt_473cb9ae_release(&t39); t18 = h6_f0; t19 = t18.tag; t20 = INT64_C(1); t21 = t19 == t20; h5_b0 = t21; goto bb6; bb6: t22 = h5_b0; if (t22) goto bb7; else goto bb8; bb7:
+#line 82
+    t15 = h1_g.f_taken; t16 = h3_room.f_item; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.describe", 82, 35}; HERO_NODEBUG const void *found = hero_map_find_at(t15, &t16, &hero_here); if (found == NULL) { t17 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t17 = (h_0opt_473cb9ae){.tag = INT64_C(0)}; (&hero_desc_bool)->copy(&t17.as.ok, found); } } t38 = h11_own11; h11_own11 = t17; h_0opt_473cb9ae_release(&t38); t39 = h6_f0; h_0opt_473cb9ae_retain(&t17); h6_f0 = t17; h_0opt_473cb9ae_release(&t39); t18 = h6_f0; t19 = t18.tag; t20 = INT64_C(1); t21 = t19 == t20; h5_b0 = t21; goto bb6; bb6: t22 = h5_b0; if (t22) goto bb7; else goto bb8; bb7:
     t24 = HERO_STR_LIT(hero_str_32321b5); t25 = h3_room.f_item; t26 = hero_str_concat(t24, t25); t40 = h12_own12; h12_own12 = t26; hero_str_decref(t40); t27 = HERO_STR_LIT(hero_str_1fc22d9b); t28 = hero_str_concat(t26, t27); t41 = h13_own13; h13_own13 = t28; hero_str_decref(t41); hero_array_push_owned(&h4_lines, &t28); goto bb4; bb8: goto bb4; bb9:
 #line 751 "main.c"
     t31 = h7_ret0;
@@ -763,25 +763,25 @@ HeroArrayHeader * h_game_describe(h_world_World h0_w, h_game_Game h1_g) { HERO_N
     return t31;
 }
 
-#line 85 "examples/adventure/game.hero"
+#line 86 "examples/adventure/game.hero"
 h_game_Turn h_game_go(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_direction) { HERO_NODEBUG h_0opt_f87774a h3_s0 = {0}, h8_own8 = {0}, t11, t12, t14, t20, t36, t37; HeroFailure h4_e = {0}; HeroStr h5_there = {0}; h_game_Game h6_moved = {0}; HERO_NODEBUG h_game_Turn h7_ret0 = {0}, h10_own10 = {0}, h12_own12 = {0}, h15_own15 = {0}, t7, t19, t34, t35, t39, t42, t47; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h11_own11 = {0}, *h14_own14 = {0}, *t6, *t18, *t23, *t32, *t38, *t41, *t46; HERO_NODEBUG h_game_Game h13_own13 = {0}, t4, t16, t29, t31, t33, t44, t45; HERO_NODEBUG HeroStr t1, t2, t5, t9, t10, t17, t21, t22, t43; HERO_NODEBUG bool t3, t28; HERO_NODEBUG h_world_World t8, t30; HERO_NODEBUG int64_t t13, t25, t26, t27; HERO_NODEBUG HeroFailure t15, t40; HERO_NODEBUG HeroMapHeader *t24; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h2_direction; t2 = HERO_STR_LIT(hero_str_0); t3 = hero_str_eq(t1, t2); if (t3) goto bb2; else goto bb3; bb1:
-#line 89
-    t8 = h0_w; t9 = h1_g.f_here; t10 = h2_direction; t11 = h_world_through(t8, t9, t10); t36 = h8_own8; h8_own8 = t11; h_0opt_f87774a_release(&t36); t37 = h3_s0; h_0opt_f87774a_retain(&t11); h3_s0 = t11; h_0opt_f87774a_release(&t37); t12 = h3_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
-#line 87
-    t4 = h1_g; t5 = HERO_STR_LIT(hero_str_15e95702); t6 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t6, &t5); t38 = h9_own9; h9_own9 = t6; hero_array_decref(t38); t7 = h_game_same(t4, t6); t39 = h10_own10; h10_own10 = t7; h_game_0Turn_release(&t39); h7_ret0 = t7; goto bb7; bb3: goto bb1; bb5:
 #line 90
+    t8 = h0_w; t9 = h1_g.f_here; t10 = h2_direction; t11 = h_world_through(t8, t9, t10); t36 = h8_own8; h8_own8 = t11; h_0opt_f87774a_release(&t36); t37 = h3_s0; h_0opt_f87774a_retain(&t11); h3_s0 = t11; h_0opt_f87774a_release(&t37); t12 = h3_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
+#line 88
+    t4 = h1_g; t5 = HERO_STR_LIT(hero_str_15e95702); t6 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t6, &t5); t38 = h9_own9; h9_own9 = t6; hero_array_decref(t38); t7 = h_game_same(t4, t6); t39 = h10_own10; h10_own10 = t7; h_game_0Turn_release(&t39); h7_ret0 = t7; goto bb7; bb3: goto bb1; bb5:
+#line 91
     t14 = h3_s0; t15 = t14.as.err; t40 = h4_e; hero_failure_retain(&t15); h4_e = t15; hero_failure_release(&t40); t16 = h1_g; t17 = h4_e.msg; t18 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t18, &t17); t41 = h11_own11; h11_own11 = t18; hero_array_decref(t41); t19 = h_game_same(t16, t18); t42 = h12_own12; h12_own12 = t19; h_game_0Turn_release(&t42); h7_ret0 = t19; goto bb7; bb6:
     t20 = h3_s0; t21 = t20.as.ok; t43 = h5_there; hero_str_incref(t21); h5_there = t21; hero_str_decref(t43);
-#line 93
+#line 94
     t22 = h5_there;
     t23 = h1_g.f_carrying;
     t24 = h1_g.f_taken;
-    t25 = h1_g.f_moves; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("game.hero", "game.go", 96, 24);
+    t25 = h1_g.f_moves; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("game.hero", "game.go", 97, 24);
     t28 = h1_g.f_won;
-#line 92
+#line 93
     hero_str_incref(t22); hero_array_incref(t23); hero_map_incref(t24); t29 = (h_game_Game){.f_here = t22, .f_carrying = t23, .f_taken = t24, .f_moves = t27, .f_won = t28}; t44 = h13_own13; h13_own13 = t29; h_game_0Game_release(&t44); t45 = h6_moved; h_game_0Game_retain(&t29); h6_moved = t29; h_game_0Game_release(&t45);
-#line 99
+#line 100
     t30 = h0_w; t31 = h6_moved; t32 = h_game_describe(t30, t31); t46 = h14_own14; h14_own14 = t32; hero_array_decref(t46); t33 = h6_moved; hero_array_incref(t32); h_game_0Game_retain(&t33); t34 = (h_game_Turn){.f_said = t32, .f_next = t33}; t47 = h15_own15; h15_own15 = t34; h_game_0Turn_release(&t47); h7_ret0 = t34; goto bb7; bb7:
 #line 787 "main.c"
     t35 = h7_ret0;
@@ -801,24 +801,24 @@ h_game_Turn h_game_go(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_direction
     return t35;
 }
 
-#line 101 "examples/adventure/game.hero"
+#line 102 "examples/adventure/game.hero"
 h_game_Turn h_game_take(h_world_World h0_w, h_game_Game h1_g) { HERO_NODEBUG h_0opt_5e724113 h2_s0 = {0}, h8_own8 = {0}, t3, t4, t10, t49, t50; h_world_Room h3_room = {0}; HERO_NODEBUG bool h4_b0, t14, t21, t22, t23, t38; HERO_NODEBUG h_0opt_473cb9ae h5_f0 = {0}, h18_own18 = {0}, t17, t18, t62, t63; h_game_Game h6_picked = {0}; HERO_NODEBUG h_game_Turn h7_ret0 = {0}, h10_own10 = {0}, h17_own17 = {0}, h20_own20 = {0}, t9, t27, t47, t48, t52, t61, t65; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h11_own11 = {0}, *h16_own16 = {0}, *h19_own19 = {0}, *t8, *t26, *t29, *t31, *t45, *t51, *t54, *t60, *t64; HERO_NODEBUG HeroMapHeader *h12_own12 = {0}, *t15, *t32, *t34, *t55; HERO_NODEBUG h_game_Game h13_own13 = {0}, t6, t24, t39, t46, t56, t57; HERO_NODEBUG HeroStr h14_own14 = {0}, h15_own15 = {0}, t2, t7, t12, t13, t16, t25, t28, t30, t33, t40, t41, t42, t43, t44, t58, t59; HERO_NODEBUG h_world_World t1; HERO_NODEBUG int64_t t5, t19, t20, t35, t36, t37; HERO_NODEBUG h_world_Room t11, t53; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_w; t2 = h1_g.f_here; t3 = h_world_room_at(t1, t2); t49 = h8_own8; h8_own8 = t3; h_0opt_5e724113_release(&t49); t50 = h2_s0; h_0opt_5e724113_retain(&t3); h2_s0 = t3; h_0opt_5e724113_release(&t50); t4 = h2_s0; t5 = t4.tag; switch (t5) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb2:
     t6 = h1_g; t7 = HERO_STR_LIT(hero_str_60b7b9c7); t8 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t8, &t7); t51 = h9_own9; h9_own9 = t8; hero_array_decref(t51); t9 = h_game_same(t6, t8); t52 = h10_own10; h10_own10 = t9; h_game_0Turn_release(&t52); h7_ret0 = t9; goto bb9; bb3:
     t10 = h2_s0; t11 = t10.as.ok; t53 = h3_room; h_world_0Room_retain(&t11); h3_room = t11; h_world_0Room_release(&t53);
     t12 = h3_room.f_item; t13 = HERO_STR_LIT(hero_str_0); t14 = hero_str_eq(t12, t13); h4_b0 = t14; if (t14) goto bb6; else goto bb5; bb4:
-#line 108
+#line 109
     t28 = h1_g.f_here;
     t29 = h1_g.f_carrying; t30 = h3_room.f_item; t31 = hero_array_push(t29, &t30); t54 = h11_own11; h11_own11 = t31; hero_array_decref(t54);
     t32 = h1_g.f_taken; t33 = h3_room.f_item; t34 = h_game_with_taken(t32, t33); t55 = h12_own12; h12_own12 = t34; hero_map_decref(t55);
-    t35 = h1_g.f_moves; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("game.hero", "game.take", 111, 24);
+    t35 = h1_g.f_moves; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("game.hero", "game.take", 112, 24);
     t38 = h1_g.f_won;
-#line 107
+#line 108
     hero_str_incref(t28); hero_array_incref(t31); hero_map_incref(t34); t39 = (h_game_Game){.f_here = t28, .f_carrying = t31, .f_taken = t34, .f_moves = t37, .f_won = t38}; t56 = h13_own13; h13_own13 = t39; h_game_0Game_release(&t56); t57 = h6_picked; h_game_0Game_retain(&t39); h6_picked = t39; h_game_0Game_release(&t57);
-#line 114
+#line 115
     t40 = HERO_STR_LIT(hero_str_45eeb27); t41 = h3_room.f_item; t42 = hero_str_concat(t40, t41); t58 = h14_own14; h14_own14 = t42; hero_str_decref(t58); t43 = HERO_STR_LIT(hero_str_2e); t44 = hero_str_concat(t42, t43); t59 = h15_own15; h15_own15 = t44; hero_str_decref(t59); t45 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t45, &t44); t60 = h16_own16; h16_own16 = t45; hero_array_decref(t60); t46 = h6_picked; hero_array_incref(t45); h_game_0Game_retain(&t46); t47 = (h_game_Turn){.f_said = t45, .f_next = t46}; t61 = h17_own17; h17_own17 = t47; h_game_0Turn_release(&t61); h7_ret0 = t47; goto bb9; bb5:
-#line 105
-    t15 = h1_g.f_taken; t16 = h3_room.f_item; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.take", 105, 36}; HERO_NODEBUG const void *found = hero_map_find_at(t15, &t16, &hero_here); if (found == NULL) { t17 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t17 = (h_0opt_473cb9ae){.tag = INT64_C(0)}; (&hero_desc_bool)->copy(&t17.as.ok, found); } } t62 = h18_own18; h18_own18 = t17; h_0opt_473cb9ae_release(&t62); t63 = h5_f0; h_0opt_473cb9ae_retain(&t17); h5_f0 = t17; h_0opt_473cb9ae_release(&t63); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(1); t21 = t19 == t20; t22 = !t21; h4_b0 = t22; goto bb6; bb6: t23 = h4_b0; if (t23) goto bb7; else goto bb8; bb7:
+#line 106
+    t15 = h1_g.f_taken; t16 = h3_room.f_item; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.take", 106, 36}; HERO_NODEBUG const void *found = hero_map_find_at(t15, &t16, &hero_here); if (found == NULL) { t17 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t17 = (h_0opt_473cb9ae){.tag = INT64_C(0)}; (&hero_desc_bool)->copy(&t17.as.ok, found); } } t62 = h18_own18; h18_own18 = t17; h_0opt_473cb9ae_release(&t62); t63 = h5_f0; h_0opt_473cb9ae_retain(&t17); h5_f0 = t17; h_0opt_473cb9ae_release(&t63); t18 = h5_f0; t19 = t18.tag; t20 = INT64_C(1); t21 = t19 == t20; t22 = !t21; h4_b0 = t22; goto bb6; bb6: t23 = h4_b0; if (t23) goto bb7; else goto bb8; bb7:
     t24 = h1_g; t25 = HERO_STR_LIT(hero_str_247d54f0); t26 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t26, &t25); t64 = h19_own19; h19_own19 = t26; hero_array_decref(t64); t27 = h_game_same(t24, t26); t65 = h20_own20; h20_own20 = t27; h_game_0Turn_release(&t65); h7_ret0 = t27; goto bb9; bb8: goto bb4; bb9:
 #line 824 "main.c"
     t48 = h7_ret0;
@@ -843,10 +843,10 @@ h_game_Turn h_game_take(h_world_World h0_w, h_game_Game h1_g) { HERO_NODEBUG h_0
     return t48;
 }
 
-#line 116 "examples/adventure/game.hero"
+#line 117 "examples/adventure/game.hero"
 HeroMapHeader * h_game_with_taken(HeroMapHeader * h0_taken, HeroStr h1_item) { HeroMapHeader * h2_out = {0}; HERO_NODEBUG HeroMapHeader *t1, *t4, *t5; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_taken; t5 = h2_out; hero_map_incref(t1); h2_out = t1; hero_map_decref(t5);
-    t2 = h1_item; t3 = true; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.with_taken", 118, 5}; hero_map_set_at(&(h2_out), &t2, &t3, &hero_here); }
+    t2 = h1_item; t3 = true; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.with_taken", 119, 5}; hero_map_set_at(&(h2_out), &t2, &t3, &hero_here); }
     t4 = h2_out;
 #line 852 "main.c"
     hero_map_incref(t4);
@@ -854,12 +854,12 @@ HeroMapHeader * h_game_with_taken(HeroMapHeader * h0_taken, HeroStr h1_item) { H
     return t4;
 }
 
-#line 121 "examples/adventure/game.hero"
+#line 122 "examples/adventure/game.hero"
 HeroStr h_game_bag_of(h_game_Game h0_g) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t5, t6, t9, t10, t11, t12, t13, t14, t16, t17, t18; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t7, *t8, *t15; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g.f_carrying; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 125
+    t6 = HERO_STR_LIT(hero_str_4e1f4eec); t7 = h0_g.f_carrying; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.bag_of", 125, 40}; t8 = hero_array_sort_at(t7, &hero_here); } t15 = h2_own2; h2_own2 = t8; hero_array_decref(t15); t9 = HERO_STR_LIT(hero_str_16a4); t10 = hero_str_join(t8, t9); t16 = h3_own3; h3_own3 = t10; hero_str_decref(t16); t11 = hero_str_concat(t6, t10); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); t12 = HERO_STR_LIT(hero_str_2e); t13 = hero_str_concat(t11, t12); t18 = h5_own5; h5_own5 = t13; hero_str_decref(t18); h1_ret0 = t13; goto bb4; bb2:
 #line 124
-    t6 = HERO_STR_LIT(hero_str_4e1f4eec); t7 = h0_g.f_carrying; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"game.hero", "game.bag_of", 124, 40}; t8 = hero_array_sort_at(t7, &hero_here); } t15 = h2_own2; h2_own2 = t8; hero_array_decref(t15); t9 = HERO_STR_LIT(hero_str_16a4); t10 = hero_str_join(t8, t9); t16 = h3_own3; h3_own3 = t10; hero_str_decref(t16); t11 = hero_str_concat(t6, t10); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); t12 = HERO_STR_LIT(hero_str_2e); t13 = hero_str_concat(t11, t12); t18 = h5_own5; h5_own5 = t13; hero_str_decref(t18); h1_ret0 = t13; goto bb4; bb2:
-#line 123
     t5 = HERO_STR_LIT(hero_str_47c407bd); h1_ret0 = t5; goto bb4; bb3: goto bb1; bb4:
 #line 865 "main.c"
     t14 = h1_ret0;
@@ -871,24 +871,24 @@ HeroStr h_game_bag_of(h_game_Game h0_g) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h3
     return t14;
 }
 
-#line 128 "examples/adventure/game.hero"
+#line 129 "examples/adventure/game.hero"
 h_game_Turn h_game_open(h_game_Game h0_g) { h_game_Game h1_won = {0}; HERO_NODEBUG h_game_Turn h2_ret0 = {0}, h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, t7, t15, t27, t28, t30, t34, t36; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h6_own6 = {0}, *h8_own8 = {0}, *t6, *t14, *t17, *t25, *t29, *t33, *t35; HERO_NODEBUG h_game_Game h5_own5 = {0}, t4, t8, t12, t23, t26, t31, t32; HERO_NODEBUG HeroStr t1, t2, t5, t9, t13, t16, t24; HERO_NODEBUG bool t3, t10, t11, t22; HERO_NODEBUG HeroMapHeader *t18; HERO_NODEBUG int64_t t19, t20, t21; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_g.f_here; t2 = HERO_STR_LIT(hero_str_24704bf6); t3 = !hero_str_eq(t1, t2); if (t3) goto bb2; else goto bb3; bb1:
-#line 132
+#line 133
     t8 = h0_g; t9 = HERO_STR_LIT(hero_str_1c38eb); t10 = h_game_carrying(t8, t9); t11 = !t10; if (t11) goto bb5; else goto bb6; bb2:
-#line 130
+#line 131
     t4 = h0_g; t5 = HERO_STR_LIT(hero_str_6b9a179b); t6 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t6, &t5); t29 = h3_own3; h3_own3 = t6; hero_array_decref(t29); t7 = h_game_same(t4, t6); t30 = h4_own4; h4_own4 = t7; h_game_0Turn_release(&t30); h2_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
-#line 135
+#line 136
     t16 = h0_g.f_here;
     t17 = h0_g.f_carrying;
     t18 = h0_g.f_taken;
-    t19 = h0_g.f_moves; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("game.hero", "game.open", 138, 16);
+    t19 = h0_g.f_moves; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("game.hero", "game.open", 139, 16);
     t22 = true;
-#line 134
+#line 135
     hero_str_incref(t16); hero_array_incref(t17); hero_map_incref(t18); t23 = (h_game_Game){.f_here = t16, .f_carrying = t17, .f_taken = t18, .f_moves = t21, .f_won = t22}; t31 = h5_own5; h5_own5 = t23; h_game_0Game_release(&t31); t32 = h1_won; h_game_0Game_retain(&t23); h1_won = t23; h_game_0Game_release(&t32);
-#line 141
+#line 142
     t24 = HERO_STR_LIT(hero_str_403631d2); t25 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t25, &t24); t33 = h6_own6; h6_own6 = t25; hero_array_decref(t33); t26 = h1_won; hero_array_incref(t25); h_game_0Game_retain(&t26); t27 = (h_game_Turn){.f_said = t25, .f_next = t26}; t34 = h7_own7; h7_own7 = t27; h_game_0Turn_release(&t34); h2_ret0 = t27; goto bb7; bb5:
-#line 133
+#line 134
     t12 = h0_g; t13 = HERO_STR_LIT(hero_str_2c86d9cb); t14 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t14, &t13); t35 = h8_own8; h8_own8 = t14; hero_array_decref(t35); t15 = h_game_same(t12, t14); t36 = h9_own9; h9_own9 = t15; h_game_0Turn_release(&t36); h2_ret0 = t15; goto bb7; bb6: goto bb4; bb7:
 #line 894 "main.c"
     t28 = h2_ret0;
@@ -904,18 +904,18 @@ h_game_Turn h_game_open(h_game_Game h0_g) { h_game_Game h1_won = {0}; HERO_NODEB
     return t28;
 }
 
-#line 145 "examples/adventure/game.hero"
+#line 146 "examples/adventure/game.hero"
 h_game_Turn h_game_play_all(h_world_World h0_w, HeroArrayHeader * h1_lines) { h_game_Game h2_g = {0}; HeroArrayHeader * h3_said = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h8_xs1 = {0}, *h12_own12 = {0}, *t3, *t4, *t7, *t10, *t17, *t20, *t23, *t36, *t41, *t42, *t43, *t47; HERO_NODEBUG int64_t h5_i0, h9_i1, t5, t6, t8, t11, t18, t19, t21, t24, t29, t30, t31, t33, t34, t35; HeroStr h6_line = {0}; h_game_Turn h7_turn = {0}; HeroStr h10_one = {0}; HERO_NODEBUG h_game_Game h11_own11 = {0}, t2, t14, t32, t37, t39, t40, t50; HERO_NODEBUG h_game_Turn h13_own13 = {0}, h14_own14 = {0}, t16, t38, t45, t46, t48; HERO_NODEBUG h_world_World t1, t13; HERO_NODEBUG bool t9, t22; HERO_NODEBUG HeroStr t12, t15, t25, t27, t44, t49; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_w; t2 = h_game_begin(t1); t39 = h11_own11; h11_own11 = t2; h_game_0Game_release(&t39); t40 = h2_g; h_game_0Game_retain(&t2); h2_g = t2; h_game_0Game_release(&t40);
     t3 = hero_array_new(&hero_desc_str, 1); t41 = h12_own12; h12_own12 = t3; hero_array_decref(t41); t42 = h3_said; hero_array_incref(t3); h3_said = t3; hero_array_decref(t42);
-#line 149
-    t4 = h1_lines; t43 = h4_xs0; hero_array_incref(t4); h4_xs0 = t4; hero_array_decref(t43); t5 = INT64_C(0); h5_i0 = t5; goto bb1; bb1: t6 = h5_i0; t7 = h4_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h4_xs0; t11 = h5_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "game.hero", "game.play_all", 149, 9) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t44 = h6_line; hero_str_incref(t12); h6_line = t12; hero_str_decref(t44);
+#line 150
+    t4 = h1_lines; t43 = h4_xs0; hero_array_incref(t4); h4_xs0 = t4; hero_array_decref(t43); t5 = INT64_C(0); h5_i0 = t5; goto bb1; bb1: t6 = h5_i0; t7 = h4_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h4_xs0; t11 = h5_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "game.hero", "game.play_all", 150, 9) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t44 = h6_line; hero_str_incref(t12); h6_line = t12; hero_str_decref(t44);
     t13 = h0_w; t14 = h2_g; t15 = h6_line; t16 = h_game_play(t13, t14, t15); t45 = h13_own13; h13_own13 = t16; h_game_0Turn_release(&t45); t46 = h7_turn; h_game_0Turn_retain(&t16); h7_turn = t16; h_game_0Turn_release(&t46);
-#line 152
+#line 153
     t17 = h7_turn.f_said; t47 = h8_xs1; hero_array_incref(t17); h8_xs1 = t17; hero_array_decref(t47); t18 = INT64_C(0); h9_i1 = t18; goto bb5; bb3:
-#line 149
-    t33 = h5_i0; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("game.hero", "game.play_all", 149, 9); h5_i0 = t35; goto bb1; bb4:
-#line 157
+#line 150
+    t33 = h5_i0; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("game.hero", "game.play_all", 150, 9); h5_i0 = t35; goto bb1; bb4:
+#line 158
     t36 = h3_said; t37 = h2_g; hero_array_incref(t36); h_game_0Game_retain(&t37); t38 = (h_game_Turn){.f_said = t36, .f_next = t37}; t48 = h14_own14; h14_own14 = t38; h_game_0Turn_release(&t48);
 #line 921 "main.c"
     h_game_0Turn_retain(&t38);
@@ -932,12 +932,12 @@ h_game_Turn h_game_play_all(h_world_World h0_w, HeroArrayHeader * h1_lines) { h_
     h_game_0Turn_release(hero_slot_escape(&h14_own14));
     return t38;
 bb5:
-#line 152 "examples/adventure/game.hero"
-    t19 = h9_i1; t20 = h8_xs1; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); t22 = t19 < t21; if (t22) goto bb6; else goto bb8; bb6: t23 = h8_xs1; t24 = h9_i1; t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "game.hero", "game.play_all", 152, 13) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t24]); t49 = h10_one; hero_str_incref(t25); h10_one = t25; hero_str_decref(t49);
+#line 153 "examples/adventure/game.hero"
+    t19 = h9_i1; t20 = h8_xs1; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); t22 = t19 < t21; if (t22) goto bb6; else goto bb8; bb6: t23 = h8_xs1; t24 = h9_i1; t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "game.hero", "game.play_all", 153, 13) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t24]); t49 = h10_one; hero_str_incref(t25); h10_one = t25; hero_str_decref(t49);
     t27 = h10_one; hero_array_push_owned(&h3_said, &t27); goto bb7; bb7:
-#line 152
-    t29 = h9_i1; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("game.hero", "game.play_all", 152, 13); h9_i1 = t31; goto bb5; bb8:
-#line 155
+#line 153
+    t29 = h9_i1; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("game.hero", "game.play_all", 153, 13); h9_i1 = t31; goto bb5; bb8:
+#line 156
     t32 = h7_turn.f_next; t50 = h2_g; h_game_0Game_retain(&t32); h2_g = t32; h_game_0Game_release(&t50); goto bb3;
 #line 943 "main.c"
 }
@@ -1121,7 +1121,7 @@ bb14:
 #line 1122 "main.c"
 }
 
-#line 17 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings/internal/scan.hero"
+#line 17 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) { uint8_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, h10_b5, h11_b6, h12_b7, h13_b8, h14_b9, h15_b10, h16_b11, h17_b12, h18_b13, h19_b14, t6, t9, t12, t13, t14, t18, t24, t31, t38, t39, t40, t48, t62, t65, t66, t69, t70, t74, t77, t78, t81, t84, t85, t88, t89, t92, t93, t94, t98, t101, t102, t105, t106, t110, t113, t114, t117, t118; uint8_t h7_second; uint8_t h8_third; HERO_NODEBUG int64_t h20_ret0, t2, t15, t19, t20, t21, t23, t26, t27, t28, t33, t34, t35, t41, t42, t43, t44, t45, t47, t49, t51, t52, t53, t56, t57, t58, t71, t95, t107, t119, t120, t121; HERO_NODEBUG HeroStr t1, t22, t25, t32, t46, t50, t55; HERO_NODEBUG uint8_t t3, t4, t5, t7, t8, t10, t11, t16, t17, t29, t30, t36, t37, t54, t59, t60, t61, t63, t64, t67, t68, t72, t73, t75, t76, t79, t80, t82, t83, t86, t87, t90, t91, t96, t97, t99, t100, t103, t104, t108, t109, t111, t112, t115, t116; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = h1_at; t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? hero_panic_byte_at(t1, t2, "<core>/strings/internal/scan.hero", "scan.space_width_at", 18, 13) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]); h2_first = t3;
 #line 20
@@ -1172,7 +1172,7 @@ int64_t h_1corestringsinternalscan_space_width_at(HeroStr h0_s, int64_t h1_at) {
     return t121;
 }
 
-#line 48 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings/internal/scan.hero"
+#line 48 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings/internal/scan.hero"
 int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_end) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t4, *t7, *t10, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_ret0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t14, t15, t16, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30, t31; int64_t h4_width; HERO_NODEBUG bool h5_b0, t9, t17, t24, t25; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t32 = h7_own7; h7_own7 = t4; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t33); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "<core>/strings/internal/scan.hero", "scan.space_width_before", 49, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_width = t12;
     t13 = h1_end; t14 = h4_width; if (__builtin_sub_overflow(t13, t14, &t15)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.space_width_before", 50, 12); t16 = INT64_C(0); t17 = t15 >= t16; h5_b0 = t17; if (t17) goto bb6; else goto bb7; bb3:
@@ -1190,7 +1190,7 @@ int64_t h_1corestringsinternalscan_space_width_before(HeroStr h0_s, int64_t h1_e
     return t31;
 }
 
-#line 57 "examples/adventure/heroes.packages/core@0.1.0-db7f072b4678b0b1/strings/internal/scan.hero"
+#line 57 "examples/adventure/heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strings/internal/scan.hero"
 h_0opt_e201354 h_1corestringsinternalscan_first_at(HeroStr h0_s, HeroStr h1_sep) { int64_t h2_last; int64_t h3_at; int64_t h4_matched; HERO_NODEBUG bool h5_b0, t9, t14, t23, t24, t31, t40; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}, h7_own7 = {0}, h12_own12 = {0}, h18_own18 = {0}, t33, t53, t64, t65, t66, t71, t77; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t1, t3, t12, t15, t20, t29, t37, t41, t42, t43, t45, t46, t47, t48, t49, t50, t51, t52, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t67, t68, t69, t70, t72, t73, t74, t75, t76; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t10, t11, t13, t16, t17, t18, t21, t25, t26, t27, t28, t30, t32, t34, t35, t36, t38, t39, t44; HERO_NODEBUG uint8_t t19, t22; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_s; t2 = hero_str_len(t1); t3 = h1_sep; t4 = hero_str_len(t3); if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow_at("<core>/strings/internal/scan.hero", "scan.first_at", 58, 12); h2_last = t5;
     t6 = INT64_C(0); h3_at = t6; goto bb1; bb1:
@@ -1716,7 +1716,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4119c4dd205577e0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("06080a5f1f150248", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("1corestrings\tstrings\n1corestringsinternalscan\tscan\n");

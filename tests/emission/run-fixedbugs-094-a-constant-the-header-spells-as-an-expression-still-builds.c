@@ -346,7 +346,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6283bcba588298a1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7821e962514608d5", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds\tfixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds\n");

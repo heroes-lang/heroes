@@ -373,7 +373,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("46a1bd97346bb27e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c3fea3f2d2f22b2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2364afieldafteraunionanothermodulesmacrowouldwidenreadsasitsowntheotherway\tfixedbugs-2364-a-field-after-a-union-another-module-s-macro-would-widen-reads-as-its-own-the-other-way\nfixedbugs2364rbox\trbox\nfixedbugs2364thenwide\tthen_wide\n");

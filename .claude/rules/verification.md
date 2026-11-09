@@ -820,6 +820,22 @@ the interaction of two repairs, the later one is redone and the record says so.
 defect's issue is closed by `close`, its `## The repair` ending with the hash
 of the commit that repaired it (`.claude/rules/records.md` § The issues).
 
+**What a gate's reds owe is answered whole, then read once** (author
+instruction 2026-11-09, meant as: *it seems to me you keep running suites
+alone when you could aggregate several things and not run them alone*).
+Given at batch 26's close, whose gate B found four reds and whose
+re-reading went in two passes: the seven suites the first two repairs
+touched with `cache` alone after them, then, once the emissions were
+blessed and the floors raised, nine more with the net's own tests,
+`canonical` and `order` among them a second time; and the site's build
+ran only after both, where it found a figure the reformatting had moved.
+So: every red is answered first, its repair, the blessing it owes, the
+floors the gate told and the site's build where a file it reads moved,
+the last beside the gate rather than after it; then the suites any of
+those touched run once, together, four at a time, `cache` last and alone
+in the same command. No suite is read to check one answer while another
+is still to come.
+
 **CL-054 is discharged at the batch, not per repair**: *run the suite you did
 not expect to move* is what the full net is, and a repair defers it knowingly,
 in writing. **CL-063's half about the sub-step is superseded by this section**;

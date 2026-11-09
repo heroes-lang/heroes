@@ -319,7 +319,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ea131fd3ecb6878", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("343f5ea5378ed8ac", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2286agenericinstancereturnsapartialrecordinplace\tfixedbugs-2286-a-generic-instance-returns-a-partial-record-in-place\n");

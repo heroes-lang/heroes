@@ -366,7 +366,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4850b5354186981d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5deee1dd3a4a0851", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites\tfixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes\n");

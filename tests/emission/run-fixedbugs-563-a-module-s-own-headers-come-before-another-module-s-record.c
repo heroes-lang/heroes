@@ -348,7 +348,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("621f49af204a128e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77bd7657190d82c2", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord\tfixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record\nfixedbugs563narrow\tnarrow\nfixedbugs563wide\twide\n");

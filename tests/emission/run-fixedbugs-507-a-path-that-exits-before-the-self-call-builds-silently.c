@@ -257,7 +257,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2873b6fd41c72cc2", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e11e3a53a8a9cf6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs507apaththatexitsbeforetheselfcallbuildssilently\tfixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently\n");

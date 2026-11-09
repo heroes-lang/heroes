@@ -182,11 +182,11 @@ void h_fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("a")
 #undef a
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2354_el, a), sizeof(((struct fixedbugs_2354_el *)0)->a), (0) + 1, 1};
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2354_el, a), sizeof(((struct fixedbugs_2354_el *)0)->a)};
 #pragma pop_macro("a")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 6];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static size_t hero_pad_m_0[2];
+__attribute__((unused)) static size_t hero_pad_m_0[4];
 __attribute__((unused)) static size_t hero_pad_mn_0;
 #pragma push_macro("a")
 #undef a
@@ -201,15 +201,14 @@ __attribute__((unused)) static const size_t hero_pad_t_1[] = {__builtin_offsetof
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
-    hero_pad_n_0 = hero_pad_gaps(sizeof(struct fixedbugs_2354_el), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct fixedbugs_2354_array), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     {
         struct fixedbugs_2354_el *const hero_pad_o = (struct fixedbugs_2354_el *)hero_pad_object(sizeof(struct fixedbugs_2354_el));
     #pragma push_macro("b")
     #undef b
-        hero_pad_o->b--;
+        hero_pad_o->b = 0; hero_pad_o->b--;
     #pragma pop_macro("b")
-        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 1, hero_pad_o, sizeof(struct fixedbugs_2354_el), hero_pad_m_0, 1);
+        hero_pad_n_0 = hero_pad_bits(sizeof(struct fixedbugs_2354_el), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_o, hero_pad_g_0, hero_pad_m_0, 2, &hero_pad_mn_0);
         hero_pad_object_give(hero_pad_o);
     }
 }
@@ -227,7 +226,7 @@ __attribute__((__noinline__)) void h_fixedbugs2354bitfieldsinanarrayofrecordspas
     t2 = INT64_C(7); t3 = *(struct fixedbugs_2354_array *)__builtin_memset(&t3, 0, sizeof t3); __builtin_memset(&t3, 0, sizeof t3); t3.a = t2; h0_held = t3; hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_m_0, hero_pad_mn_0); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.hero", "fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.main", 19, 5}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_array_dirty", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_m_0, hero_pad_mn_0); } (void)fixedbugs_2354_array_dirty(&h0_held); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.hero", "fixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept.main", 20, 11}; hero_lend_local_name(hero_lend_h0_held, "fixedbugs_2354_array_check", "p"); hero_pad_fill(&h0_held, sizeof(struct fixedbugs_2354_array), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_g_0, hero_pad_n_0); hero_pad_clear((unsigned char *)(&h0_held) + hero_pad_k0 * sizeof(struct fixedbugs_2354_array) + __builtin_offsetof(struct fixedbugs_2354_array, e), sizeof(struct fixedbugs_2354_el), sizeof(((struct fixedbugs_2354_array *)0)->e) / sizeof(struct fixedbugs_2354_el), hero_pad_m_0, hero_pad_mn_0); } t4 = fixedbugs_2354_array_check(&h0_held); } hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_held); hero_frame_give(hero_big_t3); return;
-#line 231 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
+#line 230 "fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept.c"
 }
 #undef h0_held
 #undef t3
@@ -344,7 +343,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("28e99d2a11d20eb7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3e87c9d20a957eeb", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2354bitfieldsinanarrayofrecordspasteverystackarekept\tfixedbugs-2354-bit-fields-in-an-array-of-records-past-every-stack-are-kept\n");

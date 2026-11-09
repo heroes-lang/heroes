@@ -512,7 +512,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("35be796022b2aae4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4b5ca6081b761b18", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2316apartialrecordinanoptionreturnedpastanearlyquestionmarkruns\tfixedbugs-2316-a-partial-record-in-an-option-returned-past-an-early-question-mark-runs\n");

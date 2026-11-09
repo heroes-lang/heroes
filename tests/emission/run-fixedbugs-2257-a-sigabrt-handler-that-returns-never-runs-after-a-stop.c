@@ -428,7 +428,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("45ab96e8624eec0b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b49c3905b125c3f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs2257asigabrthandlerthatreturnsneverrunsafterastop\tfixedbugs-2257-a-sigabrt-handler-that-returns-never-runs-after-a-stop\n");

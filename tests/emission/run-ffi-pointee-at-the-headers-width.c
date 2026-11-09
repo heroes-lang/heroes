@@ -286,7 +286,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("69f5e4714774d5c6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7f941119403845fa", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffipointeeattheheaderswidth\tffi-pointee-at-the-headers-width\n");

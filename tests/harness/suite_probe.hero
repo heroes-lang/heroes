@@ -192,10 +192,13 @@ function trees() -> [Tree]
     # `examples/` for the repository's root, its four `.hero` files with it:
     # 4 seeds and 36 variants, measured by `heroes probe packages --family
     # multi` that day, the four the examples row stopped reading.
+    # The tests row raised 2026-11-09 at batch 26's gate, to what the suite
+    # asked: 2332 seeds and 20988 variants, past 1798 and 16182 by more than a
+    # quarter, the `.hero` files added under `tests/` since 2026-10-20.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
-        Tree(name: "tests, multi", root: "tests", seeds: 1798, floor: Floor(family: "multi", generated: 16182, parsing: 16182), known: none)
+        Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 159, floor: Floor(family: "multi", generated: 1431, parsing: 1431), known: none)
         Tree(name: "packages, multi", root: "packages", seeds: 4, floor: Floor(family: "multi", generated: 36, parsing: 36), known: none)
     ]

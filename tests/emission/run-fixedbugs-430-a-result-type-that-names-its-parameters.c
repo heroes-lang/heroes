@@ -377,7 +377,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1f05d42b15d475c4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("34a400d30e97e5f8", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs430aresulttypethatnamesitsparameters\tfixedbugs-430-a-result-type-that-names-its-parameters\n");

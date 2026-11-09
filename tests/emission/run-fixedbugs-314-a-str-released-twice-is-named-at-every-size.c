@@ -271,7 +271,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7afa23534d93e396", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("10984ffc465753ca", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs314astrreleasedtwiceisnamedateverysize\tfixedbugs-314-a-str-released-twice-is-named-at-every-size\n");
