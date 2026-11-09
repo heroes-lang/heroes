@@ -1,0 +1,4 @@
+# The catalogue of defect 2368's case beside it: one package of the author's
+# own, read from a folder, the mark `<core>` any entry's.
+[dependencies.core]
+path = "vendor/core"

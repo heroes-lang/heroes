@@ -1,0 +1,17 @@
+# Fixed defect 2368, 2026-11-09, lane b26-misc, a shape beside it: in the
+# package `core`'s own file, `use zeta` beside `use text/zeta`, both binding
+# `zeta`; the file is the package's, so the error stands there.
+#
+# SYMPTOM: the line told was `use zeta`, with `fix (guess): write
+# `use <core>/zeta as <core>_zeta``: a line the file never wrote, and an
+# alias that is no name. Which line is told asked whether a fix could repair
+# it of the module's name in the compilation, `<core>/zeta`, whose closed-up
+# form was not `zeta`.
+#
+# FIX: both ask the path the line writes. `use zeta` could take no `as` that
+# changes its name, so `use text/zeta` is told, offered
+# `use text/zeta as text_zeta`.
+use <core>/strings
+
+function main()
+    print(strings.hello())

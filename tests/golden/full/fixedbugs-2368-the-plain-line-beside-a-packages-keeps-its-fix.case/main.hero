@@ -1,0 +1,19 @@
+# Fixed defect 2368, 2026-11-09, lane b26-misc, the issue's own reproducer
+# (lane b26-fmt's, on a copy of `examples/todo`'s catalogue; here a `path`
+# entry, whose module carries the same mark): `use other/strings` beside
+# `use <core>/strings`, both binding `strings`.
+#
+# SYMPTOM, as lane b26-fmt measured it on the trunk's compiler before defect
+# 2367's repair: the package's line was told, with `fix (guess): write
+# `use <core>/strings as <core>_strings``, no name. Read in the key's order
+# and by which line a fix can repair, the plain line is told, and its fix was
+# already a name on this lane's base.
+#
+# FIX: it keeps it, `other_strings`; the package's line, were it told, would
+# be offered `core_strings`.
+use <core>/strings
+
+use other/strings  #~ module_binding_taken
+
+function main()
+    print(strings.hello())

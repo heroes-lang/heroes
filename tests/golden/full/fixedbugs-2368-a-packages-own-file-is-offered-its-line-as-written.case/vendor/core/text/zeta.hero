@@ -1,0 +1,5 @@
+# A module of defect 2368's cases, the package `core`'s nested `text/zeta`,
+# of its root `zeta`'s last part.
+
+function z() -> str
+    return "text z"

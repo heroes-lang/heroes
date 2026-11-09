@@ -1,0 +1,4 @@
+# A module of defect 2368's cases, the package `json`'s `strings`, of the same last part.
+
+function hello() -> str
+    return "json"

@@ -1,0 +1,16 @@
+# Fixed defect 2368, 2026-11-09, lane b26-misc, a shape beside it: a
+# package's line that already has an `as`, `use <core>/strings as strings`,
+# beside the program's `use other/strings`, both binding `strings`. The line
+# with the `as` is the one told (defect 2367), and its fix renames the alias.
+#
+# SYMPTOM: told with `fix (guess): write `use <core>/strings as
+# <core>_strings``, whose replacement `<core>_strings` is no name.
+#
+# FIX: the alias is `core_strings`, the package's entry and its path, which
+# the parser reads after `as`.
+use <core>/strings as strings  #~ module_binding_taken
+
+use other/strings
+
+function main()
+    print(strings.hello())

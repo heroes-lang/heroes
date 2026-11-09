@@ -19,6 +19,7 @@
 # entries, and the diagnostic order is the driver's sort anyway.
 
 use ast
+use module/binding_taken
 use module/diagnostics
 use module/placed
 use parse
@@ -143,16 +144,16 @@ function read_uses(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses
 # repair, a path of one part and no `as` (`module_binding_taken`'s own rule:
 # a fix only where it changes something); 1 where the fix would write an
 # `as`; 2 where the line has one.
+#
+# **Asked of the path the line writes, as the fix is** (defect 2368): the
+# module's identity in a package's own file is `<core>/zeta` for `use zeta`,
+# whose closed-up form differed from `zeta`, so that line was read second
+# beside `use text/zeta` and told with a fix renaming it `<core>_zeta`.
 function repair_pass(s: source.Source, used: ast.Use) -> i64
     if used.binding.end != used.name.end
         return 2
-    named = placed.identity(
-        s.reached.aliases,
-        from: source.module_at(s, used.span.start),
-        named: source.span_text(s, used.name)
-    )
 
-    if diagnostics.suggestion(named) != source.span_text(s, used.binding)
+    if binding_taken.alias_for(written: source.span_text(s, used.name), binding: source.span_text(s, used.binding)) != ""
         return 1
     return 0
 
@@ -192,7 +193,7 @@ function read_use(@r: state.Resolver, s: source.Source, decls: [ast.Decl], used:
     if !taken.is_err()
         state.push_diagnostic(
             @r,
-            diagnostics.module_binding_taken(binding: binding, first: taken.must(), second: named, has_alias: used.binding.end != used.name.end, span: used.binding)
+            binding_taken.module_binding_taken(binding: binding, first: taken.must(), second: named, written: source.span_text(s, used.name), has_alias: used.binding.end != used.name.end, span: used.binding)
         )
         return
     already = resolved.top_in(r.out, module: from, name: binding)
@@ -460,6 +461,41 @@ test "of two lines binding one name, the one a fix can repair is told, in either
         assert told_of(pair[0]) == [pair[2]]
         assert told_of(pair[1]) == [pair[2]]
 
+# Defect 2368, 2026-11-09: the line told keeps the rule above when a package's
+# module is one of the two, and its fix writes a name. In a package's own file
+# a bare `use zeta` is the module `<core>/zeta`, whose closed-up form
+# `<core>_zeta` was not its binding, so that line was read second beside
+# `use text/zeta` and told with a fix renaming it `<core>_zeta`; two packages'
+# modules of one last part were offered `<json>_strings`.
+test "a package's module beside another of its last part: the line a fix can repair is told, its alias a name"
+    inside = [
+        ["use zeta\nuse text/zeta\n", "use text/zeta\nuse zeta\n", "text/zeta: zeta as text_zeta"]
+        ["use other/zeta\nuse text/zeta\n", "use text/zeta\nuse other/zeta\n", "text/zeta: zeta as text_zeta"]
+    ]
+
+    for pair in inside
+        assert told(files: packaged(head: "use <core>/strings\n", inner: pair[0])) == [pair[2]]
+        assert told(files: packaged(head: "use <core>/strings\n", inner: pair[1])) == [pair[2]]
+
+    assert told(files: packaged(head: "use <core>/strings\nuse <json>/strings\n", inner: "")) == ["<json>/strings: strings as json_strings"]
+    assert told(files: packaged(head: "use <json>/strings\nuse <core>/strings\n", inner: "")) == ["<json>/strings: strings as json_strings"]
+    assert told(files: packaged(head: "use <core>/strings as strings\nuse other/strings\n", inner: "")) == ["<core>/strings: core_strings"]
+
+# A program whose root `use`s `head` and whose package `core`'s `strings` uses
+# `inner`, with the modules both name: `core`'s `zeta`, `text/zeta` and
+# `other/zeta`, `json`'s `strings`, and the program's `other/strings`.
+function packaged(head: str, inner: str) -> [source.InputFile]
+    body = "function three() -> i64\n    return 3\n"
+    return [
+        source.InputFile(name: "main.hero", module: "main", text: head + "\nfunction main()\n    print(strings.two())\n", is_library: false)
+        source.InputFile(name: "core/strings.hero", module: "<core>/strings", text: inner + "\nfunction two() -> i64\n    return zeta.three()\n", is_library: false)
+        source.InputFile(name: "core/zeta.hero", module: "<core>/zeta", text: body, is_library: false)
+        source.InputFile(name: "core/text/zeta.hero", module: "<core>/text/zeta", text: body, is_library: false)
+        source.InputFile(name: "core/other/zeta.hero", module: "<core>/other/zeta", text: body, is_library: false)
+        source.InputFile(name: "json/strings.hero", module: "<json>/strings", text: body, is_library: false)
+        source.InputFile(name: "other/strings.hero", module: "other/strings", text: body, is_library: false)
+    ]
+
 # Each line `module_binding_taken` tells of the root `head`, as its path and the
 # replacement its fix writes, `no fix` where it offers none.
 function told_of(head: str) -> [str]
@@ -469,6 +505,11 @@ function told_of(head: str) -> [str]
         source.InputFile(name: "lib/beta.hero", module: "lib/beta", text: "function three() -> i64\n    return 3\n", is_library: false)
         source.InputFile(name: "other/zeta.hero", module: "other/zeta", text: "function three() -> i64\n    return 3\n", is_library: false)
     ]
+    return told(files: files)
+
+# Each line `module_binding_taken` tells of `files`, as its path and the
+# replacement its fix writes, `no fix` where it offers none.
+function told(files: [source.InputFile]) -> [str]
     s = source.from_files(files)
     p = parse.parse(s.text)
     r: state.Resolver @= state.new_resolver(

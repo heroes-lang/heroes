@@ -1,0 +1,4 @@
+# A module of defect 2368's cases, the package `core`'s `strings`.
+
+function hello() -> str
+    return "core"

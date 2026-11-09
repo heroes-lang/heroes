@@ -1,0 +1,4 @@
+# A module of defect 2368's cases, the program's own `other/strings`, of the package module's last part.
+
+function hello() -> str
+    return "mine"

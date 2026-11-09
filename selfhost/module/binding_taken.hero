@@ -1,0 +1,211 @@
+# Two `use` lines of one file that bind one name, and the alias that repairs
+# the line told (panel 100 R3; spec § Files and layout).
+#
+# Out of `module/diagnostics.hero` since defect 2368, along the seam the
+# diagnostic already had: it is the one module diagnostic whose repair is
+# built from the line's own path, and that repair grew a rule of its own, the
+# alias of a package's module, past the ceiling of the file it lived in
+# (CLAUDE.md §11). `resolve/top.hero` asks it twice: `alias_for`, to read
+# first a line no fix could repair (defect 2367), and `module_binding_taken`,
+# to tell the line read later.
+#
+# **Two names for one module, and the fix wants the second.** The compilation
+# calls a module by its identity (`placed.identity`): `<core>/strings`, and in
+# a package's own file `<json>/text/strs` for the line `use text/strs`. The
+# message names the identity, which is what the clash is between; the fix
+# names the path the line WRITES, the only text an author can rename, and
+# builds its alias from that.
+
+use diag
+use keywords
+use module/placed
+use module_text
+use token
+
+# `use check/state` beside `use ir/state`: one file, one name, two modules.
+#
+# **Panel 100 R3's diagnostic, and it replaced a program-wide one.** The
+# deleted `module_last_parts_collide` refused the two modules ANYWHERE in a
+# program and put its caret on a module's own first line — a file the author
+# may never have opened, with no repair they could apply there. This one
+# fires on the `use` line that made the name ambiguous, in the file being
+# edited, and its repair is one clause: `as`.
+#
+# `second` is the module in the compilation, which the message names, and
+# `written` the path its line writes, which the fix names and renames.
+function module_binding_taken(binding: str, first: str, second: str, written: str, has_alias: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "module_binding_taken",
+        message: "this file already calls `" + first + "` by the name `" + binding + "`, so `" + second + "` cannot have it too — a file may not bind one name twice",
+        span: span
+    )
+    suggested = alias_for(written: written, binding: binding)
+
+    # **The replacement depends on whether the line ALREADY says `as`, and
+    # getting that wrong shipped a fix that does not parse.** The span is the
+    # binding, so on `use ir/state` it must become `state as ir_state`, and on
+    # `use ir/state as state` it must become just `ir_state` — the first form
+    # applied to the second line gives `as state as ir_state`. Measured by
+    # panel 101's compiler-engineer on the build that had shipped hours
+    # earlier; it was invisible because §8 makes CI apply only `certain` fixes,
+    # and this one is a guess.
+    replacement: str @= binding + " as " + suggested
+
+    if has_alias
+        replacement @ suggested
+
+    if suggested != ""
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `use " + written + " as " + suggested + "`", replacement: replacement, span: span, certainty: .guess)
+        )
+    d.notes @ d.notes.push(
+        "the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently"
+    )
+    return d
+
+# The alias `module_binding_taken`'s fix gives the line whose path is
+# `written` and whose binding is `binding`, or "" where it offers none.
+#
+# **A fix is offered only where it would CHANGE something.** The suggestion
+# closes up a path's separators, so for a path with none — a root module
+# colliding with a nested one's last part — it is the taken name again and
+# `use scale as scale` repairs nothing. Found by the corpus:
+# `examples/shapes/` provoked exactly that while it was being written. The
+# rule is `use_wants_a_name`'s, one department over — a fix that leaves the
+# program where it was is worse than a message with no fix, because the
+# author reads it as the answer.
+#
+# **And only where the alias is a name the parser reads after `as`** (defect
+# 2368): the suggestion kept a package's `<` and `>`, so `use <core>/strings`
+# was offered `as <core>_strings`, which does not parse. The suggestion no
+# longer writes a mark, and this asks the alias itself rather than trusting
+# that: a fix that does not parse is the one thing a fix may never be.
+function alias_for(written: str, binding: str) -> str
+    suggested = suggestion(written)
+
+    if suggested == binding || !module_text.is_one_part(suggested) || !keywords.keyword(suggested).is_err()
+        return ""
+    return suggested
+
+# A name for the module a `use` line writes as `written` that is unlikely to
+# be taken: its path with the separators closed up, which is the same shape
+# its C component already has, and for a package's module the entry's name
+# before its path, the mark left out (defect 2368): `ir/state` is `ir_state`
+# and `<json>/text/strs` is `json_text_strs`. A GUESS rather than a certain
+# fix — the author knows a better word than the compiler does, and §4.17
+# says a certain fix must be the one repair, not the first one that parses.
+#
+# Whether the path is a package's is `placed.hero`'s to say, which every
+# reader of a module name asks.
+function suggestion(written: str) -> str
+    entry = placed.entry_of(written)
+
+    if entry.len() > 0
+        return entry + "_" + closed_up(placed.inside_of(written))
+    return closed_up(written)
+
+# `path` with each `/` written `_`.
+#
+# The path is cut only beside its `/`, one byte that is never inside another
+# character, and never a byte at a time: a module path is identifier text
+# and ASCII today, and the byte-at-a-time spelling is the one that aborted
+# `build` on `f"é {x}"` (defect 110), so it is not kept where nothing but
+# today's lexer stands between it and a character above ASCII.
+function closed_up(path: str) -> str
+    parts: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < path.len()
+        if path[i] == '/'
+            parts @ parts.push(path.slice(from: start, to: i))
+            parts @ parts.push("_")
+            start @ i + 1
+        i @ i + 1
+
+    parts @ parts.push(path.slice(from: start, to: path.len()))
+    return parts.join("")
+
+## Tests
+
+test "a suggested name closes up the path's separators, and keeps every character whole"
+    assert suggestion("ir/state") == "ir_state"
+    assert suggestion("a/b/c") == "a_b_c"
+    assert suggestion("state") == "state"
+    assert suggestion("") == ""
+    assert suggestion("/x/") == "_x_"
+    assert suggestion("café/é€😀") == "café_é€😀"
+
+test "a package's module is named by its entry and its path, the mark left out"
+    # Defect 2368: `<core>_strings` was offered, which is no name.
+    assert suggestion("<core>/strings") == "core_strings"
+    assert suggestion("<json>/text/strs") == "json_text_strs"
+
+    # A mark that never closes, or closes on no path, is no package's module,
+    # and no name either: no reader hands one here, and none is offered.
+    assert alias_for(written: "<core", binding: "core") == ""
+    assert alias_for(written: "<core>", binding: "core") == ""
+
+test "a fix is offered only where its alias is a name and changes something"
+    assert alias_for(written: "other/strings", binding: "strings") == "other_strings"
+    assert alias_for(written: "<core>/strings", binding: "strings") == "core_strings"
+    assert alias_for(written: "<core>/strings", binding: "words") == "core_strings"
+    assert alias_for(written: "zeta", binding: "zeta") == ""
+    assert alias_for(written: "lib/beta", binding: "lib_beta") == ""
+    assert alias_for(written: "café/é", binding: "é") == ""
+
+test "the fix names the line as written, and renames its alias where it has one"
+    span = token.Span(start: 4, end: 11)
+    plain = module_binding_taken(
+        binding: "strings",
+        first: "<core>/strings",
+        second: "other/strings",
+        written: "other/strings",
+        has_alias: false,
+        span: span
+    )
+    assert plain.fixes.len() == 1
+    assert plain.fixes[0].certainty == .guess
+    assert plain.fixes[0].title == "write `use other/strings as other_strings`"
+    assert plain.fixes[0].replacement == "strings as other_strings"
+    bracketed = module_binding_taken(
+        binding: "strings",
+        first: "<core>/strings",
+        second: "<json>/strings",
+        written: "<json>/strings",
+        has_alias: false,
+        span: span
+    )
+    assert bracketed.fixes[0].title == "write `use <json>/strings as json_strings`"
+    assert bracketed.fixes[0].replacement == "strings as json_strings"
+    renamed = module_binding_taken(
+        binding: "strings",
+        first: "other/strings",
+        second: "<core>/strings",
+        written: "<core>/strings",
+        has_alias: true,
+        span: span
+    )
+    assert renamed.fixes[0].replacement == "core_strings"
+
+    # In a package's own file the line writes `text/strs`, which the
+    # compilation calls `<json>/text/strs`: the message names the second and
+    # the fix the first.
+    inside = module_binding_taken(
+        binding: "strs",
+        first: "<json>/other/strs",
+        second: "<json>/text/strs",
+        written: "text/strs",
+        has_alias: false,
+        span: span
+    )
+    assert inside.fixes[0].title == "write `use text/strs as text_strs`"
+    root = module_binding_taken(
+        binding: "zeta",
+        first: "other/zeta",
+        second: "zeta",
+        written: "zeta",
+        has_alias: false,
+        span: span
+    )
+    assert root.fixes.len() == 0
