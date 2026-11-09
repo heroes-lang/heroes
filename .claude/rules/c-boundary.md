@@ -72,6 +72,17 @@ precedent):
 - a `constant` that is not one;
 - a name the header does not have;
 - a symbol the **linker** cannot find because the group named no `link`;
+  and, widened 2026-11-08 by defect 2365 (lane b26-link, with no sitting, on
+  defect 360's precedent: who is blamed moves, the line between accepted and
+  refused does not), a name **a library the program links needs** and
+  nothing on the link line defines, told `ffi_missing_link` at the string of
+  the group whose `link` names that library, or of the package whose answer
+  carried it, the library and every such name named
+  (`cli/library_needs.hero`). The narrowing is the program's own words: every
+  undefined name the linker reports must be referenced from a library a
+  `link` or a package's `-l` names (`cli/link_report.hero` reads who refers
+  to each, in GNU ld's, ld64's and the lld family's words), so a reference
+  from the program's own object stays exit 2;
 - **a `ptr` lend C would write through, rooted at a name the program may not
   write** — added 2026-09-19 (panel 166, defect 065). The lend crosses as
   `const void *` from a `=` binding or a by-value parameter, and clang's own

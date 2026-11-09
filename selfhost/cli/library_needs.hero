@@ -1,0 +1,323 @@
+# A name a library the program links needs and nothing on the link line
+# defines (design.md §4.19, §4.17; defect 2365, 2026-11-08): told at the
+# group whose `link` names that library, or at the package whose answer
+# carried it, as `ffi_missing_link`, the class panel 048 gives a symbol the
+# linker cannot find because no group says which library has it. Until then
+# it was *internal error: linking failed* at exit 2 on every platform: panel
+# 238's `only_top`, a `link "top"` whose `libtop.a` needs `base_helper` of a
+# `libbase.a` the program never names, the author's library blamed on the
+# compiler.
+#
+# **The narrowing is the program's own words, as `ffi_build.missing_library`'s
+# is**: a library this program named, by a `link` or through a package's
+# answer, is the author's business, and only where EVERY undefined name the
+# linker reports is referenced from such a library (`cli/link_report.hero`
+# reads who refers to each) is the refusal told. A reference from one of the
+# program's own objects, from the runtime or from a file the program did not
+# name, or a report nobody can place, leaves the refusal the compiler's, exit
+# 2: a name the C this compiler writes uses and nobody defines is the
+# compiler's defect, as panel 048 ruled.
+#
+# **No fix is offered**, as `ffi_build.missing_link` offers none: the repair
+# is a group naming the library that defines the name, and the compiler does
+# not know which library that is.
+
+use ast
+use diag
+use source
+use token
+use emit/externs as emit_externs
+use cli/libraries
+use cli/link_report
+use cli/package_missing
+use cli/shell_split
+
+# What one library of the program needs: the name the program linked it by,
+# the file the linker read, as the linker named it, and every undefined name
+# it refers to, in the linker's order.
+record Needing
+    name: str
+    file: str
+    symbols: [str]
+
+# The diagnostics for a refused link's `message`, one per library of the
+# program that refers to a name nothing defines; none unless every undefined
+# name it reports is referenced from such a library. `linked` are the
+# packages' flags the link carried, and `build` is where a package is asked
+# again which of them answered a library (`package_missing.answers`).
+function told(message: str, s: source.Source, decls: [ast.Decl], build: str, linked: [str]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    out: [diag.Diagnostic] @= []
+
+    for need in needed(message: message, names: names_of(s, decls: decls, linked: linked))
+        at = told_at(s, decls: decls, need: need, build: build)
+
+        if at.is_err()
+            return none
+        out @ out.push(at.must())
+
+    return out
+
+# Every library name the program's words link: each `link` group's name, then
+# each `-l<name>` among the packages' link words.
+function names_of(s: source.Source, decls: [ast.Decl], linked: [str]) -> [str]
+    names: [str] @= []
+
+    for decl in decls
+        span = group_span(decl, want_package: false)
+
+        if !span.is_err()
+            names @ names.push(emit_externs.unquoted(s, span: span.must()))
+
+    for word in libraries.link_words(linked)
+        named = package_missing.named_library(word)
+
+        if named.len() > 0
+            names @ names.push(named)
+
+    return names
+
+# The string of `decl`'s group's `link`, or of its `package` where
+# `want_package`; an error where it has no group or its group names the other.
+function group_span(decl: ast.Decl, want_package: bool) -> token.Span?
+    group: ast.Library? @= fail(code: "none", msg: "no group")
+
+    match decl.kind
+        .function_decl fd          => group @ fd.value.library
+        .constant_decl k           => group @ k.library
+        .record_decl rec           => group @ rec.library
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no group")
+
+    if group.is_err()
+        return fail(code: "none", msg: "no group")
+
+    match group.must()
+        .link l =>
+            if want_package
+                return fail(code: "none", msg: "a `link` group")
+            return ok(l.name)
+        .package pk =>
+            if !want_package
+                return fail(code: "none", msg: "a package's group")
+            return ok(pk.name)
+
+# The libraries among `names` that `message` reports needing a name nothing
+# defines, in the linker's order; none where any undefined name it reports is
+# referenced from anything else, or from nothing it can place.
+function needed(message: str, names: [str]) -> [Needing]
+    none: [Needing] = []
+    out: [Needing] @= []
+
+    for one in link_report.references(message)
+        name = library_named(file: one.file, names: names)
+
+        if name == "" || one.symbol == ""
+            return none
+        at: i64 @= -1
+
+        for i in range(from: 0, to: out.len())
+            if out[i].name == name
+                at @ i
+
+        if at < 0
+            out @ out.push(Needing(name: name, file: base_of(one.file), symbols: [one.symbol]))
+        else if !holds(names: out[at].symbols, name: one.symbol)
+            out[at].symbols @ out[at].symbols.push(one.symbol)
+
+    return out
+
+# The longest of `names` whose library `file` is, `lib<name>.a`,
+# `lib<name>.so` or `<name>.lib` standing at its end after a path's
+# separator, a space or nothing; "" for none. Each name the program wrote is
+# asked, the file never parsed for one (panel 188's rule for a library's
+# name).
+function library_named(file: str, names: [str]) -> str
+    best: str @= ""
+
+    for name in names
+        if name.len() > best.len() && is_library(file: file, name: name)
+            best @ name
+
+    return best
+
+function is_library(file: str, name: str) -> bool
+    cs = file.chars()
+
+    for whole in ["lib" + name + ".a", "lib" + name + ".so", name + ".lib"]
+        rest = cs.len() - whole.chars().len()
+
+        if rest >= 0 && cs.slice(from: rest, to: cs.len()).join("") == whole
+            if rest == 0 || cs[rest - 1] == "/" || cs[rest - 1] == "\\" || cs[rest - 1] == " "
+                return true
+
+    return false
+
+# A file's last part, after its path's separators and the linker's own
+# words before it: `libtop.a` of `/usr/bin/ld: ./libtop.a`.
+function base_of(file: str) -> str
+    cs = file.chars()
+    start: i64 @= 0
+
+    for i in range(from: 0, to: cs.len())
+        if cs[i] == "/" || cs[i] == "\\" || cs[i] == " "
+            start @ i + 1
+
+    return cs.slice(from: start, to: cs.len()).join("")
+
+# Where `need` is told: at the first group whose `link` names its library, or
+# at the first package whose answer, asked again, carries `-l<name>`; an
+# error where neither does, which leaves the refusal the compiler's.
+function told_at(s: source.Source, decls: [ast.Decl], need: Needing, build: str) -> diag.Diagnostic?
+    for decl in decls
+        span = group_span(decl, want_package: false)
+
+        if !span.is_err() && emit_externs.unquoted(s, span: span.must()) == need.name
+            return ok(linked_told(need, span: span.must()))
+
+    asked: {str: bool} @= {}
+    lacked = package_missing.Lacked(name: need.name, kind: "library", words: ["-l" + need.name], found: true)
+
+    for decl in decls
+        span = group_span(decl, want_package: true)
+
+        if span.is_err()
+            continue
+        package = emit_externs.unquoted(s, span: span.must())
+
+        if asked[package].is_err()
+            asked[package] @ true
+
+            if package_missing.answers(package: package, build: build, lacked: lacked)
+                return ok(answered_told(need, package: package, span: span.must()))
+
+    return fail(code: "none", msg: "no group of the program links " + need.name)
+
+# What is told at a `link` group's string: the library, every name it needs,
+# and the group the author writes for the library that defines them.
+function linked_told(need: Needing, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_missing_link",
+        message: "the library `" + shown(need.name) + "` needs " + listed(need.symbols) + ", and nothing on the link line defines " + pronoun(need.symbols),
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`" + shown(need.file) + "` refers to " + listed(need.symbols) + " without defining " + pronoun(need.symbols) + ", and a library is linked only where a group names it: give this program a group for the library that defines " + pronoun(need.symbols) + " as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    )
+    return d
+
+# What is told at a package's string: the library its answer carried, every
+# name that library needs, and the two ways to name the one that defines them.
+function answered_told(need: Needing, package: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_missing_link",
+        message: "the library `" + shown(need.name) + "`, which the package `" + shown(package) + "` answered with, needs " + listed(need.symbols) + ", and nothing on the link line defines " + pronoun(need.symbols),
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`" + shown(need.file) + "` refers to " + listed(need.symbols) + " without defining " + pronoun(need.symbols) + ", and the package's answer names no library that does: its `.pc` names that library in `Libs`, or a package that has it in `Requires`; or give this program a group of its own for it, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"
+    )
+    return d
+
+# Names as a sentence lists them: `a`, `a` and `b`, `a`, `b` and `c`.
+function listed(names: [str]) -> str
+    parts: [str] @= []
+
+    for i in range(from: 0, to: names.len())
+        if i > 0 && i == names.len() - 1
+            parts @ parts.push(" and ")
+        else if i > 0
+            parts @ parts.push(", ")
+        parts @ parts.push("`" + shown(names[i]) + "`")
+
+    return parts.join("")
+
+function pronoun(names: [str]) -> str
+    if names.len() == 1
+        return "it"
+    return "them"
+
+# A word the linker or `pkg-config` wrote, its control characters by their
+# codes (`shell_split.shown`, defect 237).
+function shown(word: str) -> str
+    return shell_split.shown(word, keep_lines: false)
+
+function holds(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+test "a name a library needs is told with the library, on every linker's report (defect 2365)"
+    both = ["base_helper", "base_two"]
+    gnu = "/usr/bin/ld: a/libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n/usr/bin/ld: a/libtop.a(top.o): in function `top_more':\ntop.c:(.text+0x24): undefined reference to `base_two'\n/usr/bin/ld: top.c:(.text+0x2c): undefined reference to `base_helper'\n"
+    ld64 = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_value in libtop.a[2](top.o)\n      _top_more in libtop.a[2](top.o)\n  \"_base_two\", referenced from:\n      _top_more in libtop.a[2](top.o)\nld: symbol(s) not found for architecture arm64\n"
+    lld = "ld.lld: error: undefined symbol: base_helper\n>>> referenced by top.c\n>>>               top.o:(top_value) in archive a/libtop.a\n\nld.lld: error: undefined symbol: base_two\n>>> referenced by top.c\n>>>               top.o:(top_more) in archive a/libtop.a\n"
+    gnu_shared = "/usr/bin/ld: s/libtop.so: undefined reference to `base_helper'\n/usr/bin/ld: s/libtop.so: undefined reference to `base_two'\n"
+    lld_shared = "ld.lld: error: undefined reference: base_helper\n>>> referenced by s/libtop.so (disallowed by --no-allow-shlib-undefined)\n\nld.lld: error: undefined reference: base_two\n>>> referenced by s/libtop.so (disallowed by --no-allow-shlib-undefined)\n"
+
+    for report in [gnu, ld64, lld, gnu_shared, lld_shared]
+        got = needed(message: report, names: ["top", "base"])
+        assert got.len() == 1
+        assert got[0].name == "top"
+        assert got[0].symbols == both
+
+    assert needed(message: gnu, names: ["top"])[0].file == "libtop.a"
+    assert needed(message: gnu_shared, names: ["top"])[0].file == "libtop.so"
+    windows = needed(
+        message: "lld-link: error: undefined symbol: base_helper\n>>> referenced by top.lib(top.obj):(top_value)\n",
+        names: ["top"]
+    )
+    assert windows.len() == 1 && windows[0].file == "top.lib"
+
+    # Two libraries of the program, each told with its own names.
+    two = needed(
+        message: gnu + "/usr/bin/ld: a/libcli.a(cli.o): in function `run':\ncli.c:(.text+0x4): undefined reference to `net_open'\n",
+        names: ["top", "cli"]
+    )
+    assert two.len() == 2
+    assert two[1].name == "cli" && two[1].symbols == ["net_open"]
+
+    # The words told, at the group and at a package.
+    d = linked_told(
+        Needing(name: "top", file: "libtop.a", symbols: ["base_helper"]),
+        span: token.Span(start: 0, end: 0)
+    )
+    assert d.code == "ffi_missing_link"
+    assert d.message == "the library `top` needs `base_helper`, and nothing on the link line defines it"
+    assert d.notes == ["`libtop.a` refers to `base_helper` without defining it, and a library is linked only where a group names it: give this program a group for the library that defines it as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares"]
+    p = answered_told(
+        Needing(name: "top", file: "libtop.a", symbols: both),
+        package: "ptop",
+        span: token.Span(start: 0, end: 0)
+    )
+    assert p.code == "ffi_missing_link"
+    assert p.message == "the library `top`, which the package `ptop` answered with, needs `base_helper` and `base_two`, and nothing on the link line defines them"
+    assert listed(["a", "b", "c"]) == "`a`, `b` and `c`"
+
+test "a name the program's own object or an unnamed library refers to leaves the refusal the compiler's (defect 2365)"
+    # The program's object refers to `base_helper` too: measured on all three
+    # linkers, each naming the object.
+    gnu = "/usr/bin/ld: /tmp/m3-39b8ed.o: in function `main':\nm3.c:(.text+0x18): undefined reference to `base_helper'\n/usr/bin/ld: a/libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n"
+    ld64 = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _main in m3-f5a527.o\n      _top_value in libtop.a[2](top.o)\n"
+    lld = "ld.lld: error: undefined symbol: base_helper\n>>> referenced by m3.c\n>>>               /tmp/m3-55a8f7.o:(main)\n>>> referenced by top.c\n>>>               top.o:(top_value) in archive a/libtop.a\n"
+    data = "/usr/bin/ld: a/libtop.a(top.o): in function `top_value':\ntop.c:(.text+0x8): undefined reference to `base_helper'\n/usr/bin/ld: /tmp/m-83ddc3.o:(.data+0x0): undefined reference to `main_var'\n"
+
+    for report in [gnu, ld64, lld, data]
+        assert needed(message: report, names: ["top"]).len() == 0
+
+    # A library the program does not name, a name that is another's end, a
+    # name with a space, a report with no reference under its name, and
+    # words that are no report.
+    only = "/usr/bin/ld: a/libtop.a(top.o): in function `f':\ntop.c:(.text+0x8): undefined reference to `g'\n"
+    assert needed(message: only, names: ["base"]).len() == 0
+    assert needed(message: only, names: ["op"]).len() == 0
+    assert needed(message: "/usr/bin/ld: a/libxtop.a(x.o): in function `f':\nx.c:(.text+0x8): undefined reference to `g'\n", names: ["top"]).len() == 0
+    assert library_named(file: "a/libmy lib.a", names: ["my lib", "lib"]) == "my lib"
+    assert library_named(file: "/usr/bin/ld: ./libtop.a", names: ["op", "top"]) == "top"
+    assert needed(message: "lld-link: error: undefined symbol: base_helper\n", names: ["top"]).len() == 0
+    assert needed(message: "ld: library 'top' not found\n", names: ["top"]).len() == 0
+    assert needed(message: "", names: ["top"]).len() == 0
+    assert base_of("/usr/bin/ld: ./libtop.a") == "libtop.a"

@@ -1730,6 +1730,77 @@ test "a package whose -l this machine has no library for is told at its string (
 
     assert !shell.remove_tree(scratch).is_err()
 
+# DEFECT 2365, asked of the compiler itself: a `link` group's library that
+# needs a name nothing on the link line defines, a `libtop2365.a` whose
+# `top_value` calls a `base_helper` no library of the program has, is told
+# at the group's `link` string, `ffi_missing_link` at exit 1, the library and
+# the name named, where every platform's linker ended the build at exit 2 as
+# *internal error: linking failed* (panel 238's `only_top`, measured on this
+# Mac and in the `heroes-linux-arm64` container, 2026-11-08); and the same
+# library carried by a package's answer is told at the package's string. The
+# archive is made by the machine's own `ar`, which stands beside GNU ld and
+# ld64 alike; a machine that runs no script, Windows, is not asked.
+test "a name a linked library needs and nothing defines is told at its group or its package, never as an internal error (defect 2365)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/needs2365"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/top.c", text: "int base_helper(void);\nint top_value(void);\nint top_value(void) { return base_helper() + 1; }\n").is_err()
+    assert !write_file(path: dir + "/top2365.h", text: "int top_value(void);\n").is_err()
+    made = shell.run(
+        scratch: scratch,
+        program: "clang",
+        words: ["clang", "-c", "-fPIC", dir + "/top.c", "-o", dir + "/top.o"]
+    ).must()
+    assert made.err == ""
+    assert made.code == 0
+    archived = shell.run(
+        scratch: scratch,
+        program: "ar",
+        words: ["ar", "rcs", dir + "/libtop2365.a", dir + "/top.o"]
+    ).must()
+    assert archived.code == 0
+    linked = dir + "/linked.hero"
+    assert !write_file(path: linked, text: "extern \"top2365.h\" link \"top2365\"\n    function top_value() -> i32\n\nfunction main()\n    print(top_value())\n").is_err()
+    said = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", linked, "--library", dir, "-o", linked + ".out"]
+    ).must()
+    assert strings.contains(
+        text: said.err,
+        needle: "error[ffi_missing_link]: the library `top2365` needs `base_helper`, and nothing on the link line defines it\n  at " + linked + ":1:25\n"
+    )
+    assert strings.contains(
+        text: said.err,
+        needle: "  note: `libtop2365.a` refers to `base_helper` without defining it, and a library is linked only where a group names it: give this program a group for the library that defines it as well, `extern \"<its header>\" link \"<library>\"`, holding a function its header declares\n"
+    )
+    assert !strings.contains(text: said.err, needle: "internal error")
+    assert said.code == 1
+    assert !shell.exists(linked + ".out")
+
+    # The same library carried by a package's answer, told at its string.
+    bin = dir + "/bin"
+    assert !answering(dir: bin, answer: "-I" + dir + " -L" + dir + " -ltop2365\n").is_err()
+    path = dir + "/answered.hero"
+    told = built_said(
+        scratch: scratch,
+        compiler: compiler,
+        path: path,
+        source: "extern \"top2365.h\" package \"ptop2365\"\n    function top_value() -> i32\n\nfunction main()\n    print(top_value())\n",
+        bin: bin,
+        alone: false
+    ).must()
+    assert strings.contains(
+        text: told,
+        needle: "error[ffi_missing_link]: the library `top2365`, which the package `ptop2365` answered with, needs `base_helper`, and nothing on the link line defines it\n  at " + path + ":1:28\n"
+    )
+    assert !strings.contains(text: told, needle: "internal error")
+    assert !shell.exists(path + ".out")
+    assert !shell.remove_tree(scratch).is_err()
+
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
 # named `zz9`.
