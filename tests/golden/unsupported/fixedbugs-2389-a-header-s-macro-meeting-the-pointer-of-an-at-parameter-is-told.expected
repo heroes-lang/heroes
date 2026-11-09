@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2389-a-header-s-macro-meeting-the-pointer-of-an-at-parameter-is-told.h`, the header this group names, does not compile in this program's unit: its line 3 defines `ph0_n` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected ')'
+  at tests/golden/unsupported/fixedbugs-2389-a-header-s-macro-meeting-the-pointer-of-an-at-parameter-is-told.hero:11:8
+     |
+  11 | extern "fixedbugs-2389-a-header-s-macro-meeting-the-pointer-of-an-at-parameter-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2389-a-header-s-macro-meeting-the-pointer-of-an-at-parameter-is-told.h` line 3 reads `#define ph0_n 0`
+  note: this compiler's `ph0_n` is the name the C it writes gives the pointer the `@` parameter `n` of a function of the program's own arrives through
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `ph0_n` in `fixedbugs-2389-a-header-s-macro-meeting-the-pointer-of-an-at-parameter-is-told.h`, a name this compiler keeps to itself

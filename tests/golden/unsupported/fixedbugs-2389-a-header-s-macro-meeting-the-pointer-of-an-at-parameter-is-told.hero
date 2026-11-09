@@ -1,0 +1,20 @@
+# fixedbugs, defect 2389, 2026-11-09.
+#
+# SYMPTOM, a shape beside it: a header defining `#define ph0_n 0`, the name
+# of the pointer an `@` parameter `n` arrives through, was *internal error* at
+# exit 2 for the same reason.
+#
+# FIX: panel 214's R3 reads the first note under the error that expands a
+# macro, wherever it stands (`cli/own_names.hero`, `met`), and the emitter's
+# names of a body are among its forms, so the header is told at exit 1.
+
+extern "fixedbugs-2389-a-header-s-macro-meeting-the-pointer-of-an-at-parameter-is-told.h"  #~ ffi_header_refused
+    function plus(x: i64, y: i64) -> i64
+
+function bump(@n: i64)
+    n @ plus(x: n, y: 2)
+
+function main()
+    n: i64 @= 40
+    bump(@n)
+    print(n)

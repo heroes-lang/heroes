@@ -1,0 +1,17 @@
+# fixedbugs, defect 2389, 2026-11-09, the shape beside the call.
+#
+# SYMPTOM: a bound C function named `t1` standing as a value was *internal
+# error* at exit 2: `t31 = t1;` assigned the body's temporary to a function
+# pointer, *incompatible integer to pointer conversion*.
+#
+# FIX: its designator is its accessor's (`emit/shadowed.hero`), so the
+# function value calls `t1` and prints 42.
+
+extern "fixedbugs-2389-a-bound-c-function-named-as-a-temporary-is-a-value.h"
+    function t1(x: i64) -> i64
+
+function apply(g: (function(i64) -> i64), x: i64) -> i64
+    return g(x)
+
+function main()
+    print(apply(g: t1, x: 41))

@@ -1,0 +1,20 @@
+# fixedbugs, defect 2389, 2026-11-09.
+#
+# SYMPTOM: a header defining `#define f_left f_right` beside a record whose
+# fields are `left` and `right` was *internal error* at exit 2: clang's
+# *duplicate member 'f_right'*, its macro's expansion the second note.
+#
+# FIX: panel 214's R3 reads the first note under the error that expands a
+# macro, wherever it stands (`cli/own_names.hero`, `met`), and the emitter's
+# names of a body are among its forms, so the header is told at exit 1.
+
+extern "fixedbugs-2389-a-header-s-macro-turning-a-field-into-another-is-told.h"  #~ ffi_header_refused
+    function plus(x: i64, y: i64) -> i64
+
+record Pair
+    left: i64
+    right: i64
+
+function main()
+    p = Pair(left: 1, right: 2)
+    print(plus(x: p.left, y: p.right))

@@ -27,6 +27,7 @@
 use ast
 use check/state
 use emit/ctype
+use emit/shadowed
 use emit/signature
 use emit/writer
 use ir
@@ -55,7 +56,7 @@ function designator(p: instances.Held, c: state.Checked, names: ctype.Names, s: 
             # the one the program wrote (panel 230's R1), and so does one whose
             # value takes a group's large record by C's convention (panel 236).
             return ok(signature.as_value(p.program.functions[found.must()], c, names, s, decls))
-        .extern_fn e  => return ok(source.span_text(s, decls[e.decl].name))
+        .extern_fn e  => return ok(shadowed.written(source.span_text(s, decls[e.decl].name), s: s, decls: decls))
         .builtin_fn _ => return fail(code: "builtin", msg: "a built-in is expanded, never named")
         .indirect _   => return fail(code: "indirect", msg: "the address of an address")
 

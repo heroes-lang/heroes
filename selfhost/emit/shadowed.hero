@@ -1,0 +1,165 @@
+# A C function a group binds under a name the C this compiler writes gives
+# something inside a function's body, reached through an accessor taken
+# before any body (design.md §4.19, §3.1; CLAUDE.md §7; defect 2389).
+#
+# **The names a body declares**: `t<N>`, a temporary (`mangle.value`),
+# `h<N>_<name>`, a parameter or a local (`mangle.slot`), and `ph<N>_<name>`,
+# the pointer a mutable parameter arrives through (`mangle.out_param`). The
+# specification reserves no prefix (panel 214), so a group may bind a C
+# function of any of those forms, and until 2026-11-09 a call to it in a body
+# that declares the same name read the body's own variable: `t2 = t1(t1);` was
+# clang's *called object type 'int64_t' is not a function* at exit 2, a
+# correct program refused.
+#
+# **C has no way to name a file-scope identifier a block hides**, so the
+# reference is taken before any body: each such function a unit calls or
+# names as a value gets an accessor among the unit's file-scope C,
+# `static inline __typeof__(t1) *hero_bound_t1(void) { return &t1; }`, and a
+# body writes `(*hero_bound_t1())` where it would write `t1`. A function
+# rather than a `static` pointer, because a name a header spells as a macro
+# over an object has no constant address (`emit/extern_refs.hero`, defect
+# 171). The test is the NAME's form, never whether this body happens to
+# declare it, so the answer cannot hang on which temporaries are live; a
+# name of no such form is written as before, and a program that binds none
+# writes the same C.
+#
+# A header MACRO of those forms is another matter: it rewrites the body's
+# own declarations before clang reads them, and it is the header's to repair
+# (`cli/own_names.hero`, panel 214's R3).
+
+use ast
+use emit/writer
+use ir/containers
+use source
+
+constant HEAD: str
+    "hero_bound_"
+
+# What the C a body declares uses `name` for: `"temporary"`, `"local"` (a
+# parameter or a local), `"pointer"` (a mutable parameter's), or `""` where
+# no body declares a name of its form.
+function form(name: str) -> str
+    if name.len() > 1 && name[0] == 't' && digits_end(name, from: 1) == name.len()
+        return "temporary"
+
+    if name.len() > 2 && name[0] == 'p' && name[1] == 'h' && slot_shaped(name, from: 2)
+        return "pointer"
+
+    if name.len() > 1 && name[0] == 'h' && slot_shaped(name, from: 1)
+        return "local"
+    return ""
+
+# The index just past the decimal digits that start at `from`.
+function digits_end(name: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < name.len() && name[at] >= '0' && name[at] <= '9'
+        at @ at + 1
+
+    return at
+
+# Whether `name` reads `<digits>_` from `from` on, as `mangle.slot` writes
+# the index and its separator.
+function slot_shaped(name: str, from: i64) -> bool
+    end = digits_end(name, from: from)
+    return end > from && end < name.len() && name[end] == '_'
+
+# What a body writes where it names the bound C function `name`, called or
+# as a value: the name itself, or its accessor's designator.
+function written(name: str, s: source.Source, decls: [ast.Decl]) -> str
+    if form(name) == ""
+        return name
+    return "(*" + accessor(name, s: s, decls: decls) + "())"
+
+# The accessor's name: `hero_bound_<name>`, a form of the compiler's own,
+# widened by `hero_` for as long as a group binds it too, so the unit
+# never declares one name twice.
+function accessor(name: str, s: source.Source, decls: [ast.Decl]) -> str
+    out: str @= HEAD + name
+
+    while binds(s, decls, name: out)
+        out @ "hero_" + out
+
+    return out
+
+# Whether a group of the program binds `name` as a function, a constant or
+# a record, which then keeps its C name.
+function binds(s: source.Source, decls: [ast.Decl], name: str) -> bool
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.header.is_err() && source.span_text(s, decl.name) == name
+                    return true
+            .constant_decl k =>
+                if !k.header.is_err() && source.span_text(s, decl.name) == name
+                    return true
+            .record_decl rec =>
+                if !rec.header.is_err() && source.span_text(s, decl.name) == name
+                    return true
+            .variant_decl | .test_decl => continue
+
+    return false
+
+# The accessors a unit needs, one per bound C function of a body's form it
+# calls or names as a value, written once after the headers that declare
+# them and before the first body. ORDER: by name, so the unit's text is a
+# function of the program.
+function accessors(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl])
+    named: {str: bool} @= {}
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .call cl =>
+                        match cl.callee
+                            .extern_fn e =>
+                                name = source.span_text(s, decls[e.decl].name)
+
+                                if form(name) != ""
+                                    named[name] @ true
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .func_ref fr =>
+                        match fr.callee
+                            .extern_fn e =>
+                                name = source.span_text(s, decls[e.decl].name)
+
+                                if form(name) != ""
+                                    named[name] @ true
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast              => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    if named.len() == 0
+        return
+    writer.at_generated(@w)
+
+    for name in sort(keys(named))
+        writer.line(
+            @w,
+            text: "static inline __typeof__(" + name + ") *" + accessor(name, s: s, decls: decls) + "(void) { return &" + name + "; }"
+        )
+
+    writer.blank(@w)
+
+## Tests
+
+# The forms are read from the name alone, as `mangle` writes them; a name
+# that only resembles one is left as it is written.
+test "a body's own forms are read from the name, and only they reach an accessor (defect 2389)"
+    for name in ["t1", "t12", "t0"]
+        assert form(name) == "temporary"
+
+    for name in ["h0_p", "h12_count", "h3_"]
+        assert form(name) == "local"
+
+    assert form("ph0_l") == "pointer"
+
+    for name in ["t", "tx1", "t1x", "h_p", "h0", "hx_p", "ph_p", "p0_x", "f_left", "plus", "hero_twice"]
+        assert form(name) == ""
+
+    s = source.new_source(name: "b.hero", text: "")
+    assert written("plus", s: s, decls: []) == "plus"
+    assert written("t1", s: s, decls: []) == "(*hero_bound_t1())"
+    assert written("h0_p", s: s, decls: []) == "(*hero_bound_h0_p())"

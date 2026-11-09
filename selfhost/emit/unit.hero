@@ -62,6 +62,7 @@ use emit/extern_refs
 use emit/members
 use emit/padding_tables
 use emit/perfn
+use emit/shadowed
 use emit/side_bodies
 use emit/sides
 use emit/signature
@@ -142,6 +143,10 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     # Every function this unit calls through a group, its address held, so
     # the link needs its definition at every level (defect 562).
     extern_refs.references(@w, tu_p, s, decls)
+
+    # A bound C function a body would hide behind a name of its own, reached
+    # through an accessor taken here, before any body (defect 2389).
+    shadowed.accessors(@w, tu_p, s, decls)
     perfn.prototypes(@w, c, names, decls, want: want)
 
     # An `assert`'s sides, the renderers of the types this unit's compare (panel

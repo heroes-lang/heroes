@@ -1,0 +1,20 @@
+# fixedbugs, defect 2389, 2026-11-09, the shapes beside it that built before.
+#
+# A bound constant of a local's C name is read through its accessor, which
+# declares no local, and a bound function named `f_left` beside a record's
+# field `left` meets only a struct's member, which C keeps apart: both built
+# and printed before the repair, and this pins them.
+
+extern "fixedbugs-2389-a-bound-constant-and-a-field-s-name-build.h"
+    constant h0_p: i64
+    function f_left(v: i64) -> i64
+
+record Pair
+    left: i64
+    right: i64
+
+function main()
+    p = 40
+    print(p + h0_p)
+    pair = Pair(left: 1, right: 40)
+    print(f_left(v: pair.left) + pair.right)
