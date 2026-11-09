@@ -1,0 +1,17 @@
+# Fixed defect 2390, 2026-11-09, lane b27-place: the shapes beside the
+# issue's, in a program with no catalogue and no placed tree, which the parser
+# reads neither of. A key opening with a letter, so no number is lexed in it.
+#
+# SYMPTOM: each was `use_holds_an_address`, advising `use <parse>/parse`,
+# `use <parse>/deep` and `use <heroes>/parse`, the module or the folder's
+# own name taken for the entry.
+#
+# FIX: each is told it names the folder a fetch placed a package in, or the
+# folder every tree is placed under, and advised its entry's line, a `guess`
+# where the folder names an entry and a module.
+use "heroes.packages/json@1.4.2-fbd8abc09c185522/parse"  #~ package_unmarked
+use heroes.packages/json@1.4.2-fbd8abc09c185522/parse/deep  #~ package_unmarked
+use heroes.packages/  #~ package_unmarked
+
+function main()
+    print(parse.value())

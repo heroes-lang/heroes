@@ -257,13 +257,13 @@ function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
 # and of seven quoted shapes six were advised a line the compiler refuses,
 # `use github.com/acme/csv`, `use geom.hero`, `use my-lib`, `use ../x`.
 # `module_text.quoted` decides what a quoted name holds; an address there is
-# told as one on a bare line (`package_mark.address_told`, panel 235's R18).
+# told as on a bare line, a placed tree's too (`package_mark.told_whole`).
 function quoted_module(@c: cursor.Cursor, text: str)
     s = cursor.current_span(c)
     inner = module_text.unquote(cursor.slice_of(text, s))
 
     if module_text.is_address(inner)
-        cursor.say(@c, package_mark.address_told(module_text.read_address(inner), span: s))
+        cursor.say(@c, package_mark.told_whole(inner, span: s))
     else
         said = module_text.quoted(inner)
         d: diag.Diagnostic @= diag.new_diagnostic(code: "use_wants_a_name", message: said.message, span: s)

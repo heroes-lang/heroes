@@ -1,0 +1,37 @@
+error[exponent_literal]: `2e3` is not a number in this language — there are no exponents. Write the digits out, or compute it: `2 * pow(base: 10.0, exponent: …)` through the FFI (§4.19)
+  at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:22:32
+     |
+  22 | use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv  #~ exponent_literal package_unmarked
+     |                                ^^^
+
+error[exponent_literal]: `2e3` is not a number in this language — there are no exponents. Write the digits out, or compute it: `2 * pow(base: 10.0, exponent: …)` through the FFI (§4.19)
+  at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:23:32
+     |
+  23 | use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ exponent_literal package_unmarked
+     |                                ^^^
+
+error[exponent_literal]: `2e3` is not a number in this language — there are no exponents. Write the digits out, or compute it: `2 * pow(base: 10.0, exponent: …)` through the FFI (§4.19)
+  at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:24:33
+     |
+  24 | use <heroes.packages/core@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ exponent_literal package_unmarked
+     |                                 ^^^
+
+error[package_unmarked]: `heroes.packages/core@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>` — `use <core>/strconv`, `core` standing for the entry that placed this folder
+  at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:22:5
+     |
+  22 | use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv  #~ exponent_literal package_unmarked
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): write `<core>/strconv`
+
+error[package_unmarked]: `heroes.packages/core@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>`, and `<core>/strconv/internal/shown` is private to `<core>/strconv`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it, so no `use` of this program reaches it; name what `<core>/strconv` offers instead
+  at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:23:5
+     |
+  23 | use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ exponent_literal package_unmarked
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[package_unmarked]: `heroes.packages/core@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>` — `use <core>/strconv`, `core` standing for the entry that placed this folder
+  at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:24:5
+     |
+  24 | use <heroes.packages/core@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ exponent_literal package_unmarked
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): write `<core>/strconv`

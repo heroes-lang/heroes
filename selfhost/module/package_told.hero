@@ -29,6 +29,7 @@ use module/paths
 use module/placed
 use module/reached
 use module/spelling
+use placed_use
 use source
 use token
 
@@ -201,17 +202,11 @@ function reaches(from: str, name: str) -> bool
     owner = owner_of(name)
     return owner.len() == 0 || from == owner || from.len() > owner.len() && from.slice(from: 0, to: owner.len() + 1) == owner + "/"
 
-# The module a private module belongs to, "" for one under no `internal`.
+# The module a private module belongs to, "" for one under no `internal`:
+# `placed_use.internal_owner`, which the parser asks too of a `use` naming a
+# placed tree (defect 2390), one rule in one place.
 function owner_of(name: str) -> str
-    cut: i64 @= -1
-
-    for at in range(from: 0, to: name.len())
-        if at + 9 <= name.len() && name.slice(from: at, to: at + 9) == "/internal" && (at + 9 == name.len() || name[at + 9] == '/')
-            cut @ at
-
-    if cut < 0
-        return ""
-    return name.slice(from: 0, to: cut)
+    return placed_use.internal_owner(name)
 
 test "a private module is its owner's and its owner's modules' alone"
     assert owner_of("<core>/strings/internal/scan") == "<core>/strings"

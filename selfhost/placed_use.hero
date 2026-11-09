@@ -1,0 +1,164 @@
+# A `use` naming the folder a fetch placed a package's tree in (defect 2390):
+# `use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv`. `heroes fetch`
+# places each package of the catalogue under `heroes.packages/`, one folder
+# `<name>@<version>-<key>` a package, under a folder no `use` can spell
+# (spec § 1; panel 235's R7), the name being the catalogue's entry for a
+# version and the address's last part for a `git` source
+# (`module/placed.key`). Such a line was read as an address, Go's host, owner
+# and repository, since `heroes.packages` holds a dot: it was told the
+# catalogue holds that address, which it does not, and advised the folder's
+# module as the entry, `use <strconv>/parse`, a line the compiler refuses.
+#
+# What it is told here: what the folder is, and the line that reaches the
+# same file through its entry, `use <core>/strconv`. The repair is a `guess`
+# (`package_mark.placed_told`): the parser reads the line's text and never
+# the catalogue, and only the catalogue says that its entry `core` places this
+# folder, at this version and key; an entry of another version, a `git`
+# entry under another alias, or none at all, and `<core>/strconv` is another
+# module or none. A module under the package's `internal` folder is offered no
+# line, since no line of the program reaches it (R16), and is told so.
+#
+# A leaf, read by `package_mark.hero` and, for the `internal` rule, by
+# `module/package_told.hero`, one rule in one place.
+
+# The folder every fetched tree is placed under, as `module/packages.PLACED`
+# and `fetch/staging.PLACED` spell it.
+constant FOLDER: str
+    "heroes.packages"
+
+# A `use` naming a placed tree, read: the folder, `heroes.packages/` and its
+# first part; the entry its first part opens with, "" where that is no
+# entry's name; and the module after the folder, "" where none is written.
+record Placed
+    folder: str
+    entry: str
+    module: str
+
+# Whether `written` names the placed folder or something under it, its first
+# part being `heroes.packages` and a `/` after it.
+function is_placed(written: str) -> bool
+    head = FOLDER + "/"
+    return written.len() >= head.len() && written.slice(from: 0, to: head.len()) == head
+
+function read(written: str) -> Placed
+    start = FOLDER.len() + 1
+    end: i64 @= start
+
+    while end < written.len() && written[end] != '/'
+        end @ end + 1
+
+    module: str @= ""
+    folder: str @= written.slice(from: 0, to: end)
+
+    if end + 1 < written.len()
+        module @ written.slice(from: end + 1, to: written.len())
+
+    # `heroes.packages/` alone: the folder every tree is placed under.
+    if end == start
+        folder @ FOLDER
+    return Placed(
+        folder: folder,
+        entry: entry_of(written.slice(from: start, to: end)),
+        module: module
+    )
+
+# The entry a placed folder's name opens with, before its `@`: lowercase
+# letters, digits and `_` after a letter (the catalogue's rule,
+# `module/catalogue.entry_name`), else "".
+function entry_of(folder: str) -> str
+    end: i64 @= 0
+
+    while end < folder.len() && folder[end] != '@'
+        end @ end + 1
+
+    name = folder.slice(from: 0, to: end)
+
+    if name.len() == 0 || !(name[0] >= 'a' && name[0] <= 'z')
+        return ""
+
+    for ch in name.chars()
+        b = ch[0]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
+            return ""
+
+    return name
+
+# What the line is told: the folder, then the line reaching the module through
+# its entry, or why no line reaches it.
+function said(held: Placed) -> str
+    what: str @= "the folder a fetch placed a package's tree in"
+
+    if held.folder == FOLDER
+        what @ "the folder a fetch places every package's tree under"
+    told = "`" + held.folder + "/` is " + what + ", which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>`"
+
+    if held.entry.len() == 0
+        return told + " — `use <json>/parse`, `json` standing for the entry that placed this folder and `parse` for one of the package's modules"
+    marked = "<" + held.entry + ">"
+
+    if held.module.len() == 0
+        return told + " — `use " + marked + "/parse`, `" + held.entry + "` standing for the entry that placed this folder and `parse` for one of the package's modules"
+    owner = internal_owner(marked + "/" + held.module)
+
+    if owner.len() > 0
+        return told + ", and `" + marked + "/" + held.module + "` is private to `" + owner + "`: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it, so no `use` of this program reaches it; name what `" + owner + "` offers instead"
+    return told + " — `use " + marked + "/" + held.module + "`, `" + held.entry + "` standing for the entry that placed this folder"
+
+# The line the repair writes, "" where none is offered: an entry and a module
+# no `internal` folder holds.
+function repair(held: Placed) -> str
+    if held.entry.len() == 0 || held.module.len() == 0
+        return ""
+    marked = "<" + held.entry + ">/" + held.module
+
+    if internal_owner(marked).len() > 0
+        return ""
+    return marked
+
+# The module a private module belongs to, "" for one under no `internal`
+# folder (R16): the path before its last `/internal` part.
+function internal_owner(name: str) -> str
+    cut: i64 @= -1
+
+    for at in range(from: 0, to: name.len())
+        if at + 9 <= name.len() && name.slice(from: at, to: at + 9) == "/internal" && (at + 9 == name.len() || name[at + 9] == '/')
+            cut @ at
+
+    if cut < 0
+        return ""
+    return name.slice(from: 0, to: cut)
+
+## Tests
+
+test "a placed folder is read into its folder, its entry and its module (defect 2390)"
+    assert is_placed("heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv")
+    assert is_placed("heroes.packages/core@0.1.0-2e3e1bba9c8acea1")
+    assert !is_placed("heroes.packages")
+    assert is_placed("heroes.packages/")
+    assert read("heroes.packages/").folder == "heroes.packages"
+    assert read("heroes.packages/").entry == ""
+    assert !is_placed("github.com/acme/json")
+    assert !is_placed("heroes.packagesx/core")
+    one = read("heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown")
+    assert one.folder == "heroes.packages/core@0.1.0-2e3e1bba9c8acea1"
+    assert one.entry == "core"
+    assert one.module == "strconv/internal/shown"
+    assert read("heroes.packages/core@0.1.0-2e3e1bba9c8acea1").module == ""
+    assert read("heroes.packages/core@0.1.0-2e3e1bba9c8acea1/").module == ""
+    assert read("heroes.packages/Core@1/x").entry == ""
+    assert read("heroes.packages/go-json@1/x").entry == ""
+    assert read("heroes.packages/json2@v1-k/x").entry == "json2"
+
+test "the repair is the entry's line, and none reaches a module under `internal`"
+    assert repair(read("heroes.packages/core@0.1.0-k/strconv")) == "<core>/strconv"
+    assert repair(read("heroes.packages/core@0.1.0-k/text/strs")) == "<core>/text/strs"
+    assert repair(read("heroes.packages/core@0.1.0-k/strconv/internal/shown")) == ""
+    assert repair(read("heroes.packages/core@0.1.0-k/internal/scan")) == ""
+    assert repair(read("heroes.packages/core@0.1.0-k")) == ""
+    assert repair(read("heroes.packages/Core@0.1.0-k/strconv")) == ""
+    assert internal_owner("<core>/strings/internal/scan") == "<core>/strings"
+    assert internal_owner("<core>/internal/scan") == "<core>"
+    assert internal_owner("a/internal/b/internal/c") == "a/internal/b"
+    assert internal_owner("internalx/y") == ""
+    assert internal_owner("a/internals/b") == ""
