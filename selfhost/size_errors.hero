@@ -16,8 +16,8 @@
 # every use site moves with it — this must never be applied without a
 # human.
 
-use token
 use diag
+use token
 
 # `holder` contains itself; `steps` is the cycle as one line per edge.
 # `direct` distinguishes the two messages a reader needs: a

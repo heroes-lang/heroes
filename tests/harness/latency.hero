@@ -39,11 +39,11 @@
 # and a reading is taken on a machine that has it, macOS or Linux with GNU
 # time installed, never inferred.
 
-use shell
-use strings
 use latency_clock
 use latency_ledger
 use latency_runs
+use shell
+use strings
 
 constant DEFAULT_RUNS: i64
     7

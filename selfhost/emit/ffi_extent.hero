@@ -10,13 +10,13 @@
 # is done (panel 038's trap). The diagnostic lands on the NUMBER the author
 # wrote, because that is what is wrong; the lend is named in the sentence.
 
-use token
-use source
 use diag
 use emit/ffi_lookup
-use emit/lend_extent
 use emit/lend_buffer
+use emit/lend_extent
 use field_lend_errors
+use source
+use token
 
 constant MARKER: str
     "heroes-ffi-extent "

@@ -14,12 +14,12 @@
 # arm types each hole by recursion, which only the knot can do, and hands the
 # type here to be judged. The judgement needs nothing from the knot.
 
-use token
-use diag
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use diag
+use source
+use token
 
 # One hole, its type already found by the walk. A poisoned type has already
 # been reported and adds nothing.

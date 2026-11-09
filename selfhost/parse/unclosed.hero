@@ -30,15 +30,15 @@
 # | `withdrawn` | `parse.parse_source`, `parse.parse_bounded` |
 # | `type_closer` | `parse/type`'s array, map and function types |
 
-use token
-use diag
 use cursor
+use diag
 use laid_braces
-use pairing
-use parse/line_end
 use lexer
 use next_line
+use pairing
+use parse/line_end
 use text_lines
+use token
 
 # Whether no closer closes the opener at token `open` (`paired_closer`): one
 # asked as never closed, which the parser names none of. A body's `{` the

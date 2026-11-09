@@ -25,19 +25,19 @@
 # headers, and any note in a file of the compiler's own, stays the
 # compiler's at exit 2, as defect 360 left it.
 
-use source
 use ast
+use cli/caret_bytes
+use cli/clang_excerpt
+use cli/clang_first
+use cli/group_file
+use cli/runtime_key
+use cli/standard_name
 use diag
 use emit/clang_place
 use emit/ffi_lookup
 use emit/mangle
-use cli/group_file
-use cli/runtime_key
-use cli/standard_name
-use cli/caret_bytes
-use cli/clang_first
-use cli/clang_excerpt
 use parse
+use source
 
 # How the note naming C's own declaration opens, and the one naming this
 # compiler's, which `taken` reads back; and the one naming a declaration

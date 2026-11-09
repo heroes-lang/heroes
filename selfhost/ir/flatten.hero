@@ -39,27 +39,27 @@
 # six steps. `.missing` now flows only from what the checker already
 # reported, exactly as in the original.
 
-use token
 use ast
-use source
-use resolved
-use check/table
-use check/state
 use check/contextual
+use check/leasing
+use check/state
+use check/table
 use escape
+use inventory
 use ir
 use ir/build
-use ir/interning
-use ir/layout
-use ir/inout
-use ir/questions
 use ir/emissions
-use ir/owned_release
-use ir/interp
 use ir/in_place
-use inventory
+use ir/inout
+use ir/interning
+use ir/interp
+use ir/layout
+use ir/owned_release
+use ir/questions
 use read_lend
-use check/leasing
+use resolved
+use source
+use token
 
 ## Statements
 

@@ -5,9 +5,9 @@
 # name's span the caller builds starts at the `<` and every reader of the
 # line takes the module's name whole, mark and all (`ast.Use.name`).
 
-use token
 use cursor
 use package_mark
+use token
 
 # After `use`, at `<`: the cursor past the mark, on the module's first name,
 # and where the mark starts; or the line told and a failure, the caller then

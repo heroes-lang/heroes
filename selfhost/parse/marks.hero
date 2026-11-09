@@ -21,10 +21,10 @@
 # that reached it. `tails` reaches the loop through `members`, which it
 # already uses, so the ring stays open.
 
-use token
 use cursor
 use keywords
 use lexer
+use token
 
 # `owned <C function>` after a `cstr`, if it is there (§4.19, panel 109): the
 # C function that frees the string this signature hands the program.

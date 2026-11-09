@@ -9,14 +9,14 @@
 # cannot differ in anything but the tags they learn (`cli/rounds.hero`).
 
 use ast
-use source
 use cli/compile
-use cli/toolchain
 use cli/compiling
 use cli/libraries
 use cli/package_units
+use cli/toolchain
 use emit/header_packages
 use emit/unit_plan
+use source
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a

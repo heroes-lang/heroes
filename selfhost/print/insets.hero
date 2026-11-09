@@ -17,10 +17,10 @@
 # still a name. Split out of `anchors.hero` for §11's 300 lines.
 
 use ast
-use token
-use source
 use parse
 use print/owners
+use source
+use token
 
 # One entry per comment of the file, in order: `"<word> <count>"` for one
 # inside a set, the empty text for every other.

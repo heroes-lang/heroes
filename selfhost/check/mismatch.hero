@@ -6,14 +6,14 @@
 # whose operator walk grew that file past its decided ceiling: neither calls
 # anything of the walk.
 
-use token
-use diag
 use ast
-use source
-use value_errors
+use check/state
 use check/table
 use check/type_fit
-use check/state
+use diag
+use source
+use token
+use value_errors
 
 function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
     if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)

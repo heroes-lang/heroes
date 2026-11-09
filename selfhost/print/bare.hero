@@ -36,12 +36,12 @@
 # which the tree-identity run over the whole tree shows, or the break at the
 # statement's depth, which the output guard refuses at exit 2.
 
-use token
-use print/page
-use print/parens
-use print/elements
 use print/around
 use print/breaks
+use print/elements
+use print/page
+use print/parens
+use token
 
 # Does the value at `value`, placed by `at` with no bracket of the page
 # open around it, break a line for a comment where no bracket it prints

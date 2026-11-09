@@ -25,14 +25,14 @@
 # reaches the others before anything weaker speaks.
 
 use ast
-use source
-use resolved
-use check/state
 use check/function_value
 use check/generics as check_generics
+use check/state
 use check/waiting
-use check/waiting_order
 use check/waiting_names
+use check/waiting_order
+use resolved
+use source
 
 # A generic call whose arguments wait: its declaration, its parameters'
 # types, the receiver of `x.f(…)` where the call types it (-1 for none), its

@@ -30,16 +30,16 @@
 # Part 6 row names that as its falsifier.
 
 use ast
-use source
-use token
-use diag
-use digits
-use widths
-use parse
+use check/acquiring
+use check/decls as declared
 use check/state
 use check/table
-use check/decls as declared
-use check/acquiring
+use diag
+use digits
+use parse
+use source
+use token
+use widths
 
 function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
     for decl in decls

@@ -32,18 +32,18 @@
 # `part` for anything else, `opened` calls `element` for each element, and
 # each of them, and `shut` for its callee or receiver, calls `spread` again.
 
-use token
 use ast
-use source
-use print/bodies
-use print/page
-use print/margins
-use print/parens
-use print/elements
-use print/owners
-use print/breaks
 use print/around
 use print/bare
+use print/bodies
+use print/breaks
+use print/elements
+use print/margins
+use print/owners
+use print/page
+use print/parens
+use source
+use token
 
 # `head`, a value and `tail`, on one line when nothing asks otherwise, and
 # opened when `open` (the line is too long, or the author spread it) or a

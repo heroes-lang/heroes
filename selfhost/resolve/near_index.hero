@@ -34,8 +34,8 @@
 # walked against it have reached that count, so a list asked about once or
 # twice is never indexed, and a program that asks nothing pays nothing.
 
-use resolve/near_names
 use bytes
+use resolve/near_names
 
 # A prime under 2^31, so a product of two hashes stays inside an `i64`.
 constant MODULUS: i64

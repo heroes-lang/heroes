@@ -20,20 +20,20 @@
 # plain fallibles — fail means "not mine, caller continues", ok carries
 # the answer, the silent error id included.
 
-use token
 use ast
-use source
-use diag
-use resolved
-use widths
-use check/table
-use check/state
-use check/type_fit
-use check/ordering
 use check/lend_types
 use check/nested
-use value_errors
+use check/ordering
+use check/state
+use check/table
+use check/type_fit
 use check/unwrap_removal
+use diag
+use resolved
+use source
+use token
+use value_errors
+use widths
 
 ## What a built-in expects of an argument
 

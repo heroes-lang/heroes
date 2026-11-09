@@ -55,30 +55,30 @@
 # listing the groups' headers cost is asked again of the opening alone, so the
 # landed refusal never waits on a group's header.
 
-use source
-use diag
-use module/reading as file_reading
-use cli/toolchain
+use cli/clang_added
+use cli/clang_jobs
 use cli/compile
 use cli/compiling
-use cli/process
-use cli/order_trial
-use cli/package_reads
 use cli/deps
 use cli/digest
+use cli/flags
+use cli/named_folders
+use cli/order_trial
+use cli/package_reads
+use cli/process
 use cli/publish
 use cli/read_back
 use cli/response_file
-use cli/strings
-use cli/clang_added
-use cli/stand_in
-use cli/shadowed_words
-use cli/shadowed_tree
-use cli/named_folders
-use cli/clang_jobs
-use cli/flags
 use cli/settled
+use cli/shadowed_tree
+use cli/shadowed_words
+use cli/stand_in
+use cli/strings
+use cli/toolchain
+use diag
 use emit/externs as emit_externs
+use module/reading as file_reading
+use source
 
 # The build stopped, its refusals told, where the environment hands a clang
 # job a file or a kept name, or some jobs a folder others do not search,

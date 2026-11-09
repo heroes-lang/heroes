@@ -16,17 +16,17 @@
 # machinery. The two ownership questions live in `ir/released.hero`
 # since defect 218's repair (2026-10-03), and this file asks them.
 
-use token
-use source
-use parse
-use resolve
-use checker
-use check/table
 use check/state
+use check/table
+use checker
 use ir
 use ir/containers
 use ir/place_store
 use ir/released
+use parse
+use resolve
+use source
+use token
 
 # What every block of one function is asked about its slots and its
 # result, answered once per function (defect 218, 2026-10-03). The three

@@ -20,10 +20,10 @@
 # `ffi_sweep` is: it reads what the resolver said each callee is, and no type.
 
 use ast
-use source
-use resolved
 use check/state
 use resolve/rest_zero as rest_reading
+use resolved
+use source
 
 function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     # Nothing to mark, and no walk, where no call ends with the words.

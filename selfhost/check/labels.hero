@@ -21,16 +21,16 @@
 # asks it here of what it holds: the other positions of the argument's type,
 # and marker, that no label of the call has taken.
 
-use token
-use diag
 use ast
-use source
+use check/contextual
+use check/state
+use check/type_fit
+use diag
+use inventory
 use label_errors
 use resolved
-use inventory
-use check/type_fit
-use check/state
-use check/contextual
+use source
+use token
 
 # One argument of a built-in call: refuse it if the rule names this position
 # and the call site does not, or names it wrongly. `position` counts the

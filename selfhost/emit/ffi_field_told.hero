@@ -15,13 +15,13 @@
 # of C's spellings (`emit/c_spellings.hero`) cannot answer for it. The offer
 # is a guess, as every offer of a type is: the header may be the wrong one.
 
-use token
 use ast
-use source
 use diag
 use emit/c_spellings
 use emit/ffi_asked
 use emit/ffi_result
+use source
+use token
 
 # The header's type of a field: its spelling, and the type clang gives after
 # it where that is another and not a word of the table.

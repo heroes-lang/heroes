@@ -6,8 +6,8 @@
 # read as what the author wrote — `param_binding`, `cell_binding` — rather
 # than as four fields somebody has to get right each time.
 
-use token
 use resolved
+use token
 
 # What is being bound, as one value: its kind, whether it may be written,
 # the syntax the checker will want back, and for a cell the span of the

@@ -33,14 +33,14 @@
 # comment. The order of the comments is compared, so a run cannot be
 # reordered.
 
-use token
 use ast
-use source
 use digits
 use parse
-use print/owners
 use print/groups
 use print/insets
+use print/owners
+use source
+use token
 
 # Where one comment sits: its text, its owner, and the kept tokens before
 # and after it, by their place in the kept stream and by their text.

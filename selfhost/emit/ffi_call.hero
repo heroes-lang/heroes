@@ -39,18 +39,18 @@
 # none; which of object and value it is, the same unit asked.
 
 use ast
-use source
-use diag
-use check/state
 use check/render
-use ir/containers
+use check/state
+use checker
+use diag
+use emit/ffi_declared
 use emit/ffi_lookup
 use emit/ffi_site
-use emit/ffi_declared
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 constant TOO_MANY: str
     "too many arguments to function call"

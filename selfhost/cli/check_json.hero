@@ -34,16 +34,16 @@
 # was written before it and says nothing either way, never that no note was
 # owed.
 
+use cli/certain
+use cli/holes_json
+use cli/json_text
+use cli/sha256
+use cli/unverified
 use diag
+use module/reached
 use source
 use source_extent
 use token
-use cli/json_text
-use cli/certain
-use cli/sha256
-use cli/holes_json
-use cli/unverified
-use module/reached
 
 # The schema's number, which every document opens with. The help, the page a
 # model reads and the errors page say it, each held to this constant.

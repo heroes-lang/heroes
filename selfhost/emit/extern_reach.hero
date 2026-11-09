@@ -10,8 +10,8 @@
 # before and apart from what is then asserted of each record it names.
 
 use ast
-use check/table
 use check/state
+use check/table
 
 # The extern records a type reaches by value: a SET, which the caller
 # reads sorted, so the order the queue drains in reaches nothing.

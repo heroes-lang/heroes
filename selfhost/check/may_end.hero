@@ -23,12 +23,12 @@
 # nothing for it.
 
 use ast
-use source
-use resolved
-use check/table
-use check/state
-use check/path_end
 use check/name_types
+use check/path_end
+use check/state
+use check/table
+use resolved
+use source
 
 # One function's facts: whether it may end by itself, and the functions it
 # names, any of which may end it.

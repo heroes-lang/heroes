@@ -31,9 +31,9 @@
 # they agree, and it fails the day either one learns something the other
 # does not.
 
-use token
 use lexer
 use parse
+use token
 
 ## Reading a path off a use line
 

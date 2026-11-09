@@ -29,8 +29,8 @@ use json_read
 use shell
 use strings
 use thesis_answer
-use thesis_json
 use thesis_grade
+use thesis_json
 use thesis_pace
 use thesis_price
 use thesis_prompt

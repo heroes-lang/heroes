@@ -6,13 +6,13 @@
 # spelling is here, and every reader of either names this module.
 
 use ast
-use check/table
-use check/state
 use check/freer as freer
-use widths
-use ir/containers
+use check/state
+use check/table
 use emit/ctype
+use ir/containers
 use read_lend
+use widths
 
 # The declared parameter types as C, positionally named a0, a1, … — or
 # absent for a type this backend has no spelling for, which the

@@ -27,21 +27,21 @@
 # one grew — and it is a PROGRAM diagnostic at exit 1, because the
 # program is legal under §4.12 as written.
 
-use token
-use diag
 use ast
-use source
-use check/table
+use check/counted
 use check/render
 use check/state
-use check/counted
+use check/table
+use checker
+use diag
 use ir
 use ir/containers
-use parse
-use resolve
-use checker
 use ir/lower
 use ir/verify
+use parse
+use resolve
+use source
+use token
 
 # One instantiation: which declaration, at which type arguments.
 record Instance

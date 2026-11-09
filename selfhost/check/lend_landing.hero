@@ -21,13 +21,13 @@
 # is a refusal and never silence, for all three.
 
 use ast
-use source
-use resolved
 use check/state
-use lend_errors
 use field_lend_errors
+use lend_errors
 use parse
 use resolve
+use resolved
+use source
 
 ## The landing
 

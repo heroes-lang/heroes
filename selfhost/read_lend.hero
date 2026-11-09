@@ -18,8 +18,8 @@
 # without `@` is, and nothing marks the call.
 
 use ast
-use source
 use resolved
+use source
 
 function read_only(f: ast.FunctionDecl, p: ast.Param, a: ast.Ast, s: source.Source) -> bool
     if !p.lent || p.mutable

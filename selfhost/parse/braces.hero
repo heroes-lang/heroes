@@ -30,11 +30,11 @@
 use ast
 use cursor
 use grammar_expr
-use parse/opening
 use parse/brace_habit
-use parse/unclosed
-use parse/swap_reading
 use parse/head_kind
+use parse/opening
+use parse/swap_reading
+use parse/unclosed
 
 ## The habit
 

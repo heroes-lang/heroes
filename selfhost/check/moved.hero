@@ -39,13 +39,13 @@
 # a function value carries no declaration and no mark, so it ends nothing.
 
 use ast
-use source
+use check/moved_calls as calls
+use check/moved_walk as walk
+use check/state
 use parse
 use resolve
 use resolved
-use check/state
-use check/moved_calls as calls
-use check/moved_walk as walk
+use source
 
 # The rule, over every body. A program in which no `extern` ends a life pays
 # nothing here, the early exit `check/lending.hero` takes for the same reason.

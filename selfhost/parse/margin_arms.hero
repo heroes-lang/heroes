@@ -31,13 +31,13 @@
 # | `below`, `past_the_block`, `taken` | `grammar_expr.match_expr` |
 # | `end_here` | `grammar_expr.arms_of` |
 
-use token
 use cursor
+use lexer
 use parse/broken_arm
 use parse/swap_reading
 use parse/unclosed
-use lexer
 use stream_tables
+use token
 
 # Whether the line under the cursor begins at the margin of the `match` whose
 # keyword is token `head`, holds an arm, and can be that `match`'s.

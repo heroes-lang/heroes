@@ -26,10 +26,6 @@ use cli/io
 use cli/process
 use cli/publish
 use cli/table as cli_table
-use module/catalogue
-use module/fingerprint
-use module/placed
-use module_text
 use fetch/address
 use fetch/build_list
 use fetch/catalogue_edit
@@ -42,6 +38,10 @@ use fetch/staging
 use fetch/told
 use fetch/transport
 use fetch/verb_place
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module_text
 
 # The command: what changed and the file written on stdout, or the refusal
 # on stderr, its exit its code's (`fetch/told.hero`).

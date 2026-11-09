@@ -23,10 +23,10 @@
 # 8089 reads `host` as a machine and a relative reading would read it as a
 # folder, and an address read two ways is the class this file refuses.
 
+use cli/strings
 use fetch/local_path
 use fetch/scheme_told
 use fetch/url_bytes
-use cli/strings
 
 # One address judged.
 record Address

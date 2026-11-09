@@ -16,19 +16,19 @@
 # functions that only call inwards are exactly the ones that can leave.
 # Cut at M-declared-freer step 1, panel 109's condition.
 
-use token
 use ast
-use source
-use resolved
-use check/table
-use check/state
 use check/contextual
+use check/state
+use check/table
 use contextless_errors
 use ir
 use ir/build
-use ir/interning
 use ir/inout
+use ir/interning
 use ir/questions
+use resolved
+use source
+use token
 
 # §4.8's second half, on one exit edge: every @ parameter is written
 # back before control leaves. Copy-out happens ALWAYS — including on

@@ -27,15 +27,15 @@
 # through the same `unescape` a plain literal uses, so a form that looks like
 # a string escapes like one.
 
-use token
 use diag
-use state
+use escape
 use layout
 use literals
-use escape
+use openers
 use raw_chars
 use raw_refusal
-use openers
+use state
+use token
 
 # `f"` at the cursor: the head piece.
 function head(@l: state.LexState, text: str)

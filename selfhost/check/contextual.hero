@@ -22,15 +22,15 @@
 # port". Here it is: a value is a SIGN and a u64 MAGNITUDE, and every
 # width check reads the pair.
 
-use token
 use ast
-use handles
-use source
-use resolved
+use check/state
+use check/table
 use digits
 use escape
-use check/table
-use check/state
+use handles
+use resolved
+use source
+use token
 
 # True where an expression has no type of its own and must be checked
 # against one — §4.5's ⇐-only forms.

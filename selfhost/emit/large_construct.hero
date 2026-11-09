@@ -6,13 +6,13 @@
 # is held, passed and returned; this module is how one comes into existence.
 
 use ast
-use ir
 use check/state
 use emit/aggregate
 use emit/byte_copy
 use emit/ctype
 use emit/mangle
 use emit/writer
+use ir
 use ir/layout
 use source
 

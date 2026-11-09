@@ -32,14 +32,14 @@
 # asks a platform question (`selfhost/cli/flags.hero`'s *no platform axis*).
 
 use ast
+use cli/libraries
+use cli/shell_split
 use diag
-use source
-use token
 use emit/externs as emit_externs
 use emit/ffi_build
 use emit/ffi_lookup
-use cli/libraries
-use cli/shell_split
+use source
+use token
 
 # What a refused link reports missing: its name, a `library` or a `framework`,
 # the words the link carried it as (`-l<name>` or `-framework <name>`), and

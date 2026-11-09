@@ -12,12 +12,12 @@
 # operand, and `to_u8(300) == c` one on its left, the side that is fallible,
 # where the mismatch alone names `u8?` as what was expected.
 
-use token
-use diag
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use diag
+use source
+use token
 
 # The fixes for the refusal `ops.binary` pushed after `before` diagnostics.
 function after_binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], before: i64, op: ast.BinaryOp, left: i64, right: i64, left_span: token.Span, right_span: token.Span)

@@ -35,11 +35,11 @@
 # | `arrow_below` | `parse/margin_arms` |
 # | `told_above` | `grammar_expr.statement_kind` |
 
-use token
-use diag
 use cursor
-use text_lines
+use diag
 use lexer
+use text_lines
+use token
 
 # The arm's `=>`, owed at the cursor: taken where it stands; named missing
 # otherwise, and the arm goes on at a `=>` the line below begins with, past

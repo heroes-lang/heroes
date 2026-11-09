@@ -9,12 +9,12 @@
 # stray closer is a `slice` to len-1 behind a length test; and `push` being a
 # built-in name, the token-emitting half of Rust's `push` is `emit` here.
 
-use token
 use diag
-use text_outline
-use swap_words
 use lex_asked
 use openers
+use swap_words
+use text_outline
+use token
 
 ## Error codes
 

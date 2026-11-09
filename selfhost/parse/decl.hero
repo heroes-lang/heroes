@@ -35,25 +35,25 @@
 # file), and `parse/top_level` (a line that opens no declaration, since
 # 2026-10-02).
 
-use token
-use cursor
-use doc_comments
 use ast
+use cursor
 use diag
-use lexer
-use source
-use parse/use_line
-use parse/tails
-use parse/records
-use parse/members_below
-use parse/group
-use parse/swap_reading
-use parse/heads
-use parse/braces
+use doc_comments
 use grammar_expr
-use parse/opening
-use parse/top_level
+use lexer
+use parse/braces
+use parse/group
 use parse/headless
+use parse/heads
+use parse/members_below
+use parse/opening
+use parse/records
+use parse/swap_reading
+use parse/tails
+use parse/top_level
+use parse/use_line
+use source
+use token
 
 ## The dispatcher
 

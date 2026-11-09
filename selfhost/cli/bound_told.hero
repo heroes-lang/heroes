@@ -6,18 +6,18 @@
 # program's own that includes the other and undoes the macro.
 
 use ast
-use token
-use source
+use cli/bound_ask
+use cli/bound_names
+use cli/bound_said
+use cli/compiling
+use cli/strings
+use cli/toolchain
 use diag
 use emit/clang_place
 use emit/externs as emit_externs
 use emit/macro_guard
-use cli/toolchain
-use cli/compiling
-use cli/bound_names
-use cli/bound_said
-use cli/bound_ask
-use cli/strings
+use source
+use token
 
 # A name a later header changed.
 function after(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], text: str, b: bound_names.Bound, by: str, place: i64, before: str, then: str) -> diag.Diagnostic

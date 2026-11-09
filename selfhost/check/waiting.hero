@@ -38,14 +38,14 @@
 # synthesised as before and its type is the better answer.
 
 use ast
-use source
-use resolved
-use inventory
-use check/table
-use check/state
 use check/contextual
 use check/function_value
 use check/generics as check_generics
+use check/state
+use check/table
+use inventory
+use resolved
+use source
 
 # One argument that waits: the expression, and the position of the callee's
 # parameter it stands for, the receiver of `x.f()` standing for the first.

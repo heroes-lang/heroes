@@ -4,8 +4,8 @@
 # flag took that file past the layout's threshold; the link words are its own
 # seam, read by the link line, the release line and the package words.
 
-use cli/process
 use cli/flags
+use cli/process
 use cli/strings
 
 # **WHAT A BINARY IS LINKED WITH, and it exists for one platform.**

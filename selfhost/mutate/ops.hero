@@ -12,11 +12,11 @@
 # is the first — it exists to measure a hole rather than to confirm a defence,
 # and an instrument that could only report success would not be one.
 
-use source
-use parse
 use mutate/edits
 use mutate/handles
 use mutate/typo
+use parse
+use source
 
 record Operator
     id: str

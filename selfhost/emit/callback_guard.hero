@@ -44,15 +44,15 @@
 # value_comes_from_func_ref` below is the test that fires when it does.
 
 use ast
-use source
-use check/table
 use check/state
-use ir/containers
+use check/table
+use checker
 use emit/externs as emit_externs
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 # Which functions C may call back, as the whole program answers it: whether an
 # `extern` takes a callback at all (`opened`), the decl indices of every

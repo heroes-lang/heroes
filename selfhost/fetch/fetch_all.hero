@@ -16,9 +16,6 @@ use cli/io
 use cli/process
 use cli/strings
 use cli/table as cli_table
-use module/catalogue
-use module/fingerprint
-use module/placed
 use fetch/catalogue_edit
 use fetch/made_index
 use fetch/made_repo
@@ -27,6 +24,9 @@ use fetch/staging
 use fetch/told
 use fetch/transport
 use fetch/verb_place
+use module/catalogue
+use module/fingerprint
+use module/placed
 
 # The command: one line on stdout for each entry placed, kept or read where
 # it stands, and each refusal on stderr at the catalogue's line.

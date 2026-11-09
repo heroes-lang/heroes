@@ -32,9 +32,9 @@
 # the top down it pulled a block's closing remark out of the block
 # (the first seat's `s8`, `comments101/runs.hero`).
 
-use token
-use source
 use lexer
+use source
+use token
 
 # A comment with code before it on its line.
 constant TRAILS: i64

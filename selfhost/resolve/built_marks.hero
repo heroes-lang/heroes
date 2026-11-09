@@ -39,16 +39,16 @@
 # place. So the mark stays on one argument only: one whose parameter, at its
 # position, takes an `@`.
 
-use token
 use ast
-use source
 use diag
 use handles
 use inventory
 use keywords
 use label_errors
-use resolve/state
 use resolve/meant
+use resolve/state
+use source
+use token
 
 # The arguments of a call whose callee, the node at `callee` (the method node
 # itself for a qualified name or UFCS), the walk has just resolved, each `@`

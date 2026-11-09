@@ -18,9 +18,9 @@
 # Its own module because `cli/clang_floor.hero` reads clang's answer too, and
 # `cli/toolchain.hero` imports that module: a reader there would be a cycle.
 
+use cli/strings
 use module/reading
 use not_text
-use cli/strings
 
 # What the child wrote at `path`: its own text where every byte is UTF-8, and
 # where one is not, the text with each such byte written by its value

@@ -60,18 +60,18 @@
 # compile C (`guarded_names.hero`, measured on this Mac's SDK and clang).
 
 use ast
-use token
-use source
-use parse
-use emit/guarded_names
-use emit/c_words
-use emit/externs as emit_externs
-use emit/checks_raised
-use emit/header_region
-use emit/header_state
-use emit/deprecation
 use cli/process
 use cli/strings
+use emit/c_words
+use emit/checks_raised
+use emit/deprecation
+use emit/externs as emit_externs
+use emit/guarded_names
+use emit/header_region
+use emit/header_state
+use parse
+use source
+use token
 
 # The line before the groups' includes, and the line after them.
 constant OPEN_LINE: str

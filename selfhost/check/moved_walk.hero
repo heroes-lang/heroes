@@ -8,15 +8,15 @@
 # holds blocks, a block holds statements, so no module boundary passes
 # between them (`grammar_expr.hero`).
 
-use token
 use ast
-use source
-use diag
-use resolved
-use check/state
 use check/flow
 use check/moved_calls as calls
 use check/moved_errors as errors
+use check/state
+use diag
+use resolved
+use source
+use token
 
 record Frame
     base: flow.Flow

@@ -19,20 +19,20 @@
 # again, whole, on the build after the spelling is mended.
 
 use ast
-use source
 use check/state
+use checker
+use emit/c_text
 use emit/extern_union
+use emit/guarded_names
+use emit/layout_compare
+use emit/layout_rows
+use emit/layout_sites
 use emit/layout_text
 use emit/layout_visible
-use emit/layout_rows
-use emit/layout_compare
-use emit/layout_sites
-use emit/c_text
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
-use emit/guarded_names
+use source
 
 # The markers, one writer and one reader each (`emit/ffi_layout.hero`).
 constant MISSING: str

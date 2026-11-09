@@ -34,11 +34,11 @@
 # | `pair_all` | `parse.parse_source`, `parse.parse_bounded`, `parse/readings.read_apart`, `plain_holes.hole` |
 # | `view` | `parse/braced_lines` |
 
-use token
 use cursor
-use literals
 use lexer
+use literals
 use text_outline
+use token
 
 # The index of the closer that closes the opener at token `open`, as the
 # lexer's stack pairs them, whatever its kind, or -1 where none does: every

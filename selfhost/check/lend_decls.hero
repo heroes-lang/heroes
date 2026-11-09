@@ -24,10 +24,10 @@
 # free: every `-> cstr` in this tree is already inside an `extern` group.
 
 use ast
-use source
 use check/state
 use check/table
 use lend_errors
+use source
 
 # A function outside an `extern` group may not answer `cstr` (panel 122 R3).
 #

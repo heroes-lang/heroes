@@ -13,21 +13,21 @@
 # belong moved to `check/field_names.hero` on 2026-09-30 (lane 135b, defect
 # 135), along panel 132's seam.
 
-use token
 use ast
-use source
-use resolved
+use check/contextual
+use check/lower
+use check/state
+use check/table
+use data_errors
+use ffi_errors
+use flow_errors
+use named_fields
 use parse
 use resolve
-use check/table
-use check/state
-use check/lower
-use check/contextual
+use resolved
+use source
+use token
 use value_errors
-use named_fields
-use data_errors
-use flow_errors
-use ffi_errors
 
 # `p.x` — a field of a record, of a variant's case, or of the error
 # payload.

@@ -14,9 +14,9 @@
 # seam the parser's budget lets a move pay along
 # (`tests/harness/suite_layout.hero`, `BUDGETS`).
 
-use token
 use lexer
 use text_outline
+use token
 
 # One joined line that holds refused breaks, by the offsets the comparison
 # needs: where it begins (`from`), where it ends (`to`) and the first word

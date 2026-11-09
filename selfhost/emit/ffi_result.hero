@@ -15,14 +15,14 @@
 # Where the language has no word for the type, the message names it and
 # offers nothing.
 
-use token
 use ast
-use source
 use diag
 use emit/c_spellings
 use emit/ffi_asked
 use emit/ffi_lookup
 use parse
+use source
+use token
 
 # The diagnostic for `name`, declared `declared`, whose header `found` names
 # and whose type the refused round's question answered `typed`.

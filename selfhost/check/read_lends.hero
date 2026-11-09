@@ -16,15 +16,15 @@
 # that lends nothing in place pays one pass over its expressions.
 
 use ast
-use token
-use source
-use resolved
-use diag
 use check/state
 use data_errors
+use diag
 use read_lend
 use resolve/aliased_places
 use resolve/writes
+use resolved
+use source
+use token
 
 function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     declared(@c, s, decls)

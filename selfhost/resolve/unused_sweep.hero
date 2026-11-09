@@ -14,14 +14,14 @@
 # file-wide.
 
 use ast
-use source
-use resolved
-use resolve/builtin_names
 use diag
-use resolve/state
+use resolve/binding as resolve_binding
+use resolve/builtin_names
 use resolve/did_you_mean
 use resolve/errors
-use resolve/binding as resolve_binding
+use resolve/state
+use resolved
+use source
 
 function report(@r: state.Resolver, s: source.Source)
     gathered: [diag.Diagnostic] @= []

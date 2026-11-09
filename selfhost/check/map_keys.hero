@@ -22,18 +22,18 @@
 # the call chose, so the runtime guard STAYS and the float diagnostic's
 # own note says so.
 
-use token
 use ast
-use source
-use parse
-use resolve
 use check/decls as check_decls
-use check/table
-use check/state
 use check/partial
 use check/reaches
-use handles
+use check/state
+use check/table
 use ffi_errors
+use handles
+use parse
+use resolve
+use source
+use token
 
 # Check every map key the program writes or builds.
 function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])

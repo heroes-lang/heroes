@@ -17,13 +17,13 @@
 # reads only literals and other constants, and the cycle check proves
 # those are not circular.
 
-use token
-use diag
 use ast
-use source
-use resolved
+use diag
 use resolve/state
+use resolved
+use source
 use stable
+use token
 
 ## Which declaration an offset falls inside
 

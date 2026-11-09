@@ -18,12 +18,12 @@
 # locals table gave `?`, which is how this was found on the Rust side.
 
 use ast
-use source
-use parse
-use resolved
-use resolve
-use check/table
 use check/state
+use check/table
+use parse
+use resolve
+use resolved
+use source
 
 function lower_ty(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64) -> i64
     answer = shape(@c, a, r, id)

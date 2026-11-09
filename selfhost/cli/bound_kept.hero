@@ -31,20 +31,20 @@
 #   The ten macros the unit writes from `<stdint.h>` and `<math.h>` are not
 #   such a change: `heroes_standard.h` defines them again as C does.
 
-use diag
-use emit/c_text
-use emit/externs as emit_externs
-use emit/macro_guard
-use emit/c_words
-use emit/guarded_names
-use cli/toolchain
-use cli/compiling
+use cli/bound_ask
 use cli/bound_names
 use cli/bound_said
-use cli/bound_ask
 use cli/bound_told
-use cli/strings
+use cli/compiling
 use cli/process
+use cli/strings
+use cli/toolchain
+use diag
+use emit/c_text
+use emit/c_words
+use emit/externs as emit_externs
+use emit/guarded_names
+use emit/macro_guard
 
 # What the question of the names' meaning where the unit's C stands comes
 # to: its refusals, and the names the guard keeps for the unit.

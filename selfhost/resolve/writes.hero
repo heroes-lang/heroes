@@ -29,16 +29,16 @@
 
 use ast
 use diag
-use token
-use source
+use read_lend
+use resolve/aliased_places
 use resolve/builtin_names
-use resolve/state
 use resolve/did_you_mean
 use resolve/errors
-use resolve/qualified
 use resolve/names
-use resolve/aliased_places
-use read_lend
+use resolve/qualified
+use resolve/state
+use source
+use token
 
 # The root of a written place. A write is recorded, and it is NOT a read:
 # `v @ 1` alone leaves `v` unused. Writing through a field or an index is a

@@ -10,13 +10,13 @@
 # the tree around the hole holds (defect 2204).
 
 use ast
-use source
-use resolved
-use check/table
-use check/state
-use check/render
-use check/holes_gather
 use check/hole_place
+use check/holes_gather
+use check/render
+use check/state
+use check/table
+use resolved
+use source
 
 # §4.16's cap, and the reason it exists: identical holes must give
 # identical guidance, whatever the file's size.

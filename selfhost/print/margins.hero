@@ -4,11 +4,11 @@
 # `print/page.hero`'s rule and `owners.lone_comma`'s. Split out of page on 2026-09-26, the fifth
 # round of defects 099 and 101, which took it past §11's 300 lines.
 
-use token
-use source
-use print/page
 use print/owners
+use print/page
 use print/sheet
+use source
+use token
 
 # A comma `owners.lone_comma` keeps on a line of its own, at `indent`,
 # after a value just printed without it: the comment trailing the value's

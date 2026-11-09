@@ -16,13 +16,13 @@
 # per element — the store shape this very session's emitter fix made
 # writable.
 
-use token
 use ast
-use source
-use resolved
-use check/table
 use check/state
+use check/table
 use check/type_fit
+use resolved
+use source
+use token
 use value_errors
 
 # §4.12's inference, in one direction: a type parameter meets an argument

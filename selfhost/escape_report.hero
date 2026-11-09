@@ -6,15 +6,15 @@
 # once, beside its message. Called by `literals.escape_step`, for every
 # escape `escape.escape_text` refuses that is not the other context's.
 
-use token
-use diag
-use state
-use escape
 use bytes
-use escape_readings
+use diag
+use escape
 use escape_codes
+use escape_readings
 use raw_chars
 use shown_char
+use state
+use token
 
 # The diagnostic for the escape whose backslash is at `backslash`, in the
 # escape's own words, its fixes by its reading, pushed; and the position past

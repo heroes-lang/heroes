@@ -21,22 +21,22 @@
 # 023), so the graph is a DAG either way.
 
 use ast
-use source
-use check/table
 use check/state
-use ir/phases
-use emit/ctype
-use emit/types
-use emit/synth
-use emit/writer
+use check/table
+use checker
 use emit/byte_copy
+use emit/ctype
+use emit/ffi_lookup
+use emit/synth
+use emit/tu_local
+use emit/type_needs
+use emit/types
+use emit/writer
+use ir/lower
+use ir/phases
 use parse
 use resolve
-use checker
-use ir/lower
-use emit/ffi_lookup
-use emit/type_needs
-use emit/tu_local
+use source
 
 # Every typedef the program needs, each after everything it contains
 # by value. The seed order is the two old orders concatenated —

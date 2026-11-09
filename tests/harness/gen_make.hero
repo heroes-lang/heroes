@@ -6,8 +6,8 @@
 # `gen_expr`'s, the C group `gen_cboundary`'s; a seed's program and its files
 # are `gen_program`'s.
 
-use gen_ccall
 use gen_cboundary
+use gen_ccall
 use gen_cfloat
 use gen_chandle
 use gen_cmodule

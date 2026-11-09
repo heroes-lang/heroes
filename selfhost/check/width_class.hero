@@ -6,14 +6,14 @@
 # declaration above: so it gains a note naming the birth, and a `guess` fix
 # annotating the cell with the width the write holds.
 
-use token
-use diag
 use ast
-use source
-use resolved
-use widths
-use check/state
 use check/render
+use check/state
+use diag
+use resolved
+use source
+use token
+use widths
 
 # After the write of `value` into `place` was checked, from diagnostic `from`
 # on: where the place is a name resolved to such a cell, the value is of a

@@ -11,18 +11,18 @@
 # | `Readings`, `readings` | `parse/apart` |
 # | `read_bodies` | `parse/apart` |
 
-use token
-use diag
 use ast
-use lexer
 use cursor
-use stable
-use swap_words
+use diag
+use joined_lines as seams
+use lexer
+use pairing
 use parse/decl
 use parse/which_arm
-use joined_lines as seams
-use pairing
+use stable
+use swap_words
 use text_outline
+use token
 use word_place
 
 ## A reading's diagnostics, in the order of the text

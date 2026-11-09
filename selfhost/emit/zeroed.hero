@@ -33,17 +33,17 @@
 # before the first of them.
 
 use ast
-use source
-use check/table
 use check/state
-use emit/mangle
-use emit/ctype
+use check/table
+use checker
 use emit/aggregate
-use emit/writer
+use emit/ctype
+use emit/mangle
 use emit/typeorder
+use emit/writer
 use parse
 use resolve
-use checker
+use source
 
 # Whether the construction ending at `end` said `rest: zero`: the checker's
 # record, keyed by the call's span end (`check/rest_zero.hero`).

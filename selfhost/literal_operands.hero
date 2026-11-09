@@ -28,8 +28,8 @@
 # | `no_left_operand` | `line_joins.writes_a_type`, which asks whether a `-` negates |
 # | `past_comments` | `line_joins`, for what follows an operand |
 
-use token
 use operand_families as families
+use token
 
 ## A reading
 

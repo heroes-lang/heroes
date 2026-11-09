@@ -21,24 +21,24 @@
 # What lowering IS lives in `ir/flatten.hero`'s own doc: flattening a
 # tree into instructions that name temporaries and nest nothing.
 
-use token
 use ast
-use source
-use diag
-use resolved
-use check/table
 use check/state
-use ir/containers
+use check/table
+use checker
+use diag
 use ir/build
-use ir/questions
+use ir/containers
 use ir/emissions
+use ir/exits
 use ir/flatten
 use ir/owned_release
-use ir/exits
-use read_lend
+use ir/questions
 use parse
+use read_lend
 use resolve
-use checker
+use resolved
+use source
+use token
 
 # Lower one checked file. Runs only on a tree that checked clean: after
 # a type error the checker's answers are guesses, and expr_types would

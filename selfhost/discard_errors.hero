@@ -20,9 +20,9 @@
 # 2026-09-30, defect 135's lane, along that concern's own seam).
 # Message text byte for byte with the Rust side, as everywhere in the port.
 
-use token
 use diag
 use statement_front as front
+use token
 
 # What else a line whose value nothing receives may have meant, each one
 # read off the value in hand by `check/discard.hero` (defect 135). Every

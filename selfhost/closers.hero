@@ -27,11 +27,11 @@
 # | `past_literal` | `loop_headers`, `bracket_reach` |
 # | `said_of`, `run_of` | `unclosed_runs` |
 
-use token
 use diag
-use state
 use lex_asked
 use openers
+use state
+use token
 
 # Before the token `kind` at `start` is emitted: a closer of another kind
 # than the innermost closes the opener of its own kind where one is open

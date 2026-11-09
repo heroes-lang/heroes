@@ -40,13 +40,13 @@
 # carries.
 
 use ast
-use token
-use check/table
-use check/state
 use check/freer as freer
+use check/state
+use check/table
 use ir
-use ir/containers
 use ir/build
+use ir/containers
+use token
 
 # What one call's arguments became, and what the call still owes.
 record Args

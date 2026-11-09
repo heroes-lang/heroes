@@ -31,14 +31,14 @@
 # file.
 
 use ast
-use diag
-use source
-use resolved
-use check/state
+use check/endless_parts
+use check/may_end
 use check/self_call
 use check/self_walk
-use check/may_end
-use check/endless_parts
+use check/state
+use diag
+use resolved
+use source
 
 # Where the set stands: who is a member, and for each member what its last
 # walk found, its witness and the member that calls, and its first calls,

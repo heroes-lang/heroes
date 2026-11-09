@@ -39,14 +39,14 @@
 # | `eat` | `grammar_expr.eat_python_colon` |
 # | `read_below` | `grammar_expr.if_expr`, `for_stmt`, `while_stmt`, `match_expr` |
 
-use token
-use diag
 use cursor
-use parse/line_end
-use word_place
-use text_lines
+use diag
 use lexer
+use parse/line_end
 use stream_tables
+use text_lines
+use token
+use word_place
 
 ## The `:` that ends its line
 

@@ -32,8 +32,8 @@
 # excluded the way `suite_layout` excludes it: it is the net, not the
 # compiler.
 
-use report
 use floors
+use report
 use shell
 use strings
 

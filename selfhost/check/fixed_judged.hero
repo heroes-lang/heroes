@@ -27,8 +27,8 @@
 
 use ast
 use diag
-use token
 use parse
+use token
 
 # The program as the refusal repairs it: every fixed array in a refused
 # node, at any depth, written as the `[T]` of what it holds. Spans stay, so

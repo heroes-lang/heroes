@@ -67,15 +67,15 @@
 # never hidden: the signature declares it, and no prologue line does.
 
 use check/state
-use ir/containers
-use ir/layout
-use emit/mangle
 use emit/ctype
 use emit/field_lend
-use emit/unread
-use emit/lend_local
-use emit/nodebug
 use emit/large_value
+use emit/lend_local
+use emit/mangle
+use emit/nodebug
+use emit/unread
+use ir/containers
+use ir/layout
 
 # A prologue's statements, written as one line, and the `#define`s of its
 # guarded locals, each a line of its own above it.

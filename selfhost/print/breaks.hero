@@ -5,15 +5,15 @@
 # day, which calls it for a value no bracket of its own can hold the
 # comment in; it calls nothing of that knot back.
 
-use token
 use ast
-use source
 use lexer
-use print/page
+use parse
+use print/aligned
 use print/elements
 use print/owners
-use print/aligned
-use parse
+use print/page
+use source
+use token
 
 # `head` and `text`, the source from `from` up to `to` on one line, printed
 # with the comments inside it kept (`lead`): the last line comes back.

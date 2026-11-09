@@ -25,8 +25,8 @@
 # rebuilds the probe's line can ask it, and that line stays one formatter's.
 
 use bytes
-use emit/ffi_lookup
 use cli/pointee_ask
+use emit/ffi_lookup
 use emit/membership
 
 constant KEY: str

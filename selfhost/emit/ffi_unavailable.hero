@@ -14,9 +14,9 @@
 
 use ast
 use diag
-use source
 use emit/ffi_lookup
 use emit/ffi_site
+use source
 
 constant OPENING: str
     "error: '"

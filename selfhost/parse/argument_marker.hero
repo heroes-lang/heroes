@@ -20,10 +20,10 @@
 # is refused anew as `needs_label`. Called by `grammar_expr.call_args`; a
 # leaf that reads the tree and never parses.
 
-use token
-use diag
 use ast
 use cursor
+use diag
+use token
 
 # Whether the value before the `@` can be the name a `:` follows: a bare name,
 # with no label of its own and no `@` of its own.

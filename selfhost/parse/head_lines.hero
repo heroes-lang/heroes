@@ -18,9 +18,9 @@
 # parser. Moved out of `parse/opening.hero` on 2026-09-29, when that module
 # reached its 300 lines and the brace habit's reading had to go in.
 
-use token
 use cursor
 use text_lines
+use token
 
 ## Crossing and joining
 

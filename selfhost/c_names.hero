@@ -24,12 +24,12 @@
 # about a C name is not the parser's to hold against the lines its directory
 # is granted (`BUDGETS` in `tests/harness/suite_layout.hero`).
 
-use token
-use diag
 use bytes
 use describe
+use diag
 use keywords
 use text_outline
+use token
 use word_place
 
 # What `tag` says where no name follows it (`parse/records.tag_marker`).

@@ -70,11 +70,11 @@
 # driver reaches it. Such a module is told as unreached, the loud direction, and
 # the failure says why.
 
+use floors
 use package_judge
 use package_rules
 use placed_trees
 use report
-use floors
 use shell
 use strings
 use thesis_sha256

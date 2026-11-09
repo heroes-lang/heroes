@@ -13,18 +13,18 @@
 # any two values of THE SAME type, structural); boolean (`&& || !`,
 # `bool` only, short-circuiting).
 
-use token
 use ast
-use source
+use check/operand_must
+use check/partial
+use check/state
+use check/table
+use check/type_fit
+use ffi_errors
 use parse
 use resolved
-use check/table
-use check/state
-use check/type_fit
-use check/partial
+use source
+use token
 use value_errors
-use ffi_errors
-use check/operand_must
 
 # Is this type a type parameter itself? Total on Ty by construction, and
 # every other arm is `false` rather than a `_ =>`: a new type kind must be

@@ -16,17 +16,17 @@
 # here before the compiler builds.
 
 use check/state
+use check/table
+use checker
+use emit/ctype
+use inventory
 use ir
 use ir/containers
 use ir/uses
-use inventory
-use emit/ctype
-use token
-use check/table
-use source
 use parse
 use resolve
-use checker
+use source
+use token
 
 # Whether this instruction is still correct with its destination
 # dropped. Two groups may lose it: a PURE READ simply vanishes, and a

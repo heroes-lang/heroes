@@ -5,18 +5,18 @@
 # both questions a reading linear in the block and the file passed design.md
 # §11's ~300 lines; `phases.check` asks them at the Owned phase.
 
-use token
+use check/state
+use check/table
+use checker
 use ir
 use ir/containers
 use ir/layout
 use ir/owning
-use check/state
-use check/table
-use source
+use ir/released_oracle
 use parse
 use resolve
-use checker
-use ir/released_oracle
+use source
+use token
 
 # The slots every returning block owes a release, in slot order: a local or
 # synthetic slot of a counted type. Rules 1 and 2 of `ir/own.hero`, read

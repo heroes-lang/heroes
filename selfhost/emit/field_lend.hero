@@ -42,15 +42,15 @@
 # honest READ from an immutable binding on the way. So the prologue asks this
 # module which values are const lends and declares those `const void *`.
 
-use token
+use ast
 use check/state
-use ir
-use ir/containers
-use emit/writer
 use emit/aggregate
 use emit/unread
-use ast
+use emit/writer
+use ir
+use ir/containers
 use source
+use token
 
 # The C text of the PLACE a lent field lives in — `h0_s.nsap`, never `t13.nsap`.
 #

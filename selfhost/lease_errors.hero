@@ -13,8 +13,8 @@
 # NO `Fix` HERE, for `lend_errors.hero`'s reason: every repair is a different
 # shape of program, and a fix that leaves the defect standing is a guess.
 
-use token
 use diag
+use token
 
 # A lease cell's name where it may not stand (M-held-bytes, panel 124 R2 to R4
 # and panel 125's soundness lane).

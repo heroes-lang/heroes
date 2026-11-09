@@ -22,8 +22,8 @@
 # down, by the unit test in `cli/grammar.hero` which asserts that the operator
 # `%` resolves to spells `%` again.
 
-use token
 use ast
+use token
 
 # Every token that is a binary operator, weakest binding first. The powers
 # themselves stay with the climber that asks for them, in

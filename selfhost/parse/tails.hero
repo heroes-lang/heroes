@@ -29,14 +29,14 @@
 # `parse/records.hero` (defect 133), which reads `Linkage` and `here_or` from
 # here; this module reads nothing there.
 
-use token
-use cursor
 use ast
-use parse/heads
-use parse/signature
+use cursor
 use grammar_expr
-use parse/opening
 use parse/braces
+use parse/heads
+use parse/opening
+use parse/signature
+use token
 
 ## Linkage — where a declaration's implementation comes from
 

@@ -7,14 +7,14 @@
 # readers are the same, and so is their order.
 
 use ast
-use source
 use diag
-use ir/containers
-use emit/ffi_lookup
-use emit/ffi_field
-use emit/ffi_const_built
-use emit/ffi_nested
 use emit/ffi_asked
+use emit/ffi_const_built
+use emit/ffi_field
+use emit/ffi_lookup
+use emit/ffi_nested
+use ir/containers
+use source
 
 function told(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str, asked: ffi_asked.Asked, word_bits: i64) -> [diag.Diagnostic]
     found: [diag.Diagnostic] @= []

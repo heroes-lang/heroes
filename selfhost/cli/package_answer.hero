@@ -20,14 +20,14 @@
 # `-DSEVEN=7\r\n` warned in every compile. A lone return stays a return, as
 # `strings.without_returns` keeps it, written by its code where it is shown.
 
-use module/reading
-use not_text
-use cli/process
 use cli/files
+use cli/process
 use cli/publish
 use cli/shell_split
 use cli/strings
 use emit/ffi_build
+use module/reading
+use not_text
 use parse
 use source
 

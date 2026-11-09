@@ -19,15 +19,15 @@
 # told as before the repair. Every module that answers is named, each with
 # its own `guess`, in the walk's order.
 
-use token
 use ast
 use diag
-use source
+use inventory
+use module/answering
+use module/names as module_names
 use resolve/state
 use resolved
-use inventory
-use module/names as module_names
-use module/answering
+use source
+use token
 
 # The diagnostic owed where the receiver `id` is a module named by no `use`
 # of this file, or a failure where it is not one.

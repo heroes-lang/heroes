@@ -11,13 +11,13 @@
 # |---|---|
 # | `ended_at_a_binding` | `grammar_expr.map_literal` |
 
-use diag
 use cursor
-use text_lines
+use diag
 use pairing
-use parse/unclosed
-use parse/list_line
 use parse/bracket_head
+use parse/list_line
+use parse/unclosed
+use text_lines
 
 # Whether the map whose `{` is at `open` ends above its entry begun at token
 # `first`, asked after the key where its `:` goes (`keyed`), else after the

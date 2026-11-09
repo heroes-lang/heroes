@@ -16,9 +16,9 @@
 # | `stray_run`, `found_run` | `parse/brace_habit.a_closer_too_many`, `parse/statement_end`, `parse/opening`, `parse/list_line`, `grammar_expr` |
 # | `told_to` | `parse/brace_habit.a_closer_too_many` |
 
-use token
-use text_lines
 use cursor
+use text_lines
+use token
 
 # The closers from token `at` on, one after another on its line: a run of
 # strays told at once, since past the first, which closes nothing the line

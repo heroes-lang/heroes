@@ -48,9 +48,9 @@
 # reads: 10.77 billion instructions for 2,000 `if`s whose branches each end
 # a handle after defect 511's repair, 4.21 billion with the tree.
 
-use token
 use check/flow_groups
 use check/flow_log
+use token
 
 record Flow
     # A group per local an event has named.

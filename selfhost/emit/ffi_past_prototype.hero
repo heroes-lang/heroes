@@ -54,21 +54,21 @@
 # the critic built a header writing through it, an immutable binding printing
 # `103` at exit 0, before this refusal.
 
-use token
 use ast
-use source
-use diag
 use bytes
+use checker
+use cli/pointee_ask
+use diag
 use emit/c_text
+use emit/externs as emit_externs
 use emit/ffi_lookup
+use emit/ffi_mutable
 use emit/ffi_pointee
 use emit/ffi_site
-use emit/ffi_mutable
-use emit/externs as emit_externs
-use cli/pointee_ask
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The contract between the line written below and its reader: one string,
 # one home (CLAUDE.md §11). No other `heroes-ffi-` marker is a prefix of it,

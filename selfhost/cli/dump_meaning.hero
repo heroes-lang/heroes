@@ -16,12 +16,12 @@
 # the addresses, the source ranges and columns, and the words saying whether
 # the unit used or referenced it.
 
-use emit/clang_place
-use cli/toolchain
 use cli/compiling
-use cli/order_trial
 use cli/dump_tops
+use cli/order_trial
 use cli/strings
+use cli/toolchain
+use emit/clang_place
 
 # Each of `names` as clang's dump of the unit's opening with `headers`
 # reads it; absent where clang could not dump it.

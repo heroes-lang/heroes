@@ -21,8 +21,8 @@
 #
 # A leaf: it reads the reports and nothing that reads the parser.
 
-use token
 use diag
+use token
 
 record Marks
     # offset -> the index of the last report of the first `upto` beginning there

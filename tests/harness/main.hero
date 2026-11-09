@@ -106,39 +106,39 @@
 use cases
 use report
 use shell
+use strings
 use suite_annotations
 use suite_cache
 use suite_canonical
 use suite_compat
+use suite_control
 use suite_corpus
 use suite_descriptors
-use suite_wholes
-use suite_seed
 use suite_determinism
 use suite_emission
 use suite_fetch
 use suite_fixes
 use suite_generated
 use suite_golden
-use suite_layout
+use suite_grammar
 use suite_latency
+use suite_layout
 use suite_lines
 use suite_lldb
 use suite_order
 use suite_packages
 use suite_probe
 use suite_records
+use suite_run
 use suite_runtime
+use suite_seed
 use suite_spec
-use suite_grammar
 use suite_special
 use suite_surface
 use suite_units
-use suite_warnings
-use suite_control
-use suite_run
 use suite_unseen
-use strings
+use suite_warnings
+use suite_wholes
 
 # The prefix of this run's scratch directory; the process id follows it
 # (main, below), so that no two runs alive at once share a directory.

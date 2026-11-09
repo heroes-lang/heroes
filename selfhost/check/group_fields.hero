@@ -25,14 +25,14 @@
 # record was told until 2026-11-08, so `R(a: 1, a: 2)`, which misses no
 # field, was told it must name `a:`.
 
-use diag
 use ast
+use check/labels
+use check/state
+use data_errors
+use diag
+use label_errors
 use source
 use token
-use data_errors
-use label_errors
-use check/state
-use check/labels
 
 # Each argument's field: the index in `names` its label names, or -1 where it
 # has no label or names no field.

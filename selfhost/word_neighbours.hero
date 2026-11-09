@@ -14,8 +14,8 @@
 # |---|---|
 # | `header_after`, `continues_an_if`, `name_after`, `value_after`, `arms_below` | `foreign_at` |
 
-use token
 use bytes
+use token
 use word_place
 
 ## The questions

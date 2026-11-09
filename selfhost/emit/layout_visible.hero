@@ -8,8 +8,8 @@
 # 215's R1 took that file past CLAUDE.md §11's ceiling: reading the dump
 # stayed there, what a program can name came here.
 
-use emit/layout_text
 use emit/layout_rows
+use emit/layout_text
 
 # A member a program can name on T: its own, or one an anonymous member
 # promotes (C11 6.7.2.1p13). `group` is the index of the anonymous member it

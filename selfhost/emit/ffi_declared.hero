@@ -11,18 +11,18 @@
 # it reads but declaration() — the gate in ffi_lookup.
 
 use ast
-use source
+use checker
 use diag
 use emit/assert_spelling
-use emit/ffi_lookup
 use emit/ffi_asked
-use emit/ffi_result
 use emit/ffi_held
+use emit/ffi_lookup
+use emit/ffi_result
 use emit/ffi_switched
 use emit/ffi_value
 use parse
 use resolve
-use checker
+use source
 
 # _Static_assert(HERO_RET_INT(sqrt(…)), "heroes-ffi-return sqrt int")
 # failed: the header disagrees with the declared type. Two codes from

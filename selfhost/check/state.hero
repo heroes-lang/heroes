@@ -12,13 +12,13 @@
 # yet" rather than "nothing is counted" because nothing asks it before
 # counted.hero lands.
 
-use token
-use diag
 use ast
-use source
-use resolved
-use check/table
 use check/render
+use check/table
+use diag
+use resolved
+use source
+use token
 
 ## What the checker leaves behind
 

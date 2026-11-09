@@ -15,18 +15,18 @@
 # types that exist, because clang is going to be handed those names.
 
 use ast
-use source
-use resolved
-use resolve/vocab
-use resolve/builtin_names
 use parse
-use resolve/state
-use resolve/unused_sweep
-use resolve/types
-use resolve/errors
-use resolve/walk
 use resolve/binding as resolve_binding
+use resolve/builtin_names
+use resolve/errors
+use resolve/state
+use resolve/types
+use resolve/unused_sweep
+use resolve/vocab
+use resolve/walk
 use resolve/written_nowhere
+use resolved
+use source
 
 function declaration(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], index: i64)
     r.generics @ r.generics.slice(from: 0, to: 0)

@@ -13,11 +13,11 @@
 # fix is tagged, because a model that cannot see which repair is safe
 # will apply whichever one it read last.
 
-use source
 use diag
-use token
-use shown_char
 use excerpt_window
+use shown_char
+use source
+use token
 
 # One diagnostic, in the rich form. No trailing blank line: the
 # caller joins.

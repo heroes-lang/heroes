@@ -33,11 +33,11 @@
 # |---|---|
 # | `told_once` | `parse.parse_source`, `parse.parse_bounded` |
 
-use diag
 use closers
+use diag
+use lexer
 use text_lines
 use text_outline
-use lexer
 
 # `said`, the lexer's reports in the order it said them, with each run of
 # openers left open told once, at its first.

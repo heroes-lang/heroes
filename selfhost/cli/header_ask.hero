@@ -11,24 +11,24 @@
 # has already failed asks. And it prints nothing: what clang said reaches the
 # author only as a diagnostic `emit/ffi.hero` makes of it.
 
-use source
 use cli/compile
-use cli/toolchain
+use cli/compiling
+use cli/input
+use cli/probing
 use cli/process
 use cli/publish
-use cli/response_file
-use cli/compiling
-use cli/strings
 use cli/read_back
-use emit/ffi_asked
-use emit/ffi_answer
-use cli/probing
+use cli/response_file
+use cli/strings
 use cli/switch_ask
-use cli/unswitch_ask
+use cli/toolchain
 use cli/units
+use cli/unswitch_ask
+use emit/ffi_answer
+use emit/ffi_asked
 use emit/ffi_lookup
-use cli/input
 use library_source
+use source
 
 # Ask, once per unit's headers, under the words its probe compiles under
 # (`compiling.probe_words` of its own packages, defect 572). `-ferror-limit=0` because every question that

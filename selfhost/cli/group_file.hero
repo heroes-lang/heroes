@@ -5,14 +5,14 @@
 # that file past §11's 300 lines: that file tells a refused header, and this
 # finds whose header a path is.
 
-use source
 use ast
-use token
-use emit/clang_place
-use emit/clang_name
-use emit/externs as emit_externs
 use cli/strings
+use emit/clang_name
+use emit/clang_place
+use emit/externs as emit_externs
 use module/names as module_names
+use source
+use token
 
 # The name the Heroes library's lowered code carries in every unit
 # (`source.hero`'s library file).

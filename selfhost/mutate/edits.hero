@@ -23,9 +23,9 @@
 # part of it.
 
 use ast
+use mutate/sites
 use source
 use token
-use mutate/sites
 
 # **The classic argument inversion** — the whole reason §4.9's same-typed
 # argument rule exists. Label and value travel together, so a named call stays

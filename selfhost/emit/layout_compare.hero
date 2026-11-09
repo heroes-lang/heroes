@@ -28,11 +28,11 @@
 # and its `sizeof` is the width.
 
 use ast
-use handles
-use check/table
 use check/state
-use emit/layout_text
+use check/table
 use emit/layout_rows
+use emit/layout_text
+use handles
 
 constant OVERLAP: str
     "heroes-ffi-overlap"

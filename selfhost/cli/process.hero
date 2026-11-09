@@ -34,8 +34,8 @@
 # callable across a module boundary, so these are the route every other
 # module takes.
 
-use not_text
 use cli/strings
+use not_text
 
 extern "hero_os.h"
     function hero_run_discard_path() -> str

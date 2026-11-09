@@ -23,16 +23,16 @@
 # still ships through a generic callback. Defect 026 keeps that half and says
 # so, rather than letting a green suite imply the class is closed.
 
-use token
 use ast
-use source
+use check/decls as check_decls
+use check/render
+use check/state
+use check/type_fit
+use data_errors
 use parse
 use resolve
-use check/decls as check_decls
-use check/type_fit
-use check/state
-use check/render
-use data_errors
+use source
+use token
 
 # Every function type the program writes, judged once.
 function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])

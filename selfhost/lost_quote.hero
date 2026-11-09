@@ -25,13 +25,13 @@
 # | `ended` | `layout.maybe_terminator`, at a line a literal swallowed |
 # | `lost_lines`, `holds` | `parse/quote_held.held` |
 
-use token
 use diag
-use state
-use stable
 use lost_reading
-use text_outline
 use openers
+use stable
+use state
+use text_outline
+use token
 
 # The stretches of the lines a literal never closed on, each from its line's
 # first quote to its end, in the order of the text, and where each begins.

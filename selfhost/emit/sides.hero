@@ -31,21 +31,21 @@
 # the renderers it hands on to.
 
 use ast
-use source
-use check/table
 use check/state
-use ir
-use ir/containers
+use check/table
+use checker
+use cli/strings
 use emit/ctype
+use emit/decls as emit_decls
 use emit/mangle
 use emit/synth
-use emit/decls as emit_decls
 use emit/worklist
+use ir
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
-use cli/strings
+use source
 
 # The renderer of a value of type `ty`, as C names it: the runtime's for a type
 # it owns, the unit's own for a type the program declares and for a container.

@@ -23,17 +23,17 @@
 # `operator.binary`'s alone, and its C does not move.
 
 use ast
-use handles
-use source
-use ir
-use ir/containers
-use check/table
 use check/state
+use check/table
 use emit/ctype
 use emit/mangle
-use emit/writer
 use emit/operator
 use emit/stop_place
+use emit/writer
+use handles
+use ir
+use ir/containers
+use source
 
 # `operator.binary`, an `==` or `!=` of values holding a handle given its place.
 function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ctype.Names, decls: [ast.Decl], f: containers.Function, op: ir.BinaryOp, left: i64, right: i64, target: str?, site: i64)

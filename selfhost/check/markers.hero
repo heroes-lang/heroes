@@ -20,13 +20,13 @@
 # (int64_t *)` as `void (*)(int64_t)`, an internal error at exit 2.
 
 use ast
-use token
-use source
-use resolved
-use data_errors
-use check/state
 use check/leasing
+use check/state
 use check/table
+use data_errors
+use resolved
+use source
+use token
 
 # Why the argument cannot take the `@`, empty where it can. The words follow
 # `not_mutable`'s, the refusal the `@` alone would earn, one per binding; the

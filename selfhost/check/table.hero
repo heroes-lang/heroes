@@ -23,8 +23,8 @@
 #   parameters in a side arena as a run; Heroes values are all copies, so
 #   the same shape is kept for the same reason wearing the other sign.
 
-use widths
 use check/type_runs
+use widths
 
 ## What a type is
 

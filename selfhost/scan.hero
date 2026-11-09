@@ -14,35 +14,35 @@
 # The order IS the rule, so the ladder keeps Rust's exact sequence. It lives
 # in `punctuation.hero` since panel 181, because the layout asks it too.
 
-use token
-use diag
-use state
-use layout
-use keywords
-use foreign_at
-use number
-use literals
-use lex_interp
-use bytes
-use shown_char
-use punctuation
-use open_line
+use arrow_inside
 use backslash
 use brace_layout
-use map_alone
-use closers
-use loop_headers
-use arrow_inside
 use bracket_reach
-use lost_quote
-use comment_habit
-use word_place
+use bytes
 use c_names
-use separator_runs
-use text_lines
+use closers
+use comment_habit
 use comment_refusal
-use refused_stretch
+use diag
+use foreign_at
+use keywords
+use layout
+use lex_interp
+use literals
+use loop_headers
+use lost_quote
+use map_alone
+use number
+use open_line
 use openers
+use punctuation
+use refused_stretch
+use separator_runs
+use shown_char
+use state
+use text_lines
+use token
+use word_place
 
 ## One line of words
 

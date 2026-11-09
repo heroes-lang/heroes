@@ -16,10 +16,10 @@
 #   message is the one, and `check --permissive`, which drops it, reads the
 #   string as it did before panel 192.
 
-use token
 use diag
-use keywords
 use head_names
+use keywords
+use token
 
 # Which of `diagnostics` a head tells instead, one flag each. A text with
 # nothing said of it, every clean file, is answered at once, and a token is

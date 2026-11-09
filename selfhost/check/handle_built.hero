@@ -14,10 +14,10 @@
 # words `rest: zero` included (`check/rest_zero.hero` leaves a handle to this
 # file), a module's handle `g.Opaque()`, one inside an array or a field.
 
-use token
 use ast
-use source
 use diag
+use source
+use token
 
 function told(s: source.Source, decl: ast.Decl, span: token.Span) -> diag.Diagnostic
     name = source.span_text(s, decl.name)

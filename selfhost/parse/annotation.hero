@@ -20,11 +20,11 @@
 # |---|---|
 # | `past_a_refused_type`, `no_binding_symbol` | `grammar_expr.annotated` |
 
-use token
-use cursor
-use parse/opening
-use lexer
 use cell_errors
+use cursor
+use lexer
+use parse/opening
+use token
 
 # Where the type begun at `typed` refused, the cursor moves to the `@` or `=`
 # its line holds after the type, if one stands there: what it passes is the

@@ -23,12 +23,12 @@
 # two made one wrongly would build one package for two, the direction
 # robustness refuses.
 
-use module/sums
+use bytes
+use cli/strings
 use fetch/address
 use fetch/local_path
 use fetch/url_bytes
-use cli/strings
-use bytes
+use module/sums
 
 # `written` in its one form. An address `address.shaped` refuses is its own
 # text: no catalogue that reads holds one.

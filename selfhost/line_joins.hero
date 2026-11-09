@@ -46,11 +46,11 @@
 # |---|---|
 # | `weigh` | `lexer.lex_one`, after the file's last token |
 
-use token
-use state
-use operand_families as families
-use literal_operands as operands
 use join_fix
+use literal_operands as operands
+use operand_families as families
+use state
+use token
 
 ## The joins, weighed
 

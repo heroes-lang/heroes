@@ -14,17 +14,17 @@
 # rather than assumed.
 
 use ast
-use token
-use source
 use check/state
 use check/table
-use ir
-use ir/containers
+use digits
 use emit/aggregate
 use emit/literal
 use emit/mangle
+use ir
+use ir/containers
+use source
+use token
 use widths
-use digits
 
 # For each parameter of the extern, the position of the sibling its
 # `counted_by` names, or -1: the pointer at position k is counted by the

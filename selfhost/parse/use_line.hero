@@ -24,15 +24,15 @@
 # finding). `uses.rs` is in neither — it calls the cursor and nothing calls it
 # back — so it ports as its own module with the question still open.
 
-use token
-use diag
-use module_text
-use cursor
 use ast
-use keywords
 use bytes
-use parse/use_mark
+use cursor
+use diag
+use keywords
+use module_text
 use package_mark
+use parse/use_mark
+use token
 use use_dots
 
 ## The declaration

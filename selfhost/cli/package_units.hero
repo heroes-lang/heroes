@@ -45,14 +45,9 @@
 # package's folder standing in for a header of the C library or the runtime.
 
 use ast
-use source
-use diag
-use token
 use bytes
-use module/placed
-use emit/unit_plan
-use emit/externs as emit_externs
 use cli/compiling
+use cli/deps
 use cli/digest
 use cli/order_trial
 use cli/process
@@ -60,7 +55,12 @@ use cli/publish
 use cli/read_back
 use cli/response_file
 use cli/strings
-use cli/deps
+use diag
+use emit/externs as emit_externs
+use emit/unit_plan
+use module/placed
+use source
+use token
 
 # Where a module's package lives: the folder its files are opened from, with
 # no `/` at its end, `""` for a module of the program's own or of the

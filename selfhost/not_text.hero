@@ -24,11 +24,11 @@
 # **The note under the first names what the bytes prove and nothing they do
 # not** (panel 189's R4): `byte_evidence.hero` reads it.
 
-use token
+use byte_evidence
 use diag
 use source
 use source_extent
-use byte_evidence
+use token
 
 # How many lines holding such a byte are told one by one.
 constant TOLD: i64

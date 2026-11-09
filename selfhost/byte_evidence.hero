@@ -13,8 +13,8 @@
 # what a byte proves is asked of the bytes alone, where `not_text` places and
 # counts the diagnostics.
 
-use source
 use shown_char
+use source
 
 # A byte as the reader searches for it: `0xE9`.
 function shown(byte: i64) -> str

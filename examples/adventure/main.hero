@@ -20,6 +20,7 @@
 # make, so what is tested is what runs.
 
 use <core>/strings
+
 use game
 use world
 

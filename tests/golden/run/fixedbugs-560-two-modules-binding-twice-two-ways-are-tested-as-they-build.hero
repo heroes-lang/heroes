@@ -8,8 +8,8 @@
 # refused it. It compiles a unit per module now, the root's carrying the
 # runner of every module's tests, and the program's `main` never runs before
 # them.
-use fixedbugs560/long_twice
 use fixedbugs560/int_twice
+use fixedbugs560/long_twice
 
 function main()
     print(long_twice.doubled(x: 3))

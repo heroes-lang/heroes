@@ -16,28 +16,28 @@
 # answer depend on whether the program happened to read the field — a
 # leak whose cause was a field nobody touched.
 
-use token
 use ast
-use source
-use parse
-use resolve
-use resolved
-use check/table
-use check/state
-use check/render
-use check/lower
-use check/walk
-use check/join
-use check/path_end
+use check/declared_once
+use check/discard
 use check/ffi
 use check/freer as freer
 use check/generics
-use check/discard
-use check/declared_once
-use value_errors
-use handles
-use flow_errors
+use check/join
+use check/lower
+use check/path_end
+use check/render
+use check/state
+use check/table
+use check/walk
 use contextless_errors
+use flow_errors
+use handles
+use parse
+use resolve
+use resolved
+use source
+use token
+use value_errors
 
 function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     one_tag_one_type(@c, s, decls)

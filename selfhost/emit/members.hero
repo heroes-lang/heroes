@@ -1,4 +1,3 @@
-use emit/large_size
 # WHO is in a translation unit, and WHAT it must declare — the
 # selection half of the per-module path (panel 093; split out of
 # emit_unit at M-separate-compilation step 6, when the two answers it
@@ -15,17 +14,18 @@ use emit/large_size
 # TU contains what it contains reads this file, and a reader who wants
 # to know what a TU looks like reads unit.
 use ast
-use source
-use check/table
 use check/state
-use ir/containers
-use ir/phases
+use check/table
 use emit
-use emit/ctype
-use emit/types
 use emit/callback_guard
+use emit/ctype
+use emit/large_size
+use emit/types
 use emit/worklist
+use ir/containers
 use ir/instances
+use ir/phases
+use source
 
 # The tables every TU shares, built ONCE for the whole build.
 #

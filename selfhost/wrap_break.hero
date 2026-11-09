@@ -21,10 +21,10 @@
 # and nothing of the parser, the seam the parser's budget lets a move pay
 # along (`tests/harness/suite_layout.hero`, `BUDGETS`).
 
-use token
-use diag
 use ast
+use diag
 use text_lines
+use token
 
 constant CODE: str
     "continuation_outside_brackets"

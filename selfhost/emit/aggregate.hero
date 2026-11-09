@@ -21,17 +21,17 @@
 # so far does. satellite_name lives in emit_ctype — the one home.
 
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use checker
+use emit/ctype
+use emit/mangle
+use emit/places
 use ir
 use ir/containers
-use emit/mangle
-use emit/ctype
-use emit/places
 use parse
 use resolve
-use checker
+use source
 use token
 
 # The C member name of a field, and the type it holds: `emit/places.hero`

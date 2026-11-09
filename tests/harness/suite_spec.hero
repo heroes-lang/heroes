@@ -59,10 +59,10 @@
 # a FLOOR, because an extractor that silently reads nothing turns two checks
 # into decorations.
 
-use report
 use floors
 use json_fields
 use json_read
+use report
 use shell
 use spec_text
 use strings

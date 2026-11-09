@@ -31,12 +31,12 @@
 # `tests/harness/` is excluded the way the Rust excluded `tests/`: it is
 # the net, not the compiler.
 
-use report
 use floors
-use shell
-use strings
 use growth
+use report
+use shell
 use stream_writes
+use strings
 
 constant COMPILER: str
     "selfhost"

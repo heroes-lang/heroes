@@ -31,10 +31,10 @@
 # left in `Key` below, unused by the table, because the FINDING is worth
 # keeping in the file that found it.
 
-use token
 use diag
-use resolve/vocab
 use name_rows
+use resolve/vocab
+use token
 
 ## The compound key that a map cannot sort
 

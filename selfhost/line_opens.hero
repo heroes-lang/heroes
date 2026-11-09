@@ -10,8 +10,8 @@
 # | `opens_a_block` | `indent_runs.with_words`, `indent_runs.tab_line` |
 # | `opens_a_block_before` | `map_alone.begins_a_value` |
 
-use token
 use brace_layout
+use token
 
 # Whether the last line of `tokens` with words opens a block by its tokens:
 # it ends with `=>`, `else` or `:`; it begins with a keyword that heads a

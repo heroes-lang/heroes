@@ -15,10 +15,10 @@
 # |---|---|
 # | `told` | `cli/compile.to_unit` |
 
-use token
+use diag
 use source
 use source_extent
-use diag
+use token
 
 # The report, its caret on the root file's last byte, never the whole text's:
 # the library is appended, so the text's end lands inside it, and the

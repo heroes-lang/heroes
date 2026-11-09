@@ -42,13 +42,13 @@
 # | `told` | `grammar_expr.prefixed` |
 # | `in_value` | `grammar_expr.primary` |
 
-use token
-use diag
 use ast
-use cursor
 use bytes
-use text_lines
+use cursor
+use diag
 use parse/type
+use text_lines
+use token
 
 # How a line that a sigil before a name opens reads with the sigil gone: the
 # words it is told with, its fix, and what `grammar_expr.prefixed` parses.

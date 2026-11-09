@@ -9,9 +9,9 @@
 # what an instruction names is one question, and the verifier's other
 # invariants, a block's shape and §4.8's copy-out, are another.
 
+use check/state
 use ir/containers
 use ir/instances
-use check/state
 
 # A Heroes callee the emitter could not name (defect 417, 2026-10-07): a call,
 # or a function used as a value, whose declaration at the type arguments the

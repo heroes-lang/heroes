@@ -23,8 +23,8 @@
 # diagnostics-and-goldens.md` says a fix that leaves the defect standing is a
 # guess however well it compiles.
 
-use token
 use diag
+use token
 
 # A lent C pointer standing anywhere but in the call that reads it
 # (defect 022, found by the ffi-pragmatist at panel 121; author decision

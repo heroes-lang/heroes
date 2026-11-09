@@ -11,9 +11,9 @@
 # disagree about which is which would be a refcount bug that reproduces
 # once a week. There is one table, and it is this module.
 
-use token
 use ir
 use ir/containers
+use token
 
 # Every value an operation reads. One function, so a new op that
 # forgets to list its operands fails the exhaustiveness check.

@@ -23,10 +23,10 @@
 # |---|---|
 # | `named_by` | `parse/headless.read_below`, `parse/headless.braced` |
 
-use token
 use cursor
 use keywords
 use resolve/near_names
+use token
 
 ## Error codes
 

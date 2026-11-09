@@ -33,11 +33,11 @@
 # Heroes stores no closures (the Cyclone rule's mirror), so the callers
 # pass the finished prefix string instead.
 
-use token
 use ir
 use ir/containers
 use ir/dominators
 use ir/uses
+use token
 
 # Every value invariant, on one function. `label` prefixes every
 # message: "name (after lowering): ".

@@ -13,9 +13,9 @@
 # Every reading of the machine is a spawn that may not start, on a platform
 # without the tool: `unread` or `unknown` is then the cell, never a guess.
 
+use latency_clock
 use shell
 use strings
-use latency_clock
 
 constant TIMER: str
     "/usr/bin/time"

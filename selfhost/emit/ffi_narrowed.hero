@@ -12,22 +12,22 @@
 # does not.
 
 use ast
-use source
-use diag
-use check/table
-use check/state
 use check/freer_marks
-use ir/containers
+use check/state
+use check/table
+use checker
+use diag
+use emit/c_spellings
 use emit/ctype
 use emit/extern_probe
-use emit/probe_reply as probe_reply
-use emit/c_spellings
 use emit/ffi_lookup
 use emit/ffi_site
+use emit/probe_reply as probe_reply
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 # What clang calls a silent narrowing, and what it calls a silent
 # change of sign. Both are the same defect — a parameter declared as

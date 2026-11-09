@@ -17,11 +17,11 @@
 
 use lex/scan
 use lex/token
-use syn/cursor
-use syn/expr as parse_expr
 use run/eval
 use run/expr
 use run/value
+use syn/cursor
+use syn/expr as parse_expr
 use syn/parse
 use syn/tree
 use util/each

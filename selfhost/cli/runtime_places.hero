@@ -11,8 +11,8 @@
 # built for, asked of its header before any unit is written (defect 2259).
 
 use cli/process
-use module/reading
 use emit/runtime_abi
+use module/reading
 
 # `runtime/parts/fs.c` is the C, and names each platform's call.
 extern "hero_os.h"

@@ -29,9 +29,9 @@
 # outline, read once for the whole text (`text_outline.hero`, defect 146):
 # read by a walk for every word, a file of foreign heads cost its square.
 
-use token
 use bytes
 use text_outline
+use token
 
 ## The places
 

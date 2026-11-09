@@ -26,21 +26,21 @@
 # moved into the program's C and this file stood at §11's 300 lines.
 
 use ast
-use source
-use check/table
 use check/state
-use ir/containers
-use emit/mangle
-use emit/ctype
-use emit/descriptors
-use emit/storageless
-use emit/defined
+use check/table
+use checker
 use emit/array_read
+use emit/ctype
+use emit/defined
+use emit/descriptors
+use emit/mangle
 use emit/nodebug
 use emit/stop_place
+use emit/storageless
+use ir/containers
 use parse
 use resolve
-use checker
+use source
 use token
 
 # t4 = hero_array_new(&hero_desc_int, 3); plus one push per element, into

@@ -10,8 +10,8 @@
 # alone (`sign_above.hero`): weighed as a join, that deletion would have been
 # judged as one. So the join is the fix with its title, and one place says so.
 
-use token
 use diag
+use token
 
 constant TITLE: str
     "write the statement on one line"

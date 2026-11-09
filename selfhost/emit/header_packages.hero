@@ -5,9 +5,9 @@
 # unit is handed it.
 
 use ast
-use source
-use ir/containers
 use emit/externs as emit_externs
+use ir/containers
+use source
 
 # Each header a group names, with the packages its groups name, in their
 # written order: asked once per build (`cli/produce.hero`), so a unit's words

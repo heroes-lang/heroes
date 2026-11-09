@@ -55,8 +55,8 @@
 
 use report
 use shell
-use strings
 use spec_text
+use strings
 
 constant CHECK_DIR: str
     "tests/golden/check"

@@ -40,17 +40,17 @@
 #
 # A leaf: nothing here reads the parser.
 
-use token
-use cursor
-use word_place
-use state
-use line_above
 use brace_layout
+use cursor
 use laid_braces
+use line_above
 use map_alone
 use pairing
 use parse/line_end
+use state
 use stray_closers
+use token
+use word_place
 
 ## The habit
 

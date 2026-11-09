@@ -48,17 +48,17 @@
 # initialiser, so the prologue's rule about `goto` never reaches it.
 
 use ast
-use token
-use source
 use check/state
-use ir
-use ir/containers
-use emit/writer
-use emit/ctype
 use emit/aggregate
+use emit/ctype
 use emit/field_lend
 use emit/lend_count
 use emit/stop_place
+use emit/writer
+use ir
+use ir/containers
+use source
+use token
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader: one
 # string each, one home (CLAUDE.md §11). None is a prefix of another.

@@ -9,12 +9,12 @@
 # A leaf: it reads the cursor, the text and the closers a literal left open
 # took, and nothing of the parser.
 
-use token
-use diag
 use cursor
+use diag
+use laid_braces
 use lexer
 use pairing
-use laid_braces
+use token
 
 # What else the line end refused before a token may have been, beside going on
 # with the line above, which is what the fix writes:

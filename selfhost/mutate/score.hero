@@ -23,13 +23,13 @@
 # One mutant per site, sites found in the arena's order, so a run is
 # reproducible from the compiler alone.
 
+use check/state
+use checker
 use diag
 use modules
+use mutate/ops
 use parse
 use resolve
-use checker
-use check/state
-use mutate/ops
 
 # One program of the corpus: the file as it is on disk, and the name it is
 # COMPILED under. The two differ for a module below a nested program's root

@@ -13,15 +13,15 @@
 # |---|---|
 # | `alone`, `offer` | `open_line.refuse_the_end` |
 
-use token
-use state
-use lex_asked
 use diag
-use keywords
 use join_fix
-use next_line
+use keywords
+use lex_asked
 use line_opens
+use next_line
 use sign_above
+use state
+use token
 
 # Whether the line that ends with the token at `at`, which no `\` asked to
 # go on, holds operators alone: an expression broken around them, its

@@ -27,12 +27,12 @@
 # `check --permissive` keeps them, as it keeps panel 066's
 # `raw_carriage_return` (`diag.is_thesis_rule` names the three classes).
 
-use token
-use diag
-use state
 use bytes
-use shown_char
+use diag
 use raw_chars
+use shown_char
+use state
+use token
 
 # What a refused character is written in, which decides its repair.
 variant Holder

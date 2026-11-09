@@ -29,14 +29,14 @@
 # author's that both disagree with the library are each named in one turn,
 # rather than one per run.
 use ast
+use check/decls as declared
+use check/state
 use diag
 use handles
 use parse
 use resolve
 use source
 use token
-use check/state
-use check/decls as declared
 
 function agree(@c: state.Checker, s: source.Source, decls: [ast.Decl])
     reference: {str: i64} @= {}

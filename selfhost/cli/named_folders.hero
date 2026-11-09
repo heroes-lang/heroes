@@ -7,12 +7,12 @@
 # a flag, a package or the environment to change without opening another
 # file. Moved out of `cli/shadowed.hero` when its note learned the four.
 
+use cli/clang_added
 use cli/compiling
 use cli/libraries
 use cli/package_reads
-use cli/strings
-use cli/clang_added
 use cli/shadowed_words
+use cli/strings
 
 # The folders a unit's words search before clang's own, in their order
 # (`compiling.search_words`), read lexically: the runtime's, each

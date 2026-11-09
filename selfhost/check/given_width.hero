@@ -18,18 +18,18 @@
 # against, so a walk that reached one too far changes no note.
 
 use ast
-use source
-use resolved
-use digits
+use check/builtins
+use check/contextual
+use check/declared_once
+use check/group_fields
+use check/lower
+use check/settling
 use check/state
 use check/table
-use check/lower
-use check/contextual
-use check/group_fields
-use check/settling
 use check/waiting as waits
-use check/builtins
-use check/declared_once
+use digits
+use resolved
+use source
 
 # After a call's values were checked, from diagnostic `from` on, where the
 # callee is the library's or an `extern` binding: the receiver's, where the

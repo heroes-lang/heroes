@@ -6,12 +6,12 @@
 # are one concern, what the group names outside itself, and the group reads
 # them through `header` and `library_clause` and nothing else here. A leaf.
 
-use token
-use cursor
 use ast
-use keywords
+use cursor
 use head_names
+use keywords
 use parse/heads
+use token
 
 # The head line's header string. A missing one is where the old headerless
 # spelling lands, so the message repairs THAT program rather than describing

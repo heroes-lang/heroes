@@ -8,8 +8,8 @@
 # struct whose layout is the header's, where the repair depends on which
 # Heroes type was written and is carried in the note rather than guessed.
 
-use token
 use diag
+use token
 
 # A type in an extern's signature that no C header can declare (§4.19).
 # The message names what the boundary DOES carry, because the repair is

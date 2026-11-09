@@ -40,16 +40,16 @@
 # module's first paragraph is about.
 
 use ast
-use check/table
 use check/state
-use ir/phases
-use emit/types
+use check/table
+use checker
 use emit/synth
+use emit/types
 use emit/worklist
-use source
+use ir/phases
 use parse
 use resolve
-use checker
+use source
 
 # Every GENERATED descriptor the program needs, ascending — the key
 # walk is the sort, and the emitted order must be a function of the

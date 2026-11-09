@@ -29,8 +29,8 @@
 # `#line <n> "<file>"`, never by what it said.
 
 use emit/c_text
-use emit/layout_rows
 use emit/guarded_names
+use emit/layout_rows
 
 constant LOCKS: [str]
     [

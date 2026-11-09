@@ -16,9 +16,9 @@ use expectation
 use report
 use shell
 use spec_text
-use strings
 use special_environment
 use special_groups
+use strings
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()

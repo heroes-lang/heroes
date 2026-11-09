@@ -13,12 +13,12 @@
 # constant does a `when` clause compare the result with (`success_c`).
 
 use ast
-use source
-use digits
-use widths
+use check/reaches
 use check/state
 use check/table
-use check/reaches
+use digits
+use source
+use widths
 
 # Does any parameter hand its life into the call? Without one the NULL guard
 # would be an empty `if`, and the C says nothing it does not need to.

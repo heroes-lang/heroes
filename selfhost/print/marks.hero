@@ -8,10 +8,10 @@
 # formatter deleting it. One home, so a sixth word cannot be forgotten in one
 # of two copies — and the `layout` suite's ceiling on `fmt.hero`, which the
 # success clause pushed it past, is the reason the seam was cut today.
-use token
-use source
-use handles
 use digits
+use handles
+use source
+use token
 
 # ` owned sqlite3_free`, or nothing. Written once and read from both
 # positions, so the two cannot learn the form apart (§4.19, panel 109).

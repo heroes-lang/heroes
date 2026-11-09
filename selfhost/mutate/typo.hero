@@ -20,9 +20,9 @@
 #   consulted and did not.
 
 use ast
+use mutate/sites
 use source
 use token
-use mutate/sites
 
 # THE ONE-CHARACTER SLIP ITSELF LIVES IN `mutate_sites`, with the text edit and
 # the questions about one node, and the reason is the language rather than

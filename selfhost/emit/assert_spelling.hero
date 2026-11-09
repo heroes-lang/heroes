@@ -13,14 +13,14 @@
 # error mapper — the message carries marker + C name + declared type,
 # so a clang failure maps back to the author's line.
 
-use check/table
 use check/state
-use widths
+use check/table
+use checker
 use emit/ctype
-use source
 use parse
 use resolve
-use checker
+use source
+use widths
 
 # THE SIX SPELLINGS OF A C STRING, AND THEIR ONE HOME.
 #

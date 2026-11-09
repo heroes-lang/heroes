@@ -47,15 +47,15 @@
 # stacks above.
 
 use ast
-use source
 use check/state
 use check/table
+use emit/ctype
+use emit/lend_count
+use emit/mangle
+use emit/writer
 use ir
 use ir/containers
-use emit/writer
-use emit/ctype
-use emit/mangle
-use emit/lend_count
+use source
 
 # A parameter of a Heroes function, as `flows` keys it: `@` first, which no
 # C name a counted parameter is keyed by can begin with.

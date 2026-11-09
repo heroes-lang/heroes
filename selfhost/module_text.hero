@@ -16,10 +16,10 @@
 # parse, and the parser's line budget (`tests/harness/suite_layout.hero`)
 # holds what does.
 
-use text_lines
 use bytes
-use keywords
 use foreign_words
+use keywords
+use text_lines
 
 # Whether two offsets stand on one line: the distance between them, never
 # each one's line number, a walk from the text's first byte that made a file

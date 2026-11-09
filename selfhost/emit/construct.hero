@@ -11,28 +11,28 @@
 # nothing to report it.
 
 use ast
-use source
 use check/state
+use check/table
+use checker
+use emit/aggregate
+use emit/byte_copy
+use emit/container
+use emit/ctype
+use emit/defined
+use emit/fallible
+use emit/large_construct
+use emit/large_value
+use emit/mangle
+use emit/storageless
+use emit/writer
+use emit/zeroed
 use ir
 use ir/containers
 use ir/layout
-use emit/mangle
-use emit/ctype
-use emit/aggregate
-use emit/container
-use emit/fallible
-use emit/storageless
-use emit/defined
-use emit/zeroed
-use emit/writer
-use emit/byte_copy
-use emit/large_value
-use emit/large_construct
-use token
-use check/table
 use parse
 use resolve
-use checker
+use source
+use token
 
 # Every argument as a C name. An @ place arrives by address (§4.8).
 # The construct op as C, by the shape it builds: a record or a case, an array,

@@ -17,36 +17,36 @@
 # the FFI cluster.
 
 use ast
-use source
 use check/state
-use ir/containers
-use ir/instances
-use emit/mangle
-use emit/ctype
-use emit/signature
-use emit/static_constant
+use checker
+use cli/strings
 use emit/callback_guard
 use emit/callback_thunk
-use emit/inst
+use emit/constant_accessor
+use emit/ctype
 use emit/defined
+use emit/entry_stop
+use emit/inst
+use emit/large_value
+use emit/lend_local
+use emit/mangle
+use emit/nodebug
+use emit/out_of_line
+use emit/prologue
+use emit/signature
+use emit/static_constant
 use emit/term
 use emit/unread
-use emit/constant_accessor
 use emit/writer
-use emit/lend_local
-use emit/prologue
-use emit/nodebug
-use emit/entry_stop
-use emit/large_value
-use emit/out_of_line
-use parse
-use resolve
-use checker
+use ir/containers
+use ir/instances
 use ir/lower
 use ir/mono
-use ir/place_store
 use ir/own
-use cli/strings
+use ir/place_store
+use parse
+use resolve
+use source
 
 # An extern constant has no blocks, so it takes none of the machinery:
 # what it needs is one line — the C name, read where the preprocessor

@@ -30,11 +30,11 @@
 # operator — which is exactly the hand-written discipline the form replaces.
 
 use ast
+use handles as handle_form
+use mutate/sites
 use parse
 use source
 use token
-use mutate/sites
-use handles as handle_form
 
 # Every mutant one source makes: one handle name swapped for another handle
 # name in scope, at one call argument.

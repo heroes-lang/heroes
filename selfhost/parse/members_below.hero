@@ -18,15 +18,15 @@
 # unsaid. The braces and the `,` between members are the habit's debris, and
 # a `{` is one report where it stands (`no_members_below`).
 
-use token
-use cursor
 use ast
+use cursor
 use diag
-use text_lines
-use parse/member_lines
-use parse/swap_reading
 use parse/brace_habit
 use parse/head_lines
+use parse/member_lines
+use parse/swap_reading
+use text_lines
+use token
 
 ## Where the members stand
 

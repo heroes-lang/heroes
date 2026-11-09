@@ -43,16 +43,16 @@
 # check catches an emitter bug and says so.
 
 use ast
-use token
-use source
+use check/lending
+use check/lower
+use check/state
+use data_errors
+use lease_errors
 use parse
 use resolve
-use check/lower
 use resolved
-use check/state
-use check/lending
-use lease_errors
-use data_errors
+use source
+use token
 
 function is_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
     return lending.is_builtin_named(a, r, at, name: "lease")

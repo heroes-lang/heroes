@@ -36,20 +36,20 @@
 # A leaf below the grammar: it reads the cursor, the types and the habits'
 # leaves, and nothing that reads the parser.
 
-use token
-use diag
-use cursor
-use doc_comments
 use ast
-use parse/orphans
-use parse/type
-use parse/line_end
-use parse/colon_habit
-use parse/refused_literal
+use cursor
+use diag
+use doc_comments
+use laid_braces
 use parse/brace_habit
 use parse/braced_lines
+use parse/colon_habit
+use parse/line_end
+use parse/orphans
+use parse/refused_literal
+use parse/type
 use parse/unclosed
-use laid_braces
+use token
 
 ## Fields and cases
 

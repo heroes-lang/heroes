@@ -52,19 +52,19 @@
 # what is left here is one that never closed, taken as the line's last
 # operand (`refused_operand`).
 
-use cursor
 use ast
+use cursor
+use line_opens
 use parse/brace_habit
-use stray_closers
 use parse/headless
+use parse/line_end
+use parse/loop_habit
 use parse/orphans
 use parse/refused_heads
 use parse/refused_literal
-use token
 use separator_runs
-use line_opens
-use parse/loop_habit
-use parse/line_end
+use stray_closers
+use token
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below

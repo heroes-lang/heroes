@@ -27,21 +27,21 @@
 # hide exactly the difference that silently replaces libc's open.
 
 use ast
-use source
-use check/table
-use check/state
 use check/render
+use check/state
+use check/table
+use checker
+use cli/strings
 use inventory
-use shown_char
 use ir
 use ir/containers
 use ir/layout
+use ir/lower
 use ir/questions
 use parse
 use resolve
-use checker
-use ir/lower
-use cli/strings
+use shown_char
+use source
 
 # The whole program, in source order. The strings section lists only
 # the literals the SHOWN functions read — the table is program-wide, so

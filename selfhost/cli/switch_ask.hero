@@ -23,20 +23,20 @@
 # of the program's own groups' names.
 
 use ast
-use source
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/toolchain
 use emit/c_text
 use emit/externs as emit_externs
 use emit/ffi_lookup
 use emit/ffi_switched
 use emit/guarded_names
 use ir/containers
-use cli/toolchain
-use cli/compiling
-use cli/process
-use cli/publish
-use cli/response_file
-use cli/strings
-use cli/read_back
+use source
 
 constant FILE: str
     "hero-ask-switch "

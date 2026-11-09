@@ -10,17 +10,17 @@
 # §7's narrowing: the name is recovered from clang's own text and then
 # asked whether THIS PROGRAM declared it inside an extern group.
 
-use token
 use ast
-use source
+use checker
 use diag
-use handles
 use emit/externs as emit_externs
-use emit/ffi_lookup
 use emit/ffi_held
+use emit/ffi_lookup
+use handles
 use parse
 use resolve
-use checker
+use source
+use token
 
 # What clang says when a bare word names a struct tag and nothing else: the
 # one message this file reads for two purposes, so it is written once.

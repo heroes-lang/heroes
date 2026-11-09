@@ -4,10 +4,10 @@
 # `grammar_expr.hero` on 2026-10-05 (defect 307), the knot standing at its
 # decided ceiling: it reads the tree and the text, and nothing of the grammar.
 
-use token
 use ast
 use cursor
 use operators
+use token
 
 # `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
 # call inside a hole shows in the dump as it shows anywhere.

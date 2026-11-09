@@ -58,13 +58,13 @@
 
 use absence
 use cases
-use report
 use floors
+use placed_trees
+use platform_skips
+use report
 use shell
 use strings
 use suite_descriptors
-use platform_skips
-use placed_trees
 
 constant STORE: str
     "tests/emission"

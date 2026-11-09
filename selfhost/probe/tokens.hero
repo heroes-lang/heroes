@@ -18,8 +18,8 @@
 #   (`int_lit` where it prints `int`), so the seats' runs wrapped names and
 #   booleans only; this wraps what the Python said it would.
 
-use token
 use probe/seed
+use token
 
 function opens(kind: token.TokenKind) -> bool
     return kind == .lparen || kind == .lbracket || kind == .lbrace

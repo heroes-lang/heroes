@@ -51,19 +51,19 @@
 # the author's ruling at 171), and a reader meets one message per lend.
 
 use ast
-use token
-use source
-use handles
+use check/ffi_buffer
+use check/lower
 use check/state
 use check/table
-use check/lower
-use check/ffi_buffer
-use ffi_errors
 use diag
 use digits
-use widths
+use ffi_errors
+use handles
 use parse
 use resolve
+use source
+use token
+use widths
 
 ## The declaration
 

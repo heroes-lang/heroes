@@ -33,10 +33,10 @@
 # stands at that name in the runtime's line, and clang's message ends `did
 # you mean 'HeroStr'?` (`suggested`).
 
+use cli/caret_bytes
+use cli/standard_name
 use emit/clang_place
 use emit/ffi_lookup
-use cli/standard_name
-use cli/caret_bytes
 
 constant NOTE: str
     ": note: "

@@ -15,15 +15,15 @@
 # told what C wants and what the author may do, on the binding.
 
 use ast
-use source
-use diag
-use emit/ffi_lookup
-use emit/ffi_build
-use emit/clang_place
-use cli/toolchain
-use cli/probing
 use cli/defined_twice
+use cli/probing
+use cli/toolchain
 use cli/two_ways_ask
+use diag
+use emit/clang_place
+use emit/ffi_build
+use emit/ffi_lookup
+use source
 
 # The diagnostics for every undefined symbol the linker named that a group
 # binds and the header lists of `asking` give only an inline definition of.

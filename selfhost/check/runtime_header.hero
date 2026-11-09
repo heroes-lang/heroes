@@ -23,11 +23,11 @@
 # compiles against (`cli/runtime_bound.hero`); both are this one code.
 
 use ast
-use source
-use token
+use check/state
 use diag
 use escape
-use check/state
+use source
+use token
 
 constant CODE: str
     "ffi_runtime_header"

@@ -19,10 +19,10 @@
 # question, so the control arm refuses it as the strict build does.
 
 use ast
+use check/state
 use diag
 use source
 use token
-use check/state
 
 function told(@c: state.Checker, s: source.Source, decls: [ast.Decl])
     index: i64 @= -1

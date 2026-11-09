@@ -24,28 +24,28 @@
 # emitter that must assert its absence — ir_phases does, at their
 # phases.
 
-use token
 use ast
-use source
-use parse
-use resolve
-use checker
-use ir/lower
-use check/table
 use check/state
+use check/table
+use checker
 use ir
+use ir/agree
+use ir/callees
 use ir/containers
 use ir/flow
 use ir/graph
 use ir/inout
+use ir/instances
+use ir/lower
+use ir/one_exit
+use ir/phases
+use ir/read_only
 use ir/uses
 use ir/values
-use ir/phases
-use ir/one_exit
-use ir/agree
-use ir/instances
-use ir/callees
-use ir/read_only
+use parse
+use resolve
+use source
+use token
 
 # Whether this function's implementation is C's: an extern function's
 # code, or an extern constant's value (§4.19, panel 038). Both have no

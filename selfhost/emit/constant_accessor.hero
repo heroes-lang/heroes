@@ -16,22 +16,22 @@
 # runtime's, and is written with neither.
 
 use ast
-use source
 use check/state
-use ir/containers
-use emit/ctype
-use emit/signature
-use emit/record_constant
+use checker
+use cli/strings
 use emit/checks_raised
-use emit/value_check
+use emit/ctype
 use emit/extern_assert
-use emit/writer
 use emit/externs as emit_externs
+use emit/record_constant
+use emit/signature
+use emit/value_check
+use emit/writer
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
-use cli/strings
+use source
 
 # The accessor, its signature at the declaration as every signature is, and
 # its `return` at the constant's own line too (defect 2068): a `step` into the

@@ -10,9 +10,9 @@
 # an optional, a list, a map, two type parameters and a function type; then
 # the same through two modules of one name in two directories, bound apart
 # by `as`.
-use fixedbugs2030/one
 use fixedbugs2030/a/held
 use fixedbugs2030/b/held as other
+use fixedbugs2030/one
 
 record Held
     b: str

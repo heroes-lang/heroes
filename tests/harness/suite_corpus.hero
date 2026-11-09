@@ -47,10 +47,10 @@
 
 use absence
 use expectation
-use gallery
-use report
 use floors
+use gallery
 use placed_trees
+use report
 use shell
 use strings
 

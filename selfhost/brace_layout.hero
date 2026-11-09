@@ -53,9 +53,9 @@
 # | `opens_a_body`, `closer_alone`, `ended` | `layout.line_start` |
 # | `value_follows` | `line_opens.opens_a_block` |
 
-use token
-use state
 use openers
+use state
+use token
 
 ## The `{`
 

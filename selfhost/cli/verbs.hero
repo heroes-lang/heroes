@@ -13,22 +13,22 @@
 # abort cannot hide the tests after it, with the report on stdout
 # because the verdicts are the artifact.
 
-use source
-use cli/table as cli_table
 use cli/argv
-use cli/io
 use cli/compile
-use cli/toolchain
-use cli/process
-use cli/input
-use library_source
-use cli/produce
-use cli/served
 use cli/files
+use cli/input
+use cli/io
+use cli/process
+use cli/produce
 use cli/publish
+use cli/served
 use cli/strings
 use cli/symbolized
+use cli/table as cli_table
+use cli/toolchain
+use library_source
 use module/reading as file_reading
+use source
 
 function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
     if argv.has(inv, spelling: "--dump-ir") && argv.has(inv, spelling: "--emit-c")

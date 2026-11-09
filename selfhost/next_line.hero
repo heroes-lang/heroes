@@ -14,12 +14,12 @@
 # one answers the cautious way on a doubt: a `guess` rather than a `certain`
 # fix, an interpolated literal read as a line that may stand alone.
 
-use token
-use punctuation
-use keywords
 use bytes
 use foreign_at
+use keywords
+use punctuation
 use text_outline
+use token
 
 # Does the line from `from` bind or mutate: a lone `=` or an `@` outside
 # brackets?

@@ -14,10 +14,10 @@
 # |---|---|
 # | `placed` | `parse.parse_source`, `parse.parse_bounded`, `parse/readings.read_apart` |
 
-use token
-use diag
 use cursor
+use diag
 use stable
+use token
 
 # One file's parser diagnostics as each arm reads them.
 record Said

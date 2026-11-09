@@ -20,15 +20,15 @@
 # AT that position, so the arguments were already in declaration order
 # before lowering saw them.
 
-use token
 use ast
-use source
-use named_fields
-use check/table
 use check/state
+use check/table
+use checker
+use named_fields
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The two fields of the built-in failure record, in order.
 constant FAILURE_FIELDS: [str]

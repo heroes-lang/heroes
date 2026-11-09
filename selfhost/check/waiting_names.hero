@@ -18,14 +18,14 @@
 # `settle_waiting`).
 
 use ast
-use source
-use resolved
-use check/table
-use check/state
-use check/markers
 use check/function_value
 use check/generics as check_generics
+use check/markers
+use check/state
+use check/table
 use check/waiting
+use resolved
+use source
 
 # Every generic function's name the bindings so far settle in part, its
 # instance binding the callee's letters in turn; what none settles is left.

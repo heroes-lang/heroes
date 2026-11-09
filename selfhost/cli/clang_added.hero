@@ -33,9 +33,9 @@
 # environment moves, which moves the platform's folders with it.
 
 use cli/deps
-use cli/process
 use cli/package_macros
 use cli/package_reads
+use cli/process
 
 # One word of the job this compiler did not pass: its flag as clang wrote it,
 # its value, and the variable the environment's words name as having added

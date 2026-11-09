@@ -22,18 +22,18 @@
 # the widths tables, and the emitted TEXT comes from int_low_text/
 # int_high_text, the same strings the diagnostics print.
 
-use check/table
 use check/state
-use ir
-use ir/containers
-use widths
+use check/table
+use checker
 use emit/ctype
 use emit/writer
-use token
-use source
+use ir
+use ir/containers
 use parse
 use resolve
-use checker
+use source
+use token
+use widths
 
 # Emit into = to_<width>(value) — a T?, always, at every width (the
 # uniform rule the author ratified on 2026-08-13).

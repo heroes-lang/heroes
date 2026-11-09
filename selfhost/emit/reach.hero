@@ -5,11 +5,11 @@
 # 300 lines: moved whole, the fused unit and every translation unit
 # (`emit/unit.hero`) asking it as before.
 
-use check/table
 use check/state
-use ir/containers
+use check/table
 use emit/decls as emit_decls
 use emit/worklist
+use ir/containers
 
 # What one unit's type walk found: every type its functions mention —
 # transitively, because a type names the types it holds: [i64?] is one

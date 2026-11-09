@@ -6,8 +6,8 @@
 # lines; the report that reads it stays there.
 
 use ast
-use resolved
 use check/state
+use resolved
 
 # **Once per report, not once per hole** (defect 113). Each hole walked
 # every local of the program, every name of every module, rendering each

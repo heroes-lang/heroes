@@ -7,12 +7,12 @@
 # them.
 
 use ast
-use token
-use source
+use emit/c_words
 use emit/externs as emit_externs
 use emit/macro_guard
-use emit/c_words
 use parse
+use source
+use token
 
 # A name the unit's C writes from a group: the header that group names, its
 # place among the unit's groups' headers (the first 1), the span it is told

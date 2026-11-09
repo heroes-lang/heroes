@@ -16,18 +16,18 @@
 # hero_unreachable() is the honest spelling: a tag outside the range is
 # the compiler being wrong, not the program.
 
-use token
-use check/table
 use check/state
-use source
-use parse
-use resolve
+use check/table
 use checker
+use emit/ctype
+use emit/mangle
+use emit/writer
 use ir
 use ir/containers
-use emit/mangle
-use emit/ctype
-use emit/writer
+use parse
+use resolve
+use source
+use token
 
 # `out` is whether the function returns through its caller's slot, a large
 # result's (`emit/large_value.hero`): the value is written there before any

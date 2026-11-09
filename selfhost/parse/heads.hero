@@ -22,20 +22,20 @@
 # A leaf below the knot: it reads types, parameters, fields and cases, and
 # nothing that reads the grammar.
 
-use token
+use ast
 use cursor
 use doc_comments
-use ast
 use lexer
-use parse/type
-use parse/signature
-use parse/opening
 use parse/brace_habit
-use parse/members_below
-use parse/member_lines
 use parse/headless
-use parse/swap_reading
+use parse/member_lines
+use parse/members_below
+use parse/opening
 use parse/refused_heads
+use parse/signature
+use parse/swap_reading
+use parse/type
+use token
 
 ## The head
 

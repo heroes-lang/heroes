@@ -35,20 +35,20 @@
 # refusal names is read on the failure path alone, from a `-dD` run.
 
 use ast
-use source
-use diag
-use emit/c_text
-use cli/toolchain
-use cli/compiling
-use cli/probing
+use cli/bound_ask
+use cli/bound_kept
 use cli/bound_names
 use cli/bound_said
-use cli/bound_ask
 use cli/bound_told
-use cli/bound_kept
-use emit/macro_guard
+use cli/compiling
 use cli/order_trial
+use cli/probing
 use cli/strings
+use cli/toolchain
+use diag
+use emit/c_text
+use emit/macro_guard
+use source
 
 # The refusals of every list's names, each name told once, and the names
 # the guard keeps for the units where a bound macro expands to them (defect

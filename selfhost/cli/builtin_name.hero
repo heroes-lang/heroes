@@ -25,18 +25,18 @@
 # would change nothing, so neither note is told as clang wrote it. Any other
 # note stays the compiler's at exit 2.
 
-use source
 use ast
+use cli/caret_bytes
+use cli/clang_excerpt
+use cli/clang_first
+use cli/declared_after
+use cli/group_file
+use cli/runtime_key
 use diag
 use emit/clang_place
 use emit/ffi_lookup
-use cli/group_file
-use cli/runtime_key
-use cli/caret_bytes
-use cli/clang_first
-use cli/clang_excerpt
-use cli/declared_after
 use parse
+use source
 
 # clang's words for the two notes it writes where a declaration's earlier one
 # stands at its own place (`Sema::notePreviousDefinition`), word for word

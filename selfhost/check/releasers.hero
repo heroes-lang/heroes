@@ -24,15 +24,15 @@
 # ceiling, along a seam that is a question: that file asks whether a binding
 # SAYS how a handle begins, this one asks whether what it says RESOLVES.
 use ast
-use source
-use token
-use diag
-use parse
-use handles
-use check/state
-use check/reaches
 use check/acquiring
 use check/decls as declared
+use check/reaches
+use check/state
+use diag
+use handles
+use parse
+use source
+use token
 
 function sets_name_releasers(@c: state.Checker, s: source.Source, decls: [ast.Decl])
     for decl in decls

@@ -16,18 +16,18 @@
 # (2026-10-02).
 
 use ast
-use source
 use check/state
-use emit/extern_union
-use cli/toolchain
+use cli/digest
+use cli/kept
+use cli/pointee
 use cli/process
 use cli/publish
-use cli/response_file
-use cli/digest
-use cli/pointee
-use cli/strings
 use cli/read_back
-use cli/kept
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use emit/extern_union
+use source
 
 # The largest dump kept under `build/`, in bytes: every real header measured
 # for panel 186 dumps far below it (`SDL3/SDL.h`, whole, 30 KB), and a

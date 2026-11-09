@@ -5,9 +5,9 @@
 
 use cli/argv
 use cli/process
-use module/sums
 use fetch/index_source
 use fetch/versions
+use module/sums
 
 # The program's folder as a prefix of its files' paths: "" for the current
 # folder, else `-C`'s folder with a `/` after it; refused where `-C` names no

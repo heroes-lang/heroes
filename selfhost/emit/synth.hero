@@ -20,11 +20,11 @@
 # types had never been asked of the functions instantiated at them.
 
 use ast
-use source
-use check/table
-use check/state
 use check/render
+use check/state
+use check/table
 use emit/worklist
+use source
 
 function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
     no_generics: [str] = []

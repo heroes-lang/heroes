@@ -41,9 +41,9 @@
 # place, and a place that no longer holds its character is red too, so the
 # list cannot outlive what it excuses.
 
-use report
 use floors
 use placed_trees
+use report
 use shell
 use strings
 

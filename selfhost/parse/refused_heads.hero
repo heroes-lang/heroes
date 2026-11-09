@@ -31,10 +31,10 @@
 # And what such a word declares, the declaration its swap names (`declares`),
 # so that a word alone with nothing below it is told what it lacks there.
 
-use token
 use cursor
 use foreign_words
 use lexer
+use token
 
 ## The answer
 

@@ -22,17 +22,17 @@
 # instrument reports, and hero_unreachable() is a program that stops.
 
 use ast
-use source
-use check/table
 use check/state
-use ir/layout
-use emit/mangle
+use check/table
+use checker
 use emit/ctype
+use emit/mangle
 use emit/types
 use emit/writer
+use ir/layout
 use parse
 use resolve
-use checker
+use source
 
 # Whether a value of this declaration owns a counted reference — asked
 # through is_refcounted, the one home for the question. The absent arm

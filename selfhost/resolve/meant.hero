@@ -23,12 +23,12 @@
 # arguments not yet.
 
 use ast
-use token
 use diag
-use source
-use resolve/state
-use resolve/errors
 use resolve/binding as resolve_binding
+use resolve/errors
+use resolve/state
+use source
+use token
 
 # A field lent to C through `.ptr()` is a place C may write: spec § 13, *C
 # writes back through the lend only where the binding is a `@` name*. So

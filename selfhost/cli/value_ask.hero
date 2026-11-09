@@ -21,25 +21,25 @@
 # Mac, 0.07 s on Linux arm64, nothing warm.
 
 use ast
-use source
-use diag
 use check/state
-use emit/value_probe
-use emit/ffi_lookup
-use ir/containers
-use cli/toolchain
-use cli/publish
+use cli/compile
+use cli/constant_dump
 use cli/digest
+use cli/io
 use cli/kept as kept_answers
 use cli/libraries
-use cli/value_run
-use cli/value_c2
-use cli/constant_dump
-use cli/value_fetched
 use cli/package_units
+use cli/publish
+use cli/toolchain
+use cli/value_c2
+use cli/value_fetched
+use cli/value_run
 use cli/value_told
-use cli/compile
-use cli/io
+use diag
+use emit/ffi_lookup
+use emit/value_probe
+use ir/containers
+use source
 
 # What the probes said: a diagnostic per constant a probe refuses, and the
 # compiler's own failure, present where a probe of the compiler's own making

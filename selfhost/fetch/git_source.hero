@@ -20,18 +20,18 @@
 use cli/process
 use cli/read_back
 use cli/strings
-use module/catalogue
-use module/placed
-use module/reading
-use not_text
-use source
-use module/fingerprint
 use fetch/address
 use fetch/git_words
 use fetch/made_repo
 use fetch/staging
 use fetch/transport
 use fetch/tree_names
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module/reading
+use not_text
+use source
 
 # One file of the commit's tree as git lists it.
 record Blob

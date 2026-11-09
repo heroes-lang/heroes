@@ -19,8 +19,8 @@
 use bytes
 use cli/process
 use cli/publish
-use cli/strings
 use cli/read_back
+use cli/strings
 
 # THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"if you
 # need to, you can require a recent minimum clang version, whichever you

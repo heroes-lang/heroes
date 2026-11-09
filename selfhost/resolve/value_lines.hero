@@ -29,11 +29,11 @@
 # `print`, `end_lease` or `exit`, or of a function declared without `->`.
 
 use ast
-use source
 use inventory
-use value_parts
 use resolve/state
 use resolve/unused_sweep
+use source
+use value_parts
 
 # Where no cell went unwritten, which is every program the rule accepts, the
 # lines are not read at all, so a correct program pays one pass over its

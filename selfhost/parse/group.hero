@@ -22,20 +22,20 @@
 # tails next door to the dispatcher, `file -> extern_group -> members ->
 # function_tail` was a ring, and Heroes refuses module cycles.
 
-use token
-use diag
-use cursor
-use c_names
-use doc_comments
 use ast
-use parse/tails
-use parse/records
-use parse/swap_reading
-use parse/opening
+use c_names
+use cursor
+use diag
+use doc_comments
 use parse/braced_lines
-use parse/members_below
 use parse/group_head
 use parse/line_end
+use parse/members_below
+use parse/opening
+use parse/records
+use parse/swap_reading
+use parse/tails
+use token
 
 ## The extern group
 

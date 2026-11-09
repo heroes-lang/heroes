@@ -11,12 +11,12 @@
 # - The fallback is loud: a character that cannot continue a based literal
 #   ends it with a diagnostic, never by silently handing `2` back as a token.
 
-use token
-use diag
-use state
-use digits
 use bytes
+use diag
+use digits
 use leading_zeros
+use state
+use token
 
 ## What a run of digits turned out to be
 

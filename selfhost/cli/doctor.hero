@@ -10,13 +10,13 @@
 # one author-ratified exception to §10's stopping rule, admitted in
 # the class --version occupies: zero input, constant output, exit 0.
 
-use cli/table as cli_table
+use cli/clang_floor
 use cli/io
-use cli/toolchain
 use cli/process
 use cli/publish
-use cli/clang_floor
 use cli/read_back
+use cli/table as cli_table
+use cli/toolchain
 use emit/runtime_abi
 
 record Check

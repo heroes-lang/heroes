@@ -23,8 +23,8 @@
 #   render-in-base helper; the width-aware twin names an IntKind, which is
 #   checker vocabulary, and ports with the checker at M-selfhost-port.
 
-use token
 use diag
+use token
 use widths
 
 ## Error codes

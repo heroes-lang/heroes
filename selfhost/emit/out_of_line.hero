@@ -36,17 +36,17 @@
 # it was, byte for byte. The word is spelled as C reserves it, so no group's
 # header can define it as a macro (`emit/guarded_names.hero`'s list).
 
+use check/state
+use checker
+use emit/ctype
+use emit/large_size
+use emit/large_value
 use ir
 use ir/containers
-use emit/ctype
-use emit/large_value
+use ir/lower
 use parse
 use resolve
-use checker
-use check/state
 use source
-use ir/lower
-use emit/large_size
 
 # The attribute, written before the definition's signature.
 constant WORD: str

@@ -10,12 +10,12 @@
 # is; the exception is a statement that IS an if or a match, which
 # keeps its keyword and carries its blocks indented below.
 
-use token
 use ast
-use source
 use digits
-use print/types
 use parse
+use print/types
+use source
+use token
 
 function write_block(tree: ast.Ast, s: source.Source, block: ast.Block, indent: i64) -> str
     rows: [str] @= []

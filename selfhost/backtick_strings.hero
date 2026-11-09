@@ -58,8 +58,8 @@
 # | `is_template` | `refused_runs.gathered` |
 # | `quote_end`, `line_end`, `TEMPLATE_SAID`, `BACKTICKS_SAID` | `backtick_told` |
 
-use diag
 use bytes
+use diag
 use literals
 use next_line
 

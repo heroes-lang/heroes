@@ -22,14 +22,14 @@
 # #84611 is a stack overflow inside this very check, Nim #13715 a
 # SIGSEGV, Zig #21436 an undetected cycle plus a crash.
 
-use token
-use diag
 use ast
-use source
-use resolved
+use diag
 use parse
 use resolve
+use resolved
 use size_errors
+use source
+use token
 
 # One by-value containment edge: from's field lands a whole `to` inside
 # it. `field` is the span the caret points at — the field's TYPE as

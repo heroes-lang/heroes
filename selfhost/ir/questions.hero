@@ -16,13 +16,13 @@
 # functions that call INWARDS only are exactly the ones that can leave.
 # Cut at M-declared-freer step 1, panel 109's condition.
 
-use token
 use ast
-use source
-use resolved
-use check/table
 use check/state
+use check/table
 use ir
+use resolved
+use source
+use token
 
 # The type a block produces: its last statement's, when that statement
 # is an expression. Read straight out of the checker's dense table —

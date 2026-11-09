@@ -11,9 +11,9 @@
 # where the missing half was supposed to come from — which is why almost
 # every message here ends by telling the author to write an annotation.
 
-use token
 use diag
 use digits
+use token
 
 # An empty literal with nothing to type it. The guess shows an annotation of
 # the literal's own kind: until defect 553 one example served both, and an

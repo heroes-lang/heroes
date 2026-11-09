@@ -24,13 +24,13 @@
 # | `ends_at` | `layout.line_start` |
 # | `ended_by_a_brace` | `scan.finish`, a `{` that ends the line of C's `for` header |
 
-use token
-use state
-use next_line
+use brace_layout
 use closers
 use loop_headers
-use brace_layout
+use next_line
 use openers
+use state
+use token
 
 # Whether the line under `l.pos`, whose margin is `spaces`, ends the reach
 # of every opener still open: where it does, each is named there and the

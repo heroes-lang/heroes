@@ -9,6 +9,7 @@
 # rule and `* item` is a bullet, so the rule is asked about first.
 
 use <core>/strings
+
 use inline
 
 variant Block

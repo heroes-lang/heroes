@@ -12,8 +12,8 @@
 #
 # `keywords.hero` is the same table for words; this is the one for the rest.
 
-use token
 use number
+use token
 
 record Punct
     kind: token.TokenKind

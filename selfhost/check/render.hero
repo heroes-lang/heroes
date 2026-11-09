@@ -10,12 +10,12 @@
 # needs the declarations: nominal types are names, and the name lives in
 # the declaration list.
 
-use source
 use ast
-use parse
-use widths
-use resolved
 use check/table
+use parse
+use resolved
+use source
+use widths
 
 # `generics` names the type parameters of the function the message is
 # about (§4.12 keeps generics on functions, and a message is always about

@@ -50,10 +50,10 @@
 # lines of one bracket with no counted token crossed, and the blank lines
 # around a comment.
 
-use token
 use lexer
 use probe/seed
 use text_lines
+use token
 
 # One comment, placed: `owner` as this reader reads it, `canonical` where
 # the canonical form puts it (the run rule's block, for a block comment),

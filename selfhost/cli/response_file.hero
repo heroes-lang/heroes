@@ -39,6 +39,8 @@
 use cli/digest
 use cli/process
 use cli/publish
+use cli/strings
+use cli/toolchain
 
 # The rule clang reads the file by, named on the line so that no host's
 # default is asked.
@@ -140,9 +142,6 @@ function quoted(word: str) -> str
     return parts.join("")
 
 ## Tests
-
-use cli/strings
-use cli/toolchain
 
 test "a word is written in double quotes with a backslash before each backslash and each quote (defect 583)"
     assert quoted("build/tu-0/a.o") == "\"build/tu-0/a.o\""

@@ -12,13 +12,13 @@
 # arguments, its `instance_key`; one copy each is what keeps them agreeing,
 # and what lets the verifier ask the emitter's own question.
 
-use ir/containers
 use check/state
-use source
+use checker
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 # The type arguments the instruction at span end `at` names, as a call's are
 # read: this copy's own table first, since monomorphisation substituted it per

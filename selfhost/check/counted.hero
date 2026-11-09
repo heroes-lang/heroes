@@ -16,12 +16,12 @@
 # through [T] stops at the container, which is counted whatever it holds.
 
 use ast
-use source
+use check/lower
+use check/state
+use check/table
 use parse
 use resolve
-use check/lower
-use check/table
-use check/state
+use source
 
 # One entry per interned type: does a value of it own a counted
 # reference. Dense over the interner, built after checking, when no more

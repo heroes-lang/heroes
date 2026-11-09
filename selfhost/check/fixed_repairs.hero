@@ -15,15 +15,15 @@
 # sweep's to find (defect 408), since it reads what the resolver said each
 # name is, and it is handed in as `into`.
 
-use token
 use ast
-use source
+use check/lower
+use check/state
+use check/table
+use ffi_errors
 use parse
 use resolve
-use check/table
-use check/state
-use check/lower
-use ffi_errors
+use source
+use token
 
 function told(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span, into: ffi_errors.BuiltInto?)
     growable = growable_twin(@c, ty)

@@ -19,18 +19,18 @@
 # for this language; `()` survives because its premise is about C's
 # GRAMMAR, and a grammar does not acquire new headers.
 
-use token
 use ast
-use source
-use parse
-use resolve
-use check/table
-use check/state
-use check/lower
-use check/lend_extent
 use check/ffi_buffer
 use check/fixed_repairs
+use check/lend_extent
+use check/lower
+use check/state
+use check/table
 use ffi_errors
+use parse
+use resolve
+use source
+use token
 
 ## The vocabulary — can a C header spell this at all?
 

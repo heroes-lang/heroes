@@ -8,8 +8,8 @@
 # type grammar it left had grown past §11's 300 lines by the bare function
 # type it now reads.
 
-use token
 use cursor
+use token
 
 ## Reading it
 

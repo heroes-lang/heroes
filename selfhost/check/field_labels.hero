@@ -10,11 +10,11 @@
 # (`label_order.told`).
 
 use ast
-use source
-use label_errors
-use check/state
-use check/labels
 use check/label_order
+use check/labels
+use check/state
+use label_errors
+use source
 
 # `names` and `types` are the record's fields in the order it declares them,
 # and `said` the first diagnostic told since its values were checked.

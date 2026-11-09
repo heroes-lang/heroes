@@ -8,11 +8,11 @@
 # second name, and two names that may be one file holding two texts. A failure
 # after that, a full disk, leaves each file whole and names those written.
 
-use source
 use cli/files as fs
 use cli/io
 use cli/publish
 use cli/strings
+use source
 
 # One write per file: two spellings of one name that differ in case alone,
 # which this Mac's volume opens as one file, kept once where their texts

@@ -20,11 +20,11 @@
 # nothing, and the field's diagnostic says what it always said.
 
 use ast
-use source
-use emit/ctype
 use emit/c_text
-use emit/mangle
+use emit/ctype
 use emit/externs as emit_externs
+use emit/mangle
+use source
 
 constant FIELD: str
     "hero-ask-field "

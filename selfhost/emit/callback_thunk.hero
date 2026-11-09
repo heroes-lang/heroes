@@ -42,23 +42,23 @@
 # `a_callback_crosses_only_as_an_argument` below is what fires the day it is.
 
 use ast
-use source
-use check/table
-use check/state
 use check/reaches
+use check/state
+use check/table
+use checker
+use cli/strings
+use emit/callback_guard
+use emit/ctype
+use emit/large_value
+use emit/mangle
+use emit/signature
+use emit/writer
 use ir/containers
 use ir/instances
-use emit/mangle
-use emit/ctype
-use emit/signature
-use emit/callback_guard
-use emit/large_value
-use emit/writer
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
-use cli/strings
+use source
 
 # The thunk's C name: the function's own with the synthetic marker in front,
 # `h_0cb_main_seen` for `h_main_seen`. A Heroes module component is sanitised

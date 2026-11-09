@@ -20,10 +20,10 @@
 # that array to every declaration it resolves).
 
 use ast
-use source
-use resolved
 use inventory
 use parse
+use resolved
+use source
 
 record Offered
     # The table's count of writes when these were gathered.

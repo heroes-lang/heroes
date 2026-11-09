@@ -16,13 +16,13 @@
 # and a list of the bytes that are not text, instead of a failure that every
 # reader took for *cannot read*, or for absence.
 
-use source
-use diag
-use not_text
 use byte_evidence
 use cli/digest
 use cli/files
 use cli/process
+use diag
+use not_text
+use source
 
 # `runtime/parts/os.c` is the C, and `runtime/hero_os.h` says what the result
 # holds. `lent`: the call reads the path while it runs and keeps nothing.

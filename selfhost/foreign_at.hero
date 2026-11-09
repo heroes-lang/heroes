@@ -30,12 +30,12 @@
 # writes (`swap_words.hero`), and the parser reads that, so the byte and the
 # place are read once, by the stage that writes the fix.
 
-use token
-use foreign_words
-use word_place
-use word_neighbours
-use text_outline
 use c_names
+use foreign_words
+use text_outline
+use token
+use word_neighbours
+use word_place
 
 ## Error codes
 

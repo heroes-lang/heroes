@@ -34,12 +34,12 @@
 # language turned a naming slip into a compile error, which is the thesis
 # working on the compiler that implements it.
 
-use token
-use diag
 use describe
-use swap_words
+use diag
 use report_marks
 use stream_tables
+use swap_words
+use token
 
 ## Reading the text
 

@@ -18,16 +18,16 @@
 # printed across lines is a block's head, and every line of it after its
 # first goes eight columns further in (`margins.deepened`).
 
-use token
 use ast
-use source
 use handles
-use print/types
-use print/signature
-use print/page
+use print/breaks
 use print/margins
 use print/owners
-use print/breaks
+use print/page
+use print/signature
+use print/types
+use source
+use token
 
 # The signature of `fd`, whose name is at `name`, and the comment trailing
 # its last line.

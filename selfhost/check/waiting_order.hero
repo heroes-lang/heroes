@@ -21,15 +21,15 @@
 # form alone.
 
 use ast
-use source
-use resolved
-use check/table
-use check/state
-use check/lower
 use check/contextual
 use check/function_value
 use check/generics as check_generics
+use check/lower
+use check/state
+use check/table
 use check/waiting
+use resolved
+use source
 
 # Whether the receiver of the call `at`, `x.f(…)`, is typed by the call as its
 # first argument rather than read first to look for a field (§4.11; panel 203

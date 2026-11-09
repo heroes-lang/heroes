@@ -27,14 +27,14 @@
 # unit's C is what it was, byte for byte.
 
 use ast
-use source
 use check/state
 use check/table
-use ir/layout
+use checker
 use emit/writer
+use ir/layout
 use parse
 use resolve
-use checker
+use source
 
 constant DEFINITION: str
     "#define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), \"heroes-copy\"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)"

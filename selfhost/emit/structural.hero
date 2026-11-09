@@ -23,19 +23,19 @@
 # index — same bytes out, one fewer string trick.
 
 use ast
-use handles
-use source
-use check/table
 use check/state
-use emit/mangle
-use emit/ctype
-use emit/types
-use emit/descriptors
-use emit/writer
-use parse
-use resolve
+use check/table
 use checker
 use cli/strings
+use emit/ctype
+use emit/descriptors
+use emit/mangle
+use emit/types
+use emit/writer
+use handles
+use parse
+use resolve
+use source
 
 # Structural ==, field by field (§4.3).
 function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, at: ctype.Aggregate, fields: [ast.Field])

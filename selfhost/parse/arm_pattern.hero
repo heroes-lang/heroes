@@ -26,10 +26,10 @@
 # Out of the expression knot, because it no longer calls into it: the cursor
 # and the tree are all it asks. `grammar_expr.arm` calls `read`.
 
-use token
-use diag
 use ast
 use cursor
+use diag
+use token
 
 # What a pattern may be, the tail of every refusal here.
 constant ALLOWED: str

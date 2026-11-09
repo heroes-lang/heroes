@@ -25,16 +25,16 @@
 
 use cli/process
 use cli/strings
-use module/catalogue
-use module/fingerprint
-use module/placed
-use module/sums
 use fetch/address
 use fetch/made_index
 use fetch/made_repo
 use fetch/staging
 use fetch/transport
 use fetch/tree_names
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module/sums
 
 extern "hero_compiler.h"
     function hero_file_sha256(path: cstr lent, @status: i64) -> str

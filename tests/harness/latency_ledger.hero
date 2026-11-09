@@ -16,8 +16,8 @@
 # rewritten), so a row is never rewritten; a reading since falsified is
 # answered by a later row.
 
-use strings
 use latency_clock
+use strings
 
 constant LEDGER: str
     "docs/measurements/061-the-latency-ledger.md"

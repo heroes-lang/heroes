@@ -39,12 +39,12 @@
 # (`shadowed_binding`, `resolve/top.hero`'s "a local may not take a name a
 # `use` bound").
 
-use token
-use source
 use cursor
 use parse
 use print/owners
 use print/sheet
+use source
+use token
 
 ## The state
 

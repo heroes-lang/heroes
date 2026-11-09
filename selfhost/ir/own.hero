@@ -44,25 +44,25 @@
 # because the synthetic slot is overwritten each iteration and the
 # overwrite releases.
 
-use token
 use ast
-use source
 use check/state
+use checker
 use ir
 use ir/containers
+use ir/held
 use ir/layout
-use ir/owning
-use parse
-use resolve
-use checker
 use ir/lower
 use ir/mono
-use ir/verify
+use ir/owning
 use ir/place_store
-use ir/survival
-use ir/held
-use ir/uses
 use ir/released
+use ir/survival
+use ir/uses
+use ir/verify
+use parse
+use resolve
+use source
+use token
 
 # Insert the reference counting. Idempotent by construction: advance_to
 # refuses a second run.

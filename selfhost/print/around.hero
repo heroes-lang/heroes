@@ -8,14 +8,14 @@
 # `written` on 2026-09-27, when the same round took it past them again;
 # none of this calls that knot back.
 
-use token
 use ast
-use source
-use print/page
-use print/parens
+use print/breaks
 use print/elements
 use print/groups
-use print/breaks
+use print/page
+use print/parens
+use source
+use token
 
 # How a value is printed beside what surrounds it: parenthesised below
 # `needed`, opened even with no comment inside when `open`, and inside the

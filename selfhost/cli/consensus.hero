@@ -22,23 +22,23 @@
 # --in-place` reaches here (`main.hero`); a directory with anything else is
 # told unreadable, as defect 295 left it.
 
-use token
-use lexer
-use diag
-use source
-use source_extent
-use modules
-use library_source
-use module/reading
+use cli/agreed_writes
 use cli/argv
 use cli/certain
 use cli/check
 use cli/io
 use cli/process
 use cli/publish
-use cli/agreed_writes
 use cli/strings
 use cli/table as cli_table
+use diag
+use lexer
+use library_source
+use module/reading
+use modules
+use source
+use source_extent
+use token
 
 # One file as one root read it: its text then, and what that root's certain
 # fixes make of it.

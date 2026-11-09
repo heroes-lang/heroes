@@ -22,22 +22,22 @@
 # dump that does not compile answers nothing, and the field is told as before.
 
 use ast
-use source
+use cli/bound_macro
+use cli/digest
+use cli/probing
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/toolchain
 use emit/externs as emit_externs
 use emit/ffi_asked
 use emit/ffi_lookup
+use emit/layout_rows
 use emit/layout_text
 use emit/layout_visible
-use emit/layout_rows
-use cli/toolchain
-use cli/probing
-use cli/bound_macro
-use cli/process
-use cli/publish
-use cli/response_file
-use cli/read_back
-use cli/digest
 use parse
+use source
 
 # clang's words for a member a type does not have.
 constant NO_MEMBER: str

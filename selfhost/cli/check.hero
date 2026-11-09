@@ -9,28 +9,28 @@
 # about the same input — and a file with ??? in it is NOT wrong: it
 # type-checks everything else, the holes go to stdout, exit 0.
 
-use source
-use source_extent
+use check/hole_report
+use check/holes
+use check/state
+use checker
+use cli/apply_answer
+use cli/argv
+use cli/certain
+use cli/check_json
+use cli/holes_json
+use cli/io
+use cli/table as cli_table
 use diag
 use diag_render
-use parse
-use modules
-use resolve
-use rename_fit
-use checker
-use not_text
-use check/state
-use check/holes
-use print/scopes
-use cli/table as cli_table
-use cli/argv
-use cli/io
-use cli/check_json
-use cli/certain
-use cli/apply_answer
-use cli/holes_json
-use check/hole_report
 use library_source
+use modules
+use not_text
+use parse
+use print/scopes
+use rename_fit
+use resolve
+use source
+use source_extent
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     parsed = parse.parse_source(s)

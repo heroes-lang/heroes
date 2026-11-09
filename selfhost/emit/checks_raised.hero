@@ -36,12 +36,12 @@
 # leaves the checks alone.
 
 use ast
-use source
-use ir/containers
-use emit/externs as emit_externs
-use emit/writer
 use cli/flags
 use cli/strings
+use emit/externs as emit_externs
+use emit/writer
+use ir/containers
+use source
 
 # The warnings clang makes errors by default, which a header can turn off
 # like any other and which the build's flags do not name.

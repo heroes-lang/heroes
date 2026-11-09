@@ -15,12 +15,12 @@
 # | `in_brackets` | `grammar_expr.match_expr`, `grammar_expr.if_expr` |
 # | `enclosing_openers`, `holds`, `openers_around` | `parse/list_line`, `parse/map_line`, `grammar_expr.call_args` |
 
-use token
 use cursor
-use text_lines
 use pairing
 use parse/opening
 use parse/unclosed
+use text_lines
+use token
 
 # A head inside brackets, `print(match t` over its arms or `f(if c` over its
 # body (defect 269): what it owes goes on the lines below it, one level

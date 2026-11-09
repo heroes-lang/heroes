@@ -28,9 +28,9 @@
 # one shape it names: a function with a result that falls off its end, which
 # only a hole lets past the checker, and of which no binary is ever made.
 
-use token
 use ir
 use ir/containers
+use token
 
 # The return slot's name, for the reader of a dump: what makes it the return
 # slot is its kind.

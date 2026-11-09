@@ -26,12 +26,12 @@
 # sitting measured +3.29% of the seed's bytes, against +7.4% and 416 KiB
 # rebased at load for a record per site).
 
-use source
-use ir/containers
 use emit/c_text
 use emit/nodebug
+use ir/containers
 use module/names as module_names
 use module/paths
+use source
 use token
 
 # The four arguments, `"file", "function", line, column`, for the site at

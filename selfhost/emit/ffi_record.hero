@@ -12,16 +12,16 @@
 # that lived here until then read clang's prose through the #line mapping and
 # named a declared field when the one left out was in the middle.
 
-use token
 use ast
-use source
+use checker
 use diag
-use emit/externs as emit_externs
 use emit/extern_union
+use emit/externs as emit_externs
 use emit/ffi_lookup
 use parse
 use resolve
-use checker
+use source
+use token
 
 # A group's record over a C UNION TYPE, at the operations that would answer
 # wrongly (panels 073, 077, 186): comparing one, hashing it or keying a map by

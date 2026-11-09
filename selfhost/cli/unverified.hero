@@ -13,10 +13,10 @@
 # `lex --json` and `check --apply --json`, whose stderr is no document, were
 # silenced with it. Stderr is left to the document only where it is one.
 
-use source
 use cli/argv
 use cli/io
 use module/reached
+use source
 
 # What each package read from a `path` entry is told, once a package, in the
 # order discovery reached them.

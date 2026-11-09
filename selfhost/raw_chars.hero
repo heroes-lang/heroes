@@ -20,11 +20,11 @@
 # its one spelling; a NUL by no escape at all, and a carriage return by its
 # own, `\r`.
 
-use token
 use diag
-use state
 use escape
 use shown_char
+use state
+use token
 
 ## The characters
 

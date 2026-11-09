@@ -22,14 +22,14 @@
 # cell, `m @= l`, the write it forgot is offered first: `l @ m` as its last
 # statement, or before its `return`.
 
-use token
 use ast
 use diag
-use source
-use resolved
-use resolve/state
 use resolve/errors
+use resolve/state
 use resolve/unused_sweep
+use resolved
+use source
+use token
 
 # The rule, after the walk: every `@` parameter read and never written, not
 # left to the checker, told at its name.

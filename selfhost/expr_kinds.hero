@@ -13,8 +13,8 @@
 # | `is_place` | `grammar_expr.expression_or_mutation` and `call_args` |
 # | `depth` | its own test: moved out of `ast.hero` (panel 194), the walk that proves the arena needs no recursive type |
 
-use token
 use ast
+use token
 
 # Does this operand carry a block, so that the expression ends with it, or
 # could it not be read, so that `while >` is not refused twice (defect 131)?

@@ -24,20 +24,20 @@
 # ffi-pragmatist's veto of any copy of a record).
 
 use ast
-use source
 use check/state
 use check/table
-use ir
-use ir/containers
-use emit/writer
-use emit/ctype
 use emit/aggregate
+use emit/ctype
 use emit/lend_count
 use emit/lend_extent
-use emit/probe_params
 use emit/nodebug
 use emit/padding
+use emit/probe_params
 use emit/stop_place
+use emit/writer
+use ir
+use ir/containers
+use source
 use widths
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader.

@@ -17,12 +17,12 @@
 # may stand is not a type fact either and stays `check/lending.hero`'s.
 
 use ast
-use token
-use source
 use check/state
 use check/table
-use widths
+use source
+use token
 use value_errors
+use widths
 
 # The typing of the lend AND the lease, moved here from `check/builtins.hero`,
 # which is at its decided ceiling. A lend and a lease both take a `str` and

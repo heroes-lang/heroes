@@ -26,14 +26,14 @@
 # program binds them as the library does.
 
 use ast
-use source
-use token
-use diag
-use module/reading
-use emit/c_words
-use cli/own_names
 use check/runtime_header
 use cli/compile
+use cli/own_names
+use diag
+use emit/c_words
+use module/reading
+use source
+use token
 
 # The build stopped where a binding names the runtime's own: its refusals
 # printed as `check`'s are, and the failure `compile.leave` gives a stage.

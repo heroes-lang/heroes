@@ -35,65 +35,65 @@
 # asked what type `break` has. Divergence lives in `Outcome.leaves` and
 # reaches expressions only as an absent branch value in the join.
 
-use token
 use ast
-use source
-use resolved
-use parse
-use resolve
-use inventory
-use digits
-use widths
-use check/table
-use check/type_fit
-use check/state
-use check/lower
-use check/render
-use check/ops
 use check/access
-use check/field_names
-use check/contextual
-use check/consuming
-use check/join
-use check/builtins
-use check/labels
-use check/label_order
-use check/labels_in_place
-use check/field_labels
 use check/builtin_args
-use check/group_fields
-use check/handle_built
-use handles
-use check/markers
-use check/function_value
-use check/generics as check_generics
-use check/generic_argument
-use check/waiting as waits
-use check/waiting_order as settle_order
-use check/settling
-use check/empty_binding
-use check/width_class
-use check/given_width
+use check/builtins
+use check/callee_text
+use check/consuming
+use check/contextual
 use check/declared_once
-use check/exit_code
 use check/discard
-use check/kept_cells
-use value_errors
-use discard_errors
-use data_errors
-use label_errors
-use flow_errors
-use contextless_errors
-use ffi_errors
+use check/empty_binding
+use check/exit_code
+use check/field_labels
+use check/field_names
 use check/freer as freer
 use check/freer_marks
+use check/function_value
+use check/generic_argument
+use check/generics as check_generics
+use check/given_width
+use check/group_fields
+use check/handle_built
 use check/interp
-use check/reach
-use check/path_end
-use check/callee_text
-use check/operands
+use check/join
+use check/kept_cells
+use check/label_order
+use check/labels
+use check/labels_in_place
+use check/lower
+use check/markers
 use check/mismatch
 use check/name_types
+use check/operands
+use check/ops
+use check/path_end
+use check/reach
+use check/render
+use check/settling
+use check/state
+use check/table
+use check/type_fit
+use check/waiting as waits
+use check/waiting_order as settle_order
+use check/width_class
+use contextless_errors
+use data_errors
+use digits
+use discard_errors
+use ffi_errors
+use flow_errors
+use handles
+use inventory
+use label_errors
+use parse
+use resolve
+use resolved
+use source
+use token
+use value_errors
+use widths
 
 ## The two statement-side answers
 

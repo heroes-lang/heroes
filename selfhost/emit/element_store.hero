@@ -17,24 +17,24 @@
 # twice.
 
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use checker
+use emit/aggregate
+use emit/array_read
+use emit/container
+use emit/ctype
+use emit/defined
+use emit/mangle
+use emit/nodebug
+use emit/places
+use emit/stop_place
 use ir
 use ir/containers
 use ir/layout
-use emit/mangle
-use emit/ctype
-use emit/aggregate
-use emit/container
-use emit/defined
-use emit/places
-use emit/array_read
-use emit/nodebug
-use emit/stop_place
 use parse
 use resolve
-use checker
+use source
 use token
 
 # What replaces the value at a C lvalue the walk reached in place, a field or a

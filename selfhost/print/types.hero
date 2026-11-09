@@ -7,8 +7,8 @@
 # a type, and by heroes fmt — written once, used everywhere.
 
 use ast
-use source
 use parse
+use source
 use type_text
 
 function render_type(tree: ast.Ast, id: i64, s: source.Source) -> str

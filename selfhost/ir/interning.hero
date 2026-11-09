@@ -5,8 +5,8 @@
 # `build.Lowering`.
 
 use diag
-use token
 use ir/build
+use token
 
 # Interns a decoded string, by a lookup in the ids table. The ids are given
 # in the order strings first appear, which keeps them stable across two runs

@@ -26,8 +26,8 @@
 # Rust's two run newtypes Args/Steps are ONE record Run — the type
 # distinction was compile-time-only and Heroes indices are honest i64s.
 
-use token
 use check/contextual
+use token
 
 # A run inside a function's args or steps arena: start and length.
 record Run

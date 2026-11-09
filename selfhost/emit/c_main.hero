@@ -14,21 +14,21 @@
 # does not exist on this platform, measured, a 999-block leak exiting 0
 # in silence.
 
-use source
 use bytes
 use check/state
-use ir/containers
-use emit/mangle
-use emit/writer
-use emit/provenance
+use checker
 use emit/c_text
+use emit/mangle
+use emit/provenance
 use emit/stop_place
+use emit/writer
+use ir/containers
+use ir/lower
 use module/names as module_names
-use shown_char
 use parse
 use resolve
-use checker
-use ir/lower
+use shown_char
+use source
 
 # The line that opens a shim's C function called `name`: `main` in every
 # unit a build compiles, the probe's hidden name in its copy, so the

@@ -12,10 +12,10 @@
 # block, and `parse/statement_end.close`, below a line the lexer refused
 # past its head, whose block is the rest of that line and goes whole.
 
-use token
 use cursor
 use lexer
 use stream_tables
+use token
 
 # A block where a statement should start, which no head opens: named, once,
 # and read by the caller, its own mistakes told, where until 2026-09-29 it

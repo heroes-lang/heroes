@@ -4,13 +4,13 @@
 # fifth round of defects 099 and 101, along the seam between matching the
 # two texts and printing their lines; nothing here prints.
 
-use token
-use source
-use lexer
-use digits
 use ast
+use digits
+use lexer
 use print/elements
 use print/owners
+use source
+use token
 
 # Which printed token each written one is, -1 for one `render` does not
 # print, or nothing where the two are not the same tokens. Every token but

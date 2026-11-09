@@ -69,13 +69,13 @@
 # `UnloadModel` one for four arrays.
 
 use ast
-use source
-use token
+use check/decls as declared
+use check/reaches
+use check/state
 use diag
 use parse
-use check/state
-use check/reaches
-use check/decls as declared
+use source
+use token
 
 # Every handle type some `extern` function takes back. The map is keyed on the
 # handle's DECLARATION, which `one_tag_one_type` makes a program-wide identity.

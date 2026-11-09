@@ -30,14 +30,14 @@
 # parameter.
 
 use bytes
-use emit/ffi_pointee
-use emit/width_line
-use emit/ffi_unit
-use emit/ffi_read_only
-use emit/ffi_past_prototype
 use cli/pointee_ask
 use emit/c_text
+use emit/ffi_past_prototype
+use emit/ffi_pointee
+use emit/ffi_read_only
+use emit/ffi_unit
 use emit/guarded_names
+use emit/width_line
 
 constant PREFIX: str
     "hero_ty_"

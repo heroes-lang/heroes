@@ -38,15 +38,15 @@
 # nested `if` recurses through, where a list's temporaries would widen each
 # level's frame.
 
-use token
 use ast
-use source
-use resolved
-use check/table
 use check/state
+use check/table
 use check/type_fit
-use value_errors
 use flow_errors
+use resolved
+use source
+use token
+use value_errors
 
 # How control leaves a statement, a block or a branch, if it does: it
 # `falls` to the next line; it `jumps`, by a `return`, or by a `break` or a

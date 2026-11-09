@@ -27,11 +27,11 @@
 #   runs the later block whole, its own writes included, before arriving;
 # - two points of one block in the wrong order.
 
-use token
 use ir
 use ir/containers
 use ir/graph
 use ir/survival
+use token
 
 # Whether some instruction that may write `root` can run after instruction
 # `from_at` of block `from_block` and before instruction `to_at` of block

@@ -20,15 +20,15 @@
 # refused body is a consequence, not a finding, and reporting both is the
 # two-diagnostics-for-one-mistake defect.
 
-use diag
 use ast
-use source
-use resolved
+use diag
 use parse
+use resolve/constant_body
+use resolve/decls as resolve_decls
 use resolve/state
 use resolve/top
-use resolve/decls as resolve_decls
-use resolve/constant_body
+use resolved
+use source
 
 ## Both checks, in the order a reader wants them
 

@@ -21,11 +21,11 @@
 # |---|---|
 # | `wider`, `window` | `diag_render.excerpt` |
 
-use token
-use source
-use diag
 use bytes
+use diag
 use shown_char
+use source
+use token
 
 # The widest line an excerpt prints whole, in columns: `print/fmt`'s
 # `WIDTH`, the width of every line the formatter writes where it can break.

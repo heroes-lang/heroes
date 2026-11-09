@@ -58,27 +58,27 @@
 # sign conversions alone in a header, wherever it was found
 # (`emit/header_region.hero`, defect 569).
 
-use source
 use ast
+use checker
+use cli/builtin_name
+use cli/caret_bytes
+use cli/clang_excerpt
+use cli/clang_first
+use cli/declared_after
+use cli/flags
+use cli/group_file
+use cli/headers_together
+use cli/own_names
+use cli/process
+use cli/read_back
 use diag
 use emit/clang_place
-use emit/ffi_lookup
-use cli/read_back
-use cli/process
-use cli/headers_together
-use cli/group_file
-use cli/clang_first
-use cli/clang_excerpt
-use cli/caret_bytes
-use cli/declared_after
-use cli/own_names
-use cli/builtin_name
 use emit/ffi_build
+use emit/ffi_lookup
 use emit/header_region
-use cli/flags
 use parse
 use resolve
-use checker
+use source
 
 constant AS_ERROR: str
     "[-Werror"

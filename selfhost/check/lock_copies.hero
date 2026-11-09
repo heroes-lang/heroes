@@ -21,16 +21,16 @@
 # measured; a condition of that seat's approval).
 
 use ast
-use source
-use resolved
-use diag
+use check/leasing
+use check/lending
 use check/state
 use check/table
-use check/lending
-use check/leasing
+use diag
 use emit/lock_screen
 use ir/layout
 use read_lend
+use resolved
+use source
 use token
 
 constant CODE: str

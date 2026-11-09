@@ -53,10 +53,10 @@
 # `add_line`, which grows them in place (design.md Part 8 wart 8's
 # spelling), so a line costs its own push and no other.
 
-use source
 use emit/line_join
 use emit/line_name
 use emit/probe_cut
+use source
 
 # What clang believes the next output line is: which file, and which
 # line in it. `none` — nothing claimed yet, the file is its own truth.

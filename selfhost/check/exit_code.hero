@@ -30,12 +30,12 @@
 # refusal is not about a width: `256` fits an `i64`.
 
 use ast
-use diag
-use source
-use token
 use check/contextual
 use check/settling
 use check/state
+use diag
+use source
+use token
 
 # After a call was checked: where the callee is the library's `exit`, each
 # value it is handed (the receiver, where the dot gave one, then the

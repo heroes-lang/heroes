@@ -21,9 +21,9 @@
 # reserve.
 
 use bytes
+use cli/group_file
 use emit/clang_place
 use emit/ffi_lookup
-use cli/group_file
 
 constant SUFFIX: str
     "_t"

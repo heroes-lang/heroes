@@ -8,9 +8,9 @@
 # it is `cli/switch_ask.hero`'s and `cli/unswitch_ask.hero`'s, and the words
 # are here.
 
-use token
 use diag
 use emit/ffi_lookup
+use token
 
 # What a refused round learned of a name a switch decides: the switch, and
 # the headers after which the unit found it defined where it hides the name,

@@ -5,11 +5,11 @@
 # and this as the marks; the split is a seam and not a size, the two halves
 # being read for different reasons.
 
-use token
 use ast
-use source
-use resolved
 use check/flow
+use resolved
+use source
+use token
 
 # Does any `extern` here end a life outright? Where none does, the walk has
 # nothing to find and the program pays nothing (the early exit

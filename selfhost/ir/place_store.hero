@@ -38,15 +38,15 @@
 # put a container between the slot and the header, which is the exact
 # corruption panel 037 measured — and the place is an array.
 
-use token
-use ir
-use ir/containers
-use ir/uses
-use ir/graph
-use ir/between
-use inventory
 use check/state
 use check/table
+use inventory
+use ir
+use ir/between
+use ir/containers
+use ir/graph
+use ir/uses
+use token
 
 function run(@p: containers.Program)
     rewritten: [containers.Function] @= []

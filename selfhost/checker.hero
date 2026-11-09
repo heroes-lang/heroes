@@ -22,33 +22,33 @@
 # can see.
 
 use ast
-use source
-use diag
-use parse
-use resolved
-use resolve
-use check/state
-use check/sized
+use check/acquiring
+use check/const_steps
+use check/contracts
+use check/counted
 use check/decls as check_decls
-use check/map_keys
-use check/type_labels
+use check/endless
 use check/ffi_sweep
 use check/fixed_judged
-use check/rest_zero
-use check/marks
-use check/acquiring
-use check/releasers
-use check/contracts
-use check/moved
-use check/lending
-use check/leasing
-use check/read_lends
-use check/counted
 use check/freer_marks
-use check/endless
-use check/const_steps
 use check/kept_cells
+use check/leasing
+use check/lending
+use check/map_keys
+use check/marks
+use check/moved
+use check/read_lends
+use check/releasers
+use check/rest_zero
 use check/runtime_header
+use check/sized
+use check/state
+use check/type_labels
+use diag
+use parse
+use resolve
+use resolved
+use source
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.

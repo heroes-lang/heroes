@@ -14,8 +14,8 @@
 # `x @ ` stand on the arm's line as well; the block is the one of the two
 # forms the fix writes.
 
-use token
 use diag
+use token
 
 # Where a repair is written: the compilation's text, the first byte of the
 # statement's value, and whether that value begins its line.

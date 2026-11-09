@@ -28,14 +28,14 @@
 # the whole payload is bound by name — so the rule the bootstrap needs
 # rustc to enforce is this language's default.
 
-use token
 use ast
-use source
-use shown_char
-use print/types
-use print/signature as sig
-use print/bodies
 use parse
+use print/bodies
+use print/signature as sig
+use print/types
+use shown_char
+use source
+use token
 
 # **The dump as `heroes parse --dump-ast` hands it to a terminal** (defect
 # 290): `dump_ast`, each control character but a line end and a tab written

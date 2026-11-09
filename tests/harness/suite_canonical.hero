@@ -56,8 +56,8 @@
 # something must type it, and the harness already runs the binary and
 # reads files. A `--check` flag would be surface bought for nothing.
 
-use report
 use floors
+use report
 use shell
 use strings
 

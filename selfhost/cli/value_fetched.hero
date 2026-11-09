@@ -27,18 +27,18 @@
 # constants read so at exit 0): judging it is panel 218's C2, which runs.
 
 use ast
-use source
-use diag
 use check/state
 use check/table
-use emit/value_probe
-use emit/ffi_lookup
-use emit/record_constant
 use cli/constant_dump
 use cli/opening
 use cli/toolchain
 use cli/value_run
+use diag
+use emit/ffi_lookup
+use emit/record_constant
+use emit/value_probe
 use ir/containers
+use source
 
 # The refusals of the constants `accessors` asks of the fetched package's unit
 # `one`, a diagnostic for each the reading cannot value, in the order they

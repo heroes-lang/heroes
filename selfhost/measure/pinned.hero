@@ -46,9 +46,9 @@
 # than computed — because a headroom sentence against a stale count is the
 # exact sentence that cost this project 998 tokens.
 
+use cli/count_tokens
 use cli/io
 use cli/refresh
-use cli/count_tokens
 use cli/table as cli_table
 
 constant SPEC_REAL_TOKENS: i64

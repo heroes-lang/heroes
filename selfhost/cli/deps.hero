@@ -80,8 +80,8 @@
 
 use bytes
 use cli/digest
-use cli/kept
 use cli/files
+use cli/kept
 use cli/process
 use module/reading as file_reading
 

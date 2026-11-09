@@ -31,16 +31,16 @@
 # `check/rest_zero.hero` asks `reading` of the same calls and marks each
 # construction the words end, so which call may end with them is written once.
 
-use token
 use ast
-use source
 use diag
-use resolved
 use handles
 use keywords
-use resolve/state
-use resolve/plain_literal
 use parse/rest_words
+use resolve/plain_literal
+use resolve/state
+use resolved
+use source
+use token
 
 # What the words ending a call find there.
 variant Reading

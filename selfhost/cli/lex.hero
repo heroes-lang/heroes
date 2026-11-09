@@ -8,16 +8,16 @@
 # eight-line program printed 470 lines, the library's included, at
 # concatenated numbers with no file marker.
 
-use token
-use source
 use char_column
-use lexer
-use diag
-use shown_char
-use cli/table as cli_table
 use cli/argv
 use cli/io
 use cli/json_text
+use cli/table as cli_table
+use diag
+use lexer
+use shown_char
+use source
+use token
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     out = lexer.lex(s)

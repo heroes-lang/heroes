@@ -24,16 +24,16 @@
 # make the line legible only to a reader who knows whether the base names a
 # type or a value, which is not on that line.
 
-use token
 use ast
-use diag
-use source
-use resolved
-use check/table
 use check/state
+use check/table
 use data_errors
+use diag
 use named_fields
 use resolve/near_names
+use resolved
+use source
+use token
 
 function names_a_record(r: resolved.Resolved, decls: [ast.Decl], base: i64) -> bool
     match r.uses[base]

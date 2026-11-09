@@ -17,9 +17,9 @@
 # which tells a union's or an enum's tag as the type's spelling would have.
 
 use ast
-use source
 use handles
 use parse
+use source
 
 # The answer for `name` where it is a HANDLE's tag the header holds, and absent
 # where the answer is `neither`, none was given, the word is no handle's tag,

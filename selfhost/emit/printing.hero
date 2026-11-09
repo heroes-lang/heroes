@@ -7,16 +7,16 @@
 #
 # Cut out of `emit/ops.hero` on 2026-09-24 at the `layout` suite's ceiling:
 # that file answers what a CALL is in C, and `print` is not a call.
-use source
-use token
-use parse
-use resolve
-use checker
-use check/table
 use check/state
+use check/table
+use checker
+use emit/writer
 use ir
 use ir/containers
-use emit/writer
+use parse
+use resolve
+use source
+use token
 
 function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked, run: ir.Run, arguments: [str])
     at: i64 @= 0

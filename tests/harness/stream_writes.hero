@@ -35,8 +35,8 @@
 # name; and `relaid` reached through a module alias, which reads as a write
 # and is refused, the loud direction.
 
-use strings
 use growth
+use strings
 
 # The field a stream's tokens are held in.
 constant FIELD: str

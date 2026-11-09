@@ -25,24 +25,24 @@
 # shared home.
 
 use ast
-use source
-use token
-use diag
-use check/state
 use check/freer as freer
 use check/freer_marks
 use check/render
-use ir/containers
+use check/state
+use checker
+use diag
 use emit/ctype
 use emit/extern_probe
-use emit/probe_reply as probe_reply
 use emit/ffi_lookup
-use emit/ffi_site
 use emit/ffi_pointee
+use emit/ffi_site
+use emit/probe_reply as probe_reply
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
+use token
 
 # A parameter the header declares WRITABLE, which .cstr() cannot
 # supply, as clang's phrase about the probe's call says it.

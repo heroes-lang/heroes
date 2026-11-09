@@ -27,16 +27,16 @@
 # | `expect_after` | a token a production writes after a line that can end: `:`, `->` |
 # | `continued` | `parse/unclosed`, under an opener the lexer named never closed; `parse/list_line`, between a literal's elements |
 
-use token
-use diag
 use cursor
 use describe
+use diag
 use keywords
-use operators
 use open_line
+use operators
 use parse/line_end_readings
-use text_lines
 use report_marks
+use text_lines
+use token
 
 ## What the parser is reading
 

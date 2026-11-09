@@ -23,25 +23,25 @@
 # diagnostics department.
 
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use checker
+use diag
+use emit/builtins
+use emit/decls as emit_decls
+use emit/defined
+use emit/key_pointer
+use emit/types
+use inventory
 use ir
 use ir/containers
-use inventory
-use emit/types
-use emit/key_pointer
-use emit/builtins
-use emit/defined
-use emit/decls as emit_decls
-use diag
-use token
-use parse
-use resolve
-use checker
 use ir/lower
 use ir/questions
 use library_source
+use parse
+use resolve
+use source
+use token
 
 record GateNote
     code: str

@@ -5,8 +5,8 @@
 # `test` blocks of `fetch/` call it.
 
 use cli/process
-use module/fingerprint
 use fetch/made_repo
+use module/fingerprint
 
 # `name` at `version` published into the index folder `idx`: `files`, a path
 # and its text in turn, and `raw`, a path and its bytes in hexadecimal in

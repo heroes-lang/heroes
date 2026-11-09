@@ -41,19 +41,19 @@
 # from that root (another binding, a call's result, a join's slot) already
 # holds a count of its own.
 
-use token
-use ir
-use ir/containers
-use ir/borrowed
-use ir/survival
-use source
 use check/state
-use parse
-use resolve
 use checker
+use ir
+use ir/borrowed
+use ir/containers
 use ir/lower
 use ir/mono
 use ir/place_store
+use ir/survival
+use parse
+use resolve
+use source
+use token
 
 # One reading of a function for the ownership pass: the loads that lend
 # their header to a read after a write to their root (`borrowed.lenders_of`,

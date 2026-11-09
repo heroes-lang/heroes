@@ -21,11 +21,11 @@
 # else told about the function stays.
 
 use ast
-use token
-use source
 use diag
-use type_text
 use parse
+use source
+use token
+use type_text
 
 # The classes that refuse a record at its own declaration.
 constant OWN: [str]

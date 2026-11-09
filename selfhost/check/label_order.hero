@@ -17,17 +17,17 @@
 # those in its place (`diag.kept`) and refuses the call as it always did. A
 # value that fits neither keeps its own message. Its fix: `check/order_fix.hero`.
 
-use token
-use diag
 use ast
-use source
+use check/callee_text
+use check/labels
+use check/labels_in_place
+use check/order_fix
+use check/state
+use diag
 use inventory
 use label_errors
-use check/state
-use check/labels
-use check/callee_text
-use check/order_fix
-use check/labels_in_place
+use source
+use token
 
 # The values of a call whose labels name one another's positions, by index in
 # the order written, and the position each one's label names.

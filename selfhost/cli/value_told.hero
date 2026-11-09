@@ -11,18 +11,18 @@
 # between running and telling.
 
 use ast
-use source
-use diag
-use check/state
-use check/render
-use emit/value_probe
-use emit/ffi_lookup
-use emit/ffi_value
-use emit/ffi_constant_value
 use bytes
+use check/render
+use check/state
 use cli/bound_said
 use cli/caret_bytes
 use cli/strings
+use diag
+use emit/ffi_constant_value
+use emit/ffi_lookup
+use emit/ffi_value
+use emit/value_probe
+use source
 
 # One finding's diagnostics: a trapped accessor's constant told on its own
 # line; a probe's death, or its link that left a symbol undefined, told once.

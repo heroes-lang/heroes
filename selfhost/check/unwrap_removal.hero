@@ -19,9 +19,9 @@
 #
 # A leaf: it lexes the call's own text and reads nothing of the checker.
 
-use token
 use diag
 use lexer
+use token
 
 # The call less its `.name(…)`, and how sure that removal is.
 record Removal

@@ -8,15 +8,15 @@
 # 300: the dispatcher, `decl.file`, reads the seven heads, and this module
 # is the one arm that reads none. Nothing here calls back into `decl`.
 
-use token
-use cursor
 use ast
+use cursor
 use grammar_expr
+use parse/brace_habit
+use parse/braces
+use parse/members_below
 use parse/opening
 use parse/refused_heads
-use parse/members_below
-use parse/braces
-use parse/brace_habit
+use token
 
 # What stands on a `use` line past what it names, `use geom )`: told as
 # anything at the top level that opens no declaration is, and the rest of

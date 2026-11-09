@@ -14,16 +14,16 @@
 # echo of the source (panel 038's trap), and no column arithmetic is
 # needed because the marker names the parameter.
 
-use token
 use ast
-use source
-use diag
-use emit/ffi_lookup
-use emit/c_spellings
+use checker
 use cli/pointee_ask
+use diag
+use emit/c_spellings
+use emit/ffi_lookup
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The contract between the check that writes the assertion and this
 # reader: one string, one home (CLAUDE.md §11).

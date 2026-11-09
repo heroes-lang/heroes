@@ -21,21 +21,21 @@
 # build refused there that binds no header value pays nothing; one that does
 # pays the probe, cold once, its verdict kept by its key.
 
-use source
+use cli/compile
+use cli/pointee_ask
+use cli/probing
+use cli/settled
+use cli/toolchain
+use cli/value_beside
+use cli/value_run
 use diag
-use module/names as module_names
-use emit/unit
-use emit/members
 use emit/lend_local
 use emit/lend_type
+use emit/members
+use emit/unit
 use emit/value_probe
-use cli/compile
-use cli/toolchain
-use cli/settled
-use cli/probing
-use cli/pointee_ask
-use cli/value_run
-use cli/value_beside
+use module/names as module_names
+use source
 
 # The units the probe asks: every module's whose unit defines an asked
 # accessor, written marked, under the words its unit would compile with.

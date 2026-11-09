@@ -11,9 +11,9 @@
 # the body, LLVM has --verify-each, Go runs checkFunc between phases;
 # all three audited verbatim by panel 021's historian.
 
-use token
 use diag
 use ir
+use token
 
 # What a lowered function is: a constant's body, a function, an extern
 # with no body, or a test block. A constant becomes a zero-argument

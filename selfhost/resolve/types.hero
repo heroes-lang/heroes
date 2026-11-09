@@ -14,19 +14,19 @@
 # constructor, and those are two questions asked in two places — here, and
 # in the expression walk.
 
-use token
 use ast
-use source
-use resolved
-use resolve/vocab
-use widths
-use resolve/state
-use resolve/did_you_mean
-use resolve/offered
-use resolve/errors
 use module/diagnostics
+use resolve/did_you_mean
+use resolve/errors
 use resolve/missing_use
+use resolve/offered
+use resolve/state
+use resolve/vocab
+use resolved
+use source
+use token
 use type_text
+use widths
 
 function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     match a.types[id].kind

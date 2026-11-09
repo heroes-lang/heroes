@@ -11,18 +11,18 @@
 # 2026-09-30 (`arrow_habit`), where what follows the parameters is decided,
 # its fix `certain` only where the head has a body below it or none is owed.
 
-use token
+use ast
+use cursor
 use diag
 use lexer
-use cursor
-use ast
-use parse/type
-use parse/line_end
 use parse/brace_habit
-use parse/opening
 use parse/colon_habit
-use parse/members as parse_members
+use parse/line_end
 use parse/marks as parse_marks
+use parse/members as parse_members
+use parse/opening
+use parse/type
+use token
 
 record Signature
     generics: [token.Span]

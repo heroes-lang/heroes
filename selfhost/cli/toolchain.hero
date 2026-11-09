@@ -28,20 +28,20 @@
 #   the shell's sorted order) because the language has no readdir;
 #   same fact, same key, different plumbing.
 
-use cli/io
-use cli/link_flags
+use cli/clang_asked
 use cli/clang_floor
 use cli/deps
-use cli/opening
 use cli/digest
 use cli/flags
+use cli/io
+use cli/link_flags
+use cli/opening
 use cli/process
 use cli/publish
 use cli/runtime_key
-use cli/strings
 use cli/runtime_places
 use cli/served
-use cli/clang_asked
+use cli/strings
 use emit/runtime_abi
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.

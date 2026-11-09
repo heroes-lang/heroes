@@ -11,8 +11,8 @@
 # §4.11's lookup fit in one diagnostic instead of two passes each guessing
 # one.
 
-use token
 use diag
+use token
 
 function not_a_record(got: str, field: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(

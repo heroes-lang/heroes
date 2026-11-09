@@ -15,30 +15,30 @@
 # it catches is a wrong compiler.
 
 use ast
-use source
+use check/holes
+use check/state
+use checker
+use cli/argv
+use cli/io
+use cli/no_entry
+use cli/table as cli_table
 use diag
 use diag_render
-use parse
-use modules
-use resolve
-use resolved
-use rename_fit
-use checker
-use check/state
-use check/holes
+use emit
+use emit/decls as emit_decls
 use ir/containers
 use ir/lower
-use ir/verify
 use ir/mono
 use ir/own
 use ir/place_store
 use ir/print
-use emit/decls as emit_decls
-use emit
-use cli/table as cli_table
-use cli/argv
-use cli/io
-use cli/no_entry
+use ir/verify
+use modules
+use parse
+use rename_fit
+use resolve
+use resolved
+use source
 
 record Options
     # The clang optimisation level — part of the cache key, because

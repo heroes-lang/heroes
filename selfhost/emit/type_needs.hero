@@ -11,8 +11,8 @@
 # typedef, as `typeorder.hero` keeps it.
 
 use ast
-use check/table
 use check/state
+use check/table
 use emit/ctype
 use emit/types
 

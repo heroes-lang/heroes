@@ -23,16 +23,16 @@
 # a pattern's plain literal is the only spelling its text has
 # (`resolve/walk`); nor is the library's, which no program edits.
 
-use token
 use ast
 use diag
-use source
-use resolved
+use escape_readings
 use inventory
 use plain_holes
-use escape_readings
-use resolve/state
 use resolve/braced_names
+use resolve/state
+use resolved
+use source
+use token
 
 # The plain literal `id` of the walk: refused where a hole names bindings all
 # bound here; else every name its holes read is kept, with the local it

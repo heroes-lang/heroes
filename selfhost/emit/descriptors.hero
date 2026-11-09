@@ -14,19 +14,19 @@
 # through the header's own elem, so [[i64]] and [[str]] need one
 # descriptor between them rather than one each.
 
-use check/table
+use ast
 use check/state
+use check/table
+use checker
 use emit/ctype
-use emit/writer
 use emit/descriptor_set
 use emit/synth
-use ir/layout
-use ast
+use emit/writer
 use handles
-use source
+use ir/layout
 use parse
 use resolve
-use checker
+use source
 
 # The C expression for a pointer to this type's descriptor, or absent
 # where the backend has no representation — which the gate has already

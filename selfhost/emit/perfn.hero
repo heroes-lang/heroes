@@ -15,22 +15,22 @@
 # small record (§4.2), so it gets exactly what a record gets.
 
 use ast
-use handles
-use source
+use bytes
 use check/state
-use ir/layout
-use emit/ctype
-use emit/types
-use emit/synth
-use emit/counted as emit_counted
-use emit/structural
-use emit/descriptors
-use emit/writer
-use parse
-use resolve
 use checker
 use cli/strings
-use bytes
+use emit/counted as emit_counted
+use emit/ctype
+use emit/descriptors
+use emit/structural
+use emit/synth
+use emit/types
+use emit/writer
+use handles
+use ir/layout
+use parse
+use resolve
+use source
 
 record GeneratedType
     at: ctype.Aggregate

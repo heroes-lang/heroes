@@ -13,11 +13,11 @@
 # a folder.
 
 use ast
-use diag
-use source
-use module/names as module_names
 use bytes
 use cli/process
+use diag
+use module/names as module_names
+use source
 
 extern "stdlib.h"
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64

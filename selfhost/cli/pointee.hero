@@ -58,31 +58,31 @@
 # line first.
 
 use ast
-use source
 use check/state
-use ir/containers
-use emit/externs as emit_externs
-use cli/toolchain
-use cli/libraries
+use checker
 use cli/compiling
-use cli/process
-use cli/publish
-use cli/response_file
-use cli/digest
 use cli/deps
+use cli/digest
 use cli/header_types
+use cli/kept
+use cli/libraries
 use cli/pointee_ask
 use cli/pointee_wants
-use cli/strings
+use cli/process
+use cli/publish
 use cli/read_back
-use cli/kept
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use emit/externs as emit_externs
 use emit/ffi_lookup
-use emit/ffi_read_only
 use emit/ffi_past_prototype
+use emit/ffi_read_only
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 ## The check itself
 

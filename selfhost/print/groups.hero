@@ -8,10 +8,10 @@
 # and the output guard (`print/anchors.hero`) read these, so the printer and
 # the guard count the same pairs.
 
-use token
 use lexer
-use source
 use print/owners
+use source
+use token
 
 # The author's grouping parentheses around the value at `span`, as the
 # token index of each `(`, the innermost first. The tree keeps none, and

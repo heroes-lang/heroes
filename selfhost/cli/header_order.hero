@@ -29,19 +29,19 @@
 # And on `ffi_unknown_name`'s path, the same search asked of a name
 # (`cli/name_order.hero`). A build that compiles pays nothing for any of it.
 
-use source
 use ast
-use diag
-use emit/externs as emit_externs
-use cli/toolchain
 use cli/compiling
-use cli/order_trial
+use cli/declared_after
 use cli/header_meaning
+use cli/header_reads
 use cli/header_refused
 use cli/headers_together
 use cli/order_groups
-use cli/declared_after
-use cli/header_reads
+use cli/order_trial
+use cli/toolchain
+use diag
+use emit/externs as emit_externs
+use source
 
 # The C11 headers (C11 7.1.2) but the four every unit reads already, the
 # likeliest a header leans on first.

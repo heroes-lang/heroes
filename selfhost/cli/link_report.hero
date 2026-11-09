@@ -31,9 +31,9 @@
 # leaves a name undefined (measured), so on macOS only an archive's
 # reference is reported.
 
+use cli/strings
 use emit/ffi_build
 use emit/ffi_lookup
-use cli/strings
 
 # One reference a refused link reports: the undefined name, and who refers
 # to it as the linker named it with its decorations taken off (`placed`), ""

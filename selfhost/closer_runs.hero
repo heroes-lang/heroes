@@ -23,8 +23,8 @@
 # |---|---|
 # | `told_once` | `parse.parse_source`, `parse.parse_bounded` |
 
-use token
 use diag
+use token
 
 # `said`, the parser's reports in the order it said them, each run of closers
 # told alike told once, at its first.

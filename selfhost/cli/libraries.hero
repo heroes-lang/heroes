@@ -23,13 +23,13 @@
 # the other's `-I`) or that `lz4.h` is not on the include path. They are
 # private names now (`cli/publish.hero`), removed once read.
 
+use cli/package_answer
+use cli/package_macros
+use cli/package_words
 use cli/process
 use cli/publish
-use cli/strings
 use cli/shell_split
-use cli/package_answer
-use cli/package_words
-use cli/package_macros
+use cli/strings
 
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's

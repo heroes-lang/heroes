@@ -17,8 +17,8 @@
 # spaces, since a Heroes line is indented with spaces alone (spec § 1), so
 # the two counts agree there by what the value is.
 
-use token
 use text_lines
+use token
 
 # A token, placed: its kind, the 0-based line it starts on, and its start
 # and end as byte offsets into that line. A token never spans a line: a

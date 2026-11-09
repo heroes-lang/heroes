@@ -10,8 +10,8 @@
 # the gate, so it leaves along the seam it always had.
 
 use ast
-use check/table
 use check/state
+use check/table
 use emit/synth
 
 # Does this type REACH a ptr or a cstr, through fields, payloads or

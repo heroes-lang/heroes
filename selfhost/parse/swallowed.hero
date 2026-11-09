@@ -28,12 +28,12 @@
 
 use cursor
 use next_line
+use pairing
+use parse/line_end
+use parse/unclosed
+use spill_reading
 use text_lines
 use word_place
-use pairing
-use spill_reading
-use parse/unclosed
-use parse/line_end
 
 # Where the body below a head begun at token `from` ends, read through a view
 # from the cursor, where the head's bracket took it in (`lines_to`), or, for

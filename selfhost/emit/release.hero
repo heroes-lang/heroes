@@ -33,18 +33,18 @@
 # program, which no test here sees, and defect 470's measurement, a string
 # returned 800 ways at `-O2`, is the shape that would show it.
 
-use check/table
 use check/state
-use emit/ctype
-use emit/aggregate
-use emit/writer
+use check/table
+use checker
 use cli/flags
 use cli/link_flags
 use cli/strings
-use source
+use emit/aggregate
+use emit/ctype
+use emit/writer
 use parse
 use resolve
-use checker
+use source
 
 # The incref or decref of a value named `name`, dispatched by type with the
 # aggregate fallback, under the line its caller claimed: a release inside a

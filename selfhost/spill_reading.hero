@@ -23,8 +23,8 @@
 # |---|---|
 # | `is_a_body_line` | `parse/swallowed.spilled` |
 
-use token
 use cursor
+use token
 
 # Whether the line below the opener at token `open`, its first token `start`,
 # is a body line that the closer at `close` ends, one too many, closing the

@@ -52,14 +52,14 @@
 # is read through `is_large` and `off_frame` alone. This module never counts a
 # byte; that one never spells any C.
 
-use ir
 use check/state
-use ir/containers
+use checker
 use emit/ctype
 use emit/mangle
+use ir
+use ir/containers
 use parse
 use resolve
-use checker
 use source
 
 # The parameter a function returning a large value is handed first.

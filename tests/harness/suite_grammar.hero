@@ -22,8 +22,8 @@
 # a precedence table whose rows had been shuffled, which is the only kind of
 # mistake this table can have that still parses.
 
-use report
 use floors
+use report
 use shell
 use strings
 

@@ -27,24 +27,24 @@
 # purpose, the one place this tells another party than the readers before it
 # (the compiler-engineer's W4).
 
-use source
 use ast
+use cli/caret_bytes
+use cli/clang_excerpt
+use cli/clang_first
+use cli/compiling
+use cli/declared_after
+use cli/group_file
+use cli/order_trial
+use cli/process
+use cli/runtime_key
+use cli/standard_name
+use cli/strings
+use cli/toolchain
 use diag
 use emit/clang_place
 use emit/ffi_lookup
-use cli/group_file
-use cli/runtime_key
-use cli/caret_bytes
-use cli/standard_name
-use cli/clang_first
-use cli/clang_excerpt
-use cli/declared_after
-use cli/toolchain
-use cli/compiling
-use cli/order_trial
-use cli/process
-use cli/strings
 use parse
+use source
 
 constant FORMS: str
     "`h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`"

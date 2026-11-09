@@ -12,22 +12,22 @@
 # lives with the target logic, which is decls' concern.
 
 use ast
-use source
-use check/state
 use check/render
-use ir/containers
-use emit/mangle
-use emit/synth
+use check/state
+use check/table
+use checker
 use emit/ctype
-use emit/writer
+use emit/large_value
+use emit/mangle
 use emit/nodebug
 use emit/stop_place
-use emit/large_value
-use token
-use check/table
+use emit/synth
+use emit/writer
+use ir/containers
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The C name of one function: its mangled name, plus the hash of what
 # it was instantiated at when it is a monomorphised instance. What is

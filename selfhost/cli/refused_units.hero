@@ -15,16 +15,16 @@
 # A refusal that is no one unit's, a link, a dump that did not compile or a
 # probe, is read as before, of the modules it names.
 
-use source
-use emit/ffi_asked
-use cli/compile
-use cli/toolchain
-use cli/compiling
 use cli/assemble
-use cli/probing
+use cli/compile
+use cli/compiling
 use cli/pointee_ask
+use cli/probing
+use cli/toolchain
 use cli/whose
 use diag
+use emit/ffi_asked
+use source
 use token
 
 # What a refused round tells, and its verdict: `failed` the round's, `modules`

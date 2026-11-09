@@ -40,9 +40,9 @@
 #     fields names nothing at all, which is its own diagnostic.
 
 use ast
-use token
-use source
 use diag
+use source
+use token
 
 # The three clauses, over the PIECES, because the parser asks before a
 # declaration exists: it holds `is_from_c(linkage)` where everyone later holds

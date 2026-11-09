@@ -4,9 +4,9 @@
 # kept apart from `emit/ffi_pointee.hero`, which reads the answer, so the two
 # markers it writes keep their one home there and this file imports them.
 
-use emit/ffi_pointee
 use cli/pointee_ask
 use emit/ffi_lookup
+use emit/ffi_pointee
 
 # The check unit's width question for one `@` parameter, as ONE line, so every
 # assertion on it stands at the author's `#line`. **The header's own width

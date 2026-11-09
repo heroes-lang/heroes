@@ -17,15 +17,15 @@
 #   last line, a `()` call, a value of another type, a `return` or `assert`
 #   reading, or a line that is the rest of the one above.
 
-use token
-use source
 use ast
-use resolved
-use discard_errors
-use check/state
 use check/discard
 use check/leasing
+use check/state
+use discard_errors
 use resolve/written_nowhere
+use resolved
+use source
+use token
 
 # At a dropped value: the cell its first repair writes back, kept.
 function claim(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, got: i64, readings: discard_errors.Readings, span: token.Span)

@@ -18,14 +18,14 @@
 # width (`contextual.literal_value`), the sign folded in and `-0` the number
 # `0`; a string's is its text with the escapes decoded.
 
-use token
 use ast
-use source
-use escape
-use check/table
-use check/state
 use check/contextual
+use check/state
+use check/table
 use data_errors
+use escape
+use source
+use token
 
 # What the patterns of one `match` have taken so far: whether a `_` has, and
 # each literal's value, keyed to the spelling it was first written in: one

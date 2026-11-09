@@ -14,18 +14,18 @@
 # the type of the first argument, never from anything the runtime
 # inspects at run time.
 
-use check/table
 use check/state
+use check/table
+use checker
+use emit/array_read
+use emit/worklist
 use ir
 use ir/containers
 use ir/instances
-use emit/array_read
-use emit/worklist
-use token
-use source
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The built-ins the backend emits. The gate reads this list, and entry
 # below is exhaustive over it — so the two cannot disagree. Tier 2 is

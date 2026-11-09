@@ -20,13 +20,13 @@
 # |---|---|
 # | `told` | `grammar_expr.call_args` |
 
-use token
-use diag
 use cursor
+use diag
 use pairing
-use text_lines
-use parse/unclosed
 use parse/bracket_head
+use parse/unclosed
+use text_lines
+use token
 
 # Where the call's `(` at `open`, closed further down, stands above the
 # cursor, on a line below it, and its last argument left openers the lexer

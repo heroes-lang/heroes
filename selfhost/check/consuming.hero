@@ -35,15 +35,15 @@
 # transitivity and written down rather than patched.
 
 use ast
-use source
-use token
-use diag
-use parse
-use resolved
-use read_lend
-use check/state
 use check/leasing
 use check/moved_calls as calls
+use check/state
+use diag
+use parse
+use read_lend
+use resolved
+use source
+use token
 
 # One position a call takes a handle at for good, and with which word: the
 # refusal says what the callee does with the value, and a transfer does not

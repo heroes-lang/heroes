@@ -10,19 +10,19 @@
 # All three keep §7's narrowing: the name is recovered and then asked
 # whether THIS PROGRAM declared it inside an extern group.
 
-use token
 use ast
-use source
+use checker
 use diag
-use emit/externs as emit_externs
 use emit/extern_field
+use emit/externs as emit_externs
 use emit/ffi_asked
 use emit/ffi_field_told
 use emit/ffi_lookup
 use emit/ffi_site
 use parse
 use resolve
-use checker
+use source
+use token
 use type_text
 
 # _Static_assert(_Generic(&((Color *)0)->r, …), "heroes-ffi-field

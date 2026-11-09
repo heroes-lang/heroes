@@ -40,24 +40,24 @@
 # reported wherever the cache happens to be warm, and a cache hit can
 # never convert a failing build into a passing one.
 
-use source
-use cli/io
 use cli/clang_floor
+use cli/clang_told
+use cli/compiling
 use cli/deps
 use cli/digest
 use cli/flags
+use cli/front_check
+use cli/io
+use cli/kept
+use cli/libraries
+use cli/opening
 use cli/process
 use cli/publish
-use cli/toolchain
-use cli/libraries
-use cli/compiling
-use cli/strings
-use cli/clang_told
-use cli/kept
 use cli/response_file
 use cli/served
-use cli/front_check
-use cli/opening
+use cli/strings
+use cli/toolchain
+use source
 
 # How a refused unit's message names the C clang refused, on its last line.
 constant GENERATED: str

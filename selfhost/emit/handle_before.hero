@@ -39,15 +39,15 @@
 # The string handed with the check names the crossing, because the line a
 # runtime abort can name is the C's and the reader's is the `.hero` file's.
 use ast
-use source
-use handles
-use check/state
 use check/reaches
-use emit/writer
+use check/state
 use emit/handle_text
 use emit/nodebug
 use emit/stop_place
+use emit/writer
+use handles
 use parse
+use source
 
 function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str])
     match decls[decl].kind

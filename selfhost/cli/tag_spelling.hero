@@ -26,15 +26,15 @@
 # refusal's reader (`cli/whose.hero`), which would otherwise ask it again.
 
 use ast
-use source
-use handles
-use emit/ffi_tag
-use emit/ffi_asked
 use cli/compile
-use cli/toolchain
 use cli/header_ask
 use cli/probing
+use cli/toolchain
+use emit/ffi_asked
+use emit/ffi_tag
+use handles
 use parse
+use source
 
 # What one refused round taught the next: how many tags it learned, and the
 # header's answer where it was asked. The answer is for the refusal's reader

@@ -23,9 +23,9 @@
 # Rust side's, byte for byte: two compilers that disagree about a message
 # would turn the fixpoint diff into a prose review.
 
-use token
 use diag
 use resolved
+use token
 
 ## Names that resolve to nothing
 

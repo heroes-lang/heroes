@@ -31,16 +31,16 @@
 # measures by default is `spec/heroes-spec.md`, a file in this repository,
 # so a run outside the repository has no question to answer.
 
-use cli/io
 use cli/argv
-use cli/input
-use not_text
-use module/reading
 use cli/digest
-use measure/pinned
+use cli/input
+use cli/io
 use cli/table as cli_table
-use measure/vendored
 use measure/judged as budgets
+use measure/pinned
+use measure/vendored
+use module/reading
+use not_text
 
 function run(inv: argv.Invocation) -> cli_table.Exit
     path = inv.file.default(budgets.SPEC)

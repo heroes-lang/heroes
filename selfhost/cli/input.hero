@@ -18,12 +18,12 @@
 # it: where the compiled selfhost binary keeps its copy is the driver's
 # parked DECIDE question.
 
-use source
-use modules
-use module/reading
-use cli/process
 use cli/files
+use cli/process
+use module/reading
+use modules
 use parse
+use source
 
 # The whole compilation as one Source: the file named, every module it
 # reaches through use, and the library last (§1.11). Doing it here is

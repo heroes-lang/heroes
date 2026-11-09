@@ -57,11 +57,11 @@
 # |---|---|
 # | `margin_at`, `through`, `quiet`, `with_words`, `finish` | `layout.line_start`, `lexer.lexed` (`finish`) |
 
-use token
 use diag
+use line_opens
 use state
 use text_lines
-use line_opens
+use token
 
 ## Error codes
 

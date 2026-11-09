@@ -13,14 +13,14 @@
 # | `header_semicolon` | `scan.punct`, a `;` of C's header, in its `(` or bare |
 # | `for_header` | `bracket_reach.a_header_open`, where the header's reach ends |
 
-use token
-use diag
-use state
 use closers
-use separator_runs
-use word_place
+use diag
 use lex_asked
 use openers
+use separator_runs
+use state
+use token
+use word_place
 
 # The index in `l.open_brackets` of the `(` right after a `for`, C's
 # three-clause header `for (i = 0; i < n; i++)`, whose `;` are its own and

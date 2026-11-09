@@ -16,11 +16,11 @@
 # newest row may not pass without a decision, is the level below, set by
 # decision 2282.
 
-use report
-use strings
 use latency_clock
 use latency_ledger
 use latency_runs
+use report
+use strings
 
 constant LEDGER_ROWS: i64
     3

@@ -9,9 +9,9 @@
 # the blocks under it (defect 003).
 
 use ast
-use source
 use digits
 use print/bodies
+use source
 
 # Binding power, on the same scale as the parser's table: higher binds
 # tighter. THE NUMBERS HAVE TO MATCH THE PARSER'S — and the two

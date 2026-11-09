@@ -7,13 +7,13 @@
 # `check/moved.hero` is from `check/moved_walk.hero`.
 
 use ast
-use source
-use resolved
-use check/state
-use check/self_call
-use check/may_end
 use check/endless_cycle
+use check/may_end
+use check/self_call
+use check/state
 use flow_errors
+use resolved
+use source
 
 # Every function the program writes, with a body, after the types are
 # written (`checker.hero`); the library's are not asked.

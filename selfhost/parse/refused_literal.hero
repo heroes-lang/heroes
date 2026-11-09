@@ -18,11 +18,11 @@
 # (`grammar_expr.primary`) asks it too since the same day. A leaf: it reads
 # the cursor and the text.
 
-use token
 use cursor
 use describe
 use lexer
 use literals
+use token
 
 # Whether the cursor stands on a literal the lexer refused, a number or a
 # quoted literal: an `error` token whose first byte is a digit or a quote.

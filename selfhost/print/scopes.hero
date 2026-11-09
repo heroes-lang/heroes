@@ -11,12 +11,12 @@
 # Output surface, like every other dump.
 
 use ast
-use source
-use resolved
 use parse
-use resolve
-use stable
 use read_lend
+use resolve
+use resolved
+use source
+use stable
 
 # The library is part of every compilation and part of no dump: a
 # --dump-<stage> answers "what does the compiler know about THE FILE I

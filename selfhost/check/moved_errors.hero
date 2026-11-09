@@ -6,11 +6,11 @@
 # itself read again, and a whole record or array handed to C with a dead part
 # inside.
 
-use token
-use source
-use diag
 use check/flow
 use check/flow_groups
+use diag
+use source
+use token
 
 # What a read of `path` is told where a place it reaches has ended on every
 # path here: the value read again, or handed to C whole with a dead part

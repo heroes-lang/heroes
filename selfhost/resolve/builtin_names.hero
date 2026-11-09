@@ -24,10 +24,10 @@
 # library's by name and origin (`ir/owned_release.hero`).
 
 use ast
-use source
 use inventory
-use parse
 use library_source
+use parse
+use source
 
 # Whether no program may declare `name`: a built-in's, or one of the
 # names `library` holds (`of_library`).

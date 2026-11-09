@@ -23,14 +23,14 @@
 # module may name which.
 
 use ast
-use source
-use check/table
 use check/state
-use ir/containers
-use emit/reach
-use emit/members
-use emit/externs as emit_externs
+use check/table
 use emit/decls as emit_decls
+use emit/externs as emit_externs
+use emit/members
+use emit/reach
+use ir/containers
+use source
 
 # One module's unit, planned: what it defines and declares (`members`), the
 # program cut to its members, the types its sections spell, closed as C reads

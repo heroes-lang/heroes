@@ -36,16 +36,16 @@
 # type question clang did not answer is not compared.
 
 use ast
-use source
+use cli/probing
+use cli/strings
+use cli/toolchain
+use cli/two_ways_ask
 use diag
-use token
-use emit/ffi_lookup
 use emit/clang_place
 use emit/externs as emit_externs
-use cli/toolchain
-use cli/probing
-use cli/two_ways_ask
-use cli/strings
+use emit/ffi_lookup
+use source
+use token
 
 # One list's declaration of a name: where it is told, the binding's name or
 # the group's header string, the file declaring it as that group names it,

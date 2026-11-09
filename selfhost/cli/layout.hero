@@ -46,32 +46,32 @@
 # build's field assertions name too.
 
 use ast
-use source
 use check/state
-use ir/containers
-use emit/externs as emit_externs
-use emit/extern_union
-use emit/layout_text
-use emit/layout_rows
-use emit/layout_screen
-use emit/layout_check
-use emit/membership
-use cli/toolchain
-use cli/process
-use cli/publish
-use cli/digest
-use cli/deps
-use cli/pointee
+use checker
 use cli/compiling
-use cli/libraries
-use cli/strings
-use cli/read_back
+use cli/deps
+use cli/digest
 use cli/kept
 use cli/layout_runs
+use cli/libraries
+use cli/pointee
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/strings
+use cli/toolchain
+use emit/extern_union
+use emit/externs as emit_externs
+use emit/layout_check
+use emit/layout_rows
+use emit/layout_screen
+use emit/layout_text
+use emit/membership
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
     every: {i64: bool}? = fail(code: "every", msg: "every group record")

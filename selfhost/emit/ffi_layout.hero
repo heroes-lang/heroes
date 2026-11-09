@@ -15,17 +15,17 @@
 # `emit/ffi_built.hero`.
 
 use ast
-use source
+use checker
 use diag
 use emit/externs as emit_externs
 use emit/ffi_lookup
-use emit/ffi_site
 use emit/ffi_record
+use emit/ffi_site
 use emit/layout_check
 use emit/layout_compare
 use parse
 use resolve
-use checker
+use source
 
 function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)

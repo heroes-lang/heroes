@@ -9,6 +9,7 @@
 # route (the coordinator's ruling): this module's unit and the one of
 # `geo/shape` each read `pt.h` from `pt`'s folder.
 use <pt>/pt
+
 use geo/shape
 
 function main()

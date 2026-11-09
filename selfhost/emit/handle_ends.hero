@@ -8,12 +8,12 @@
 # acquisitions stays in `handle_traffic`.
 
 use ast
-use source
-use check/state
 use check/reaches
-use emit/writer
+use check/state
 use emit/handle_place
 use emit/handle_text
+use emit/writer
+use source
 
 # The ends of one call, `consumes` and `transfers` positions or one kind of
 # them, each as `entry`: made good (`hero_handle_ended`) or withdrawn

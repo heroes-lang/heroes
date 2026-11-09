@@ -29,13 +29,13 @@
 # on group records (2026-10-14), and a new accepted form is its to rule.
 
 use ast
-use token
-use source
 use diag
-use emit/ffi_asked
-use emit/ffi_lookup
 use emit/extern_field
+use emit/ffi_asked
 use emit/ffi_field
+use emit/ffi_lookup
+use source
+use token
 
 # clang's *no member named 'fd' in 'struct tagged'* at a field the refused
 # round found inside another member: told where, read before

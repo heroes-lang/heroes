@@ -23,20 +23,20 @@
 # record on one line are told as one, their fields together.
 
 use ast
-use token
-use source
-use diag
 use check/state
-use ir/containers
-use emit/ffi_lookup
-use emit/ffi_site
-use emit/ffi_record
+use checker
+use diag
 use emit/extern_union
+use emit/ffi_lookup
+use emit/ffi_record
+use emit/ffi_site
 use emit/layout_sites
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
+use token
 
 # One construction's markers of one kind: the record's name, where clang put
 # them, and each field (OMITTED) or pair (SHARED, "a b") they name.

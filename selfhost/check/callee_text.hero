@@ -16,11 +16,11 @@
 # break or a margin. Lexed only then, and only for a message: a callee on
 # one line is its text.
 
-use token
-use source
 use lexer
+use source
 use stream_tables
 use text_lines
+use token
 
 function written(s: source.Source, span: token.Span) -> str
     text = source.span_text(s, span)

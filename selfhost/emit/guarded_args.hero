@@ -6,11 +6,11 @@
 # ceiling: the call stayed there, its arguments came here.
 
 use ast
-use check/table
-use check/state
 use check/freer as freer
-use ir/instances
+use check/state
+use check/table
 use emit/extern_probe
+use ir/instances
 
 # Every cstr argument of an extern call, wrapped in the runtime's null
 # check (panel 053; §12's robustness rule) — and every opaque or numeric

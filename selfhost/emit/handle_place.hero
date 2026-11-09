@@ -43,13 +43,13 @@
 # caught through its address by the dead set.
 
 use ast
-use source
 use check/state
 use check/table
-use ir
-use ir/containers
 use emit/aggregate
 use emit/mangle
+use ir
+use ir/containers
+use source
 
 # One entry per argument of the call, in the call's order: the lvalue the
 # argument was read from, or absent where the argument is not a place, or is

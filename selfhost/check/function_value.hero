@@ -35,21 +35,21 @@
 # template monomorphisation had deleted; and every position that named a type
 # refused it, quoting *a type parameter* where no reader wrote one.
 
-use token
-use diag
 use ast
-use source
-use resolved
-use value_errors
-use check/table
-use check/type_fit
-use check/state
-use check/lower
-use check/render
-use check/labels
-use check/markers
 use check/freer as freer
 use check/generics as check_generics
+use check/labels
+use check/lower
+use check/markers
+use check/render
+use check/state
+use check/table
+use check/type_fit
+use diag
+use resolved
+use source
+use token
+use value_errors
 
 # A declaration's type, from its written signature (§4.13: a top-level
 # function is a value). Moved here from `check/walk.hero`, unchanged, with

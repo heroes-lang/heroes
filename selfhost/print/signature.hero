@@ -11,11 +11,11 @@
 # at exit 0, and the self-check cannot see it if `dump` forgot it too. So
 # `dump` reads these as well, and the `layout` suite's ceiling on `fmt.hero`
 # is, as on the day `marks.hero` was cut, why the seam is a module.
-use token
 use ast
-use source
-use print/types
 use print/marks
+use print/types
+use source
+use token
 
 # `<A, B>`, or nothing: type parameter names and never constraints (§4.12).
 function generics_text(s: source.Source, generics: [token.Span]) -> str

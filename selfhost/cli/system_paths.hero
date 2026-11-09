@@ -20,14 +20,14 @@
 # group's header and its directory are named as the group names them before
 # anything here reads the message (`emit/clang_place.shown`).
 
-use diag
-use cli/toolchain
 use cli/compiling
 use cli/process
 use cli/publish
 use cli/read_back
 use cli/response_file
 use cli/strings
+use cli/toolchain
+use diag
 use emit/clang_place
 use emit/ffi_lookup
 

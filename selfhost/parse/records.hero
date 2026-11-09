@@ -14,19 +14,19 @@
 # same day (lane X4), shared with a variant, a group and a record nested in a
 # block of declarations.
 
-use token
-use cursor
 use ast
+use c_names
+use cursor
+use grammar_expr
 use handles
 use keywords
-use parse/tails
-use parse/members_below
-use c_names
-use parse/heads
+use lexer
 use parse/brace_habit
 use parse/headless
-use grammar_expr
-use lexer
+use parse/heads
+use parse/members_below
+use parse/tails
+use token
 
 # The same declaration when the caller has **already taken the doc comment** —
 # which is what a group member needs, because a group's own doc documents its

@@ -33,12 +33,12 @@
 # integer operators (defect 580's `run` cases).
 
 use ast
-use source
-use resolved
-use check/state
-use check/contextual
 use check/const_values as values
 use check/const_writes
+use check/contextual
+use check/state
+use resolved
+use source
 
 record Program
     a: ast.Ast

@@ -19,15 +19,15 @@
 # generated C name no group, so a missing header they include is never
 # blamed on the author.
 
-use token
 use ast
-use source
+use checker
 use diag
-use emit/ffi_lookup
 use emit/clang_place
+use emit/ffi_lookup
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The group whose header is a file of the stack: its first declaration, where
 # `ffi_build` lands a header the group names itself, and the header as the

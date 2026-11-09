@@ -18,16 +18,16 @@
 # `.interp` arm lowers each hole by recursion, which only the knot can do, and
 # hands the values here. The concatenation needs nothing from the knot.
 
-use token
-use source
-use check/table
 use check/state
-use ir/build
-use ir/interning
-use ir/inout
-use ir/emissions
-use lex_interp
+use check/table
 use inventory
+use ir/build
+use ir/emissions
+use ir/inout
+use ir/interning
+use lex_interp
+use source
+use token
 
 # The whole literal as one `str` value. `values[i]` is the lowered hole
 # `holes[i]`; `pieces` has one more entry than `holes`.

@@ -22,15 +22,15 @@
 #
 # A unit with no region reads nothing here and its key does not move.
 
-use emit/undefined_words
-use emit/value_check
-use emit/clang_place
-use emit/ffi_lookup
-use emit/writer
-use cli/strings
-use cli/toolchain
 use cli/process
 use cli/publish
+use cli/strings
+use cli/toolchain
+use emit/clang_place
+use emit/ffi_lookup
+use emit/undefined_words
+use emit/value_check
+use emit/writer
 
 # The words that ask the front end alone, C's meaning of a signed shift
 # first after the unit's own, so it wins.

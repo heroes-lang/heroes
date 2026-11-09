@@ -8,16 +8,16 @@
 # `emit/sides.hero`'s.
 
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use cli/strings
+use emit/c_text
 use emit/ctype
 use emit/mangle
-use emit/types
-use emit/c_text
 use emit/sides
+use emit/types
 use emit/writer
-use cli/strings
+use source
 
 # Every renderer's prototype, before any body: a record's calls its fields'.
 function prototypes(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], listed: [i64])

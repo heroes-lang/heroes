@@ -26,10 +26,10 @@
 # `.claude/hooks/provenance.py` a mirror of this file held to it by a test.
 # A program that reads it not carries forty bytes nobody reads.
 
+use cli/digest
+use emit/writer
 use source
 use source_extent
-use emit/writer
-use cli/digest
 
 extern "hero_compiler.h"
     function hero_text_key(text: str) -> str

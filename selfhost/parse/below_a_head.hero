@@ -18,9 +18,9 @@
 # | `Below`, `Reading`, `lines_below`, `agreed`, `region_at`, `own` | `parse/apart` |
 
 use diag
+use joined_lines as seams
 use lexer
 use parse/readings
-use joined_lines as seams
 use text_outline
 
 # Which reading a line below a bodiless head is read as: the head's body, one

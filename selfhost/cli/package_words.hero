@@ -99,10 +99,10 @@
 # word* holds the two together both ways: every word the note names is accepted,
 # and every word of a table is named. What is not here stays refused.
 
-use cli/process
 use cli/link_flags
-use cli/strings
 use cli/package_macros
+use cli/process
+use cli/strings
 
 # The flag clang reads with its value as the next word alone (clang's
 # `Separate`): `-framework <name>`.

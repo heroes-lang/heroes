@@ -23,11 +23,11 @@
 # `meant` the position each one's label names, `from` positions past the
 # first value: 1 behind a dotted call's receiver.
 
-use token
-use diag
 use ast
-use source
 use check/contextual
+use diag
+use source
+use token
 
 # A value's text with its label, from the label to the value's end.
 function slot(a: ast.Ast, arg: ast.Arg) -> token.Span

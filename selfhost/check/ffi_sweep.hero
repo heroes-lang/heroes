@@ -26,18 +26,18 @@
 # What the message says is `check/fixed_repairs.hero`'s.
 
 use ast
+use check/ffi
+use check/fixed_repairs
+use check/lower
+use check/state
+use check/table
 use diag
-use source
+use ffi_errors
+use keywords
 use parse
 use resolve
 use resolved
-use check/table
-use check/state
-use check/lower
-use check/ffi
-use check/fixed_repairs
-use ffi_errors
-use keywords
+use source
 
 # It asks the value, not the world: the legal set is built by reading the
 # declarations in hand, so a position added later is refused by default.

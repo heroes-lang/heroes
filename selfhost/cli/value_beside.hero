@@ -26,31 +26,31 @@
 # again and says why.
 
 use ast
-use source
-use diag
 use check/state
-use ir/containers
-use emit/ctype
-use emit/signature
-use emit/body
-use emit/clang_place
-use emit/ffi_lookup
+use checker
+use cli/compile
+use cli/digest
 use cli/front_check
 use cli/toolchain
-use cli/value_run
 use cli/value_ask
-use cli/compile
-use emit/unit
+use cli/value_run
+use diag
+use emit/body
+use emit/clang_place
+use emit/constant_accessor
+use emit/ctype
+use emit/ffi_lookup
 use emit/members
+use emit/probe_cut
+use emit/signature
+use emit/unit
 use emit/unit_plan
 use emit/writer
-use emit/constant_accessor
-use emit/probe_cut
-use cli/digest
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 # One accessor of a unit: its constant's declaration, the place its
 # signature and its `return` are told at, and the lines of the unit's own C

@@ -6,8 +6,8 @@
 # told by what it is, and where the same source has an address this command
 # reads, the message writes it; the verb never writes it into the catalogue.
 
-use fetch/url_bytes
 use cli/strings
+use fetch/url_bytes
 
 # What every refusal of a source's shape ends with: the two it may have.
 constant SHAPES: str

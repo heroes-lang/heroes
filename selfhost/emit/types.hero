@@ -18,16 +18,16 @@
 # by-value field — measured, same two clang errors with and without.
 
 use ast
-use source
-use check/table
 use check/state
-use emit/mangle
+use check/table
+use checker
+use cli/strings
 use emit/ctype
+use emit/mangle
 use emit/writer
 use parse
 use resolve
-use checker
-use cli/strings
+use source
 
 # Every aggregate the program declares, in the order C can accept them.
 function aggregates(c: state.Checked, decls: [ast.Decl]) -> [i64]

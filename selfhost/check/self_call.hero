@@ -30,16 +30,16 @@
 # once its arguments are, so a call among them comes first. Where the walk
 # stands, and its moves, are `check/self_walk.hero`'s.
 
-use token
 use ast
-use source
-use resolved
-use check/state
-use check/path_end
 use check/markers
-use check/name_types
 use check/may_end
+use check/name_types
+use check/path_end
 use check/self_walk
+use check/state
+use resolved
+use source
+use token
 
 ## The rule
 

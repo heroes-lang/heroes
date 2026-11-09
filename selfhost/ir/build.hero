@@ -19,11 +19,11 @@
 # the sigil the dump would be ambiguous on input the author may legally
 # write, because `t0: i64 @= 0` is legal Heroes.
 
-use token
-use resolved
 use ir
 use ir/containers
 use ir/flow
+use resolved
+use token
 
 # Where break and continue go. A stack, because loops nest — and for a
 # `for` loop continue must land on the STEP block rather than the head:

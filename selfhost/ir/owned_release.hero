@@ -28,15 +28,15 @@
 # this machine can see the guard missing**, so it can never be justified by a
 # green local run and never left to the library's good manners.
 
-use token
 use ast
-use source
-use check/table
 use check/state
+use check/table
 use ir/build
 use ir/emissions
-use ir/questions
 use ir/inout
+use ir/questions
+use source
+use token
 
 # The `extern` this program declares under that name, if it has one. The mark
 # carries a NAME and the lowering needs the declaration, because a call is made

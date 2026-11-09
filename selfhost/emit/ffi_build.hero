@@ -9,18 +9,18 @@
 # compiler's own PACKAGE marker, so the file that groups them is the
 # one that knows a build has more tools in it than clang.
 
-use token
 use ast
-use source
-use diag
 use bytes
-use emit/externs as emit_externs
+use checker
+use diag
 use emit/clang_name
+use emit/externs as emit_externs
 use emit/ffi_lookup
 use emit/header_reach
 use parse
 use resolve
-use checker
+use source
+use token
 
 # A symbol the linker could not find, which this program declared
 # extern — the author forgot `link`, and until panel 048 the compiler

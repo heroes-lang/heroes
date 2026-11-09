@@ -38,11 +38,11 @@
 # told moves the places after it, so `told_once` says where each one went and
 # `renumbered` moves the breaks with them.
 
-use token
-use diag
-use state
-use shown_char
 use backtick_strings
+use diag
+use shown_char
+use state
+use token
 
 # How many refused characters are told one by one in a text.
 constant TOLD: i64

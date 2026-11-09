@@ -28,19 +28,19 @@
 # Linear in the function: the exits are found in one walk, and each
 # instruction is asked once.
 
-use token
-use ir
-use ir/containers
-use ir/layout
-use ir/uses
-use ir/survival
 use check/state
 use check/table
+use checker
+use ir
 use ir/agree
-use source
+use ir/containers
+use ir/layout
+use ir/survival
+use ir/uses
 use parse
 use resolve
-use checker
+use source
+use token
 
 function check(p: containers.Program, f: containers.Function, c: state.Checked, label: str, @problems: [str])
     ways_out(f, c, label: label, problems: @problems)

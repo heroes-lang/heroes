@@ -36,16 +36,16 @@
 # rule was chosen before the sitting sat, and a second spelling of one state is
 # a second state to a program matching on `e.code`.
 
-use check/table
+use ast
 use check/state
-use ir
-use ir/containers
+use check/table
 use emit/ctype
-use emit/writer
-use emit/storageless
 use emit/defined
 use emit/nodebug
-use ast
+use emit/storageless
+use emit/writer
+use ir
+use ir/containers
 use source
 
 # Emit `into = validated_bytes(value)`. Named `validated` until defect 501

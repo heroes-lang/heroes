@@ -29,19 +29,19 @@
 # the text.
 
 use ast
-use token
-use source
+use checker
 use diag
-use ir
-use ir/containers
 use emit/ffi_lookup
 use emit/ffi_site
 use emit/field_lend
 use field_lend_errors
+use ir
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
+use token
 
 # The lend clang refused: where the author wrote it, the name it is rooted at,
 # and the C function it was handed to.

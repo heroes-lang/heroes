@@ -23,15 +23,15 @@
 # pair of its members is not refused twice. What clang says back is read in
 # `emit/ffi_built.hero`, one diagnostic per construction.
 
-use source
+use checker
+use emit/c_text
 use emit/extern_union
 use emit/layout_compare
 use emit/layout_rows
-use emit/c_text
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 # The markers, one writer here and one reader (`emit/ffi_built.hero`).
 constant OMITTED: str

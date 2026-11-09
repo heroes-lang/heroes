@@ -15,12 +15,12 @@
 # The reading is the same function of either text, so it can name a name
 # whose text differs and never miss one whose definition does.
 
-use emit/ffi_lookup
-use emit/clang_place
-use cli/toolchain
 use cli/compiling
 use cli/order_trial
 use cli/strings
+use cli/toolchain
+use emit/clang_place
+use emit/ffi_lookup
 
 # The names of `names` whose meaning reads otherwise with the headers in
 # `after`'s order than in `before`'s, in `names`' order; none where either

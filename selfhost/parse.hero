@@ -4,22 +4,22 @@
 # syntax stage, and the one that makes the pipeline an implementation detail
 # of the frontend rather than of its clients.
 
-use token
-use diag
 use ast
+use closer_runs
+use cursor
+use diag
+use lexer
+use pairing
+use parse/apart
+use parse/decl
+use parse/quote_held
+use parse/unclosed
+use parse/which_arm
 use source
 use source_extent
-use cursor
-use lexer
-use parse/decl
-use parse/apart
-use parse/which_arm
-use parse/quote_held
-use wrap_break
-use parse/unclosed
-use pairing
+use token
 use unclosed_runs
-use closer_runs
+use wrap_break
 
 record ParseOutput
     decls: [ast.Decl]

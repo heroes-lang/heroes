@@ -17,8 +17,8 @@
 # different types is a diagnostic class, panel 200 R1's question for a full
 # sitting, and this says only what is true of the unit clang refused.
 
-use source
 use diag
+use source
 use token
 
 # One of the two: the group's string, the header as the group wrote it, the

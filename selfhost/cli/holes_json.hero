@@ -9,8 +9,8 @@
 # absent member is false, measured by the sitting's critic. What a hole says
 # is `check/hole_report.hero`'s, which the text renders too.
 
-use cli/json_text
 use check/hole_report
+use cli/json_text
 
 # The holes a document carries, and whether they are all the program holds.
 record Holes

@@ -19,19 +19,19 @@
 # its depth), and the build stays the tool unable to finish, exit 2.
 
 use ast
-use source
+use bytes
 use check/state
 use check/table
-use emit/types
-use emit/typeorder
-use parse
-use resolve
 use checker
-use bytes
 use cli/compile
 use cli/compiling
 use cli/process
 use cli/strings
+use emit/typeorder
+use emit/types
+use parse
+use resolve
+use source
 
 # The deepest chain: how many declared types it holds by value, the one at
 # its top counted, and that type's declaration (-1 when there is none).

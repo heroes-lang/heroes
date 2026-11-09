@@ -18,8 +18,8 @@
 
 use cli/files
 use cli/process
-use fetch/url_bytes
 use cli/strings
+use fetch/url_bytes
 
 # Whether `path` opens with a drive, `C:/`.
 function drive_lettered(path: str) -> bool

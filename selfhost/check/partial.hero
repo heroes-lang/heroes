@@ -21,10 +21,10 @@
 # per-declaration for construction.
 
 use ast
+use check/state
+use check/table
 use parse
 use resolved
-use check/table
-use check/state
 
 # Is this declaration a record its group marked `partial`?
 function is_partial(decls: [ast.Decl], decl: i64) -> bool

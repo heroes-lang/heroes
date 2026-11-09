@@ -7,9 +7,9 @@
 # defect 234's rules needed room there (panel 188's R12), word for word but a
 # guard against an empty value, which `head_names` never hands it.
 
-use token
 use diag
 use shown_char
+use token
 
 # What `pkg-config` cannot be handed as one package's name: `unwritable_name`
 # where it splits its argument, `option_like_name` where it would read an

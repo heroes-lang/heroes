@@ -13,9 +13,9 @@
 # another margin is its own over them. A leaf over the tokens and the text,
 # outside `parse/` for that directory's budget.
 
-use token
 use cursor
 use text_lines
+use token
 
 # Whether the head begun at token `from`, read to the cursor, went on to a
 # line whose margin is one level below its own.

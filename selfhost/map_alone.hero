@@ -33,10 +33,10 @@
 # | `opens_a_body` | `scan.finish`, `layout.line_start` |
 # | `begins_a_value` | `opens_a_body`, `parse/brace_habit.opens_a_value` |
 
-use token
+use brace_layout
 use closers
 use line_opens
-use brace_layout
+use token
 
 # `brace_layout.opens_a_body`, but where the `{` begins a value.
 function opens_a_body(tokens: [token.Token], open: i64, text: str, at: i64) -> bool

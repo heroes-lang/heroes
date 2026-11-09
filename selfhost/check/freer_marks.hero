@@ -4,9 +4,9 @@
 # took that file past design.md §11's ~300 lines; the refusal it feeds stays
 # there.
 
-use token
 use ast
 use source
+use token
 
 # Every `owned <freer>` mark in the program, by the name it gives: the table
 # `marked_as_freer` answers from, built in one pass over the declarations.

@@ -11,14 +11,14 @@
 # second of them as the walk does.
 
 use ast
-use source
-use resolved
-use inventory
-use contextless_errors
-use check/table
-use check/state
-use check/lower
 use check/function_value
+use check/lower
+use check/state
+use check/table
+use contextless_errors
+use inventory
+use resolved
+use source
 
 function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> i64
     span = a.exprs[id].span

@@ -19,14 +19,14 @@
 # four bitwise operators and the shifts are `i64`'s alone (spec § 7), so they
 # are computed on an `i64` here, by the same operators.
 
-use token
-use diag
-use widths
 use ast
-use source
+use check/contextual
 use check/state
 use check/table
-use check/contextual
+use diag
+use source
+use token
+use widths
 
 constant U64_MAX: u64
     18446744073709551615

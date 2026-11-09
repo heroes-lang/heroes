@@ -50,21 +50,21 @@
 # constant keeps the return assertion and `return NAME;`.
 
 use ast
-use source
-use check/table
 use check/state
-use ir/containers
+use check/table
+use checker
+use cli/strings
 use emit/ctype
 use emit/externs as emit_externs
-use emit/signature
 use emit/large_value
+use emit/signature
 use emit/writer
 use handles
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
-use cli/strings
+use source
 
 # The accessor's one local: a name the unit's own C gives nothing else.
 constant VALUE: str

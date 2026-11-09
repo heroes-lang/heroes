@@ -54,14 +54,14 @@
 # the operand may be what was left out, and a certain deletion would write a
 # program meaning less than the one meant.
 
-use token
-use state
-use lex_asked
-use diag
 use bytes
+use diag
 use join_fix
-use word_place
+use lex_asked
 use next_line
+use state
+use token
+use word_place
 
 # Whether the line that ends with the token at `at`, which no `\` asked to
 # go on, holds operators alone above an arm or above what no operator goes

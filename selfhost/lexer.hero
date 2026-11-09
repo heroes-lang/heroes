@@ -19,22 +19,22 @@
 # record (source.rs), which is not lexer code; the probe ports `lex_one`
 # faithfully and the Source half is measured when a second file needs it.
 
-use token
 use diag
+use escape
+use file_start
+use heads_told
+use indent_runs
+use layout
+use line_joins
+use not_text
+use open_line
+use refused_runs
+use scan
 use source
 use source_extent
 use state
-use layout
-use open_line
-use line_joins
-use scan
-use escape
 use swap_words
-use indent_runs
-use not_text
-use file_start
-use refused_runs
-use heads_told
+use token
 
 ## The output
 

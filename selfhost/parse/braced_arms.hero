@@ -28,13 +28,13 @@
 # | `lines_of`, `taken` | `grammar_expr.match_expr` |
 # | `body_opens` | `grammar_expr.arm` |
 
-use token
-use diag
 use cursor
-use parse/opening
-use parse/braced_lines
-use parse/brace_habit
+use diag
 use lexer
+use parse/brace_habit
+use parse/braced_lines
+use parse/opening
+use token
 
 # The arms in the braces whose `{` is at `brace`, after the `match` that began
 # at `head`: the `{` named as the arms it stands for, the cursor left on it,

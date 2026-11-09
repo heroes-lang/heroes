@@ -8,8 +8,8 @@
 # resolver's working state stay there, and this is what the name stage does
 # with them for a name nothing answers.
 
-use resolve/state
 use resolve/asked
+use resolve/state
 
 # The candidates for a name that resolved to nothing, remembered so the
 # unused sweep can stay quiet about them — keyed by the module that was

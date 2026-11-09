@@ -10,14 +10,14 @@
 # said at exactly that span is told again; a literal nested inside the value,
 # `ys = [{}]`, is no binding's whole value and keeps the general guess.
 
-use token
-use diag
 use ast
-use source
-use check/table
 use check/state
+use check/table
 use contextless_errors
+use diag
 use discard_errors
+use source
+use token
 
 # Tells again, since `from`, what the walk said of the value `value` bound to
 # `name`, with `=` or, where `cell`, with `@=` (panel 209). Hands back the

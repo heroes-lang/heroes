@@ -34,10 +34,10 @@
 # would count one break twice. Out of the expression knot for
 # `parse/list_line`'s reason: a question with a name and no cycle.
 
-use token
-use diag
 use cursor
+use diag
 use parse/line_end
+use token
 
 # At an arm's first pattern: refuse it where it opens with a `-` that a space
 # sets apart from its operand, on the line the `-` begins. Nothing is

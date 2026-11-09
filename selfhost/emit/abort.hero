@@ -11,21 +11,21 @@
 
 use ast
 use check/state
+use check/table
+use checker
+use emit/builtins
+use emit/ctype
+use emit/ffi_lookup
+use emit/mangle
+use emit/sides
+use emit/stop_place
+use emit/writer
 use ir
 use ir/containers
-use emit/ctype
-use emit/mangle
-use emit/builtins
-use emit/writer
-use emit/stop_place
-use emit/sides
-use emit/ffi_lookup
-use token
-use check/table
-use source
 use parse
 use resolve
-use checker
+use source
+use token
 
 # Every stop an `.abort_op` names, by why the program stops.
 function stop(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, why: ir.AbortWhy, run: ir.Run, site: i64)

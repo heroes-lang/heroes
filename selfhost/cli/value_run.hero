@@ -21,18 +21,18 @@
 # leaves a symbol undefined is the header's own code reaching a library, told
 # (panel 218's R2: it passed in silence).
 
-use emit/value_probe
-use emit/probe_cut
-use emit/ffi_lookup
-use cli/toolchain
 use cli/flags
 use cli/link_flags
 use cli/process
 use cli/publish
-use cli/response_file
 use cli/read_back
+use cli/response_file
 use cli/strings
+use cli/toolchain
 use cli/value_told
+use emit/ffi_lookup
+use emit/probe_cut
+use emit/value_probe
 
 # The runtime's child runner with its two limits, which `cli/process.run`
 # does not take: a group of this module's own, as `mutate/child.hero` holds

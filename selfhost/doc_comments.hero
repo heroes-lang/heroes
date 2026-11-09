@@ -6,9 +6,9 @@
 # ceiling: which comments document a declaration is a question about the
 # text above it, not about moving through tokens.
 
-use token
 use cursor
 use text_lines
+use token
 
 # The comment lines directly above a declaration, in source order (§4.1).
 #

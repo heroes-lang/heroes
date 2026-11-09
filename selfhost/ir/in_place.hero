@@ -34,11 +34,11 @@
 # earlier would have.
 
 use ast
-use source
-use resolved
 use check/state
 use check/table
 use ir/layout
+use resolved
+use source
 
 # Whether `id` is a field read through a path of fields alone, rooted in a
 # local or a parameter, each field found: the read `place` spells whole.

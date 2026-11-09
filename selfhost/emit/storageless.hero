@@ -15,19 +15,19 @@
 # and the sanitiser reports clean while the next field is corrupted.
 
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use checker
+use emit/aggregate
+use emit/defined
+use emit/mangle
+use emit/places
 use ir
 use ir/containers
-use emit/mangle
-use emit/aggregate
-use emit/places
-use emit/defined
-use token
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The TEXT of a fixed-array value: the braced literal, or the field
 # read, rendered at the use site. Two producers, both here rather than

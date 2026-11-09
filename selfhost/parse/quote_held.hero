@@ -17,10 +17,10 @@
 # |---|---|
 # | `held` | `parse.parse_source`, `parse.parse_bounded` |
 
-use token
 use diag
 use lost_quote
 use parse/which_arm
+use token
 
 # `said` without the reports a lost quote's line holds past its first quote,
 # the lines `lexed` names a literal never closed on.

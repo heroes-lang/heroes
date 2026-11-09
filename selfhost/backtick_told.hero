@@ -30,13 +30,13 @@
 # |---|---|
 # | `template`, `unclosed` | `refused_stretch.told` |
 
-use token
-use diag
-use bytes
-use shown_char
-use raw_chars
-use escape_readings
 use backtick_strings
+use bytes
+use diag
+use escape_readings
+use raw_chars
+use shown_char
+use token
 
 # The template from `from` to past its close, told: named for what it is,
 # with the literal that writes it offered as a guess where its text and

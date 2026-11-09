@@ -60,17 +60,17 @@
 # says of a head's lines is `parse/head_lines`; and what a block that no head
 # opens is told is `parse/orphans`.
 
-use token
-use diag
-use cursor
-use parse/swap_reading
-use text_lines
-use parse/head_lines
 use body_margin
+use cursor
+use diag
 use parse/brace_habit
-use stray_closers
-use parse/unclosed
+use parse/head_lines
 use parse/swallowed
+use parse/swap_reading
+use parse/unclosed
+use stray_closers
+use text_lines
+use token
 
 # Where a head began: how many diagnostics the parser had said, and the
 # token its first word stands on.

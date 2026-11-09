@@ -6,14 +6,14 @@
 # `print/brackets.hero` on 2026-09-25 with defect 101, along the seam
 # between what is read and what is printed; none of this prints.
 
-use token
 use ast
-use source
 use print/bodies
+use print/groups
+use print/owners
 use print/page
 use print/parens
-use print/owners
-use print/groups
+use source
+use token
 
 # The four things every question here reads.
 record Code

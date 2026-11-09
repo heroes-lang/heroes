@@ -6,10 +6,10 @@
 # way because they are written here once.
 
 use ast
-use token
-use source
 use handles
 use parse
+use source
+use token
 
 # THE LIFE AN END IS ANNOUNCED FOR, and where the C keeps it (defect 098). An
 # address is not an identity: C can release one inside a call and hand it out

@@ -29,13 +29,13 @@
 # blocks between that the place store asks too, and a write left in the
 # load's own block answers for every later block without it.
 
-use token
 use ir
-use ir/containers
-use ir/uses
-use ir/graph
 use ir/between
+use ir/containers
+use ir/graph
 use ir/survival
+use ir/uses
+use token
 
 # What a function's values borrow. `lender` is dense over the value ids, so
 # no question below hashes: for each value the index of the load whose

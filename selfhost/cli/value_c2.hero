@@ -18,22 +18,22 @@
 # panel 216's probe's does (defect 2147), so a warm build asks nothing and a
 # header edited since is asked again.
 
-use emit/value_probe
-use emit/ffi_lookup
-use cli/toolchain
-use cli/process
-use cli/publish
-use cli/response_file
-use cli/read_back
-use cli/strings
+use cli/clang_tree
 use cli/digest
 use cli/kept as kept_answers
 use cli/libraries
-use cli/clang_tree
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/toolchain
 use cli/value_init
-use cli/value_text
 use cli/value_run
+use cli/value_text
 use cli/value_told
+use emit/ffi_lookup
+use emit/value_probe
 
 # The dump step's canary (the compiler-engineer's condition 4): an enumerator
 # C leaves undefined reached through a second, which must trap, and its

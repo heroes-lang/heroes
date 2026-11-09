@@ -13,9 +13,9 @@
 # branch's or an arm's, the one value a statement can hand back.
 
 use ast
-use source
 use check/state
 use check/table
+use source
 
 # The place of one hole: `statement` where nothing reads its value; else
 # `ty`, the type a value there must have, or -1 where the place fixes none,

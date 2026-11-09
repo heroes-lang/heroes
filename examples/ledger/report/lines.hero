@@ -6,8 +6,9 @@
 # that check the arithmetic never have to read text, and the tests that
 # check the text never have to open a database.
 
-use book/entry
 use <core>/strings
+
+use book/entry
 
 constant BALANCE_HEADING: str
     "account  kind     entries      total"

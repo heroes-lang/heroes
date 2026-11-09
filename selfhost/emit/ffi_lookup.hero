@@ -17,16 +17,16 @@
 # do: every reader splits clang's line the same way, and two copies of
 # "after the marker" would be two chances to disagree about it.
 
-use token
 use ast
-use source
-use diag
 use bytes
-use emit/externs as emit_externs
+use checker
+use diag
 use emit/clang_name
+use emit/externs as emit_externs
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The marker the driver puts on a verdict about a PACKAGE — one this
 # compiler wrote itself, unlike the clang and linker lines the other

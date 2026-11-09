@@ -28,11 +28,11 @@
 
 use cli/io
 use cli/table as cli_table
-use token
-use keywords
 use grammar_expr
-use operators
+use keywords
 use operand_families
+use operators
+use token
 
 constant SPEC: str
     "spec/heroes-spec.md"

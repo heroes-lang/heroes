@@ -35,13 +35,13 @@
 # Every walk is a loop over a stack sized once, never a recursion: a chain
 # of blocks thousands long is exactly what defect 218's sources make.
 
-use source
-use parse
-use resolve
 use checker
 use ir/containers
 use ir/graph
 use ir/lower
+use parse
+use resolve
+use source
 
 # The tree, walked once from block 0: each block's position in that walk
 # (`number`, -1 where block 0 never reaches it), and the last position

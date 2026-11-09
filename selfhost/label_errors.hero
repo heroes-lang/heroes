@@ -14,8 +14,8 @@
 # position order certifies the order written. Either is certain only where
 # the position is the one reading (`check/labels.hero` asks it).
 
-use token
 use diag
+use token
 
 # The span is the label's IDENTIFIER — the `:` is not in it — so the
 # replacement is the bare name. Applying `y:` here produced `y:: 2`, which

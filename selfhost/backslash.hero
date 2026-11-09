@@ -32,12 +32,12 @@
 # | `word_below`, `begins_a_value`, `closes_or_separates`, `within_brackets` | `layout.maybe_terminator`, at the end of a line a `\` asks to go on inside brackets |
 # | `joined` | `open_line.refused`, where the line below is joined to it |
 
-use token
-use diag
-use state
 use bytes
+use diag
 use join_fix
 use openers
+use state
+use token
 
 ## At the `\`
 

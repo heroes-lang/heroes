@@ -10,11 +10,11 @@
 # its value says its own mistakes. And the cell's old symbol after a type,
 # whose words `parse/annotation.cell_symbol` says (`old_symbol`).
 
-use token
-use diag
 use ast
 use cursor
+use diag
 use expr_kinds
+use token
 
 # The `@` after a type, the cell's symbol until panel 209 (2026-10-10), told
 # once with a certain fix writing `@=`, how `check --apply` rewrote the tree's

@@ -27,11 +27,11 @@
 # a diagnostic pointing into it is a compiler bug, not a user error, and
 # nothing that hands a program back may print it.
 
-use token
 use char_column
 use module/names as module_names
 use module/reached
 use text_lines
+use token
 
 ## The two tables
 

@@ -56,26 +56,26 @@
 # would be a route nothing runs.
 
 use ast
-use source
-use check/table
 use check/state
-use widths
+use check/table
+use checker
+use emit/aggregate
+use emit/ctype
+use emit/descriptors
+use emit/literal
+use emit/mangle
+use emit/signature
+use emit/writer
 use ir
 use ir/containers
-use emit/ctype
-use emit/literal
-use emit/descriptors
-use emit/aggregate
-use emit/signature
-use emit/mangle
-use emit/writer
-use parse
-use resolve
-use checker
 use ir/lower
 use ir/mono
 use ir/own
 use ir/place_store
+use parse
+use resolve
+use source
+use widths
 
 # The runtime's switch, `heroes_runtime.h`: 1 in a plain build, 0 under
 # AddressSanitizer.

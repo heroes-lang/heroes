@@ -29,15 +29,15 @@
 # |---|---|
 # | `told` | `scan.punct` |
 
-use token
-use diag
-use state
-use bytes
-use shown_char
-use punctuation
-use escape_readings
 use backtick_strings
 use backtick_told
+use bytes
+use diag
+use escape_readings
+use punctuation
+use shown_char
+use state
+use token
 
 # How the scanner's refusal of one character ends (`scan.punct`), which a
 # run's message keeps, so `refused_runs.gathered` counts it.

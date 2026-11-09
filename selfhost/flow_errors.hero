@@ -10,11 +10,11 @@
 # the end of a statement. Collapsing them would have let a binding take its
 # value from nothing.
 
-use token
-use diag
 use ast
-use source
+use diag
 use resolved
+use source
+use token
 
 # `inner` is the operand's own span, so the fix deletes exactly what lies
 # between the operand's end and the expression's — the `?`, and any space

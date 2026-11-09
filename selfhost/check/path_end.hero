@@ -31,15 +31,15 @@
 # by `check/decls.hero`'s constant body; it calls none of them back, which is
 # what lets it stand outside the walk's knot.
 
-use token
 use ast
-use source
-use resolved
-use parse
-use check/table
-use check/state
 use check/join
+use check/state
+use check/table
 use flow_errors
+use parse
+use resolved
+use source
+use token
 
 ## The refusal after a jump
 

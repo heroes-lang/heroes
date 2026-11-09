@@ -3,8 +3,8 @@
 # convention, so the `extern` stands as itself and no adapter has to be one
 # function across units; the proposal as first written refused this program at
 # build. `fixedbugs_2286_call_ret` reads the record's first word and its last.
-use holder
 use caller
+use holder
 
 function main()
     f = holder.maker()

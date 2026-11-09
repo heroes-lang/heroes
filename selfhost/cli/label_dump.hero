@@ -13,13 +13,13 @@
 # clang until the name is declared, is seen on that declaration. Asked on the
 # link's failure path alone.
 
-use cli/toolchain
 use cli/compiling
+use cli/digest
 use cli/process
 use cli/publish
-use cli/digest
-use cli/strings
 use cli/read_back
+use cli/strings
+use cli/toolchain
 use emit/macro_guard
 
 # A C name a declaration of the dump gives another linker name: the name,

@@ -29,16 +29,16 @@
 # stays the compiler's own failure, exit 2.
 
 use ast
-use source
-use diag
-use emit/ffi_lookup
-use emit/ffi_build
-use emit/externs as emit_externs
-use cli/toolchain
-use cli/probing
 use cli/group_file
 use cli/label_dump
+use cli/probing
 use cli/strings
+use cli/toolchain
+use diag
+use emit/externs as emit_externs
+use emit/ffi_build
+use emit/ffi_lookup
+use source
 
 # A symbol the linker named, as it spelled it and as a C name.
 record Missing

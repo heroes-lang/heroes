@@ -22,13 +22,13 @@
 # `ok(…)`, …), and an operator of them, at any depth.
 
 use ast
-use source
-use resolved
-use check/table
-use check/state
 use check/contextual
 use check/function_value
+use check/state
+use check/table
 use check/waiting
+use resolved
+use source
 
 # The size of an operator tree asked again at each of its nodes rather than
 # once through a map (`taking`).

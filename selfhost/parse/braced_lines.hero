@@ -31,14 +31,14 @@
 # parser. `laid_out` moved here from `parse/headless.hero` on 2026-09-29
 # (lane X4), when bodies in braces came to be read through it too.
 
-use token
-use diag
 use cursor
-use lexer
-use text_lines
-use parse/brace_habit
+use diag
 use laid_braces
+use lexer
 use pairing
+use parse/brace_habit
+use text_lines
+use token
 
 ## The view
 

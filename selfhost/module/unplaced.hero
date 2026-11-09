@@ -16,15 +16,15 @@
 # beside the placed trees, as it does for the verb (`fetch/staging.hero`),
 # removed at once, with `heroes.packages/` where nothing else stands in it.
 
-use module/catalogue
-use module/reached
+use cli/process
+use cli/strings
 use fetch/address
 use fetch/index_source
 use fetch/staging
 use fetch/transport
 use fetch/verb_place
-use cli/process
-use cli/strings
+use module/catalogue
+use module/reached
 
 # The refusal `heroes fetch` would give the entry `e`, whose tree `package`
 # names, for the program read under `program` (the directory of the file you

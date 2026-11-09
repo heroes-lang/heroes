@@ -5,9 +5,9 @@
 # and what it is checked against is here, a seam the file already drew with
 # its `## Tests` heading.
 
-use token
 use ir
 use ir/containers
+use token
 
 # The reading this file replaced, word for word as `ir/phases.hero` held it at
 # 994c8889: the oracle the generated blocks below hold `releases` to.

@@ -31,10 +31,10 @@
 # 2026-11-08). What only the repository answers, a path outside it or
 # through a link, is the verb's alone: the build reads no repository.
 
-use module/sums
-use module/toml_line
 use fetch/address
 use fetch/address_form
+use module/sums
+use module/toml_line
 
 # One entry: its name, the alias its program's `use` lines write between the
 # brackets, and its source, one of three (R6): the Heroes index by `version`;

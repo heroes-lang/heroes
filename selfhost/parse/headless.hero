@@ -57,17 +57,17 @@
 # `parse/top_level.unexpected` call; and `grammar_expr.hanging` asks
 # `arms_below` whether a block is arms.
 
-use token
 use ast
 use cursor
-use word_place
 use lexer
-use parse/member_lines
 use parse/brace_habit
 use parse/braced_lines
-use parse/refused_heads
-use parse/orphans
 use parse/head_kind
+use parse/member_lines
+use parse/orphans
+use parse/refused_heads
+use token
+use word_place
 
 ## Reading
 

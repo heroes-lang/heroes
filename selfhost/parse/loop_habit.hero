@@ -38,17 +38,17 @@
 # | `do_tail`, `passed_clauses` | `grammar_expr.while_stmt` |
 # | `past_a_statement`, `under_a_do` | `parse/statement_end.close` |
 
-use token
-use diag
 use cursor
-use parse/brace_habit
-use parse/opening
-use parse/line_end
+use diag
 use laid_braces
-use pairing
-use text_lines
-use operators
 use lex_interp
+use operators
+use pairing
+use parse/brace_habit
+use parse/line_end
+use parse/opening
+use text_lines
+use token
 
 # `for_missing_in` at the cursor, which stands where the loop variable
 # should, with *use `while`* over `keyword`; `read` is the cursor after the

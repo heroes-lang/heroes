@@ -20,17 +20,17 @@
 # roman/numeral` where `roman` is an entry, its tree holds `numeral.hero` and
 # the program has no `roman/numeral.hero` is `certain`.
 
-use token
 use ast
+use cli/files
 use diag
-use source
 use module/catalogue
-use module/reached
-use module/placed
 use module/packages
 use module/paths
+use module/placed
+use module/reached
 use module/spelling
-use cli/files
+use source
+use token
 
 # What `used` is told, `name` its module in the compilation ("" where no
 # package of the build answers it), none where an earlier `use` already told

@@ -6,15 +6,15 @@
 # header refused in a unit was also asked whether it compiles alone: that
 # file tells what this one reads.
 
-use source
 use ast
-use emit/clang_place
-use emit/ffi_lookup
+use cli/caret_bytes
 use cli/group_file
 use cli/runtime_key
-use cli/standard_name
 use cli/runtime_name
-use cli/caret_bytes
+use cli/standard_name
+use emit/clang_place
+use emit/ffi_lookup
+use source
 
 # clang's first error, read: its row in the text, its place, and its message.
 record First

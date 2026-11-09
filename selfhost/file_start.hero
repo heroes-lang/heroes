@@ -21,10 +21,10 @@
 # `byte_evidence` names it where the bytes prove it, and nothing else of the
 # file is read, as nothing else of a file that is not UTF-8 is.
 
-use token
+use byte_evidence
 use diag
 use state
-use byte_evidence
+use token
 
 # How many bytes of byte-order marks, U+FEFF as UTF-8 writes it, open the
 # text: 0 for nearly every file, 3 for one mark, more for a file a tool saved

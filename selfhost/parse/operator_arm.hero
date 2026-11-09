@@ -28,11 +28,11 @@
 # |---|---|
 # | `lead`, `to_the_arrow` | `grammar_expr.arm` |
 
-use token
 use ast
 use cursor
 use parse/arm_pattern
 use report_marks
+use token
 
 # An arm's patterns, none where an operator stood alone where they go; and
 # whether a refusal of them was told (`told`), the arm then read for its own

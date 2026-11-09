@@ -18,15 +18,15 @@
 # prints. Every other brace of the text is doubled, `}` as well as `{`, since
 # a `}` alone is refused in an `f` literal (panel 184 R1).
 
-use token
 use ast
-use diag
 use cursor
+use diag
+use escape
+use escape_readings
+use grammar_expr
 use lexer
 use pairing
-use grammar_expr
-use escape_readings
-use escape
+use token
 
 # One hole a plain literal holds: the offsets of its two braces in the source,
 # and the names its expression reads, as spans of the source.

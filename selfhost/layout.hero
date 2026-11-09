@@ -17,20 +17,20 @@
 # `open_line.hero`'s (panel 181): this module asks it at the two moments it
 # can be told, a line's end and the next line's margin.
 
-use token
-use state
-use diag
-use bytes
-use open_line
 use backslash
-use indent_runs
 use brace_layout
-use map_alone
-use closers
 use bracket_reach
-use lost_quote
+use bytes
+use closers
 use comment_habit
+use diag
+use indent_runs
+use lost_quote
+use map_alone
+use open_line
 use openers
+use state
+use token
 
 ## The carriage return
 

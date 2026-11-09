@@ -16,15 +16,15 @@
 # no ring (measurement 009 § the structural finding). `tails` reads a result's
 # marks through it for the same one-way reason: it already uses this module.
 
-use token
-use cursor
 use ast
+use cursor
 use keywords
 use lexer
+use parse/line_end
 use parse/marks as parse_marks
 use parse/type
-use parse/line_end
 use parse/unclosed
+use token
 
 ## Type parameters
 

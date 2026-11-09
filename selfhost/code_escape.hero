@@ -17,14 +17,14 @@
 # group head's string the escape decodes, and the head refuses the character
 # it writes, as it refuses `\t` there (`head_names`, `unshowable_name`).
 
-use token
 use diag
-use state
 use escape
 use escape_codes
 use escape_report
 use raw_chars
 use shown_char
+use state
+use token
 
 # Past the `\u{…}` whose backslash is at `backslash`, in the literal or the
 # piece of an `f"…"` literal that opened at `literal`: refused where it writes

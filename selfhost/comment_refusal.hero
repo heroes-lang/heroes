@@ -10,9 +10,9 @@
 # calls them, and `foreign_comment` there takes its token from here.
 
 use diag
+use raw_refusal
 use state
 use token
-use raw_refusal
 
 # `# …` to end of line, retained as a token (doc comments and `##` section
 # headings are the parser's reading of the same span), every character in it

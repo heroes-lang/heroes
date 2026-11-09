@@ -24,15 +24,15 @@
 # clang-failure class of `.claude/rules/c-boundary.md` arriving at an
 # assignment instead of at a call.
 
+use ast
+use check/state
+use emit/ctype
+use emit/signature
+use emit/writer
 use ir
 use ir/containers
 use ir/instances
 use source
-use ast
-use check/state
-use emit/signature
-use emit/ctype
-use emit/writer
 
 # The name a callee has when it stands as a value, or an error where the form
 # has none. A Heroes function is named as a call names it, `instance` being

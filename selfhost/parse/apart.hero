@@ -55,17 +55,17 @@
 # The readings and their offsets are `parse/readings`, the line below a
 # bodiless head `parse/below_a_head`, the joined lines `joined_lines`.
 
-use token
-use diag
 use ast
-use lexer
 use cursor
-use parse/decl
-use parse/which_arm
-use parse/readings
-use parse/below_a_head as below
-use joined_lines as seams
+use diag
 use join_fix
+use joined_lines as seams
+use lexer
+use parse/below_a_head as below
+use parse/decl
+use parse/readings
+use parse/which_arm
+use token
 
 # One diagnostic of the joined reading in the order it is said, the held ones
 # where `placed` puts them: said as the parser said it, or held back

@@ -45,17 +45,17 @@
 # | `goes_on`, `goes_on_below` | `layout.line_start`, at the next line with words: refused and joined, or ended there |
 # | `settle` | `layout.line_start` where a stray carriage return leaves the margin unread, and `lexer.lex_one` at the file's end |
 # | `ended` | `lexer.lex_one`, for a line still left open at the file's end |
-use token
-use state
-use diag
-use bytes
-use punctuation
-use next_line
-use line_above
-use backslash
-use join_fix
-use sign_above
 use alone_lines
+use backslash
+use bytes
+use diag
+use join_fix
+use line_above
+use next_line
+use punctuation
+use sign_above
+use state
+use token
 use word_place
 
 ## At the line end

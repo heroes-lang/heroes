@@ -23,12 +23,12 @@
 # guess and `value_errors` says why.
 
 use ast
-use source
-use token
-use resolved
 use check/state
 use check/table
 use discard_errors
+use resolved
+use source
+use token
 use value_parts
 
 # Whether this type is a `T?`. One home for the question: `check/decls`

@@ -38,7 +38,7 @@
 # else's type stays exit 2 and the compiler's.
 
 use ast
-use source
+use checker
 use diag
 use emit/externs as emit_externs
 use emit/ffi_lookup
@@ -46,7 +46,7 @@ use emit/ffi_tag
 use emit/layout_screen
 use parse
 use resolve
-use checker
+use source
 
 # What clang says when the word after `struct` names no complete struct.
 constant NO_LAYOUT: str

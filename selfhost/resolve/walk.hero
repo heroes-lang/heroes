@@ -37,23 +37,23 @@
 # the unused rule counts only reads (§4.8's copy-out is the one exception,
 # handled in the sweep).
 
-use token
 use ast
-use source
-use resolved
 use parse
-use resolve/state
-use resolve/unused_sweep
-use resolve/types
-use resolve/errors
-use resolve/qualified
-use resolve/names
-use resolve/writes
 use resolve/binding as resolve_binding
-use resolve/plain_literal
-use resolve/rest_zero
 use resolve/built_marks
+use resolve/errors
 use resolve/meant
+use resolve/names
+use resolve/plain_literal
+use resolve/qualified
+use resolve/rest_zero
+use resolve/state
+use resolve/types
+use resolve/unused_sweep
+use resolve/writes
+use resolved
+use source
+use token
 
 ## Statements
 

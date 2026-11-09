@@ -15,16 +15,16 @@
 # rest of the emitter asks these by.
 
 use ast
-use source
-use check/table
 use check/state
+use check/table
+use emit/array_read
+use emit/ctype
+use emit/mangle
+use emit/stop_place
+use emit/writer
 use ir
 use ir/containers
-use emit/mangle
-use emit/array_read
-use emit/stop_place
-use emit/ctype
-use emit/writer
+use source
 
 # The C member name of a field, and the type it holds. Absent where the
 # owner is not an aggregate or the index is past its fields — which by

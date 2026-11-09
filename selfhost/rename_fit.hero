@@ -36,18 +36,18 @@
 # `test`; a caller that does not shows each rename as the guess the resolver
 # offers, never a certainty nobody proved.
 
-use token
+use checker
 use diag
+use library_source
+use modules
+use parse
+use resolve
+use resolve/asked
+use resolve/near_names
+use resolved
 use source
 use source_extent
-use parse
-use modules
-use resolve
-use resolved
-use checker
-use resolve/near_names
-use resolve/asked
-use library_source
+use token
 
 # The codes whose one fix is the did-you-mean rename: a name, a function
 # after a dot, a type, and a name inside a module (`resolve/errors.suggest`,

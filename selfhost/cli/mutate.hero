@@ -24,20 +24,20 @@
 # (https://github.com/heroes-lang/heroes/issues/611).
 
 use bytes
-use diag
-use source
 use cli/argv
 use cli/io
 use cli/mutate_recovery
-use cli/table as cli_table
 use cli/process
+use cli/table as cli_table
+use diag
 use library_source
-use modules
-use not_text
 use module/packages
 use module/reading
+use modules
 use mutate/ops
 use mutate/score
+use not_text
+use source
 
 constant DEFAULT_DIR: str
     "examples"

@@ -15,13 +15,13 @@
 # else — the report is OUTPUT, exit 0.
 
 use ast
-use source
-use resolved
-use check/state
 use check/hole_report
+use check/state
+use checker
 use parse
 use resolve
-use checker
+use resolved
+use source
 
 # The report for every hole in the file, in source order.
 function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str

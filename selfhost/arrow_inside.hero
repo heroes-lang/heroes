@@ -19,16 +19,16 @@
 # |---|---|
 # | `close` | `scan.finish`, before a `->` is emitted |
 
-use token
-use diag
-use state
-use keywords
 use bytes
-use indent_runs
-use next_line
 use closers
+use diag
+use indent_runs
+use keywords
 use layout
+use next_line
 use openers
+use state
+use token
 
 # Before the token `kind` at `start` is emitted: a `->` inside a function
 # type's parameters whose `)` was left out has that `)` written where it

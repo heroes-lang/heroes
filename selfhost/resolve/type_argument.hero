@@ -12,11 +12,11 @@
 # no list, and `f(a: x < i64, b: 2)` closes it with `)`, so both keep the
 # message of an unknown name.
 
-use token
-use diag
 use ast
-use source
+use diag
 use resolve/vocab
+use source
+use token
 
 # Whether the name `text` at `span` is a type word written as a type
 # argument: the text before it back to a `<` after a name, and after it on

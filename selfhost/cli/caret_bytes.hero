@@ -35,14 +35,14 @@
 # is every refusal the readers told before this defect, so the second run
 # costs nothing where the excerpt already said the line.
 
-use emit/clang_place
-use emit/ffi_lookup
-use module/reading
 use cli/process
 use cli/publish
 use cli/read_back
 use cli/response_file
 use cli/strings
+use emit/clang_place
+use emit/ffi_lookup
+use module/reading
 
 # The words that make clang name the place it read rather than the one a
 # `#line` presumes.

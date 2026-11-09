@@ -36,24 +36,24 @@
 # never as an undefined value.
 
 use ast
-use source
 use bytes
-use check/table
 use check/state
-use ir/containers
+use check/table
+use checker
+use emit/c_main
+use emit/extern_refs
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use emit/large_size
+use emit/record_constant
 use emit/signature
 use emit/value_check
-use emit/extern_refs
-use emit/c_main
 use emit/writer
-use emit/externs as emit_externs
-use emit/record_constant
-use emit/large_size
-use emit/ffi_lookup
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 # The four checks, UndefinedBehaviorSanitizer's names: each a value C leaves
 # undefined that clang may fold in silence.

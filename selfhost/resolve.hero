@@ -23,20 +23,20 @@
 # other meaning. One resolution, recorded once.
 
 use ast
-use source
-use parse
 use diag
-use resolved
+use parse
+use resolve/asked
+use resolve/cycles
+use resolve/decls as resolve_decls
+use resolve/plain_literal
+use resolve/rest_zero
 use resolve/state
+use resolve/top
 use resolve/unused_sweep
 use resolve/value_lines
 use resolve/written_nowhere
-use resolve/top
-use resolve/decls as resolve_decls
-use resolve/cycles
-use resolve/plain_literal
-use resolve/rest_zero
-use resolve/asked
+use resolved
+use source
 
 function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
     asking: asked.Asking @= asked.new_asking()

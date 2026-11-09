@@ -9,17 +9,17 @@
 # (`ends_line`) — a string is not multi-line in this language, so an
 # unterminated one is a mistake with a known extent.
 
-use token
-use diag
-use state
-use escape
-use layout
 use bytes
-use escape_report
 use code_escape
+use diag
+use escape
+use escape_report
+use layout
+use openers
 use raw_chars
 use raw_refusal
-use openers
+use state
+use token
 
 ## The escape validator
 

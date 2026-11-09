@@ -10,13 +10,13 @@
 # reads it under, so what a verb places is what a build finds.
 
 use cli/process
-use module/catalogue
-use module/fingerprint
-use module/placed
 use fetch/address
 use fetch/git_source
 use fetch/index_source
 use fetch/transport
+use module/catalogue
+use module/fingerprint
+use module/placed
 
 # Where an entry's tree stands, and whether this call fetched it.
 record Placed

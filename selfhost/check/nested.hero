@@ -20,12 +20,12 @@
 # The question this module asks is the one none of the readers asked: **what is
 # the payload?**
 
-use token
 use ast
-use source
-use check/table
 use check/state
+use check/table
 use flow_errors
+use source
+use token
 
 # Whether `payload` is itself a fallible type. A poisoned payload is `.fallible`
 # too — `check/discard.hero` paid for that one, where a `T?` whose payload was

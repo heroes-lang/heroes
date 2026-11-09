@@ -21,11 +21,11 @@
 # - `use <json>`, a package with no module, an unclosed mark and an empty one:
 #   no repair, which module or name is meant being the author's.
 
-use token
-use diag
 use describe
+use diag
 use keywords
 use module_text
+use token
 
 # The diagnostic owed by the mark at `tokens[at]`, a `<`, or none where the
 # mark is whole: then its four tokens stand at `at` to `at + 3`.

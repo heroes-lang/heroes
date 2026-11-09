@@ -22,10 +22,10 @@
 # Neither reading is `certain`, as before: the compiler does not know which
 # the author meant (`tests/golden/check/leading-zero.hero` says why).
 
-use token
+use bytes
 use diag
 use digits
-use bytes
+use token
 
 # `written` is the digits a zero opens, `span` where they stand, and `rest`
 # what joins them after (`joined_end`), "" where nothing does.

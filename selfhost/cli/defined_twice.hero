@@ -46,20 +46,20 @@
 # (`cli/two_ways_ask.hero`), and what is told names it and the modules.
 
 use ast
-use source
-use diag
-use cli/toolchain
 use cli/compiling
+use cli/digest
+use cli/dump_tops
 use cli/probing
-use cli/two_ways
-use cli/two_ways_ask
 use cli/process
 use cli/publish
-use cli/response_file
-use cli/digest
-use cli/strings
 use cli/read_back
-use cli/dump_tops
+use cli/response_file
+use cli/strings
+use cli/toolchain
+use cli/two_ways
+use cli/two_ways_ask
+use diag
+use source
 
 # One list's definition of a name: whether it is a function's, an object's
 # else.

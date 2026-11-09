@@ -29,16 +29,16 @@
 # Nothing is held on the checker: its record is copied at every frame of the
 # walk, and a field widens every copy (`check/state.hero`, panel 185's R5).
 
-use token
-use diag
 use ast
-use source
-use resolved
-use check/waiting
-use check/state
-use check/render
 use check/generics as check_generics
+use check/render
+use check/state
+use check/waiting
+use diag
 use parse
+use resolved
+use source
+use token
 
 # What the message of an argument nothing settled names: the parameter `at` it
 # stands for, the callee's letters that parameter names which nothing in the

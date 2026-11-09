@@ -16,8 +16,8 @@
 # FILE that wants both renames one with `as`, which is what happens below.
 # (These lines said *"last parts are unique across a program"* until panel 100
 # repealed that rule the same day, hours after they were written.)
-use geom/point
 use geom/area
+use geom/point
 use render/ascii
 use render/scale as near_scale
 use scale

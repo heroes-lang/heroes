@@ -64,17 +64,17 @@
 # choosing the strict rule over the escape-only one).
 
 use ast
-use source
+use check/lend_decls
+use check/lend_landing
+use check/lower
+use check/state
+use field_lend_errors
+use inventory
+use lend_errors
 use parse
 use resolve
-use check/lower
 use resolved
-use inventory
-use check/state
-use check/lend_landing
-use check/lend_decls
-use lend_errors
-use field_lend_errors
+use source
 
 # Whether this expression is a lend: `s.cstr()` or `cstr(s)`. The
 # RESOLVER answers, not the text — a name is only a builtin because the

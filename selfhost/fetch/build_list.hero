@@ -27,12 +27,12 @@
 # Each package walked is placed as it is read (`fetch/placing.hero`), so the
 # catalogue it holds is read from a tree held to its sum.
 
-use module/catalogue
 use fetch/address
 use fetch/address_form
 use fetch/placing
 use fetch/transport
 use fetch/versions
+use module/catalogue
 
 # One package of the build: its entry as the program's catalogue will hold
 # it, its identity, and the package whose catalogue first required it, ""

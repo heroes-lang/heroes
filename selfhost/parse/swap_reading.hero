@@ -50,15 +50,15 @@
 # (`record_tail`), `parse/type.hero` (`prefix`, `unit_or_function`) and
 # `parse/opening.hero` (`absent`).
 
-use token
 use bytes
 use cursor
-use keywords
-use foreign_words
 use foreign_at
-use word_place
-use text_outline
+use foreign_words
+use keywords
 use lexer
+use text_outline
+use token
+use word_place
 
 ## Reading
 

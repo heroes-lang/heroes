@@ -5,13 +5,13 @@
 # directory. Split out of `cli/header_order.hero` on 2026-10-10, which they
 # took past the layout's threshold, and read by `cli/macro_twice.hero` too.
 
-use source
 use ast
-use token
-use emit/externs as emit_externs
-use emit/clang_place
 use cli/compiling
 use cli/process
+use emit/clang_place
+use emit/externs as emit_externs
+use source
+use token
 
 # The string of the first group of `module` naming `header`.
 function group_in(s: source.Source, decls: [ast.Decl], header: str, module: str) -> token.Span?

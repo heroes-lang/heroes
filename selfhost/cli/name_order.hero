@@ -16,18 +16,18 @@
 # the false headline and its note. A headline the switch reader told
 # (`emit/ffi_switched.hero`, defect 585) is true, and is left as it was.
 
-use source
 use ast
+use cli/compiling
+use cli/header_order
+use cli/header_reads
+use cli/order_groups
+use cli/order_trial
+use cli/strings
+use cli/toolchain
 use diag
 use emit/ffi_declared
 use emit/ffi_switched
-use cli/toolchain
-use cli/compiling
-use cli/order_trial
-use cli/order_groups
-use cli/header_reads
-use cli/header_order
-use cli/strings
+use source
 
 function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> diag.Diagnostic
     if d.code != "ffi_unknown_name" || strings.ends_with(text: d.message, suffix: ffi_switched.NARROWED_TAIL)

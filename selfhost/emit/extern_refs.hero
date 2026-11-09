@@ -19,10 +19,10 @@
 # already references what it calls.
 
 use ast
-use source
-use ir/containers
-use emit/writer
 use emit/externs as emit_externs
+use emit/writer
+use ir/containers
+use source
 
 # The table's first line, one home for the writer and for the probe of a
 # constant's value, which compiles the unit with the line made `UNUSED_HEAD`

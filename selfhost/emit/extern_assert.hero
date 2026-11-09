@@ -21,20 +21,20 @@
 # renumbered 56 restore directives across five golden files.
 
 use ast
-use source
-use check/table
-use check/state
 use check/render
-use ir/containers
+use check/state
+use check/table
+use checker
+use emit/assert_spelling
 use emit/ctype
 use emit/externs as emit_externs
-use emit/assert_spelling
 use emit/record_constant
 use emit/writer
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
 
 function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
     # Everything a header owns, whichever kind it lowered to: the

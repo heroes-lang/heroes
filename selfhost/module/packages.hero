@@ -27,12 +27,12 @@
 # there, and nothing compiles in its place (W4). A `path` entry is read where
 # it names, a folder of the author's own, and told as unverified (R6).
 
-use module/reached
-use module/catalogue
-use module/placed
-use module/fingerprint
-use module/unplaced
 use cli/process
+use module/catalogue
+use module/fingerprint
+use module/placed
+use module/reached
+use module/unplaced
 
 constant PLACED: str
     "heroes.packages"

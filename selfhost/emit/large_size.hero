@@ -19,14 +19,14 @@
 use ast
 use check/state
 use check/table
+use checker
 use emit/byte_copy
 use emit/ctype
 use emit/types
-use widths
 use parse
 use resolve
-use checker
 use source
+use widths
 
 # The threshold, in bytes as `bytes_of` counts them. Panel 233 measured the
 # cost a value just under it leaves: a 2 MiB record built in one function cost

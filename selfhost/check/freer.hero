@@ -23,14 +23,14 @@
 # The narrow reading would have to prove which value reaches the call, which is
 # the dataflow this file exists not to need.
 
-use token
 use ast
-use source
-use diag
-use check/table
-use parse
-use type_text
 use check/freer_marks
+use check/table
+use diag
+use parse
+use source
+use token
+use type_text
 
 # What a marked call HANDS BACK, which is not what its signature declares.
 #

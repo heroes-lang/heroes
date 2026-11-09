@@ -27,9 +27,9 @@
 # (panel 052's compiler-engineer, in the emitted goldens).
 
 use ast
-use source
-use ir/containers
 use emit/ffi_lookup
+use ir/containers
+use source
 
 record Located
     file: i64

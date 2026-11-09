@@ -14,15 +14,15 @@
 # layout, before this unit compiles: `emit/layout_text.hero`.
 
 use ast
-use source
 use check/state
+use checker
 use emit/ctype
 use emit/extern_field
 use emit/externs as emit_externs
 use emit/writer
 use parse
 use resolve
-use checker
+use source
 
 # One assertion per field of every record a group declares whose header
 # the unit reads (`records`, `emit_externs.held`: every one in the fused

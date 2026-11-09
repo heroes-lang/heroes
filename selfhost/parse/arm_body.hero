@@ -8,9 +8,9 @@
 # |---|---|
 # | `reject_declaration` | `grammar_expr.arm` |
 
-use token
 use ast
 use cursor
+use token
 
 # A declaration is not an arm body (panel 017 D). `.a => x = 5` binds a name
 # nothing can read: the arm is one statement, so the binding's scope ends with

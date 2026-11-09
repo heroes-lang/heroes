@@ -22,8 +22,8 @@
 #
 # Message text byte for byte with the Rust side, as everywhere in the port.
 
-use token
 use diag
+use token
 
 function mismatch(expected: str, got: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(

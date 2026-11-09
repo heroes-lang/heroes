@@ -25,23 +25,23 @@
 # there, and the one diagnostic both give there, which this file imports.
 
 use ast
-use source
-use token
-use diag
+use check/render
 use check/state
 use check/table
-use check/render
-use ir/containers
-use emit/ffi_lookup
-use emit/ffi_site
-use emit/ffi_pointee
-use emit/ffi_mutable
-use emit/lend_type
+use checker
 use cli/pointee_ask
+use diag
+use emit/ffi_lookup
+use emit/ffi_mutable
+use emit/ffi_pointee
+use emit/ffi_site
+use emit/lend_type
+use ir/containers
+use ir/lower
 use parse
 use resolve
-use checker
-use ir/lower
+use source
+use token
 
 # The contract between the check unit that asks the question and the reader
 # below: one string, one home (CLAUDE.md §11). No other `heroes-ffi-` marker

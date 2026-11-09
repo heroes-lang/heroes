@@ -30,19 +30,19 @@
 # that declared Color (panel 060, condition 3).
 
 use ast
-use source
-use handles
-use check/table
 use check/state
-use widths
-use ir/containers
-use ir/phases
-use emit/synth
+use check/table
+use checker
 use emit/mangle
+use emit/synth
+use handles
+use ir/containers
+use ir/lower
+use ir/phases
 use parse
 use resolve
-use checker
-use ir/lower
+use source
+use widths
 
 # Both names of one aggregate, for the emitters that write a definition
 # rather than a mention.

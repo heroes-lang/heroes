@@ -16,19 +16,19 @@
 # the trial and not in the unit (defect 568), and a header whose own code
 # holds a sign conversion compiled in the unit and in no trial (defect 569).
 
-use emit/c_text
-use emit/externs as emit_externs
-use emit/macro_guard
-use emit/ffi_lookup
-use cli/toolchain
 use cli/clang_first
+use cli/digest
+use cli/files
 use cli/process
 use cli/publish
-use cli/response_file
-use cli/files
-use cli/digest
 use cli/read_back
+use cli/response_file
 use cli/strings
+use cli/toolchain
+use emit/c_text
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use emit/macro_guard
 
 # Whether the unit compiled, whether clang could be asked at all, its first
 # error where it refused, and all it said.

@@ -12,14 +12,14 @@
 # msg on the way out, which is why the err shape is one struct
 # assignment and not a rebuild.
 
-use ir
-use emit/mangle
-use emit/ctype
-use source
-use parse
-use resolve
 use check/state
 use checker
+use emit/ctype
+use emit/mangle
+use ir
+use parse
+use resolve
+use source
 
 # ok(x), fail(code, msg) and the err that ? produces — one compound
 # literal each.

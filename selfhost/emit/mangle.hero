@@ -23,10 +23,10 @@
 # computed the same values since the day of the decision. This module
 # is that premise, cashed.
 
-use source
 use inventory
-use parse
 use library_source
+use parse
+use source
 
 # The two numbers the golden witness copies.
 constant HASH_BASE: i64

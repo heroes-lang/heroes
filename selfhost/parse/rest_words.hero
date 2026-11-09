@@ -8,10 +8,10 @@
 # sets the words apart there and refuses them: `.c(rest: zero)` is the words
 # wherever it is written, never a field `rest` given a value called `zero`.
 
-use token
 use ast
 use cursor
 use keywords
+use token
 
 # An argument list with the words taken off its end, and their index in
 # `Ast.rests`, or -1.

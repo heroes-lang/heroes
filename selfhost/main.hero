@@ -24,29 +24,29 @@
 # environment, because "the language has no getenv" was a fact about
 # nobody having tried, not about the language: it is one extern.
 
-use source
-use cli/table as cli_table
 use cli/argv
-use cli/io
-use cli/toolchain
-use cli/process
-use cli/input
-use library_source
-use cli/lex
-use cli/syntax_cmds
 use cli/check
-use cli/consensus
 use cli/check_flags
-use cli/verbs
+use cli/consensus
 use cli/doctor
+use cli/grammar
 use cli/help
+use cli/input
+use cli/io
+use cli/lex
 use cli/measure
 use cli/mutate
 use cli/probe
-use cli/grammar
+use cli/process
+use cli/syntax_cmds
+use cli/table as cli_table
+use cli/toolchain
 use cli/unverified
+use cli/verbs
 use fetch/add
 use fetch/fetch_all
+use library_source
+use source
 
 # The version, and the one place it lives (CLAUDE.md §14, release tags):
 # `heroes --version` prints it, `heroes build --emit-c` writes it as the

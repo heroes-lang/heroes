@@ -17,8 +17,8 @@
 # and `.claude/rules/diagnostics-and-goldens.md` says a fix that leaves the
 # defect standing is a guess however well it compiles.
 
-use token
 use diag
+use token
 
 # The same position rule, over a FIELD's lend (panel 164).
 #

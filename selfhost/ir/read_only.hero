@@ -9,9 +9,9 @@
 # would stop the build here rather than reach C. Its own file beside
 # `ir/callees.hero`, the verifier's other question asked apart.
 
-use token
 use ir
 use ir/containers
+use token
 
 # Every instruction of `blk` that writes through a read-only parameter.
 function check(f: containers.Function, blk: containers.Block, at: str, @problems: [str])

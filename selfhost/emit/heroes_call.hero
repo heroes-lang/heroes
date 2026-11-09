@@ -35,15 +35,15 @@
 # `the_library_exit_is_a_call_of_hero_exit_alone` below fires when it does.
 
 use ast
-use source
 use check/state
-use ir/instances
-use ir/containers
 use emit/signature
 use emit/stop_place
 use emit/writer
+use ir/containers
+use ir/instances
 use library_source
 use parse
+use source
 
 # `callee` is the declaration the call names and `instance` the type
 # arguments it names it at; `assign` is the target and its ` = `, or empty

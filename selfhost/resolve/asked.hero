@@ -32,8 +32,8 @@
 # read by one question or two is never indexed, and a program that asks no
 # question builds none.
 
-use resolve/near_names
 use resolve/near_index
+use resolve/near_names
 
 # One question: the name, and the numbers of its lists in the order read.
 record Question

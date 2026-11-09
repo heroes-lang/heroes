@@ -53,14 +53,14 @@
 
 use ast
 use bytes
+use check/state
+use check/table
+use emit/c_text
+use emit/extern_union
+use emit/guarded_names
+use emit/layout_text
 use handles
 use source
-use check/table
-use check/state
-use emit/extern_union
-use emit/layout_text
-use emit/c_text
-use emit/guarded_names
 
 constant SCREEN: str
     "hero_ly_screen"

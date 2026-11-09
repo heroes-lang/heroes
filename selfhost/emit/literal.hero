@@ -34,9 +34,9 @@
 # both sides.
 
 use check/contextual
-use widths
-use ir
 use emit/mangle
+use ir
+use widths
 
 extern "stdlib.h"
     function atof(text: cstr lent) -> f64

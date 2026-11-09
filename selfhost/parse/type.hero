@@ -19,15 +19,15 @@
 # the parser needs the text and not the file table, and deferring the `Source`
 # record keeps the port honest about what it has actually ported.
 
-use token
 use ast
-use diag
 use cursor
 use data_errors
-use parse/line_end
+use diag
 use parse/fixed_length
+use parse/line_end
 use parse/swap_reading
 use parse/unclosed
+use token
 
 ## The entry point
 

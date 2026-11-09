@@ -22,17 +22,17 @@
 # Where the unit is known, the comparison itself is `emit/lend_extent.hero`'s,
 # in the main unit, before the call.
 
-use token
 use ast
-use source
+use checker
+use cli/pointee_ask
 use diag
 use emit/ffi_lookup
-use emit/ffi_pointee
 use emit/ffi_past_prototype
-use cli/pointee_ask
+use emit/ffi_pointee
 use parse
 use resolve
-use checker
+use source
+use token
 
 # The contract between `cli/header_types.hero`, which writes these, and the
 # readers below: one string each, one home (CLAUDE.md §11). Neither is a

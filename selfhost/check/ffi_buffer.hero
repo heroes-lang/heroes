@@ -26,11 +26,11 @@
 # refusal (`check/ffi.hero`).
 
 use ast
-use source
-use handles
 use check/state
 use check/table
 use ffi_errors
+use handles
+use source
 
 # What the judgement found: not a buffer, a buffer, or a buffer refused.
 variant Verdict

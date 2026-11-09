@@ -57,8 +57,8 @@
 # when one stops failing, which is the day its entry goes, as well as when
 # anything else fails.
 
-use report
 use floors
+use report
 use shell
 use strings
 use suite_surface

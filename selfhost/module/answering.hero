@@ -22,16 +22,16 @@
 #     and the folders are read in their names' byte order, shallowest first,
 #     so the answer is one answer on every machine.
 
-use source
 use bytes
-use keywords
-use module/names as module_names
-use module/placed
-use module/paths
-use module/package_told
-use module/spelling
 use cli/files
 use cli/process
+use keywords
+use module/names as module_names
+use module/package_told
+use module/paths
+use module/placed
+use module/spelling
+use source
 
 # The modules a bare `use` in the module `from` could name for `name`, as
 # that `use` would spell them: one of the compilation whose last part is

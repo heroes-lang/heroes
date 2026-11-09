@@ -4,14 +4,14 @@
 # file past its ceiling; `operator.binary` writes the zero test and asks
 # here for the rest.
 
-use check/table
 use check/state
+use check/table
+use checker
 use ir
-use widths
-use source
 use parse
 use resolve
-use checker
+use source
+use widths
 
 # The one quotient a signed width cannot hold, its smallest value by -1, and
 # the guard that aborts on it, or "" where none is owed (defect 567). It is
