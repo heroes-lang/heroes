@@ -440,6 +440,16 @@ reaches anyone, and nothing in the resolution rests on it.
 
 Pending.
 
+**Ratified, 2026-11-09, about 08:48**, by the author's reading of the sitting's results as the coordinator set
+them out in the conversation (R1 to R10, what each repair costs, the landing in two lanes, the two
+questions asked beside the ratification), answered through the question form, meant as: *ratify*.
+R1 to R10 stand as adopted. The two questions asked beside it were answered in the same form: R3's
+`intern_*` (defect 2375) is kept as a known silent shape and never refused, since refusing it refuses
+static FFmpeg and X11 as the sitting measured, pinned as a known cost by a case whose header gives
+that reason and this ruling; and the blind seat is allowed, at most 10 USD in all (the author's
+words: *yes 10 dollars*), its twelve sessions run against the landing's compiler with their grading
+registered before any session starts.
+
 ## Process notes
 
 1. **The critic's first pass changed the briefs before any seat started**: eleven findings (two new
