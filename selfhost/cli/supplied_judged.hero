@@ -169,12 +169,18 @@ function lone(bound: [Bound], found: [str]) -> [Bound]
 
     return out
 
-# `found` without the refusal of each lone binding the platform alone does
-# not answer where both orders took one file: on glibc `fabs` is
-# `libm.so.6`'s alone, so a group with no `link` binding it, in a program
-# another of whose groups links `m`, reaches one definition. `platform` is
-# the platform's answer for each it was asked, "" where it gave none; a
-# binding it was not asked of, its probe refused, stays refused.
+# `found` without the refusal of each lone binding where both orders took
+# one file and the platform alone answers it from no file or from that very
+# file: one definition either way, and the library the program names moved
+# no call. On glibc `fabs` is `libm.so.6`'s alone, so a group with no `link`
+# binding it, in a program another of whose groups links `m`, reaches one
+# definition; and under `--sanitize` clang's driver links `libm.so.6` itself
+# for its runtime (`-lpthread -lrt -lm -ldl -lresolv`, clang 22's `-###` in
+# the Linux arm64 image, 2026-11-09), so the platform alone answers `fabs`
+# from the file the program's `link "m"` reached (defect 2395). `platform` is the platform's answer for each it was asked,
+# "" where it gave none; a binding it was not asked of, its probe refused,
+# stays refused, and so does one it answers from another file, `puts` from
+# `libc.so.6` where the program's `libq` took it.
 function platform_kept(found: [str], alone: [Bound], first: {str: str}, turned: {str: str}, platform: {str: str}) -> [str]
     kept: [str] @= found
 
@@ -183,10 +189,11 @@ function platform_kept(found: [str], alone: [Bound], first: {str: str}, turned: 
         there = turned[b.name].default(here)
         theirs = platform[b.name]
 
-        if theirs.is_err()
+        if theirs.is_err() || here != there
             continue
+        answer = theirs.must()
 
-        if here == there && (theirs.must() == "" || theirs.must() == "linker synthesized")
+        if answer == "" || answer == "linker synthesized" || answer == here
             kept @ without_decl(kept, decl: b.decl)
 
     return kept
@@ -250,3 +257,23 @@ test "a runtime name a library supplies is judged unless a group of that library
         order: "written"
     )
     assert got == ["heroes-supplied\truntime\t-1\tfree\t/w/libmyalloc.a(myalloc.o)\tmyalloc\twritten"]
+
+test "a lone binding the platform alone answers from the file the link took is one definition, from another file two (defect 2395)"
+    none: [str] = []
+    alone = [Bound(name: "fabs", decl: 7, own: none), Bound(name: "puts", decl: 8, own: none)]
+    found = [
+        marker(kind: "bound", decl: 7, name: "fabs", file: "/usr/lib/x/libm.so.6", library: "m", order: "written")
+        marker(kind: "bound", decl: 8, name: "puts", file: "/w/libq.so", library: "q", order: "written")
+    ]
+    first: {str: str} @= {}
+    first["fabs"] @ "/usr/lib/x/libm.so.6"
+    first["puts"] @ "/w/libq.so"
+    turned: {str: str} = {}
+    platform: {str: str} @= {}
+    platform["fabs"] @ "/usr/lib/x/libm.so.6"
+    platform["puts"] @ "/usr/lib/x/libc.so.6"
+    assert platform_kept(found, alone: alone, first: first, turned: turned, platform: platform) == [found[1]]
+    platform["fabs"] @ ""
+    assert platform_kept(found, alone: alone, first: first, turned: turned, platform: platform) == [found[1]]
+    platform["fabs"] @ "/usr/lib/x/libc.so.6"
+    assert platform_kept(found, alone: alone, first: first, turned: turned, platform: platform) == found
