@@ -48,6 +48,22 @@
 # declares the Rust it held spent, until it left the tree on 2026-10-18.
 # `tests/emission/` and `tests/golden/**/*.expected` hold no `.hero` at all.
 #
+# **A tree a package fetch placed, any folder named `heroes.packages`, since
+# 2026-11-09** (batch 26's gate, on panel 235's R7 and `placed_trees.hero`, the
+# rule's one home in the net, which `corpus`, `packages`, `records` and `unseen`
+# already ask). Three reasons, each measured that day:
+#
+#   - **Its bytes are its fingerprint's.** The one placed module panel 238's R1
+#     moved, `av.hero` of defect 2351's case, formatted in place in a copy of
+#     the case: the case then stopped at `package_unread`, exit 1, the tree's
+#     digest no longer the catalogue's `sum`, so the fix this check prints
+#     would break the program it judges.
+#   - **Nobody in this repository writes it** (R7): a placed module's source is
+#     judged where it is written, and the core packages' is `packages/`, which
+#     the walk reads.
+#   - **A package is built as its author wrote it**, in form or not: the same
+#     case built and printed `1112` and `81` with that module out of R1's form.
+#
 # ## The shape of the check
 #
 # `heroes fmt <file>` to stdout, compared against the file. Not
@@ -57,6 +73,7 @@
 # reads files. A `--check` flag would be surface bought for nothing.
 
 use floors
+use placed_trees
 use report
 use shell
 use strings
@@ -108,6 +125,11 @@ constant SOURCE_DIRS: [str]
 constant LEAST: i64
     1704
 
+# Whether `path` is a file this check judges: a `.hero` file standing in no
+# tree a package fetch placed (the reasons are at the top of this file).
+function is_source(path: str) -> bool
+    return strings.ends_with(text: path, suffix: ".hero") && !placed_trees.within(path)
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
     seen: i64 @= 0
@@ -124,7 +146,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         entries = shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
 
         for path in entries
-            if !strings.ends_with(text: path, suffix: ".hero")
+            if !is_source(path)
                 continue
             seen @ seen + 1
             text = read_file(path)
@@ -212,3 +234,10 @@ test "the exempt directories are named nowhere in the walk"
         # strict build refuses, run by the control arm, three of them refused
         # at parse, which `fmt` cannot read.
         assert dir != "tests/golden/control"
+
+test "a module a package fetch placed is no source, at any depth, and a folder only holding the word is (batch 26)"
+    assert !is_source("tests/golden/run/fixedbugs-2351-x.case/heroes.packages/a@1.0.0-0bf9de114969a539/av.hero")
+    assert !is_source("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
+    assert is_source("examples/ini/main.hero")
+    assert is_source("examples/ini/heroes.packagesx/strings.hero")
+    assert !is_source("examples/ini/notes.md")

@@ -11,7 +11,8 @@
 # author's, judged where the package's source is written. The rule is the name
 # and never a list of the trees placed today, so a program that fetches a
 # package joins the exemption by existing, and this module is its one home in
-# the net.
+# the net. `canonical` asks it too since 2026-11-09, a walk R7 did not name
+# (batch 26's gate; the reasons stand at the top of `suite_canonical.hero`).
 #
 # What the rule asks is a FOLDER's name, each part of the path but its last,
 # so a file named `heroes.packages` or a folder whose name only holds the word,
