@@ -31,6 +31,7 @@ use cli/process
 use module/catalogue
 use module/fingerprint
 use module/placed
+use module/placed_beside
 use module/reached
 use module/unplaced
 
@@ -100,6 +101,16 @@ function reach(@b: Book, alias: str) -> i64
         return -1
     e = found.must()
     package: reached.Package @= rooted(b, e: e)
+
+    # A tree not placed beside one of the same package placed for the entry
+    # as it was is told as the line that moved (defect 2443), never as a
+    # tree `heroes fetch` would place from the source the moved line names.
+    beside = placed_beside.said(e, program: b.program, named: b.named, opened: b.opened)
+
+    if beside.len() > 0
+        package.problem @ beside
+        b.reached @ b.reached.push(package)
+        return b.reached.len() - 1
     package.problem @ problem_of(@b, package: package, e: e)
 
     # A tree not placed whose address the verb refuses is told as the verb

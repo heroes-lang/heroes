@@ -1,0 +1,288 @@
+# What stands beside a package whose tree is not placed (defect 2443; panel
+# 235's R7, ratified 2026-11-07): a tree under `heroes.packages/` of the same
+# package, placed for an entry the catalogue no longer holds as it was. The
+# key a tree is placed under is taken over every field that names the
+# package (`module/placed.hero`), so an `index` line lost or rewritten, a
+# `git` address, a `tag`, a `commit`, a `version` or a `sum` changed by hand
+# names a key where nothing is placed, beside the tree that was. Until then a
+# build told *not placed: `heroes fetch` places it*, silent on the tree
+# beside, and `heroes fetch` read the source the changed line names: the
+# Heroes index where the `index` line was lost, which did not answer, a moved
+# tag refused, a sum that is not the source's refused. So the message names
+# the tree beside and the line that differs, and names `heroes fetch` only
+# where it can place what the catalogue names, the source being what moved.
+#
+# **What the folder's name holds, and what is asked**: `<name>@<version>-` or
+# `<last part of the address>@<tag>-`, then sixteen digits no reader can turn
+# back into the fields. A tree beside is one whose name holds the entry's
+# first part; it is held to the entry's `sum` by its fingerprint, read from
+# the disk, as every build holds a placed tree (R7). Three readings, the
+# first that one tree gives in this order:
+#
+#   - the same version or tag at the catalogue's `sum`: the source moved,
+#     the `index` line, or the `git` address or `commit`;
+#   - another version or tag at the catalogue's `sum`: the `version` or
+#     `tag` moved;
+#   - the same version or tag at another sum: the `sum` moved, or the source
+#     names another package, the one case `heroes fetch` may answer.
+#
+# Asked on the error path alone: a build whose trees are placed reads none
+# of this, and nothing here writes.
+
+use cli/process
+use cli/strings
+use module/catalogue
+use module/fingerprint
+use module/placed
+
+constant PLACED: str
+    "heroes.packages"
+
+# One tree beside: its folder's name, and its fingerprint, "" where it
+# cannot be read whole.
+record Tree
+    name: str
+    sum: str
+
+# What a build tells of the entry `e` of the program's catalogue `program`,
+# not placed at its key under the program's directory, opened as `opened`
+# and named in messages as `named`; "" where no tree of the same package
+# stands beside the key, and the build's own words stand. A tree another
+# entry of the catalogue is placed under is that entry's, and never read as
+# this one's.
+function said(e: catalogue.Entry, program: catalogue.Catalogue, named: str, opened: str) -> str
+    if e.path.len() > 0
+        return ""
+    index = program.index
+    key = placed.key(e, index: index)
+
+    if process.is_directory(path: opened + PLACED + "/" + key)
+        return ""
+    head = key.slice(from: 0, to: key.len() - 16)
+    stem = head.slice(from: 0, to: at_sign(head) + 1)
+    trees = beside(opened: opened, stem: stem, taken: keys_of(program))
+    where = named + PLACED + "/"
+
+    for one in trees
+        if one.sum == e.sum && strings.starts_with(text: one.name, prefix: head)
+            return moved_source(e, index: index, at: where + one.name + "/")
+
+    for one in trees
+        if one.sum == e.sum
+            return moved_version(e, at: where + one.name + "/")
+
+    for one in trees
+        if one.sum.len() > 0 && strings.starts_with(text: one.name, prefix: head)
+            return moved_sum(e, at: where + one.name + "/", sum: one.sum, root: where + key + "/")
+
+    return ""
+
+# The trees under the program's `heroes.packages/` whose folder's name opens
+# with `stem`, every folder an entry's key names left out, each with its
+# fingerprint, in the order of their names. A staging folder's name opens
+# with `.`, which no stem does.
+function beside(opened: str, stem: str, taken: [str]) -> [Tree]
+    folder = opened + PLACED
+    walked = process.walk(folder)
+    names: [str] @= []
+
+    if walked.is_err()
+        return []
+
+    for path in walked.must().files
+        inside = path.slice(from: folder.len() + 1, to: path.len())
+        cut = slash_in(inside)
+
+        if cut > 0
+            name = inside.slice(from: 0, to: cut)
+
+            if strings.starts_with(text: name, prefix: stem) && !held(taken, name: name) && !held(names, name: name)
+                names @ names.push(name)
+
+    out: [Tree] @= []
+
+    for name in sort(names)
+        out @ out.push(Tree(name: name, sum: fingerprint.of(folder + "/" + name).default("")))
+
+    return out
+
+# The source moved: the tree beside is the package at its version or tag and
+# its `sum`, from another source.
+function moved_source(e: catalogue.Entry, index: str, at: str) -> str
+    if e.version.len() > 0
+        return "the package `" + e.name + "` " + e.version + " is in the catalogue and not placed for the source it names, " + index_said(index) + ", and a tree of it at the catalogue's `sum` is placed beside, at `" + at + "`, from another source: the catalogue's `index` line is not the one that tree was placed from; write that line back, and this tree is read"
+    return "the package `" + e.name + "` at the tag `" + e.tag + "` is in the catalogue and not placed for `" + e.git + "` at the commit " + e.commit + ", and a tree of it at that tag and the catalogue's `sum` is placed beside, at `" + at + "`, from another source or commit: the catalogue's `git` or `commit` line is not the one that tree was placed from; write it back, and this tree is read"
+
+# The version or the tag moved: the tree beside is the package at the
+# catalogue's `sum`, placed at another.
+function moved_version(e: catalogue.Entry, at: str) -> str
+    if e.version.len() > 0
+        return "the package `" + e.name + "` " + e.version + " is in the catalogue and not placed, and a tree of it at the catalogue's `sum` is placed beside, at `" + at + "`, at another version: the catalogue's `version` is not the one that tree was placed at; write it back, and this tree is read"
+    return "the package `" + e.name + "` at the tag `" + e.tag + "` is in the catalogue and not placed, and a tree of it at the catalogue's `sum` is placed beside, at `" + at + "`, under another tag: the catalogue's `tag` is not the one that tree was placed at; write it back, and this tree is read"
+
+# The sum moved, or the source names another package: the tree beside is the
+# package at its version or tag and another sum.
+function moved_sum(e: catalogue.Entry, at: str, sum: str, root: str) -> str
+    return "the package `" + e.name + "` " + version_said(e) + " is in the catalogue and not placed at its `sum`, `" + e.sum + "`, and a tree of it is placed beside, at `" + at + "`, that sums to `" + sum + "`: the catalogue's `sum` is not the one that tree was placed at, or its source names another package; where the `sum` is what moved, write back `" + sum + "`, and this tree is read; where the source is, `heroes fetch` places the package it names at `" + root + "`"
+
+function version_said(e: catalogue.Entry) -> str
+    if e.version.len() > 0
+        return e.version
+    return "at the tag `" + e.tag + "`"
+
+function index_said(index: str) -> str
+    if index.len() == 0
+        return "the Heroes index, the catalogue holding no `index` line"
+    return "the index `" + index + "`"
+
+# The folder every entry of the catalogue is placed under, a `path` entry
+# having none.
+function keys_of(program: catalogue.Catalogue) -> [str]
+    out: [str] @= []
+
+    for e in program.entries
+        if e.path.len() == 0
+            out @ out.push(placed.key(e, index: program.index))
+
+    return out
+
+function at_sign(head: str) -> i64
+    at: i64 @= 0
+
+    while at < head.len() && head[at] != '@'
+        at @ at + 1
+
+    return at
+
+# Where the first `/` of `path` stands, -1 where it holds none: a byte asked,
+# so the cut before it never splits a character.
+function slash_in(path: str) -> i64
+    at: i64 @= 0
+
+    while at < path.len()
+        if path[at] == '/'
+            return at
+        at @ at + 1
+
+    return -1
+
+function held(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-placed-beside"
+
+# A tree holding `text` placed under the folder `name` of the scratch
+# program; its fingerprint.
+function tree_at(name: str, text: str) -> str
+    folder = SCRATCH + "/" + PLACED + "/" + name
+    process.mkdir_all(folder).must()
+    write_file(path: folder + "/parse.hero", text: text).must()
+    return fingerprint.of(folder).must()
+
+function catalogue_of(index: str, entries: [catalogue.Entry]) -> catalogue.Catalogue
+    return catalogue.Catalogue(
+        file: "heroes.toml",
+        index: index,
+        entries: entries,
+        problem: "",
+        code: "",
+        at: "",
+        said: ""
+    )
+
+test "a tree beside an entry's key tells which line moved, and names heroes fetch only where the source is what moved (defect 2443)"
+    assert !process.remove_tree(SCRATCH).is_err()
+    text = "function value() -> i64\n    return 1\n"
+    sum = tree_at(name: "pub", text: text)
+    assert !process.remove_tree(SCRATCH + "/" + PLACED + "/pub").is_err()
+    was = catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: sum)
+    key = placed.key(was, index: "file://../packages")
+    _ = tree_at(name: key, text: text)
+    where = "p/" + PLACED + "/" + key + "/"
+    opened = SCRATCH + "/"
+
+    # The `index` line lost: the tree of the same version and sum beside.
+    lost = said(was, program: catalogue_of(index: "", entries: [was]), named: "p/", opened: opened)
+    assert lost == "the package `json` 1.4.2 is in the catalogue and not placed for the source it names, the Heroes index, the catalogue holding no `index` line, and a tree of it at the catalogue's `sum` is placed beside, at `" + where + "`, from another source: the catalogue's `index` line is not the one that tree was placed from; write that line back, and this tree is read"
+
+    # Placed where the catalogue names it: nothing to say.
+    assert said(was, program: catalogue_of(index: "file://../packages", entries: [was]), named: "p/", opened: opened) == ""
+
+    # The `version` moved, the sum the tree's.
+    bumped = catalogue.Entry(name: "json", version: "1.4.3", git: "", tag: "", commit: "", path: "", sum: sum)
+    assert said(bumped, program: catalogue_of(index: "file://../packages", entries: [bumped]), named: "p/", opened: opened) == "the package `json` 1.4.3 is in the catalogue and not placed, and a tree of it at the catalogue's `sum` is placed beside, at `" + where + "`, at another version: the catalogue's `version` is not the one that tree was placed at; write it back, and this tree is read"
+
+    # The `sum` moved: the tree beside sums to the one it was placed at.
+    other = "sha256-" + "0".repeat(64.to_u64().must())
+    summed = catalogue.Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: other)
+    root = "p/" + PLACED + "/" + placed.key(summed, index: "file://../packages") + "/"
+    assert said(summed, program: catalogue_of(index: "file://../packages", entries: [summed]), named: "p/", opened: opened) == "the package `json` 1.4.2 is in the catalogue and not placed at its `sum`, `" + other + "`, and a tree of it is placed beside, at `" + where + "`, that sums to `" + sum + "`: the catalogue's `sum` is not the one that tree was placed at, or its source names another package; where the `sum` is what moved, write back `" + sum + "`, and this tree is read; where the source is, `heroes fetch` places the package it names at `" + root + "`"
+
+    # Another package's tree, a folder whose name only opens like this one's,
+    # and a `path` entry: none read.
+    assert said(catalogue.Entry(name: "yaml", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: sum), program: catalogue_of(index: "", entries: []), named: "p/", opened: opened) == ""
+    _ = tree_at(name: "jsonx@1.4.2-0000000000000000", text: text)
+    assert said(catalogue.Entry(name: "jsonx", version: "9.9.9", git: "", tag: "", commit: "", path: "", sum: other), program: catalogue_of(index: "", entries: []), named: "p/", opened: opened) == ""
+    assert said(catalogue.Entry(name: "json", version: "", git: "", tag: "", commit: "", path: "../json", sum: ""), program: catalogue_of(index: "", entries: []), named: "p/", opened: opened) == ""
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a git entry beside its tree tells whether its tag or its source moved (defect 2443)"
+    assert !process.remove_tree(SCRATCH).is_err()
+    text = "function value() -> i64\n    return 3\n"
+    sum = tree_at(name: "pub", text: text)
+    assert !process.remove_tree(SCRATCH + "/" + PLACED + "/pub").is_err()
+    commit = "9fceb02d0ae598e95dc970b74767f19372d61af8"
+    was = catalogue.Entry(
+        name: "yaml",
+        version: "",
+        git: "https://git.example.org/ana/yaml",
+        tag: "v0.3.1",
+        commit: commit,
+        path: "",
+        sum: sum
+    )
+    key = placed.key(was, index: "")
+    _ = tree_at(name: key, text: text)
+    where = "p/" + PLACED + "/" + key + "/"
+    opened = SCRATCH + "/"
+    moved = catalogue.Entry(
+        name: "yaml",
+        version: "",
+        git: "https://git.example.org/bob/yaml",
+        tag: "v0.3.1",
+        commit: commit,
+        path: "",
+        sum: sum
+    )
+    assert said(moved, program: catalogue_of(index: "", entries: [moved]), named: "p/", opened: opened) == "the package `yaml` at the tag `v0.3.1` is in the catalogue and not placed for `https://git.example.org/bob/yaml` at the commit " + commit + ", and a tree of it at that tag and the catalogue's `sum` is placed beside, at `" + where + "`, from another source or commit: the catalogue's `git` or `commit` line is not the one that tree was placed from; write it back, and this tree is read"
+
+    # A tree another entry of the catalogue is placed under is that entry's:
+    # `yaml_2` from another address ending in the same word reads none.
+    second = catalogue.Entry(
+        name: "yaml_2",
+        version: "",
+        git: "https://git.example.org/bob/yaml",
+        tag: "v0.3.1",
+        commit: commit,
+        path: "",
+        sum: sum
+    )
+    assert said(second, program: catalogue_of(index: "", entries: [was, second]), named: "p/", opened: opened) == ""
+    tagged = catalogue.Entry(
+        name: "yaml",
+        version: "",
+        git: "https://git.example.org/ana/yaml",
+        tag: "v0.3.2",
+        commit: commit,
+        path: "",
+        sum: sum
+    )
+    assert said(tagged, program: catalogue_of(index: "", entries: [tagged]), named: "p/", opened: opened) == "the package `yaml` at the tag `v0.3.2` is in the catalogue and not placed, and a tree of it at the catalogue's `sum` is placed beside, at `" + where + "`, under another tag: the catalogue's `tag` is not the one that tree was placed at; write it back, and this tree is read"
+    assert !process.remove_tree(SCRATCH).is_err()
