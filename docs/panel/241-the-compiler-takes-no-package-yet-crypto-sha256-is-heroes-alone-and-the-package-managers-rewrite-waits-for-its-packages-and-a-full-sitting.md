@@ -371,3 +371,17 @@ design.md:571, R6's transport and R7's move of `hero_env_put` into
 `hero_os.h`, each the full sitting's; the blind seat's paid run of that
 sitting, put to the author before it runs; and the predictions above, on their
 own clocks.
+
+**Ratified, R1 to R8, 2026-11-10, with R8's order reversed**: the author's
+answer at about 11:55 the same day, put with the coordinator's recommendation
+through the question form, *ratify, order corrected*, recorded as a reading
+(`.claude/rules/records.md` § And the record says whose idea it was). The
+correction is the coordinator's, made on re-reading R8 after the tag and put
+to the author with its reason: R8 put the packages first and the full sitting
+after, but the program that would admit those packages is the package manager,
+and whether the compiler may take a package at all is the full sitting's first
+question (R4); so the full sitting sits first (panel 242), and
+`path/filepath`, `os`, `crypto/sha256` and a transport follow its answer. What
+the yes settles: R1 to R7 as adopted, and R8 with that order. What it does
+not: the full sitting's answers, and the predictions above, on their own
+clocks.
