@@ -243,8 +243,12 @@ test "every name the emitter declares in a body is one the accessors step around
 
     assert unknown.join(" ") == ""
 
-# Every string literal of `code` outside its comments, one per line, as
-# `c_words.quoted_words` reads them.
+# Every string literal of `code` outside its comments that may be C, one per
+# line, as `c_words.quoted_words` reads them. A literal holding a backtick is a
+# message's words and never C, which has no backtick, while every message the
+# emitter writes quotes its code between two: defect 2421's notes, *at its
+# widths; a function* and *holds it to them; past*, read as declaring `widths`
+# and `them` until 2026-11-10, batch 30's gate.
 function literals(code: str) -> str
     out: [str] @= []
 
@@ -268,7 +272,10 @@ function literals(code: str) -> str
                         i @ i + 1
                     i @ i + 1
 
-                out @ out.push(line.slice(from: begin, to: i))
+                literal = line.slice(from: begin, to: i)
+
+                if !strings.holds(text: literal, needle: "`")
+                    out @ out.push(literal)
             i @ i + 1
 
     return out.join("\n")

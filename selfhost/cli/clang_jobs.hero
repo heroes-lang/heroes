@@ -71,6 +71,8 @@ constant WORDS: [str]
         "-fno-crash-diagnostics"
         "-ferror-limit=0"
         "-fno-caret-diagnostics"
+        "-fno-builtin"
+        "-fno-spell-checking"
         "-fno-color-diagnostics"
         "-Xclang"
         "-fno-diagnostics-use-presumed-location"
