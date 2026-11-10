@@ -36,6 +36,11 @@ decision of 2026-09-26, which the stopping rule was not stretched to cover, and
 the sitting ruled its shape by the first sentence, since its artifact is a
 verdict over generated programs and its operand a directory, which `fmt`'s row
 cannot carry. The second sentence governs a verb split out of an existing one.
+**`heroes new` entered the same way, by the author's decision of 2026-11-10**
+(issue 2441, meant as: *a command that creates a project's stub, as cargo
+does*), and panel 244's R2 ruled its shape by the first sentence: its artifact
+is a new project's folder and its operand a name, so a subcommand, and
+`--package` a flag, since it changes how one question is answered.
 
 **The contract of every invocation**: the artifact on stdout, diagnostics on
 stderr; exit 0 clean, exit 1 the input has diagnostics, exit 2 the tool could not
