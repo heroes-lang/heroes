@@ -295,9 +295,14 @@ function diagnostic(asked: Asked, pragma: str) -> diag.Diagnostic
         span: asked.span
     )
     d.notes @ d.notes.push("clang read the header, and the expansion of `" + asked.name + "` runs `" + pragma + "`")
-    d.notes @ d.notes.push(
-        "a header of your own that includes `" + asked.header + "` and then writes `#undef " + asked.name + "`, named by this group instead, binds the header's own `" + asked.name + "` where it declares one"
-    )
+    route: str @= "a header of your own that includes `" + asked.header + "` and then writes `#undef " + asked.name + "`, named by this group instead, binds the header's own `" + asked.name + "` where it declares one"
+
+    # A function behind the macro may be variadic, `curl_easy_setopt`'s shape,
+    # and nothing is bound past its `...` (panel 243's R1): the same header is
+    # where its door goes. A field or a type has no `...` to stand past.
+    if asked.kind == "function"
+        route @ route + "; where it declares `" + asked.name + "` with `...`, that header also defines a `static inline` function of a new name with a fixed prototype, taking each argument at the type `" + asked.name + "` reads and calling it, and the group binds that function, since nothing is bound past a `...`"
+    d.notes @ d.notes.push(route)
     return d
 
 ## Tests
@@ -341,6 +346,17 @@ test "the refusal names the header, the name and the pragma it expands to"
     assert d.message == "`callee.h` defines `my_abs` as a macro whose expansion holds a `_Pragma`: where this program's C calls `my_abs`, the pragma changes how clang judges every line after it, the checks of this program's bindings among them"
     assert source.span_text(s, d.span) == "my_abs"
     assert d.notes[0] == "clang read the header, and the expansion of `my_abs` runs `#pragma clang diagnostic ignored \"-Wsign-conversion\"`"
+
+    # A variadic behind the macro, `curl_easy_setopt`'s shape, is bound
+    # through a door of the same header (panel 243's R1).
+    assert d.notes[1] == "a header of your own that includes `callee.h` and then writes `#undef my_abs`, named by this group instead, binds the header's own `my_abs` where it declares one; where it declares `my_abs` with `...`, that header also defines a `static inline` function of a new name with a fixed prototype, taking each argument at the type `my_abs` reads and calling it, and the group binds that function, since nothing is bound past a `...`"
+
+    # A type or a field behind a macro has no `...`, and its note names none.
+    typed = diagnostic(
+        asked: Asked(name: "real_s", kind: "type", header: "callee.h", span: asked[0].span, arity: -1),
+        pragma: "#pragma clang diagnostic ignored \"-Wsign-conversion\""
+    )
+    assert typed.notes[1] == "a header of your own that includes `callee.h` and then writes `#undef real_s`, named by this group instead, binds the header's own `real_s` where it declares one"
 
 function parse_of(s: source.Source) -> [ast.Decl]
     return parse.parse_source(s).decls

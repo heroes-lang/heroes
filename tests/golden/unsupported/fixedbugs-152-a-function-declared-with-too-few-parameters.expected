@@ -3,4 +3,4 @@ error[ffi_call_shape]: `strlen` is declared with a different number of parameter
      |
   13 |     function strlen() -> u64  #~ ffi_call_shape
      |     ^^^^^^^^^^^^^^^^^^^^^^^^
-  note: spec § 13: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with
+  note: spec § 13: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths; a function it declares variadic (`...`) takes nothing a binding can type past it, so a header of your own defines a `static inline` function of a new name with a fixed prototype that calls it, and the group binds that
