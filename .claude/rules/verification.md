@@ -1107,8 +1107,11 @@ is a bisect whose question at each step is `compare`.
 **When, and what a close owes** (decision 2282, 2026-10-31): `record` at
 every milestone close, the bullet of `/step` § 5's checklist, and the
 `latency` suite holds the newest row to **the level**, 7.50 s for `check`,
-9.00 s for the seed and 41.00 s for the warm build, which moves only by a
-decision issue; and `compare --clock all` at every close against the previous
+9.00 s for the seed and 41.00 s for the warm build as decision 2282 set it,
+**8.9, 10.3 and 49.1 s since decision 2396** (2026-11-09, M-package-manager's
+close, its cause named there; `tests/harness/suite_latency.hero` holds the
+numbers, and this line said the first three until panel 241's critic read it
+stale on 2026-11-10), which moves only by a decision issue; and `compare --clock all` at every close against the previous
 tag's compiler, built in two stages from that tag's seed, where a loss past
 **the floor of effect**, a median 0.5 % of the first compiler's, is paid
 before the tag, by a repair or by a decision naming its cause. The level
