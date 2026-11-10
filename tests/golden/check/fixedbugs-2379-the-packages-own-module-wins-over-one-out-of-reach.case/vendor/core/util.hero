@@ -1,0 +1,5 @@
+# The package `core`'s own module of defect 2379's case beside it.
+
+# A word of `core`.
+function mine() -> str
+    return "u"

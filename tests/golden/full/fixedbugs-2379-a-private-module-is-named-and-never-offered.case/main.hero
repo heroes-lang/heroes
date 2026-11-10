@@ -1,0 +1,15 @@
+# Fixed defect 2379, 2026-11-10, lane b29-pkgmsg, a shape beside it: the
+# program's own file calls `mine()`, which only `lib/internal/x` declares, a
+# module private to `lib` (panel 235's R16).
+#
+# SYMPTOM: `needs_qualifying`, *add `use lib/internal/x`*, a line refused
+# `private_module` once written.
+#
+# CAUSE: the module declaring the name was offered as a `use` without asking
+# whether this file may name it.
+#
+# FIX: the name is told with the module and its owner, and no line is offered.
+use lib/words
+
+function main()
+    print(words.word() + mine())  #~ unknown_name

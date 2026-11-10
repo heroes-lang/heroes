@@ -1,0 +1,6 @@
+# The package `core`'s module of defect 2379's case beside it: it calls a
+# function only a package its catalogue does not list declares.
+
+# A word.
+function word() -> str
+    return mine()  #~ unknown_name

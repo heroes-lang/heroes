@@ -1,0 +1,5 @@
+# The private module of defect 2379's case beside it.
+
+# A word only `x` may reach.
+function mine() -> str
+    return "p"
