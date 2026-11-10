@@ -51,9 +51,11 @@ constant ROOT: str
 # by that evening (an index written two ways, a source of no shape), and
 # fourteen with defect 2411's case on 2026-11-10, raised where the b28
 # round's gate told `FLOOR fetch`; nineteen at batch 29's gate the same day,
-# defect 2392's five cases for the refusals no case held.
+# defect 2392's five cases for the refusals no case held; thirty-four at batch
+# 30's gate, 2026-11-11, the round's fifteen: defects 2432 (two), 2433 (two),
+# 2434 (five), 2446 (two), 2463 (one) and `heroes new` (three).
 constant LEAST: i64
-    19
+    34
 
 # The identity and the date every git source of a case is committed with.
 constant IDENTITY: [str]

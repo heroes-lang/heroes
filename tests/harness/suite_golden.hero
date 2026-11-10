@@ -109,6 +109,10 @@ record Shape
 # b15-emit at defect 501's case (a program's own `validated`) and in lane
 # land199 at defect 457's (panel 199's R1): the batches after it took the
 # directory past 498 by more than a quarter.
+#
+# **802 at batch 30's gate, 2026-11-11**: the batches after it took the
+# directory past 623 by more than a quarter, and the round's gate B told
+# `FLOOR check` at 802.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -117,7 +121,7 @@ function shape_check() -> Shape
         flags: ["--brief"],
         on_stderr: true,
         want_code: 1,
-        least: 623,
+        least: 802,
         watched: true,
         silent_stdout: false,
         library_skip: false

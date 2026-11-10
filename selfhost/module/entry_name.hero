@@ -10,7 +10,7 @@
 # one place.
 #
 # Defect 2432: `[dependencies.match]` read, and `use <match>/x` was refused at
-# its `<` with no word of the keyword; `heroes add --path vendor/match` wrote
+# its `<` with no word of the keyword; on 2026-11-10 `heroes add --path vendor/match` wrote
 # that entry; and the program's alias for a package another package names
 # otherwise was offered in a message as `use <match>/x`, a line the parser
 # refuses (`needs_qualifying`, measured).

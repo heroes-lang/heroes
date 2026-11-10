@@ -89,6 +89,8 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
 
     out: [diag.Diagnostic] @= []
 
+    # ORDER: by declaration index, the order the program wrote its bindings;
+    # the diagnostics' order on stderr observes it.
     for decl in sort(keys(found))
         out @ out.push(found[decl].must())
 

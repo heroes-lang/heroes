@@ -1,4 +1,5 @@
 note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-dependency-is-quoted-by-its-own-alias.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `core`, read from the folder `tests/golden/full/fixedbugs-2373-a-packages-dependency-is-quoted-by-its-own-alias.case/vendor/core/`, names the local folder `../text` for `text` in its own catalogue: read here, both folders being the author's own, and refused where `core` is fetched by its `version` or `git`
 note: the package `words` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-dependency-is-quoted-by-its-own-alias.case/vendor/text/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
 error[unused_binding]: `use <text>/cut` is never used — nothing in this file names anything from `<text>/cut`
   at tests/golden/full/fixedbugs-2373-a-packages-dependency-is-quoted-by-its-own-alias.case/vendor/core/strings.hero:4:5
