@@ -88,7 +88,7 @@ function written(tools: transport.Tools, e: catalogue.Entry, root: address.Root,
 
     for one in blobs(listed)?
         path = s.tree + "/" + one.path
-        made(process.mkdir_all(path.slice(from: 0, to: last_slash(path))))?
+        made(process.mkdir_all(folder_of(path)))?
         own(tools, words: ["--git-dir=" + bare, "cat-file", "blob", "--", one.oid], out: path, s: s)?
 
     return ok()
@@ -177,13 +177,23 @@ function shifted(faults: [source.Fault], by: i64, before: i64) -> [source.Fault]
 
     return out
 
-function last_slash(path: str) -> i64
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none. Every byte is asked, the first included: until
+# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
+# `/a` does, and `""` sliced to -1 and aborted.
+function folder_of(path: str) -> str
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
-    return at
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
 
 # A folder that could not be made under the staging folder, told as the
 # machine's.
@@ -368,3 +378,13 @@ test "a name that is not UTF-8 is refused, named by its bytes"
 
     staging.dropped(s)
     assert !process.remove_tree(SCRATCH).is_err()
+
+test "a path's folder is asked of every byte, the first included (defect 2406)"
+    assert folder_of("") == "."
+    assert folder_of("a") == "."
+    assert folder_of("/") == "/"
+    assert folder_of("/a") == "/"
+    assert folder_of(".bashrc") == "."
+    assert folder_of("..") == "."
+    assert folder_of("file.tar.gz") == "."
+    assert folder_of("staging/tree/file.tar.gz") == "staging/tree"

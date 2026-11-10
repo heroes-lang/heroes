@@ -84,7 +84,7 @@ function committed(dir: str, files: [str], message: str) -> str?
 
     while at + 1 < files.len()
         path = dir + "/" + files[at]
-        parent = path.slice(from: 0, to: last_slash(path))
+        parent = folder_of(path)
         process.mkdir_all(parent)?
         write_file(path: path, text: files[at + 1])?
         paths @ paths.push(files[at])
@@ -229,10 +229,47 @@ function answered(dir: str, words: [str]) -> str?
 function last_part(path: str) -> str
     return path.slice(from: last_slash(path) + 1, to: path.len())
 
+# The index of `path`'s last `/`, -1 where it holds none: every byte is
+# asked, the first included (defect 2406: the loop stopped at index 0, so
+# `a` answered a slash there as `/a` does, and `last_part("file.tar.gz")` was
+# `ile.tar.gz`).
 function last_slash(path: str) -> i64
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
     return at
+
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none.
+function folder_of(path: str) -> str
+    at = last_slash(path)
+
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
+
+## Tests
+
+test "a path's last part and folder are asked of every byte, the first included (defect 2406)"
+    assert last_part("") == ""
+    assert last_part("a") == "a"
+    assert last_part("/") == ""
+    assert last_part("/a") == "a"
+    assert last_part(".bashrc") == ".bashrc"
+    assert last_part("..") == ".."
+    assert last_part("file.tar.gz") == "file.tar.gz"
+    assert last_part("build/selftest-fetch-git/file.tar.gz") == "file.tar.gz"
+    assert folder_of("") == "."
+    assert folder_of("a") == "."
+    assert folder_of("/") == "/"
+    assert folder_of("/a") == "/"
+    assert folder_of(".bashrc") == "."
+    assert folder_of("..") == "."
+    assert folder_of("file.tar.gz") == "."
+    assert folder_of("build/selftest-fetch-git/file.tar.gz") == "build/selftest-fetch-git"

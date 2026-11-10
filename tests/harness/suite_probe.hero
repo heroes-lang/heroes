@@ -544,12 +544,22 @@ function fixture_directories() -> [str]
 
     return out
 
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none. Every byte is asked, the first included: until
+# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
+# `/a` does, and `""` sliced to -1 and aborted.
 function directory_of(path: str) -> str
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
     return path.slice(from: 0, to: at)
 
 ## Tests
@@ -700,3 +710,13 @@ test "a tree's failures are held to the ones its row names as known"
         sum: clean
     )
     assert gone.failed == 1
+
+test "a path's folder is asked of every byte, the first included (defect 2406)"
+    assert directory_of("") == "."
+    assert directory_of("a") == "."
+    assert directory_of("/") == "/"
+    assert directory_of("/a") == "/"
+    assert directory_of(".bashrc") == "."
+    assert directory_of("..") == "."
+    assert directory_of("file.tar.gz") == "."
+    assert directory_of("tests/golden/surface-fixtures/comments101/a.hero") == "tests/golden/surface-fixtures/comments101"
