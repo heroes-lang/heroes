@@ -369,7 +369,8 @@ test "the reserved pair saves and gives back the reserved list, inside the guard
 # four headers write. A word the emitter only reads of clang's own answers is
 # named here with its reason, and nowhere else: the qualifiers a header's
 # type may carry after a pointer (`emit/lend_type.hero` reads them off), and
-# the import prefix of a Windows linker's complaint (`emit/ffi_build.hero`),
+# the import prefix of a Windows linker's complaint, link.exe's `__imp_` and
+# lld-link's `__declspec(dllimport)` (`emit/ffi_build.hero`, defect 2398),
 # and the parameter list of a variadic macro, which `emit/c_words.hero` names
 # to leave out of what it reads.
 test "every reserved name the emitter writes and the runtime's headers write is in the reserved list (defect 2333)"
@@ -383,6 +384,7 @@ test "every reserved name the emitter writes and the runtime's headers write is 
         "_Null_unspecified"
         "_Nullable"
         "_Nullable_result"
+        "__declspec"
         "__imp_"
         "__restrict"
         "__restrict__"

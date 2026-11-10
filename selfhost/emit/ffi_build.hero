@@ -66,8 +66,15 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # on GNU ld were an internal error. The longest name the line holds wins.
 # lld-link, the Windows linker, writes `could not open 'X.lib'` then `:`, and
 # a missing library was exit 2 there (panel 188's Windows leg, § 22.2).
+#
+# **And MSVC's link.exe, the CI's, writes `LINK : fatal error LNK1181: cannot
+# open input file 'X.lib'`**, measured on the Windows box 2026-11-10 through
+# clang 23.1.1's `-fuse-ld=link`, link.exe 14.44.35207: a `link` naming a
+# library the machine lacks was *internal error: linking failed* at exit 2
+# under it where lld-link told `ffi_missing_library` (found beside defect
+# 2398).
 function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
-    if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l") && !ffi_lookup.has(text: line, needle: "could not open '")
+    if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l") && !ffi_lookup.has(text: line, needle: "could not open '") && !ffi_lookup.has(text: line, needle: MSVC_NO_FILE)
         return fail(code: "none", msg: "not a missing-library line")
     name: str @= ""
     span: token.Span? @= fail(code: "none", msg: "no group names this library")
@@ -105,16 +112,30 @@ function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag
     )
     return ok(d)
 
+# What link.exe writes before a file it was given and could not open.
+constant MSVC_NO_FILE: str
+    "cannot open input file '"
+
 # Whether the linker's line is its report of `name` missing, in any of the
-# three spellings, the name whole. lld-link opens `-lX` as `X.lib`, and a
-# name already ending in `.lib` is asked as itself too, unrun on Windows.
+# four spellings, the name whole. lld-link and link.exe open `-lX` as
+# `X.lib`, and a name already ending in `.lib` is asked as itself too, unrun
+# on Windows. link.exe's line ends at the quote (CRLF's `\r` after it).
 function names_library(line: str, name: str) -> bool
     if ffi_lookup.has(text: line, needle: "library '" + name + "' not found")
         return true
 
     if ends_the_name(line: line, marker: "could not open '" + name + ".lib'") || ends_the_name(line: line, marker: "could not open '" + name + "'")
         return true
+
+    if ends_the_line(line: line, marker: MSVC_NO_FILE + name + ".lib'") || ends_the_line(line: line, marker: MSVC_NO_FILE + name + "'")
+        return true
     return ends_the_name(line: line, marker: "cannot find -l" + name)
+
+# Whether `marker` stands in the line followed by nothing, or by the `\r` of
+# a CRLF line end alone.
+function ends_the_line(line: str, marker: str) -> bool
+    rest = ffi_lookup.after(text: line, marker: marker)
+    return !rest.is_err() && (rest.must().len() == 0 || rest.must() == "\r")
 
 # Whether `marker` stands in the line followed by `:` or by its end.
 function ends_the_name(line: str, marker: str) -> bool
@@ -172,7 +193,19 @@ function undefined_symbol(line: str) -> str?
         return ok(quoted)
     return fail(code: "none", msg: "not an undefined-symbol line")
 
+# What lld-link writes before the name of a function a header imports.
+constant IMPORTED: str
+    "__declspec(dllimport) "
+
 # The symbol out of lld-link's or link.exe's complaint, `__imp_` taken off.
+#
+# **lld-link 23 writes an import as C declares it**, `undefined symbol:
+# __declspec(dllimport) imp2398_value` where link.exe writes
+# `__imp_imp2398_value` (measured on the Windows box 2026-11-10, clang
+# 23.1.1, beside defect 2398): the words before the name are taken off as
+# `__imp_` is, and until then the name was read as `__declspec(dllimport)`,
+# which no group declares, so a header importing a function from a DLL with
+# no `link` was *internal error: linking failed* at exit 2 under lld-link.
 function windows_symbol(line: str) -> str?
     if ffi_lookup.has(text: line, needle: "entry point must be defined") || ffi_lookup.has(text: line, needle: "subsystem must be defined")
         return ok("main")
@@ -181,6 +214,9 @@ function windows_symbol(line: str) -> str?
 
     if !lld.is_err()
         rest @ lld.must()
+
+        if bytes.bytes_at(text: rest, at: 0, needle: IMPORTED)
+            rest @ rest.slice(from: IMPORTED.len(), to: rest.len())
     else
         msvc = ffi_lookup.after(text: line, marker: "unresolved external symbol ")
 
@@ -334,6 +370,10 @@ test "the linker's two spellings, the library, the header, the package"
     assert undefined_symbol("u.exe : fatal error LNK1120: 3 unresolved externals").is_err()
     assert undefined_symbol(">>> referenced by C:\\w\\u.o:(main)").is_err()
 
+    # lld-link 23's import, written as C declares it (beside defect 2398).
+    assert undefined_symbol("lld-link: error: undefined symbol: __declspec(dllimport) imp2398_value\r").must() == "imp2398_value"
+    assert missing_link(s, parsed.decls, line: "lld-link: error: undefined symbol: __declspec(dllimport) sqrt").must().message == d.must().message
+
     # The library, in both linker spellings, lands on the quoted name.
     lib = missing_library(s, parsed.decls, line: "ld: library 'sdl2' not found")
     assert lib.must().code == "ffi_missing_library"
@@ -412,6 +452,16 @@ test "a library lld-link could not open is found whole, and only by its own name
     assert source.span_text(s, suffixed.must().span) == "\"z.lib\""
     assert missing_library(s, parsed.decls, line: opened + "abc.lib'" + absent).is_err()
     assert missing_library(s, parsed.decls, line: opened + "main.obj'" + absent).is_err()
+
+    # MSVC's link.exe, the CI's, the line ending at the quote and its CRLF
+    # (the Windows box, 2026-11-10, beside defect 2398).
+    msvc = "LINK : fatal error LNK1181: cannot open input file '"
+    assert source.span_text(s, missing_library(s, parsed.decls, line: msvc + "a b.lib'\r").must().span) == "\"a b\""
+    assert source.span_text(s, missing_library(s, parsed.decls, line: msvc + "x'y.lib'").must().span) == "\"x'y\""
+    assert source.span_text(s, missing_library(s, parsed.decls, line: msvc + "ab.lib'\r").must().span) == "\"ab\""
+    assert source.span_text(s, missing_library(s, parsed.decls, line: msvc + "z.lib'\r").must().span) == "\"z.lib\""
+    assert missing_library(s, parsed.decls, line: msvc + "abc.lib'\r").is_err()
+    assert missing_library(s, parsed.decls, line: msvc + "ab.lib' x\r").is_err()
 
 # Defect 232's lines, as this Mac's clang printed them (2026-10-03): a quote
 # in a header's name, a code point clang escapes, a header whose name another
