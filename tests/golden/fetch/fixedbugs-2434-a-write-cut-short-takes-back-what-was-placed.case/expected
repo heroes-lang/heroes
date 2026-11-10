@@ -1,0 +1,9 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2434-a-write-cut-short-takes-back-what-was-placed.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[absent]: there is no file `<root>/tests/golden/fetch/fixedbugs-2434-a-write-cut-short-takes-back-what-was-placed.case/idx/cut/1.0.0/files/b.hero`
+heroes.toml:
+(none)
+heroes.packages:
+(none)

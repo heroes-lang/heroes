@@ -1,0 +1,9 @@
+$ heroes add json --index file://../../../../../tests/golden/fetch/fixedbugs-2434-a-second-package-refused-takes-back-the-first.case/idx -C <work>/app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: the listing of strings 1.0.0 at the index `file://../../../../../tests/golden/fetch/fixedbugs-2434-a-second-package-refused-takes-back-the-first.case/idx` sums to `sha256-cc413f73740a34c2776d134e9373fb4690d742c224efdbef0a6f31fe261ddc06`, and the catalogue's `sum` for it is `sha256-0000000000000000000000000000000000000000000000000000000000000000`: the package is not the one its entry was written for, and nothing was fetched
+heroes.toml:
+(none)
+heroes.packages:
+(none)

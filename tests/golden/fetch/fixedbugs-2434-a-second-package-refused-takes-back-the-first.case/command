@@ -1,0 +1,1 @@
+add json --index file://../../../../../tests/golden/fetch/fixedbugs-2434-a-second-package-refused-takes-back-the-first.case/idx -C <work>/app

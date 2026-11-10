@@ -14,7 +14,8 @@
 # question, where the program stands in its repository, is asked after the
 # build has already failed. Git writes its answer into a staging folder
 # beside the placed trees, as it does for the verb (`fetch/staging.hero`),
-# removed at once, with `heroes.packages/` where nothing else stands in it.
+# removed at once, with `heroes.packages/` where this question made it and
+# nothing else stands in it (defect 2434: an author's own empty one stays).
 
 use cli/process
 use cli/strings
@@ -42,7 +43,7 @@ function refusal(package: reached.Package, e: catalogue.Entry, index: str, progr
 
     if !strings.starts_with(text: written, prefix: "file://")
         return ok()
-    scratch = staging.opened(program)
+    scratch = staging.begun(program)
 
     if scratch.is_err()
         return ok()
@@ -51,8 +52,7 @@ function refusal(package: reached.Package, e: catalogue.Entry, index: str, progr
         folder: verb_place.dot_if_empty(program),
         scratch: scratch.must().folder
     )
-    staging.dropped(scratch.must())
-    verb_place.unused_dropped(program)
+    staging.ended(scratch.must())
 
     match root
         .err asked => return fail(code: asked.code, msg: asked.msg)

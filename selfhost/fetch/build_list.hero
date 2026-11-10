@@ -30,6 +30,7 @@
 use fetch/address
 use fetch/address_form
 use fetch/placing
+use fetch/staging
 use fetch/transport
 use fetch/versions
 use module/catalogue
@@ -43,8 +44,9 @@ record Pick
     for_whom: str
 
 # The build list for the program whose folder is `program`, its catalogue
-# `c`, once `wanted` is added to it.
-function chosen(tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue, wanted: catalogue.Entry) -> [Pick]?
+# `c`, once `wanted` is added to it; each tree fetched is written into the
+# run's `ledger`, so a refusal can take it back.
+function chosen(@ledger: staging.Ledger, tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue, wanted: catalogue.Entry) -> [Pick]?
     picks: [Pick] @= []
     wanted_id = catalogue.source_of(wanted, index: c.index, folder: program)
     placed_wanted: bool @= false
@@ -71,7 +73,7 @@ function chosen(tools: transport.Tools, program: str, root: address.Root, c: cat
         at = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
         e = picks[at].entry
-        tree = placing.placed_tree(tools, e: e, program: program, root: root, index: c.index)?
+        tree = placing.placed_tree(@ledger, tools, e: e, program: program, root: root, index: c.index)?
         own = placing.own_catalogue(e, folder: tree.folder)?
 
         for r in own.entries

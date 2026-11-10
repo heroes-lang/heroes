@@ -1,7 +1,9 @@
 # What `heroes add` and `heroes fetch` share (panel 235's R11, ratified
 # 2026-11-07): the program's folder, `-C <folder>` or the current one; the
-# `heroes.packages/` folder taken away again where a verb left nothing in it;
-# the version an index lists that `add` picks; and the readers of a failure.
+# version an index lists that `add` picks; and the readers of a failure. The
+# `heroes.packages/` folder a run made and left empty is taken away by the
+# run's ledger (`fetch/staging.hero`, defect 2434), which knows whether the
+# run made it: until then any empty one went, an author's own included.
 
 use cli/argv
 use cli/process
@@ -30,15 +32,6 @@ function dot_if_empty(program: str) -> str
     if program.len() == 0
         return "."
     return program
-
-# `heroes.packages/` taken away where a verb placed nothing in it, so a
-# program a verb found nothing to place for is left as it was.
-function unused_dropped(program: str)
-    folder = program + "heroes.packages"
-    walked = process.walk(folder)
-
-    if !walked.is_err() && walked.must().files.len() == 0 && walked.must().unnamed.len() == 0
-        _ = process.remove_tree(folder).is_err()
 
 # Where `@` stands in `asked`, `json@1.4.2`, or its length where it holds none.
 function at_of(asked: str) -> i64

@@ -1,0 +1,6 @@
+# Needs a `cut` whose second file the index lists and does not hold.
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2434-a-write-cut-short-takes-back-what-was-placed.case/idx"
+
+[dependencies.cut]
+version = "1.0.0"
+sum = "sha256-73698b04796b5a6c3fc5086b34ef96800bbed5405548c070a715ef68dd4f8b68"
