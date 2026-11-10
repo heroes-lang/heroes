@@ -1,0 +1,27 @@
+# Fixed defect 2430, 2026-11-10, lane b30-msg: the shapes beside
+# `fixedbugs-2430-a-type-a-used-module-declares-is-told-qualified`, each told
+# `unknown_type` with no word of a module until then. Two modules this file
+# names declare a type `Spot`, so which was meant is the author's: told with
+# the first, its fix a guess, the other named in a note. A type only a
+# module this file does not name declares, `fixedbugs2430/far`'s `Tile`, is
+# told with the `use` the file lacks, as a value of it is. A used module's
+# function named as the type, `geom.Maker`, is no type there, and stays
+# `unknown_type`.
+use fixedbugs2430/geom
+use fixedbugs2430/mid
+use fixedbugs2430/other
+
+function two(p: Spot) -> i64  #~ needs_qualifying
+    print(p)
+    return 1
+
+function far_one(t: Tile) -> i64  #~ needs_qualifying
+    print(t)
+    return 2
+
+function made(m: Maker) -> i64  #~ unknown_type
+    print(m)
+    return 3
+
+function main()
+    print(geom.Spot(x: 1).x, other.Spot(y: 2).y, mid.made().z, geom.Maker())

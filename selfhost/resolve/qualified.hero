@@ -162,22 +162,30 @@ function name_declared_elsewhere(@r: state.Resolver, s: source.Source, text: str
         # never wrote.
         return ok(diagnostics.needs_qualifying(name: text, qualifier: local.must(), module: module, span: span))
 
-    # No `use` of this file names a module declaring it. The line to add is
-    # the first such module's, in ascending order, that a `use` of this file
-    # can name, as this file writes it (defect 2373): in a package's own file
-    # its module is bare. Every declaring module is asked (defect 2379):
-    # until then only the first was, so `<alpha>/a`, which `core`'s files
-    # cannot name, hid `<core>/util`, which `use util` names, and the name
-    # was told as unknown with a near name's rename.
-    beyond: [str] @= []
+    declaring: [str] @= []
 
     for one in sort(resolved.modules_declaring(r.out))
         if one != r.module && one != source.LIBRARY_MODULE && !resolved.top_in(r.out, module: one, name: text).is_err()
-            written = placed.written_in(s.reached.aliases, from: r.module, module: one)
+            declaring @ declaring.push(one)
 
-            if written != "" && package_told.reaches(from: r.module, name: one)
-                return ok(diagnostics.needs_a_use(name: text, module: one, written: written, span: span))
-            beyond @ beyond.push(one)
+    return outside_the_file(s, from: r.module, text: text, span: span, declaring: declaring)
+
+# No `use` of this file names a module of `declaring`, the modules declaring
+# the name, in ascending order. The line to add is the first such module's
+# that a `use` of this file can name, as this file writes it (defect 2373):
+# in a package's own file its module is bare. Every declaring module is asked
+# (defect 2379): until then only the first was, so `<alpha>/a`, which
+# `core`'s files cannot name, hid `<core>/util`, which `use util` names, and
+# the name was told as unknown with a near name's rename.
+function outside_the_file(s: source.Source, from: str, text: str, span: token.Span, declaring: [str]) -> diag.Diagnostic?
+    beyond: [str] @= []
+
+    for one in declaring
+        written = placed.written_in(s.reached.aliases, from: from, module: one)
+
+        if written != "" && package_told.reaches(from: from, name: one)
+            return ok(diagnostics.needs_a_use(name: text, module: one, written: written, span: span))
+        beyond @ beyond.push(one)
 
     # Only modules no `use` of this file can name declare it: a program's,
     # from a package's file; a package's that this one's catalogue does not
@@ -185,7 +193,7 @@ function name_declared_elsewhere(@r: state.Resolver, s: source.Source, text: str
     # a near name's rename, which points away from the cause.
     if beyond.len() == 0
         return fail(code: "absent", msg: "no other module declares this name")
-    return ok(diagnostics.out_of_reach(name: text, modules: beyond, s: s, from: r.module, span: span))
+    return ok(diagnostics.out_of_reach(name: text, modules: beyond, s: s, from: from, span: span))
 
 ## Tests
 

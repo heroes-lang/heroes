@@ -1,0 +1,104 @@
+# A bare name in a type position that another module declares as a type
+# (design.md §4.17, spec § 1; defect 2430, 2026-11-10): the type position's
+# twin of `resolve/qualified.name_declared_elsewhere`, which the value
+# position has asked since panel 031 R5.
+#
+# **What it closes.** `use geom`, `geom.hero` declaring `record Spot`, and
+# `function f(p: Spot) -> i64` was told `unknown_type`, *no type named
+# `Spot`*, with no word of `geom`, where `Spot(x: 1)` in a value position was
+# told `needs_qualifying` and offered `geom.Spot`: the module was known to
+# the compiler and not told. Every type position read the same, a field's,
+# a result's, a local's annotation, and an element of `[Spot]`, `Spot?`,
+# `{str: Spot}` or a function type.
+#
+# **Held to types**: a module counts only where its top-level declaration of
+# the name is a record or a variant, since a function or a constant of that
+# name there is no type either, and `geom.Spot` would name no type. The first
+# module this file names that declares the type, in ascending order, is told
+# as the value position tells one; where none is named, the line the file
+# lacks, as for a value (`qualified.outside_the_file`).
+#
+# **The fix is `certain` where exactly one module this file names declares
+# the type.** Nothing that made the value position's a `guess` reaches a
+# type: the span is the type's own name, no local and no field stands in a
+# type position, and `geom.Spot`, what this file calls the module with the
+# type's name, names that one type, so the program `check --apply` writes
+# resolves the name and asks nothing again. Where two such modules declare
+# it, which one was meant is the author's: a `guess`, the others named in a
+# note as this file writes them.
+
+use ast
+use diag
+use module/diagnostics
+use resolve/qualified
+use resolve/state
+use resolved
+use source
+use token
+
+function told(@r: state.Resolver, s: source.Source, decls: [ast.Decl], text: str, span: token.Span) -> diag.Diagnostic?
+    declaring: [str] @= []
+    named: [str] @= []
+    qualifiers: [str] @= []
+
+    for one in sort(resolved.modules_declaring(r.out))
+        if one != r.module && one != source.LIBRARY_MODULE && declares_type(r.out, decls, module: one, name: text)
+            declaring @ declaring.push(one)
+            local = resolved.binding_in(r.out, from: r.module, module: one)
+
+            if !local.is_err()
+                named @ named.push(one)
+                qualifiers @ qualifiers.push(local.must())
+
+    if named.len() == 0
+        return qualified.outside_the_file(s, from: r.module, text: text, span: span, declaring: declaring)
+    state.keyed_add(@r.module_reads, module: r.module, name: named[0])
+    return ok(
+        diagnostic(name: text, qualifier: qualifiers[0], module: named[0], span: span, others: qualifiers.slice(from: 1, to: qualifiers.len()))
+    )
+
+# Whether `module`'s top-level declaration named `name` is a type.
+function declares_type(out: resolved.Resolved, decls: [ast.Decl], module: str, name: str) -> bool
+    at = resolved.top_in(out, module: module, name: name)
+
+    if at.is_err()
+        return false
+
+    match decls[at.must()].kind
+        .record_decl | .variant_decl                 => return true
+        .function_decl | .constant_decl | .test_decl => return false
+
+# `needs_qualifying`'s words, and its fix `certain` where `others`, what this
+# file calls the other modules it names that declare the type, is empty.
+function diagnostic(name: str, qualifier: str, module: str, span: token.Span, others: [str]) -> diag.Diagnostic
+    d: diag.Diagnostic @= diagnostics.needs_qualifying(name: name, qualifier: qualifier, module: module, span: span)
+
+    if others.len() == 0
+        d.fixes @ [
+            diag.Fix(title: "write `" + qualifier + "." + name + "`", replacement: qualifier + "." + name, span: span, certainty: .certain)
+        ]
+        return d
+    written: [str] @= []
+
+    for one in others
+        written @ written.push("`" + one + "." + name + "`")
+
+    d.notes @ d.notes.push(
+        "a module this file names as " + written.join(", ") + " declares a type `" + name + "` too: write the one meant"
+    )
+    return d
+
+## Tests
+
+# **One module named, a `certain` fix; two, a `guess` and a note** (defect
+# 2430). The program-level shapes are `check/fixedbugs-2430-*`.
+test "a type another module declares is told qualified, certain where one module this file names declares it (defect 2430)"
+    span = token.Span(start: 3, end: 7)
+    one = diagnostic(name: "Spot", qualifier: "g", module: "geom", span: span, others: [])
+    assert one.code == "needs_qualifying"
+    assert one.message == "`Spot` is declared in module `geom`, and a name from another module is always written qualified — `g.Spot`"
+    assert one.fixes.len() == 1 && one.fixes[0].certainty == .certain && one.fixes[0].replacement == "g.Spot"
+    assert one.notes.len() == 0
+    two = diagnostic(name: "Spot", qualifier: "geom", module: "geom", span: span, others: ["other"])
+    assert two.fixes.len() == 1 && two.fixes[0].certainty == .guess
+    assert two.notes == ["a module this file names as `other.Spot` declares a type `Spot` too: write the one meant"]
