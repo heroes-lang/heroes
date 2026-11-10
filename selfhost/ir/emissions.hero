@@ -17,6 +17,7 @@
 # Cut at M-declared-freer step 1, panel 109's condition.
 
 use ast
+use bytes
 use check/contextual
 use check/state
 use check/table
@@ -129,7 +130,7 @@ function assert_text(@b: build.Lowering, c: state.Checked, s: source.Source, spa
     written = source.span_text(s, span)
     expression: str @= written
 
-    if written.len() > 6 && written.slice(from: 0, to: 6) == "assert"
+    if written.len() > 6 && bytes.bytes_at(text: written, at: 0, needle: "assert")
         expression @ written.slice(from: 6, to: written.len())
     expression @ questions.trimmed(expression)
     at = interning.intern(@b, expression)

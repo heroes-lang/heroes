@@ -27,6 +27,7 @@
 # | `past_literal` | `loop_headers`, `bracket_reach` |
 # | `said_of`, `run_of` | `unclosed_runs` |
 
+use bytes
 use diag
 use lex_asked
 use openers
@@ -219,7 +220,7 @@ function said_of(report: diag.Diagnostic, text: str) -> str
     head = opened(text, report.span) + "is "
     whole = report.message
 
-    if whole.len() <= head.len() || whole.slice(from: 0, to: head.len()) != head
+    if whole.len() <= head.len() || !bytes.bytes_at(text: whole, at: 0, needle: head)
         return ""
     return whole.slice(from: head.len(), to: whole.len())
 

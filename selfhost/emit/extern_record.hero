@@ -16,6 +16,7 @@
 use ast
 use check/state
 use checker
+use cli/strings
 use emit/ctype
 use emit/extern_field
 use emit/externs as emit_externs
@@ -171,7 +172,7 @@ function landed_at(rows: [str]) -> [str]
     next: i64 @= 0
 
     for row in rows
-        if row.len() > 6 && row.slice(from: 0, to: 6) == "#line "
+        if row.len() > 6 && strings.starts_with(text: row, prefix: "#line ")
             at: i64 @= 6
             number: i64 @= 0
 

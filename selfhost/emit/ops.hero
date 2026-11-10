@@ -8,6 +8,7 @@
 # type (panel 006), which is what lets clang type-check every one.
 
 use ast
+use bytes
 use check/state
 use check/table
 use checker
@@ -77,7 +78,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, site
 
             # to_<width> is not a call: it builds a T? generated for
             # this result type, which no runtime function can return.
-            if builtin_name.len() > 3 && builtin_name.slice(from: 0, to: 3) == "to_" && !target.is_err()
+            if builtin_name.len() > 3 && bytes.bytes_at(text: builtin_name, at: 0, needle: "to_") && !target.is_err()
                 if !convert.kind_named(builtin_name.slice(from: 3, to: builtin_name.len())).is_err()
                     convert.width(
                         @w,

@@ -54,6 +54,7 @@
 
 use check/state
 use checker
+use cli/strings
 use emit/ctype
 use emit/mangle
 use ir
@@ -139,11 +140,14 @@ function writable(f: containers.Function, c: state.Checked, names: ctype.Names, 
     name = mangle.slot(index: root, name: f.slots[root].name)
     spelled = ctype.c_type(names, c: c, ty: f.slots[root].ty)
 
-    if spelled.is_err() || place.len() < name.len() || place.slice(from: 0, to: name.len()) != name
+    # The place is asked of its bytes, never cut at the name's length or as a
+    # text of one byte, which would split a character of more than one there
+    # (defect 2410's shape).
+    if spelled.is_err() || !strings.starts_with(text: place, prefix: name)
         return place
     rest = place.slice(from: name.len(), to: place.len())
 
-    if rest != "" && rest.slice(from: 0, to: 1) != "." && rest.slice(from: 0, to: 1) != "["
+    if rest != "" && rest[0] != '.' && rest[0] != '['
         return place
     return "(*(" + spelled.must() + " *)" + in_pointer(name) + ")" + rest
 

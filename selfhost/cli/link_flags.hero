@@ -4,6 +4,7 @@
 # flag took that file past the layout's threshold; the link words are its own
 # seam, read by the link line, the release line and the package words.
 
+use bytes
 use cli/flags
 use cli/process
 use cli/strings
@@ -165,7 +166,7 @@ function apple(target: str) -> bool
     vendor = "apple"
     end = first + 1 + vendor.len()
 
-    if end > target.len() || target.slice(from: first + 1, to: end) != vendor
+    if !bytes.bytes_at(text: target, at: first + 1, needle: vendor)
         return false
     return end == target.len() || target[end] == '-'
 

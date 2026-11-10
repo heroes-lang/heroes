@@ -206,7 +206,7 @@ function in_placed_tree(dir: str, path: str) -> bool
 
     for at in range(from: start, to: path.len())
         if path[at] == '/'
-            if path.slice(from: from, to: at) == packages.PLACED
+            if at - from == packages.PLACED.len() && bytes.bytes_at(text: path, at: from, needle: packages.PLACED)
                 return true
             from @ at + 1
 

@@ -1,0 +1,11 @@
+# fixedbugs, defect 2410, 2026-11-10 (panel 241's compiler-engineer, outside
+# its brief): a catalogue whose row is `[dependencieXé]` made `heroes check`
+# stop at exit 134, *string slice splits a character*, in
+# `module/catalogue.hero`'s `table`, a hand copy of *starts with* that cut the
+# row at `[dependencies.`'s fourteen bytes, inside `é`. The head is asked of
+# the row's bytes now (`bytes.bytes_at`), and the `use` is told the
+# catalogue's own message at exit 1, as `[dependencieXe]` was.
+use <x>/y  #~ catalogue_refused
+
+function main()
+    print(y.one())

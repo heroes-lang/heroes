@@ -28,6 +28,7 @@
 # Read as `layout_screen.hero` reads its own: by where clang erred, at
 # `#line <n> "<file>"`, never by what it said.
 
+use cli/strings
 use emit/c_text
 use emit/guarded_names
 use emit/layout_rows
@@ -150,7 +151,7 @@ function erred(said: str, file: str) -> {i64: bool}
     prefix = file + ":"
 
     for row in layout_rows.rows_of(said)
-        if row.len() > prefix.len() && row.slice(from: 0, to: prefix.len()) == prefix && is_error(row)
+        if row.len() > prefix.len() && strings.starts_with(text: row, prefix: prefix) && is_error(row)
             n: i64 @= 0
             at: i64 @= prefix.len()
 

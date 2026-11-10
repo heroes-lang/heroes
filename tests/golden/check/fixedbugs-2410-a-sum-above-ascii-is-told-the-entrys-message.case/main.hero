@@ -1,0 +1,10 @@
+# fixedbugs, defect 2410's shape, 2026-11-10: an entry whose `sum` is
+# `sha256é` and 63 more bytes, 71 in all as a fingerprint is, made `heroes
+# check` stop at exit 134, *string slice splits a character*, in
+# `module/sums.hero`'s `sum_shape`, which cut the value at `sha256-`'s seven
+# bytes, inside `é`. The head is asked of the value's bytes now, and the `use`
+# is told the entry's own message, the shape a `sum` takes, at exit 1.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.value())

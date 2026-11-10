@@ -22,6 +22,7 @@
 
 use ast
 use cli/files
+use cli/strings
 use diag
 use module/catalogue
 use module/packages
@@ -158,10 +159,13 @@ function root_of(s: source.Source, alias: str) -> str
 
     return ""
 
-# Whether a diagnostic of `code` naming `<entry>` (any, for "") was told.
+# Whether a diagnostic of `code` naming `<entry>` (any, for "") was told, its
+# message asked of its bytes: a message quotes what the author wrote, and a
+# cut at the entry's length split a character standing there (defect 2410's
+# shape).
 function said(told: [diag.Diagnostic], code: str, entry: str) -> bool
     for d in told
-        if d.code == code && (entry.len() == 0 || d.message.len() > entry.len() + 2 && d.message.slice(from: 0, to: entry.len() + 3) == "`<" + entry + ">")
+        if d.code == code && (entry.len() == 0 || strings.starts_with(text: d.message, prefix: "`<" + entry + ">"))
             return true
 
     return false
@@ -200,7 +204,7 @@ function private_reaches(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
 # `use` is offered (`module/answering.hero`), one rule in one place.
 function reaches(from: str, name: str) -> bool
     owner = owner_of(name)
-    return owner.len() == 0 || from == owner || from.len() > owner.len() && from.slice(from: 0, to: owner.len() + 1) == owner + "/"
+    return owner.len() == 0 || from == owner || strings.starts_with(text: from, prefix: owner + "/")
 
 # The module a private module belongs to, "" for one under no `internal`:
 # `placed_use.internal_owner`, which the parser asks too of a `use` naming a

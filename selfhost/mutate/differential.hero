@@ -29,6 +29,7 @@
 # The told status is a word, `same`, `other` or `hidden`, never a boolean
 # (batch 8's gate, 2026-10-04, where the Python read the word as true).
 
+use bytes
 use cli/process
 use mutate/json_fields
 use mutate/json_read
@@ -164,7 +165,7 @@ function apply_moved(a: [str], b: [str]) -> bool
     return false
 
 function starts_apply(f: str) -> bool
-    return f.len() >= 5 && f.slice(from: 0, to: 5) == "APPLY"
+    return bytes.bytes_at(text: f, at: 0, needle: "APPLY")
 
 function in_list(f: str, list: [str]) -> bool
     for one in list
@@ -333,7 +334,7 @@ function test_run(dir: str, rows: [str], told: str) -> run_records.Run
 
 function has_line(lines: [str], start: str) -> bool
     for line in lines
-        if line.len() >= start.len() && line.slice(from: 0, to: start.len()) == start
+        if bytes.bytes_at(text: line, at: 0, needle: start)
             return true
 
     return false

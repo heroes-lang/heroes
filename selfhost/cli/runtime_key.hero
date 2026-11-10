@@ -174,7 +174,7 @@ function has(list: [str], one: str) -> bool
     return false
 
 function is_part(name: str) -> bool
-    return name.len() > 8 && name[6] != '.' && name.slice(from: name.len() - 2, to: name.len()) == ".c"
+    return name.len() > 8 && name[6] != '.' && bytes.bytes_at(text: name, at: name.len() - 2, needle: ".c")
 
 test "every file under the runtime's parts is included by runtime.c, and every part it includes is there"
     included = included_names(text: read_file("runtime/runtime.c").must())

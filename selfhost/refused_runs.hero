@@ -39,6 +39,7 @@
 # `renumbered` moves the breaks with them.
 
 use backtick_strings
+use bytes
 use diag
 use shown_char
 use state
@@ -237,7 +238,7 @@ function gathered(d: diag.Diagnostic) -> bool
 
     if d.code == "tab_in_line" || d.code == "stray_carriage_return" || d.code == "reserved_word"
         return true
-    return d.code == "unexpected_character" && d.message.len() >= SAID.len() && d.message.slice(from: d.message.len() - SAID.len(), to: d.message.len()) == SAID
+    return d.code == "unexpected_character" && bytes.bytes_at(text: d.message, at: d.message.len() - SAID.len(), needle: SAID)
 
 # How many characters a refusal counted rather than told stands for, so the
 # note's count stays one of characters: one for the scanner's own, and a

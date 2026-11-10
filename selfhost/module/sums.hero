@@ -4,10 +4,15 @@
 # compiler never fetches (R8), so what it can know of a value it reads is its
 # shape, and the fingerprint of the tree a fetch placed.
 
+use bytes
+
 # `sha256-` then 64 lowercase hexadecimal digits: Go's `h1` shape, over a
-# listing of the package's files (R6, `module/fingerprint.hero`).
+# listing of the package's files (R6, `module/fingerprint.hero`). The head is
+# asked of the value's bytes, never cut at seven (defect 2410's shape): the
+# value is the author's, and `sha256é` and 63 more bytes put that cut inside
+# `é`, which stopped `check` where the entry's own message was owed.
 function sum_shape(sum: str) -> bool
-    return sum.len() == 71 && sum.slice(from: 0, to: 7) == "sha256-" && lower_hex(sum.slice(from: 7, to: 71))
+    return sum.len() == 71 && bytes.bytes_at(text: sum, at: 0, needle: "sha256-") && lower_hex(sum.slice(from: 7, to: 71))
 
 # An exact version, three numbers with no leading zero: `1.4.2`, never a
 # range, never `v1.4.2` or `1.4`.
@@ -77,6 +82,7 @@ test "a catalogue's values are asked their shape, and nothing else"
     assert sum_shape("sha256-" + "0123456789abcdef".repeat(4.to_u64().must()))
     assert !sum_shape("sha256-" + "0123456789ABCDEF".repeat(4.to_u64().must()))
     assert !sum_shape("sha256-abc")
+    assert !sum_shape("sha256é" + "a".repeat(63.to_u64().must()))
     assert !sum_shape("h1:" + "a".repeat(68.to_u64().must()))
     assert version_shape("1.4.2")
     assert version_shape("0.10.0")

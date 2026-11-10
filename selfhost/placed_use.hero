@@ -18,8 +18,14 @@
 # module or none. A module under the package's `internal` folder is offered no
 # line, since no line of the program reaches it (R16), and is told so.
 #
-# A leaf, read by `package_mark.hero` and, for the `internal` rule, by
-# `module/package_told.hero`, one rule in one place.
+# A leaf but for `bytes`, read by `package_mark.hero` and, for the `internal`
+# rule, by `module/package_told.hero`, one rule in one place. **What a `use`
+# wrote is asked of its bytes and never cut** (defect 2410's shape): a quoted
+# line may hold any character, and `use "heroes.package€x/y"` put the end of
+# `heroes.packages/` inside `€`, which stopped `check` with *string slice
+# splits a character* where the author was owed the line's message.
+
+use bytes
 
 # The folder every fetched tree is placed under, as `module/packages.PLACED`
 # and `fetch/staging.PLACED` spell it.
@@ -38,7 +44,7 @@ record Placed
 # part being `heroes.packages` and a `/` after it.
 function is_placed(written: str) -> bool
     head = FOLDER + "/"
-    return written.len() >= head.len() && written.slice(from: 0, to: head.len()) == head
+    return bytes.bytes_at(text: written, at: 0, needle: head)
 
 function read(written: str) -> Placed
     start = FOLDER.len() + 1
@@ -122,7 +128,7 @@ function internal_owner(name: str) -> str
     cut: i64 @= -1
 
     for at in range(from: 0, to: name.len())
-        if at + 9 <= name.len() && name.slice(from: at, to: at + 9) == "/internal" && (at + 9 == name.len() || name[at + 9] == '/')
+        if bytes.bytes_at(text: name, at: at, needle: "/internal") && (at + 9 == name.len() || name[at + 9] == '/')
             cut @ at
 
     if cut < 0

@@ -1,0 +1,16 @@
+# fixedbugs, defect 2410's shape, 2026-11-10: a quoted `use` holding a
+# character above ASCII where the compiler cut the quotes' text at a byte
+# offset stopped `heroes check` at exit 134, *string slice splits a
+# character*: each line below did so alone, at `module_text.hero`'s `./` (two
+# bytes), `.hero` (five from the end) and `../` (three), and at
+# `placed_use.hero`'s `heroes.packages/` (sixteen) and `/internal`, asked at
+# every offset. Each is asked of the bytes now (`bytes.bytes_at`), and each
+# line is told its own message at exit 1.
+use "aéb"  #~ use_wants_a_name
+use "ab€€"  #~ use_wants_a_name
+use "ab€"  #~ use_wants_a_name
+use "heroes.package€x/y"  #~ use_holds_an_address
+use "heroes.packages/json@1.4.2-abc/caf€/internal/x"  #~ package_unmarked
+
+function main()
+    print(1)
