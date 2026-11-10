@@ -1,0 +1,5 @@
+# A module at the root of the package of defect 2394's case beside it.
+
+# A number.
+function n() -> i64
+    return 1
