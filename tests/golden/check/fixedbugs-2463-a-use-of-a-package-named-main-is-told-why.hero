@@ -1,0 +1,15 @@
+# Fixed defect 2463, 2026-11-10, lane b30-pkg: `use <main>/main`, the line
+# `heroes new main --package` offered, and another module of a package named
+# `main`.
+#
+# SYMPTOM: `shadowed_binding` against the program's `function main()`, the
+# line a verb offered refused once written.
+#
+# FIX: `main` is no entry's name, the entry point every program declares, so
+# the line is told so at the name, as a keyword there is (defect 2432), and
+# no verb or catalogue holds the name.
+use <main>/main  #~ package_wants_a_name
+use <main>/strings  #~ package_wants_a_name
+
+function main()
+    print("x")

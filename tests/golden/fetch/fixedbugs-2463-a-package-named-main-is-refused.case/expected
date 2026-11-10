@@ -1,0 +1,20 @@
+$ heroes new main --package -C <work>
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `main` is no package's name: `main` is the entry point every program declares, `function main()`, so a package named so cannot be named from a program: its `use <main>/main` is shadowed by that function
+$ heroes add --path ../local/main -C <work>/app
+exit 2
+stdout:
+stderr:
+error[bad_usage]: `main` is no entry's name: `main` is the entry point every program declares, `function main()`, so a package named so cannot be named from a program: its `use <main>/main` is shadowed by that function; give one with `--as`
+$ heroes new main -C <work>
+exit 0
+stdout:
+wrote <work>/main/main.hero
+next: `heroes run <work>/main/main.hero` runs it, and `heroes test <work>/main/main.hero` runs its tests
+stderr:
+heroes.toml:
+(none)
+heroes.packages:
+(none)

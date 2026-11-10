@@ -1,0 +1,8 @@
+# Fixed defect 2463, 2026-11-10, lane b30-pkg, the catalogue's half: an entry
+# named `main` beside the entry `json` the file reaches. The catalogue's
+# reader asks the one rule of an entry's name, which refuses `main`, at its
+# line, and a catalogue that does not read names no entry (panel 235's R5).
+use <json>/p  #~ catalogue_refused
+
+function main()
+    print(p.word())

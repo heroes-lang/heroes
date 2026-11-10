@@ -1,0 +1,3 @@
+new main --package -C <work>
+add --path ../local/main -C <work>/app
+new main -C <work>
