@@ -117,6 +117,8 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
         d.notes @ d.notes.push(
             lead + library_remedy(folder: one.folder, named: one.named, library: origin.name, reaches: reaches)
         )
+    else if origin.kind == FETCHED
+        d.notes @ d.notes.push(lead + fetched_remedy(folder: one.folder, package: origin.name, reaches: reaches))
     else
         d.notes @ d.notes.push(
             lead + "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder) + ", and " + reaches
@@ -183,6 +185,15 @@ function named_by(origin: Origin, folder: str) -> str
         return told
     return "the folder is this program's own, one `--include` names, or one `pkg-config` answers for a library"
 
+# **What the consumer of a fetched package can do where its folder holds the
+# file** (panel 244's R4, defect 2458): a fetched package's placed tree is held
+# to its fingerprint, and a file of it changed is refused `package_unread`, so
+# the note never sends the reader to rename or move it, which it said until
+# then. What the reader can do is ask the package's author, or name a copy of
+# the package by a `path` entry, whose files are the program's to change.
+function fetched_remedy(folder: str, package: str, reaches: str) -> str
+    return "`" + folder + "` is the package `" + package + "`'s, fetched and held to its fingerprint, so its file is no file of this program's to rename or move, and " + reaches + ": ask the package's author to rename it, or develop a copy of the package through a `path` entry of the catalogue, whose files are this program's to change"
+
 # **A file read for a header a package's group names, from a folder searched
 # before that package's own** (defect 2357): a unit reading another
 # package's group record searches the package's folder after its own route,
@@ -195,9 +206,14 @@ function package_header(path: str, folder: str, wanted: str, package: str, origi
         message: "`" + clang_place.slashed(path) + "` stands in for the package `" + package + "`'s `" + wanted + "`, which a unit reads for that package's group record: a folder this build names is searched before the package's own folder, so its file is read in the package's place",
         span: token.Span(start: 0, end: 0)
     )
-    d.notes @ d.notes.push(
-        "rename the file, or move it out of `" + folder + "`: " + named_by(origin, folder: folder) + ", and every unit reading the package's record reads what it holds"
-    )
+    reaches = "every unit reading the package's record reads what it holds"
+
+    if origin.kind == FETCHED
+        d.notes @ d.notes.push(fetched_remedy(folder: folder, package: origin.name, reaches: reaches))
+    else
+        d.notes @ d.notes.push(
+            "rename the file, or move it out of `" + folder + "`: " + named_by(origin, folder: folder) + ", and " + reaches
+        )
     return d
 
 # A file the environment has every clang read before a unit's first line.
@@ -335,3 +351,40 @@ test "a quoted include found through the search is told as written, and its note
     )
     assert angle.message == "`./sys/timeb.h` stands in for the system's `<sys/timeb.h>`, which `./lib/clock.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place"
     assert angle.notes[1] == "or, where `./lib/clock.h` means `./sys/timeb.h`, include it as `#include \"../sys/timeb.h\"`, its path from that header's own folder: C reads a quoted name from there first, where `<sys/timeb.h>` asks the system's places, which hold a `sys/timeb.h` of their own"
+
+# **A fetched package's folder is told by what its consumer can do** (panel
+# 244's R4, defect 2458): the placed tree is held to its fingerprint, so the
+# note asks its author or a copy named by a `path` entry, never a rename or a
+# move of the package's file, whether the file stands in for the C library's
+# header or for another package's; a `path` entry's folder, the consumer's
+# own, keeps the rename.
+test "a fetched package's folder is told by what its consumer can do, never a rename of its file (defect 2458)"
+    d = header(
+        stand_in.Shadow(path: "heroes.packages/sint@1.0.0-ab/stdint.h", folder: "heroes.packages/sint@1.0.0-ab", named: "stdint.h", reader: "", quoted: "", written: "", asked: false),
+        origin: Origin(kind: FETCHED, name: "sint"),
+        runtime: false
+    )
+    assert d.notes == ["`heroes.packages/sint@1.0.0-ab` is the package `sint`'s, fetched and held to its fingerprint, so its file is no file of this program's to rename or move, and every `#include <stdint.h>` of the build reads what it holds: ask the package's author to rename it, or develop a copy of the package through a `path` entry of the catalogue, whose files are this program's to change"]
+    other = package_header(
+        path: "heroes.packages/a@1.0.0-cd/pt.h",
+        folder: "heroes.packages/a@1.0.0-cd",
+        wanted: "pt.h",
+        package: "pt",
+        origin: Origin(kind: FETCHED, name: "a")
+    )
+    assert other.notes.len() == 1 && strings.starts_with(text: other.notes[0], prefix: "`heroes.packages/a@1.0.0-cd` is the package `a`'s, fetched and held to its fingerprint")
+    assert strings.holds(
+        text: other.notes[0],
+        needle: "every unit reading the package's record reads what it holds: ask the package's author"
+    )
+    own = package_header(
+        path: "lib/pt.h",
+        folder: "lib",
+        wanted: "pt.h",
+        package: "pt",
+        origin: Origin(kind: PATH, name: "lib")
+    )
+    assert strings.starts_with(
+        text: own.notes[0],
+        prefix: "rename the file, or move it out of `lib`: the `path` entry `lib` of the catalogue names that folder"
+    )

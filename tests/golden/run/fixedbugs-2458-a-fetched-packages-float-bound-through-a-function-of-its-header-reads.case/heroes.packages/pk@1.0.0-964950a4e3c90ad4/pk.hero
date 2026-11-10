@@ -1,0 +1,9 @@
+# The half the package's header defines, through a function of that header,
+# since a fetched package's float constant is never read at build (panel
+# 235's C5, defect 2458).
+extern "pk.h"
+    function pk_half() -> f64
+
+# The half.
+function half() -> f64
+    return pk_half()
