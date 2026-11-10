@@ -1,0 +1,5 @@
+# The folder of defect 2463's case beside it the catalogue names `main`.
+
+# A word.
+function word() -> str
+    return "m"

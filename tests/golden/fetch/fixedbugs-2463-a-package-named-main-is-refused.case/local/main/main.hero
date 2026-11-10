@@ -1,0 +1,11 @@
+# Fixed defect 2463, 2026-11-10, lane b30-pkg: a package named `main`.
+# `heroes new main --package` wrote it and `heroes add --path` added it, and
+# the line `heroes new` offered, `use <main>/main`, was refused
+# `shadowed_binding` against the program's `function main()`. Now both verbs
+# refuse the name before anything is written, in the words of the one rule
+# every place naming an entry asks (`module/entry_name.hero`); a program
+# named `main` is made as before.
+
+# A word.
+function word() -> str
+    return "m"

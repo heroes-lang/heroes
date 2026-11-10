@@ -14,6 +14,12 @@
 # that entry; and the program's alias for a package another package names
 # otherwise was offered in a message as `use <match>/x`, a line the parser
 # refuses (`needs_qualifying`, measured).
+#
+# Defect 2463: `main` too, the entry point every program declares, refused
+# as a keyword is and with its own words. `heroes new main --package` and
+# `heroes add --path ../main` wrote the name, and the line `heroes new`
+# offers, `use <main>/main`, binds `main`, which the program's `function
+# main()` holds, so it was refused `shadowed_binding`.
 
 use foreign_words
 use keywords
@@ -42,15 +48,23 @@ function refused(name: str) -> str
     return word(name)
 
 # Why no `use` can write `name` between `<` `>` where it is a word of the
-# language or one the lexer refuses as a name, whatever its shape; "" for any
-# other.
+# language, one the lexer refuses as a name, or `main`, whatever its shape;
+# "" for any other.
 function word(name: str) -> str
+    if name == ENTRY_POINT
+        return "`main` is the entry point every program declares, `function main()`, so a package named so cannot be named from a program: its `use <main>/main` is shadowed by that function"
+
     if !keywords.keyword(name).is_err()
         return "`" + name + "` is a keyword of Heroes, which no `use` writes between `<` `>`"
 
     if !foreign_words.declared_word(name).is_err()
         return "`" + name + "` is a word of another language that Heroes refuses, which no `use` writes between `<` `>`"
     return ""
+
+# The name of a program's entry point (spec § 1, *the file you compile holds
+# `function main()`*), which no entry takes.
+constant ENTRY_POINT: str
+    "main"
 
 # What a `use` line is told where `name` stands between its `<` `>` and is a
 # word no `use` writes there; "" where it is none.
@@ -74,6 +88,11 @@ test "an entry is named as a `use` writes it between the brackets"
     # A contextual word is a name everywhere but its one position, so a
     # `use` writes it: `use <as>/x` compiles.
     assert refused("as") == "" && refused("tag") == ""
+
+    # The entry point's name is no entry's (defect 2463), and a name only
+    # opening with it is one.
+    assert refused("main") == word("main") && word("main").len() > 0
+    assert refused("mainline") == "" && refused("main_2") == ""
 
     # The mark is told only of a word, never of a name or of another token.
     assert in_mark("json") == "" && in_mark("1") == "" && in_mark("Json") == ""
