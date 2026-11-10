@@ -3160,30 +3160,45 @@ the first is the one that proves the project's premise:
    in a named folder refuses the build, `shadowed_header`, exit 1, at the program's first byte,
    the message naming the file and the header it stands in for, the note the folder, **who named
    it** (the program's own folder, `--include`, `pkg-config`'s answer by its library, the variable by its
-   name) and the two repairs, rename it or move it (panel 237's R3). It carries no `Fix`: the
-   repair is a file renamed or moved, which no edit of a `.hero` file writes. A file standing in
-   for C itself is undefined behaviour (ISO C, N1570 §7.1.2p3, and CERT C's PRE04-C), so the
-   refusal rests on C and not on a list of names; no reorder of the search replaces it, each
-   reorder measured refusing a correct program or reading the wrong ABI (panel 237's R1).
+   name) and the repairs its folder allows: for the program's own folder or `--include`, rename
+   the file or move it (panel 237's R3); for a folder `pkg-config` names for a library, another
+   copy through `PKG_CONFIG_PATH` or the library named by `link` (panel 243's R2); for a fetched
+   package's folder, the package's author asked or a copy developed through a `path` entry (defect
+   2458); for a quoted include, its path from the includer's folder (R3). It carries no `Fix`:
+   every repair is the author's choice between files and spellings, none a `certain` edit of the
+   `.hero` file. A file standing in for C itself is undefined behaviour (ISO C, N1570 §7.1.2p3,
+   and CERT C's PRE04-C), so the refusal rests on C, and its one list, the C11 and POSIX.1 names a
+   library's folder may not hold (R2), is the two standards' own; no reorder of the search
+   replaces it, each reorder measured refusing a correct program or reading the wrong ABI (panel
+   237's R1). Until 2026-11-10 this paragraph said *the two repairs, rename it or move it*, *which
+   no edit of a `.hero` file writes* and *not on a list of names*, each false since panel 243's R2
+   and R3 landed (lane b30-shadow's report).
 
    **Its reach is every folder a build reads a library header from** (panel 237's R2). The
    same run lists the program's groups after the opening, with who included each file (`-H`),
    so a library header only a group's header reaches is judged too (defect 2343): a named
    folder's file is refused where a platform or runtime header includes it, or where a platform
-   folder holds a file of its name and the folder is not one a `pkg-config` answer of the build
-   names for a library, a file named like a C11 or POSIX.1 standard header refused even there,
-   from a list sourced from the two standards (panel 243's R2, provisional, defect 2428); the
-   header a group names is the program's own, read from where the program put it, even one named
-   like the library's; and a file under the program's own folder that one of its headers includes
-   in quotes is its own, however clang finds it, unless a platform or runtime header includes it
-   as well, which the listing shows even where a guard skips that second open
-   (`-fshow-skipped-includes`), every includer of a file judged and not only its first open
-   (panel 243's R3, provisional, defect 2447), where `#include <util.h>` meaning the program's
+   folder holds a file of its name, unless the folder is one only a `pkg-config` answer of the
+   build names, a file named like a C11 or POSIX.1-2024 header refused even there, from the two
+   standards' lists (panel 243's R2, provisional, defect 2428), a file a header only asks after
+   with `__has_include` judged alike; the header a group names is the program's own, read from
+   where the program put it, even one named like the library's; and a file a header of a named
+   folder includes in quotes is its own where that spelling, read from the header's own folder,
+   names it, or where it is the header's sibling named as the search names it, unless a platform or
+   runtime header includes it as well, which the listing shows even where a guard skips that
+   second open (`-fshow-skipped-includes`), every includer of a file judged and not only its first
+   open (panel 243's R3, provisional, defect 2447); a quoted include found only through the search
+   is refused as the angle form is, its note offering the path from the includer's folder; where `#include <util.h>` meaning the program's
    `util.h` is refused, its note naming the quoted form, the angle form asking the system's places
    for a name the platform holds. Until 2026-11-10 this sentence said *a platform folder holds a
    file of its name* with no exception and *a header's own sibling included in quotes is its own*,
    which refused a `pkg-config` folder's own headers and a quoted include found from its
-   includer's folder that is not a sibling. **The environment is a named folder** (defect 2344): panel 055 made
+   includer's folder that is not a sibling; and the coordinator's first wording that day, *the
+   folder is not one a `pkg-config` answer of the build names* and *a file under the program's own
+   folder ... is its own, however clang finds it*, said more than the landing does (lane
+   b30-shadow's report: a folder the program's own folder or `--include` also names is judged as
+   theirs, and a quoted spelling found only through the search, its shape `e2`, is refused, the
+   batch's recommended answer). **The environment is a named folder** (defect 2344): panel 055 made
    `CPATH` the machine's own way to name a header folder, so the folders and words the
    environment hands clang are read from clang's own answer, the `-cc1` job of the `-###` the
    build already asks and of the listing's `-v`, with clang's reading of empty elements and
