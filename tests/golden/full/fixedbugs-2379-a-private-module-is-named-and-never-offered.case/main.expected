@@ -3,4 +3,4 @@ error[unknown_name]: nothing named `mine` is in scope, and no `use` of this file
      |
   15 |     print(words.word() + mine())  #~ unknown_name
      |                          ^^^^
-  note: a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it: name what its owner offers instead
+  note: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it: name what its owner offers instead

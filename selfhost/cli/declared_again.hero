@@ -33,14 +33,17 @@
 # defining `extra` under `WANT_EXTRA`) left the name declared before the
 # header and the header declaring it neither alone nor after the others,
 # measured: refused, a correct program told *`lib.h` declares no `extra`*.
-# Renamed, only the header's own declaration can answer. What is left
-# unasked: a header whose declaration of the name stands in a file an
-# earlier header already entered, under that one's switch, which no ask of
-# clang's separates from the header declaring nothing; refused, the case
-# being a program's own header reaching into a library's private file.
+# Renamed, only the header's own declaration can answer. And where none of
+# those says the header declares it, clang is asked where the name's
+# declaration stands (`cli/declared_place.hero`): in a file the header reads
+# alone, an earlier header having entered it first under its switch
+# (`earlier.h` including `sub.h`, then `top.h` including it again, its guard
+# skipping it), the header declares the name where the unit reads it.
 
 use cli/declared_ask
 use cli/declared_ladder as ladder
+use cli/declared_place
+use cli/strings
 use cli/toolchain
 use emit/c_text
 use emit/clang_place
@@ -52,13 +55,14 @@ record Candidate
     asked: ladder.Asked
     declarer: i64
 
-# A name refused: its binding's index, the rung that first declares it, and
-# the headers the compile that answered read before its own, none where it
-# read the header alone.
+# A name refused: its binding's index, the rung that first declares it, the
+# headers the compile that answered read before its own, none where it read
+# the header alone, and what was asked.
 record Refused
     index: i64
     declarer: i64
     after: [str]
+    asked: ladder.Asked
 
 # The candidates of the header at rung `at` of `q` that it does not declare.
 function refused(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Question, at: i64, candidates: [Candidate]) -> [Refused]
@@ -88,20 +92,59 @@ function refused(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Ques
     if faithful.is_err()
         return none
     out: [Refused] @= []
-    left: [ladder.Asked] @= []
     index: i64 @= 0
 
     for one in candidates
         found = !alone.is_err() && alone.must()[index] == ladder.DECLARED
 
         if !found && faithful.must()[index] == ladder.UNDECLARED
-            out @ out.push(Refused(index: one.index, declarer: one.declarer, after: before))
-            left @ left.push(one.asked)
+            out @ out.push(Refused(index: one.index, declarer: one.declarer, after: before, asked: one.asked))
         index @ index + 1
 
-    if out.len() == 0 || read_before(t, words: words, q: q, at: at)
+    if out.len() == 0
         return none
-    return unrenamed(t, words: words, read: read, q: q, at: at, told: out, asked: left)
+
+    # The files the header reads alone, its own first, and whether the
+    # opening before its rung read that one; clang saying neither refuses
+    # nothing.
+    own = declared_ask.listed(t, words: words, text: c_text.includes([header]).join("\n") + "\n")
+
+    if own.is_err() || own.must().len() == 0
+        return none
+    groups = groups_before(q, at: at)
+    opened = declared_ask.listed(t, words: words, text: ladder.opening_text(groups))
+
+    if opened.is_err() || among(opened.must(), path: own.must()[0])
+        return none
+    left = unrenamed(t, words: words, read: read, q: q, at: at, told: out)
+
+    if left.len() == 0
+        return left
+    return unplaced(t, words: words, groups: groups, header: header, told: left, own: own.must())
+
+# The refusals whose name clang places in no file the header reads alone
+# (`declared_place.placed`).
+function unplaced(t: toolchain.Toolchain, words: [str], groups: [str], header: str, told: [Refused], own: [str]) -> [Refused]
+    places = declared_place.placed(t, words: words, groups: groups, header: header, asked: asked_of_refused(told))
+    out: [Refused] @= []
+    index: i64 @= 0
+
+    for one in told
+        place = places[index]
+
+        if place.is_err() || !among(own, path: place.must())
+            out @ out.push(one)
+        index @ index + 1
+
+    return out
+
+function asked_of_refused(told: [Refused]) -> [ladder.Asked]
+    out: [ladder.Asked] @= []
+
+    for one in told
+        out @ out.push(one.asked)
+
+    return out
 
 # The refusals the header still declares nothing of where the unit reads it,
 # every header before it read first and each name renamed while it alone is
@@ -110,7 +153,8 @@ function refused(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Ques
 # found declaring it, as alone and after the others it was not. An ask that
 # gives no answer, a header whose own code a renamed name breaks, keeps the
 # refusals the cleaner asks made.
-function unrenamed(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Question, at: i64, told: [Refused], asked: [ladder.Asked]) -> [Refused]
+function unrenamed(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Question, at: i64, told: [Refused]) -> [Refused]
+    asked = asked_of_refused(told)
     question = ladder.renamed_question(groups: groups_before(q, at: at), header: q.rungs[at].header, asked: asked)
     states = declared_ask.answered(t, words: words, read: read, q: question, asked: ladder.renamed(asked))
 
@@ -174,29 +218,41 @@ function declares(candidates: [Candidate], rung: i64) -> bool
 
     return false
 
-# Whether the header at rung `at` was read before it: its file, the first
-# its include alone enters, among the files the opening up to the group
-# before it reads. True where clang cannot say, which refuses nothing.
-function read_before(t: toolchain.Toolchain, words: [str], q: ladder.Question, at: i64) -> bool
-    own = declared_ask.listed(t, words: words, text: c_text.includes([q.rungs[at].header]).join("\n") + "\n")
-
-    if own.is_err() || own.must().len() == 0
-        return true
-    opened = declared_ask.listed(t, words: words, text: ladder.opening_text(groups_before(q, at: at)))
-
-    if opened.is_err()
-        return true
-    return among(opened.must(), path: own.must()[0])
-
-# Whether `paths` holds `path`, every separator read as `/`.
+# Whether `paths` holds `path`, each read by `normal`.
 function among(paths: [str], path: str) -> bool
-    wanted = clang_place.slashed(path)
+    wanted = normal(path)
 
     for one in paths
-        if clang_place.slashed(one) == wanted
+        if normal(one) == wanted
             return true
 
     return false
+
+# A path as two of clang's answers compare: every separator a `/`, and a
+# `./` that names the directory it stands in read as nothing, since `clang
+# -M` lists a file a quoted include found beside its includer as `sub.h`
+# and a note under an error names the same file `./sub.h` (measured
+# 2026-11-10, clang 21).
+function normal(path: str) -> str
+    out: str @= clang_place.slashed(path)
+
+    while strings.starts_with(text: out, prefix: "./")
+        out @ out.slice(from: 2, to: out.len())
+
+    parts: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= out.len()
+        if at == out.len() || out[at] == '/'
+            part = out.slice(from: start, to: at)
+
+            if part != "."
+                parts @ parts.push(part)
+            start @ at + 1
+        at @ at + 1
+
+    return parts.join("/")
 
 ## Tests
 
@@ -213,3 +269,5 @@ test "a header is asked again after the groups before it, the declarers and the 
     assert earlier(q, at: 4, candidates: seeded) == ["first.h", "math.h"]
     assert holds([0, 1], state: 1) && !holds([0, 2], state: 1)
     assert among(["/inc/a.h", "C:\\inc\\b.h"], path: "C:/inc/b.h") && !among(["/inc/a.h"], path: "/inc/b.h")
+    assert among(["top.h", "sub.h"], path: "./sub.h") && among(["/inc/./x.h"], path: "/inc/x.h") && normal("././a/./b.h") == "a/b.h"
+    assert !among(["sub.h"], path: "./other/sub.h")

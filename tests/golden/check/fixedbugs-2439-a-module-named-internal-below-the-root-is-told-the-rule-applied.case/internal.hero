@@ -1,0 +1,5 @@
+# A module of defect 2439's case beside it.
+
+# A number.
+function two() -> i64
+    return 2

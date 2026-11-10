@@ -66,10 +66,23 @@ function answered(t: toolchain.Toolchain, words: [str], read: str, q: ladder.Que
 
 # One compile of `q`, read.
 function asked_now(t: toolchain.Toolchain, words: [str], q: ladder.Question, asked: [ladder.Asked]) -> [i64]?
+    said = said_of(t, words: words, text: q.text, kind: "asked")?
+    return ladder.states_of(said: said.text, unit: said.unit, q: q, asked: asked)
+
+# What clang said of a compile, and the file it compiled.
+record Said
+    unit: str
+    text: str
+
+# One `clang -fsyntax-only` of `text` under `words`, written where its bytes
+# name it, `kind` the name's first word; what it said is not kept, which a
+# question whose answer is read otherwise than by rung asks
+# (`cli/declared_place.hero`).
+function said_of(t: toolchain.Toolchain, words: [str], text: str, kind: str) -> Said?
     dir = t.build + "/declared"
     process.mkdir_all(dir)?
-    unit = dir + "/asked-" + digest.digest(q.text) + ".c"
-    publish.write_whole(path: unit, text: q.text, keyed: true)?
+    unit = dir + "/" + kind + "-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
     err = publish.private_name(dir + "/said.txt")
     line = response_file.carried(line: strings.with_all(list: ["clang", "-fsyntax-only"], more: words), dir: dir)
     ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: err)
@@ -78,7 +91,7 @@ function asked_now(t: toolchain.Toolchain, words: [str], q: ladder.Question, ask
 
     if !ran.started || said.is_err()
         return fail(code: "unread", msg: "clang did not answer")
-    return ladder.states_of(said: said.must(), unit: unit, q: q, asked: asked)
+    return ok(Said(unit: unit, text: said.must()))
 
 # States kept as one digit each, in order.
 function kept_text(states: [i64]) -> str

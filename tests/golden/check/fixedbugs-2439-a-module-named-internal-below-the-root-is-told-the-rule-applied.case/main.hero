@@ -1,0 +1,20 @@
+# Fixed defect 2439, 2026-11-10, lane b30-pkg: `lib/internal.hero`, a file
+# named `internal` below the root, named `use lib/internal` (panel 244's
+# critic).
+#
+# SYMPTOM: `private_module`, *a module under an `internal` folder is named
+# only by the module that folder belongs to*, though the file stands under
+# no `internal` folder: the compiler applies Go's element rule, a part
+# `internal` after the first, and the message stated another.
+#
+# FIX: the message states the rule applied, a part `internal` after the
+# first, a folder's name or the module's own, the path before the last such
+# part owning it; the rule itself is unchanged (panel 244 rules on how the
+# specification states it). So `internal.hero` at the root, a first part,
+# builds, and `a/internal/b/internal/c` is `a/internal/b`'s.
+use a/internal/b/internal/c  #~ private_module
+use internal
+use lib/internal as li  #~ private_module
+
+function main()
+    print(internal.two() + li.two() + c.two())
