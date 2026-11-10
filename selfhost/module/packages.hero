@@ -157,7 +157,7 @@ function problem_of(@b: Book, package: reached.Package, e: catalogue.Entry) -> s
     if !process.is_directory(path: package.opened)
         if package.unverified
             return "the folder `" + package.root + "` its `path` names is not there"
-        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`"
+        return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`" + placed_beside.fetch_from(e, index: b.program.index)
 
     # The tree is a folder of the program anything can edit, so it is held to
     # its fingerprint at every build that reads it (R7): a tree changed since

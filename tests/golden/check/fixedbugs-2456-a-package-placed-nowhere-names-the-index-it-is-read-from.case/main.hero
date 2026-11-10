@@ -1,0 +1,18 @@
+# Fixed defect 2456, 2026-11-10, lane b30-pkg: a catalogue naming `core` by
+# `version` and `sum`, with no `index` line, and nothing placed.
+#
+# SYMPTOM: *`heroes fetch` places it at …*, and `heroes fetch` there read the
+# Heroes index, which did not answer (`curl` exited 6): a fix named that
+# fails on every machine today.
+#
+# CAUSE: the message named the verb and not the source it reads, which a
+# catalogue holding no `index` line leaves to the Heroes index.
+#
+# FIX: the verb is named with the index it reads, the Heroes index by its
+# address, and the `index` line as the way to read another: a sentence true
+# whether that index answers or not, so the compiler holds no premise that
+# it is absent.
+use <core>/strings  #~ package_unread
+
+function main()
+    print(strings.trim_space(s: "  hi  "))

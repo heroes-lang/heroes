@@ -1,0 +1,7 @@
+# The catalogue of defect 2456's case beside it: an entry of the index its
+# `index` line names, and nothing placed under `heroes.packages/`.
+index = "file://../idx"
+
+[dependencies.core]
+version = "0.2.1"
+sum = "sha256-6cf4554fb84b9ecfb0e22a2d8e715e7e1dc20221936aade3dee19d2991b7022c"
