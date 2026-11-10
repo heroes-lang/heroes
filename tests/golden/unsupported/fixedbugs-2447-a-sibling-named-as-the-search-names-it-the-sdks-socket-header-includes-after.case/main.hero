@@ -1,0 +1,16 @@
+#~ shadowed_header
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3, the lane's
+# shape beside `live` and `e`): `sys/clock.h` names its sibling as the
+# search names it, `#include "sys/types.h"`, its own by the rule `e` keeps,
+# and the SDK's `<sys/socket.h>` reads the same file after it: built at exit
+# 0, printing 42 and 2, before defect 2447. Refused; this line is its mark.
+
+extern "sys/clock.h"
+    constant CLOCK_TICKS: i64
+
+extern "sys/socket.h"
+    constant AF_INET: i64
+
+function main()
+    print(CLOCK_TICKS)
+    print(AF_INET)

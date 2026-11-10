@@ -1,0 +1,6 @@
+error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2447-an-unguarded-sibling-the-sdks-socket-header-includes-after-the-programs-header.case/sys/types.h` stands in for the C library's `<sys/types.h>`, which the C library's `<sys/socket.h>` includes: a folder this build names is searched before the system's, so its file is read in the library's place
+  at tests/golden/unsupported/fixedbugs-2447-an-unguarded-sibling-the-sdks-socket-header-includes-after-the-programs-header.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
+  note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2447-an-unguarded-sibling-the-sdks-socket-header-includes-after-the-programs-header.case`: the folder is this program's own, which every unit searches before the system's, and every `#include <sys/types.h>` of the build reads what it holds

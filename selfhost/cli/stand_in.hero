@@ -15,17 +15,19 @@ use cli/package_reads
 # One file of a named folder read in the library's place: the path clang
 # listed, the folder that held it, and the name the library's header has
 # there; who included it, as a refusal names it, "" for the C this compiler
-# writes (`cli/shadowed_tree.hero`); and whether it stands beside a named
-# folder's includer that asked for it by the angle form, where the quoted one
-# would mean the includer's own file; and whether it is only asked after,
-# listed by clang's `-M` and entered by no include its `-H` shows, which a
-# header's `__has_include` does (defect 2356).
+# writes (`cli/shadowed_tree.hero`); the spelling that would name it in
+# quotes from that includer's own folder, which the note offers, "" for none
+# (`shadowed_tree.Reader`); the includer's quoted spelling that found it
+# through the search, "" where it wrote none; and whether it is only asked
+# after, listed by clang's `-M` and entered by no include its `-H` shows,
+# which a header's `__has_include` does (defect 2356).
 record Shadow
     path: str
     folder: str
     named: str
     reader: str
-    beside: bool
+    quoted: str
+    written: str
     asked: bool
 
 # The folder of `named` that found `path`, read lexically: the longest
@@ -58,7 +60,7 @@ function shadows(paths: [str], named: [str], others: [str]) -> [Shadow]
 
         if folder.len() > 0
             out @ out.push(
-                Shadow(path: written, folder: folder, named: relative(path: path, dir: folder), reader: "", beside: false, asked: false)
+                Shadow(path: written, folder: folder, named: relative(path: path, dir: folder), reader: "", quoted: "", written: "", asked: false)
             )
 
     return out

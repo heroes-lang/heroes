@@ -1,0 +1,14 @@
+#~ shadowed_header
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3): the
+# angle form beside `d`. `lib/clock.h` writes `#include <sys/timeb.h>` for the
+# program's own `sys/timeb.h`, which the angle form asks the system's places
+# for, the program's folder answering first: refused, as panel 237 ruled of a
+# sibling named so. Its note offers `#include "../sys/timeb.h"`, the file's
+# path from the header's own folder, where C reads a quoted name first; only
+# a sibling was offered its name until defect 2447; this line is its mark.
+
+extern "lib/clock.h"
+    constant CLOCK_TICKS: i64
+
+function main()
+    print(CLOCK_TICKS)

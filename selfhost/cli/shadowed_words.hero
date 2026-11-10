@@ -90,6 +90,12 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
     if one.reader.len() > 0
         reads @ "which " + one.reader + " includes"
 
+    # A quoted include C did not find in its header's own folder and so
+    # searched for, which the message named in the angle form until panel
+    # 243's R3 (defect 2447).
+    if one.written.len() > 0
+        reads @ "which " + one.reader + " includes as `\"" + one.written + "\"`, a name C does not find in that header's own folder and so searches for"
+
     # A file a header only asks after (defect 2356): nothing reads it, and the
     # question is what it answers.
     if one.asked
@@ -116,16 +122,27 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
             lead + "rename the file, or move it out of `" + one.folder + "`: " + named_by(origin, folder: one.folder) + ", and " + reaches
         )
 
-    # The angle form found a name the platform holds beside the header that
-    # asked for it (panel 237's ruling on `sibutil-angled`). The quoted form
-    # offered is the file's name in that folder, which C reads there first;
-    # the library's name for it, `sys/timeb.h` for a `sys/clock.h`'s
-    # `timeb.h`, is found by the search and was offered until defect 2420.
-    if one.beside
-        sibling = last_part(clang_place.slashed(one.path))
-        d.notes @ d.notes.push(
-            "or, where " + one.reader + " means its own `" + sibling + "` beside it, include it as `#include \"" + sibling + "\"`: C reads a quoted name from the including header's own folder first, where `<" + one.named + ">` asks the system's places, which hold a `" + one.named + "` of their own"
-        )
+    # The search found a name the platform holds for a header of the same
+    # named folder (panel 237's ruling on `sibutil-angled`). The quoted form
+    # offered is the file's path from that header's own folder, which C reads
+    # there first and the rule takes as the header's own (panel 243's R3): its
+    # name beside it, `timeb.h` for a `sys/clock.h`'s, offered since defect
+    # 2420, or a path out of it, `../sys/timeb.h` from `lib/clock.h`, since
+    # defect 2447.
+    if one.quoted.len() > 0
+        asked: str @= "`<" + one.named + ">`"
+
+        if one.written.len() > 0
+            asked @ "`\"" + one.written + "\"`, not in that folder,"
+
+        if !strings.holds(text: one.quoted, needle: "/")
+            d.notes @ d.notes.push(
+                "or, where " + one.reader + " means its own `" + one.quoted + "` beside it, include it as `#include \"" + one.quoted + "\"`: C reads a quoted name from the including header's own folder first, where " + asked + " asks the system's places, which hold a `" + one.named + "` of their own"
+            )
+        else
+            d.notes @ d.notes.push(
+                "or, where " + one.reader + " means `" + clang_place.slashed(one.path) + "`, include it as `#include \"" + one.quoted + "\"`, its path from that header's own folder: C reads a quoted name from there first, where " + asked + " asks the system's places, which hold a `" + one.named + "` of their own"
+            )
     return d
 
 # **What the author can change where the folder is a library's** (panel 243's
@@ -136,16 +153,6 @@ function header(one: stand_in.Shadow, origin: Origin, runtime: bool) -> diag.Dia
 # Homebrew's Cellar, a remedy nobody can take.
 function library_remedy(folder: str, named: str, library: str, reaches: str) -> str
     return "`" + folder + "` is the library `" + library + "`'s, named by `pkg-config`'s answer for it, so the file is that library's own, which no edit of this program renames or moves, and " + reaches + ": build against a copy of `" + library + "` whose folders hold no `" + named + "`, its `.pc` named in `PKG_CONFIG_PATH`, or name the library with `link` rather than `pkgconfig`, so the build reads the system's headers for it"
-
-# The part of a `/`-separated path after its last `/`, the whole where it has
-# none.
-function last_part(path: str) -> str
-    at: i64 @= path.len()
-
-    while at > 0 && path[at - 1] != '/'
-        at @ at - 1
-
-    return path.slice(from: at, to: path.len())
 
 # **Who named the folder, in words** (panel 237's R3): the one origin the
 # reader changes, never the three it might be, which the note said until then.
@@ -246,7 +253,7 @@ function remedy(one: clang_added.Added, word: str) -> str
 # folder; a file the unit reads keeps the sentence of what reads it.
 test "a file a header only asks after is told as answering the question, and a file read as read (defect 2356)"
     asked = header(
-        stand_in.Shadow(path: "./stdio.h", folder: ".", named: "stdio.h", reader: "", beside: false, asked: true),
+        stand_in.Shadow(path: "./stdio.h", folder: ".", named: "stdio.h", reader: "", quoted: "", written: "", asked: true),
         origin: Origin(kind: PROGRAM, name: ""),
         runtime: false
     )
@@ -254,7 +261,7 @@ test "a file a header only asks after is told as answering the question, and a f
     assert asked.message == "`./stdio.h` stands in for the C library's `<stdio.h>`, which a header of this build asks after and never includes: a folder this build names is searched before the system's, so the question finds its file in the library's place"
     assert asked.notes == ["a header asks only whether `stdio.h` exists, with `__has_include`, and the file standing in `.` answers yes in the library's place: rename the file, or move it out of `.`: the folder is this program's own, which every unit searches before the system's, and every `__has_include(<stdio.h>)` and `#include <stdio.h>` of the build finds it there"]
     read = header(
-        stand_in.Shadow(path: "inc/stdio.h", folder: "inc", named: "stdio.h", reader: "", beside: false, asked: false),
+        stand_in.Shadow(path: "inc/stdio.h", folder: "inc", named: "stdio.h", reader: "", quoted: "", written: "", asked: false),
         origin: Origin(kind: INCLUDE, name: ""),
         runtime: false
     )
@@ -278,13 +285,12 @@ test "a forced file and a folder some jobs search are told with `/` in the messa
 # folder first; `"sys/timeb.h"` is found there by the search alone.
 test "the quoted form offered for a nested header's sibling is its name in that folder (defect 2420)"
     d = header(
-        stand_in.Shadow(path: "./sys/timeb.h", folder: ".", named: "sys/timeb.h", reader: "`./sys/clock.h`", beside: true, asked: false),
+        stand_in.Shadow(path: "./sys/timeb.h", folder: ".", named: "sys/timeb.h", reader: "`./sys/clock.h`", quoted: "timeb.h", written: "", asked: false),
         origin: Origin(kind: PROGRAM, name: ""),
         runtime: false
     )
     assert d.notes.len() == 2
     assert d.notes[1] == "or, where `./sys/clock.h` means its own `timeb.h` beside it, include it as `#include \"timeb.h\"`: C reads a quoted name from the including header's own folder first, where `<sys/timeb.h>` asks the system's places, which hold a `sys/timeb.h` of their own"
-    assert last_part("a/b/c.h") == "c.h" && last_part("c.h") == "c.h" && last_part("a/") == ""
 
 # **A file of a library's folder is told by what its author can change, and a
 # header no standard lists as the system's** (panel 243's R2, defect 2428): the
@@ -294,16 +300,38 @@ test "the quoted form offered for a nested header's sibling is its name in that 
 # the system's.
 test "a library's folder is told by what its author can change, and a header no standard lists as the system's (defect 2428)"
     d = header(
-        stand_in.Shadow(path: "/keg/include/sys/socket.h", folder: "/keg/include", named: "sys/socket.h", reader: "`./own.h`", beside: false, asked: false),
+        stand_in.Shadow(path: "/keg/include/sys/socket.h", folder: "/keg/include", named: "sys/socket.h", reader: "`./own.h`", quoted: "", written: "", asked: false),
         origin: Origin(kind: PKGCONFIG, name: "fake"),
         runtime: false
     )
     assert d.message == "`/keg/include/sys/socket.h` stands in for the C library's `<sys/socket.h>`, which `./own.h` includes: a folder this build names is searched before the system's, so its file is read in the library's place"
     assert d.notes == ["`/keg/include` is the library `fake`'s, named by `pkg-config`'s answer for it, so the file is that library's own, which no edit of this program renames or moves, and every `#include <sys/socket.h>` of the build reads what it holds: build against a copy of `fake` whose folders hold no `sys/socket.h`, its `.pc` named in `PKG_CONFIG_PATH`, or name the library with `link` rather than `pkgconfig`, so the build reads the system's headers for it"]
     own = header(
-        stand_in.Shadow(path: "./curl/curl.h", folder: ".", named: "curl/curl.h", reader: "`./net/own.h`", beside: false, asked: false),
+        stand_in.Shadow(path: "./curl/curl.h", folder: ".", named: "curl/curl.h", reader: "`./net/own.h`", quoted: "", written: "", asked: false),
         origin: Origin(kind: PROGRAM, name: ""),
         runtime: false
     )
     assert own.message == "`./curl/curl.h` stands in for the system's `<curl/curl.h>`, which `./net/own.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place"
     assert own.notes == ["rename the file, or move it out of `.`: the folder is this program's own, which every unit searches before the system's, and every `#include <curl/curl.h>` of the build reads what it holds"]
+
+# **A quoted include found only through the search is told as written, and a
+# file out of its includer's folder is offered its path from there** (panel
+# 243's R3, defect 2447): the message named the angle form for an include
+# written in quotes; the note offers `"../sys/timeb.h"`, which C reads from
+# `lib/` first and the rule takes as the header's own.
+test "a quoted include found through the search is told as written, and its note offers the path from the header's folder (defect 2447)"
+    d = header(
+        stand_in.Shadow(path: "./sys/timeb.h", folder: ".", named: "sys/timeb.h", reader: "`./lib/clock.h`", quoted: "../sys/timeb.h", written: "sys/timeb.h", asked: false),
+        origin: Origin(kind: PROGRAM, name: ""),
+        runtime: false
+    )
+    assert d.message == "`./sys/timeb.h` stands in for the system's `<sys/timeb.h>`, which `./lib/clock.h` includes as `\"sys/timeb.h\"`, a name C does not find in that header's own folder and so searches for: a folder this build names is searched before the system's, so its file is read in the system's place"
+    assert d.notes.len() == 2
+    assert d.notes[1] == "or, where `./lib/clock.h` means `./sys/timeb.h`, include it as `#include \"../sys/timeb.h\"`, its path from that header's own folder: C reads a quoted name from there first, where `\"sys/timeb.h\"`, not in that folder, asks the system's places, which hold a `sys/timeb.h` of their own"
+    angle = header(
+        stand_in.Shadow(path: "./sys/timeb.h", folder: ".", named: "sys/timeb.h", reader: "`./lib/clock.h`", quoted: "../sys/timeb.h", written: "", asked: false),
+        origin: Origin(kind: PROGRAM, name: ""),
+        runtime: false
+    )
+    assert angle.message == "`./sys/timeb.h` stands in for the system's `<sys/timeb.h>`, which `./lib/clock.h` includes: a folder this build names is searched before the system's, so its file is read in the system's place"
+    assert angle.notes[1] == "or, where `./lib/clock.h` means `./sys/timeb.h`, include it as `#include \"../sys/timeb.h\"`, its path from that header's own folder: C reads a quoted name from there first, where `<sys/timeb.h>` asks the system's places, which hold a `sys/timeb.h` of their own"

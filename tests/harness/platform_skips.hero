@@ -123,12 +123,25 @@ constant EMPTY_CPATH_IS_APPLES: str
 constant UNDERSCORE_STDIO_IS_DARWINS: str
     "Darwin's `stdio.h` includes `<_stdio.h>`, where glibc's and the UCRT's read no header of that name, so a program's own `_stdio.h` stands in for nothing there and the program builds; the shape is the SDK's (panel 237's compiler-engineer, 2026-11-08), and a library header the program's own header includes is judged everywhere (defect 2343)"
 
+constant SOCKET_READS_TYPES_ON_DARWIN: str
+    "Darwin's `sys/socket.h` includes `<sys/types.h>` itself, and the runtime's opening reads no `sys/types.h` there, so a program's own `sys/types.h` is read by the SDK's header after a header of the program's opened it, and the refusal names `<sys/socket.h>` as the includer (measured on this Mac, 2026-11-10, panel 243's critic and the lane b30-shadow); which header of glibc's or the UCRT's reaches `sys/types.h`, and whether the runtime's opening reads it first there, is unrun here, so these words are judged where they were read, and the rule that every include of a file is judged is held on every platform by `cli/shadowed_tree.hero`'s tests (defect 2447)"
+
 # The cases whose shape only Apple's clang or the SDK holds, skipped on every
 # other machine by name.
 function darwin_alone() -> [Skip]
     return [
         Skip(name: "fixedbugs-2344-an-empty-cpath", why: EMPTY_CPATH_IS_APPLES)
         Skip(name: "fixedbugs-2343-a-library-header-only-a-group-reaches", why: UNDERSCORE_STDIO_IS_DARWINS)
+        Skip(name: "fixedbugs-2447-a-guarded-sibling-the-sdks-socket-header-includes-after-the-programs-header", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-guarded-sibling-the-sdks-socket-header-includes-before-the-programs-header", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-an-unguarded-sibling-the-sdks-socket-header-includes-after-the-programs-header", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-an-unguarded-sibling-the-sdks-socket-header-includes-before-the-programs-header", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-file-a-header-names-out-of-its-folder-the-sdks-socket-header-includes-after", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-file-a-header-names-out-of-its-folder-the-sdks-socket-header-includes-before", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-file-a-root-header-names-in-quotes-the-sdks-socket-header-includes-after", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-file-a-root-header-names-in-quotes-the-sdks-socket-header-includes-before", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-pragma-once-sibling-the-sdks-socket-header-includes-after-the-programs-header", why: SOCKET_READS_TYPES_ON_DARWIN)
+        Skip(name: "fixedbugs-2447-a-sibling-named-as-the-search-names-it-the-sdks-socket-header-includes-after", why: SOCKET_READS_TYPES_ON_DARWIN)
     ]
 
 # **And an emission that names the platform's own C is compared where it was
@@ -216,7 +229,8 @@ test "every name skipped on Windows is a case or a surface row that exists"
     for one in darwin_alone()
         assert shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
 
-    assert darwin_alone().len() == 2
+    # Two, and defect 2447's ten danger cases, whose words are the SDK's.
+    assert darwin_alone().len() == 12
 
 # On a machine that is not Windows nothing is skipped by name but the cases
 # whose words are Windows' alone, and on Windows those are judged.
