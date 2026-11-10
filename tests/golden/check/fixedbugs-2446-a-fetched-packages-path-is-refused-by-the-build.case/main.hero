@@ -1,0 +1,17 @@
+# Fixed defect 2446, 2026-11-10, lane b30-pkg, by panel 244's R3
+# (provisional): `gp`, placed from the index and held to its `sum`, holds a
+# catalogue naming the local folder `../../mypkg`, which the program's
+# catalogue names too (panel 244's critic).
+#
+# SYMPTOM: the build read the package at exit 0, and so did `heroes fetch`,
+# while `heroes add` refused the same catalogue: a `path` a fetched tree names
+# is a folder its `sum` does not hold.
+#
+# FIX: one rule for the build and the verbs (`module/path_entries.hero`): a
+# package fetched by its `version` or `git` holds no `path`, told by the
+# build as by `add` and `fetch`, one code, `requirement_refused`, and one
+# wording.
+use <gp>/g  #~ requirement_refused
+
+function main()
+    print(g.g().to_str())

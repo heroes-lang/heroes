@@ -1,0 +1,5 @@
+# The program the case's `check` reads.
+use <pp>/p
+
+function main()
+    print(p.p().to_str())

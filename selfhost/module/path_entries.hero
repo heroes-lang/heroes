@@ -1,0 +1,79 @@
+# Where a `path` entry may stand (panel 244's R3, provisional, author
+# ratification pending; panel 235's R6 and R7; defect 2446): in the
+# program's own catalogue, and in the catalogue of a package the program
+# itself reads from a `path`, both folders being the author's own; never in
+# the catalogue of a package fetched by its `version` or `git`, whose tree is
+# held to its `sum` (R7) while a folder it names outside that tree is held to
+# nothing.
+#
+# One rule, one code and one wording for the build and the verbs: the build
+# tells a fetched package's catalogue holding one as that package's problem
+# (`module/packages.hero`), `heroes add` refuses it in the build list it
+# writes (`fetch/build_list.hero`), and `heroes fetch` at the entry's line
+# (`fetch/fetch_all.hero`), where until then the build and `fetch` read such
+# a catalogue at exit 0 and `add` refused even the author's own `path`
+# package's. Where it is accepted, the author's build notes that a fetch of
+# that package would be refused (`cli/unverified.hero`).
+
+use module/catalogue
+
+# The code every refusal of the rule is told with, the verbs' own.
+constant CODE: str
+    "requirement_refused"
+
+# What the catalogue `own` of the package `of`, an entry of the program's
+# catalogue, is refused for: its first `path` entry where `of` is fetched by
+# its `version` or `git`; "" where it holds none it may not.
+function held(of: catalogue.Entry, own: catalogue.Catalogue) -> str
+    for r in own.entries
+        said = refused(of: of, r: r)
+
+        if said.len() > 0
+            return said
+
+    return ""
+
+# Why the requirement `r` may not stand in the catalogue of `of`, "" where it
+# may.
+function refused(of: catalogue.Entry, r: catalogue.Entry) -> str
+    if r.path.len() == 0 || of.path.len() > 0
+        return ""
+    return "the catalogue of `" + of.name + "` names the local folder `" + r.path + "` for `" + r.name + "`, and a package fetched by its `version` or `git` holds no `path`: its tree is held to its `sum`, and a folder outside it to nothing; a `path` stands in the program's own catalogue, or in the catalogue of a package the program reads from a `path` of its own"
+
+# What the author's build notes of the package `alias`, read from the folder
+# `folder` the program's `path` names, for each `path` its own catalogue
+# `own` holds: read here, and refused where that package is fetched.
+function noted(alias: str, folder: str, own: catalogue.Catalogue) -> [str]
+    out: [str] @= []
+
+    for r in own.entries
+        if r.path.len() > 0
+            out @ out.push(
+                "the package `" + alias + "`, read from the folder `" + folder + "`, names the local folder `" + r.path + "` for `" + r.name + "` in its own catalogue: read here, both folders being the author's own, and refused where `" + alias + "` is fetched by its `version` or `git`"
+            )
+
+    return out
+
+## Tests
+
+function entry(name: str, version: str, path: str) -> catalogue.Entry
+    return catalogue.Entry(name: name, version: version, git: "", tag: "", commit: "", path: path, sum: "")
+
+test "a path stands in the catalogue of a package read from a path, and in no fetched package's (defect 2446)"
+    folder = entry(name: "mypkg", version: "", path: "../../mypkg")
+    own = catalogue.Catalogue(
+        file: "heroes.toml",
+        index: "",
+        entries: [entry(name: "core", version: "1.0.0", path: ""), folder],
+        problem: "",
+        code: "",
+        at: "",
+        said: ""
+    )
+    fetched = entry(name: "gp", version: "1.0.0", path: "")
+    assert held(of: fetched, own: own) == refused(of: fetched, r: folder)
+    assert refused(of: fetched, r: folder).len() > 0
+    assert held(of: entry(name: "pp", version: "", path: "../git/pp"), own: own) == ""
+    assert refused(of: fetched, r: entry(name: "core", version: "1.0.0", path: "")) == ""
+    assert noted(alias: "pp", folder: "../git/pp/", own: own).len() == 1
+    assert noted(alias: "gp", folder: "x/", own: catalogue.empty()).len() == 0

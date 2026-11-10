@@ -1,0 +1,14 @@
+# Fixed defect 2446, 2026-11-10, lane b30-pkg, by panel 244's R3
+# (provisional): a package the program reads from a `path`, whose own
+# catalogue names another folder of the author's.
+#
+# `heroes add --path ../local/pp` refused it, *only the program's own
+# catalogue holds a `path`*, while the build read it. Now `add` writes `pp`
+# and the entry it names, `mypkg`, from the program's folder; `fetch` reads
+# both where they stand; and the build reads them, noting that a fetch of
+# `pp` by its `version` or `git` would be refused.
+use <mypkg>/lib
+
+# Two, from the folder `pp` names.
+function p() -> i64
+    return lib.two()

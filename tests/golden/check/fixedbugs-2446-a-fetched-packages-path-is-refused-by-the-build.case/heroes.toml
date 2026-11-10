@@ -1,0 +1,8 @@
+index = "file://../idx"
+
+[dependencies.gp]
+version = "1.0.0"
+sum = "sha256-15668383c82ada1b7617b1e5b1a84ddbb59aafbbe2e457ebe8c1e48ea7a0cdaa"
+
+[dependencies.mypkg]
+path = "mypkg"

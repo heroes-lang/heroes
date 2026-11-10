@@ -8,7 +8,7 @@ $ heroes add json -C <work>/app
 exit 1
 stdout:
 stderr:
-error[requirement_refused]: the catalogue of `json` names the local folder `../text` for `text`, and only the program's own catalogue holds a `path`, while a package is developed
+error[requirement_refused]: the catalogue of `json` names the local folder `../text` for `text`, and a package fetched by its `version` or `git` holds no `path`: its tree is held to its `sum`, and a folder outside it to nothing; a `path` stands in the program's own catalogue, or in the catalogue of a package the program reads from a `path` of its own
 heroes.toml:
 index = "file://../../../../../tests/golden/fetch/fixedbugs-2434-an-earlier-runs-tree-is-kept-by-a-refused-add.case/idx"
 

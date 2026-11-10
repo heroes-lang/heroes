@@ -1,5 +1,0 @@
-# The one module of the package `core` of defect 2431's case beside it.
-
-# A word.
-function word() -> str
-    return "s"

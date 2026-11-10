@@ -25,6 +25,7 @@ use fetch/transport
 use fetch/verb_place
 use module/catalogue
 use module/fingerprint
+use module/path_entries
 use module/placed
 
 # The command: one line on stdout for each entry placed, kept or read where
@@ -76,6 +77,11 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
             out @ out.push(
                 told.Said(code: "", at: "", said: "path " + e.name + " " + e.path + ", read where it stands and unverified")
             )
+        else if refused_of(e, folder: tree.must().folder).len() > 0
+            line = catalogue_edit.place_of(text: text, name: e.name, key: "")
+            out @ out.push(
+                told.Said(code: path_entries.CODE, at: place_said(c.file, line: line), said: refused_of(e, folder: tree.must().folder))
+            )
         else if tree.must().fetched
             out @ out.push(
                 told.Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
@@ -89,6 +95,16 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
     # taken back: it ends, and what it moved aside goes.
     staging.ended(ledger)
     return out
+
+# What the build refuses a fetched package's catalogue for, the rule's words
+# (`module/path_entries.hero`, defect 2446), "" where nothing; a catalogue
+# that does not read is the build's to tell.
+function refused_of(e: catalogue.Entry, folder: str) -> str
+    own = placing.own_catalogue(e, folder: folder)
+
+    if own.is_err()
+        return ""
+    return path_entries.held(of: e, own: own.must())
 
 # The line of an entry's a refusal points at: the field the refusal is
 # about, else the entry's table.
