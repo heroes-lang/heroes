@@ -29,6 +29,7 @@ use cli/process
 use cli/publish
 use cli/read_back
 use cli/response_file
+use cli/strings
 use cli/toolchain
 use emit/externs as emit_externs
 use emit/ffi_asked
@@ -163,7 +164,7 @@ function by_path(read: [layout_text.Member], path: str) -> i64?
 # is a type's name alone (`point_t`).
 function kind_of(type_text: str) -> str
     for word in ["union", "struct"]
-        if type_text.len() > word.len() && type_text.slice(from: 0, to: word.len() + 1) == word + " "
+        if strings.starts_with(text: type_text, prefix: word + " ")
             return word
 
     return type_text

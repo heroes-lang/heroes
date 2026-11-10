@@ -114,7 +114,10 @@ function key_of(copy: str) -> str?
     return ok(line_from(text: copy, begin: begin))
 
 # Every line of `text` holding `key`, in order, each without its carriage
-# return.
+# return. The byte beside a match is asked as a byte, here and in
+# `line_from` and `line_at`, never cut out as a text of one byte: the
+# preprocessed text holds the headers' code, and a character of more than
+# one byte beside a match put the cut inside it (defect 2409's shape).
 function carrying(text: str, key: str) -> [str]
     out: [str] @= []
     from: i64 @= 0
@@ -126,7 +129,7 @@ function carrying(text: str, key: str) -> [str]
             break
         begin: i64 @= found.must()
 
-        while begin > 0 && text.slice(from: begin - 1, to: begin) != "\n"
+        while begin > 0 && text[begin - 1] != '\n'
             begin @ begin - 1
 
         whole = line_from(text: text, begin: begin)
@@ -144,7 +147,7 @@ function line_from(text: str, begin: i64) -> str
     if !end.is_err()
         stop @ end.must()
 
-    if stop > begin && text.slice(from: stop - 1, to: stop) == "\r"
+    if stop > begin && text[stop - 1] == '\r'
         stop @ stop - 1
     return text.slice(from: begin, to: stop)
 
@@ -158,9 +161,9 @@ function line_at(text: str, line: str, from: i64) -> i64?
 
         if found.is_err()
             return found
-        begins = found.must() == 0 || text.slice(from: found.must() - 1, to: found.must()) == "\n"
+        begins = found.must() == 0 || text[found.must() - 1] == '\n'
         after = found.must() + line.len()
-        ends = after == text.len() || text.slice(from: after, to: after + 1) == "\n" || text.slice(from: after, to: after + 1) == "\r"
+        ends = after == text.len() || text[after] == '\n' || text[after] == '\r'
 
         if begins && ends
             return found

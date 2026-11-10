@@ -31,6 +31,7 @@ use checker
 use cli/compile
 use cli/digest
 use cli/front_check
+use cli/strings
 use cli/toolchain
 use cli/value_ask
 use cli/value_run
@@ -153,7 +154,7 @@ function accessors(tu_text: str, p: containers.Program, c: state.Checked, names:
     index: i64 @= 0
 
     while index < rows.len()
-        if rows[index].len() > 2 && rows[index].slice(from: rows[index].len() - 2, to: rows[index].len()) == " {"
+        if rows[index].len() > 2 && strings.ends_with(text: rows[index], suffix: " {")
             if opening[rows[index]].is_err()
                 opening[rows[index]] @ index
             else

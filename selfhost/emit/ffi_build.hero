@@ -236,7 +236,7 @@ function windows_symbol(line: str) -> str?
     if symbol.len() == 0
         return fail(code: "none", msg: "no symbol after the linker's words")
 
-    if !imported.is_err() && symbol.len() > 6 && symbol.slice(from: 0, to: 6) == "__imp_"
+    if !imported.is_err() && symbol.len() > 6 && bytes.bytes_at(text: symbol, at: 0, needle: "__imp_")
         return imported
     return ok(symbol)
 

@@ -217,7 +217,7 @@ function initialiser(tree: clang_tree.Tree, at: i64) -> i64
     for child in tree.children[at]
         kind = tree.nodes[child].kind
 
-        if kind.len() < 4 || kind.slice(from: kind.len() - 4, to: kind.len()) != "Attr"
+        if !strings.ends_with(text: kind, suffix: "Attr")
             found @ child
 
     return found

@@ -22,6 +22,7 @@
 # it kept holds 299,470 (`tests/harness/suite_records.hero`): the cap
 # stands between the two, so the cut keeps what the frozen plan kept.
 
+use bytes
 use cli/process
 use library_source
 use modules
@@ -57,7 +58,7 @@ function listed(tree: str) -> [str]?
 
 function ends_hero(path: str) -> bool
     tail = ".hero"
-    return path.len() >= tail.len() && path.slice(from: path.len() - tail.len(), to: path.len()) == tail
+    return bytes.bytes_at(text: path, at: path.len() - tail.len(), needle: tail)
 
 # Whether a folder of the path, its last part being the file, is skipped.
 function skipped(rel: str) -> bool
@@ -115,7 +116,7 @@ function closure(mirror: str, rel: str) -> [str]?
     prefix = mirror + "/"
 
     for f in loaded.files
-        if !f.is_library && f.name.len() > prefix.len() && f.name.slice(from: 0, to: prefix.len()) == prefix
+        if !f.is_library && f.name.len() > prefix.len() && bytes.bytes_at(text: f.name, at: 0, needle: prefix)
             out @ out.push(f.name.slice(from: prefix.len(), to: f.name.len()))
 
     return ok(out)

@@ -213,7 +213,7 @@ function microsoft(target: str) -> bool
             start @ at + 1
         at @ at + 1
 
-    return word == 3 && start + 4 <= target.len() && target.slice(from: start, to: start + 4) == "msvc"
+    return word == 3 && bytes.bytes_at(text: target, at: start, needle: "msvc")
 
 ## Tests
 

@@ -15,6 +15,7 @@
 # block of declarations.
 
 use ast
+use bytes
 use c_names
 use cursor
 use grammar_expr
@@ -186,23 +187,20 @@ function junk_said(text: str) -> str
 
     return ""
 
-# Whether `said` begins with `prefix`, and is long enough to.
-function opens_with(said: str, prefix: str) -> bool
-    return said.len() >= prefix.len() && said.slice(from: 0, to: prefix.len()) == prefix
-
 test "a head the lexer joined across a line break is quoted as it stands on one line"
     # Found `:`, the first token past the quoted head, since lane X3 left a
     # mid-line `:` to its head's own report (the batch of lanes X3 and X4,
     # 2026-09-29); it said found `i64` before. The quote is what this holds.
     after = "expected the end of the line after `record x`, found `:`"
-    assert opens_with(said: junk_said("record\n    x: i64\n    y: i64\n"), prefix: after)
+    assert bytes.bytes_at(text: junk_said("record\n    x: i64\n    y: i64\n"), at: 0, needle: after)
 
     # A comment before the break, and a CRLF file: neither reaches the quote.
-    assert opens_with(said: junk_said("record  # a point\n    x: i64\n    y: i64\n"), prefix: after)
-    assert opens_with(said: junk_said("record\r\n    x: i64\r\n    y: i64\r\n"), prefix: after)
+    assert bytes.bytes_at(text: junk_said("record  # a point\n    x: i64\n    y: i64\n"), at: 0, needle: after)
+    assert bytes.bytes_at(text: junk_said("record\r\n    x: i64\r\n    y: i64\r\n"), at: 0, needle: after)
 
     # On one line the text's own spelling stands, two spaces and all.
-    assert opens_with(
-        said: junk_said("record  Point )\n    x: i64\n"),
-        prefix: "expected the end of the line after `record  Point`, found `)`"
+    assert bytes.bytes_at(
+        text: junk_said("record  Point )\n    x: i64\n"),
+        at: 0,
+        needle: "expected the end of the line after `record  Point`, found `)`"
     )

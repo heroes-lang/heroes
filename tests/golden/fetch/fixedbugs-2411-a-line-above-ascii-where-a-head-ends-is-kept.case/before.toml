@@ -1,0 +1,11 @@
+#12345678901234567é
+# Defect 2411, 2026-11-10: the line above, and the comment in the entry,
+# each hold a two-byte character where `[dependencies.json]` or `version`
+# ends, and `heroes add` cut them there and stopped at exit 134; each is
+# asked of its bytes now, and kept as written.
+index = "file://../../../../../tests/golden/fetch/fixedbugs-2411-a-line-above-ascii-where-a-head-ends-is-kept.case/idx"
+
+[dependencies.json]
+#12345é
+version = "1.4.1"
+sum = "sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

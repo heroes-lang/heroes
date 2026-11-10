@@ -1,0 +1,15 @@
+# fixedbugs, defect 2409's shape, 2026-11-10: a field whose header type is a
+# typedef named `unioné` stopped `heroes build` at exit 134, *string slice
+# splits a character*, in `emit/ffi_nested.hero`'s `kind_of`, which cut the
+# type text at `union `'s length to ask whether it names a union. It is asked
+# of the bytes now (`cli/strings.starts_with`), and the field is told the
+# header's type, its width and the type that builds, at exit 1.
+
+extern "fixedbugs-2409-a-field-of-a-type-whose-name-opens-with-union-is-told.h"
+    record Holder tag holder
+        kind: i32
+        c: i32  #~ ffi_field_type
+
+function main()
+    h = Holder(kind: 2, c: 3)
+    print(h.kind)

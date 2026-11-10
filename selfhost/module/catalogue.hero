@@ -31,6 +31,7 @@
 # 2026-11-08). What only the repository answers, a path outside it or
 # through a link, is the verb's alone: the build reads no repository.
 
+use bytes
 use fetch/address
 use fetch/address_form
 use module/sums
@@ -262,10 +263,16 @@ function field(@c: Catalogue, key: str, value: str) -> str
     c.entries[last] @ e
     return ""
 
+# A table row read: its head asked of the row's bytes from `at`, never cut at
+# the head's length (defect 2410), since a row is the author's and may hold
+# any character, and `[dependencieXé]` put that cut inside `é`, which stopped
+# `check` with *string slice splits a character* where the catalogue's own
+# message was owed. Every later cut stands beside an ASCII byte: the head's
+# `.`, a `]`, or the row's end.
 function table(@c: Catalogue, row: str, at: i64) -> str
     head = "[dependencies."
 
-    if row.len() < at + head.len() || row.slice(from: at, to: at + head.len()) != head
+    if !bytes.bytes_at(text: row, at: at, needle: head)
         return "a table is `[dependencies.<name>]`, one per entry, found `" + row + "`; the catalogue holds the program's dependencies and nothing else"
     start = at + head.len()
     close: i64 @= start

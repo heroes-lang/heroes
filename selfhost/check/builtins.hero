@@ -21,6 +21,7 @@
 # the answer, the silent error id included.
 
 use ast
+use bytes
 use check/lend_types
 use check/nested
 use check/ordering
@@ -145,7 +146,7 @@ function conversion_call(@c: state.Checker, s: source.Source, decls: [ast.Decl],
 
 # The width `to_<name>` converts to, when the suffix names one.
 function int_width_of(name: str) -> widths.IntKind?
-    if name.len() <= 3 || name.slice(from: 0, to: 3) != "to_"
+    if name.len() <= 3 || !bytes.bytes_at(text: name, at: 0, needle: "to_")
         return fail(code: "absent", msg: "not a conversion name")
     suffix = name.slice(from: 3, to: name.len())
 

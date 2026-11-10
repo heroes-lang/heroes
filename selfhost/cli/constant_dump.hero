@@ -49,6 +49,7 @@
 # declarations its value reads (`Read.refers`), which a fetched header's
 # route refuses.
 
+use bytes
 use cli/clang_tree
 use cli/deps
 use cli/digest
@@ -310,12 +311,15 @@ function errors(said: str, unit: str, first: i64, count: i64) -> [str]
 
     return out
 
-# Where `part` first stands in `text`, or -1.
+# Where `part` first stands in `text`, or -1, each offset asked of its bytes:
+# clang's line quotes the header, whose names may hold a character of more
+# than one byte, and a cut at every offset aborts inside it (defect 2409's
+# shape).
 function found_at(text: str, part: str) -> i64
     at: i64 @= 0
 
     while at + part.len() <= text.len()
-        if text.slice(from: at, to: at + part.len()) == part
+        if bytes.bytes_at(text: text, at: at, needle: part)
             return at
         at @ at + 1
 

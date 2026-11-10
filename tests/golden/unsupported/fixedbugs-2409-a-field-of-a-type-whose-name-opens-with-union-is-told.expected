@@ -1,0 +1,7 @@
+error[ffi_field_type]: `Holder.c` is `unioné` (`double`) in `fixedbugs-2409-a-field-of-a-type-whose-name-opens-with-union-is-told.h`, a 64-bit float, not `i32` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-2409-a-field-of-a-type-whose-name-opens-with-union-is-told.hero:11:9
+     |
+  11 |         c: i32  #~ ffi_field_type
+     |         ^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `c`, or name the header that spells `Holder` this way
+  fix (guess): declare `c` with `f64`

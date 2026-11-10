@@ -21,6 +21,7 @@
 # else told about the function stays.
 
 use ast
+use bytes
 use diag
 use parse
 use source
@@ -116,7 +117,7 @@ function parameter_named(message: str) -> str?
     while at < message.len() && message[at] != '`'
         at @ at + 1
 
-    if at + 4 >= message.len() || message.slice(from: at + 1, to: at + 5) != " of "
+    if at + 4 >= message.len() || !bytes.bytes_at(text: message, at: at + 1, needle: " of ")
         return fail(code: "none", msg: "no parameter named")
     return ok(message.slice(from: 1, to: at))
 

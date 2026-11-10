@@ -29,6 +29,7 @@
 # on group records (2026-10-14), and a new accepted form is its to rule.
 
 use ast
+use cli/strings
 use diag
 use emit/extern_field
 use emit/ffi_asked
@@ -185,15 +186,18 @@ function unnamed_field(header: str, owner: str, member: str, kind: str, declared
     return d
 
 # Whether a type as clang spells it is a union or a struct with no name of its
-# own: its first word, and clang naming it by where it stands.
+# own: its first word, and clang naming it by where it stands. **Asked of the
+# bytes, never cut** (defect 2409): clang spells the header's own names, and
+# `struct café` put an end the search added inside `é`, which stopped `build`
+# with *string slice splits a character* where the author was owed the field.
 function unnamed(spelled: str) -> bool
     kind = kind_of(spelled)
-    return (kind == "union" || kind == "struct") && has(text: spelled, needle: " at ")
+    return (kind == "union" || kind == "struct") && strings.holds(text: spelled, needle: " at ")
 
 # `union` or `struct`, a type text's first word, or the whole text.
 function kind_of(type_text: str) -> str
     for word in ["union", "struct"]
-        if type_text.len() > word.len() && type_text.slice(from: 0, to: word.len() + 1) == word + " "
+        if strings.starts_with(text: type_text, prefix: word + " ")
             return word
 
     return type_text
@@ -215,7 +219,7 @@ function reached(header: str, c_type: str, path: str, member: str, field_type: s
 # A C type's name without its `struct ` or `union `.
 function bare(c_type: str) -> str
     for word in ["struct ", "union "]
-        if c_type.len() > word.len() && c_type.slice(from: 0, to: word.len()) == word
+        if c_type.len() > word.len() && strings.starts_with(text: c_type, prefix: word)
             return c_type.slice(from: word.len(), to: c_type.len())
 
     return c_type
@@ -240,16 +244,6 @@ function listed(names: [str]) -> str
     if quoted.len() == 1
         return quoted[0]
     return quoted.slice(from: 0, to: quoted.len() - 1).join(", ") + " and " + quoted[quoted.len() - 1]
-
-function has(text: str, needle: str) -> bool
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
 
 ## Tests
 

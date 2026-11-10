@@ -136,7 +136,7 @@ function hex13(mantissa: i64) -> str
 function without_trailing_zeros(digits: str) -> str
     last: i64 @= digits.len()
 
-    while last > 0 && digits.slice(from: last - 1, to: last) == "0"
+    while last > 0 && digits[last - 1] == '0'
         last @ last - 1
 
     return digits.slice(from: 0, to: last)

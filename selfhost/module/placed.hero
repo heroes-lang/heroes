@@ -18,7 +18,9 @@ function is_package(module: str) -> bool
     return module.len() > 0 && module[0] == '<'
 
 # `<json>/` for a module of the package `json`; "" for the program's own, and
-# for a name whose mark never closes, which no reader hands here.
+# for a name whose mark never closes or is not followed by `/`, which no
+# reader hands here. The byte after the mark is asked before the cut that
+# keeps it (defect 2410's shape), so the cut stands beside an ASCII `/`.
 function package_of(module: str) -> str
     if !is_package(module)
         return ""
@@ -27,7 +29,7 @@ function package_of(module: str) -> str
     while at < module.len() && module[at] != '>'
         at @ at + 1
 
-    if at + 1 >= module.len()
+    if at + 1 >= module.len() || module[at + 1] != '/'
         return ""
     return module.slice(from: 0, to: at + 2)
 

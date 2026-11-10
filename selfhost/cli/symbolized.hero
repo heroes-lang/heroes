@@ -25,6 +25,7 @@
 # `test`, gets what its environment says.
 
 use cli/process
+use cli/strings
 
 # `runtime/hero_compiler.h`: this process's environment, which the program it
 # starts inherits.
@@ -56,25 +57,15 @@ function prepare(sanitize: bool)
         _ = hero_env_put(name: OPTIONS.cstr(), value: wanted.cstr())
 
 # `current` with no external symbolizer, unless it already names one; ASan's
-# options are `name=value` words joined by `:`.
+# options are `name=value` words joined by `:`, asked of the bytes, since the
+# variable is the user's and may hold any character (defect 2409's shape).
 function options_with(current: str) -> str
-    if holds(text: current, needle: SYMBOLIZER_WORD)
+    if strings.holds(text: current, needle: SYMBOLIZER_WORD)
         return current
 
     if current.len() == 0
         return SYMBOLIZER_WORD + "="
     return current + ":" + SYMBOLIZER_WORD + "="
-
-# Whether `needle` stands in `text`, byte for byte.
-function holds(text: str, needle: str) -> bool
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
 
 test "the options keep a symbolizer the user named, and otherwise name none (defect 509)"
     assert options_with("") == "external_symbolizer_path="

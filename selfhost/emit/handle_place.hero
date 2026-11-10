@@ -45,6 +45,7 @@
 use ast
 use check/state
 use check/table
+use cli/strings
 use emit/aggregate
 use emit/mangle
 use ir
@@ -144,7 +145,7 @@ function overlaps(one: str, other: str) -> bool
     return one == other || inside(inner: one, outer: other) || inside(inner: other, outer: one)
 
 function inside(inner: str, outer: str) -> bool
-    if inner.len() <= outer.len() || inner.slice(from: 0, to: outer.len()) != outer
+    if inner.len() <= outer.len() || !strings.starts_with(text: inner, prefix: outer)
         return false
     next = inner[outer.len()]
     return next == 46 || next == 91

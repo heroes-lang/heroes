@@ -78,7 +78,7 @@ function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: st
     # never of a name that merely begins so; the fix is a `guess`, since the
     # header may as well write a type wider than a byte. A round that asked
     # the header says its type instead (`ffi_field_told.offered`).
-    if declared == "u8" || declared.len() > 2 && declared.slice(from: 0, to: 3) == "u8["
+    if declared == "u8" || declared.len() > 2 && declared[0] == 'u' && declared[1] == '8' && declared[2] == '['
         d.notes @ d.notes.push(ffi_field_told.SIGNED_CHAR)
         d.fixes @ d.fixes.push(
             diag.Fix(title: "declare `" + member + "` with `i8`", replacement: "i8", span: token.Span(start: written.start, end: written.start + 2), certainty: .guess)

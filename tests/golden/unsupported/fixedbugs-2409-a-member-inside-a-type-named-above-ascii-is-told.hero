@@ -1,0 +1,15 @@
+# fixedbugs, defect 2409's shape, 2026-11-10: a field the header has only
+# inside a member whose type is named `unioné` stopped `heroes build` at exit
+# 134, *string slice splits a character*, in `cli/member_ask.hero`'s
+# `kind_of`, which cut the member's type text at `union `'s length. It is
+# asked of the bytes now (`cli/strings.starts_with`), and the field is told
+# where the header has it, with what builds, at exit 1.
+
+extern "fixedbugs-2409-a-member-inside-a-type-named-above-ascii-is-told.h"
+    record Tagged tag tagged
+        kind: i32
+        fd: i32  #~ ffi_unknown_field
+
+function main()
+    t = Tagged(kind: 2, fd: 3)
+    print(t.kind)

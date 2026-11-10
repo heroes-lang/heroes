@@ -16,6 +16,7 @@
 # is a guess, as every offer of a type is: the header may be the wrong one.
 
 use ast
+use cli/strings
 use diag
 use emit/c_spellings
 use emit/ffi_asked
@@ -70,8 +71,10 @@ function declaring(s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, 
         return ok(c_spellings.Spelling(heroes: "bool", caveat: none))
     c_type = typed.canonical
 
-    # A pointer to a function or to an array, before an array's brackets.
-    if has(text: c_type, needle: "(*)")
+    # A pointer to a function or to an array, before an array's brackets,
+    # asked of the bytes: the header's `struct café` is no text to cut at
+    # every offset (defect 2409).
+    if strings.holds(text: c_type, needle: "(*)")
         return ok(c_spellings.Spelling(heroes: "ptr", caveat: none))
     open = last_bracket(c_type)
 
@@ -157,16 +160,6 @@ function caveat(typed: ffi_asked.Typed, word_bits: i64) -> str?
     return ok(
         "`" + typed.spelled + "` names no width of its own, as an enumeration's is each platform's choice: this is its width and sign on this machine, and a field is declared at the header's own on every platform the program builds for"
     )
-
-function has(text: str, needle: str) -> bool
-    at: i64 @= 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
 
 # Where `[` last opens in `text`, -1 where it never does.
 function last_bracket(text: str) -> i64

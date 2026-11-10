@@ -25,6 +25,7 @@
 # The text is read here only for the places of its tables and keys: whether
 # it reads at all is the reader's, which `add` asked first.
 
+use cli/strings
 use module/catalogue
 
 # `text`, the catalogue as it stands ("" where there is none), with `entries`
@@ -191,10 +192,16 @@ function table_at(lines: [str], name: str) -> i64
 
     return -1
 
+# Whether `line` opens the table of `name` with something after it, a space,
+# a comment or a return. The head is asked of the line's bytes (defect 2411):
+# a line is the author's, any character, and `#12345678901234567é` put a cut
+# at `[dependencies.core]`'s nineteen bytes inside `é`, which stopped `heroes
+# add` at exit 134 after it had placed the tree. `key_line` below asks a key
+# the same way.
 function starts_table(line: str, name: str) -> bool
     head = "[dependencies." + name + "]"
     rest = trimmed_start(line)
-    return rest.len() > head.len() && rest.slice(from: 0, to: head.len()) == head && (rest[head.len()] == ' ' || rest[head.len()] == '#' || rest[head.len()] == '\r')
+    return rest.len() > head.len() && strings.starts_with(text: rest, prefix: head) && (rest[head.len()] == ' ' || rest[head.len()] == '#' || rest[head.len()] == '\r')
 
 # Where the table opening at `head` ends: the next table, or the text's end.
 function table_end(lines: [str], head: i64) -> i64
@@ -216,7 +223,7 @@ function key_line(lines: [str], from: i64, to: i64, key: str) -> i64
     for at in range(from: from, to: to)
         rest = trimmed_start(lines[at])
 
-        if rest.len() > key.len() && rest.slice(from: 0, to: key.len()) == key && (rest[key.len()] == ' ' || rest[key.len()] == '=')
+        if rest.len() > key.len() && strings.starts_with(text: rest, prefix: key) && (rest[key.len()] == ' ' || rest[key.len()] == '=')
             return at
 
     return -1
@@ -307,3 +314,13 @@ test "a catalogue whose lines end with a return keeps them, every line it adds e
     assert after == "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.5.0\"  # pinned\r\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\r\n\r\n[dependencies.core]\r\nversion = \"0.1.0\"\r\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\r\n"
     assert catalogue.parsed(file: "h", text: after).problem == ""
     assert place_of(text: after, name: "json", key: "sum") == 5
+
+# A line the author wrote with a character above ASCII where the head or the
+# key ends is no table and no key, asked of its bytes; cut at the head's
+# length, `é` and `€` were split and the edit aborted (defect 2411).
+test "a line holding a character above ASCII where a head ends is read by its bytes"
+    assert !starts_table(line: "#12345678901234567é", name: "core")
+    assert !starts_table(line: "[dependencies.jso€x", name: "json")
+    assert starts_table(line: "[dependencies.json] # é", name: "json")
+    assert key_line(lines: ["versio€ = \"1.4.2\""], from: 0, to: 1, key: "version") == -1
+    assert key_line(lines: ["version = \"1.4.2\"  # é"], from: 0, to: 1, key: "version") == 0

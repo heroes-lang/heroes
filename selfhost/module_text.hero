@@ -211,10 +211,14 @@ function quoted(inner: str) -> Quoted
         )
     path: str @= inner
 
-    if path.len() > 2 && path.slice(from: 0, to: 2) == "./"
+    # The quotes' text is asked of its bytes at either end and cut only after
+    # a match (defect 2410's shape): it is the author's, any character, and
+    # `use "aéb"` put a cut at two bytes inside `é`, which stopped `check`
+    # with *string slice splits a character* where this message was owed.
+    if path.len() > 2 && bytes.bytes_at(text: path, at: 0, needle: "./")
         path @ path.slice(from: 2, to: path.len())
 
-    if path.len() > 5 && path.slice(from: path.len() - 5, to: path.len()) == ".hero"
+    if path.len() > 5 && bytes.bytes_at(text: path, at: path.len() - 5, needle: ".hero")
         path @ path.slice(from: 0, to: path.len() - 5)
 
     if is_marked_path(path)
@@ -280,7 +284,7 @@ function has_slash(s: str) -> bool
     return false
 
 function climbs(s: str) -> bool
-    return s == ".." || s.len() >= 3 && s.slice(from: 0, to: 3) == "../" || !bytes.locate(text: s, needle: "/../", from: 0).is_err()
+    return s == ".." || bytes.bytes_at(text: s, at: 0, needle: "../") || !bytes.locate(text: s, needle: "/../", from: 0).is_err()
 
 # Rust writes `quoted.trim_matches('"')`; the port says it in five lines, which
 # is the same shape the lexer's own scanners use — the delimiters are known to
