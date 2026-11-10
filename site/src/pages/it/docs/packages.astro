@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { page } from '../../../lib/figures.ts';
+import content from '../../../html/it/docs/packages.html?raw';
+---
+<BaseLayout url="/it/docs/packages/" title={"I pacchetti: documentazione di Heroes"} description={"Scarica un pacchetto con heroes add, chiamalo tra parentesi angolari e scopri come catalogo, impronta e cartelle internal tengono onesta ogni build."} current="docs">
+<Fragment set:html={page(content, 'site/src/html/it/docs/packages.html')} />
+</BaseLayout>
