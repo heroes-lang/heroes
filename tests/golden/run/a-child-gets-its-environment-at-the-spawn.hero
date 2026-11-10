@@ -1,0 +1,98 @@
+# Feature 2424, 2026-11-10 (panel 242's R6, ratified that day): a child's
+# environment is given at the spawn, `hero_run_env` in `runtime/hero_os.h`,
+# and the program that stages it never writes its own. The program is its
+# own child twice over. With no argument it gives `HEROES_SPAWN_HELD` to a
+# middle run of itself, which then holds it. The middle starts a third run
+# with nothing staged, which inherits exactly what the middle holds; then one
+# with six variables staged: the held one given another value, a plain one,
+# an empty one (set, never removed), one whose value holds `=`, one above
+# ASCII, and one staged twice, which takes its later value; then one more
+# after `hero_run_reset`, which gave a staged variable back. Between them the
+# middle says what it holds of its own, which no staging moved, and the first
+# run says the same at the end. The Windows arm is the `CreateProcessW` block
+# of `runtime/parts/run.c`, unrun on the box the day it was written and
+# judged by the CI's Windows leg.
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_env(name: str, value: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_NOT_FOUND: i64
+
+constant NAMES: [str]
+    [
+        "HEROES_SPAWN_HELD"
+        "HEROES_SPAWN_PLAIN"
+        "HEROES_SPAWN_EMPTY"
+        "HEROES_SPAWN_EQUALS"
+        "HEROES_SPAWN_TEXT"
+        "HEROES_SPAWN_TWICE"
+    ]
+
+function itself() -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+# What this process holds of `name`: its value between brackets, or `unset`.
+function held(name: str) -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    value = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_FOUND
+        return "unset"
+    return "[" + value + "]"
+
+# This program run again with `word`, given the variables staged so far; the
+# launch given back after it.
+function again(word: str) -> i64
+    program = itself()
+    hero_run_arg(word: program)
+    hero_run_arg(word: word)
+    hero_run_limit(seconds: 60)
+    status: i64 @= 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    return code
+
+function show()
+    for name in NAMES
+        print("  " + name + " " + held(name))
+
+function middle()
+    print("nothing staged:")
+    print("child exit ", again("show"))
+    hero_run_env(name: "HEROES_SPAWN_HELD", value: "child")
+    hero_run_env(name: "HEROES_SPAWN_PLAIN", value: "plain")
+    hero_run_env(name: "HEROES_SPAWN_EMPTY", value: "")
+    hero_run_env(name: "HEROES_SPAWN_EQUALS", value: "a=b=c")
+    hero_run_env(name: "HEROES_SPAWN_TEXT", value: "café ∂ 日本 😀")
+    hero_run_env(name: "HEROES_SPAWN_TWICE", value: "first")
+    hero_run_env(name: "HEROES_SPAWN_TWICE", value: "second")
+    print("six staged, one of them twice:")
+    print("child exit ", again("show"))
+    print(
+        "the middle's own: HEROES_SPAWN_HELD " + held("HEROES_SPAWN_HELD") + ", HEROES_SPAWN_PLAIN " + held("HEROES_SPAWN_PLAIN")
+    )
+    hero_run_env(name: "HEROES_SPAWN_PLAIN", value: "given back")
+    hero_run_reset()
+    print("one staged, then reset:")
+    print("child exit ", again("show"))
+
+function main()
+    if args().len() > 0 && args()[0] == "show"
+        show()
+        return
+
+    if args().len() > 0 && args()[0] == "middle"
+        middle()
+        return
+    print("the first run's own: HEROES_SPAWN_HELD " + held("HEROES_SPAWN_HELD"))
+    hero_run_reset()
+    hero_run_env(name: "HEROES_SPAWN_HELD", value: "parent")
+    print("middle exit ", again("middle"))
+    print("the first run's own, after: HEROES_SPAWN_HELD " + held("HEROES_SPAWN_HELD"))

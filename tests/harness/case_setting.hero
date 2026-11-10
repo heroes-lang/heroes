@@ -4,9 +4,9 @@
 # way to a source, a variable clang reads. Three files beside `main.hero`, any
 # of them:
 #
-#     environment    `NAME=VALUE` a line, set for the case's run alone and put
-#                    back after it, `<root>` in a value standing for the
-#                    repository's root as git answers it
+#     environment    `NAME=VALUE` a line, given to the case's run alone and
+#                    never to this process, `<root>` in a value standing for
+#                    the repository's root as git answers it
 #     links          `<name> <target>` a line, a symbolic link made in the
 #                    case before its run, holding `<target>` as written
 #     directory      one line, a folder of the case: its run starts there,
@@ -25,14 +25,19 @@
 # **Which variables, a fact about each**: `PATH` and `GIT_CEILING_DIRECTORIES`,
 # the two whose empty value reads as unset to what a case's compiler runs (an
 # empty ceiling list is none to git, and `PATH` is set in every run of this
-# harness), so a variable this run had unset is put back empty. **And the
-# three clang reads into every compile** (`CLANG_READS`, panel 237's R2,
-# defect 2344): their empty value is no unset, Apple clang searching `.` for
-# an empty `CPATH`, and the runtime has no unset, so they are never set in
-# this harness's own process, where every later case's clang would read them:
-# the case's compiler is started through `/usr/bin/env` with them, and the
-# case is skipped by name where that is not the machine's, Windows. Any other
-# name is refused with the case's name, never set.
+# harness). Since feature 2424 (panel 242's R6) they are given to the case's
+# run at its start (`shell.run_given`), and this process's environment is
+# never written; until then they were set here and put back after the run,
+# empty where this run had them unset, since the runtime had no unset, and
+# that is why only a variable whose empty value reads as unset was admitted.
+# The case's compiler is found through this process's `PATH`, never the
+# case's, which is its run's alone. **And the three clang reads into every
+# compile** (`CLANG_READS`, panel 237's R2, defect 2344): their empty value is
+# no unset, Apple clang searching `.` for an empty `CPATH`, so they were never
+# set in this harness's own process, where every later case's clang would
+# read them: the case's compiler is started through `/usr/bin/env` with them,
+# and the case is skipped by name where that is not the machine's, Windows.
+# Any other name is refused with the case's name, never given.
 #
 # **A case with a `directory` runs from a copy of its folder**, as one with
 # links does, since the compiler writes its cache under the folder it runs in:
@@ -44,11 +49,7 @@ use apply_tree
 use shell
 use strings
 
-extern "hero_compiler.h"
-    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
-
-# The variables a case's `environment` may set in this process, put back
-# after its run.
+# The variables a case's `environment` may give its run.
 constant SETTABLE: [str]
     ["PATH", "GIT_CEILING_DIRECTORIES"]
 
@@ -175,8 +176,8 @@ function repository_root(scratch: str) -> str?
 
 # The run of `words` for the case in `dir` as `s` asks it, what it printed
 # written back as the case's own: in a copy holding its links or starting in
-# its folder, with its variables set and put back, those clang reads given to
-# its compiler alone.
+# its folder, its variables given to its run alone, those clang reads to its
+# compiler through `/usr/bin/env`.
 function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, root: str) -> shell.Run?
     at: str @= dir
     line: [str] @= words
@@ -201,7 +202,7 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
     if started_by_env(s)
         line @ env_line(line, s: s, at: whole(root: root, path: at), root: root)
         started @ ENV
-    before: [str] @= []
+    given: [shell.Variable] @= []
 
     for pair in s.environment
         cut = strings.index_of(text: pair, needle: "=").must()
@@ -210,20 +211,11 @@ function ran(scratch: str, program: str, words: [str], dir: str, s: Setting, roo
         # A variable clang reads went to the compiler's line alone.
         if reads(name)
             continue
-        before @ before.push(name + "=" + shell.env(name).default(""))
-        _ = hero_env_put(
-            name: name.cstr(),
-            value: swapped(text: pair.slice(from: cut + 1, to: pair.len()), old: "<root>", new: root).cstr()
+        given @ given.push(
+            shell.Variable(name: name, value: swapped(text: pair.slice(from: cut + 1, to: pair.len()), old: "<root>", new: root))
         )
 
-    said = shell.run(scratch: scratch, program: started, words: line)
-
-    for pair in before
-        cut = strings.index_of(text: pair, needle: "=").must()
-        _ = hero_env_put(
-            name: pair.slice(from: 0, to: cut).cstr(),
-            value: pair.slice(from: cut + 1, to: pair.len()).cstr()
-        )
+    said = shell.run_given(scratch: scratch, program: started, words: line, given: given)
 
     if at != dir
         _ = shell.remove_tree(at).is_err()

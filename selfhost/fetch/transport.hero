@@ -24,14 +24,17 @@
 # `http.lowSpeedTime=60`, curl's stall bound in git's words;
 # `transfer.fsckObjects=true`, so an object git would refuse to hold, a tree
 # naming `..` or `.git` among them, is refused as it arrives. And
-# `GIT_TERMINAL_PROMPT=0` with
-# `GCM_INTERACTIVE=never` in this process's environment, which git inherits:
-# a source asking for a password fails at once instead of waiting for one.
+# `GIT_TERMINAL_PROMPT=0` with `GCM_INTERACTIVE=never` given to git at its
+# start (panel 242's R6), so a source asking for a password fails at once
+# instead of waiting for one; each only where the user's environment does not
+# hold it, since a value the user set is theirs (`unprompted`), and this
+# process's own environment is never written.
 #
 # **A missing program is told by name, exit 2** (R10's note for row 83): a
 # `heroes` that cannot start `git` says `git` and what it is needed for. Every
 # failure's code is `fetch/told.hero`'s, which gives its exit.
 
+use cli/environment
 use cli/files
 use cli/process
 use cli/read_back
@@ -40,11 +43,6 @@ use fetch/address
 use fetch/git_words
 use fetch/made_repo
 use fetch/told
-
-# `runtime/hero_compiler.h`: this process's environment, which every program
-# it starts inherits.
-extern "hero_compiler.h"
-    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
 
 # The programs this file runs, by name: `git` and `curl` as the PATH finds
 # them, or a test's own names where it asks what a missing one is told.
@@ -157,14 +155,13 @@ function settings(tools: Tools) -> [str]
 # has no network to fail, and `git_failed` for the staging folder's own
 # repository, where a failure is git's or the machine's.
 function git_ran(tools: Tools, words: [str], out: str, scratch: str, failed_as: str) -> ()?
-    _ = hero_env_put(name: "GIT_TERMINAL_PROMPT".cstr(), value: "0".cstr())
-    _ = hero_env_put(name: "GCM_INTERACTIVE".cstr(), value: "never".cstr())
     said_path = scratch + "/git-said.txt"
-    ran = process.run(
+    ran = process.run_given(
         program: tools.git,
         words: strings.with_all(list: settings(tools), more: words),
         out: out,
-        err: said_path
+        err: said_path,
+        given: unprompted()
     )
 
     if !ran.started
@@ -177,6 +174,16 @@ function git_ran(tools: Tools, words: [str], out: str, scratch: str, failed_as: 
         return ok()
     git_said = strings.trimmed(read_back.words(said_path).default(""))
     return fail(code: failed_as, msg: "`git " + verb_of(words) + "` exited " + ran.code.to_str() + ": " + git_said)
+
+# What git is given so that it asks nothing of a person, git's own prompt
+# and Git Credential Manager's (panel 242's R6, its third choice): each only
+# where the user's environment does not hold it, empty included, so a
+# `GIT_TERMINAL_PROMPT=1` the user set keeps git asking (Go's correction in
+# its issue 12706, as panel 242's historian read it).
+function unprompted() -> [process.Variable]
+    return environment.unless_set(
+        [process.Variable(name: "GIT_TERMINAL_PROMPT", value: "0"), process.Variable(name: "GCM_INTERACTIVE", value: "never")]
+    )
 
 # The command a run of git's `words` names: the first word after git's own
 # options, `-C <folder>` and `--git-dir=<folder>`.
@@ -199,7 +206,7 @@ function verb_of(words: [str]) -> str
 # would answer for that one.
 function root_of(tools: Tools, folder: str, scratch: str) -> address.Root?
     for name in ["GIT_DIR", "GIT_WORK_TREE"]
-        if process.env(name).default("x").len() > 0
+        if environment.env(name).default("x").len() > 0
             return fail(
                 code: "git_environment",
                 msg: "`" + name + "` is set, so git would answer for the repository it names rather than for the program's folder: run `heroes` without it"
@@ -442,3 +449,13 @@ test "a file address outside the program's repository, or through a link below i
             .ok _  => assert false
             .err e => assert e.msg == "`file://../linked/a.txt` reaches its folder through the link `" + root.top + "/linked`, and a `file://` source is read through no link, which could name a place outside the program's repository"
     assert !process.remove_tree(SCRATCH).is_err()
+
+test "git is given its two quiet words, each only where the user's environment does not hold it (feature 2424)"
+    wanted: [process.Variable] @= []
+
+    if !environment.is_set("GIT_TERMINAL_PROMPT")
+        wanted @ wanted.push(process.Variable(name: "GIT_TERMINAL_PROMPT", value: "0"))
+
+    if !environment.is_set("GCM_INTERACTIVE")
+        wanted @ wanted.push(process.Variable(name: "GCM_INTERACTIVE", value: "never"))
+    assert unprompted() == wanted

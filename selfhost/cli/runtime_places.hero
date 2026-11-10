@@ -10,6 +10,7 @@
 # told (defect 276). And whether the runtime found is the one this compiler is
 # built for, asked of its header before any unit is written (defect 2259).
 
+use cli/environment
 use cli/process
 use emit/runtime_abi
 use module/reading
@@ -19,6 +20,38 @@ extern "hero_os.h"
     function hero_exe_path_shown(@status: i64, @marks: i64) -> str
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_TEXT: i64
+
+# Where the runtime is, when it is not ./runtime — the REAL environment
+# variable, the same channel the bootstrap reads and the same one
+# --help names.
+#
+# It used to read a one-line FILE called HEROES_RUNTIME, on the note
+# "the language has no getenv". That note was false: getenv is one
+# `extern "stdlib.h"` away, exactly like the `system` this compiler
+# already calls, and §1.11 says so — everything comes from C. What the
+# file spelling cost was a DIAGNOSTIC THAT LIED: `locate_toolchain`
+# says "set HEROES_RUNTIME=<dir>", which every reader takes for an
+# environment variable, and under the port that route did nothing
+# (panel 085 R8, measured both ways).
+#
+# A value that is not UTF-8 is a failure that names it (defect 243), never
+# the unset hint it was read as: the search then went on to `./runtime`
+# without a word, or told the author to set what was set.
+#
+# It stood in `main.hero` until 2026-10-26, which passed §11's 300 lines
+# when panel 230's R4 gave the compiler its own way out, and in
+# `toolchain.hero` until feature 2424, which the environment's own module
+# (`cli/environment.hero`) took one line past the same ceiling; the first of
+# the three places, beside the third.
+function runtime_hint() -> str?
+    hint = environment.env(name: "HEROES_RUNTIME")
+
+    if hint.is_err()
+        return fail(
+            code: "not_text",
+            msg: "`HEROES_RUNTIME` is set, and its value, `" + environment.env_written(name: "HEROES_RUNTIME") + "`, is not UTF-8, so this compiler cannot look in the directory it names"
+        )
+    return hint
 
 # Every directory above the running compiler, nearest first, each a place
 # for `runtime/`; or, where there are none, why: this machine gave no path,

@@ -1,0 +1,148 @@
+# This process's environment, read, and kept from the programs it starts
+# (design.md §1.11, §1.12; panel 242's R6, ratified 2026-11-10). Out of
+# `cli/process.hero` since feature 2424, when the second half arrived and
+# that module passed §11's ceiling: the process boundary runs programs and
+# touches files, and this is where a variable is read and where a program's
+# own are chosen (`unless_set`).
+#
+# **Read, never written.** No function here, and none in this compiler, writes
+# this process's environment: a program it starts is given its variables at
+# its start (`process.run_given`, the runtime's `hero_run_env`), so no later
+# program and no other thread's child sees them. Until feature 2424 the
+# compiler wrote its own (`hero_env_put`), and every program it started after
+# inherited the write. **And read as the shown read reads a file** (defect
+# 243): a value that is not UTF-8 is held and named, never read as unset.
+
+use cli/process
+use cli/strings
+
+extern "hero_os.h"
+    # `lent`, as every name handed to C here: read while it runs, kept never.
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+
+# One environment variable: "" where it is unset, its value where that is
+# UTF-8, and a failure naming the variable where it is set and not UTF-8,
+# which the caller tells, at its place. The failure does not quote the
+# value: a variable may hold a secret (the key `measure --refresh` reads),
+# and a variable that names a place is quoted by its caller through
+# `env_written`.
+#
+# **This killed the compiler until 2026-08-24**: `getenv` answers a pointer
+# to whatever bytes the environment holds, and `to_str` aborts on bytes that
+# are not UTF-8, so `HEROES_RUNTIME=$'\xff\xfe' heroes doctor` was exit 134
+# (panel 089). **And then it read such a value as unset** (defect 243), ""
+# for both: a `HEROES_RUNTIME` naming a real runtime was answered *looked in:
+# the given hint* and told to set what was set, and with a `./runtime` beside
+# the program the build went on against that one, no word said. The runtime
+# reads the value as the shown read reads a file (`hero_env_shown`), so a
+# value that is not text is held, and named.
+function env(name: str) -> str?
+    status: i64 @= 0
+    marks: i64 @= 0
+    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_FOUND
+        return ok("")
+
+    if status == HERO_OS_OK
+        return ok(got)
+    return fail(
+        code: "not_text",
+        msg: "`" + name + "` is set, and its value is not UTF-8, which a value this compiler reads must be"
+    )
+
+# `given` without each variable this process's environment already holds,
+# empty included: a value the user set is the user's (panel 242's R6, its
+# third choice: Go's module loader writes `GIT_TERMINAL_PROMPT` only where the
+# user has not, its issue 12706, as the sitting's historian read it).
+function unless_set(given: [process.Variable]) -> [process.Variable]
+    out: [process.Variable] @= []
+
+    for one in given
+        if !is_set(one.name)
+            out @ out.push(one)
+
+    return out
+
+# Whether `name` is set at all, empty included, which `env` answers as unset:
+# a `PKG_CONFIG_LIBDIR` set empty leaves `pkg-config` no default directory
+# (defect 292, `cli/pkgconfig_answer.hero`).
+function is_set(name: str) -> bool
+    status: i64 @= 0
+    marks: i64 @= 0
+    _ = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+    return status != HERO_OS_NOT_FOUND
+
+# A variable's value as a message may quote it, each byte that is not UTF-8
+# written by its value, `<0xE9>`; "" where it is unset. For a variable that
+# names a place, never for one that may hold a secret.
+function env_written(name: str) -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+    return process.written_value(answer: got, marks: marks)
+
+## Tests
+
+# Feature 2424: a program given variables holds every variable this process
+# holds, in its order, each given one taking its namesake's place and a name
+# given twice its later value, and this process's own environment is never
+# written. `/usr/bin/env` prints the environment it was started with, so the
+# listing with nothing given is this process's, and each listing after it is
+# that one with exactly the given lines changed. Windows has no such program,
+# and the runtime's arm there is the `run` cases' own
+# (`tests/golden/run/a-child-gets-its-environment-at-the-spawn.hero`).
+test "a program given variables holds this process's environment with exactly those changed (feature 2424)"
+    if process.exe_suffix() != ".exe"
+        out = "build/selftest-given.txt"
+        lister = "/usr/bin/env"
+        none = process.run_given(program: lister, words: [lister], out: out, err: process.discard(), given: [])
+        assert none.started && none.code == 0
+        before = read_file(out).must()
+        twice = [
+            process.Variable(name: "HEROES_GIVEN_ALONE", value: "a=b")
+            process.Variable(name: "HEROES_GIVEN_ALONE", value: "later")
+        ]
+        added = process.run_given(program: lister, words: [lister], out: out, err: process.discard(), given: twice)
+        assert added.started && added.code == 0
+        assert read_file(out).must() == before + "HEROES_GIVEN_ALONE=later\n"
+        assert !is_set("HEROES_GIVEN_ALONE")
+
+        # A variable this process holds, given another value: its line leaves
+        # the listing and the given one ends it, the program still found by the
+        # path it was named by.
+        kept: [str] @= []
+        from: i64 @= 0
+
+        for at in range(from: 0, to: before.len())
+            if before[at] == '\n'
+                line = before.slice(from: from, to: at + 1)
+
+                if !strings.starts_with(text: line, prefix: "PATH=")
+                    kept @ kept.push(line)
+                from @ at + 1
+
+        moved = process.run_given(
+            program: lister,
+            words: [lister],
+            out: out,
+            err: process.discard(),
+            given: [process.Variable(name: "PATH", value: "heroes-given-path")]
+        )
+        assert moved.started && moved.code == 0
+        assert read_file(out).must() == kept.join("") + "PATH=heroes-given-path\n"
+        assert env(name: "PATH").must() != "heroes-given-path"
+        assert !process.remove_file(out).is_err()
+
+test "a variable the user set is left as it is, and one unset is given (feature 2424)"
+    kept = unless_set(
+        [process.Variable(name: "PATH", value: "x"), process.Variable(name: "HEROES_NO_SUCH_VARIABLE_EXISTS", value: "y")]
+    )
+    assert kept == [process.Variable(name: "HEROES_NO_SUCH_VARIABLE_EXISTS", value: "y")]
+
+test "an unset variable is empty, and a set one is its value"
+    assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS").must() == ""
+    assert env_written(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""
+    assert env(name: "PATH").must().len() > 0

@@ -1,0 +1,11 @@
+# Feature 2424, 2026-11-10: a variable `hero_run_env` stages is held until
+# `hero_run_reset()` gives it back, as a word `hero_run_arg` stages is (defect
+# 573's case beside this one), so a program that stages one and never gives
+# it back is told so at exit, the call that gives it back named, and never as
+# a runtime call that kept what it borrowed.
+extern "hero_os.h"
+    function hero_run_env(name: str, value: str)
+
+function main()
+    hero_run_env(name: "HEROES_LEFT_STANDING", value: "staged")
+    print("staged")

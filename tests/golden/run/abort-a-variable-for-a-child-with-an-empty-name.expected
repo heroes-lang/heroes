@@ -1,0 +1,2 @@
+before
+!panic: a variable given to a child has an empty name

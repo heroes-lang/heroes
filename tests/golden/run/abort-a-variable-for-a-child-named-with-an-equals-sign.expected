@@ -1,0 +1,2 @@
+before
+!panic: a variable's name given to a child holds `=`, which ends a name in an environment

@@ -38,6 +38,9 @@ use strings
 extern "hero_os.h"
     function hero_run_reset()
     function hero_run_arg(word: str)
+    # One variable for the next child alone (panel 242's R6): this process's
+    # environment is never written, so no later case's child sees it.
+    function hero_run_env(name: str, value: str)
     function hero_run_limit(seconds: i64)
     function hero_run_limit_writes(bytes: i64) -> i64
     function hero_run_exe_suffix() -> str
@@ -147,13 +150,29 @@ record Run
 # Windows arm, where the inherited handle already had a probe around it.
 function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS, given: [])?,
         program: program
     )
 
 function run(scratch: str, program: str, words: [str]) -> Run?
+    return run_given(scratch: scratch, program: program, words: words, given: [])
+
+# A variable a child of this harness is given at its start, and no other
+# process (panel 242's R6, ratified 2026-11-10; `hero_run_env`): the child's
+# environment is this process's, each given variable taking its namesake's
+# place, a name given twice its later value. Until feature 2424 a suite wrote
+# this process's environment for it, so every later child of every suite
+# inherited the write, and a case's `PATH` had to be put back by hand after
+# its run, empty where it had been unset, since nothing could unset one.
+record Variable
+    name: str
+    value: str
+
+# `run`, the child given `given` as well. **The program is found through this
+# process's `PATH`**, never a `PATH` among `given`, which is the child's alone.
+function run_given(scratch: str, program: str, words: [str], given: [Variable]) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS, given: given)?,
         program: program
     )
 
@@ -165,7 +184,7 @@ function run(scratch: str, program: str, words: [str]) -> Run?
 # says so first and the caller runs nothing.
 function run_limited(scratch: str, program: str, words: [str], bytes: i64) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS, given: [])?,
         program: program
     )
 
@@ -207,7 +226,7 @@ function run_bounded(scratch: str, program: str, words: [str], seconds: i64, byt
         )
 
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [])?,
         program: program
     )
 
@@ -236,7 +255,7 @@ function run_self_bounded(scratch: str, program: str, words: [str], seconds: i64
         )
 
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds, given: [])?,
         program: program
     )
 
@@ -256,13 +275,18 @@ function can_limit_writes() -> bool
 # machine's answer has to say so at the call, which is where a reader of
 # the case will look for it.
 function attempted(scratch: str, program: str, words: [str]) -> Run?
+    return attempted_given(scratch: scratch, program: program, words: words, given: [])
+
+# `attempted`, the child given `given` as well, as `run_given` gives them.
+function attempted_given(scratch: str, program: str, words: [str], given: [Variable]) -> Run?
     return spawned(
         scratch: scratch,
         program: program,
         words: words,
         in_path: "",
         write_limit: 0,
-        seconds: WATCHDOG_SECONDS
+        seconds: WATCHDOG_SECONDS,
+        given: given
     )
 
 # Why a `run` came back with no program verdict, for a caller about to print
@@ -318,7 +342,7 @@ function insisted(ran: Run, program: str) -> Run?
         msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
     )
 
-function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64) -> Run?
+function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64, given: [Variable]) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
     # The two streams are files opened under it, so a missing directory makes
     # the child fail to start — and `started: false` then means "the program is
@@ -374,6 +398,9 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
 
     for word in words
         hero_run_arg(word: word)
+
+    for one in given
+        hero_run_env(name: one.name, value: one.value)
 
     status: i64 @= 0
     code = hero_run_go(

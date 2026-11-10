@@ -8,21 +8,26 @@
 # its own identity, signs nothing and runs no hook, whatever the user's
 # configuration says (`commit.gpgsign`, a global `core.hooksPath`), since a
 # case that fails on one machine's settings tests the machine. The dates are
-# fixed too, through the environment every git this process starts inherits,
-# so a commit's name is the same on every run.
+# fixed too, given to every git command here at its start (`DATED`, panel
+# 242's R6), so a commit's name is the same on every run, and this process's
+# environment, which the fetches under test run their own git beside, is
+# never written.
 
 use cli/process
 use cli/read_back
 use cli/strings
 
-# `runtime/hero_compiler.h`: this process's environment, which every program
-# it starts inherits.
-extern "hero_compiler.h"
-    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
-
 # The date every commit a test makes carries.
 constant DATE: str
     "2026-11-08T00:00:00Z"
+
+# What every git command here is given: the date as the author's and the
+# committer's, the second also a tag's.
+function dated() -> [process.Variable]
+    return [
+        process.Variable(name: "GIT_AUTHOR_DATE", value: DATE)
+        process.Variable(name: "GIT_COMMITTER_DATE", value: DATE)
+    ]
 
 # The settings every test's git command carries, before its own words.
 function settings(dir: str) -> [str]
@@ -49,11 +54,12 @@ function settings(dir: str) -> [str]
 # git run in `dir` with `words`, at exit 0 or the failure saying what it said.
 function git(dir: str, words: [str]) -> ()?
     said = dir + "-git-said.txt"
-    ran = process.run(
+    ran = process.run_given(
         program: "git",
         words: strings.with_all(list: settings(dir), more: words),
         out: process.discard(),
-        err: said
+        err: said,
+        given: dated()
     )
 
     if !ran.started || ran.code != 0
@@ -65,8 +71,6 @@ function git(dir: str, words: [str]) -> ()?
 
 # A new repository at `dir`, whatever stood there removed first.
 function made(dir: str) -> ()?
-    _ = hero_env_put(name: "GIT_AUTHOR_DATE".cstr(), value: DATE.cstr())
-    _ = hero_env_put(name: "GIT_COMMITTER_DATE".cstr(), value: DATE.cstr())
     process.remove_tree(dir)?
     process.mkdir_all(dir)?
     git(dir, words: ["init", "-q"])?
@@ -101,11 +105,12 @@ function tagged(dir: str, tag: str, annotated: bool) -> ()?
 # The commit `dir`'s HEAD names.
 function head(dir: str) -> str?
     out = dir + "-git-head.txt"
-    ran = process.run(
+    ran = process.run_given(
         program: "git",
         words: strings.with_all(list: settings(dir), more: ["rev-parse", "HEAD"]),
         out: out,
-        err: process.discard()
+        err: process.discard(),
+        given: dated()
     )
 
     if !ran.started || ran.code != 0
@@ -209,11 +214,12 @@ function hex_of(text: str) -> str
 # What git answers in `dir`, its line end taken off.
 function answered(dir: str, words: [str]) -> str?
     out = dir + "-git-answer.txt"
-    ran = process.run(
+    ran = process.run_given(
         program: "git",
         words: strings.with_all(list: settings(dir), more: words),
         out: out,
-        err: process.discard()
+        err: process.discard(),
+        given: dated()
     )
 
     if !ran.started || ran.code != 0
