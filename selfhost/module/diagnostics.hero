@@ -246,7 +246,7 @@ function out_of_reach(name: str, modules: [str], s: source.Source, from: str, sp
 
     if held.len() > 0
         d.notes @ d.notes.push(
-            "a module under an `internal` folder is named only by the module that folder belongs to and by the modules under it: name what its owner offers instead"
+            placed_use.PRIVATE_RULE + ": name what its owner offers instead"
         )
     return d
 
