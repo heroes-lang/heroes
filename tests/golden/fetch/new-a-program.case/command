@@ -1,0 +1,4 @@
+new hello -C <work>
+test <work>/hello/main.hero
+run <work>/hello/main.hero
+fmt <work>/hello/main.hero

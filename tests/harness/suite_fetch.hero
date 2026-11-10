@@ -12,6 +12,8 @@
 #     command        one `heroes` invocation a line, `<work>` standing for the
 #                    case's scratch folder, whose `app/` is the program's
 #     before.toml    the program's catalogue before the first command
+#     app/           the program's own files, copied into its folder: a
+#                    program reaching a package `heroes new` wrote
 #     local/         a folder copied beside the program, for `--path`
 #     git/<name>/    a git source's files, made a repository here and tagged
 #                    by the lines of `git/<name>.tags`
@@ -141,11 +143,15 @@ function one_case(@r: report.Report, scratch: str, compiler: str, dir: str, root
         report.keep_pass(@r)
     _ = shell.remove_tree(work).is_err()
 
-# The case's scratch folder: the program's folder, its catalogue, a `local/`
-# beside it, and each git source made a repository and tagged.
+# The case's scratch folder: the program's folder with its own files and its
+# catalogue, a `local/` beside it, and each git source made a repository and
+# tagged.
 function made_work(scratch: str, dir: str, work: str) -> ()?
     shell.remove_tree(work)?
     shell.mkdir_all(work + "/app")?
+
+    if shell.is_directory(dir + "/app")
+        copied(from: dir + "/app", to: work + "/app")?
     before = read_file(dir + "/before.toml")
 
     if !before.is_err()

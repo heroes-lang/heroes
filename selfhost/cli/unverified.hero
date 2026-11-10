@@ -49,7 +49,7 @@ function documented(inv: argv.Invocation) -> bool
 
     return match inv.tag
         .check_cmd => true
-        .lex_cmd | .parse_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd | .add_cmd | .fetch_cmd | .doctor_cmd | .mutate_cmd | .probe_cmd | .measure_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd => false
+        .lex_cmd | .parse_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd | .add_cmd | .fetch_cmd | .new_cmd | .doctor_cmd | .mutate_cmd | .probe_cmd | .measure_cmd | .grammar_cmd | .this_cmd | .version_cmd | .help_cmd => false
 
 ## Tests
 

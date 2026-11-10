@@ -1,0 +1,70 @@
+$ heroes new greet --package -C <work>
+exit 0
+stdout:
+wrote <work>/greet/greet.hero
+wrote <work>/greet/greet/internal/words.hero
+next: a program in a folder beside it reaches it by `heroes add --path ../greet` and `use <greet>/greet`; a build reads a `path` folder unverified, and a fetch of a published version may refuse what such a build accepts
+stderr:
+$ heroes test <work>/greet/greet.hero
+exit 0
+stdout:
+ok   "hello greets who it is given, an empty name included"
+ok   "a greeting opens with hello"
+2 tests, all passed
+stderr:
+$ heroes add --path ../greet -C <work>/app
+exit 0
+stdout:
+added greet ../greet
+wrote <work>/app/heroes.toml
+stderr:
+$ heroes run <work>/app/main.hero
+exit 0
+stdout:
+hello, ana
+stderr:
+note: the package `greet` is read from the folder `<work>/app/../greet/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+$ heroes test <work>/app/main.hero
+exit 0
+stdout:
+ok   "hello greets who it is given, an empty name included"
+ok   "a greeting opens with hello"
+2 tests, all passed
+stderr:
+note: the package `greet` is read from the folder `<work>/app/../greet/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+$ heroes fmt <work>/greet/greet.hero
+exit 0
+stdout:
+# The package `greet`, its face: a program reaches it by `use <greet>/greet`,
+# once `heroes add` has written its entry in the program's catalogue. This
+# module declares only what a program calls; what the package keeps to
+# itself stands under `greet/internal/`, which no module outside it names.
+
+use greet/internal/words
+
+# The greeting for `who`: the word a greeting opens with, then `who`.
+function hello(who: str) -> str
+    return words.opening() + ", " + who
+
+test "hello greets who it is given, an empty name included"
+    assert hello("ana") == "hello, ana"
+    assert hello("") == "hello, "
+stderr:
+$ heroes fmt <work>/greet/greet/internal/words.hero
+exit 0
+stdout:
+# The words a greeting is made of, private to the package `greet`: only
+# the package's own modules name this one.
+
+# The word a greeting opens with.
+function opening() -> str
+    return "hello"
+
+test "a greeting opens with hello"
+    assert opening() == "hello"
+stderr:
+heroes.toml:
+[dependencies.greet]
+path = "../greet"
+heroes.packages:
+(none)

@@ -1,0 +1,15 @@
+new
+new app -C <work>
+new local --package -C <work>
+new heroes.toml -C <work>/app
+new a/b -C <work>
+new . -C <work>
+new .. -C <work>
+new my app -C <work>
+new x -C <work>/nothere
+new x --bogus -C <work>
+new Greet --package -C <work>
+new my-lib --package -C <work>
+new match --package -C <work>
+new let --package -C <work>
+new internal --package -C <work>

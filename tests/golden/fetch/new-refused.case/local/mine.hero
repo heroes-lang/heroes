@@ -1,0 +1,5 @@
+# A folder beside the program, so that `heroes new local` finds one there.
+
+# A number.
+function mine() -> i64
+    return 4
