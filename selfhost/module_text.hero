@@ -174,12 +174,19 @@ function read_address(written: str) -> Address
     if module.len() > 0 && written.len() > module.len()
         address @ written.slice(from: 0, to: written.len() - module.len() - 1)
     entry: str @= address_entry(address)
+    path: str @= module
 
-    # No line a `use` cannot write is offered (defect 2432): a keyword or a
-    # refused word as the last part leaves the stand-in, `json`.
+    # No line a `use` cannot write is offered: an entry or a module part that
+    # is a keyword or a refused word, the rule the parser reads a path by,
+    # leaves the stand-in, `json` for the entry (defect 2432) and `parse` for
+    # the module (defect 2450: `github.com/acme/json/match` was offered
+    # `use <json>/match`, which the parser refuses at `match`).
     if !is_use_path(entry)
         entry @ ""
-    return Address(address: address, entry: entry, module: module)
+
+    if !is_use_path(path)
+        path @ ""
+    return Address(address: address, entry: entry, module: path)
 
 # What a `use` holding an address is told: where the address goes, and the
 # line that names it, which is a line this compiler reads (defect 2308's
