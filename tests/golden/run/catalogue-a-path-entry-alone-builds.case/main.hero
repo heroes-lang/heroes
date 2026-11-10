@@ -1,0 +1,15 @@
+# Panel 244's R1, spec § 1 as it landed on 2026-11-11: the catalogue names a
+# package "with its source, exact version and `sum`, or by a local `path`
+# alone, which nothing verifies". This entry names the `path` alone: the
+# program builds, is told on stderr that no fingerprint holds the folder, and
+# prints 2.
+#
+# It is the second case of the spec-warden's P2 (i), registered in
+# `docs/panel/244-reports/spec-warden.md` § 5 and scored at M-core-packages'
+# close: falsified if it flips while the sentence stands. Its twin, an entry
+# naming a `path` and a `version`, is refused, in
+# `tests/golden/check/catalogue-a-path-entry-holding-a-version-is-refused.case/`.
+use <mypkg>/lib
+
+function main()
+    print(lib.two().to_str())

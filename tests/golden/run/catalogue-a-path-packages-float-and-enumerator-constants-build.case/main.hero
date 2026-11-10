@@ -1,0 +1,16 @@
+# Panel 244's R1, spec § 13 as it landed on 2026-11-11: "A group's `constant`
+# has no body: the header holds the value, in a package named by `version` or
+# `git` never a float, a record or one read through an enumerator or object."
+# The package here is named by a `path`, so its units build as the program's
+# own and its header's float and enumerator are read: it prints 0.5 and 8.
+#
+# It is the spec-warden's P2 (iii), registered in
+# `docs/panel/244-reports/spec-warden.md` § 5 and scored at M-core-packages'
+# close: falsified if it flips while the sentence stands. Its twin, P2 (ii),
+# is the same two shapes in a fetched package, refused `ffi_constant_type`, in
+# `tests/golden/unsupported/fixedbugs-2351-a-fetched-constant-only-a-run-could-read-is-refused-never-run.case/`.
+use <pk>/pk
+
+function main()
+    print(pk.half())
+    print(pk.green())

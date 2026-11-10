@@ -1,0 +1,6 @@
+# The catalogue of the case beside it: one entry naming a local `path` and a
+# `version` with its `sum`, two sources for one package.
+[dependencies.mypkg]
+path = "vendor/mypkg"
+version = "1.0.0"
+sum = "sha256-0000000000000000000000000000000000000000000000000000000000000000"

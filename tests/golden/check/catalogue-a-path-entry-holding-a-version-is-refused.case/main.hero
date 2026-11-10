@@ -1,0 +1,15 @@
+# Panel 244's R1, spec § 1 as it landed on 2026-11-11: the catalogue names
+# each package "with its source, exact version and `sum`, or by a local `path`
+# alone, which nothing verifies". This entry names a `path` and a `version`
+# with its `sum`, two sources for one package, and the catalogue does not
+# read: no package is named, so the `use` that reaches through it is refused.
+#
+# It is the first case of the spec-warden's P2 (i), registered in
+# `docs/panel/244-reports/spec-warden.md` § 5 and scored at M-core-packages'
+# close: falsified if it flips while the sentence stands. Its twin, the entry
+# naming the `path` alone, builds, in
+# `tests/golden/run/catalogue-a-path-entry-alone-builds.case/`.
+use <mypkg>/lib  #~ catalogue_refused
+
+function main()
+    print(lib.two().to_str())

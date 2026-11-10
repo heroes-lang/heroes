@@ -1,0 +1,13 @@
+# The package `pk` of the case two folders up, read from its folder: a module
+# binding a float and an enumerator of the header it holds.
+extern "pk.h"
+    constant PK_HALF: f64
+    constant PK_GREEN: i64
+
+# The half.
+function half() -> f64
+    return PK_HALF
+
+# The colour after red.
+function green() -> i64
+    return PK_GREEN

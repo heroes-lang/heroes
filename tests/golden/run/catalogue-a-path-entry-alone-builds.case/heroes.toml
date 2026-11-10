@@ -1,0 +1,3 @@
+# The catalogue of the case beside it: one entry naming a local `path` alone.
+[dependencies.mypkg]
+path = "vendor/mypkg"

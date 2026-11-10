@@ -30,9 +30,12 @@ so a long expression, a condition included, breaks inside parentheses.
   directory of the file you compile, unless its first part is a name in angle
   brackets: `use <json>/parse` reaches the module `parse` of the package `json`,
   code others publish, which the program's catalogue `heroes.toml`, beside the
-  file you compile, names with its source, exact version and fingerprint.
+  file you compile, names with its source, exact version and `sum`, or by a
+  local `path` alone, which nothing verifies.
   `heroes add json` writes that entry; a program that uses no package has no
-  catalogue. Inside a package a `use` starts at the package's own root, and its
+  catalogue. A path with `internal` as a part after its first is named only by the
+  module the path before the last such part names and by the modules under it.
+  Inside a package a `use` starts at the package's own root, and its
   brackets name entries of the package's own catalogue; a program holds one
   version of each package, every one listed in its catalogue:
 ```
@@ -371,8 +374,7 @@ reports what belongs there (the expected type, what is in scope). A program
 with holes type-checks everything else but produces no binary.
 
 ## 13. FFI
-Anything beyond this document — sockets, maths, JSON, databases — comes from C
-libraries; threads, processes and files from the language's `hero_os.h`. A group names its header, and `link` a library when the symbols need one; C
+Anything beyond this document comes from packages or C libraries; threads, processes and files from the language's `hero_os.h`. A group names its header, and `link` a library when the symbols need one; C
 reads a module's headers in the order its groups are written: one that needs
 another's names comes after it, and one defining `_GNU_SOURCE` first. clang
 checks every result type, constant and record field against that header, and a result may be
@@ -425,7 +427,7 @@ pointer to that type: `record Db tag sqlite3` is `sqlite3 *`, and `tag void` is
 `nullptr` is its null and `==` compares the address; a map key is an error. A
 parameter declared with it takes no other handle, and two records may not name
 one tag but `void`.
-A group's `constant` has no body: the header holds the value.
+A group's `constant` has no body: the header holds the value, in a package named by `version` or `git` never a float, a record or one read through an enumerator or object.
 
 `s.cstr()` lends a `str` to C and, like `s.lease()`, aborts on one holding a
 zero byte; outside a group nothing answers `cstr` and no record holds one. `c.validated()` copies one back as a `str?`, and a

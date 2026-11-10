@@ -221,3 +221,12 @@ spec/heroes-spec.md --refresh`; and the blind reading allowed, *Sì, fino a 3 US
 `244-briefs/blind/README.md`, whose rule decides whether I2 enters. What the yes settles: every
 resolution as adopted, `heroes new` as the sixteenth verb, defect 2446's rule. What it does not: the
 predictions above, on their own clocks.
+
+**The blind reading, 2026-11-11**: eight sessions by the rule `244-briefs/blind/README.md` registered
+before any ran, 1.0231 USD of the author's 3, `claude-opus-5-5` through Claude Code 2.1.311; arm y,
+with I2, 4 right of 4, arm x 0 of 4, every session answering that nothing beyond its folder reached
+it (`244-reports/llm-ergonomist.md`, its files in `244-reports/blind-evidence.tar.xz`). So **I2
+enters the specification** beside S1c2, landed in batch 30 at 8236 legacy and 8386 cl100k vendored
+and 10,973 real on the author's `--refresh`, ledger row 8386. The row is paid by d08d's removal, by
+the spec-warden's P2 carried from d07f to C2, which states the same refusal, its three pairs pinned
+by the landing, and by this reading.
