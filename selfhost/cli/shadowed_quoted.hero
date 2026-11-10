@@ -1,0 +1,135 @@
+# What a header writes in quotes, read from its text, and the file each
+# spelling names from the header's own folder (design.md §4.19, §1.12; panel
+# 237's R2, defects 2420 and 2447). Clang's `-H` lists the file an include
+# opened and never how the include was written, so the refusal of a file
+# standing in for a header (`cli/shadowed_tree.hero`) asks it here of the
+# includer's own text. C reads a quoted name from the including header's own
+# folder first (`found_from`), and a note offers the spelling that names a
+# file from there (`spelled_from`). Moved out of `cli/shadowed_tree.hero` when
+# panel 243's R3 took that module past §11's 300 lines.
+
+use cli/deps
+use cli/package_reads
+use cli/strings
+use emit/clang_place
+use module/reading as file_reading
+
+# **What the header at `reader` spells in quotes**: what clang's `-H` cannot
+# say, so the includer's text is read, once; none where it cannot be.
+function spellings_of(reader: str) -> [str]
+    read = file_reading.source_text(reader)
+
+    if read.is_err()
+        return []
+    return quoted_spellings(read.must().text)
+
+# **Whether one of `spellings`, read from `folder`, the includer's, names the
+# file at the lexical `path`**: where C looks first for a quoted name
+# (`curl/curl.h`'s `#include "curlver.h"` for its `curl/curlver.h`, refused
+# until defect 2420; `"../sys/timeb.h"` from `lib/clock.h`, refused until
+# defect 2447).
+function found_from(spellings: [str], folder: str, path: str) -> bool
+    for spelled in spellings
+        if package_reads.lexical(from_folder(folder: folder, spelled: spelled)) == path
+            return true
+
+    return false
+
+# **The spelling that names the file at `path` in quotes from `folder`**,
+# both lexical: a `../` for each part of `folder` past what the two share,
+# then the rest of `path`; "" where one is rooted and the other is not, or
+# `folder` climbs where the two part, which no spelling written from it can
+# name without knowing the folder it climbs from.
+function spelled_from(folder: str, path: str) -> str
+    if (folder.len() > 0 && folder[0] == '/') != (path.len() > 0 && path[0] == '/')
+        return ""
+    from = parts_of(folder)
+    to = parts_of(path)
+    shared: i64 @= 0
+
+    while shared < from.len() && shared + 1 < to.len() && from[shared] == to[shared]
+        shared @ shared + 1
+
+    out: [str] @= []
+
+    for part in from.slice(from: shared, to: from.len())
+        if part == ".."
+            return ""
+        out @ out.push("..")
+
+    for part in to.slice(from: shared, to: to.len())
+        out @ out.push(part)
+
+    return out.join("/")
+
+# The parts of a lexical path, none for `.`, the root's `/` dropped.
+function parts_of(path: str) -> [str]
+    out: [str] @= []
+
+    for part in package_reads.pieces(path)
+        if part.len() > 0 && part != "."
+            out @ out.push(part)
+
+    return out
+
+# What each `#include "..."` of a header's text spells between its quotes,
+# any spaces around the `#` and before the quote; `#include_next`, which
+# skips the includer's own folder, and the angle form are none.
+function quoted_spellings(header: str) -> [str]
+    out: [str] @= []
+    word = "include"
+
+    for line in deps.lines(header)
+        written = strings.trimmed(line)
+
+        if strings.starts_with(text: written, prefix: "#")
+            rest = strings.trimmed(written.slice(from: 1, to: written.len()))
+            spaced = rest.len() > word.len() && (rest[word.len()] == ' ' || rest[word.len()] == '\t' || rest[word.len()] == '"')
+
+            if strings.starts_with(text: rest, prefix: word) && spaced
+                after = strings.trimmed(rest.slice(from: word.len(), to: rest.len()))
+                close: i64 @= 1
+
+                while close < after.len() && after[close] != '"'
+                    close @ close + 1
+
+                if after.len() > 0 && after[0] == '"' && close > 1 && close < after.len()
+                    out @ out.push(after.slice(from: 1, to: close))
+
+    return out
+
+# A quoted spelling read from the folder `folder`: itself where it is rooted.
+function from_folder(folder: str, spelled: str) -> str
+    if strings.starts_with(text: clang_place.slashed(spelled), prefix: "/")
+        return spelled
+    return folder + "/" + spelled
+
+# The folder a lexical path stands in: `.` for a bare name.
+function folder_of(path: str) -> str
+    at: i64 @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
+
+## Tests
+
+# **A header's quoted spellings are read from its text, and each names a file
+# from the header's own folder**: `#include` and its spaces, never
+# `#include_next` or an unclosed quote; a rooted spelling is itself; and the
+# path from a folder to a file, both lexical, is none where a spelling written
+# there cannot know the folder it climbs from (defect 2447).
+test "a header's quoted spellings are read from its text, and each names a file from the header's own folder (defect 2447)"
+    assert quoted_spellings("#include\"a.h\"\n# include  \"b c.h\" // x\n#include \"\"\n#include \"open\n#includex \"d.h\"\n") == ["a.h", "b c.h"]
+    assert from_folder(folder: "inc/curl", spelled: "/abs/x.h") == "/abs/x.h" && from_folder(folder: ".", spelled: "x.h") == "./x.h"
+    assert found_from(["../sys/t.h", "x.h"], folder: "lib", path: "sys/t.h") && !found_from(["sys/t.h"], folder: "lib", path: "sys/t.h")
+    assert folder_of("a/b/c.h") == "a/b" && folder_of("c.h") == "." && folder_of("/c.h") == "/"
+
+    for row in [["lib", "sys/t.h", "../sys/t.h"], [".", "sys/t.h", "sys/t.h"], ["sys", "sys/t.h", "t.h"], ["a/b", "a/c/x.h", "../c/x.h"], ["/x/y", "/x/z.h", "../z.h"], ["../a", "../b.h", "../b.h"], ["a", "../x.h", "../../x.h"], ["../a", "x.h", ""], ["a", "/x.h", ""]]
+        assert spelled_from(folder: row[0], path: row[1]) == row[2]

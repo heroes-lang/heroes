@@ -4,3 +4,4 @@ error[shadowed_header]: `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-an
   1 | #~ shadowed_header
     | ^
   note: rename the file, or move it out of `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case`: the folder is this program's own, which every unit searches before the system's, and every `#include <sys/timeb.h>` of the build reads what it holds
+  note: or, where `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case/pc/../own.h` means `tests/golden/unsupported/fixedbugs-2428-a-pkg-config-answer-naming-the-programs-own-folder-leaves-it-the-programs.case/pc/../sys/timeb.h`, include it as `#include "sys/timeb.h"`, its path from that header's own folder: C reads a quoted name from there first, where `<sys/timeb.h>` asks the system's places, which hold a `sys/timeb.h` of their own

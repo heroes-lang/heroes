@@ -1,0 +1,16 @@
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3, lane
+# b29-boundary's shape `d`).
+#
+# `lib/clock.h` writes `#include "../sys/timeb.h"` for the program's own
+# `sys/timeb.h`, a name every platform's C library holds. C reads a quoted
+# name from the including header's own folder first, so the file is the
+# header's own; it was refused `shadowed_header`, told as the angle form
+# `<sys/timeb.h>`, since only a sibling was excused. A file a header includes
+# in quotes, found from that header's own folder, is its own. It builds and
+# reads its own `TIMEB_OWN`, 21.
+
+extern "lib/clock.h"
+    constant CLOCK_TICKS: i64
+
+function main()
+    print(CLOCK_TICKS)

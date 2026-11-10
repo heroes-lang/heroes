@@ -1,0 +1,16 @@
+#~ shadowed_header
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3, the
+# critic's `live2`): the guarded shape beside it with no guard, so `-H`
+# listed the SDK's include of the program's `sys/types.h`, and the rule,
+# judging a file at its first open, passed it at exit 0 printing 42 and 2.
+# Refused; this line is its mark.
+
+extern "sys/clock.h"
+    constant CLOCK_TICKS: i64
+
+extern "sys/socket.h"
+    constant AF_INET: i64
+
+function main()
+    print(CLOCK_TICKS)
+    print(AF_INET)

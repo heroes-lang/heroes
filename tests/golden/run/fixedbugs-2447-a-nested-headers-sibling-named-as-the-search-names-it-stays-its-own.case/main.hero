@@ -1,0 +1,15 @@
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3, lane
+# b29-boundary's shape `e`).
+#
+# `sys/clock.h` writes `#include "sys/timeb.h"` for its sibling
+# `sys/timeb.h`: C misses `sys/sys/timeb.h` in the header's own folder and
+# finds the file through the program's folder, which the build searches. It
+# built before defect 2447 by the rule for a header's sibling, and a reading
+# that excused only what C finds from the includer's folder would refuse it
+# (the spec-warden's objection): it stays its own, and reads 21.
+
+extern "sys/clock.h"
+    constant CLOCK_TICKS: i64
+
+function main()
+    print(CLOCK_TICKS)

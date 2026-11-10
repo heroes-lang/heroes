@@ -1,0 +1,17 @@
+#~ shadowed_header
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3, the
+# completeness critic's `live`): the same program as
+# `fixedbugs-2447-a-guarded-sibling-the-sdks-socket-header-includes-after-the-programs-header`
+# with the SDK's group first, whose `<sys/socket.h>` opens the program's
+# `sys/types.h` first. Refused before defect 2447 too, and in the same words as
+# the other order now; this line is its mark.
+
+extern "sys/socket.h"
+    constant AF_INET: i64
+
+extern "sys/clock.h"
+    constant CLOCK_TICKS: i64
+
+function main()
+    print(CLOCK_TICKS)
+    print(AF_INET)

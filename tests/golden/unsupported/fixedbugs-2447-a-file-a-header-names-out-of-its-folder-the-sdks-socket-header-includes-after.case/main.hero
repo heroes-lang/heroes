@@ -1,0 +1,16 @@
+#~ shadowed_header
+# fixedbugs, defect 2447, lane b30-shadow, 2026-11-10 (panel 243's R3, the
+# compiler-engineer's `dd`): `lib/clock.h` writes `#include "../sys/types.h"`,
+# its own file by the rule `d` lands, and the SDK's `<sys/socket.h>` reads the
+# same file after it: the lane's widening alone built it at exit 0, so every
+# include is judged with it. Refused; this line is its mark.
+
+extern "lib/clock.h"
+    constant CLOCK_TICKS: i64
+
+extern "sys/socket.h"
+    constant AF_INET: i64
+
+function main()
+    print(CLOCK_TICKS)
+    print(AF_INET)

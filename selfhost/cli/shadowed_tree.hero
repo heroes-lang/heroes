@@ -12,11 +12,14 @@
 #
 # **The refusal's one clang run lists the runtime's opening and then the
 # program's groups inside the guard** (`text`), with `-H`, which prints each
-# file clang enters with its depth in dots, and `-MG`, so a group's missing
-# header costs the listing nothing. The opening comes first, so a library
-# header the runtime reads is entered beneath the runtime, and one only a
-# group reaches beneath that group. A file of a folder the build names is
-# then (`shadows`, the compiler-engineer's route):
+# file clang enters with its depth in dots, `-fshow-skipped-includes`, which
+# prints an include a guard or `#pragma once` skips as well, and `-MG`, so a
+# group's missing header costs the listing nothing. The opening comes first,
+# so a library header the runtime reads is entered beneath the runtime, and
+# one only a group reaches beneath that group. **Every include of a file is
+# judged, not only its first** (panel 243's R3, defect 2447), and a file is
+# told once, by the first include that refuses it. A file of a folder the
+# build names is then (`shadows`, the compiler-engineer's route):
 #
 # - **the program's own where the unit includes it for a group**: the header a
 #   group names is the program's choice, read from where the program put it,
@@ -24,11 +27,19 @@
 #   `stdio.h`, the sitting's ruling); every other file the unit includes is
 #   the runtime's, and one found in a named folder stands in for it;
 # - **refused where a header that is no named folder's includes it**, the
-#   platform's or the runtime's: `_stdio.h` beneath the SDK's `stdio.h`;
+#   platform's or the runtime's: `_stdio.h` beneath the SDK's `stdio.h`, and
+#   the program's guarded `sys/types.h` beneath the SDK's `sys/socket.h`,
+#   which built at exit 0 where a group of the program's had opened it first,
+#   since `-H` alone lists a file at its first open and the rule judged that
+#   open alone;
 # - **refused where a platform folder holds a file of its name**, a header of
 #   a named folder including it: `stdio.h` beneath the program's `lib.h`. Two
-#   exceptions. A header's sibling named in quotes is its own, C's own rule
-#   for it. A file of a folder only `pkg-config` names is that library's, but
+#   exceptions. A file a header names in quotes, found from that header's own
+#   folder, is its own, beside it or not (`"timeb.h"`, `"../sys/timeb.h"`,
+#   and `"sys/timeb.h"` from a header at the root), where C looks first, and
+#   so is a sibling named as the search names it (`"sys/timeb.h"` from
+#   `sys/clock.h`, found through `-I .`). A file of a folder only `pkg-config`
+#   names is that library's, but
 #   where its name is one of the C library's (`cli/shadowed_library.hero`,
 #   panel 243's R2, defect 2428): Homebrew's libcurl ships `curl/curl.h`, a
 #   name the SDK holds as well, and a program's own header including it was
@@ -46,16 +57,25 @@ use cli/order_trial
 use cli/package_reads
 use cli/process
 use cli/shadowed_library
+use cli/shadowed_quoted
 use cli/stand_in
 use cli/strings
 use emit/c_text
 use emit/clang_place
 use emit/macro_guard
-use module/reading as file_reading
 
 # The words the refusal's run adds where it lists a group's headers.
+#
+# `-fshow-skipped-includes` (panel 243's R3, defect 2447): `-H` alone lists a
+# file at its first open, so a guarded file of the program's that a header of
+# its own opened first was never listed where a platform header included it
+# after, skipped under its guard and read in that header's place: one order of
+# two groups built and the other was refused. This Mac's Apple clang 21
+# lists it, *"Show skipped includes in -H output"* (`clang --help`,
+# 2026-11-10), and panel 243's critic read it in the reference of clang
+# 18.1.0, the compiler's floor; a Linux clang and the Windows box's are unrun.
 constant WORDS: [str]
-    ["-H", "-MG"]
+    ["-H", "-MG", "-fshow-skipped-includes"]
 
 # The runtime's opening, then every group's header inside the guard, as a
 # unit reads them, the opening first.
@@ -127,7 +147,12 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
     named = search.named
     others = search.others
     out: [stand_in.Shadow] @= []
+
+    # Every file `-H` listed, which the `-M` pass below leaves to it, and every
+    # file told, once: each include of a file is judged, since its first may
+    # be its own and a later one a platform header's.
     seen: {str: bool} @= {}
+    told_of: {str: bool} @= {}
 
     # The file each depth's last entry is, the unit's own at depth 0, so a
     # file's includer is the entry one level up.
@@ -142,14 +167,15 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
         path = package_reads.lexical(one.path)
         folder = stand_in.finder(path: path, named: named, others: others)
 
-        if folder.len() > 0 && seen[path].is_err()
+        if folder.len() > 0 && told_of[path].is_err()
             seen[path] @ true
             name = stand_in.relative(path: path, dir: folder)
             told = refused(one, reader: reader, name: name, folder: folder, search: search)
 
             if !told.is_err()
+                told_of[path] @ true
                 out @ out.push(
-                    stand_in.Shadow(path: one.path, folder: folder, named: name, reader: told.must().reader, beside: told.must().beside, asked: false)
+                    stand_in.Shadow(path: one.path, folder: folder, named: name, reader: told.must().reader, quoted: told.must().quoted, written: told.must().written, asked: false)
                 )
 
     for written in paths
@@ -164,17 +190,21 @@ function shadows(said: str, paths: [str], search: Search) -> [stand_in.Shadow]
             if !library_own(folder: folder, name: name, search: search)
                 seen[path] @ true
                 out @ out.push(
-                    stand_in.Shadow(path: written, folder: folder, named: name, reader: "", beside: false, asked: true)
+                    stand_in.Shadow(path: written, folder: folder, named: name, reader: "", quoted: "", written: "", asked: true)
                 )
 
     return out
 
 # What a refusal says of a file's includer: who it is, "" for the C this
-# compiler writes, and whether the file stands beside it, found by the angle
-# form where the quoted one would mean it.
+# compiler writes; the spelling that would name the file in quotes from the
+# includer's own folder, offered where the two lie in one named folder that is
+# no library's, "" otherwise; and the includer's quoted spelling that found the
+# file through the search rather than from that folder, "" where it wrote none
+# (panel 243's R3: the message named the angle form for it).
 record Reader
     reader: str
-    beside: bool
+    quoted: str
+    written: str
 
 # Why a file `name` of the named folder `folder`, included by `reader`, is
 # refused, or none where it is the program's own or a library's.
@@ -182,12 +212,12 @@ function refused(one: Entry, reader: str, name: str, folder: str, search: Search
     if one.depth == 1
         if of_group(path: one.path, groups: search.groups)
             return fail(code: "own", msg: "the header a group names")
-        return ok(Reader(reader: "", beside: false))
+        return ok(Reader(reader: "", quoted: "", written: ""))
     from = package_reads.lexical(reader)
-    by_named = stand_in.finder(path: from, named: search.named, others: search.others).len() > 0
+    home = stand_in.finder(path: from, named: search.named, others: search.others)
 
-    if !by_named
-        return ok(Reader(reader: told_reader(from, others: search.others), beside: false))
+    if home.len() == 0
+        return ok(Reader(reader: told_reader(from, others: search.others), quoted: "", written: ""))
 
     if !twin(search.others, name: name)
         return fail(code: "own", msg: "a name the platform does not hold")
@@ -195,11 +225,24 @@ function refused(one: Entry, reader: str, name: str, folder: str, search: Search
     if library_own(folder: folder, name: name, search: search)
         return fail(code: "own", msg: "a library's own header, in a folder only pkg-config names")
     path = package_reads.lexical(one.path)
-    beside = folder_of(from) == folder_of(path)
+    at = shadowed_quoted.folder_of(from)
+    spellings = shadowed_quoted.spellings_of(reader)
+    searched = shadowed_library.held(spellings, item: name)
 
-    if beside && quoted(reader: reader, path: path, name: name)
-        return fail(code: "own", msg: "the includer's own sibling, named in quotes")
-    return ok(Reader(reader: "`" + clang_place.slashed(reader) + "`", beside: beside))
+    # Panel 243's R3: a quoted spelling read from the includer's own folder
+    # names the file, where C looks first, beside it or not; and a sibling
+    # named as the search names it, the landed rule (shape `e`).
+    if shadowed_quoted.found_from(spellings, folder: at, path: path) || searched && at == shadowed_quoted.folder_of(path)
+        return fail(code: "own", msg: "a file its includer names in quotes, found from the includer's own folder")
+    offered: str @= ""
+
+    if !shadowed_library.held(search.libraries, item: folder) && home == folder
+        offered @ shadowed_quoted.spelled_from(folder: at, path: path)
+    written: str @= ""
+
+    if searched
+        written @ name
+    return ok(Reader(reader: "`" + clang_place.slashed(reader) + "`", quoted: offered, written: written))
 
 # **Whether a file `name` of the named folder `folder` is a library's own**
 # (panel 243's R2, defect 2428): a folder only `pkg-config` names holds the
@@ -253,73 +296,6 @@ function twin(others: [str], name: str) -> bool
 
     return false
 
-# **Whether `reader` includes the file at `path` in quotes**: what clang's
-# `-H` cannot say, so the includer's text is read. A quoted spelling names the
-# file where, read from the includer's own folder, it is `path`, which is
-# where C looks first (`curl/curl.h`'s `#include "curlver.h"` for its
-# `curl/curlver.h`, refused until defect 2420, since the spelling was asked to
-# be the name the folder that found it gives the file); or where it is that
-# name, `name`, which the search finds in the folder (`"curl/curlver.h"`).
-# `path` is lexical.
-function quoted(reader: str, path: str, name: str) -> bool
-    read = file_reading.source_text(reader)
-
-    if read.is_err()
-        return false
-    from = folder_of(package_reads.lexical(reader))
-
-    for spelled in quoted_spellings(read.must().text)
-        if spelled == name || package_reads.lexical(from_folder(folder: from, spelled: spelled)) == path
-            return true
-
-    return false
-
-# What each `#include "..."` of a header's text spells between its quotes,
-# any spaces around the `#` and before the quote; `#include_next`, which
-# skips the includer's own folder, and the angle form are none.
-function quoted_spellings(header: str) -> [str]
-    out: [str] @= []
-    word = "include"
-
-    for line in deps.lines(header)
-        written = strings.trimmed(line)
-
-        if strings.starts_with(text: written, prefix: "#")
-            rest = strings.trimmed(written.slice(from: 1, to: written.len()))
-            spaced = rest.len() > word.len() && (rest[word.len()] == ' ' || rest[word.len()] == '\t' || rest[word.len()] == '"')
-
-            if strings.starts_with(text: rest, prefix: word) && spaced
-                after = strings.trimmed(rest.slice(from: word.len(), to: rest.len()))
-                close: i64 @= 1
-
-                while close < after.len() && after[close] != '"'
-                    close @ close + 1
-
-                if after.len() > 0 && after[0] == '"' && close > 1 && close < after.len()
-                    out @ out.push(after.slice(from: 1, to: close))
-
-    return out
-
-# A quoted spelling read from the folder `folder`: itself where it is rooted.
-function from_folder(folder: str, spelled: str) -> str
-    if strings.starts_with(text: clang_place.slashed(spelled), prefix: "/")
-        return spelled
-    return folder + "/" + spelled
-
-# The folder a lexical path stands in: `.` for a bare name.
-function folder_of(path: str) -> str
-    at: i64 @= path.len() - 1
-
-    while at >= 0 && path[at] != '/'
-        at @ at - 1
-
-    if at < 0
-        return "."
-
-    if at == 0
-        return "/"
-    return path.slice(from: 0, to: at)
-
 ## Tests
 
 # **A file of a named folder is told by who included it**: beneath a platform
@@ -346,8 +322,8 @@ test "a file of a named folder is told by who included it, and a group's own hea
     )
     assert got.len() == 4
     assert got[0].named == "heroes_unit.h" && got[0].reader == "" && !got[0].asked
-    assert got[1].named == "time.h" && got[1].reader == "`" + root + "/src/money.h`" && got[1].beside && !got[1].asked
-    assert got[2].named == "_stdio.h" && got[2].reader == "the C library's `<stdio.h>`" && !got[2].beside
+    assert got[1].named == "time.h" && got[1].reader == "`" + root + "/src/money.h`" && got[1].quoted == "time.h" && !got[1].asked
+    assert got[2].named == "_stdio.h" && got[2].reader == "the C library's `<stdio.h>`" && got[2].quoted == ""
 
     # A file `-M` lists and `-H` shows entered nowhere is one a header only
     # asks after (defect 2356); one `-MG` lists and no folder holds is none.
@@ -368,9 +344,11 @@ test "a file of a named folder is told by who included it, and a group's own hea
 # beside its own `sys/timeb.h`, a name the platform holds: `"timeb.h"` and
 # `"./timeb.h"` are its own, and so is `"sys/timeb.h"`, which the search finds
 # in the folder; `<sys/timeb.h>` stays refused (panel 237's ruling), and so
-# does a quoted spelling that names another file than the one C read, and a
-# file outside the includer's folder (`"../sys/timeb.h"`, which the sentence
-# of design.md §4.19 does not reach).
+# does a quoted spelling that names another file than the one C read. And
+# since defect 2447 (panel 243's R3) a file outside the includer's folder named
+# by its path from there is its own (`"../sys/timeb.h"` from `lib/clock.h`),
+# while `"sys/timeb.h"` from `lib/`, which C finds only through the search, is
+# refused, told as written and offered the path from that folder.
 test "a nested header's sibling named in quotes from its own folder is its own, and the angle form is refused (defect 2420)"
     root = "build/selftest-shadowed-nested"
     assert !process.remove_tree(root).is_err()
@@ -388,10 +366,14 @@ test "a nested header's sibling named in quotes from its own folder is its own, 
         ["sys/dot.h", "#  include \"./timeb.h\"\n", "own"]
         ["sys/up.h", "#include \"../sys/timeb.h\"\n", "own"]
         ["sys/found.h", "#include \"sys/timeb.h\"\n", "own"]
-        ["sys/angle.h", "#include <sys/timeb.h>\n", "beside"]
-        ["sys/next.h", "#include_next \"timeb.h\"\n", "beside"]
-        ["sys/other.h", "#include \"clock.h\"\n", "beside"]
-        ["lib/clock.h", "#include \"../sys/timeb.h\"\n", "apart"]
+        ["sys/angle.h", "#include <sys/timeb.h>\n", "timeb.h", ""]
+        ["sys/next.h", "#include_next \"timeb.h\"\n", "timeb.h", ""]
+        ["sys/other.h", "#include \"clock.h\"\n", "timeb.h", ""]
+        ["lib/clock.h", "#include \"../sys/timeb.h\"\n", "own", ""]
+        ["lib/found.h", "#include \"sys/timeb.h\"\n", "../sys/timeb.h", "sys/timeb.h"]
+        ["lib/angle.h", "#include <sys/timeb.h>\n", "../sys/timeb.h", ""]
+        ["root.h", "#include \"sys/timeb.h\"\n", "own", ""]
+        ["root2.h", "#include <sys/timeb.h>\n", "sys/timeb.h", ""]
     ]
 
     for row in verdicts
@@ -408,10 +390,8 @@ test "a nested header's sibling named in quotes from its own folder is its own, 
         if row[2] == "own"
             assert got.is_err()
         else
-            assert !got.is_err() && got.must().beside == (row[2] == "beside")
+            assert !got.is_err() && got.must().quoted == row[2] && got.must().written == row[3]
 
-    assert quoted_spellings("#include\"a.h\"\n# include  \"b c.h\" // x\n#include \"\"\n#include \"open\n#includex \"d.h\"\n") == ["a.h", "b c.h"]
-    assert from_folder(folder: "inc/curl", spelled: "/abs/x.h") == "/abs/x.h" && from_folder(folder: ".", spelled: "x.h") == "./x.h"
     assert !process.remove_tree(root).is_err()
 
 # **A file of a folder only `pkg-config` names is the library's, but where its
@@ -471,4 +451,43 @@ test "a file of a folder only pkg-config names is the library's, but where its n
     # Only asked after, with `__has_include`: the library's own `k/opt.h` is
     # its own, its `stdbool.h` refused as asked.
     assert got[5].named == "stdbool.h" && got[5].asked
+    assert !process.remove_tree(root).is_err()
+
+# **Every include of a file is judged, and the file told once** (panel 243's
+# R3, defect 2447): the program's guarded `sys/types.h`, opened first by its
+# own `sys/clock.h` as a quoted sibling, its own there, and then included by
+# the SDK's `sys/socket.h`, the open `-fshow-skipped-includes` lists, is
+# refused by the second open, told once and named by that reader, in either
+# order of the two groups; a file the rule passed at every open is no file a
+# header only asks after.
+test "every include of a file is judged, so a platform header reading the program's file after its own header is refused in either order (defect 2447)"
+    root = "build/selftest-shadowed-every-open"
+    assert !process.remove_tree(root).is_err()
+
+    for dir in ["/rt", "/sdk/sys", "/src/sys"]
+        assert !process.mkdir_all(root + dir).is_err()
+
+    for name in ["sys/types.h", "sys/socket.h"]
+        assert !write_file(path: root + "/sdk/" + name, text: "").is_err()
+
+    assert !write_file(path: root + "/src/sys/clock.h", text: "#include \"types.h\"\n").is_err()
+    assert !write_file(path: root + "/src/sys/types.h", text: "#include_next <sys/types.h>\n").is_err()
+    search = Search(
+        groups: ["sys/clock.h", "sys/socket.h"],
+        named: [root + "/src"],
+        others: [root + "/rt", root + "/sdk"],
+        libraries: []
+    )
+    clock = [". " + root + "/src/sys/clock.h", ".. " + root + "/src/sys/types.h", "... " + root + "/sdk/sys/types.h"]
+    socket = [". " + root + "/sdk/sys/socket.h", ".. " + root + "/src/sys/types.h"]
+
+    for listing in [strings.with_all(list: clock, more: socket), strings.with_all(list: socket, more: clock)]
+        got = shadows(said: listing.join("\n") + "\n", paths: [root + "/src/sys/types.h"], search: search)
+        assert got.len() == 1
+        assert got[0].named == "sys/types.h" && got[0].reader == "the C library's `<sys/socket.h>`" && !got[0].asked
+
+    # Its own at its only open, the same file is told nothing, and the `-M`
+    # pass does not tell it as asked after.
+    alone = shadows(said: clock.join("\n") + "\n", paths: [root + "/src/sys/types.h"], search: search)
+    assert alone.len() == 0
     assert !process.remove_tree(root).is_err()
