@@ -1,0 +1,9 @@
+$ heroes add file://../git/yaml --tag v1.0.0 -C <work>/app
+exit 1
+stdout:
+stderr:
+error[requirement_refused]: the catalogue of `yaml` names the local folder `../text` for `text`, and only the program's own catalogue holds a `path`, while a package is developed
+heroes.toml:
+(none)
+heroes.packages:
+(none)

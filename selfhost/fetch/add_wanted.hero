@@ -22,8 +22,9 @@ use module/fingerprint
 use module/placed
 use module_text
 
-# The entry `inv` asks for, placed where it is fetched.
-function entry_of(inv: argv.Invocation, tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue, scratch: staging.Staging) -> catalogue.Entry?
+# The entry `inv` asks for, placed where it is fetched and written into the
+# run's `ledger`, whose folder the index's answers are written into.
+function entry_of(@ledger: staging.Ledger, inv: argv.Invocation, tools: transport.Tools, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
     folder = argv.value_of(inv, spelling: "--path")
 
     if !folder.is_err()
@@ -37,8 +38,8 @@ function entry_of(inv: argv.Invocation, tools: transport.Tools, program: str, ro
     asked = inv.file.must()
 
     if looks_addressed(asked)
-        return git_entry(inv, tools: tools, address_text: asked, program: program, root: root, c: c)
-    return index_entry(inv, tools: tools, asked: asked, program: program, root: root, c: c, scratch: scratch)
+        return git_entry(@ledger, inv, tools: tools, address_text: asked, program: program, root: root, c: c)
+    return index_entry(@ledger, inv, tools: tools, asked: asked, program: program, root: root, c: c)
 
 # A folder of the author's own, read where it stands (R6).
 function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalogue.Entry?
@@ -61,7 +62,7 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str) -> catalo
 
 # A git source at a tag: its commit asked, its tree fetched and placed, and
 # its sum the tree's, trusted on first use.
-function git_entry(inv: argv.Invocation, tools: transport.Tools, address_text: str, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
+function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transport.Tools, address_text: str, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
     tag = argv.value_of(inv, spelling: "--tag")
 
     if tag.is_err()
@@ -116,12 +117,12 @@ function git_entry(inv: argv.Invocation, tools: transport.Tools, address_text: s
         path: "",
         sum: sum.must()
     )
-    _ = staging.placed(s, program: program, key: placed.key(e, index: c.index), sum: e.sum, what: "the tree of `" + name + "`")?
+    _ = staging.placed(@ledger, s, key: placed.key(e, index: c.index), sum: e.sum, what: "the tree of `" + name + "`")?
     return ok(e)
 
 # A name from the index, at the version written or the highest it lists, its
 # sum the index's.
-function index_entry(inv: argv.Invocation, tools: transport.Tools, asked: str, program: str, root: address.Root, c: catalogue.Catalogue, scratch: staging.Staging) -> catalogue.Entry?
+function index_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transport.Tools, asked: str, program: str, root: address.Root, c: catalogue.Catalogue) -> catalogue.Entry?
     if argv.has(inv, spelling: "--tag") || argv.has(inv, spelling: "--as")
         return fail(
             code: "bad_usage",
@@ -136,10 +137,10 @@ function index_entry(inv: argv.Invocation, tools: transport.Tools, asked: str, p
             msg: "`" + name + "` is no package's name: " + entry_name.refused(name)
         )
     index = address.judged(index_source.written_index(c.index), root: root)?
-    listed = index_source.versions(tools, index: index, name: name, scratch: scratch.folder)?
+    listed = index_source.versions(tools, index: index, name: name, scratch: ledger.folder)?
     pick = verb_place.version_picked(listed, asked: asked, at: at_sign, index: index.written)?
     e = catalogue.Entry(name: name, version: pick.version, git: "", tag: "", commit: "", path: "", sum: pick.sum)
-    _ = index_source.fetched(tools, e: e, program: program, root: root, index: c.index)?
+    _ = index_source.fetched(@ledger, tools, e: e, program: program, root: root, index: c.index)?
     return ok(e)
 
 # Whether the operand is an address rather than a name: a scheme, git's

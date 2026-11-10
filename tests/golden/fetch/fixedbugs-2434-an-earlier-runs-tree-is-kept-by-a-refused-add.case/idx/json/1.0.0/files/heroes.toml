@@ -1,0 +1,3 @@
+# A requirement read from a folder, which only a program's own catalogue may name.
+[dependencies.text]
+path = "../text"

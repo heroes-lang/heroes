@@ -49,20 +49,21 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
         return [
             told.Said(code: "no_catalogue", at: "", said: "there is no catalogue `" + folder + catalogue.FILE + "`, so there is nothing to fetch: `heroes add` writes one")
         ]
-    scratch = staging.opened(folder)
+    begun = staging.begun(folder)
 
-    if scratch.is_err()
-        return [told.refused(failure: verb_place.unit_of(scratch), at: "")]
-    root = transport.root_of(tools, folder: verb_place.dot_if_empty(folder), scratch: scratch.must().folder)
-    staging.dropped(scratch.must())
+    if begun.is_err()
+        return [told.refused(failure: verb_place.unit_of(begun), at: "")]
+    ledger: staging.Ledger @= begun.must()
+    root = transport.root_of(tools, folder: verb_place.dot_if_empty(folder), scratch: ledger.folder)
 
     if root.is_err()
+        staging.ended(ledger)
         return [told.refused(failure: verb_place.unit_of(root), at: "")]
     text = read_file(c.file).default("")
     out: [told.Said] @= []
 
     for e in c.entries
-        tree = placing.placed_tree(tools, e: e, program: folder, root: root.must(), index: c.index)
+        tree = placing.placed_tree(@ledger, tools, e: e, program: folder, root: root.must(), index: c.index)
 
         if tree.is_err()
             line = catalogue_edit.place_of(
@@ -84,7 +85,9 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
                 told.Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
             )
 
-    verb_place.unused_dropped(folder)
+    # Every tree fetch places is one its catalogue names, so the run is never
+    # taken back: it ends, and what it moved aside goes.
+    staging.ended(ledger)
     return out
 
 # The line of an entry's a refusal points at: the field the refusal is
@@ -223,4 +226,19 @@ test "a folder with no catalogue has nothing to fetch, and one that does not rea
     broken = outcome(asked(["fetch", "-C", SCRATCH]), tools: transport.path_tools())
     assert broken.len() == 1 && broken[0].code == "catalogue_refused"
     assert !process.path_exists(SCRATCH + "/heroes.packages")
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# Defect 2434: a fetch that places nothing takes away the `heroes.packages/`
+# it made, and keeps one it found, an empty folder of the author's.
+test "a fetch that places nothing keeps a heroes.packages it found and takes away one it made (defect 2434)"
+    made_repo.made(SCRATCH).must()
+    assert !process.mkdir_all(SCRATCH + "/mine").is_err()
+    assert !process.mkdir_all(SCRATCH + "/app").is_err()
+    assert !write_file(path: SCRATCH + "/app/heroes.toml", text: "[dependencies.mine]\npath = \"../mine\"\n").is_err()
+    path_said = ["||path mine ../mine, read where it stands and unverified"]
+    assert said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools())) == path_said
+    assert !process.path_exists(SCRATCH + "/app/heroes.packages")
+    assert !process.mkdir_all(SCRATCH + "/app/heroes.packages").is_err()
+    assert said(outcome(asked(["fetch", "-C", SCRATCH + "/app"]), tools: transport.path_tools())) == path_said
+    assert process.is_directory(SCRATCH + "/app/heroes.packages")
     assert !process.remove_tree(SCRATCH).is_err()
