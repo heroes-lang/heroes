@@ -18,6 +18,7 @@ use check/state
 use check/table
 use checker
 use emit/array_read
+use emit/float_entry
 use emit/worklist
 use ir
 use ir/containers
@@ -155,27 +156,10 @@ function entry(name: str, f: containers.Function, c: state.Checked, run: ir.Run)
         return "hero_f64_to_int"
 
     # Dispatched on the SOURCE, like to_str below: one Heroes name
-    # covers two C conversions once there are two float widths. An f32
-    # source reaching hero_int_to_f64 would be C converting a float to
-    # an int64_t and back — the silent wrong answer this dispatch
-    # exists to stop.
-    if name == "to_f64"
-        if !first.is_err()
-            match first.must()
-                .float_ty                                                  => return "hero_f32_to_f64"
-                .int_ty | .bool | .str | .ptr | .cstr | .unit              => return "hero_int_to_f64"
-                .array | .fixed | .map | .fallible | .function_ty | .named => return "hero_int_to_f64"
-                .case_ty | .failure | .generic | .error                    => return "hero_int_to_f64"
-        return "hero_int_to_f64"
-
-    if name == "to_f32"
-        if !first.is_err()
-            match first.must()
-                .float_ty                                                  => return "hero_f64_to_f32"
-                .int_ty | .bool | .str | .ptr | .cstr | .unit              => return "hero_int_to_f32"
-                .array | .fixed | .map | .fallible | .function_ty | .named => return "hero_int_to_f32"
-                .case_ty | .failure | .generic | .error                    => return "hero_int_to_f32"
-        return "hero_int_to_f32"
+    # covers two C conversions once there are two float widths, and a
+    # u64 takes C's own cast (`emit/float_entry.hero`, defect 2427).
+    if name == "to_f64" || name == "to_f32"
+        return float_entry.entry(first: first, wide: name == "to_f64")
 
     # to_str is one Heroes name over five C entry points. cstr is the
     # fifth, and it is the boundary's return path (§4.19): .cstr()
@@ -230,6 +214,10 @@ function placed(callee: str) -> bool
 function called(callee: str, arguments: [str], wanted: bool) -> str
     if callee == "hero_array_len" && wanted && arguments.len() == 1
         return array_read.length(arguments[0])
+
+    # A u64's float conversion is a cast, not a callee (defect 2427).
+    if float_entry.is_cast(callee) && arguments.len() == 1
+        return float_entry.cast(callee: callee, argument: arguments[0], wanted: wanted)
     return callee + "(" + arguments.join(", ") + ")"
 
 # Which library functions this program actually reaches. The library is
@@ -363,6 +351,38 @@ test "the panel-052 pair: u64 to its own entry point, on BOTH paths"
     assert to_str_entry(.bool).must() == "hero_bool_to_str"
     assert to_str_entry(.str).must() == "hero_str_identity"
     assert to_str_entry(.unit).is_err()
+
+test "to_f64 and to_f32 reach float_entry by the first argument's type, and its cast is written as one (defect 2427)"
+    text = "function main()\n    a: u64 = 1\n    b: u32 = 2\n    print(to_f64(a) + to_f64(b))\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    u64_id = table.lookup(c.types, .int_ty(kind: .u64)).must()
+    u32_id = table.lookup(c.types, .int_ty(kind: .u32)).must()
+    f: containers.Function = containers.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [u64_id, u32_id],
+        arguments: [.value_arg(value: 0), .value_arg(value: 1)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+    assert entry(name: "to_f64", f: f, c: c, run: ir.Run(start: 0, length: 1)) == float_entry.DOUBLE_CAST
+    assert entry(name: "to_f32", f: f, c: c, run: ir.Run(start: 0, length: 1)) == float_entry.FLOAT_CAST
+    assert entry(name: "to_f64", f: f, c: c, run: ir.Run(start: 1, length: 1)) == "hero_int_to_f64"
+    assert called(callee: float_entry.FLOAT_CAST, arguments: ["t1"], wanted: true) == "((float)t1)"
+    assert called(callee: float_entry.DOUBLE_CAST, arguments: ["t1"], wanted: false) == "(void)((double)t1)"
 
 test "an array's length is read in place where a value is wanted, and every other call stays a call (defect 389)"
     assert called(callee: "hero_array_len", arguments: ["t1"], wanted: true) == array_read.length("t1")
