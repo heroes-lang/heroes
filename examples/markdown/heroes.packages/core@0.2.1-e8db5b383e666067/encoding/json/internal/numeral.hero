@@ -1,0 +1,479 @@
+# JSON's numbers: one read from the text by RFC 8259's grammar and rounded to
+# the nearest `f64`, ties to even, and an `f64` written back as text that
+# reads as the same `f64`. A number is rounded once, so `0.3` is the `f64`
+# that `0.3` is in a program and not `0.30000000000000004`, by the first of
+# three routes that can, the order Go's `strconv` takes them in (`atof64` in
+# `src/internal/strconv/atof.go`, read 2026-11-10): one exact operation on two
+# exact doubles where the number allows it; `scaling.hero`'s one product by a
+# 128-bit power of ten for any number of at most 19 digits, and for a longer
+# one where its first 19 digits and the same plus one round alike; and
+# `decimal.hero`'s exact digits for what is left, a number of more than 19
+# digits within a hair of halfway between two `f64`s, whose cost grows with
+# the distance from one (defect 2405).
+#
+# The codes are written here as literals, `not_json` and `does_not_fit`, and
+# the face names `not_json` as a constant: the face uses this module, and a
+# module the face uses cannot use the face, which would be a cycle (spec § 1).
+
+use encoding/json/internal/cursor
+use encoding/json/internal/decimal
+use encoding/json/internal/powers
+use encoding/json/internal/scaling
+
+# The powers of ten from 10^0 to 10^22, every one of which an `f64` holds
+# exactly: 5 to the 22nd still fits the 53 bits of its significand.
+constant EXACT: [f64]
+    [
+        1.0
+        10.0
+        100.0
+        1000.0
+        10000.0
+        100000.0
+        1000000.0
+        10000000.0
+        100000000.0
+        1000000000.0
+        10000000000.0
+        100000000000.0
+        1000000000000.0
+        10000000000000.0
+        100000000000000.0
+        1000000000000000.0
+        10000000000000000.0
+        100000000000000000.0
+        1000000000000000000.0
+        10000000000000000000.0
+        100000000000000000000.0
+        1000000000000000000000.0
+        10000000000000000000000.0
+    ]
+
+# The most digits an `i64` holding them converts to an `f64` exactly: 10 to
+# the 15 is below 2 to the 53.
+constant EXACT_DIGITS: i64
+    15
+
+# The number at the cursor, read by JSON's grammar, an optional minus, an
+# integer with no leading zero, an optional fraction and an optional exponent,
+# and rounded to the nearest `f64`, ties to even; the cursor moved past it. It
+# fails `not_json` where no number stands there, and `does_not_fit` where the
+# number lies past the largest `f64`; one nearer zero than the smallest is
+# zero.
+function read(@c: cursor.Cursor) -> f64?
+    negative = cursor.accept(@c, "-")
+    whole_start = c.at
+
+    if cursor.at_end(c) || !digit(cursor.byte_at(c))
+        return fail(code: "not_json", msg: cursor.wanted(c, "a digit"))
+
+    if cursor.accept(@c, "0")
+        if !cursor.at_end(c) && digit(cursor.byte_at(c))
+            return fail(
+                code: "not_json",
+                msg: cursor.wanted(c, "a `.`, an exponent or the number's end after its leading `0`")
+            )
+    else
+        digits_past(@c)
+    whole = c.text.slice(from: whole_start, to: c.at)
+    fraction: str @= ""
+
+    if cursor.accept(@c, ".")
+        fraction_start = c.at
+
+        if cursor.at_end(c) || !digit(cursor.byte_at(c))
+            return fail(code: "not_json", msg: cursor.wanted(c, "a digit after the decimal point"))
+        digits_past(@c)
+        fraction @ c.text.slice(from: fraction_start, to: c.at)
+    exponent: i64 @= 0
+
+    if cursor.accept(@c, "e") || cursor.accept(@c, "E")
+        below = cursor.accept(@c, "-")
+
+        if !below
+            _ = cursor.accept(@c, "+")
+
+        if cursor.at_end(c) || !digit(cursor.byte_at(c))
+            return fail(code: "not_json", msg: cursor.wanted(c, "a digit in the exponent"))
+        exponent @ exponent_past(@c)
+
+        if below
+            exponent @ 0 - exponent
+    magnitude = value_of(whole: whole, fraction: fraction, exponent: exponent)?
+
+    if negative
+        return ok(-magnitude)
+    return ok(magnitude)
+
+# Whether `b` is a decimal digit.
+function digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Moves the cursor past the decimal digits at it.
+function digits_past(@c: cursor.Cursor)
+    while !cursor.at_end(c) && digit(cursor.byte_at(c))
+        cursor.advance(@c)
+
+# The exponent the digits at the cursor write, the cursor moved past them. It
+# stops growing at 10 to the 15, more than the digits of any text that could
+# bring a number written with it back near one, so no exponent overflows an
+# `i64`, nor the place of a point computed from it.
+function exponent_past(@c: cursor.Cursor) -> i64
+    n: i64 @= 0
+
+    while !cursor.at_end(c) && digit(cursor.byte_at(c))
+        if n < 1_000_000_000_000_000
+            n @ n * 10 + to_i64(cursor.byte_at(c) - '0').must()
+        cursor.advance(@c)
+
+    return n
+
+# The `f64` nearest `<whole>.<fraction> × 10^exponent`, both texts of digits,
+# ties to even. It fails `does_not_fit` where it lies past the largest `f64`.
+function value_of(whole: str, fraction: str, exponent: i64) -> f64?
+    digits = whole + fraction
+    lead: i64 @= 0
+
+    while lead < digits.len() && digits[lead] == '0'
+        lead @ lead + 1
+
+    end: i64 @= digits.len()
+
+    while end > lead && digits[end - 1] == '0'
+        end @ end - 1
+
+    if end == lead
+        return ok(0.0)
+    return nearest(digits: digits.slice(from: lead, to: end), point: whole.len() - lead + exponent)
+
+# The `f64` nearest `0.<digits> × 10^point`, the first digit not a zero and
+# the last not a zero either, ties to even: by one multiplication or division
+# of two exact `f64`s where the digits are at most `EXACT_DIGITS` and the power
+# of ten one of `EXACT`, which then rounds once and correctly; by `scaling`'s
+# product where the digits are at most `powers.DIGITS`; by `truncated` where
+# they are more. It fails `does_not_fit` where the number lies past the
+# largest `f64`.
+function nearest(digits: str, point: i64) -> f64?
+    if digits.len() > powers.DIGITS
+        return truncated(digits: digits, point: point)
+    whole = word_of(digits)
+    power = point - digits.len()
+
+    if digits.len() > EXACT_DIGITS || power < -22 || power > 22
+        return scaling.nearest(d: whole, p: power)
+
+    # Below 10 to the 15, so an `i64` holds it whole on its way to `to_f64`
+    # (`scaling.packed` says why it takes that way).
+    exact = to_f64(to_i64(whole).must())
+
+    if power >= 0
+        return ok(exact * EXACT[power])
+    return ok(exact / EXACT[0 - power])
+
+# The `f64` nearest `0.<digits> × 10^point`, `digits` more than `powers.DIGITS`
+# of them, the last not a zero. The number lies above its first 19 digits,
+# written `d`, and below `d` plus one, both at the same place, so where those
+# two round to the same `f64` the number does too, rounding never going down
+# as a number goes up; `scaling` asks both (Go's `atof64`). Otherwise the
+# number lies within a hair of halfway between two `f64`s, and `decimal`'s
+# exact digits round it.
+function truncated(digits: str, point: i64) -> f64?
+    head = word_of(digits.slice(from: 0, to: powers.DIGITS))
+    p = point - powers.DIGITS
+    below = scaling.nearest(d: head, p: p)
+
+    if agree(below: below, above: one_more(head: head, p: p))
+        return below
+    return decimal.nearest(digits: digits, point: point)
+
+# The `f64` nearest `(head + 1) × 10^p`, `head` of `powers.DIGITS` digits:
+# written `1 × 10^(p + 19)` where `head` is all nines, so the scaling is asked
+# only of a number of at most 19 digits, the ones `scaling.nearest` takes.
+function one_more(head: u64, p: i64) -> f64?
+    if head == powers.NINES
+        return scaling.nearest(d: 1, p: p + powers.DIGITS)
+    return scaling.nearest(d: head + 1, p: p)
+
+# Whether two roundings are the same `f64`, or both past the largest.
+function agree(below: f64?, above: f64?) -> bool
+    return match below
+        .ok x  => !above.is_err() && above.must() == x
+        .err _ => above.is_err()
+
+# The number the decimal digits `digits` write, at most `powers.DIGITS` of
+# them, which a `u64` holds.
+function word_of(digits: str) -> u64
+    n: u64 @= 0
+    i: i64 @= 0
+
+    while i < digits.len()
+        n @ n * 10 + to_u64(digits[i] - '0').must()
+        i @ i + 1
+
+    return n
+
+# Whether `x` is finite: `x - x` is `nan` where `x` is `nan` or an infinity,
+# and zero for every other `f64`.
+function finite(x: f64) -> bool
+    return x - x == 0.0
+
+# `x` as JSON writes a number: the digits `to_str` gives, which read back as
+# the same `f64`, laid out as Go's `encoding/json` and JavaScript's
+# `JSON.stringify` lay them out, `300`, `0.000001`, `1e+21`, `1e-7`, and `-0`
+# keeping its sign as Go keeps it. `x` is finite, which the caller asks first
+# with `finite`: no text of JSON writes `nan` or an infinity, and one here
+# aborts.
+function written(x: f64) -> str
+    assert finite(x)
+    text = x.to_str()
+    sign: str @= ""
+    at: i64 @= 0
+
+    if text[0] == '-'
+        sign @ "-"
+        at @ 1
+    whole_start = at
+
+    while at < text.len() && text[at] != '.' && text[at] != 'e'
+        at @ at + 1
+
+    whole = text.slice(from: whole_start, to: at)
+    fraction: str @= ""
+
+    if at < text.len() && text[at] == '.'
+        at @ at + 1
+        fraction_start = at
+
+        while at < text.len() && text[at] != 'e'
+            at @ at + 1
+
+        fraction @ text.slice(from: fraction_start, to: at)
+    exponent: i64 @= 0
+
+    if at < text.len()
+        exponent @ exponent_of(text.slice(from: at + 1, to: text.len()))
+    return sign + laid_out(whole: whole, fraction: fraction, exponent: exponent)
+
+# The exponent `to_str` writes after its `e`, a sign and digits: `+20`, `-06`.
+function exponent_of(text: str) -> i64
+    n: i64 @= 0
+
+    for i in range(from: 1, to: text.len())
+        n @ n * 10 + to_i64(text[i] - '0').must()
+
+    if text.len() > 0 && text[0] == '-'
+        return 0 - n
+    return n
+
+# `<whole>.<fraction> × 10^exponent`, both texts of digits, laid out as
+# JavaScript lays out a number (ECMA-262, `Number::toString`): with its
+# significant digits `s` and `n` the place of its point, `0.s × 10^n`, the
+# digits and zeros up to the point where `n` is at most 21, a point among
+# them, or `0.` and zeros where `n` is above -6, and else one digit, a point,
+# the rest and the exponent, `1.5e+300`.
+function laid_out(whole: str, fraction: str, exponent: i64) -> str
+    digits = whole + fraction
+    lead: i64 @= 0
+
+    while lead < digits.len() && digits[lead] == '0'
+        lead @ lead + 1
+
+    end: i64 @= digits.len()
+
+    while end > lead && digits[end - 1] == '0'
+        end @ end - 1
+
+    if end == lead
+        return "0"
+    s = digits.slice(from: lead, to: end)
+    k = s.len()
+    n = whole.len() - lead + exponent
+
+    if k <= n && n <= 21
+        return s + repeat("0", (n - k).to_u64().must())
+
+    if 0 < n && n <= 21
+        return s.slice(from: 0, to: n) + "." + s.slice(from: n, to: k)
+
+    if -6 < n && n <= 0
+        return "0." + repeat("0", (0 - n).to_u64().must()) + s
+    mantissa: str @= s.slice(from: 0, to: 1)
+
+    if k > 1
+        mantissa @ mantissa + "." + s.slice(from: 1, to: k)
+
+    if n - 1 < 0
+        return mantissa + "e-" + (1 - n).to_str()
+    return mantissa + "e+" + (n - 1).to_str()
+
+## Tests
+
+# The number `text` holds, read from its first byte, and whether the cursor
+# then stands at its end.
+function read_all(text: str) -> f64?
+    c: cursor.Cursor @= cursor.start(text)
+    x = read(@c)?
+
+    if !cursor.at_end(c)
+        return fail(code: "not_json", msg: "the number did not reach the end of " + text)
+    return ok(x)
+
+# What the number `text` holds is written as: the two halves of the module
+# asked at once, against what JavaScript's `JSON.stringify(Number(text))`
+# writes (node 2026-11-10).
+function shown(text: str) -> str
+    return match read_all(text)
+        .ok x  => written(x)
+        .err e => e.code
+
+test "numeral: integers, signs, fractions and exponents, as JavaScript reads them"
+    assert shown("0") == "0"
+    assert shown("-0") == "-0"
+    assert shown("100") == "100"
+    assert shown("-17") == "-17"
+    assert shown("1.5") == "1.5"
+    assert shown("4.35") == "4.35"
+    assert shown("1E2") == "100"
+    assert shown("1e+2") == "100"
+    assert shown("0.1e1") == "1"
+    assert shown("123e-20") == "1.23e-18"
+    assert shown("2.5e-10") == "2.5e-10"
+    assert shown("1.5e300") == "1.5e+300"
+
+test "numeral: a number is rounded once, to the nearest f64"
+    assert shown("0.3") == "0.3"
+    assert read_all("0.3").must() == 0.3
+    assert shown("0.1000000000000000055511151231257827021181583404541015625") == "0.1"
+    assert shown("123456789012345678901234567890") == "1.2345678901234568e+29"
+    assert shown("9007199254740993") == "9007199254740992"
+    assert shown("9007199254740995") == "9007199254740996"
+    assert shown("7.2057594037927933e16") == "72057594037927940"
+    assert shown("1.00000000000000011102230246251565404236316680908203125") == "1"
+    assert shown("1.00000000000000011102230246251565404236316680908203126") == "1.0000000000000002"
+    assert shown("3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196") == "3.141592653589793"
+
+test "numeral: the scaled route's edges, and where it hands a number on, as JavaScript reads them"
+    # 19 digits, the most a word holds whatever they are, and 20, which the
+    # route reads by their first 19 and the same plus one: all nines, whose
+    # plus one is 1 at the next place.
+    assert shown("1234567890123456789") == "1234567890123456800"
+    assert shown("9999999999999999999") == "10000000000000000000"
+    assert shown("12345678901234567891") == "12345678901234567000"
+    assert shown("99999999999999999999") == "100000000000000000000"
+    assert shown("18446744073709551615") == "18446744073709552000"
+    assert shown("18446744073709551616") == "18446744073709552000"
+
+    # Past 19 digits and a hair past halfway: the first 19 and the same plus
+    # one round apart, and the exact digits decide; a hair below, they agree.
+    assert shown("9007199254740993.0000000000001") == "9007199254740994"
+    assert shown("9007199254740992.9999999999999") == "9007199254740992"
+
+    # The powers of ten at the table's two ends and one past each.
+    assert shown("1e308") == "1e+308"
+    assert shown("1e309") == "does_not_fit"
+    assert shown("9999999999999999999e-342") == "1e-323"
+    assert shown("9999999999999999999e-343") == "0"
+    assert shown("1e-342") == "0"
+    assert shown("123456789012345678e-361") == "0"
+
+    # Halfway between two f64, to the even one; the first two and `1e23` are
+    # numbers Go 1.24's Eisel-Lemire hands to its exact route as ambiguous at
+    # halfway, the next four as ambiguous in its wider product.
+    assert shown("2585631478023808256") == "2585631478023808000"
+    assert shown("1e23") == "1e+23"
+    assert shown("-1e23") == "-1e+23"
+    assert shown("4503599627370496.5") == "4503599627370496"
+    assert shown("4503599627370497.5") == "4503599627370498"
+    assert shown("2060130142705315.375") == "2060130142705315.5"
+    assert shown("7354232512979985.5") == "7354232512979986"
+    assert shown("1844674407370955161.5") == "1844674407370955300"
+
+    # A zero keeps its sign, and the subnormals, which Eisel-Lemire hands on
+    # whole, are read here.
+    assert shown("-0.0") == "-0" && shown("-0.000") == "-0" && shown("-0e-400") == "-0"
+    assert shown("1e-323") == "1e-323"
+    assert shown("3e-324") == "5e-324"
+    assert shown("7.4e-324") == "5e-324"
+    assert shown("1e-320") == "1e-320"
+    assert shown("2.2250738585072009e-308") == "2.225073858507201e-308"
+    assert shown("-1.7976931348623157e308") == "-1.7976931348623157e+308"
+    assert shown("0.000000000000000000000000000000000001") == "1e-36"
+
+test "numeral: the pieces of the longer route, word_of, truncated, one_more and agree"
+    assert word_of("9999999999999999999") == powers.NINES
+    assert word_of("1") == 1 && word_of("1844674407370955161") == 1844674407370955161
+    assert truncated(digits: "12345678901234567891", point: 20).must() == 12345678901234567000.0
+    assert truncated(digits: "90071992547409930000000000001", point: 16).must() == 9007199254740994.0
+    assert truncated(digits: "12345678901234567891", point: 400).is_err()
+    assert one_more(head: powers.NINES, p: 0).must() == 10000000000000000000.0
+    assert one_more(head: 1, p: 0).must() == 2.0
+    assert agree(below: ok(1.0), above: ok(1.0)) && !agree(below: ok(1.0), above: ok(2.0))
+    assert agree(below: fail(code: "does_not_fit", msg: "past"), above: fail(code: "does_not_fit", msg: "past"))
+    assert !agree(below: ok(1.0), above: fail(code: "does_not_fit", msg: "past"))
+    assert !agree(below: fail(code: "does_not_fit", msg: "past"), above: ok(1.0))
+
+test "numeral: the edges of an f64, past the largest refused and below the smallest zero"
+    assert shown("1.7976931348623157e308") == "1.7976931348623157e+308"
+    assert shown("1.7976931348623158e308") == "1.7976931348623157e+308"
+    assert shown("1.7976931348623159e308") == "does_not_fit"
+    assert shown("-1e400") == "does_not_fit"
+    assert shown("1e-400") == "0"
+    assert shown("5e-324") == "5e-324"
+    assert shown("4.9406564584124654e-324") == "5e-324"
+    assert shown("2.4703282292062327e-324") == "0"
+    assert shown("2.4703282292062328e-324") == "5e-324"
+    assert shown("2.2250738585072011e-308") == "2.225073858507201e-308"
+    assert shown("1e99999999999999999999") == "does_not_fit"
+    assert shown("0e99999999999999999999") == "0"
+
+test "numeral: what JSON's grammar refuses fails `not_json`"
+    for text in ["-", "+1", ".5", "01", "-01", "1.", "1.e3", "1e", "1e+", "x"]
+        assert shown(text) == "not_json"
+
+    match read_all("01")
+        .ok _  => assert false
+        .err e => assert e.msg == "expected a `.`, an exponent or the number's end after its leading `0`, found `1` at line 1, column 2"
+
+test "numeral: a number stops where its grammar does"
+    c: cursor.Cursor @= cursor.start("12,")
+    assert read(@c).must() == 12.0
+    assert c.at == 2
+    e: cursor.Cursor @= cursor.start("7e1x")
+    assert read(@e).must() == 70.0
+    assert e.at == 3
+
+test "numeral: the pieces, digit, digits_past, exponent_past, value_of and nearest"
+    assert digit('7') && !digit('a')
+    c: cursor.Cursor @= cursor.start("123x")
+    digits_past(@c)
+    assert c.at == 3
+    huge: cursor.Cursor @= cursor.start("99999999999999999999")
+    assert exponent_past(@huge) == 9_999_999_999_999_999
+    assert value_of(whole: "00", fraction: "500", exponent: 1).must() == 5.0
+    assert value_of(whole: "0", fraction: "000", exponent: 7).must() == 0.0
+    assert nearest(digits: "25", point: 1).must() == 2.5
+    assert nearest(digits: "1", point: 23).must() == 10000000000000000000000.0
+    assert nearest(digits: "1", point: 24).must().to_str() == "1e+23"
+
+test "numeral: the exact powers are exact"
+    power: f64 @= 1.0
+
+    for p in EXACT
+        assert p == power
+        power @ power * 10.0
+
+    assert EXACT.len() == 23
+
+test "numeral: written lays the digits out as JavaScript does"
+    assert written(300.0) == "300"
+    assert written(0.5) == "0.5"
+    assert written(0.000001) == "0.000001"
+    assert written(0.0000001) == "1e-7"
+    assert written(123456789012345680000.0) == "123456789012345680000"
+    assert written(1234567890123456800000.0) == "1.2345678901234568e+21"
+    assert written(-0.0) == "-0"
+    assert written(-2.5) == "-2.5"
+    assert finite(1.0) && !finite(1.0 / 0.0) && !finite(0.0 / 0.0)
+    assert exponent_of("+20") == 20 && exponent_of("-06") == -6
+    assert laid_out(whole: "1", fraction: "5", exponent: 300) == "1.5e+300"
+    assert laid_out(whole: "0", fraction: "0", exponent: 0) == "0"
