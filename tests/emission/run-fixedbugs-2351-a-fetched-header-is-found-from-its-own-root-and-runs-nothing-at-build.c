@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -93,7 +94,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "main.c"
+#line 98 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "main.c"
+#line 150 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -178,12 +179,12 @@ void h_main_main(void) { HERO_NODEBUG int64_t t1, t4, t5, t6; HERO_NODEBUG uint6
     t3 = h_1pkpk_on(); hero_print_bool(t3); hero_print_end();
     t4 = INT64_C(21); t5 = h_1pkpk_twice(t4); hero_print_int(t5); hero_print_end();
     t6 = h_1pkpk_witnessed(); hero_print_int(t6); hero_print_end(); return;
-#line 182 "main.c"
+#line 183 "main.c"
 }
 
 #line 4 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 int64_t h_1pkpk_PK_LIMIT(void) {
-#line 187 "main.c"
+#line 188 "main.c"
     _Static_assert(HERO_RET_INT(PK_LIMIT), "heroes-ffi-return PK_LIMIT i64");
     _Static_assert(__builtin_constant_p(PK_LIMIT), "heroes-ffi-const PK_LIMIT");
 #pragma clang diagnostic push
@@ -195,7 +196,7 @@ int64_t h_1pkpk_PK_LIMIT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 4 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
     return PK_LIMIT;
-#line 199 "main.c"
+#line 200 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -213,7 +214,7 @@ int64_t h_1pkpk_PK_LIMIT(void) {
 
 #line 5 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 uint64_t h_1pkpk_PK_TOP(void) {
-#line 217 "main.c"
+#line 218 "main.c"
     _Static_assert(HERO_RET_U64(PK_TOP), "heroes-ffi-return PK_TOP u64");
     _Static_assert(__builtin_constant_p(PK_TOP), "heroes-ffi-const PK_TOP");
 #pragma clang diagnostic push
@@ -225,7 +226,7 @@ uint64_t h_1pkpk_PK_TOP(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 5 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
     return PK_TOP;
-#line 229 "main.c"
+#line 230 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -243,7 +244,7 @@ uint64_t h_1pkpk_PK_TOP(void) {
 
 #line 6 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 bool h_1pkpk_PK_ON(void) {
-#line 247 "main.c"
+#line 248 "main.c"
     _Static_assert(HERO_RET_BOOL(PK_ON), "heroes-ffi-return PK_ON bool");
     _Static_assert(__builtin_constant_p(PK_ON), "heroes-ffi-const PK_ON");
 #pragma clang diagnostic push
@@ -255,7 +256,7 @@ bool h_1pkpk_PK_ON(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 6 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
     return PK_ON;
-#line 259 "main.c"
+#line 260 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -274,31 +275,31 @@ bool h_1pkpk_PK_ON(void) {
 #line 10 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 int64_t h_1pkpk_limit(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1pkpk_PK_LIMIT(); return t1;
-#line 278 "main.c"
+#line 279 "main.c"
 }
 
 #line 13 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 uint64_t h_1pkpk_top(void) { HERO_NODEBUG uint64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1pkpk_PK_TOP(); return t1;
-#line 284 "main.c"
+#line 285 "main.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 bool h_1pkpk_on(void) { HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1pkpk_PK_ON(); return t1;
-#line 290 "main.c"
+#line 291 "main.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 int64_t h_1pkpk_twice(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<pk>/pk.hero", "pk.twice", 20, 12}; t2 = pk_twice(t1); } return t2;
-#line 296 "main.c"
+#line 297 "main.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-2351-a-fetched-header-is-found-from-its-own-root-and-runs-nothing-at-build.case/heroes.packages/pk@1.0.0-8f9c0ddf71213fde/pk.hero"
 int64_t h_1pkpk_witnessed(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<pk>/pk.hero", "pk.witnessed", 25, 12}; t1 = pk_witnessed(); } return t1;
-#line 302 "main.c"
+#line 303 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

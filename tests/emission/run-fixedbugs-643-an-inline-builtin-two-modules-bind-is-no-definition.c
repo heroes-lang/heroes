@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -93,7 +94,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 98 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -147,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 152 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -170,13 +171,13 @@ int32_t h_fixedbugs643other_magnitude(int32_t h0_x);
 void h_fixedbugs643aninlinebuiltintwomodulesbindisnodefinition_main(void) { HERO_NODEBUG int32_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(-3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero", "fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.main", 18, 11}; t2 = abs(t1); } hero_print_int(t2); hero_print_end();
     t3 = INT64_C(-4); t4 = h_fixedbugs643other_magnitude(t3); hero_print_int(t4); hero_print_end(); return;
-#line 174 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 175 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs643/other.hero"
 int32_t h_fixedbugs643other_magnitude(int32_t h0_x) { HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_x; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs643/other.hero", "other.magnitude", 8, 12}; t2 = abs(t1); } return t2;
-#line 180 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 181 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

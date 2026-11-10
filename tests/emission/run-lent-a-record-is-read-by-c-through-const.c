@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -59,11 +60,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 9 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int64_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 63 "lentarecordisreadbycthroughconst.c"
+#line 64 "lentarecordisreadbycthroughconst.c"
 
 #line 8 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
 _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13, "heroes-ffi-union Pt x y");
-#line 67 "lentarecordisreadbycthroughconst.c"
+#line 68 "lentarecordisreadbycthroughconst.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,7 +164,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "lentarecordisreadbycthroughconst.c"
+#line 168 "lentarecordisreadbycthroughconst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Pt_eq(const struct pt *a, const struct pt *b);
@@ -197,7 +198,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 18 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
 int64_t h_lentarecordisreadbycthroughconst_twice(struct pt *ph0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 12}; hero_lend_local_name(ph0_p, "pt_sum", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t1 = pt_sum(&(*ph0_p)); } t2 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 24}; hero_lend_local_name(ph0_p, "pt_scaled", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t3 = pt_scaled(&(*ph0_p), t2); } if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 12); return t4;
-#line 201 "lentarecordisreadbycthroughconst.c"
+#line 202 "lentarecordisreadbycthroughconst.c"
 }
 
 #line 21 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
@@ -212,7 +213,7 @@ void h_lentarecordisreadbycthroughconst_main(void) {
     t10 = h_lentarecordisreadbycthroughconst_twice(&h0_a); hero_print_int(t10); hero_print_end();
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.main", 26, 11}; hero_pad_fill(&h1_h.f_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t11 = pt_sum(&h1_h.f_p); } t12 = HERO_STR_LIT(hero_str_20); t13 = h1_h.f_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.main", 26, 29}; hero_pad_fill(&h1_h.f_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t14 = pt_scaled(&h1_h.f_p, t13); } hero_print_int(t11); hero_print_str(t12); hero_print_int(t14); hero_print_end();
     t15 = h0_a.x; t16 = HERO_STR_LIT(hero_str_20); t17 = h1_h.f_p.x; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_end(); hero_lend_local_give(hero_lend_h0_a); return;
-#line 216 "lentarecordisreadbycthroughconst.c"
+#line 217 "lentarecordisreadbycthroughconst.c"
 }
 #undef h0_a
 HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Pt_eq(const struct pt *a, const struct pt *b) {

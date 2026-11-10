@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_524451e, "reopened and closed once");
 
-#line 102 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 103 "handlesetacallthatalsoacquirespaysitsownmark.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -153,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 157 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 158 "handlesetacallthatalsoacquirespaysitsownmark.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_0H_eq(hh * const *a, hh * const *b);
@@ -180,7 +181,7 @@ void h_handlesetacallthatalsoacquirespaysitsownmark_main(void) { hh * h0_a; hh *
     t6 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-set-a-call-that-also-acquires-pays-its-own-mark.hero", "handle-set-a-call-that-also-acquires-pays-its-own-mark.main", 16, 11}; hero_handle_alive_at(t6, "the argument `x` of `h_value`", &hero_here); t7 = h_value(t6); } hero_print_int(t7); hero_print_end();
     t8 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"handle-set-a-call-that-also-acquires-pays-its-own-mark.hero", "handle-set-a-call-that-also-acquires-pays-its-own-mark.main", 17, 5}; { hero_handle_alive_at(t8, "the argument `x` of `h_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "h_close", NULL, &hero_here); (void)h_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_b == t8) h1_b = hero_handle_dead(); } }
     t9 = HERO_STR_LIT(hero_str_524451e); hero_print_str(t9); hero_print_end(); return;
-#line 184 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 185 "handlesetacallthatalsoacquirespaysitsownmark.c"
 }
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_0H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

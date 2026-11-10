@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -59,11 +60,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 8 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 _Static_assert(__builtin_classify_type(((struct span *)0)->lo) == 1 && sizeof(((struct span *)0)->lo) == sizeof(int64_t) && (_Generic(((struct span *)0)->lo, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Span lo");
 _Static_assert(__builtin_classify_type(((struct span *)0)->hi) == 1 && sizeof(((struct span *)0)->hi) == sizeof(int64_t) && (_Generic(((struct span *)0)->hi, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Span hi");
-#line 63 "ffilentonanoutparameter.c"
+#line 64 "ffilentonanoutparameter.c"
 
 #line 7 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 _Static_assert(__builtin_classify_type(*(struct span *)0) != 13, "heroes-ffi-union Span lo hi");
-#line 67 "ffilentonanoutparameter.c"
+#line 68 "ffilentonanoutparameter.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -158,7 +159,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "ffilentonanoutparameter.c"
+#line 163 "ffilentonanoutparameter.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffilentonanoutparameter_0Span_eq(const struct span *a, const struct span *b);
@@ -199,7 +200,7 @@ void h_ffilentonanoutparameter_main(void) {
     t6 = INT64_C(10); t7 = INT64_C(20); t8 = (struct span){.lo = t6, .hi = t7}; h1_s = t8; hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-lent-on-an-out-parameter.hero", "ffi-lent-on-an-out-parameter.main", 17, 5}; hero_lend_local_name(hero_lend_h1_s, "widen", "s"); hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0); (void)widen(&h1_s); }
     t9 = h1_s.lo; t10 = HERO_STR_LIT(hero_str_20); t11 = h1_s.hi; hero_print_int(t9); hero_print_str(t10); hero_print_int(t11); hero_print_end(); hero_lend_local_give(hero_lend_h1_s); hero_lend_local_give(hero_lend_h0_e); return;
-#line 203 "ffilentonanoutparameter.c"
+#line 204 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

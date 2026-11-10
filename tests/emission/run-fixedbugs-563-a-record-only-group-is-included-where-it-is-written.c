@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -63,7 +64,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
 _Static_assert(__builtin_classify_type(((Need *)0)->v) == 1 && sizeof(((Need *)0)->v) == sizeof(int32_t) && (_Generic(((Need *)0)->v, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Need v");
-#line 67 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
+#line 68 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -152,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
+#line 157 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_0Need_eq(const Need *a, const Need *b);
@@ -175,7 +176,7 @@ void h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_main(void);
 #line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
 void h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_main(void) { HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG Need t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(7); t2 = (Need){.v = t1}; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero", "fixedbugs-563-a-record-only-group-is-included-where-it-is-written.main", 19, 11}; t3 = need_v(t2); } hero_print_int(t3); hero_print_end(); return;
-#line 179 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
+#line 180 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_0Need_eq(const Need *a, const Need *b) {
     if (!(a->v == b->v)) return false;

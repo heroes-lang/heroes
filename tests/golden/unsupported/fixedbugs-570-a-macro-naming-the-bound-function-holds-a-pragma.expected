@@ -4,4 +4,4 @@ error[ffi_macro_name]: `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-
   16 |     function my_abs(x: u32) -> i32  #~ ffi_macro_name
      |              ^^^^^^
   note: clang read the header, and the expansion of `my_abs` runs `#pragma clang diagnostic ignored "-Wsign-conversion"`
-  note: a header of your own that includes `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma.h` and then writes `#undef my_abs`, named by this group instead, binds the header's own `my_abs` where it declares one
+  note: a header of your own that includes `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma.h` and then writes `#undef my_abs`, named by this group instead, binds the header's own `my_abs` where it declares one; where it declares `my_abs` with `...`, that header also defines a `static inline` function of a new name with a fixed prototype, taking each argument at the type `my_abs` reads and calling it, and the group binds that function, since nothing is bound past a `...`

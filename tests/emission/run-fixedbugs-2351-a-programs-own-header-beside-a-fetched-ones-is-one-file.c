@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -93,7 +94,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 97 "main.c"
+#line 98 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "main.c"
+#line 150 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -168,7 +169,7 @@ int64_t h_1pkpk_limit(void);
 
 #line 12 "tests/golden/run/fixedbugs-2351-a-programs-own-header-beside-a-fetched-ones-is-one-file.case/main.hero"
 int64_t h_main_MINE(void) {
-#line 172 "main.c"
+#line 173 "main.c"
     _Static_assert(HERO_RET_INT(MINE), "heroes-ffi-return MINE i64");
     _Static_assert(__builtin_constant_p(MINE), "heroes-ffi-const MINE");
 #pragma clang diagnostic push
@@ -180,7 +181,7 @@ int64_t h_main_MINE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 12 "tests/golden/run/fixedbugs-2351-a-programs-own-header-beside-a-fetched-ones-is-one-file.case/main.hero"
     return MINE;
-#line 184 "main.c"
+#line 185 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -199,12 +200,12 @@ int64_t h_main_MINE(void) {
 #line 14 "tests/golden/run/fixedbugs-2351-a-programs-own-header-beside-a-fetched-ones-is-one-file.case/main.hero"
 void h_main_main(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1pkpk_limit(); t2 = h_main_MINE(); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("main.hero", "main.main", 15, 11); hero_print_int(t3); hero_print_end(); return;
-#line 203 "main.c"
+#line 204 "main.c"
 }
 
 #line 4 "tests/golden/run/fixedbugs-2351-a-programs-own-header-beside-a-fetched-ones-is-one-file.case/heroes.packages/pk@1.0.0-11abc9a634bbecbf/pk.hero"
 int64_t h_1pkpk_PK_LIMIT(void) {
-#line 208 "main.c"
+#line 209 "main.c"
     _Static_assert(HERO_RET_INT(PK_LIMIT), "heroes-ffi-return PK_LIMIT i64");
     _Static_assert(__builtin_constant_p(PK_LIMIT), "heroes-ffi-const PK_LIMIT");
 #pragma clang diagnostic push
@@ -216,7 +217,7 @@ int64_t h_1pkpk_PK_LIMIT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 4 "tests/golden/run/fixedbugs-2351-a-programs-own-header-beside-a-fetched-ones-is-one-file.case/heroes.packages/pk@1.0.0-11abc9a634bbecbf/pk.hero"
     return PK_LIMIT;
-#line 220 "main.c"
+#line 221 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -235,7 +236,7 @@ int64_t h_1pkpk_PK_LIMIT(void) {
 #line 7 "tests/golden/run/fixedbugs-2351-a-programs-own-header-beside-a-fetched-ones-is-one-file.case/heroes.packages/pk@1.0.0-11abc9a634bbecbf/pk.hero"
 int64_t h_1pkpk_limit(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h_1pkpk_PK_LIMIT(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"<pk>/pk.hero", "pk.limit", 8, 12}; t2 = pk_twice(t1); } return t2;
-#line 239 "main.c"
+#line 240 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

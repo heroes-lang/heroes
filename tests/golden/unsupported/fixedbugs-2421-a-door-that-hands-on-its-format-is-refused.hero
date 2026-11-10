@@ -1,0 +1,29 @@
+# FIXED DEFECT 2421's door, written wrong, 2026-11-10, lane b30-variadic.
+#
+# SYMPTOM: a header of the program's own whose `say_any(const char *f, long
+# long v)` hands `printf` the format it was given, bound `say_any(f: cstr
+# lent, v: i64)` and called through `say(format: "n = %d\n", value:
+# 4294967338)`, built at exit 0 and printed `n = 42`: the door's prototype
+# holds `v` to `long long`, and no literal is there for `-Wformat` to read
+# `%d` against it (panel 243's critic, item 2).
+#
+# CAUSE: `-Wformat` reads a format only where it is a literal, and the
+# region a group's header is compiled in held a format handed on to nothing.
+#
+# FIX: `-Wformat-nonliteral` is an error in a header's own code
+# (`emit/header_region.hero`'s `LITERAL`, panel 243's R1, provisional, author
+# ratification pending), so the door is refused at the header's line, and its
+# route is the literal inside it:
+# `tests/golden/run/fixedbugs-2421-a-format-function-is-called-through-a-door-holding-its-literal-format.hero`.
+# A format handed alone, `printf(m)`, stays `-Wformat-security`'s and builds
+# (defect 2036); a forwarder marked with the `format` attribute is clang's own
+# reader's (defect 2034).
+
+extern "fixedbugs-2421-forward.h"  #~ ffi_header_refused
+    function say_any(f: cstr lent, v: i64) -> i32
+
+function say(format: str, value: i64) -> i32
+    return say_any(f: format.cstr(), v: value)
+
+function main()
+    _ = say(format: "n = %d\n", value: 4294967338)

@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -97,7 +98,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 101 "deadhandlethroughahelperthecheckercannotseeinto.c"
+#line 102 "deadhandlethroughahelperthecheckercannotseeinto.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "deadhandlethroughahelperthecheckercannotseeinto.c"
+#line 155 "deadhandlethroughahelperthecheckercannotseeinto.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlethroughahelperthecheckercannotseeinto_0Json_eq(Obj * const *a, Obj * const *b);
@@ -174,7 +175,7 @@ void h_deadhandlethroughahelperthecheckercannotseeinto_main(void);
 #line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 void h_deadhandlethroughahelperthecheckercannotseeinto_finish(Obj * *ph0_j) { HERO_NODEBUG Obj *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_j); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-through-a-helper-the-checker-cannot-see-into.hero", "dead-handle-through-a-helper-the-checker-cannot-see-into.finish", 16, 5}; { hero_handle_alive_at(t1, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "obj_delete", NULL, &hero_here); (void)obj_delete(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_j) == t1) (*ph0_j) = hero_handle_dead(); } } return;
-#line 178 "deadhandlethroughahelperthecheckercannotseeinto.c"
+#line 179 "deadhandlethroughahelperthecheckercannotseeinto.c"
 }
 
 #line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
@@ -184,7 +185,7 @@ void h_deadhandlethroughahelperthecheckercannotseeinto_main(void) { Obj * h0_a; 
     h_deadhandlethroughahelperthecheckercannotseeinto_finish(&h1_b);
     t3 = h0_a; t4 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-through-a-helper-the-checker-cannot-see-into.hero", "dead-handle-through-a-helper-the-checker-cannot-see-into.main", 22, 36}; t5 = hero_str_lend_at(t4, &hero_here); } t6 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-through-a-helper-the-checker-cannot-see-into.hero", "dead-handle-through-a-helper-the-checker-cannot-see-into.main", 22, 9}; { hero_handle_alive_at(t3, "the argument `object` of `obj_add`", &hero_here); hero_handle_alive_at(t6, "the argument `item` of `obj_add`", &hero_here); HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_ending_at(t6, "obj_add", NULL, &hero_here); (void)obj_add(t3, hero_cstr_nonnull_at(t5, &hero_here), t6); if (hero_handle_ended(t6, hero_life_2_0) && h1_b == t6) h1_b = hero_handle_dead(); } }
     t8 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-through-a-helper-the-checker-cannot-see-into.hero", "dead-handle-through-a-helper-the-checker-cannot-see-into.main", 23, 5}; { hero_handle_alive_at(t8, "the argument `item` of `obj_delete`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "obj_delete", NULL, &hero_here); (void)obj_delete(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_a == t8) h0_a = hero_handle_dead(); } } return;
-#line 188 "deadhandlethroughahelperthecheckercannotseeinto.c"
+#line 189 "deadhandlethroughahelperthecheckercannotseeinto.c"
 }
 HERO_TU_LOCAL bool h_deadhandlethroughahelperthecheckercannotseeinto_0Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

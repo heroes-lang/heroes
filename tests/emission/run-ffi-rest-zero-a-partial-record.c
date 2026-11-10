@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -58,7 +59,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 8 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 _Static_assert(__builtin_classify_type(((SP *)0)->kind) == 1 && sizeof(((SP *)0)->kind) == sizeof(int32_t) && (_Generic(((SP *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SP kind");
-#line 62 "ffirestzeroapartialrecord.c"
+#line 63 "ffirestzeroapartialrecord.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -150,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "ffirestzeroapartialrecord.c"
+#line 155 "ffirestzeroapartialrecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_0SP_eq(const SP *a, const SP *b);
@@ -199,7 +200,7 @@ __attribute__((__noinline__)) void h_ffirestzeroapartialrecord_built(SP *hero_ou
 #line 12
     HERO_NODEBUG int32_t t1; HERO_NODEBUG SP *const hero_big_t2 = (SP *)hero_frame_take(sizeof(SP)); HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = INT64_C(4); t2 = *(SP *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; if (hero_out != NULL) *hero_out = t2; hero_frame_give(hero_big_t2); return;
-#line 203 "ffirestzeroapartialrecord.c"
+#line 204 "ffirestzeroapartialrecord.c"
 }
 #undef t2
 __attribute__((unused)) SP hero_value_h_ffirestzeroapartialrecord_built(void) {
@@ -219,7 +220,7 @@ __attribute__((__noinline__)) void h_ffirestzeroapartialrecord_main(void) {
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-partial-record.hero", "ffi-rest-zero-a-partial-record.main", 16, 5}; (void)dirty(); }
     h_ffirestzeroapartialrecord_built(&t1); h0_s = t1; hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_s.kind; t3 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-partial-record.hero", "ffi-rest-zero-a-partial-record.main", 18, 24}; hero_lend_local_name(hero_lend_h0_s, "sp_union", "s"); hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0); t4 = sp_union(&h0_s); } hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_s); hero_frame_give(hero_big_t1); return;
-#line 223 "ffirestzeroapartialrecord.c"
+#line 224 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 #undef t1

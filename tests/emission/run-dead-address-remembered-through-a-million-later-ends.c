@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 102 "deadaddressrememberedthroughamillionlaterends.c"
+#line 103 "deadaddressrememberedthroughamillionlaterends.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "deadaddressrememberedthroughamillionlaterends.c"
+#line 156 "deadaddressrememberedthroughamillionlaterends.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_0Big_eq(big * const *a, big * const *b);
@@ -185,7 +186,7 @@ void h_deadaddressrememberedthroughamillionlaterends_main(void) { big * h0_targe
 #line 30
     t13 = HERO_STR_LIT(hero_str_11c935bc); t14 = h2_i; hero_print_str(t13); hero_print_int(t14); hero_print_end();
     t15 = HERO_STR_LIT(hero_str_eb0c0ab); t16 = h1_keep; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-address-remembered-through-a-million-later-ends.hero", "dead-address-remembered-through-a-million-later-ends.main", 31, 33}; hero_handle_alive_at(t16, "the argument `n` of `big_value`", &hero_here); t17 = big_value(t16); } hero_print_str(t15); hero_print_int(t17); hero_print_end(); return;
-#line 189 "deadaddressrememberedthroughamillionlaterends.c"
+#line 190 "deadaddressrememberedthroughamillionlaterends.c"
 }
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_0Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);

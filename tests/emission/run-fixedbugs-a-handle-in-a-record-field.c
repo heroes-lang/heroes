@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -64,7 +65,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(&((Slot *)0)->handle, Thing * *: 1, default: 0) && sizeof(((Slot *)0)->handle) == sizeof(Thing *), "heroes-ffi-field Slot handle");
 _Static_assert(_Generic(&((Slot *)0)->ratio, double *: 1, default: 0) && sizeof(((Slot *)0)->ratio) == sizeof(double), "heroes-ffi-field Slot ratio");
 _Static_assert(__builtin_classify_type(((Slot *)0)->count) == 1 && sizeof(((Slot *)0)->count) == sizeof(int64_t) && (_Generic(((Slot *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot count");
-#line 68 "fixedbugsahandleinarecordfield.c"
+#line 69 "fixedbugsahandleinarecordfield.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -156,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugsahandleinarecordfield.c"
+#line 161 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Thing_eq(Thing * const *a, Thing * const *b);
@@ -193,7 +194,7 @@ void h_fixedbugsahandleinarecordfield_main(void) { Slot h0_s; HERO_NODEBUG int64
 #line 56
     t5 = h0_s.handle; t6 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-handle-in-a-record-field.hero", "fixedbugs-a-handle-in-a-record-field.main", 56, 11}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } hero_print_bool(t7); hero_print_end();
     t8 = h0_s.ratio; hero_print_f64(t8); hero_print_end(); return;
-#line 197 "fixedbugsahandleinarecordfield.c"
+#line 198 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_0Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

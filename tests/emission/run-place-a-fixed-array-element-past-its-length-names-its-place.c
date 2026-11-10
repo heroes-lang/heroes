@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -63,11 +64,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 7 "tests/golden/run/place-a-fixed-array-element-past-its-length-names-its-place.hero"
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a"); _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
 _Static_assert(__builtin_classify_type(((struct nums *)0)->after) == 1 && sizeof(((struct nums *)0)->after) == sizeof(int64_t) && (_Generic(((struct nums *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nums after");
-#line 67 "placeafixedarrayelementpastitslengthnamesitsplace.c"
+#line 68 "placeafixedarrayelementpastitslengthnamesitsplace.c"
 
 #line 6 "tests/golden/run/place-a-fixed-array-element-past-its-length-names-its-place.hero"
 _Static_assert(__builtin_classify_type(*(struct nums *)0) != 13, "heroes-ffi-union Nums a after");
-#line 71 "placeafixedarrayelementpastitslengthnamesitsplace.c"
+#line 72 "placeafixedarrayelementpastitslengthnamesitsplace.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -143,7 +144,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "placeafixedarrayelementpastitslengthnamesitsplace.c"
+#line 148 "placeafixedarrayelementpastitslengthnamesitsplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_placeafixedarrayelementpastitslengthnamesitsplace_0Nums_eq(const struct nums *a, const struct nums *b);
@@ -178,7 +179,7 @@ void h_placeafixedarrayelementpastitslengthnamesitsplace_main(void) { struct num
     t9 = h1_at; t10 = h0_n.a[((uint64_t)(t9) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 13, 11), (int64_t)0) : (t9))]; hero_print_int(t10); hero_print_end();
     t11 = h1_at; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 14, 10); h1_at = t13;
     t14 = h1_at; t15 = h0_n.a[((uint64_t)(t14) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "place-a-fixed-array-element-past-its-length-names-its-place.hero", "place-a-fixed-array-element-past-its-length-names-its-place.main", 15, 11), (int64_t)0) : (t14))]; hero_print_int(t15); hero_print_end(); return;
-#line 182 "placeafixedarrayelementpastitslengthnamesitsplace.c"
+#line 183 "placeafixedarrayelementpastitslengthnamesitsplace.c"
 }
 HERO_TU_LOCAL bool h_placeafixedarrayelementpastitslengthnamesitsplace_0Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;

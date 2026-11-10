@@ -15,11 +15,12 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
-#include <stdio.h>
+#include <ffi-variadic-at-a-fixed-arity.h>
 #include "heroes_guard_close.h"
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
@@ -73,7 +74,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(printf(0, (int64_t)0)), "heroes-ffi-return printf i32");
+_Static_assert(HERO_RET_I32(print_count((int64_t)0)), "heroes-ffi-return print_count i32");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -92,9 +93,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-HERO_STR_STATIC(hero_str_18109220, "%lld\n");
-
-#line 98 "ffivariadicatafixedarity.c"
+#line 97 "ffivariadicatafixedarity.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -135,8 +134,8 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 8 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffivariadicatafixedarity_printf(const char * a0, int64_t a1) { (void)(printf)(a0, a1); }
+#line 14 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_ffivariadicatafixedarity_print_count(int64_t a0) { (void)(print_count)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
@@ -146,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "ffivariadicatafixedarity.c"
+#line 149 "ffivariadicatafixedarity.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -164,11 +163,11 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
 
 void h_ffivariadicatafixedarity_main(void);
 
-#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-void h_ffivariadicatafixedarity_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_18109220); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-variadic-at-a-fixed-arity.hero", "ffi-variadic-at-a-fixed-arity.main", 11, 24}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = INT64_C(42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-variadic-at-a-fixed-arity.hero", "ffi-variadic-at-a-fixed-arity.main", 11, 9}; (void)printf(hero_cstr_nonnull_at(t2, &hero_here), t3); }
-    t5 = INT64_C(7); hero_print_int(t5); hero_print_end(); return;
-#line 172 "ffivariadicatafixedarity.c"
+#line 16 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
+void h_ffivariadicatafixedarity_main(void) { HERO_NODEBUG int64_t t1, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(42); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-variadic-at-a-fixed-arity.hero", "ffi-variadic-at-a-fixed-arity.main", 17, 9}; (void)print_count(t1); }
+    t3 = INT64_C(7); hero_print_int(t3); hero_print_end(); return;
+#line 171 "ffivariadicatafixedarity.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -267,7 +266,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("681356612e07b0e9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("14bf9ebd66589aed", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("ffivariadicatafixedarity\tffi-variadic-at-a-fixed-arity\n");

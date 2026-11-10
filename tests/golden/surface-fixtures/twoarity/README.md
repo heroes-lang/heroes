@@ -70,3 +70,22 @@ its `lent`, since it stands before the `...` and the probe's call holds it to th
 header's `const char *`. The claim the fixture refutes is untouched: two modules
 still bind one C symbol at two shapes, exit 0, `n = 42` and `s = forty-two`. The
 program as it stood is `../twoarity-lent/`, refused on its own module's `value`.
+
+## Correction, 2026-11-10 (panel 243's R1, defect 2421)
+
+Past `printf`'s `...` nothing holds an argument to a type: C reads it as the
+type its `va_arg` names, and `as_int.hero`'s `value: i64`, called with
+`"n = %d\n"` and 4294967338, printed `n = 42` at exit 0 (measured that day with
+the compiler before the repair). A binding declares no parameter past a
+header's `...` since panel 243's R1, so both modules' direct bindings are
+refused, each on its own module's `value` in its own words: that program is
+`../twoarity-lent/`, and its `suite_surface` row asks both. Here each module
+reaches `printf` through a door of its own header, `as_int.h`'s `say_count(long
+long)` and `as_text.h`'s `say_text(const char *)`, a function of a new name with
+a fixed prototype holding its literal format, so clang's `-Wformat` reads each
+conversion against its argument. What the fixture still shows is that two
+modules reach one C variadic at two shapes, exit 0, `n = 42` and `s =
+forty-two`; what it no longer shows is one C name carrying two Heroes
+bindings, which nothing past a `...` admits now. The claim it was written to
+refute is moot rather than false: a variadic is bound at no shape past its
+`...`.

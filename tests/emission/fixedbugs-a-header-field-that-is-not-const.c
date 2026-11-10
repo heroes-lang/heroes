@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -59,11 +60,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 43 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 _Static_assert(_Generic(((struct passwd *)0)->pw_name, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((struct passwd *)0)->pw_name) == sizeof(char *), "heroes-ffi-field Passwd pw_name");
 _Static_assert(_Generic(((struct passwd *)0)->pw_dir, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((struct passwd *)0)->pw_dir) == sizeof(char *), "heroes-ffi-field Passwd pw_dir");
-#line 63 "aheaderfieldthatisnotconst.c"
+#line 64 "aheaderfieldthatisnotconst.c"
 
 #line 42 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 _Static_assert(__builtin_classify_type(*(struct passwd *)0) != 13, "heroes-ffi-union Passwd pw_name pw_dir");
-#line 67 "aheaderfieldthatisnotconst.c"
+#line 68 "aheaderfieldthatisnotconst.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -139,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "aheaderfieldthatisnotconst.c"
+#line 144 "aheaderfieldthatisnotconst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_0Passwd_eq(const struct passwd *a, const struct passwd *b);
@@ -214,7 +215,7 @@ __attribute__((__noinline__)) void h_aheaderfieldthatisnotconst_main(void) {
     t4 = h0_empty.pw_name; t5 = ((void *)0); t6 = t4 == t5; hero_print_bool(t6); hero_print_end();
     t7 = ((void *)0); t8 = ((void *)0); t9 = *(struct passwd *)__builtin_memset(&t9, 0, sizeof t9); t9.pw_name = (__typeof__(((struct passwd *)0)->pw_name))t7; t9.pw_dir = (__typeof__(((struct passwd *)0)->pw_dir))t8; h1_filled = t9; hero_pad_fill(&h1_filled, sizeof(struct passwd), 1, hero_pad_g_0, hero_pad_n_0);
     t10 = h1_filled.pw_dir; t11 = ((void *)0); t12 = t10 == t11; hero_print_bool(t12); hero_print_end(); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_h1_filled); hero_frame_give(hero_big_h0_empty); return;
-#line 218 "aheaderfieldthatisnotconst.c"
+#line 219 "aheaderfieldthatisnotconst.c"
 }
 #undef h0_empty
 #undef h1_filled

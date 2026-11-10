@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -58,7 +59,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 5 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2286_held *)0)->first) == 1 && sizeof(((struct fixedbugs_2286_held *)0)->first) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2286_held *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held first");
-#line 62 "main.c"
+#line 63 "main.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -152,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "main.c"
+#line 157 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_holder_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b);
@@ -187,20 +188,20 @@ __attribute__((__noinline__)) void h_main_main(void) {
     t1 = h_holder_maker(); h0_f = t1;
     t2 = h0_f; t3 = INT64_C(5); t4 = h_caller_hand(t2, t3); hero_print_int(t4); hero_print_end();
     t5 = h0_f; t6 = INT64_C(6); t7 = t5(t6); t8 = t7.first; hero_print_int(t8); hero_print_end(); hero_frame_give(hero_big_t7); return;
-#line 191 "main.c"
+#line 192 "main.c"
 }
 #undef t7
 
 #line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/caller.hero"
 int64_t h_caller_hand(h_0fn_1d97ba71 h0_cb, int64_t h1_n) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = h0_cb; t2 = h1_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"caller.hero", "caller.hand", 9, 12}; t3 = fixedbugs_2286_call_ret((h_0fn_1d97ba71)hero_callback_of((void (*)(void))t1), t2); } return t3;
-#line 198 "main.c"
+#line 199 "main.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs-2286-an-extern-and-a-function-in-one-function-type-cross-to-c-from-another-module.case/holder.hero"
 h_0fn_1d97ba71 h_holder_maker(void) { HERO_NODEBUG h_0fn_1d97ba71 t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = fixedbugs_2286_held_make; return t1;
-#line 204 "main.c"
+#line 205 "main.c"
 }
 HERO_TU_LOCAL bool h_holder_0Held_eq(const struct fixedbugs_2286_held *a, const struct fixedbugs_2286_held *b) {
     hero_panic("h_holder_0Held_eq: a partial record has no structural equality");

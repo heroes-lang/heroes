@@ -159,7 +159,7 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
     for one in wanted
         params = types[one.name]
 
-        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.PLACE || one.declared == pointee_ask.ARITY || one.declared == pointee_ask.LENT || one.declared == pointee_ask.AT
+        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.PLACE || one.declared == pointee_ask.ARITY || one.declared == pointee_ask.LENT || one.declared == pointee_ask.AT || one.declared == pointee_ask.VALUE
             continue
 
         if one.index >= params.must().len()

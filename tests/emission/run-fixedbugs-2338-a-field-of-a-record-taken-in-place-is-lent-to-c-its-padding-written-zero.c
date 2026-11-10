@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -68,11 +69,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2338_padded *)0)->a) == 1 && sizeof(((struct fixedbugs_2338_padded *)0)->a) == sizeof(int8_t) && (_Generic(((struct fixedbugs_2338_padded *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Padded a");
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2338_padded *)0)->b) == 1 && sizeof(((struct fixedbugs_2338_padded *)0)->b) == sizeof(int64_t) && (_Generic(((struct fixedbugs_2338_padded *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Padded b");
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2338_padded *)0)->c) == 1 && sizeof(((struct fixedbugs_2338_padded *)0)->c) == sizeof(int8_t) && (_Generic(((struct fixedbugs_2338_padded *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Padded c");
-#line 72 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 73 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 
 #line 13 "tests/golden/run/fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero"
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2338_padded *)0) != 13, "heroes-ffi-union Padded a b c");
-#line 76 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 77 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -174,7 +175,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 178 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 179 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_0Padded_eq(const struct fixedbugs_2338_padded *a, const struct fixedbugs_2338_padded *b);
@@ -229,7 +230,7 @@ int64_t h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero
     HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.inspect", 30, 5}; (void)fixedbugs_2338_scribble(); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.inspect", 31, 12}; hero_pad_fill(&(*(h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap *)hero_in_h0_w).f_inner, sizeof(struct fixedbugs_2338_padded), 1, hero_pad_g_0, hero_pad_n_0); t1 = fixedbugs_2338_dirty(&h0_w.f_inner); } t2 = h0_w.f_tag; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.inspect", 31, 12); return t3;
-#line 233 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 234 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 }
 #undef h0_w
 
@@ -241,7 +242,7 @@ int64_t h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero
     HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.deep", 34, 5}; (void)fixedbugs_2338_scribble(); }
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.deep", 35, 12}; hero_pad_fill(&(*(h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Outer *)hero_in_h0_o).f_mid.f_inner, sizeof(struct fixedbugs_2338_padded), 1, hero_pad_g_0, hero_pad_n_0); t1 = fixedbugs_2338_dirty(&h0_o.f_mid.f_inner); } t2 = h0_o.f_flag; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.deep", 35, 12); return t3;
-#line 245 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 246 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 }
 #undef h0_o
 
@@ -255,7 +256,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2338afieldofarecordtakeninplace
     HERO_NODEBUG h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap *const hero_big_t1 = (h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap *)hero_frame_take(sizeof(h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap)); HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hand_on", 39, 5}; (void)fixedbugs_2338_scribble(); }
     t1 = h0_w; t2 = h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_inspect(&t1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hand_on", 40, 28}; hero_pad_fill(&(*(h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Wrap *)hero_in_h0_w).f_inner, sizeof(struct fixedbugs_2338_padded), 1, hero_pad_g_0, hero_pad_n_0); t3 = fixedbugs_2338_dirty(&h0_w.f_inner); } if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hero", "fixedbugs-2338-a-field-of-a-record-taken-in-place-is-lent-to-c-its-padding-written-zero.hand_on", 40, 12); hero_frame_give(hero_big_t1); return t4;
-#line 259 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 260 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 }
 #undef h0_w
 #undef t1
@@ -284,7 +285,7 @@ __attribute__((__noinline__)) void h_fixedbugs2338afieldofarecordtakeninplaceisl
     t9 = INT64_C(0); t10 = h0_w; t11 = *(h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_Outer *)__builtin_memset(&t11, 0, sizeof t11); t11.f_flag = t9; t11.f_mid = t10; t12 = h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_deep(&t11); hero_print_int(t12); hero_print_end();
     t13 = h0_w; t14 = h_fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero_hand_on(&t13); hero_print_int(t14); hero_print_end();
     t15 = h0_w.f_inner.b; hero_print_int(t15); hero_print_end(); hero_frame_give(hero_big_t13); hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_h0_w); return;
-#line 288 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
+#line 289 "fixedbugs2338afieldofarecordtakeninplaceislenttocitspaddingwrittenzero.c"
 }
 #undef h0_w
 #undef t5

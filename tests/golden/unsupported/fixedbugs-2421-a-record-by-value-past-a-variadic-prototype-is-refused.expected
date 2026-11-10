@@ -1,0 +1,15 @@
+error[ffi_parameter_type]: `p` of `slot_pair` is declared `Pair` and crosses by value, and `fixedbugs-2421-variadic.h` gives `slot_pair` 1 parameter and then `...`, where `p` stands — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `Pair` this program hands it
+  at tests/golden/unsupported/fixedbugs-2421-a-record-by-value-past-a-variadic-prototype-is-refused.hero:25:36
+     |
+  25 |     function slot_pair(count: i32, p: Pair) -> i64  #~ ffi_parameter_type
+     |                                    ^
+  note: spec § 13: a parameter is declared at the header's own width and sign, and clang holds it to them; past a header's `...` the header declares no type, so the call converts nothing beyond C's default promotions and `slot_pair` reads the bytes as the type its `va_arg` names: an `i32` read as a C `long` gives -1 as 4294967295, and a wider integer, a float, a string, a pointer or a record read as another type is the same mistake
+  note: write a header of your own that includes `fixedbugs-2421-variadic.h` and defines a `static inline` function of a new name with a fixed prototype, taking `p` at the C type `slot_pair` reads there and calling `slot_pair` with it; bind that function instead, and its prototype holds it to that type; where `slot_pair` reads a format, write the format inside that function as a literal, and clang reads each conversion against the argument it is given
+
+error[ffi_parameter_type]: `p` of `slot_read` is declared `Pair` and crosses by value, and `fixedbugs-2421-variadic.h` gives `slot_read` 1 parameter and then `...`, where `p` stands — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `Pair` this program hands it
+  at tests/golden/unsupported/fixedbugs-2421-a-record-by-value-past-a-variadic-prototype-is-refused.hero:26:36
+     |
+  26 |     function slot_read(count: i32, p: Pair) -> i64  #~ ffi_parameter_type
+     |                                    ^
+  note: spec § 13: a parameter is declared at the header's own width and sign, and clang holds it to them; past a header's `...` the header declares no type, so the call converts nothing beyond C's default promotions and `slot_read` reads the bytes as the type its `va_arg` names: an `i32` read as a C `long` gives -1 as 4294967295, and a wider integer, a float, a string, a pointer or a record read as another type is the same mistake
+  note: write a header of your own that includes `fixedbugs-2421-variadic.h` and defines a `static inline` function of a new name with a fixed prototype, taking `p` at the C type `slot_read` reads there and calling `slot_read` with it; bind that function instead, and its prototype holds it to that type; where `slot_read` reads a format, write the format inside that function as a literal, and clang reads each conversion against the argument it is given

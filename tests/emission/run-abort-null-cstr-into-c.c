@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ HERO_STR_STATIC(hero_str_203132, "zzz");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 102 "abortnullcstrintoc.c"
+#line 103 "abortnullcstrintoc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "abortnullcstrintoc.c"
+#line 155 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -176,7 +177,7 @@ void h_abortnullcstrintoc_main(void) { const char * h0_absent; HERO_NODEBUG Hero
 #line 33
     t7 = h0_absent; t8 = HERO_STR_LIT(hero_str_79); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-null-cstr-into-c.hero", "abort-null-cstr-into-c.main", 33, 41}; t9 = hero_str_lend_at(t8, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-null-cstr-into-c.hero", "abort-null-cstr-into-c.main", 33, 8}; t10 = (const char *)strstr(hero_cstr_nonnull_at(t7, &hero_here), hero_cstr_nonnull_at(t9, &hero_here)); } t11 = ((void *)0); t12 = t10 == t11; if (t12) goto bb2; else goto bb3; bb1: return; bb2:
     t13 = HERO_STR_LIT(hero_str_187ae0ee); hero_print_str(t13); hero_print_end(); goto bb1; bb3: goto bb1;
-#line 180 "abortnullcstrintoc.c"
+#line 181 "abortnullcstrintoc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

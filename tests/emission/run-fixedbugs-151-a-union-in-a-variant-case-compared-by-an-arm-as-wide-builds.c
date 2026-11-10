@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -62,11 +63,11 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->i) == 1 && sizeof(((W *)0)->i) == sizeof(int32_t) && (_Generic(((W *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W i");
-#line 66 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 67 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 
 #line 8 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(*(W *)0) != 13 || sizeof(((W *)0)->i) == sizeof(W), "heroes-ffi-union-narrow W i");
-#line 70 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 71 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -174,7 +175,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 178 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 179 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(const W *a, const W *b);
@@ -225,7 +226,7 @@ void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main(void) { 
     t14 = h1_b; t15 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 23, 5}; hero_map_set_at(&(h2_m), &t14, &t15, &hero_here); }
     t16 = h0_a; t17 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 24, 5}; hero_map_set_at(&(h2_m), &t16, &t17, &hero_here); }
     t18 = h2_m; t19 = hero_map_len(t18); hero_print_int(t19); hero_print_end();
-#line 229 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 230 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_release_at(&h2_m);
     hero_map_release_at(&h3_own3);
     return;

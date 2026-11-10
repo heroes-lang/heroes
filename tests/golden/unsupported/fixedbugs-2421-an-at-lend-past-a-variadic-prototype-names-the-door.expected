@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `n` of `slot_wide` is an `@` parameter, and `fixedbugs-2421-variadic.h` gives `slot_wide` 1 parameter and then `...`, where `n` stands — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends
+  at tests/golden/unsupported/fixedbugs-2421-an-at-lend-past-a-variadic-prototype-names-the-door.hero:21:37
+     |
+  21 |     function slot_wide(count: i32, @n: i32) -> i64  #~ ffi_parameter_type
+     |                                     ^
+  note: spec § 13: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was
+  note: write a header of your own that includes `fixedbugs-2421-variadic.h` and defines a `static inline` function of a new name with a fixed prototype, taking `n` as a pointer to the C type `slot_wide` writes through it and calling `slot_wide` with it; bind that function instead, and its prototype holds the width; where `slot_wide` reads a format, write the format inside that function as a literal, and clang reads each conversion against the argument it is given

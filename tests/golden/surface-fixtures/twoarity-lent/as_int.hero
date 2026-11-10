@@ -1,20 +1,13 @@
-# One arity of `printf`, in its own module.
-#
-# The header is `<stdio.h>` and the C symbol is `printf` — the same
-# symbol `as_text.hero` binds, at a different signature. That is the
-# whole point of this fixture: it is legal, it links, and it runs.
-#
-# `lent`, since panel 171: `printf` reads its format while it runs and
-# keeps nothing of it, and without the word a lend at the call is refused,
-# because an unmarked C parameter is assumed to keep what it is handed.
+# `twoarity/as_int.hero` as it stood until 2026-11-10: `value` bound past
+# `printf`'s `...` at an `i64`, refused since panel 243's R1 (defect 2421) as
+# crossing by value, where nothing holds it to what `printf` reads. The
+# refusal lands HERE, on this module's `value`, in its own words, and the
+# namesake binding of `as_text.hero`, the same C name at another shape, is
+# told on its own line in its own: found by the name alone, one was told on
+# the other's line, a false message (2026-10-17).
 
 extern "stdio.h"
-    function printf(format: cstr lent, value: i64) -> i32
+    function printf(format: cstr lent, value: i64) -> i32  #~ ffi_parameter_type
 
-# The route out of the module, because an `extern` is never callable
-# across a module boundary (acceptance row 1, panel 033 R5). It takes the
-# `str` and lends inside itself, which is the shape §4.19 prescribes: a
-# wrapper taking `cstr` is a Heroes parameter no mark can reach, and panel
-# 171's rule stops a lend there with `lend_needs_a_header`.
 function say(format: str, value: i64) -> i32
     return printf(format: format.cstr(), value: value)

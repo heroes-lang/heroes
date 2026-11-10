@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -97,7 +98,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 101 "ffiacquiresandconsumes.c"
+#line 102 "ffiacquiresandconsumes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "ffiacquiresandconsumes.c"
+#line 156 "ffiacquiresandconsumes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacquiresandconsumes_0Slot_eq(Slot * const *a, Slot * const *b);
@@ -179,7 +180,7 @@ void h_ffiacquiresandconsumes_main(void) { Slot * h0_a; Slot * h1_b; HERO_NODEBU
     t10 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-acquires-and-consumes.hero", "ffi-acquires-and-consumes.main", 21, 5}; { hero_handle_alive_at(t10, "the argument `s` of `slot_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t10, "slot_close", NULL, &hero_here); (void)slot_close(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); } }
     t11 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-acquires-and-consumes.hero", "ffi-acquires-and-consumes.main", 22, 5}; { hero_handle_alive_at(t11, "the argument `s` of `slot_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t11, "slot_close", NULL, &hero_here); (void)slot_close(t11); if (hero_handle_ended(t11, hero_life_0_0) && h1_b == t11) h1_b = hero_handle_dead(); } }
     t12 = HERO_STR_LIT(hero_str_455ecde8); hero_print_str(t12); hero_print_end(); return;
-#line 183 "ffiacquiresandconsumes.c"
+#line 184 "ffiacquiresandconsumes.c"
 }
 HERO_TU_LOCAL bool h_ffiacquiresandconsumes_0Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

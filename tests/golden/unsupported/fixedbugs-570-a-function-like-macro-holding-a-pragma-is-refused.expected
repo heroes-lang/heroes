@@ -4,4 +4,4 @@ error[ffi_macro_name]: `fixedbugs-570-a-function-like-macro-holding-a-pragma-is-
   26 |     function my_twice(x: i32) -> i32  #~ ffi_macro_name
      |              ^^^^^^^^
   note: clang read the header, and the expansion of `my_twice` runs `#pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"`
-  note: a header of your own that includes `fixedbugs-570-a-function-like-macro-holding-a-pragma-is-refused.h` and then writes `#undef my_twice`, named by this group instead, binds the header's own `my_twice` where it declares one
+  note: a header of your own that includes `fixedbugs-570-a-function-like-macro-holding-a-pragma-is-refused.h` and then writes `#undef my_twice`, named by this group instead, binds the header's own `my_twice` where it declares one; where it declares `my_twice` with `...`, that header also defines a `static inline` function of a new name with a fixed prototype, taking each argument at the type `my_twice` reads and calling it, and the group binds that function, since nothing is bound past a `...`

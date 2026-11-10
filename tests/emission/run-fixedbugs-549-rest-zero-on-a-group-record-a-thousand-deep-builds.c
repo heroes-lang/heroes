@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -2060,7 +2061,7 @@ _Static_assert(_Generic(&((G997 *)0)->inner, G996 *: 1, default: 0) && sizeof(((
 _Static_assert(_Generic(&((G998 *)0)->inner, G997 *: 1, default: 0) && sizeof(((G998 *)0)->inner) == sizeof(G997), "heroes-ffi-field G998 inner");
 #line 2012
 _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((G999 *)0)->inner) == sizeof(G998), "heroes-ffi-field G999 inner");
-#line 2064 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 2065 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -2134,7 +2135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2138 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 2139 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_0G0_eq(const G0 *a, const G0 *b);
@@ -4181,13 +4182,13 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 #line 2014 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
 G999 h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_deep(void) { HERO_NODEBUG G999 t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = *(G999 *)__builtin_memset(&t1, 0, sizeof t1); __builtin_memset(&t1, 0, sizeof t1); return t1;
-#line 4185 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 4186 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 }
 
 #line 2017 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
 G31 h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_at_the_depth(void) { HERO_NODEBUG G31 t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (G31){0}; __builtin_memset(&t1, 0, sizeof t1); return t1;
-#line 4191 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 4192 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 }
 
 #line 2020 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
@@ -4203,7 +4204,7 @@ void h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_main(void) { G999 h
     t4 = h1_h.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.v;
 #line 2026
     hero_print_int(t4); hero_print_end(); return;
-#line 4207 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 4208 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_0G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;

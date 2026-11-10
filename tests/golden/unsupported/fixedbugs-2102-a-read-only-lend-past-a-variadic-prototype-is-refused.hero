@@ -15,8 +15,11 @@
 # FIX: the dump says which functions are variadic, and a `cstr lent` past the
 # `...` is refused on its parameter, the message naming the lease, a copy C may
 # write, which a `cstr` without `lent` takes there
-# (`emit/ffi_past_prototype.hero`). The legal shape beside it is
-# `tests/golden/run/fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero`.
+# (`emit/ffi_past_prototype.hero`). **Until 2026-11-10**: since panel 243's R1
+# (defect 2421) the lease is refused past `...` too, and the note names the
+# door, a function of the program's own header taking a `const char *`; the
+# shape that was legal beside this one is
+# `tests/golden/unsupported/fixedbugs-2421-a-lease-past-a-variadic-prototype-is-refused.hero`.
 
 extern "fixedbugs-2102-variadic.h"
     function va_scribble(k: i32, s: cstr lent) -> i64  #~ ffi_writable_parameter

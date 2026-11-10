@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -106,7 +107,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 110 "ffiownedcellisfreed.c"
+#line 111 "ffiownedcellisfreed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -161,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "ffiownedcellisfreed.c"
+#line 166 "ffiownedcellisfreed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -206,7 +207,7 @@ void h_ffiownedcellisfreed_main(void) {
     t71 = INT64_C(3); t72 = ((void *)0); h17_cell2 = t72; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; hero_lend_local_name(hero_lend_h17_cell2, "hero_owned_silent", "out"); (void)hero_owned_silent(t71, (char **)&h17_cell2); } t74 = h17_cell2; h18_owned4 = t74; t75 = h18_owned4; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; t76 = h_library_validated(t75, &hero_here); } t118 = h28_own28; h28_own28 = t76; h_0opt_f87774a_release(&t118); t119 = h19_owned5; h_0opt_f87774a_retain(&t76); h19_owned5 = t76; h_0opt_f87774a_release(&t119); t77 = ((void *)0); t78 = h18_owned4; t79 = t78 != t77; if (t79) goto bb17; else goto bb18; bb17: t80 = h18_owned4; t81 = (void *)(char *)t80; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-owned-cell-is-freed.hero", "ffi-owned-cell-is-freed.main", 64, 9}; (void)free(t81); } goto bb18; bb18: t82 = h19_owned5; t120 = h16_quiet; h_0opt_f87774a_retain(&t82); h16_quiet = t82; h_0opt_f87774a_release(&t120);
 #line 66
     t83 = h16_quiet; t121 = h20_s0; h_0opt_f87774a_retain(&t83); h20_s0 = t83; h_0opt_f87774a_release(&t121); t84 = h20_s0; t85 = t84.tag; switch (t85) { case 0: goto bb20; case 1: goto bb21; default: hero_unreachable(); } bb19:
-#line 210 "ffiownedcellisfreed.c"
+#line 211 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_first));
     h_0opt_f87774a_release(hero_slot_escape(&h3_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -238,7 +239,7 @@ bb20:
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t86 = h20_s0; t87 = t86.as.ok; t122 = h21_text; hero_str_incref(t87); h21_text = t87; hero_str_decref(t122); t88 = HERO_STR_LIT(hero_str_2c0c20d2); t89 = h21_text; hero_print_str(t88); hero_print_str(t89); hero_print_end(); goto bb19; bb21:
     t90 = h20_s0; t91 = t90.as.err; t123 = h22_e; hero_failure_retain(&t91); h22_e = t91; hero_failure_release(&t123); t92 = HERO_STR_LIT(hero_str_5d6883a8); t93 = h22_e.code; hero_print_str(t92); hero_print_str(t93); hero_print_end(); goto bb19;
-#line 242 "ffiownedcellisfreed.c"
+#line 243 "ffiownedcellisfreed.c"
 }
 #undef h1_cell0
 #undef h7_cell1
@@ -246,7 +247,7 @@ bb20:
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 250 "ffiownedcellisfreed.c"
+#line 251 "ffiownedcellisfreed.c"
 }
 
 #line 152 "<heroes library>"
@@ -266,7 +267,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
 #line 158
     t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 270 "ffiownedcellisfreed.c"
+#line 271 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

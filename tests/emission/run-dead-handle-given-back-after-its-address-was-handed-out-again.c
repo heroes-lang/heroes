@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6ff69f68, "the new node reads ");
 HERO_STR_STATIC(hero_str_360321cf, "the stale one was given back, and nothing said");
 
-#line 102 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 103 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 156 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_0Node_eq(node * const *a, node * const *b);
@@ -175,7 +176,7 @@ void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void);
 #line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_closed(node * *ph0_n) { HERO_NODEBUG node *t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = (*ph0_n); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-given-back-after-its-address-was-handed-out-again.hero", "dead-handle-given-back-after-its-address-was-handed-out-again.closed", 21, 5}; { hero_handle_alive_at(t1, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "node_free", NULL, &hero_here); (void)node_free(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_n) == t1) (*ph0_n) = hero_handle_dead(); } } return;
-#line 179 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 180 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
@@ -187,7 +188,7 @@ void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void) { node * h
     t6 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-given-back-after-its-address-was-handed-out-again.hero", "dead-handle-given-back-after-its-address-was-handed-out-again.main", 28, 5}; { hero_handle_alive_at(t6, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t6, "node_free", NULL, &hero_here); (void)node_free(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); } }
     t7 = HERO_STR_LIT(hero_str_360321cf); hero_print_str(t7); hero_print_end();
     t8 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-given-back-after-its-address-was-handed-out-again.hero", "dead-handle-given-back-after-its-address-was-handed-out-again.main", 30, 5}; { hero_handle_alive_at(t8, "the argument `n` of `node_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t8, "node_free", NULL, &hero_here); (void)node_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h1_b == t8) h1_b = hero_handle_dead(); } } return;
-#line 191 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 192 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_0Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

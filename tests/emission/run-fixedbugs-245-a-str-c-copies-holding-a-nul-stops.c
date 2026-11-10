@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ HERO_STR_STATIC(hero_str_41bb0df2, "C made ");
 HERO_STR_STATIC(hero_str_391e7e27, " bytes");
 HERO_STR_STATIC(hero_str_521d74b5, "C reads ");
 
-#line 102 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 103 "fixedbugs245astrccopiesholdinganulstops.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -150,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 155 "fixedbugs245astrccopiesholdinganulstops.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -173,7 +174,7 @@ void h_fixedbugs245astrccopiesholdinganulstops_main(void) { HeroStr h0_made = {0
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero", "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.main", 14, 12}; t1 = made_by_c(); } t10 = h1_own1; h1_own1 = t1; hero_str_decref(t10); t11 = h0_made; hero_str_incref(t1); h0_made = t1; hero_str_decref(t11);
     t2 = HERO_STR_LIT(hero_str_41bb0df2); t3 = h0_made; t4 = hero_str_len(t3); t5 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t2); hero_print_int(t4); hero_print_str(t5); hero_print_end();
     t6 = HERO_STR_LIT(hero_str_521d74b5); t7 = h0_made; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero", "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.main", 16, 33}; t8 = hero_str_lend_at(t7, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero", "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.main", 16, 23}; t9 = strlen(hero_cstr_nonnull_at(t8, &hero_here)); } hero_print_str(t6); hero_print_uint(t9); hero_print_end();
-#line 177 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 178 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_release_at(&h0_made);
     hero_str_release_at(&h1_own1);
     return;

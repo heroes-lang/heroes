@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wformat-nonliteral"
 #pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -94,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_279ecc0f, "sqlite ");
 
-#line 98 "ffimissinglink.c"
+#line 99 "ffimissinglink.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -144,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "ffimissinglink.c"
+#line 149 "ffimissinglink.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -165,7 +166,7 @@ void h_ffimissinglink_main(void);
 #line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
 void h_ffimissinglink_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_279ecc0f); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-missing-link.hero", "ffi-missing-link.main", 60, 22}; t2 = sqlite3_libversion_number(); } hero_print_str(t1); hero_print_int(t2); hero_print_end(); return;
-#line 169 "ffimissinglink.c"
+#line 170 "ffimissinglink.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

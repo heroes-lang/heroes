@@ -1,9 +1,10 @@
-# Both arities, one program, one C symbol. The strings cross as `str` and
-# each module lends them at its own call, where the header is asked.
+# Two shapes of one C variadic, one program: each module reaches `printf`
+# through a door of its own header, and the strings cross as `str`, lent at
+# each module's own call.
 
 use as_int
 use as_text
 
 function main()
-    _ = as_int.say(format: "n = %d\n", value: 42)
-    _ = as_text.say(format: "s = %s\n", value: "forty-two")
+    _ = as_int.say(value: 42)
+    _ = as_text.say(value: "forty-two")

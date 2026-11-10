@@ -14,11 +14,15 @@
 #   compiler blaming itself for the author's count.
 # - **a format string that is not a literal**: `printf(format: cstr)` bound at
 #   ONE parameter and called with a variable is `format string is not a
-#   string literal (potentially insecure)` under `-Wformat-security`, and
-#   clang's own repair is right: bind the arguments the call needs. A
-#   variadic bound at a FIXED arity — `printf(format: cstr, value: i64)`,
-#   `curl_easy_setopt` in `examples/curl` — is legal and stays green: clang
-#   says *too many arguments* only against a non-variadic prototype.
+#   string literal (potentially insecure)` under `-Wformat-security`. clang's
+#   own repair, *bind the arguments the call needs*, was this note's until
+#   panel 243's R1 (provisional, author ratification pending): a binding
+#   declares no parameter past a header's `...` (defect 2421,
+#   `emit/ffi_past_prototype.hero`), so both notes here name the door, a
+#   function of the program's own header with a fixed prototype that calls
+#   the variadic, its format written inside as a literal. clang says *too
+#   many arguments* only against a non-variadic prototype, so a binding past
+#   `...` is that module's to refuse, never this one's.
 #
 # Two lines arrive per mistake — the probe's, at the declaration, and the
 # call's, at the call site — and a third, raw `.c` line from the return
@@ -136,7 +140,7 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
             message @ "`" + name + "` is declared with " + n.must().have.to_str() + " parameters, and `" + header + "` gives it " + n.must().expected.to_str() + " — clang read the header, and the call this declaration implies does not fit it"
         d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_call_shape", message: message, span: span)
         d.notes @ d.notes.push(
-            "spec § 13: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with"
+            "spec § 13: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths; a function it declares variadic (`...`) takes nothing a binding can type past it, so a header of your own defines a `static inline` function of a new name with a fixed prototype that calls it, and the group binds that"
         )
         return ok(d)
     d: diag.Diagnostic @= diag.new_diagnostic(
@@ -145,7 +149,7 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
         span: span
     )
     d.notes @ d.notes.push(
-        "bind the fixed shape the program calls — `function " + name + "(format: cstr, value: i64) -> i32` binds one argument after the format, and the format may then be a literal at every call"
+        "a header of your own defines a `static inline` function of a new name with a fixed prototype that calls `" + name + "` with its format written inside as a literal and each value at a parameter of the C type its conversion names, `long long` for `%lld`, and the group binds that function: clang then reads each conversion against its argument, and nothing is bound past the `...`"
     )
     return ok(d)
 
@@ -270,6 +274,13 @@ test "the arity text is read into the author's declaration, with both counts"
     assert d.must().code == "ffi_call_shape"
     assert d.must().message == "`strtok` is declared with 3 parameters, and `string.h` gives it 2 — clang read the header, and the call this declaration implies does not fit it"
 
+    # A variadic's route is the door, never a binding past its `...` (panel
+    # 243's R1).
+    assert ffi_lookup.has(
+        text: d.must().notes[0],
+        needle: "takes nothing a binding can type past it, so a header of your own defines a `static inline` function of a new name"
+    )
+
     # The call line names no extern, and a line that is not ours is refused.
     assert call_shape(
         s,
@@ -284,7 +295,7 @@ test "the arity text is read into the author's declaration, with both counts"
         line: "t.hero:2:139: error: incompatible pointer types passing 'int *' to parameter of type 'long *'"
     ).is_err()
 
-test "the format-security text lands on the declaration with the fixed-shape repair"
+test "the format-security text lands on the declaration with the door as its repair"
     text = "extern \"stdio.h\"\n    function printf(format: cstr) -> i32\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -296,6 +307,11 @@ test "the format-security text lands on the declaration with the fixed-shape rep
     assert !d.is_err()
     assert d.must().code == "ffi_call_shape"
     assert d.must().notes.len() == 1
+
+    # The repair is a function of the program's own header holding the
+    # literal format, never a binding past the `...` (panel 243's R1).
+    assert ffi_lookup.has(text: d.must().notes[0], needle: "calls `printf` with its format written inside as a literal")
+    assert !ffi_lookup.has(text: d.must().notes[0], needle: "value: i64")
 
 test "a name the header has as an object, a value or a type is told as what it is (defect 152)"
     text = "extern \"errno.h\"\n    function errno() -> i32\n    function RED(x: i64) -> i64\n    function my_int() -> i32\n\nfunction main()\n    print(1)\n"

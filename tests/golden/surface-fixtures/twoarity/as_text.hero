@@ -1,22 +1,17 @@
-# The other arity of the SAME C symbol, in its own module.
+# The other shape of the SAME C symbol, in its own module, through a door of
+# its own.
 #
-# `printf` again, `<stdio.h>` again, a different value type. Two `extern`
-# groups in two modules naming one symbol is not a collision: the probes
-# are mangled per module (panel 053), and the call goes through the
-# header's own prototype, so C sees one function and Heroes sees two
-# bindings. `format` says `lent` (panel 171): `printf` reads it while it runs
-# and keeps nothing. `value` stands past `printf`'s `...`, where C reads what
-# it is handed as whatever type it asks for, so a read-only lend there is
-# refused (panel 217's R3(c), defect 2102, 2026-10-17) and it takes a lease, a
-# copy C may write; `twoarity-lent/` is the same program with the lend, refused.
+# `printf` again, at a string. Until 2026-11-10 this module bound it
+# directly, `printf(format: cstr lent, value: cstr)`, the value a lease
+# handed past the `...` (panel 217's R3(c)); since panel 243's R1 (defect
+# 2421) nothing is bound there, so `as_text.h` defines `say_text`, taking a
+# `const char *` that the string is lent to for the call, `lent` because
+# `printf` reads it while it runs and keeps nothing.
 
-extern "stdio.h"
-    function printf(format: cstr lent, value: cstr) -> i32
+extern "as_text.h"
+    function say_text(s: cstr lent) -> i32
 
-# The wrapper takes two `str`, lends the format inside itself, as `as_int.hero`
-# says why, and hands the value over as a lease it ends once `printf` returns.
-function say(format: str, value: str) -> i32
-    copy: cstr @= value.lease()
-    said = printf(format: format.cstr(), value: copy)
-    end_lease(@copy)
-    return said
+# The wrapper takes a `str` and lends it inside itself, the shape §4.19
+# prescribes: a wrapper taking `cstr` is a Heroes parameter no mark can reach.
+function say(value: str) -> i32
+    return say_text(s: value.cstr())
