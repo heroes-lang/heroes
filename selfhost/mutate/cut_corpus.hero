@@ -95,12 +95,22 @@ function mirrored(tree: str, files: [str], mirror: str) -> [str]?
 
     return ok(unread)
 
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none. Every byte is asked, the first included: until
+# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
+# `/a` does, and `""` sliced to -1 and aborted.
 function folder(path: str) -> str
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
     return path.slice(from: 0, to: at)
 
 # The files a check of `rel` reads, as the compiler loads them, relative
@@ -174,3 +184,13 @@ test "a program's closure is what the compiler loads for it, the program first"
     got = closure(mirror: "tests/golden/surface-fixtures", rel: "nested/main.hero").must()
     assert got[0] == "nested/main.hero"
     assert got.len() > 1
+
+test "a path's folder is asked of every byte, the first included (defect 2406)"
+    assert folder("") == "."
+    assert folder("a") == "."
+    assert folder("/") == "/"
+    assert folder("/a") == "/"
+    assert folder(".bashrc") == "."
+    assert folder("..") == "."
+    assert folder("file.tar.gz") == "."
+    assert folder("o/work/mirror/a/b.hero") == "o/work/mirror/a"

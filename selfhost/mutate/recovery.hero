@@ -132,12 +132,22 @@ function mirrored(plan_dir: str, out: str, files: [str]) -> ()?
 
     return ok()
 
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none. Every byte is asked, the first included: until
+# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
+# `/a` does, and `""` sliced to -1 and aborted.
 function directory(path: str) -> str
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
     return path.slice(from: 0, to: at)
 
 # One phase on `workers.JOBS` threads, its `count` records in task order.
@@ -258,4 +268,14 @@ test "a worker's lines are split at their first tab, and a text's last line feed
     assert lines_of("a\nb\n") == ["a", "b"]
     assert lines_of("a\nb") == ["a", "b"]
     assert lines_of("").len() == 0
+    assert directory("o/mirror/x/y.hero") == "o/mirror/x"
+
+test "a path's folder is asked of every byte, the first included (defect 2406)"
+    assert directory("") == "."
+    assert directory("a") == "."
+    assert directory("/") == "/"
+    assert directory("/a") == "/"
+    assert directory(".bashrc") == "."
+    assert directory("..") == "."
+    assert directory("file.tar.gz") == "."
     assert directory("o/mirror/x/y.hero") == "o/mirror/x"

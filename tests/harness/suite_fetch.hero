@@ -166,7 +166,7 @@ function copied(from: str, to: str) -> ()?
 
     for path in shell.walk_into(from, skip: nothing)?
         target = to + path.slice(from: from.len(), to: path.len())
-        shell.mkdir_all(target.slice(from: 0, to: last_slash(target)))?
+        shell.mkdir_all(folder_of(target))?
         write_file(path: target, text: read_file(path)?)?
 
     return ok()
@@ -292,13 +292,30 @@ function lines_of(text: str) -> [str]
 function last_part(path: str) -> str
     return path.slice(from: last_slash(path) + 1, to: path.len())
 
+# The index of `path`'s last `/`, -1 where it holds none: every byte is
+# asked, the first included (defect 2406: the loop stopped at index 0, so
+# `a` answered a slash there as `/a` does, and `last_part("file.tar.gz")` was
+# `ile.tar.gz`).
 function last_slash(path: str) -> i64
     at: i64 @= path.len() - 1
 
-    while at > 0 && path[at] != '/'
+    while at >= 0 && path[at] != '/'
         at @ at - 1
 
     return at
+
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none.
+function folder_of(path: str) -> str
+    at = last_slash(path)
+
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
 
 function why(failed: ()?) -> str
     match failed
@@ -318,3 +335,21 @@ test "a transcript holds no machine's paths, and two texts are told apart at the
     assert apart(one: "a\n", two: "a\nb\n") == 2
     assert lines_of("one\ntwo") == ["one", "two"]
     assert last_part("tests/golden/fetch/add.case") == "add.case"
+
+test "a path's last part and folder are asked of every byte, the first included (defect 2406)"
+    assert last_part("") == ""
+    assert last_part("a") == "a"
+    assert last_part("/") == ""
+    assert last_part("/a") == "a"
+    assert last_part(".bashrc") == ".bashrc"
+    assert last_part("..") == ".."
+    assert last_part("file.tar.gz") == "file.tar.gz"
+    assert last_part("tests/golden/fetch/file.tar.gz") == "file.tar.gz"
+    assert folder_of("") == "."
+    assert folder_of("a") == "."
+    assert folder_of("/") == "/"
+    assert folder_of("/a") == "/"
+    assert folder_of(".bashrc") == "."
+    assert folder_of("..") == "."
+    assert folder_of("file.tar.gz") == "."
+    assert folder_of("tests/golden/fetch/file.tar.gz") == "tests/golden/fetch"
